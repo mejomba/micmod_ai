@@ -1,0 +1,8 @@
+{% for field, value in data.items %}
+    <div class="col">
+        <div class="row row-cols-2 py-2 border bg-soft-light" style="min-height: 100%;">
+            <div class="col my-2 fw-bold" data-key="{{ field }}">{{ field }}</div>
+            <div class="col my-2">{{ value }}</div>
+        </div>
+    </div>
+{% endfor %}

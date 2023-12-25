@@ -1,0 +1,21 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+{% if not field.field.widget.input_type == 'hidden' %}
+<div class="col">
+        {% if crispy %}
+            {% if only_popup %}
+                {{ field.label }}
+            {% else %}
+                {{ field|as_crispy_field }}
+            {% endif %}
+        {% else %}
+                {{ field }}
+        {% endif %}
+{% if editable %}
+    <a href="#" class="btn-link hover" data-toggle="modal" data-target="#{{ field.html_name }}" id="#{{ field.html_name }}">نمایش | ویرایش</a>
+{% elif not editable %}
+    <a href="#" class="btn-link hover" data-toggle="modal" data-target="#{{ field.html_name }}" id="#{{ field.html_name }}">نمایش</a>
+{% endif %}
+    {% show_modal obj=obj field=field target_model_name=target editable=editable %}
+</div>
+{% endif %}

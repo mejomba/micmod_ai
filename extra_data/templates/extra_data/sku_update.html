@@ -1,0 +1,180 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    {% block form_content %}
+        {% csrf_token %}
+        <div class="mt-5 mb-2">
+            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+        </div>
+        <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-4 pb-3 align-items-end">
+
+            {% render_field_by_order form form.sku form.part_number form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
+
+            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
+            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
+            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}
+            {% if flow_state_index >= 1 %}
+                {% render_field_by_order form  form.technical_confirm %}
+            {% endif %}
+        </div>
+    {% endblock %}
+
+{% block content %}
+<!-- ============================== پرونده های استعلام قیمت ================================ -->
+            <div class="table-rep-plugin my-5">
+            <div class="my-5">
+            <div class="bg-info p-2 rounded my-1 text-center">پرونده های استعلام قیمت</div>
+                    <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
+                      <thead>
+                        <tr>
+                            <th scope="col" data-key="supplier">supplier</th>
+                            <th scope="col" data-key="demanded quantity">demanded_quantity</th>
+                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+                            <th scope="col" data-key="price">price</th>
+                            {% endif %}
+                            <th scope="col" data-key="active">active</th>
+                            <th scope="col" data-key="brand">brand</th>
+                            <th scope="col" data-key="quality">quality</th>
+                            <th scope="col" data-key="target">target</th>
+                            <th scope="col" data-key="created_date">created date</th>
+                            <th scope="col" data-key="action">action</th>
+                        </tr>
+                      </thead>
+                    <tbody>
+
+{#                        {% for price_inquiry_file in related_price_inquiry_files %}#}
+{#                            {% for inquiry_result in price_inquiry_file.inquery_result.all %}#}
+{#                                <tr>#}
+{#                                    <td><a href="{% url 'inquiry:price_inquiry_file.update' price_inquiry_file.pk %}">{{ inquiry_result.supplier }}</a></td>#}
+{#                                    <td>{{ price_inquiry_file.demanded_quantity }}</td>#}
+{#                                    {% if request.user|has_permission:'inquiry.view_inquiryresult' %}#}
+{#                                    <td>{{ inquiry_result.price }}</td>#}
+{#                                    {% endif %}#}
+{#                                    <td class="{% if inquiry_result.active %}text-success fw-bold{% endif %}">{{ inquiry_result.active|yesno:"بله,خیر" }}</td>#}
+{#                                    <td>{{ price_inquiry_file.brand }}</td>#}
+{#                                    <td>{{ price_inquiry_file.desired_quality }}</td>#}
+{#                                    <td>{{ price_inquiry_file.target }}</td>#}
+{#                                    <td>{{ inquiry_result.created_date|to_jalali:"%Y/%m/%d" }}</td>#}
+{#                                </tr>#}
+{#                            {% endfor %}#}
+{#                        {% endfor %}#}
+
+                    {% for inquiry_result in related_price_inquiry_files %}
+                        <tr>
+                            <td>
+                                {% if inquiry_result.price_inquiry_file.pk %}
+                                    <a href="{% url 'inquiry:price_inquiry_file.update' inquiry_result.price_inquiry_file.pk %}">{{ inquiry_result.supplier }}</a>
+                                {% else %}
+                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ inquiry_result.sku.pk }}">{{ inquiry_result.supplier }}</a>
+                                {% endif %}
+                            </td>
+                            <td>{{ inquiry_result.price_inquiry_file.demanded_quantity }}</td>
+                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+                            <td>{{ inquiry_result.price }}</td>
+                            {% endif %}
+                            <td class="{% if inquiry_result.active %}text-success fw-bold{% endif %}">{{ inquiry_result.active|yesno:"بله,خیر" }}</td>
+                            <td>{{ price_inquiry_file.brand }}</td>
+                            <td>{{ price_inquiry_file.desired_quality }}</td>
+                            <td>{{ price_inquiry_file.target }}</td>
+                            <td>{{ inquiry_result.created_date|to_jalali:"%Y/%m/%d" }}</td>
+                            <td>
+                                {% if inquiry_result.price_inquiry_file.pk %}
+                                    <a href="{% url 'inquiry:price_inquiry_file.update' inquiry_result.price_inquiry_file.pk %}" target="_blank" class="btn btn-sm">ویرایش با پرونده</a>
+                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ inquiry_result.sku.pk }}" target="_blank" class="btn btn-sm">ویرایش مستقل</a>
+{#                                    <a href="{% url 'inquiry:price_inquiry_file.update' inquiry_result.price_inquiry_file.pk %}">{{ inquiry_result.supplier }}</a>#}
+                                {% else %}
+                                    <a href="#" class="disabled d-block">ویرایش با پرونده</a>
+                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ inquiry_result.sku.pk }}" target="_blank" class="d-block">ویرایش مستقل</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+                    </tbody>
+                    </table>
+            </div>
+            </div>
+
+                <hr>
+<!-- =============================== جزیات رسید =============================== -->
+            <div class="table-rep-plugin">
+            <div class="my-5">
+            <div class="bg-info p-2 rounded my-1 text-center">جزیات رسید</div>
+                    <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
+                      <thead>
+                        <tr>
+                            <th scope="col" data-key="created_date">created date</th>
+                            <th scope="col" data-key="receipt">receipt</th>
+                            <th scope="col" data-key="quantity">quantity</th>
+                            <th scope="col" data-key="batch type">batch type</th>
+                            <th scope="col" data-key="batch_count">batch count</th>
+                            <th scope="col" data-key="item in batch">item in batch</th>
+                            <th scope="col" data-key="location">location</th>
+                            <th scope="col" data-key="active">is active</th>
+                            <th scope="col" data-key="register date">register date</th>
+                            <th scope="col" data-key="pack number">pack number</th>
+                            <th scope="col" data-key="sepidar code">sepidar code</th>
+                            <th scope="col" data-key="stock_id">stock id</th>
+                        </tr>
+                      </thead>
+                    <tbody>
+                        {% for receipt_detail in related_receipt_detail %}
+                            <tr>
+                                <td>{{ receipt_detail.created_date|to_jalali:"%Y/%m/%d" }}</td>
+                                <td><a href="{% url 'inventory:receipt.update' receipt_detail.receipt_id_id %}">{{ receipt_detail.receipt_id }}</a></td>
+                                <td>{{ receipt_detail.quantity }}</td>
+                                <td>{{ receipt_detail.batch_type }}</td>
+                                <td>{{ receipt_detail.batch_count }}</td>
+                                <td>{{ receipt_detail.item_in_batch }}</td>
+                                <td>{{ receipt_detail.location }}</td>
+                                <td class="{% if receipt_detail.active %}text-success fw-bold{% endif %}">{{ receipt_detail.active|yesno:"بله,خیر" }}</td>
+                                <td>{{ receipt_detail.receipt_id.register_date|to_jalali:"%Y/%m/%d" }}</td>
+                                <td>{{ receipt_detail.receipt_id.pack_number }}</td>
+                                <td>{{ receipt_detail.receipt_id.sepidar_code }}</td>
+                                <td>{{ receipt_detail.receipt_id.stock_id }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+            </div>
+            </div>
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    </script>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+{% endblock extra_js %}

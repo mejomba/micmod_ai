@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="ar" {% printHtmlAttributes 'html' %} data-bs-theme-mode="light">
+<!--begin::Head-->
+<head>
+    <title>{% block title %}{% endblock title %} - میکرومدرن</title>
+    <meta charset="utf-8"/>
+    <meta name="description" content=""/>
+    <meta name="keywords" content=""/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:locale" content="en_US"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content=""/>
+    <link rel="canonical" href=""/>
+    <link rel="shortcut icon" href="{% includeFavicon %}"/>
+
+    {% block css %}
+        {% block extra_css %}
+            <link href="test_mojtaba">
+        {% endblock extra_css %}
+        <!--begin::Fonts-->
+{#        {% includeFonts %}#}
+        <!--end::Fonts-->
+
+{#        <!--begin::Vendor Stylesheets(optional)-->#}
+{#        {% getVendors 'css' as vendors_css %}#}
+{#        {% for file in vendors_css %}#}
+{#            <link href="{{ file }}" rel="stylesheet" type="text/css"/>#}
+{#        {% endfor %}#}
+{#        <!--end::Vendor Stylesheets-->#}
+{##}
+{#        <!--begin::Custom Stylesheets(optional)-->#}
+{#        {% getCustomCss as css %}#}
+{#        {% for file in css %}#}
+{#            <link href="{% static file %}" rel="stylesheet" type="text/css"/>#}
+{#        {% endfor %}#}
+{#        <!--end::Custom Stylesheets-->#}
+{##}
+{#        <!--begin::Global Stylesheets(mandatory)-->#}
+{#        {% getGlobalAssets 'css' as assets_css %}#}
+{#        {% for file in assets_css %}#}
+{#            <link href="{% static file %}" rel="stylesheet" type="text/css"/>#}
+{#        {% endfor %}#}
+        <!--end::Global Stylesheets-->
+
+
+        <!--begin::Fonts-->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+        <!--end::Fonts-->
+
+        <!--begin::Vendor Stylesheets(optional)-->
+
+
+        <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
+
+        <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
+
+        <!--end::Vendor Stylesheets-->
+
+        <!--begin::Custom Stylesheets(optional)-->
+
+
+        <!--end::Custom Stylesheets-->
+
+        <!--begin::Global Stylesheets(mandatory)-->
+
+
+        <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
+
+        <link href="/assets/css/style.bundle.rtl.css" rel="stylesheet" type="text/css">
+
+        <link href="/assets/custom_libs/toastr/toastr.rtl.css" rel="stylesheet" type="text/css">
+
+        <link href="/assets/custom_libs/toastr/toastr.min.rtl.css" rel="stylesheet" type="text/css">
+
+        <!--end::Global Stylesheets-->
+
+
+        <!--dason-->
+        <!-- preloader css -->
+{#        <link rel="stylesheet" href="{% static 'css/preloader.min.css' %}" type="text/css"/>#}
+
+
+        <!-- Bootstrap Css -->
+{#        <link href="{% static 'css/bootstrap-rtl.min.css' %}" id="bootstrap-style" rel="stylesheet" type="text/css"/>#}
+        <!-- Icons Css -->
+        <link href="{% static 'css/icons.min.css' %}" rel="stylesheet" type="text/css"/>
+        <!-- App Css-->
+{#        <link href="{% static 'css/app-rtl.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>#}
+        <link href="{% static 'css/custom.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+        <link href="{% static 'css/print/print.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+
+        <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+        <link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css" />
+        {# toastr notification css#}
+{#        <link href="{% static 'custom_libs/toastr/toastr.css' %}" rel="stylesheet" />#}
+        <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet" />
+
+    {% endblock css %}
+
+    <!--begin::Tracking-->
+    <!--end::Tracking-->
+</head>
+<!--end::Head-->
+
+<!--begin::Body-->
+<body {% printHtmlClasses 'body' %} {% printHtmlAttributes 'body' %}>
+
+{% include 'partials/theme-mode/_init.html' %}
+
+{% block layout %}
+{% endblock layout %}
+
+{% block javascript %}
+{#    <!--begin::Global Javascript(mandatory)-->#}
+{#    {% getGlobalAssets 'js' as assets_js %}#}
+{#    {% for file in assets_js %}#}
+{#        <script src="{% static file %}"></script>#}
+{#    {% endfor %}#}
+{#    <!--end::Global Javascript-->#}
+{##}
+{#    <!--begin::Vendors Javascript(optional)-->#}
+{#    {% getVendors 'js' as vendors_js %}#}
+{#    {% for file in vendors_js %}#}
+{#        <script src="{{ file }}"></script>#}
+{#    {% endfor %}#}
+{#    <!--end::Vendors Javascript-->#}
+{##}
+{#    <!--begin::Custom Javascript(optional)-->#}
+{#    {% getCustomJs as js %}#}
+{#    {% for file in js %}#}
+{#        <script src="{% static file %}"></script>#}
+{#    {% endfor %}#}
+
+
+    <!--begin::Global Javascript(mandatory)-->
+
+
+            <script src="/assets/plugins/global/plugins.bundle.js"></script>
+
+            <script src="/assets/js/scripts.bundle.js"></script>
+
+            <script src="/assets/lang/translate.js"></script>
+
+            <script src="/assets/custom_libs/toastr/toastr.min.js"></script>
+
+        <!--end::Global Javascript-->
+
+        <!--begin::Vendors Javascript(optional)-->
+
+
+        <script src="/assets/plugins/custom/datatables/datatables.bundle.js"></script>
+
+        <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/radar.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/geodata/continentsLow.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesLow.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasLow.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+
+        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+        <!--end::Vendors Javascript-->
+
+        <!--begin::Custom Javascript(optional)-->
+
+
+        <script src="/assets/js/widgets.bundle.js"></script>
+
+        <script src="/assets/js/custom/apps/chat/chat.js"></script>
+
+        <script src="/assets/js/custom/utilities/modals/upgrade-plan.js"></script>
+
+        <script src="/assets/js/custom/utilities/modals/create-app.js"></script>
+
+        <script src="/assets/js/custom/utilities/modals/users-search.js"></script>
+
+        <script src="/assets/js/custom/utilities/modals/new-target.js"></script>
+
+        <!--end::Custom Javascript-->
+
+
+    <!-- Dason -->
+    <!-- JAVASCRIPT -->
+{#    <script src="{% static 'libs/jquery/dist/jquery.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/metismenu/dist/metisMenu.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/simplebar/dist/simplebar.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/node-waves/dist/waves.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/feather-icons/dist/feather.min.js' %}"></script>#}
+    <!-- pace js -->
+{#    <script src="{% static 'libs/pace-js/pace.min.js' %}"></script>#}
+{#    <script src="{% static 'js/app.js' %}"></script>#}
+    <script src="{% static 'js/print/print.min.js' %}"></script>
+
+{#    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>#}
+    <script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+    <script src="//cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+
+    <script src="{% static 'js/base.js' %}"></script>
+
+    {# toastr notification js#}
+    <script src="{% static 'custom_libs/toastr/toastr.min.js' %}"></script>
+
+    {% block extra_js %}
+
+    {% endblock extra_js %}
+    <!--end::Custom Javascript-->
+{% endblock javascript %}
+
+</body>
+<!--end::Body-->
+</html>

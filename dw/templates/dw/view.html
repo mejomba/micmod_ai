@@ -1,0 +1,115 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+
+{% block title %}Quotation{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    <div class="main-content" id="main-content">
+
+        <div class="page-content">
+            <div class="container-fluid">
+                <form action="" method="get">
+                    <label for="category">کد کالا</label>
+                    <input id="sku" type="text" value="{{ sku }}" name="sku">
+                    <label for="category">کد مشتری</label>
+                    <input id="customer" type="text" value="{{ customer }}" name="customer">
+                    <input id="search" type="submit" value="جست و جو">
+                </form>
+                <table class="m-table table-striped table-bordered w-100">
+                    <tr>
+                        <th>کد کالا</th>
+                        <th>{{ sepidar_data.code }}</th>
+                        <th>عنوان کالا</th>
+                        <th>{{ sepidar_data.title }}</th>
+                    </tr>
+                    <tr>
+                        <th>بیشترین قیمت</th>
+                        <th>{{ sepidar_data.max_price|floatformat:0|intcomma }}</th>
+                        <th>قیمت میانگین</th>
+                        <th>{{ sepidar_data.avg_price|floatformat:0|intcomma }}</th>
+                        <th>کمترین قیمت</th>
+                        <th>{{ sepidar_data.min_price|floatformat:0|intcomma }}</th>
+                    </tr>
+                    <tr>
+                        <th>تاریخ آخرین فاکتور</th>
+                        <th>{{ sepidar_data.f_date_cust }}</th>
+                        <th>تعداد آخرین فاکتور</th>
+                        <th>{{ sepidar_data.f_qty_cust|floatformat:0|intcomma }}</th>
+                        <th>فی آخرین فاکتور</th>
+                        <th>{{ sepidar_data.f_fee_cust|floatformat:0|intcomma }}</th>
+                    </tr>
+                    <tr>
+                        <th>تاریخ آخرین پیش فاکتور</th>
+                        <th>{{ sepidar_data.quotation_date }}</th>
+                        <th>تعداد آخرین پیش فاکتور</th>
+                        <th>{{ sepidar_data.quotation_qty|floatformat:0|intcomma }}</th>
+                        <th>فی آخرین پیش فاکتور</th>
+                        <th>{{ sepidar_data.quotation_fee|floatformat:0|intcomma }}</th>
+                    </tr>
+                    <tr>
+                        <th>موجودی انبار مرکزی</th>
+                        <th>{{ sepidar_data.stock_qty|floatformat:0|intcomma }}</th>
+                        <th>موجودی انبارهای رزرو</th>
+                        <th>{{ sepidar_data.stock_res_qty|floatformat:0|intcomma }}</th>
+                    </tr>
+                </table>
+                <div class="table-rep-plugin">
+                    <div>
+                        <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
+                            <thead>
+                            <tr>
+                                <th data-key="status">وضعیت</th>
+                                <th data-key="date">تاریخ</th>
+                                <th data-key="customer_status">وضعیت مشتری</th>
+{#                                <th data-key="request_qty">تعداد درخواست</th>#}
+{#                                <th data-key="order_qty">تعداد سفارش</th>#}
+{#                                <th data-key="gio_qty">تعداد رسید شده در دفتر چین</th>#}
+{#                                <th data-key="rec_qty">تعداد رسید شده</th>#}
+                                <th data-key="remaining_qty">تعداد باقی مانده</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for o_data in order_data %}
+                                <tr>
+                                    <th>{{ o_data.o_status }}</th>
+                                    <th>{{ o_data.req_date }}</th>
+                                    <th>{{ o_data.customer_status }}</th>
+{#                                    <th>{{ o_data.req_qty|floatformat:0|intcomma }}</th>#}
+{#                                    <th>{{ o_data.ord_qty|floatformat:0|intcomma }}</th>#}
+{#                                    <th>{{ o_data.gio_qty|floatformat:0|intcomma }}</th>#}
+{#                                    <th>{{ o_data.rec_qty|floatformat:0|intcomma }}</th>#}
+                                <th>{{ o_data.remain_qty|floatformat:0|intcomma }}</th>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- End Form Layout -->
+            </div>
+        </div> <!-- container-fluid -->
+        <!-- End Page-content -->
+
+
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/quotation.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+{% endblock extra_js %}

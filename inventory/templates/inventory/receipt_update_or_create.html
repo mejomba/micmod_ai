@@ -1,0 +1,266 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+
+{% endblock extra_css %}
+
+{% block content %}
+    {{ block.super }}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+
+
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
+                <form method="POST" enctype="multipart/form-data" id="main_form" class="mt-3">
+                    {% csrf_token %}
+                {% if workflow_form %}
+                    <div class="my-5">
+                        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+                    </div>
+                {% endif %}
+
+                    <div class="row row-cols-md-5 row-cols-1">
+                        {% render_field_by_order form form.pack_number form.sepidar_code form.register_date form.stock_id form.description form.creator_user form.editor_user crispy=True %}
+                        {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.image_1 target='Image' crispy=True editable=True %}
+                        {{ form.errors }}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="col mb-3"></div>#}
+
+{#                        <div class="row row-cols-2 mb-3 mt-3">#}
+{#                            <input type="submit" class="btn btn-primary w-25 mx-1" name="id_formset_submit_button" value="ذخیره"/>#}
+{#                        </div>#}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="col mb-3"></div>#}
+{#                        <div class="d-flex justify-content-end align-items-center">#}
+{#                             {% include 'changelog/changelog_popup.html' with logs=object_logs %}#}
+{#                        </div>#}
+                    </div>
+                {% include 'partials/form_buttons.html' %}
+
+                <div class="bg-info">
+                    <p>
+
+                    </p>
+                </div>
+                {% if formset %}
+                    {{ formset.management_form }}
+                    <div class="card">
+                        <template id="id_formset_empty_form">{% include "inventory/partial/receipt_detail_formset.html" with form=formset.empty_form %}</template>
+                    </div>
+
+                <div class="">
+                    <div class="border" id="id_formset_container">
+                        <div class="row row-cols-12 text-center py-1">
+                            <div class="col pr-2" style="max-width: fit-content;">#</div>
+                            <div class="col" data-key="sku">sku *</div>
+                            <div class="col" data-key="quantity">quantity</div>
+                            <div class="col" data-key="batch type">batch type</div>
+                            <div class="col" data-key="batch count">batch count</div>
+                            <div class="col" data-key="item in batch">item in batch</div>
+                            <div class="col" data-key="location">لوکیشن</div>
+                            <div class="col" data-key="image 1">تصاویر گروه ۱</div>
+                            <div class="col" data-key="image 2">تصاویر گروه ۲</div>
+                            <div class="col" data-key="attachment files">attachment files</div>
+                            <div class="col" data-key="active">active</div>
+                            <div class="col" data-key="change history">history</div>
+                        </div>
+
+                        {% for form_ in formset %}
+                            {% include "inventory/partial/receipt_detail_formset.html" with form=form_ idx=forloop.counter receipt_detail=form_.instance detail_logs=detail_logs %}
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+                <div class="mb-5 mt-1">
+                    <button name="id_formset_submit_button" type="submit" value="submit" class="btn btn-primary w-lg" data-key="save"></button>
+                    <div name="id_formset_add_button" class="btn btn-info mx-2 w-lg" data-key="add">Add</div>
+                </div>
+                {% endif %}
+                </form>
+        </div> <!-- container -->
+        <!-- End Page-content -->
+{#    <div class="main-content" id="main-content">#}
+
+    </div>
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+
+
+
+    <script>
+        function setValue(item, idx){
+            if(item.getElementsByClassName('goods_code')) {
+                const elem = $(item).find('[id*="select2-sku"]')
+                const sku = document.getElementById(`sku-${idx}`)
+                if (sku) {
+                    $(elem).text(sku.value)
+                }// end if
+            } // end if
+        }
+        function findAncestor(el, cls) {
+            if (el.classList.contains(cls)) {
+                return el
+            }
+            while ((el = el.parentElement) && !el.classList.contains(cls)) ;
+            return el;
+        }
+
+        const items_ = $(document).find(".item")
+        for (let i = 0; i < items_.length; i++) {
+            set_item_classes(items_[i])
+            setValue(items_[i], i)
+        }
+
+        function set_item_classes(item){
+            if(item.getElementsByClassName('goods_code')) {
+                $(item).find('.goods_code').on("select2:select", function (e) {
+                    const elem = findAncestor(e.target, "item")
+                    const data = e.params.data;
+                    const targetHiddenInput = elem.querySelector('[name*="sku"]')
+                    const targetInput = elem.querySelector('[id*="select2-sku"]')
+                    $(targetHiddenInput).val(data.id)
+                    $(targetInput).text(data.sku)
+                }) // end item.find
+            } // end if
+
+            $(item).find('#receipt_id').select2({
+                dir: 'ltr',
+                ajax: {
+                    url: '/inventory/receipt/list/json',
+                    dataType: "json",
+                    type: "GET",
+                    data: function (data) {
+                        console.log('data: ', data)
+                        //var p_id = document.getElementById('customer_pid').textContent || -1;
+                        var p_id = 1
+                        return {q: data.term, party_id: p_id, page: data.page}
+                    },
+                    processResults: function (data, params) {
+                        console.log('data: ', data)
+                        console.log('params: ', params)
+                        params.page = params.page || 1;
+                        return {
+                            results: data.items,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                dropdownAutoWidth: true,
+                dropdownCssClass: 'goods_select2',
+                minimumInputLength: 1,
+                templateResult: formatRepoItem,
+                templateSelection: formatRepoSelection,
+            });
+
+            $(item).find('.sku').select2({
+                dir: 'ltr',
+                ajax: {
+                    url: '/extra_data/item/list/json',
+                    dataType: "json",
+                    type: "GET",
+                    data: function (data) {
+                        var p_id = 1
+                        return {q: data.term, party_id: p_id, page: data.page}
+                    },
+                    processResults: function (data, params) {
+                        console.log('data: ', data)
+                        let resultHeader = $(`<div class='row row-cols-8 w-100 bg-soft-secondary mx-0 py-2 align-items-center' id="header-sku">
+                                    <div class="col text-center">sku</div>
+                                    <div class="col text-center">part number</div>
+                                    <div class="col text-center">brand</div>
+                                    <div class="col text-center">quality</div>
+                                    <div class="col text-center">group sell</div>
+                                    <div class="col text-center">group buy</div>
+                                    <div class="col text-center">group customs</div>
+                                    <div class="col text-center">package</div>
+                                </div>`);
+                       if (!document.getElementById(`header-sku`)){
+                         resultHeader.insertBefore(".select2-results__options")
+                       }
+                       document.querySelectorAll('.goods_select2').forEach(function (item){
+                            item.style.minWidth = '1000px';
+                        })
+
+                        params.page = params.page || 1;
+                        return {
+                            results: data.items,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                dropdownAutoWidth: true,
+                dropdownCssClass: 'goods_select2',
+                minimumInputLength: 1,
+                templateResult: formatRepoItem,
+                templateSelection: formatRepoSelection,
+            });
+        }
+
+        function formatRepoItem(repo) {
+
+            if (repo.loading) {
+                return repo.text;
+            }
+            var $container = $(`<div class='row row-cols-8 w-100 align-items-center mx-0 my-1' id="result-container">
+                                    <div class="col text-center text-justify">${repo.sku}</div>
+                                    <div class="col text-center text-justify">${repo.part_number}</div>
+                                    <div class="col text-center text-justify">${repo.brand}</div>
+                                    <div class="col text-center text-justify">${repo.quality}</div>
+                                    <div class="col text-center text-justify">${repo.group_sell}</div>
+                                    <div class="col text-center text-justify">${repo.group_buy}</div>
+                                    <div class="col text-center text-justify">${repo.group_customs}</div>
+                                    <div class="col text-center text-justify">${repo.package}</div>
+                                </div>`);
+            return ($container);
+        }
+
+        function formatRepoSelection(repo) {
+            return repo.id || repo.text
+        }
+
+    </script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+{% endblock extra_js %}

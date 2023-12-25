@@ -1,0 +1,171 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+{% load jalali_tags %}
+{% load tz %}
+
+
+{% if wfform %}
+{#    <div class="d-flex align-items-center justify-content-between w-100 bg-white p-1 shadow" style="gap: 5px">#}
+    <div class="row row-cols-sm-1 row-cols-1 row-cols-md-4 row-cols-lg-8  bg-white p-1 w-100 shadow mx-auto" >
+        {% render_field_by_order  wfform wfform.from_user wfform.to_current_group_user wfform.to_user wfform.deadline wfform.action wfform.wf_description wfform.state wfform.belong_to_group wfform.belong_to_group_ crispy=True %}
+    <div class="col mt-3">
+        {% if flow %}
+
+          <a class="btn btn-outline-primary mt-2 w-100" data-toggle="collapse" href="#workflow" role="button" aria-expanded="false" aria-controls="collapseExample">
+             جریان کار
+              <span class="badge bg-success p-1">{{ flow|length }}</span>
+          </a>
+
+        {% else %}
+            <a class="btn btn-outline-secondary mt-2 w-100" style="pointer-events: none">
+            جریان کار
+            <span class="badge bg-secondary p-1">0</span>
+        </a>
+        {% endif %}
+    </div>
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary w-100 d-none" id="change-user" name="change_user">تغییر کاربر</button>
+    </div>
+{% endif %}
+
+<div class="collapse" id="workflow">
+  <div class="bg-white card-body">
+      <table class="table table-striped">
+          <thead>
+            <tr>
+                <th class="text-center">#</th>
+                <th class="text-center">ثبت کننده</th>
+                <th class="text-center">تخصیص یافته به</th>
+                <th class="text-center">عملیات</th>
+                <th class="text-center">مهلت انجام</th>
+                <th class="text-center">آخرین زمان تغییر</th>
+                <th class="text-center">توضیحات</th>
+                <th class="text-center">مرحله</th>
+                <th class="text-center">وضعیت</th>
+            </tr>
+          </thead>
+          <tbody>
+{#          <tr>#}
+          {% now "Ymd" as today_str %}
+          {% for f in flow %}
+                    <td>{{ forloop.revcounter }}</td>
+                    <td>{{ f.from_user }}</td>
+                    <td>{{ f.to_user }}</td>
+                    <td>{{ f.action }}</td>
+                    <td>{{ f.deadline|to_jalali:"%Y/%m/%d" }}</td>
+                    <td class="LTR">{{ f.last_update_date|to_jalali:"%Y/%m/%d (%H:%M)" }}</td>
+                    <td>{{ f.wf_description }}</td>
+                    <td>
+                        {{ f.state }}
+                    </td>
+                    <td>
+                    {% if f.wf_status == 2 %}
+                        <span class="text-danger">{{ f.get_wf_status_display }}</span>
+                    {% elif f.wf_status == 3 %}
+                        <span class="text-success">{{ f.get_wf_status_display }}</span>
+                    {% elif f.wf_status == 4 %}
+                        <span class="text-secondary">{{ f.get_wf_status_display }}</span>
+                    {% elif f.wf_status == 5 %}
+                        <span class="text-primary">{{ f.get_wf_status_display }}</span>
+                    {% endif %}
+                    </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+      </table>
+  </div>
+</div>
+
+<style>
+.breadcrumbx {
+	list-style: none;
+	overflow: hidden;
+    font-size: 1rem;
+    margin-top: 50px;
+}
+.breadcrumbx li {
+	float: right;
+}
+.breadcrumbx li a {
+	color: white;
+	text-decoration: none;
+	padding: 10px 55px 10px 20px;
+	position: relative;
+	display: block;
+	float: right;
+}
+.breadcrumbx li a:after {
+	content: " ";
+	display: block;
+	width: 0;
+	height: 0;
+	border-top: 50px solid transparent;
+	border-bottom: 50px solid transparent;
+	border-right: 30px solid hsla(34,85%,35%,1);
+	position: absolute;
+	top: 50%;
+	margin-top: -50px;
+	right: 100%;
+}
+.breadcrumbx li a:before {
+	content: " ";
+	display: block;
+	width: 0;
+	height: 0;
+	border-top: 50px solid transparent;
+	border-bottom: 50px solid transparent;
+	border-right: 30px solid white;
+	position: absolute;
+	top: 50%;
+	margin-top: -50px;
+	margin-right: 1px;
+	right: 100%;
+}
+.active-flow {
+    background-color: var(--bs-primary);
+}
+.active-flow a:after {
+    border-right: 30px solid var(--bs-primary) !important;
+}
+.disable-flow {
+    background-color: var(--bs-gray);
+}
+.disable-flow a:after{
+    border-right: 30px solid var(--bs-gray) !important;
+}
+</style>
+
+
+<div class="mt-5 d-flex justify-content-center">
+    <ul class="breadcrumbx">
+        {% for flow_state in flow_state_list %}
+            {% if forloop.counter0 == flow_state_index %}
+                <li class="active-flow"><a href="#">{{ flow_state }}</a></li>
+            {% else %}
+                <li class="disable-flow"><a href="#">{{ flow_state }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+
+<script>
+    const changeUserBtn = document.getElementById('change-user');
+    const toUser = document.getElementById('id_to_current_group_user');
+    const fromUser = document.getElementById('id_from_user');
+    const toUserInitValue = fromUser.value;
+    const mainForm2 = document.getElementById('main_form');
+    console.log(mainForm2)
+    toUser.addEventListener('change', function (e) {
+        if (toUser.value && toUser.value !== toUserInitValue){
+            changeUserBtn.classList.remove('d-none');
+        }else {
+            changeUserBtn.classList.add('d-none');
+        }
+    })
+    changeUserBtn.addEventListener('click', function (e) {
+        {#e.preventDefault();#}
+        console.log('submit change user')
+    })
+</script>

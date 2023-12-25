@@ -1,0 +1,204 @@
+import uuid
+
+from django import template
+
+from django.contrib.contenttypes.models import ContentType
+from files.models import File, Image
+from tools.utils import show_error
+
+register = template.Library()
+
+
+@register.filter
+def classname(obj):
+    return obj.__class__.__name__
+
+@register.simple_tag
+def has_access(user_role_list=None, valid_role_str=None):
+    if valid_role_str:
+        valid_role = valid_role_str.split(',')
+        for role in user_role_list:
+            if role.get_role_display() == valid_role:
+                return True
+    return False
+
+
+@register.inclusion_tag('files/partial/image_gallery4.html', takes_context=True)
+def show_image_gallery(context, obj, form=None, js=None, editable=None, create=None,
+                       upload=True, detail=None, formset_idx=None, only_popup=None, group=None):
+    context = {'js': js,
+               'editable': editable,
+               'groups': range(1, form.image_groups + 1) if form else 1,
+               'create': create,
+               'upload': upload,
+               'form': form,
+               'detail': detail,
+               'formset_idx': formset_idx,
+               'obj': obj,
+               'crispy': form.crispy if form else True,
+               'only_popup': only_popup}
+    images = {}
+    image_fields = {}
+    context['images'] = []
+    context['image_fields'] = []
+
+    if hasattr(obj, '_meta'):
+        content_type = ContentType.objects.filter(app_label=obj._meta.label.split('.')[0],
+                                                  model=obj._meta.model_name.lower()).first()
+
+        if form and form.image_groups:
+            for g in range(1, form.image_groups + 1):
+                images[f'image{g}'] = Image.objects.filter(object_id=obj.pk, content_type=content_type.id, group=g)
+                image_fields[f'image_{g}'] = form.fields[f'image_{g}']
+            context['images'].append(images)
+            context['image_fields'].append(image_fields)
+
+    return context
+
+
+@register.inclusion_tag('files/partial/show_files.html')
+def show_files(files=None, js=None, editable=None, group=None, create=None, upload=True, idx=None):
+    context = {'files': files,
+               'js': js,
+               'editable': editable,
+               'group': group,
+               'create': create,
+               'upload': upload,
+               'idx': idx}
+    return context
+
+
+# @register.inclusion_tag('files/partial/show_modal.html')
+@register.inclusion_tag('files/partial/show_modal2.html')
+def show_modal(obj, field, target_model_name=None, editable=None):
+    import re
+    pattern = r'\d+'
+    group = re.findall(pattern, field.html_name)[-1]
+    try:
+        group = int(group)
+    except Exception as e:
+        group = 0
+        print(e)
+
+    context = {}
+    target = globals().get(target_model_name)
+    if hasattr(obj, '_meta') and target:
+        content_type = ContentType.objects.filter(app_label=obj._meta.label.split('.')[0],
+                                                  model=obj._meta.model_name.lower()).first()
+
+        for g in range(1, group + 1):
+            context['contents'] = target.objects.filter(object_id=obj.pk, content_type=content_type.id, group=g)
+            context['slider_id'] = uuid.uuid4()
+
+    context['html_name'] = field.html_name
+    context['editable'] = editable
+    # print(context['contents'].__dict__)
+    return context
+
+
+@register.inclusion_tag('core/partial/render_field.html')
+def render_field(field, crispy=None):
+    context = {'field': field, 'crispy': crispy}
+    return context
+
+
+@register.inclusion_tag('core/partial/render_field_by_order.html')
+def render_field_by_order(form, *fields, crispy=None, margin_b=None, html_tag=None, label=None, label_text=None, disable=None):
+    if form and crispy is None:
+        crispy = form.crispy
+    context = {'form': form, 'fields': fields, 'crispy': crispy,
+               'html_tag': html_tag, 'margin_b': margin_b,
+               'label': label, 'label_text': label_text, 'disable': disable
+               }
+    return context
+
+
+@register.inclusion_tag('core/partial/render_field_by_order_for_quotation.html')
+def render_field_by_order_for_quotation(form, *fields, crispy=None, html_tag=None):
+    if form and not crispy:
+        crispy = form.crispy
+    context = {'form': form, 'fields': fields, 'crispy': crispy, 'html_tag': html_tag}
+    return context
+
+
+@register.inclusion_tag('core/partial/render_field_by_order_v2.html')
+def render_field_by_order_v2(form, parent_template_col_num, template_col_num, inner_template_col_num, crispy=None):
+    template_col_num = template_col_num.split(',')
+    inner_template_col_num = inner_template_col_num.split(',')
+    context = {'form': form, 'template_col_num': template_col_num,
+               'parent_template_col_num': parent_template_col_num,
+               'inner_template_col_num': inner_template_col_num, 'crispy': crispy}
+    print("==============", form)
+    return context
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+
+@register.inclusion_tag('changelog/partial/compare_log.html')
+def compare_log(log):
+    context = {'log': log,}
+    return context
+
+
+@register.filter
+def get_list_item(lst, position):
+    try:
+        position = int(position)
+        return lst[position]
+    except Exception as e:
+        pass
+
+@register.filter
+def field_name(obj, model):
+    print(obj, model._meta)
+    return 'salam'
+
+
+@register.inclusion_tag('dw/partial/show_order_list_detail.html')
+def show_order_list_detail(obj, model):
+    from translator import get_text as _
+    context = {'data': {}}
+    fields = [f.name for f in model._meta.get_fields() if f.concrete]
+    for field in fields:
+        context['data'].update({_(field): getattr(obj, field, None)})
+    return context
+
+
+@register.filter
+def is_select2(field):
+    return getattr(field, 'select2', None)
+
+
+@register.filter
+def mul(a, b):
+    try:
+        return a * b
+    except Exception as e:
+        print('error ', __file__, e.__traceback__.tb_lineno, e)
+
+
+@register.filter
+def get_field_name(field):
+    """
+    Returns name for a field.
+    """
+    try:
+        return field.__dict__.get('name')
+    except Exception as e:
+        print(show_error(e, __file__))
+        return None
+
+
+from django.db.models import ForeignKey
+
+
+@register.simple_tag
+def get_fk_model(model, fieldname):
+    """Returns None if not foreignkey, otherswise the relevant model"""
+    field_object, model, direct, m2m = model._meta.get_field_by_name(fieldname)
+    if not m2m and direct and isinstance(field_object, ForeignKey):
+        return field_object.rel.to
+    return None

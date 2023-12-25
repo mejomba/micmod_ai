@@ -1,0 +1,201 @@
+<style>
+    @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+.baba {
+	width: 720px;
+    height: 480px;
+	margin: 10px auto;
+}
+.carousel {
+	border: 2px solid #ccc;
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+.slider {
+	display: flex;
+	height: 100%;
+	border: 1px solid red;
+	transition: all 0.7s;
+}
+.slider section {
+	flex-basis: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.slider-controls .arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor:pointer;
+}
+.arrow.left {
+	left:10px;
+	padding:80px 20px;
+	font-size: 70px;
+}
+.arrow.right {
+	right:10px;
+	padding:80px 20px;
+	font-size: 70px;
+}
+
+.slider-controls ul {
+	position: absolute;
+	bottom: 20px;
+	left: 50%;
+	transform: translate(-50%);
+	list-style: none;
+	display: flex;
+	padding: 0;
+	margin: 0;
+}
+.slider-controls ul li {
+	margin: 3px;
+	{#background: transparent;#}
+	cursor: pointer;
+}
+.slider-controls ul li.selected {
+	{#background: #777777;#}
+}
+.slider-controls ul li img {
+    width: 64px;
+	height: 64px;
+	border: 1px solid #333333;
+	border-radius: 50%;
+}
+.image-remove-btn{
+    position: absolute;
+    top: 3px;
+    right: 0;
+    font-size: 1.5rem;
+    color: red;
+    background-color: #f6b5b5;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
+}
+.image-remove-btn:hover{
+    scale: 1.2;
+    transition: all ease-in-out 0.1s;
+}
+</style>
+
+<div class="baba">
+	<div class="carousel LTR">
+		<div class="slider">
+            {% for image in images %}
+                <section id="image-{{ image.pk }}">
+                <img src="{{ image.path.url }}" alt="{{ image.alt }}" width="720px" class="m-1 border rounded">
+
+                {% if editable %}
+                    <div style="position: relative;" class="w-100 h-100">
+                        <span id="remove-image-{{ image.pk }}" class="image-remove-btn" data-id="{{ image.pk }}">&times;</span>
+                    </div>
+                {% endif %}
+                </section>
+            {% endfor %}
+		</div>
+		<div class="slider-controls">
+			<span class="arrow left material-icons">keyboard_arrow_left</span>
+			<span class="arrow right material-icons">keyboard_arrow_right</span>
+			<ul>
+                {% for image in images %}
+                    <li {% if forloop.counter0 == 0 %}class="selected"{% endif %}>
+                    <img src="{{ image.path.url }}" alt="{{ image.alt }}" class="m-1 border rounded-circle">
+                    </li>
+{#                    <li {% if forloop.counter0 == 0 %}class="selected"{% endif %}"></li>#}
+                {% endfor %}
+		</ul>
+		</div>
+	</div>
+</div>
+
+<script>
+    // Todo "move getCookie to base"
+    function getCookie(c_name)
+        {
+            if (document.cookie.length > 0)
+            {
+                c_start = document.cookie.indexOf(c_name + "=");
+                if (c_start != -1)
+                {
+                    c_start = c_start + c_name.length + 1;
+                    c_end = document.cookie.indexOf(";", c_start);
+                    if (c_end == -1) c_end = document.cookie.length;
+                    return unescape(document.cookie.substring(c_start,c_end));
+                }
+            }
+            return "";
+         }
+    const slider = document.querySelector(".slider");
+    const baba = document.querySelector('.baba');
+
+    const leftArrow = document.querySelector(".left");
+    const rightArrow = document.querySelector(".right");
+    const indicatorParents = document.querySelector('.slider-controls ul');
+    let sectionIndex = 0;
+    let numberOfSlide = {{ images|length }};
+    slider.style.length = `${numberOfSlide * 100}%`;
+
+    console.log(slider.style.length)
+    console.log(`${numberOfSlide * 100}%`)
+
+    document.querySelectorAll('.slider-controls li').forEach(function (indicator, ind) {
+        indicator.addEventListener('click', function () {
+            sectionIndex = ind;
+            document.querySelector('.slider-controls .selected').classList.remove('selected');
+            indicator.classList.add('selected');
+            slider.style.transform = 'translate(' + (sectionIndex) * -100/numberOfSlide +'%)';
+        });
+    });
+
+    rightArrow.addEventListener('click', function () {
+        sectionIndex = (sectionIndex < numberOfSlide-1) ? sectionIndex + 1 : numberOfSlide-1;
+        document.querySelector('.slider-controls .selected').classList.remove('selected');
+        indicatorParents.children[sectionIndex].classList.add('selected');
+        slider.style.transform = 'translate(' + (sectionIndex) * -100/numberOfSlide +'%)';
+    });
+
+    leftArrow.addEventListener('click', function () {
+        sectionIndex = (sectionIndex > 0) ? sectionIndex - 1 : 0;
+        document.querySelector('.slider-controls .selected').classList.remove('selected');
+        indicatorParents.children[sectionIndex].classList.add('selected');
+        slider.style.transform = 'translate(' + (sectionIndex) * -100/numberOfSlide +'%)';
+    });
+
+    // remove single image process
+    const removeBtns = document.querySelectorAll('.image-remove-btn')
+    removeBtns.forEach(function (removeBtn){
+        removeBtn.addEventListener('click', function (e){
+            e.preventDefault();
+            let imageId = removeBtn.getAttribute('data-id')
+            let imageArea = document.getElementById(`image-${imageId}`)
+            console.log('click on :', imageId)
+            console.log('image area :', imageArea)
+            $.ajax({
+                url: `/files/image/delete/single/${imageId}/`,
+                type: 'POST',
+                dataType: 'json',
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    console.log(data)
+                    imageArea.innerText = 'حذف شد'
+                    imageArea.classList.add('badge')
+                    imageArea.classList.add('badge-soft-danger')
+                    console.log("imageArea 2", imageArea)
+                },
+                error: function (rs, e){
+                    console.log('error.... ', rs)
+                }
+            })// end ajax
+        }) // end addEventListener
+    }) // end forEach
+</script>

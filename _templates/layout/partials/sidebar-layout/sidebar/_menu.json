@@ -1,0 +1,363 @@
+{
+  "comment": {
+    "menus": [
+      {
+        "title": "Dashboard",
+        "section": "False",
+        "icon": "element-11",
+        "path_key": "dashboard",
+        "permission": {
+          "permissions": [
+            ""
+          ],
+          "groups": [
+            ""
+          ]
+        },
+        "menus": [
+          {
+            "permission": {
+              "permissions": [
+                ""
+              ],
+              "groups": [
+                ""
+              ]
+            },
+            "title": "Default",
+            "path_key": "dashboard",
+            "icon": "",
+            "direct_link": "",
+            "link": ""
+          }
+        ]
+      }
+    ]
+  },
+  "menus": [
+    {
+      "title": "Dashboard",
+      "section": "False",
+      "icon": "element-11",
+      "path_key": "dashboard",
+      "menus": [
+        {
+          "title": "Default",
+          "path_key": "dashboard",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "title": "sale",
+      "section": "True",
+      "menus": [
+        {
+          "permission": {
+            "permissions": [
+              "micmod_base.view_quotation"
+            ]
+          },
+          "icon": "book",
+          "title": "sales_history",
+          "link": "sepidar:sales_history",
+          "path_key": "sales_history"
+        },
+        {
+          "title": "t-quotation",
+          "icon": "cheque",
+          "path_key": "quotations",
+          "permission": {
+            "permissions": [
+              "micmod_base.view_quotation"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "quotations/create",
+              "link": "sls:quotations.create"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "quotations/list",
+              "link": "sls:quotations.list"
+            }
+          ]
+        },
+        {
+          "permission": {
+            "groups": [
+              "base_user"
+            ]
+          },
+          "icon": "dollar",
+          "title": "currency-exchange",
+          "link": "sls:currency_exchange",
+          "path_key": "currency/exchange/"
+        }
+      ]
+    },
+    {
+      "title": "IMEI",
+      "path_key": "imei",
+      "icon": "simcard",
+      "permission": {
+        "permissions": [
+          "IMEI.view_imeilistreg"
+        ]
+      },
+      "menus": [
+        {
+          "title": "submit",
+          "section": "False",
+          "icon": "some-files",
+          "path_key": "imei_list_reg",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "imei_list_reg/create",
+              "link": "IMEI:imei_list_reg.create"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "imei_list_reg/",
+              "link": "IMEI:imei_list_reg.list"
+            }
+          ]
+        },
+        {
+          "title": "register",
+          "icon": "simcard-2",
+          "path_key": "imei_ntsw_reg",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "imei_ntsw_reg/create",
+              "link": "IMEI:imei_ntsw_reg.create"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "imei_ntsw_reg/",
+              "link": "IMEI:imei_ntsw_reg.list"
+            }
+          ]
+        },
+        {
+          "title": "sale",
+          "icon": "delivery-3",
+          "path_key": "imei_sale_reg",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "imei_sale_reg/create",
+              "link": "IMEI:imei_sale_reg.create"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "imei_sale_reg/",
+              "link": "IMEI:imei_sale_reg.list"
+            }
+          ]
+        },
+        {
+          "title": "error",
+          "icon": "cross-square",
+          "path_key": "imei_err_reg",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "imei_err_reg/create",
+              "link": "IMEI:imei_err_reg.create"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "imei_err_reg/",
+              "link": "IMEI:imei_err_reg.list"
+            }
+          ]
+        },
+        {
+          "icon": "search-list",
+          "title": "t-tracking",
+          "path_key": "imei_all_list",
+          "link": "IMEI:imei_all_list"
+        }
+      ]
+    },
+    {
+      "title": "sepidar",
+      "icon": "monitor-mobile",
+      "path_key": "sepidar",
+      "section": "False",
+      "menus": [
+        {
+          "permission": {
+            "groups": [
+              "accounting_user",
+              "trade_user"
+            ]
+          },
+          "icon": "credit-cart\n",
+          "title": "accounting",
+          "path_key": "accounting",
+          "link": "sepidar:dl.accounting"
+        }
+      ]
+    },
+    {
+      "title": "items",
+      "icon": "barcode",
+      "path_key": "sku",
+      "section": "False",
+      "menus": [
+        {
+          "title": "create",
+          "icon": "message-add",
+          "path_key": "sku/create",
+          "link": "extra_data:sku.create"
+        },
+        {
+          "title": "list",
+          "icon": "burger-menu",
+          "path_key": "sku/list",
+          "link": "extra_data:sku.list"
+        }
+      ]
+    },
+    {
+      "title": "inquiry",
+      "icon": "discount",
+      "path_key": "inquiry",
+      "section": "False",
+      "menus": [
+        {
+          "permission": {
+            "permissions": "inquiry.view_priceinquiryfile"
+          },
+          "title": "inquiry",
+          "icon": "search-list",
+          "path_key": "inquiryresult",
+          "menus": [
+            {
+              "title": "price inquiry result",
+              "icon": "burger-menu",
+              "path_key": "inquiryresult/list",
+              "link": "inquiry:inquiry_result.list"
+            },
+            {
+              "title": "price inquiry result for sale",
+              "path_key": "inquiryresult/forsale",
+              "link": "inquiry:inquiry_result.sale"
+            }
+          ]
+        },
+        {
+          "title": "price inquiry file",
+          "icon": "calendar-search",
+          "path_key": "price_inquiry_file",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "priceinquiryfile/create",
+              "link": "inquiry:price_inquiry_file.create"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "priceinquiryfile/list",
+              "link": "inquiry:price_inquiry_file.list"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "google_sheet",
+      "icon": "google",
+      "path_key": "dw",
+      "section": "False",
+      "permission": {
+        "groups": [
+          "base_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "handcart",
+          "title": "order_list",
+          "path_key": "order_list",
+          "link": "dw:order.list"
+        },
+        {
+          "icon": "truck",
+          "title": "cargo_list",
+          "path_key": "cargo_list",
+          "link": "dw:cargo.list"
+        }
+      ]
+    },
+    {
+      "title": "notify",
+      "icon": "element-12",
+      "path_key": "tlg",
+      "section": "False",
+      "permission": {
+        "groups": [
+          "base_user"
+        ]
+      },
+      "menus": [
+        {
+          "title": "party",
+          "icon": "user-tick",
+          "path_key": "tlg/receiver",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "tlg/receiver/create",
+              "link": "tlg:receiver.create_update"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "tlg/receiver/list",
+              "link": "tlg:receiver.list"
+            }
+          ]
+        },
+        {
+          "title": "messaging",
+          "icon": "message-notif",
+          "path_key": "tlg/message",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "message-add",
+              "path_key": "tlg/message/create",
+              "link": "tlg:message.create_update"
+            },
+            {
+              "title": "list",
+              "icon": "burger-menu",
+              "path_key": "tlg/message/list",
+              "link": "tlg:message.list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

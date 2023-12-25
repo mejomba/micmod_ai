@@ -1,0 +1,20 @@
+{% load accounts_tag %}
+{% if not menu.permission or request.user|has_one_group_or_permission:menu.permission %}
+    <div class="menu-item">
+        <!--begin:Menu link-->
+        <a class="menu-link {% path_has_key request.path menu.path_key 'active' %}" {% if menu.link %}
+           href="{% url menu.link %}" {% endif %}>
+            {% if menu.icon %}
+                <span class="menu-icon">{% getIcon menu.icon 'fs-2' %}</span>
+            {% else %}
+                <span class="menu-bullet">
+								<span class="bullet bullet-dot"></span>
+							</span>
+            {% endif %}
+            {% if menu.title %}
+                <span class="menu-title" data-key={{ menu.title }}>{{ menu.title }}</span>
+            {% endif %}
+        </a>
+        <!--end:Menu link-->
+    </div>
+{% endif %}

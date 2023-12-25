@@ -1,0 +1,118 @@
+{
+  "QuotationsView":
+    {
+      "workflow":
+      {
+      "name":"create quotation",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش فاکتور اولیه",
+            "group": "sales_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "استعلام قیمت",
+            "group": "base_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید پیش فاکتور",
+            "group": "wh_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مشتری",
+            "group": "imei_admin",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید کارشناس",
+            "group": "wh_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
+
+  "QuotationsView2":
+    {
+      "workflow":
+      {
+      "title":"QuotationsView",
+        "list": [
+          {
+            "tittle": "پیش فاکتور اولیه",
+            "group": "salse_users",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    }
+}
+

@@ -1,0 +1,143 @@
+{% if style %}
+<style>
+.success-element {
+    width: 200px;
+    height: 100%;
+    margin-right: 20px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.slider-card-container {
+    position: absolute;
+    display: flex;
+    height: 100%;
+}
+.slider-card-inner {
+    width: 200px;
+    height: 100%;
+    margin-right: 20px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.mobile-slider {
+    width: 1000px;
+    height: 130px;
+    margin: 5px auto;
+    border-radius: 5px;
+    position: relative;
+    border: 1px solid #aaaaaa;
+    overflow: hidden;
+}
+.image-remove-btn{
+    position: absolute;
+    top: 3px;
+    right: 0;
+    font-size: 1.5rem;
+    color: red;
+    background-color: #f6b5b5;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
+}
+.image-remove-btn:hover{
+    scale: 1.2;
+    transition: all ease-in-out 0.1s;
+}
+</style>
+{% endif %}
+
+<div class="mobile-slider LTR">
+{% if images %}
+    <div class="slider-card-container">
+        {% for image in images %}
+            <div class="slider-card-inner" id="slider-card-inner-{{ image.pk }}">
+                <img src="{{ image.path.url }}" alt="{{ image.alt }}" width="100%" class="m-1 border rounded">
+
+                {% if editable %}
+                    <div style="position: relative;" class="w-100 h-100">
+                        <span id="remove-image-{{ image.pk }}" class="image-remove-btn" data-id="{{ image.pk }}">&times;</span>
+                    </div>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <p>هیچ تصویری آپلود نشده</p>
+    </div>
+{% endif %}
+</div>
+
+{% if js %}
+<script>
+    // Todo "move getCookie to base"
+    function getCookie(c_name)
+        {
+            if (document.cookie.length > 0)
+            {
+                c_start = document.cookie.indexOf(c_name + "=");
+                if (c_start != -1)
+                {
+                    c_start = c_start + c_name.length + 1;
+                    c_end = document.cookie.indexOf(";", c_start);
+                    if (c_end == -1) c_end = document.cookie.length;
+                    return unescape(document.cookie.substring(c_start,c_end));
+                }
+            }
+            return "";
+         }
+
+    const leftArrow = document.querySelector(".left");
+    const rightArrow = document.querySelector(".right");
+
+    const sliderCardContainer = document.querySelectorAll('.slider-card-container');
+    const mobileSlider = document.querySelector('.mobile-slider');
+
+    let moving = false;
+    let mouseLastPosition = 0;
+    let transform = 0;
+    let lastPageX = 0;
+    let transformValue = 0;
+    {#console.log(mobileSlider.offsetWidth);#}
+
+
+    // remove single image process
+    const removeBtns = document.querySelectorAll('.image-remove-btn')
+    removeBtns.forEach(function (removeBtn){
+        removeBtn.addEventListener('click', function (e){
+            e.preventDefault();
+            let imageId = removeBtn.getAttribute('data-id')
+            let imageArea = document.getElementById(`slider-card-inner-${imageId}`)
+            console.log('click on :', imageId)
+            console.log('image area :', imageArea)
+            $.ajax({
+                url: `/files/image/delete/single/${imageId}/`,
+                type: 'POST',
+                dataType: 'json',
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    console.log(data)
+                    imageArea.innerText = 'حذف شد'
+                    imageArea.classList.add('badge')
+                    imageArea.classList.add('badge-soft-danger')
+                },
+                error: function (rs, e){
+                    console.log('error.... ', rs)
+                }
+            })// end ajax
+        }) // end addEventListener
+    }) // end forEach
+</script>
+{% endif %}

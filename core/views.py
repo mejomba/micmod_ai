@@ -1,0 +1,659 @@
+import datetime
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import ImproperlyConfigured
+from django.db.models import Q
+from django.forms import inlineformset_factory, modelformset_factory, formset_factory
+from django.http import HttpResponseRedirect, HttpResponse
+from django.views import View
+from django.views.generic.detail import SingleObjectTemplateResponseMixin
+from django.views.generic.edit import ProcessFormView, ModelFormMixin
+
+from _keenthemes import KTLayout
+from accounts.mixins import FormFieldAccessMixin
+from changelog.models import ChangeLog
+from files.models import Image, File
+from inquiry.models import PriceInquiryResult
+from workflow.forms import WorkFlowModelForm
+from workflow.models import FlowAdminGroup
+from workflow.views import FlowBaseView
+from .forms import CustomBaseModelForm
+
+import openpyxl
+
+
+class BaseView(UserPassesTestMixin,
+               SingleObjectTemplateResponseMixin,
+               SuccessMessageMixin,
+               ModelFormMixin,
+               ProcessFormView,
+               FlowBaseView,
+               FormFieldAccessMixin
+               ):
+    # has_flow = None
+    priority_strategy = 'or'
+    permission_strategy = 'or'
+    allow_groups = []
+    allow_perms = []
+    custom_queries = []
+    permission_priority_order = ['allow_perms', 'allow_groups']
+    base_form = CustomBaseModelForm
+    main_form = None
+    formset_model = None
+    formset = None
+    formset_form = None
+    formset_fk_field = None
+    related_name_fk = ''
+    workflow_form = WorkFlowModelForm
+    detail_list = []
+    create = None
+    has_formset = None
+    template_name = 'base_view.html'
+    finish = None
+    extra_formset = 1
+    wf_access = None
+
+    def get_object(self, queryset=None):
+        try:
+            return super().get_object(queryset)
+        except AttributeError as e:
+            print('error ', __file__, e.__traceback__.tb_lineno, e)
+            return None
+
+    def get(self, request, *args, **kwargs):
+        if self.has_formset and not all([self.model, self.formset_model, self.formset_form]):
+            raise ImproperlyConfigured(f'formset use but not configure [model, formset_model, formset_form] is required')
+        if self.has_flow and not all([item for item in self.flow_config.keys()]):
+            raise ImproperlyConfigured(f'''has_flow use but not configure [{super().flow_config.keys()}] is required''')
+        if self.has_flow and not self.flow_config.get('flow_action'):
+            raise ImproperlyConfigured(f'''has_flow use but not configure [flow_action] can't be None''')
+        if self.has_flow and self.has_simple_flow:
+            raise ImproperlyConfigured(f'''has_flow and has_simple_flow can't use together''')
+
+        if self.has_flow and not self.flow_config.get("append_last_step"):
+            self.flow_config['flow_state_list'].append('مرحله نهایی')
+            self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
+            self.flow_config['append_last_step'] = True
+
+        self.object = self.get_object()
+        if self.has_flow:
+            self.state_index = self.get_flow_index(self.object)
+
+        if hasattr(self.form_class, 'form_state'):
+            self.form_class.form_state = self.state_index
+
+        if self.has_formset:
+            self.formset_form.form_state = self.state_index
+            self.formset = inlineformset_factory(self.model, self.formset_model, form=self.formset_form, extra=self.extra_formset, )
+            print('has formset', self.formset)
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.has_formset:
+            self.formset = inlineformset_factory(self.model, self.formset_model, form=self.formset_form, extra=self.extra_formset)
+        if self.has_flow:
+            self.state_index = self.get_flow_index(self.object)
+        form = self.get_form()
+        if self.has_flow:
+            try:
+                flow_obj = self.get_flow(self.object).order_by('id').last()
+                if 'draft' in self.request.POST and flow_obj.wf_status == 1:
+                    wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
+                                                content_type_model=self.model, current_user=self.request.user,
+                                                instance=flow_obj)
+                else:
+                    wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
+                                                content_type_model=self.model, current_user=self.request.user)
+            except Exception as e:
+                print('error ', __file__, e.__traceback__.tb_lineno, e)
+                wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
+                                            content_type_model=self.model, current_user=self.request.user)
+        elif self.has_simple_flow:
+            wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
+                                        content_type_model=self.model, current_user=self.request.user)
+        else:
+            wfform = None
+            form.wfform = wfform
+            if form.is_valid():
+                return self.form_valid(form)
+            if not form.is_valid():
+                print(form.errors.as_data())
+                return self.form_invalid(form)
+
+        form.wfform = wfform
+        if form.is_valid() and wfform.is_valid():
+            return self.form_valid(form)
+        if not form.is_valid():
+            print(form.errors.as_data())
+            return self.form_invalid(form)
+        if not wfform.is_valid():
+            print(wfform.errors.as_data())
+            return self.form_invalid(wfform)
+
+    def test_func(self):
+        if not self.model:
+            raise ImproperlyConfigured(f'''BaseView need model attribute''')
+        if not self.allow_perms:
+            self.allow_perms = [f'{self.model._meta.app_label}.view_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.add_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.change_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.delete_{self.model._meta.model_name}',
+                                ]
+
+        if self.priority_strategy == 'or':
+            return any(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
+        if self.priority_strategy == 'and':
+            return all(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
+
+    def __permission_priority_check(self, priority):
+        permissions = getattr(self, priority)
+        return self.__permission_check(permissions, priority)
+
+    def __permission_check(self, permissions, priority):
+        if 'perms' in priority and self.permission_strategy == 'or':
+            return any(self.request.user.has_perm(perm) for perm in permissions)
+        elif 'perms' in priority and self.permission_strategy == 'and':
+            return all(self.request.user.has_perm(perm) for perm in permissions)
+
+        if 'groups' in priority and self.permission_strategy == 'or':
+            user_groups = self.request.user.groups.values_list('name', flat=True)
+            for g in user_groups:
+                if g in permissions:
+                    return True
+
+        elif 'groups' in priority and self.permission_strategy == 'and':
+            user_groups = self.request.user.groups.values_list('name', flat=True)
+            for g in user_groups:
+                if g not in permissions:
+                    return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = KTLayout.init(context)
+        context['has_flow'] = self.has_flow
+        if self.has_flow:
+            context['workflow_form'] = self.workflow_form(
+                                                          content_type_model=self.model,
+                                                          initial=self.wf_initial,
+                                                          current_user=self.request.user,
+                                                          )
+
+            context['flow_state_index'] = self.state_index
+            context['active_state'] = self.active_state
+            context['flow_state_list'] = self.flow_config.get('flow_state_list')
+            context['belong_to_group'] = self.wf_initial.get('belong_to_group')
+            context['current_user_groups'] = self.request.user.groups.values_list('name', flat=True)
+            context['wf_last_step_is_open'] = self.wf_last_step_is_open
+            # context['flow_admin'] = self.is_group_admin(self.request.user, context['belong_to_group'])
+            # context['flow_admin'] = self.is_admin(self.object, self.request.user)
+            context['flow_admin'] = FlowAdminGroup.is_admin_of_group(self.request.user, self.flow_config.get('flow_users_groups')[self.state_index])
+            if flow := self.get_flow(self.object):
+                context['flow'] = flow.order_by('-id')
+
+            try:
+                # context['finish'] = True if self.get_flow(self.object).filter(state=self.flow_config.get('flow_state_list')[-1]).order_by('id').last().wf_status == 3 else None
+                context['finish'] = self.finish
+            except Exception as e:
+                context['finish'] = False
+                print('firm error ', __file__, e.__traceback__.tb_lineno, e)
+
+        if self.has_simple_flow:
+            context['workflow_form'] = self.workflow_form(
+                content_type_model=self.model,
+                initial=self.wf_initial,
+                current_user=self.request.user,
+            )
+
+        if self.model and self.formset_model and self.formset_form:
+            context['formset'] = self.formset(initial=[self.get_form_kwargs()], instance=self.object,
+                                              form_kwargs={
+                                                  "constraint": {
+                                                      "wf_access": self.wf_access,
+                                                      'form_state': self.state_index,
+                                                      'request': self.request,
+                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
+            # context['formset'] = self.formset(instance=self.object, initial=self.initial.update(self.get_form_kwargs()))
+        context['object_logs'] = ChangeLog.get_log(self.object)
+        print(__file__, 'super class context', context.get('current_user_groups'))
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # fields, action = self.field_access_by_user_permission()
+        fields_access = self.field_access_by_user_permission()
+
+        try:
+            flow_user_groups = self.flow_config.get('flow_users_groups', [])
+            # print('self.state_index', self.state_index)
+            try:
+                belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
+            except Exception as e:
+                belong_to_group = None
+                print('firm error ', __file__, e.__traceback__.tb_lineno, e)
+
+            """initial work flow form kwargs"""
+            last_flow_objs = self.get_flow(self.object)
+
+            from_user_ = None
+            if self.state_index == 0 and not last_flow_objs:
+                from_user_ = None
+                print(__file__,'user none')
+
+            elif self.state_index is not None and last_flow_objs.last().wf_status == 2:  # previous step is `back`
+                # next_flow = last_flow_objs.filter(state=self.flow_config.get('flow_state_list')[self.state_index]).order_by('id').last()
+                # from_user_ = get_user_model().objects.filter(
+                #         id=next_flow.from_user_id).first() if next_flow else None
+                from_user_ = last_flow_objs.last().to_user
+
+            elif self.state_index is not None and last_flow_objs.last().wf_status == 3:  # previous step is `next`
+                from_user_ = last_flow_objs.last().to_user
+
+            elif self.state_index is not None and last_flow_objs.last().wf_status == 4:  # previous step is `change user`
+                from_user_ = get_user_model().objects.filter(
+                        id=last_flow_objs.last().to_user_id).first() if last_flow_objs else None
+
+            elif self.state_index is not None and last_flow_objs.last().wf_status == 5:  # previous step is `first draft`
+                from_user_ = last_flow_objs.last().from_user
+
+            try:
+                """work flow last step to_user should be to current user"""
+                if self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
+                    to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
+                elif self.state_index is not None:
+                    to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
+                # if 'draft' in self.request.POST:
+                #     to_user = self.request.user
+
+            except Exception as e:
+                print('error: ', __file__, e.__traceback__.tb_lineno, e)
+                to_user = None
+
+            if self.has_flow:
+                self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
+                    FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index]) or \
+                    (belong_to_group in self.request.user.groups.values_list('name', flat=True) and
+                    (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+
+            if self.has_flow:
+                if flow := self.get_flow(self.object):
+                    # self.finish = True if flow.filter(state=self.flow_config.get('flow_state_list')[-2]).order_by('id').last().wf_status == 3 else None
+                    print(__file__, flow.order_by('id').last())
+                    last_flow = flow.order_by('id').last()
+                    # self.finish = True if last_flow.state == 'مرحله نهایی' and last_flow.wf_status != 2 else None
+                    self.finish = True if last_flow.wf_status == 3 and last_flow.state == self.flow_config.get('flow_state_list')[-2] else None
+                if self.finish and not self.wf_last_step_is_open:
+                    wf_access = False
+                self.wf_initial = {
+                    'wf_access': wf_access,
+                    'from_user': from_user_,
+                    'to_user': to_user,
+                    'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
+                    'state_index': self.state_index,
+                    'belong_to_group': belong_to_group,
+                    'action': self.flow_config.get('flow_action'),
+                    'deadline': datetime.datetime.now() + datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index]) if self.has_flow else None,
+                    'flow_config': self.flow_config,
+                    'create': False if self.object else True
+                }
+            elif self.has_simple_flow:
+                self.wf_initial = {
+                    'wf_access': True,
+                    'from_user': None,
+                    'to_user': None,
+                    'state': None,
+                    'state_index': 0,
+                    'belong_to_group': None,
+                    'action': None,
+                    'deadline': None,
+                    'flow_config': {},
+                    'create': False if self.object else True
+                }
+
+            """initial main form kwargs"""
+            kwargs['initial'] = {
+                "constraint": {
+                    'form_state': self.state_index,
+                    'request': self.request,
+                    "wf_access": self.wf_access,
+                    'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    'formset_constraint': self.flow_config.get('flow_formset_constraint'),
+                    },
+                # 'permission_access': {'fields': fields, 'action': action},
+                'permission_access': fields_access,
+                                 # 'wf_access': from_user == self.request.user or self.request.user.is_superuser or not from_user,
+                                 'wf_access': wf_access if self.has_flow else True,
+                                 }
+            # kwargs['initial'].update({
+            #     'permission_access': self.formset_field_access_by_user_permission(),
+            #     # 'wf_access': from_user == self.request.user or self.request.user.is_superuser or not from_user,
+            #     'wf_access': wf_access if self.has_flow else True,
+            # })
+        except Exception as e:
+            print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
+            self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
+            kwargs['initial'] = {
+                            "constraint": {
+                                'form_state': self.state_index,
+                                'request': self.request,
+                                "wf_access": self.wf_access,
+                                'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                'formset_constraint': self.flow_config.get('flow_formset_constraint'),
+                                },
+                                 # 'permission_access': fields_access,
+                                 'create': self.create
+                                 }
+        return kwargs
+
+    def form_valid(self, form):
+        from operator import itemgetter
+        if form.is_valid():
+            """save main form"""
+            old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
+
+            if old_obj:
+                self.attach_image_file(old_obj)
+                last_flow_obj = self.get_flow(old_obj)
+
+                if self.has_flow and 'back' in self.request.POST:
+                    wf_obj = form.wfform.save(commit=False)
+                    wf_obj.from_user = self.request.user
+                    wf_obj.object_id = old_obj.id
+                    wf_obj.content_type = ContentType.objects.filter(app_label=old_obj._meta.app_label,
+                                                                     model=old_obj._meta.model_name).first()
+
+                    flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
+                    pad = 2 if self.state_index >= 2 else 1
+                    for item in flow_items:
+                        if item.state == self.flow_config.get('flow_state_list')[self.state_index - pad]:
+                            # wf_obj.to_user = item.from_user
+                            wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
+                            wf_obj.deadline = item.deadline
+                            wf_obj.wf_status = 2  # back
+                            print(__file__, '========= save as back')
+                            break
+                    wf_obj.save_user(self.request)
+                    wf_obj.save()
+                    # return super().form_valid(form)
+
+            new_obj = form.save(commit=True) if 'back' not in self.request.POST else None
+            if new_obj:
+                new_obj.save_user(self.request)
+                last_flow_obj = self.get_last_flow(new_obj)
+                """save wf if user change"""
+                if self.has_flow and 'change_user' in self.request.POST:
+                    wf_obj = form.wfform.save(commit=False)
+                    wf_obj.from_user = self.request.user
+                    wf_obj.to_user = form.wfform.cleaned_data.get('to_current_group_user')
+                    wf_obj.object_id = new_obj.id
+                    wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
+                                                                     model=new_obj._meta.model_name).first()
+                    wf_obj.wf_status = 4  # change user
+                    wf_obj.save_user(self.request)
+                    wf_obj.save()
+
+                    print(__file__, '========= wf save as change user')
+                    """save workflow form (main)"""
+                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST):
+                    if form.wfform.is_valid():
+                        wf_obj = form.wfform.save(commit=False)
+                        wf_obj.from_user = self.request.user
+                        wf_obj.object_id = new_obj.id
+                        wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
+                                                                         model=new_obj._meta.model_name).first()
+
+                        if 'next' in self.request.POST:
+                            """to_user submit as default to next user"""
+                            wf_obj.wf_status = 3  # next
+                            print(__file__, '========= workflow save as next')
+
+                        if 'submit' in self.request.POST:
+                            """to_user submit as default to next user"""
+                            wf_obj.wf_status = 3  # next
+                            # self.wf_finish = True
+                            print(__file__, '========= workflow save as submit')
+
+                        wf_obj.save_user(self.request)
+                        wf_obj.save()
+                    else:
+                        print(form.wfform.errors.as_data())
+                elif self.has_flow and 'draft' in self.request.POST:
+                    if 'to_user' in form.wfform.changed_data:
+                        """ if to_user change save new flow object `save as change_user` """
+                        wf_obj = form.wfform.save(commit=False)
+                        wf_obj.from_user = self.request.user
+                        wf_obj.object_id = new_obj.id
+                        wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
+                                                                         model=new_obj._meta.model_name).first()
+                        wf_obj.wf_status = 4  # change user
+                        print('========= workflow save as next')
+                        wf_obj.save_user(self.request)
+                        wf_obj.save()
+                    elif not form.wfform.cleaned_data.get('from_user'):
+                        """ if state 0 and from_user is None `save as first_draft` """
+                        wf_obj = form.wfform.save(commit=False)
+                        wf_obj.from_user = self.request.user
+                        wf_obj.to_user = self.request.user
+                        wf_obj.object_id = new_obj.id
+                        wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
+                                                                         model=new_obj._meta.model_name).first()
+                        wf_obj.wf_status = 5  # first draft
+                        print('========= workflow save as next')
+                        wf_obj.save_user(self.request)
+                        wf_obj.save()
+                try:
+                    """save main form image and file"""
+                    if form.image_model and form.image_groups:
+                        new_obj.save_image(request=self.request,
+                                           image_groups=form.image_groups,
+                                           image_model=form.image_model,
+                                           obj=new_obj,
+                                           input_prefix='image',
+                                           )
+                    if form.file_model and form.file_groups:
+                        new_obj.save_file(request=self.request,
+                                          file_groups=form.file_groups,
+                                          file_model=form.file_model,
+                                          obj=new_obj,
+                                          input_prefix='file'
+                                          )
+                except Exception as e:
+                    print('error: ', e.__traceback__.tb_lineno, e)
+                print("self.formset", self.formset)
+                if self.formset:
+                    """save formset"""
+                    formset = self.formset(self.request.POST, instance=new_obj,
+                                           form_kwargs={
+                                               "constraint": {
+                                                   'form_state': self.state_index,
+                                                   'request': self.request,
+                                                   "wf_access": self.wf_access,
+                                                   'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                   'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                               }
+                                           })
+                    old_details_ = getattr(new_obj, self.related_name_fk, None)
+                    old_details = []
+                    if old_details_:
+                        old_details = list(old_details_.all())
+                        old_details = [self.attach_image_file(old_detail) for old_detail in old_details]
+
+                    for idx, form_ in enumerate(formset):
+                        if form_.is_valid():
+                            print('delete: ', form_.cleaned_data.get('DELETE'))
+                            if form_.cleaned_data.get('DELETE') and form_.instance.id:
+                                form_.instance.delete()
+                                continue
+                            if form_.cleaned_data.get('DELETE') and not form_.instance.id:
+                                continue
+                            try:
+                                detail = form_.save(commit=True)
+                                if detail:
+                                    detail.save_user(self.request)
+                                    setattr(detail, self.formset_fk_field, new_obj)
+                                    # if isinstance(detail, PriceInquiryResult):
+                                    #     detail.deactivate_other()
+
+                                    if form_.image_model and form_.image_groups:
+                                        """save formset image and file"""
+                                        detail.save_image(
+                                            request=self.request,
+                                            image_groups=form_.image_groups,
+                                            image_model=form_.image_model,
+                                            obj=detail,
+                                            fk=self.related_name_fk,
+                                            form_idx=idx,
+                                        )
+                                    if form_.file_model and form_.file_groups:
+                                        detail.save_file(
+                                            request=self.request,
+                                            file_groups=form_.file_groups,
+                                            file_model=form_.file_model,
+                                            obj=detail,
+                                            fk=self.related_name_fk,
+                                            form_idx=idx,
+                                        )
+                            except Exception as e:
+                                print('error: ', __file__,  e.__traceback__.tb_lineno, e)
+
+                    """save formset log"""
+                    new_details = getattr(new_obj, self.related_name_fk, None)
+                    if new_details:
+                        new_details = list(new_details.all())
+
+                    for d in new_details:
+                        if d not in old_details:
+                            d = self.attach_image_file(d)
+                            d.save_log(self.request, obj=d, action=1)
+                        else:
+                            for old_detail in old_details:
+                                if old_detail.id == d.id:
+                                    d = self.attach_image_file(d)
+                                    d.save_log(self.request, obj=d, old=old_detail, action=2)
+                                    break
+                """save main form log"""
+                if not old_obj:
+                    new_obj = self.attach_image_file(new_obj, form)
+                    new_obj.save_log(self.request, obj=new_obj, action=1)
+                else:
+                    new_obj = self.attach_image_file(new_obj, form)
+                    new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
+
+                print('form valid base view')
+
+                if self.has_simple_flow:
+                    wf_obj = form.wfform.save(commit=False)
+                    wf_obj.from_user = self.request.user
+                    wf_obj.object_id = new_obj.id
+                    wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
+                                                                     model=new_obj._meta.model_name).first()
+                    wf_obj.wf_status = 3  # change user
+                    print('========= workflow save as next')
+                    wf_obj.save_user(self.request)
+                    wf_obj.save()
+                return super().form_valid(form)
+            return super().form_valid(form)
+        return HttpResponseRedirect('.')
+
+    @staticmethod
+    def attach_image_file(obj, form=None):
+        """attach image and file field to obj if exist"""
+        content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
+                                                  model=obj._meta.model_name,
+                                                  ).first()
+        if form is None or (form.image_groups and form.file_groups):
+            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.images = images
+            obj.files = files
+        elif form.image_groups:
+            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.images = images
+        elif form.file_groups:
+            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.files = files
+        return obj
+
+
+class Base:
+    @classmethod
+    def get_view_config(cls, file, view):
+        import json
+        with open(file, 'r', encoding='utf-8') as f:
+            json_config: dict = json.load(f)
+            return json_config.get(view)
+
+    @staticmethod
+    def get_flow_config(file, view):
+        from translator import get_text as _
+        res = {
+            'flow_name': '',
+            'flow_action': '',
+            'flow_state_list': [],
+            'flow_users_groups': [],
+            'flow_deadline': [],
+            'flow_form_constraint': [],
+            'flow_formset_constraint': []
+        }
+        cfg: dict = Base.get_view_config(file, view)
+        if wf_config := cfg.get('workflow'):
+            res['flow_name'] = _(wf_config.get('name'))
+            res['flow_action'] = _(wf_config.get('action'))
+            if config_list := wf_config.get('list'):
+                for config in config_list:
+                    res['flow_state_list'].append(config.get('state'))
+                    res['flow_users_groups'].append(config.get('group'))
+                    res['flow_deadline'].append(config.get('deadline'))
+                    res['flow_form_constraint'].append(config.get('form_constraint'))
+                    res['flow_formset_constraint'].append(config.get('formset_constraint'))
+
+        return res
+
+
+def download_excel(request, *args, **kwargs):
+    print('get export excel')
+    model_name = request.GET.get('model_name')
+    app_name = request.GET.get('app_label')
+    header = request.GET.get('header')
+
+    from django.apps import apps
+    model = apps.get_model(app_label=app_name, model_name=model_name)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="mydata.xlsx"'
+
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = 'My Data'
+
+    print(header)
+    header = header.split(' ')
+    print(header)
+    for col_num, column_title in enumerate(header, 1):
+        cell = worksheet.cell(row=1, column=col_num)
+        cell.value = column_title
+
+    queryset = model.objects.all().values_list(*header)
+    print(len(queryset))
+    for row_num, row in enumerate(queryset, 1):
+        for col_num, cell_value in enumerate(row, 1):
+            cell = worksheet.cell(row=row_num + 1, column=col_num)
+            cell.value = cell_value
+
+    workbook.save(response)
+    print(' download response')
+    return response
+
+
+class JsonTemplateResponseMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            print(request.GET)
+
+        return super().dispatch(request, *args, **kwargs)

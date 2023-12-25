@@ -1,0 +1,82 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+        <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+
+        <div class="page-content">
+            <div class="container">
+                <form method="POST" enctype="multipart/form-data" id="main_form" class="mt-5">
+                    {% csrf_token %}
+                    <div class="row row-cols-md-3 row-cols-1">
+{#                        <div class="col mb-3">#}
+{#                            {{ form.code|as_crispy_field }}#}
+{#                        </div>#}
+                        <div class="col mb-3">
+                            {{ form.IMEI|as_crispy_field }}
+                        </div>
+                        <div class="col mb-3">
+                            {{ form.reason|as_crispy_field }}
+                        </div>
+                        <div class="col mb-3">
+                            {{ form.description|as_crispy_field }}
+                        </div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3 d-flex justify-content-end">
+                            <input type="submit" class="btn btn-primary my-4 w-25 mx-1" name="create" value="ثبت"/>
+                            <input type="submit" class="btn btn-primary my-4 w-50" name="create-continue" value="ثبت و ایجاد یکی دیگر"/>
+                        </div>
+                    </div>
+                </form>
+        </div> <!-- container -->
+        <!-- End Page-content -->
+    <div class="main-content" id="main-content"></div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <!-- Required datatable js -->
+    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Buttons examples -->
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+{##}
+{#    <!-- Responsive examples -->#}
+    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+    <!-- Datatable init js -->
+    <script src="{% static 'js/pages/datatables.init.js' %}"></script>
+{% endblock extra_js %}

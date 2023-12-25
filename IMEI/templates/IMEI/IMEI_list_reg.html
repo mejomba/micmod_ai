@@ -1,0 +1,191 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+        <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+
+    <style>
+    .loader {
+        position: fixed;
+        z-index: 10;
+        width: 100vw;
+        height: 1000px;
+        background-color: #b8c6f6;
+        opacity: 0.3;
+    }
+    .loader-inner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- loader for prevent user to click -->
+    <div class="loader" id="page-loader">
+        <div class="loader-inner">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+<div class="main-content" id="main-content">
+        <div class="page-content">
+            <div class="container">
+                <div class="my-5 bg-info rounded">
+                    <p class="p-2">راهنما: فایل اکسل شامل ۵ ستون
+                        <b>(row, internal box, main box, version, IMEI)</b>
+                        آپلود کنید
+                        <span class="bg-warning p-1 rounded">سطر اول خالی باشد</span>
+                    </p>
+                </div>
+                <form method="POST" enctype="multipart/form-data" id="main_form" class="mt-5">
+                    {% csrf_token %}
+                    <div class="row row-cols-md-3 row-cols-1">
+                        <div class="col mb-4">
+                            {{ form.packing|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.sku|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.part_number|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.brand|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.register_date|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4"></div>
+                        <div class="col mb-4">
+                            {{ form.source_file|as_crispy_field }}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.action|as_crispy_field }}
+                        </div>
+                        <div class="col mb-3 d-flex justify-content-end mt-5">
+                            <input type="submit" class="btn btn-primary my-4 w-25" value="ثبت"/>
+                        </div>
+                    </div>
+                </form>
+                <hr>
+            <div class="table-rep-plugin">
+            <div class="my-5">
+                    <table id="datatable-imei-reg" class="m-table table-striped table-bordered w-100">
+                      <thead>
+                        <tr>
+{#                          <th scope="col">#</th>#}
+{#                          <th scope="col">row</th>#}
+{#                          <th scope="col">main box</th>#}
+{#                          <th scope="col">internal box</th>#}
+{#                          <th scope="col">version</th>#}
+{#                          <th scope="col">IMEI</th>#}
+                        </tr>
+                      </thead>
+{#                    <tbody>#}
+{#                        {% for imei in data.main_imei_list_reg.all %}#}
+{#                            <tr>#}
+{#                              <td>{{ imei.row }}</td>#}
+{#                              <td>{{ imei.main_box }}</td>#}
+{#                              <td>{{ imei.internal_box }}</td>#}
+{#                              <td>{{ imei.version }}</td>#}
+{#                              <td>{{ imei.IMEI }}</td>#}
+{#                            </tr>#}
+{#                        {% endfor %}#}
+{#                    </tbody>#}
+                    </table>
+            </div>
+            </div>
+            </div>
+        </div> <!-- container-fluid -->
+        <!-- End Page-content -->
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+        function removeLoader(){
+            const pageLoader = document.querySelector('#page-loader');
+            pageLoader.classList.add('d-none')
+        }
+        document.addEventListener('DOMContentLoaded', function (){
+            setTimeout(removeLoader, 1000);
+        })
+    </script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+
+    <script language="javascript">
+    $(document).ready(function() {
+
+        AjaxDatatableViewUtils.initialize_table(
+            $('#datatable-imei-reg'),
+            "{% url 'IMEI:imei_reg_datatable.view' data.id %}",
+            {
+                // extra_options (example)
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+            },
+        );
+    });
+    </script>
+
+    <!-- Required datatable js -->
+{#    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>#}
+{#    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>#}
+
+    <!-- Buttons examples -->
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+
+
+
+    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+{% endblock extra_js %}

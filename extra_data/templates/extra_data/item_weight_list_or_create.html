@@ -1,0 +1,128 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load more_tags %}
+
+{% block title %}Quotation{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+    <style>
+    span.select2-selection__rendered{
+        direction: ltr !important;
+    }
+    </style>
+{% endblock extra_css %}
+
+
+{% block form_content %}
+    {% csrf_token %}
+    <div class="d-flex mt-5 gap-3 bg-white rounded shadow pt-4 pb-1 px-2">
+    {% for field in form %}
+        {% render_field_by_order form field label='on-border' %}
+    {% endfor %}
+    </div>
+    <input type="submit" class="btn btn-primary me-1" name="next" value="ذخیره"/>
+
+    <div class="table-responsive p-2 mt-5">
+        <table id="item_weight_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+        </table>
+    </div>
+{% endblock form_content %}
+
+
+
+{% block form_footer_extra %}
+{#    <a href="{% url 'extra_data:item_weight.list' %}" class="btn btn-outline-dark ms-1">بازگشت به لیست</a>#}
+{% endblock form_footer_extra %}
+
+{% block extra_js %}
+{#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
+{#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>#}
+{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>#}
+
+
+<script>
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    </script>
+
+    <script language="javascript">
+    $(document).ready(function() {
+
+
+        let q, url;
+        url = new URL(window.location);
+        q = url.searchParams.get("item");
+
+        AjaxDatatableViewUtils.initialize_table(
+            $('#item_weight_list'),
+            "{% url 'extra_data:item_weight.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                sku: q
+            },
+        ); // end datatable
+    });
+
+        $('#id_item').on("select2:select", function (e) {
+            const skuSearch = document.querySelector('.sku-search>input')
+            const skuss = document.querySelector('input')
+            console.log(skuss)
+            debugger
+            skuSearch.value = e.target.options[e.target.selectedIndex].text;
+
+            var event = new Event('change');
+            skuSearch.dispatchEvent(event);
+
+            })
+    </script>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+{#     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>#}
+
+{% endblock extra_js %}
+
+
+

@@ -1,0 +1,27 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+
+{% for field in fields %}
+    {% if not field.field.widget.input_type == 'hidden' %}
+        {% if field.field.select2 %}
+            <div class="select2 {{ field.name }} " name="{{ field.name }}"></div>
+            {{ field.field.html|safe }}
+        {% elif crispy %}
+            <div class="col mb-3">
+            {{ field|as_crispy_field }}
+        {% else %}
+            <div class="col text-center mb-3 ">
+            {{ field }}
+            {{ field.help_text }}
+        {% endif %}
+        </div>
+    {% else %}
+        {% if field.field.as_label %}
+            <label class="text-center w-100  card-title-desc h-25" name="{{ field.name }}">-</label>
+        {% endif %} 
+        <div class="position-absolute">
+        {{ field|as_crispy_field }}
+        </div>
+    {% endif %}
+{% endfor %}
+

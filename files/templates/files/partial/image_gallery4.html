@@ -1,0 +1,84 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+
+{% if create and not images %}
+    {% for image_group in groups %}
+        <div class="col mb-5">
+            <label for="main_image_{{ forloop.counter }}_1">تصاویر گروه {{forloop.counter}}</label> <br>
+            <input type="file" id="main_image_{{ forloop.counter }}_1" name="main_image_{{ forloop.counter }}_1" multiple class="input-control">
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if not detail and not only_popup %}
+
+{% for image_set in images %}
+    {% for image_qs in image_set.values %}
+    <div class="mobile-slider LTR">
+        <span class="arrow left material-icons">keyboard_arrow_left</span>
+        <div class="slider-card-container">
+
+            {% for image in image_qs %}
+                <div class="slider-card-inner" id="slider-card-inner-{{ image.pk }}">
+                    <img src="{{ image.path.url }}" alt="{{ image.alt }}" width="100%" class="m-1 border rounded">
+
+                    {% if editable %}
+                        <div style="position: relative;" class="w-100 h-100">
+                            <span id="remove-image-{{ image.pk }}" class="content-remove-btn image" data-id="{{ image.pk }}">&times;</span>
+                        </div>
+                    {% endif %}
+
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if not image_qs %}
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <p>هیچ تصویری آپلود نشده</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+    <span class="arrow right material-icons">keyboard_arrow_right</span>
+    </div>
+
+    {% if upload %}
+    {% for image_group in groups %}
+        <div class="col mb-3">
+            <label for="main_image_{{ forloop.counter }}_1">تصاویر گروه {{forloop.counter}}</label> <br>
+            <input type="file" id="main_image_{{ forloop.counter }}_1" name="main_image_{{ forloop.counter }}_1" multiple class="input-control">
+        </div>
+    {% endfor %}
+
+    {% else %}
+        <div class="col">
+            <label for="main_image_{{ forloop.counter }}_1">تصاویر گروه {{forloop.counter}}</label> <br>
+        </div>
+    {% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if detail %}
+    {% for field in form %}
+        {% if 'image' in field.name  %}
+            {% include 'files/partial/modal_base_on_field.html' with obj=obj field=field target='Image' crispy=crispy %}
+        {% endif %}
+    {% endfor %}
+    {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.file_1 target='File' crispy=crispy %}
+    <div class="col text-center">
+        {{ form.active }}
+    </div>
+{% endif %}
+
+{% if only_popup %}
+    {% for field in form %}
+        {% if 'image' in field.name  %}
+            {% include 'files/partial/modal_base_on_field.html' with obj=obj field=field target='Image' crispy=crispy %}
+        {% endif %}
+    {% endfor %}
+    {% for field in form %}
+        {% if 'file' in field.name  %}
+            {% include 'files/partial/modal_base_on_field.html' with obj=obj field=field target='File' crispy=crispy %}
+        {% endif %}
+    {% endfor %}
+{% endif %}

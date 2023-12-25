@@ -1,0 +1,254 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+        <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+{% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+
+        <div class="page-content">
+            <div class="container">
+            <div id="ajax-message" class="mt-5 bg-danger my-2 rounded"></div>
+                <div class="my-5 bg-info rounded">
+                    <p class="p-2">راهنما: فایل اکسل شامل ۲ ستون
+                        <b>(row, IMEI)</b>
+                        آپلود کنید
+                        <span class="bg-warning p-1">سطر اول خالی باشد</span>
+                    </p>
+                </div>
+                <form method="POST" enctype="multipart/form-data" id="main_form" class="mt-5">
+                    {% csrf_token %}
+                    <div class="row row-cols-md-3 row-cols-1">
+                        <div class="col mb-3">
+                            {{ form.invoice_code|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.invoice_date|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.customer_code|as_crispy_field}}
+                        </div>
+{#                        <div class="col mb-4">#}
+{#                            {{ form.customer_name|as_crispy_field}}#}
+{#                        </div>#}
+                        <div class="col mb-4 RTL">
+                            {{ form.pack_numbers|as_crispy_field}}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.source_file|as_crispy_field }}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.action|as_crispy_field }}
+                        </div>
+                        <div class="col mb-4">
+                            {{ form.warning|as_crispy_field }}
+                        </div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3"></div>
+                        <div class="col mb-3 d-flex justify-content-end mt-5">
+                            <button type="submit" class="btn btn-primary my-4 w-25" value="normal-submit" onclick="formSubmit(event)">ثبت</button>
+                            <button type="submit" class="btn btn-outline-danger my-4 mx-2 d-none" value="force-submit" id="force-submit" onclick="formSubmitForce(event)">ثبت با هر شرایطی</button>
+                        </div>
+                    </div>
+                </form>
+            <div id="btn-container">
+                <a href="{% url 'IMEI:imei_sale_reg.view' data.pk %}" class="btn btn-outline-dark">همه</a>
+            </div>
+                <hr>
+
+            <div class="table-rep-plugin">
+            <div class="my-5">
+                    <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
+                      <thead>
+                        <tr>
+                          <th scope="col">row</th>
+                          <th scope="col">IMEI</th>
+                        </tr>
+                      </thead>
+                    <tbody>
+                        {% for imei in data.main_imei_sale_reg.all %}
+                            <tr>
+{#                              <th scope="row">{{ forloop.counter }}</th>#}
+                              <td>{{ imei.row }}</td>
+                              <td>{{ imei.IMEI }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+            </div>
+            </div>
+            </div>
+        </div> <!-- container-fluid -->
+        <!-- End Page-content -->
+    <div class="main-content" id="main-content">
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+    const boxNumbers = document.getElementById('id_pack_numbers').value.split('-')
+    const btnContainer = document.getElementById('btn-container')
+
+    let btnHtml = ``
+    if (boxNumbers[0]){
+        console.log(boxNumbers)
+        boxNumbers.forEach(function (item) {
+            let a = "imei_sale_reg/view/<int:id>/<str:box_number>/"
+            let url = new URL(window.location.href);
+            btnHtml = document.createElement('a')
+            btnHtml.className = "btn btn-outline-dark mx-1"
+            btnHtml.href = `${item}/`
+            btnHtml.innerText = item
+            btnContainer.appendChild(btnHtml)
+        })
+    }
+
+        let host_name = window.location.host
+
+
+        let mainForm = $('#main-form')
+        let ajaxMessage = $('#ajax-message')
+        const forceSubmit = $('#force-submit')
+        console.log(mainForm)
+
+        const formSubmit = (event) => {
+            event.preventDefault();
+            let formData = new FormData();
+            let source_file = $('#id_source_file').get(0).files[0]
+            console.log(source_file)
+            if (source_file){
+                formData.append('source_file', source_file);
+            }
+            formData.append('invoice_code', $('#id_invoice_code').val().trim())
+            formData.append('invoice_date', $('#id_invoice_date').val().trim())
+            formData.append('customer_code', $('#id_customer_code').val().trim())
+            {#formData.append('customer_name', $('#id_customer_name').val().trim())#}
+            formData.append('pack_numbers', $('#id_pack_numbers').val().trim())
+            formData.append('action', $('input[name="action"]:checked').val())
+            formData.append('submitter', 'normal-submitter')
+
+
+            $.ajax({
+                url: '.',
+                type: "POST",
+                dataType: 'json',
+                data: formData,
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    let redirect_url = data.redirect_url
+                    window.location.replace(redirect_url);
+                },
+                error: function (rs, e) {
+                    if (rs.status === 403){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                        forceSubmit.removeClass('d-none')
+                    }else if (rs.status === 400){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                    }else if (rs.status === 404){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                    }
+                }
+            }) // end ajax
+        }
+
+        const formSubmitForce = (event) => {
+        event.preventDefault();
+            let formData = new FormData();
+            let source_file = $('#id_source_file').get(0).files[0]
+            console.log(source_file)
+            if (source_file){
+                formData.append('source_file', source_file);
+            }
+            formData.append('invoice_code', $('#id_invoice_code').val().trim())
+            formData.append('invoice_date', $('#id_invoice_date').val().trim())
+            formData.append('customer_code', $('#id_customer_code').val().trim())
+            {#formData.append('customer_name', $('#id_customer_name').val().trim())#}
+            formData.append('pack_numbers', $('#id_pack_numbers').val().trim())
+            formData.append('action', $('input[name="action"]:checked').val())
+            formData.append('submitter', 'force-submitter')
+
+            $.ajax({
+                url: '.',
+                type: "POST",
+                dataType: 'json',
+                data: formData,
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    let redirect_url = data.redirect_url
+                    window.location.replace(redirect_url);
+                },
+                error: function (rs, e) {
+                    if (rs.status === 403){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                        forceSubmit.removeClass('d-none')
+                    }else if (rs.status === 400){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                    }else if (rs.status === 404){
+                        ajaxMessage.addClass('p-2')
+                        let data = JSON.parse(rs.responseText)
+                        ajaxMessage.html(data.detail)
+                    }
+                }
+            }) // end ajax
+        }
+    </script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <!-- Required datatable js -->
+    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Buttons examples -->
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+{##}
+{#    <!-- Responsive examples -->#}
+    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+    <!-- Datatable init js -->
+    <script src="{% static 'js/pages/datatables.init.js' %}"></script>
+
+
+{% endblock extra_js %}

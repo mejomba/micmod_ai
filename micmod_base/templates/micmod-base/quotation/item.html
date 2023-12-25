@@ -1,0 +1,287 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+
+<div class="card item p-0" dir="rtl">
+    {{ form.management_form }}
+    {{ formss.id }}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {#{{ form }}#}
+    <div class="card-body p-0">
+        <div class="row-counter rounded d-flex align-items-center question-btn active-form">
+            <span class="counter">{{ forloop.counter }}</span>
+            <div class="col ms-4">
+                <span class="me-2">کد کالا:</span>
+                <span class="code_h" name="code_h">{{ form.instance.goods_code }}</span>
+            </div>
+            <div class="col">
+                <span class="me-2">نام کالا:</span>
+                <span name="name_h">{{ form.instance.goods_name }}</span>
+            </div>
+            <div class="col">
+                <span class="me-2">تعداد:</span>
+                <span name="quantity_h">{{ form.instance.quantity }}</span>
+            </div>
+            <div class="col">
+                <span class="me-2">قیمت واحد:</span>
+                <span name="unit-price_h">{{ form.instance.goods_q_last_price }}</span>
+            </div>
+            <div class="col">
+                <span class="me-2">قیمت کل:</span>
+                <span name="total-price_h">{{ form.instance.goods_q_last_price|mul:form.instance.quantity|intcomma }} </span>
+            </div>
+        </div>
+        <div class="row answer m-0">
+            <div class="col-lg-2 border rounded">
+                <div class="d-flex">
+                    <div class="w-50 mt-3">{% render_field_by_order form form.quantity label='on-border' %}</div>
+                    <div class="w-50 replace-digits">
+                        <label class="card-title-desc text-center bold mt-1 ms-1"
+                               data-key="stock_amount">موجودی:</label>
+                        <label class="text-center w-100  card-title-desc h-25" name="stock_amount_lbl">-</label>
+                        <label class="text-center w-100  card-title-desc h-25" name="stock_amount_res_lbl">-</label>
+                    </div>
+                </div>
+                <div class="d-flex mt-3">
+                    <div class="w-25">{% render_field_by_order form form.customer_goods_code label='on-border' %}</div>
+                    <div class="w-75">{% render_field_by_order form form.customer_goods_name label='on-border' %}</div>
+                </div>
+            </div>
+            <div class="col-lg-3 p-0 border-top border-bottom border-end">
+                <div class="d-flex border-bottom px-1 align-items-start">
+                    <div class="w-25 mt-3 on-border">
+                        {% if form.enable %}
+                            <div class="select2 goods_code " name="goods_code"></div>
+                            <label>کد کالا</label>
+                        {% else %}
+                            {{ form.goods_code }}
+                            <label>کد کالا</label>
+                        {% endif %}
+                    </div>
+                    <div class="w-75">
+                        <div class="d-flex justify-content-end">
+                            {% render_field_by_order form form.goods_name label='on-border' %}
+                            {#                            <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>#}
+                            <div class="w-25 bg-soft-pink text-center" onclick="hide_show_goods_alt(this)"
+                                 data-key="show_alt">مشابه
+                            </div>
+                        </div>
+                        {#                        {% render_field_by_order form form.goods_name_alt label='on-border' %}#}
+                        <div class="col on-border">
+                            <label>نام کالا</label>
+                            <textarea class="goods_name w-100 form-control bg-white" rows="1" name="-goods_name_lbl"
+                                      disabled></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-none border-bottom px-1" name="box-alt-goods">
+                    <div class="d-flex mt-3">
+                        <div class="w-25 on-border">
+                            {#                            {% render_field_by_order form form.goods_code_alt label='on-border' margin_b=2 %}#}
+                            {#                            <div class="card-text bold">کد کالا (قیمت)</div>#}
+{#                            <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>#}
+{#                            <label>کد کالا</label>#}
+                            {% if form.enable %}
+                                <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
+                                <label>کد کالا</label>
+                            {% else %}
+                                {{ form.goods_code_alt }}
+                                <label>کد کالا</label>
+                            {% endif %}
+                        </div>
+                        <div class="w-75">
+                            <div class="col on-border">
+                                <label>نام کالا</label>
+                                <textarea class="w-100 rounded form-control bg-white" rows="1"
+                                          name="-goods_name_alt_lbl" disabled></textarea>
+                            </div>
+                            {#                            <div class="card-text bold" data-key="goods_name_alt">نام کالا</div>#}
+                            {#                            <textarea class="w-100 rounded form-control" rows="1" name="-goods_name_alt_lbl" disabled></textarea>#}
+                        </div>
+                    </div>
+                </div>
+                <div class="px-1 replace-digits">
+                    <div class="w-100">
+                        <div class="card-text bold">آخرین فروش به مشتری</div>
+                        <div class="d-flex ">
+                            <div class="w-50">
+                                <div class="card-title-desc text-center" data-key="date">تاریخ</div>
+                                <div class="card-title-desc text-center" name="last_sale">-</div>
+                                <div class="card-title-desc text-center" name="q_last_sale">-</div>
+                            </div>
+                            <div class="w-25">
+                                <div class="card-title-desc text-center" data-key="count">تعداد</div>
+                                <div class="card-title-desc text-center" name="total_sales">-</div>
+                                <div class="card-title-desc text-center" name="q_total_sales">-</div>
+                            </div>
+                            <div class="w-25">
+                                <div class="card-title-desc text-center" data-key="price">قیمت</div>
+                                <div class="card-title-desc text-center" name="last_price">-</div>
+                                <div class="card-title-desc text-center" name="q_last_price">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-lg-1 border-top border-bottom replace-digits">
+                <div class="  w-100 h-100">
+                    <div class="card-text text-center h-40 bold">قیمت فروش شصت روز اخیر</div>
+                    <div class="d-flex h-20">
+                        <div class="w-45 card-title-desc">بیشترین</div>
+                        <div class="w-55 card-title-desc text-center" name="max_price"></div>
+                    </div>
+                    <div class="d-flex h-20">
+                        <div class="w-40 card-title-desc">میانگین</div>
+                        <div class="w-60 card-title-desc text-center" name="avg_price"></div>
+                    </div>
+                    <div class="d-flex h-20">
+                        <div class="w-40 card-title-desc">کمترین</div>
+                        <div class="w-55 card-title-desc text-center" name="min_price"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 border p-0 replace-digits">
+                <div class="border-bottom px-2 h-50">
+                    <div class="card-text bold">استعلام قیمت از شیت</div>
+                    <div class="d-flex ">
+                        <div class="w-25">
+                            <div class="card-title-desc text-center">تاریخ</div>
+                            <div class="text-center card-title-desc" name="goods_sheet_date">-</div>
+                        </div>
+                        <div class="w-25">
+                            <div class="card-title-desc text-center">2-3 هفته</div>
+                            <div class="text-center card-title-desc" name="goods_price_sheet1">-</div>
+                        </div>
+                        <div class="w-25">
+                            <div class="card-title-desc text-center">3 تا 5 هفته</div>
+                            <div class="text-center card-title-desc" name="goods_price_sheet2">-</div>
+                        </div>
+                        <div class="w-25">
+                            <div class="card-title-desc text-center">12 تا 14 هفته</div>
+                            <div class="text-center card-title-desc" name="goods_price_sheet3">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-50 px-2">
+                    <div class="card-text bold">استعلام قیمت از بازار</div>
+                    <div class="d-flex">
+                        <div class="w-50">
+                            <div class="card-title-desc text-center">تاریخ</div>
+                            <div class="text-center card-title-desc" name="goods_market_date">-</div>
+                        </div>
+                        <div class="w-50">
+                            <div class="card-title-desc text-center">قیمت</div>
+                            <div class="text-center card-title-desc" name="goods_price_market">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 border-top">
+                <div class="row h-100">
+                    <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
+                        <div class="">
+                            <div class="card-text text-center bold">قیمت نهایی</div>
+                            <div class="d-flex mt-1 ">
+                                {#                        <div class="w-25 card-title-desc ps-2">روش</div>#}
+                                <div class="text-center w-100">{% render_field_by_order form form.price_method label='on-border' %}</div>
+                            </div>
+                            <div class="d-flex">
+                                {#                        <div class="w-25 card-title-desc ps-2">فی</div>#}
+                                <div class="w-100 card-text text-center">{% render_field_by_order form form.final_price label='on-border' label_text='فی' margin_b="0" %}</div>
+                            </div>
+                        </div>
+                        <div class="bg-soft-info bold replace-digits h-75">
+                            <div class="text-center">جمع کل (ردیف)</div>
+                            <h1 class="card-title text-center persian-digit" name="-total_price">-</h1>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 d-block p-0">
+                        <div class="align-content-sm-stretch d-flex flex-column align-items-center justify-content-between"
+                             style="min-height: 100%;">
+                            {#                    <button type="submit" class="btn btn-primary w-100 h-25 replace-digits" data-key="save">ذخیره</button>#}
+                            <div class="w-100">
+                                {#                                {% if form.instance.price_inquiry_done == True %}#}
+                                {% if form.instance.goods_code %}
+{#                                    <a href="{% url 'extra_data:sku.view-related' form.instance.goods_code %}"#}
+                                    <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form.instance.goods_code }}"
+                                       target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
+                                {% endif %}
+                                <div class="border-bottom ps-1">
+                                    <div class="d-flex justify-content-between mt-1">
+{#                                        {{ form.need_local_price_inquiry }}#}
+                                        {% render_field_by_order form form.need_local_price_inquiry label='on-border' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+{#                                        {{ form.local_price_inquiry_done }}#}
+                                        {% render_field_by_order form form.local_price_inquiry_done label='on-border' margin_b=0 %}
+                                    </div>
+                                </div>
+                                <div class="border-top ps-1">
+                                    <div class="d-flex justify-content-between mt-1">
+{#                                        {{ form.need_foreign_price_inquiry }}#}
+                                        {% render_field_by_order form form.need_foreign_price_inquiry label='on-order' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+{#                                        {{ form.foreign_price_inquiry_done }}#}
+                                        {% render_field_by_order form form.foreign_price_inquiry_done label='on-order' margin_b=0 %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="w-100 text-center bg-danger text-white h-50 rounded p-2 mb-1">
+                                    حذف {{ form.DELETE }}</div>
+
+                                {% if object_logs %}
+                                    {% with counter=forloop.counter0 %}
+                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}
+                                    {% endwith %}
+                                {% endif %}
+                                {#                    <button type="submit" class="btn btn-danger w-100 h-25 " data-key="delete">حذف</button>#}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+{#{% if formset.can_delete %}#}
+{#    <li>{{ form.DELETE }}</li>#}
+{#{% endif %}#}
+
+{% block extra_js %}
+    <script>
+    {#String.prototype.insert = function(index, string) {#}
+    {#    if (index > 0) {#}
+    {#        return this.substring(0, index) + string + this.substring(index, this.length);#}
+    {#    }#}
+    {#    return string + this;#}
+    //};
+    {#String.prototype.reverse_string=function() {return this.split("").reverse().join("");}#}
+    {#    let commaIndex = 0;#}
+    {#    let inputNumberValue;#}
+    {#    let numberWithComma;#}
+    {#    const textInput = document.querySelectorAll('.comma-seperator')#}
+    {#    textInput.forEach(function (item) {#}
+    {#        item.addEventListener('keyup', function (e) {#}
+    {#            inputNumberValue = e.currentTarget.value.replaceAll(',', '').reverse_string();#}
+    {#            numberWithComma = inputNumberValue;#}
+    {#            for (let i=0; i <= inputNumberValue.length; i++){#}
+    {#                if (i % 3 === 0 && i !== 0 && i !== inputNumberValue.length){#}
+    {#                    numberWithComma = numberWithComma.insert(i + commaIndex, ',')#}
+    {#                    commaIndex++;#}
+    {#                }#}
+    {#            }#}
+    {#            commaIndex = 0#}
+    {#            e.currentTarget.value = numberWithComma.reverse_string()#}
+    {#        })#}
+    {#    })#}
+    </script>
+{% endblock %}

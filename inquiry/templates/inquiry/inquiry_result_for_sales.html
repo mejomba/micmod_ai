@@ -1,0 +1,33 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% block form_content %}
+    <div id="custom-error" class="d-flex justify-content-between alert alert-danger alert-dismissable d-none fade show"
+         role="alert">
+        <span></span>
+    </div>
+    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 " id="id_ajax">
+        {% csrf_token %}
+        {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
+    </div>
+{% endblock form_content %}
+{% block content %}
+    <button onchange="refresh_data(event)">test</button>
+{% endblock %}
+
+{% block extra_js %}
+
+    <script>
+        function refresh_data(e) {
+            const skuInput = document.querySelector('#id_sku_c')
+            const requiredField = [skuInput.value]
+            if (requiredField.every(Boolean)) {
+                custom_ajax_get($("#main-form"), baseUrl + `/inquiry/ajax/inquiryresult/forsale/`, $("#id_ajax"))
+            }
+        }
+
+        $('#main-form').submit(function (e) {
+            e.preventDefault();
+            custom_ajax_post(e.target, baseUrl + `/inquiry/ajax/inquiryresult/forsale/`, $("#id_ajax"))
+        })
+    </script>
+{% endblock extra_js %}

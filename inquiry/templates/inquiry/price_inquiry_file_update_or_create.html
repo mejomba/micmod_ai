@@ -1,0 +1,160 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css"/>
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <style>
+    span.select2-selection__rendered{
+        direction: ltr !important;
+    }
+    </style>
+{% endblock extra_css %}
+
+{% block form_content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+{#    <div class="main-content" id="main-content">#}
+{#    <div class="page-content">#}
+{#        <div class="container-fluid">#}
+{#            <form method="POST" enctype="multipart/form-data" id="main_form" class="mt-5">#}
+                {% csrf_token %}
+            {% if workflow_form %}
+                <div class="my-5">
+                    {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+                </div>
+            {% endif %}
+
+                <div class="row row-cols-md-7 row-cols-7 bg-white rounded py-3 px-1 shadow">
+                    {% if request.user|has_permission:"inquiry.view_priceinquiryfile" %}
+                        {% render_field_by_order form form.item form.target form.desired_quality form.demanded_quantity form.type form.brand form.creator_user form.editor_user %}
+                        {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
+                    {% endif %}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3 d-flex justify-content-start">#}
+{#                        <button name="id_formset_submit_button" type="submit" value="submit"#}
+{#                                class="btn btn-primary w-lg mt-3" data-key="save"></button>#}
+{#                    </div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="col mb-3"></div>#}
+{#                    <div class="d-flex justify-content-end align-items-center">#}
+{#                        {% include 'changelog/changelog_popup.html' with logs=object_logs %}#}
+{#                    </div>#}
+                </div>
+
+                {% if formset and request.user|has_permission:"inquiry.view_inquiryresult" %}
+                    {{ formset.management_form }}
+                    <div class="card">
+                        <template
+                                id="id_formset_empty_form">{% include "inquiry/partial/inquiry_file_detail_formset.html" with form=formset.empty_form %}</template>
+                    </div>
+                    <div class="">
+                        <div class="border" id="id_formset_container">
+                            <div class="row row-cols-9 text-center py-1">
+                                <div class="col pr-2" style="max-width: fit-content;">#</div>
+                                <div class="col" data-key="supplier">supplier</div>
+{#                              todo only bazargani can see the price #}
+                                <div class="col" data-key="price">price</div>
+                                <div class="col" data-key="currency_type">واحد پول</div>
+                                <div class="col" data-key="currency_ir">ریال</div>
+                                <div class="col" data-key="local_price">local price</div>
+                                <div class="col" data-key="description">description</div>
+                                <div class="col" data-key="image 1">image 1</div>
+                                <div class="col" data-key="file 1">file 1</div>
+                                <div class="col" data-key="active">active</div>
+                                <div class="col" data-key=""></div>
+                            </div>
+                            {% for form_ in formset %}
+                                {% include "inquiry/partial/inquiry_file_detail_formset.html" with form=form_ idx=forloop.counter obj=form_.instance detail_logs=detail_logs %}
+                            {% endfor %}
+                        </div>
+                    </div>
+{#                    <div class="mb-5 mt-1">#}
+{#                        <button name="id_formset_submit_button" type="submit" value="submit"#}
+{#                                class="btn btn-primary w-lg" data-key="save"></button>#}
+{#                        <div name="id_formset_add_button" class="btn btn-info mx-2 w-lg" data-key="add">Add</div>#}
+{#                    </div>#}
+                {% endif %}
+{#            {% include 'partials/form_buttons.html' %}#}
+{#            </form>#}
+{#        </div> <!-- container -->#}
+{#        <!-- End Page-content -->#}
+{##}
+{#    </div>#}
+{#    </div>#}
+    <!-- end main content-->
+{% endblock form_content %}
+
+{% block extra_js %}
+
+{#    <script>#}
+{#        $(document).ready(function () {#}
+{#            $('#id_item').select2();#}
+{#        });#}
+{#    </script>#}
+
+    <script>
+        function set_item_classes() {
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    </script>
+
+    <script>
+
+        {#const select2Element = document.querySelector('select[name=item]')#}
+        {#select2Element.addEventListener('select', function (e) {#}
+
+            {#const getSkuContainer = document.querySelector('#id_item')#}
+            {#const skuValue = getSkuContainer.value#}
+            {#setSkuContainer = document.querySelector(`#id_inquery_result-${Number(document.querySelector('input[id$="-TOTAL_FORMS"]').value-1)}-sku`).value = skuValue#}
+        //})
+        {#console.log(`#id_inquery_result-${Number(document.querySelector('input[id$="-TOTAL_FORMS"]').value-1)}-sku`)#}
+        {#setSkuContainer.value = skuValue#}
+        {#console.log(setSkuContainer)#}
+    </script>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    {{ form.media.js }}
+
+    <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+{% endblock extra_js %}

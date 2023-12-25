@@ -1,0 +1,48 @@
+{% load jalali_tags %}
+{% load more_tags %}
+
+<style>
+    .modal-xl {
+        max-width: 1500px;
+    }
+</style>
+
+<button type="button" class="btn btn-outline-primary changelog-btn" data-toggle="modal" data-target="#id_x{{ forloop.counter }}">
+  تاریخچه تغییرات
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="id_x{{ forloop.counter }}" tabindex="-1" role="dialog" aria-labelledby="id_x{{ forloop.counter }}" aria-hidden="true">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+          <P class="text-center bg-info py-2 m-0">تاریخچه تغییرات</P>
+
+            <div class="row bg-soft-secondary py-2 m-0">
+                <div class="col-1" data-key="user">user</div>
+                <div class="col-2" data-key="date">date</div>
+                <div class="col-1" data-key="action">action</div>
+                <div class="col-8" data-key="detail">detail</div>
+            </div>
+            {% for log in logs %}
+                <div class="row bg-white mb-1 align-items-center m-0">
+                    <div class="col-1">{{ log.editor_user }}</div>
+                    <div class="col-2">{{ log.created_date|to_jalali }}</div>
+                    <div class="col-1">{{ log.get_action_display }}</div>
+                    <div class="col-8">
+                          <button data-key="show detail" class="btn btn-link" type="button" data-toggle="collapse" data-target="#id_{{ log.pk }}" aria-expanded="false" aria-controls="id_{{ log.pk }}">
+                            show detail
+                          </button>
+                        <span>&#8595;</span>
+                        <div class="collapse" id="id_{{ log.pk }}">
+                            {% compare_log log %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger close-modal" id="id_x{{ forloop.counter }}" data-dismiss="modal" data-key="close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

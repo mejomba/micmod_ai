@@ -1,0 +1,64 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load quotation_tag %}
+<tr class=" item">
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    <td class=" font-size-12 text-center align-middle replace-digits">
+        {{ forloop.counter }}
+    </td>
+    <td class="">
+        <div class="font-size-10">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>
+        <div class="font-size-7">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>
+    </td>
+    <td class="">
+        <div class="bold font-size-10 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
+        <div class="w-100 font-size-7">{{ form.instance.goods_name|default_if_none:"" }}</div>
+    </td>
+    <td class="replace-digits">
+        <div class="bold text-center font-size-10" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+{#        <br class="border-dark w-100"/>#}
+        <div class="bg-soft-primary w-100 text-center border-top font-size-8">{{ form.instance.stock_amount|default_if_none:0|intcomma }}
+            <span class="bg-soft-pink font-size-8">+ {{ form.instance.stock_amount_res|default_if_none:0|intcomma }}</span>
+        </div>
+    </td>
+    <td class="font-size-7 replace-digits">
+        <div class="d-flex ">
+            <div class="w-40 px-1 ">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="w-30 px-1 text-center ">{{ form.instance.goods_total_sales|default_if_none:"-"|intcomma }}</div>
+            <div class="w-30 px-1 text-center ">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+        <div class="d-flex ">
+            <div class="w-40 px-1 ">{{ form.instance.goods_last_sale_q|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="w-30 px-1 text-center ">{{ form.instance.goods_total_sales_q|default_if_none:"-"|intcomma }}</div>
+            <div class="w-30 px-1 text-center ">{{ form.instance.goods_last_price_q|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+{#        <br class="border-dark w-100"/>#}
+        <div class="d-flex border-top">
+            <div class="w-30 px-1 text-center">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="w-30 px-1 text-center">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="w-30 px-1 text-center">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+    </td>
+    <td class=" font-size-7 replace-digits">
+        <div class="d-flex ">
+            <div class="w-30">{{ form.instance.goods_sheet_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="w-25 text-center">{{ form.instance.goods_price_sheet1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="w-25 text-center">{{ form.instance.goods_price_sheet2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="w-25 text-center">{{ form.instance.goods_price_sheet3|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+{#        <br class="border-dark w-100"/>#}
+        <div class="d-flex border-top">
+            <div class="w-50 ">{{ form.instance.goods_market_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="w-50  text-center">{{ form.instance.goods_price_market|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+    </td>
+    <td class=" font-size-7 replace-digits">
+        <div class="price_method  w-100 text-center" disabled="disabled" value="{{ form.price_method.value }}" name="price_method">{% get_price_method form.price_method.value %}</div>
+        <div class="final_price w-100 text-center" name="-final_price">{{ form.instance.final_price|default_if_none:"-"|floatformat:digit|intcomma}}</div>
+        <div class="w-100 text-center bold bg-soft-primary text-darkblue font-size-7 " name="-total_price">-</div>
+    </td>
+</tr>

@@ -1,0 +1,126 @@
+{% load more_tags %}
+{% load static %}
+{% load jalali_tags %}
+{% load humanize %}
+
+<div class="card-body bg-gray-200 col-8">
+    <div class="d-flex">
+        <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-40">
+            <li class="nav-item w-100 me-0 mb-md-2">
+                <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
+                   href="#kt_tab_pane_1">
+                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-info-square-fill me-2"></i>
+                        اطلاعات کلی کالا
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
+                        <div class="text-end me-2 min-h-30px"> {{ item.title }} </div>
+                        <div class="text-end me-2 min-h-30px fw-bold"> {{ sku.purchase_group }} </div>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100 me-0 mb-md-2">
+                <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
+                   href="#kt_tab_pane_2">
+                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-currency-dollar me-2"></i>اطلاعات
+                        قیمت و فروش
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
+                        <table class="table table-row-dashed table-row-gray-300">
+                            <tr class="fw-bold fs-6 text-gray-800">
+                                <td class="w-40 text-primary"></td>
+                                <td class="w-30 text-primary">یوانی</td>
+                                <td class="w-30 text-primary">ریالی</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت اکسپرس</td>
+                                <td class="text-danger">{{ sku.n_price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.n_price.rial_final_price.express|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت هوایی</td>
+                                <td class="text-danger">{{ sku.n_price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.n_price.rial_final_price.air|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت دریایی</td>
+                                <td class="text-danger">{{ sku.n_price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.n_price.rial_final_price.sea|intcomma}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100">
+                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                   href="#kt_tab_pane_3">
+                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-box-seam-fill me-2"></i>اطلاعات
+                        موجودی کالا
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
+                        <div class="text-end me-2 min-h-30px"> {{ sku.part_number }} </div>
+                        <div class="text-end me-2 min-h-30px">{{ sku.purchase_group }} </div>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100">
+                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                   href="#kt_tab_pane_3">
+                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
+                        قیمت (مدیریتی)
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
+                        <div class="text-end me-2 min-h-30px"> {{ sku.part_number }} </div>
+                        <div class="text-end me-2 min-h-30px"> {{ sku.purchase_group }} </div>
+                    </div>
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content w-60" id="myTabContent">
+            <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel">
+                {% include "inquiry/partial/for_sales_inquery/private_data.html" %}
+            </div>
+            <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel">
+                test ali
+            </div>
+            <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel">
+                ...
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 col-lg-4">
+            <table class="table table-striped m-table border">
+                <thead>
+                <th class="p-2 caption text-center">عنوان</th>
+                <th class="p-2 caption text-center">مقدار</th>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="p-2 caption text-center" data-key="">آخرین تاریخ تغییر قیمت</td>
+                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.price_update_date|to_jalali }}</td>
+                </tr>
+                <tr>
+                    <td class="p-2 caption text-center" data-key="">قیمت داخلی</td>
+                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.local_price }}</td>
+                </tr>
+                <tr>
+                    <td class="p-2 caption text-center" data-key="">نوع ارز</td>
+                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.currency_type }}</td>
+                </tr>
+                <tr>
+                    <td class="p-2 caption text-center" data-key="">توضیحات</td>
+                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.description }}</td>
+                </tr>
+                {% for k, v in items.items %}
+                    <tr>
+                        <td class="p-2 caption text-center" data-key="{{ k }}">{{ k }}</td>
+                        <td class="p-2 caption text-center" id="{{ k }}">{{ v }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

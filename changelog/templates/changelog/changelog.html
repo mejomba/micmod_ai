@@ -1,0 +1,29 @@
+{% load more_tags %}
+
+<div class="container-fluid">
+<div class="row row-cols-1 bg-info">
+    <span class="text-center py-2">تاریخچه تغییرات</span>
+</div>
+    <div class="row bg-soft-secondary py-2">
+        <div class="col-2" data-key="name">name</div>
+        <div class="col-1" data-key="id">identity</div>
+        <div class="col-1" data-key="action">action</div>
+        <div class="col-8" data-key="detail">detail</div>
+    </div>
+    {% for log in logs %}
+        <div class="row bg-white mb-1 align-items-center">
+            <div class="col-2">{{ log }}</div>
+            <div class="col-1">{{ log.pk }}</div>
+            <div class="col-1">{{ log.get_action_display }}</div>
+            <div class="col-8">
+                  <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#id_{{ log.pk }}" aria-expanded="false" aria-controls="id_{{ log.pk }}">
+                    show detail &#8595;
+                  </button>
+                <div class="collapse" id="id_{{ log.pk }}">
+                    {% compare_log log %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+</div> <!-- container-fluid -->

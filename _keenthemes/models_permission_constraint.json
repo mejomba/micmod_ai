@@ -1,0 +1,152 @@
+{
+  "accounts":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+    "api":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "apps":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "changelog":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "core":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "dason":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "dw":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "extra_data":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "files":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "IMEI":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "inquiry":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "inventory":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "micmod_base":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },
+  "pages":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },"api":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },"api":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  },"api":
+  {
+    "model":
+    {
+      "constraint_hide": [{"groups":[], "fields":[]}],
+      "constraint_read": [{"groups":[], "fields":[]}],
+      "permission": {"delete":["g", "g"], "view":["g", "g"], "update":["g", "g"], "create":["g", "g"]}
+    }
+  }
+}

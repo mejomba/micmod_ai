@@ -1,0 +1,17 @@
+
+<div class="d-flex flex-wrap p-2 w-100">
+    {% for file in files %}
+        <a href="{{ file.path.url }}" target="_blank" class="btn btn-outline-dark mx-2 my-1">
+            <div class="d-flex align-items-center">
+                {{ file.name }}
+                <span class="material-icons">download</span>
+            </div>
+        </a>
+    {% endfor %}
+</div>
+<div class="col mb-5 mt-2">
+    <label for="file_{{ idx }}_1">فایل (ها) پیوست</label>
+    {% if upload %}
+        <input type="file" id="file_{{ idx }}_1" name="file_{{ idx }}_1" multiple>
+    {% endif %}
+</div>

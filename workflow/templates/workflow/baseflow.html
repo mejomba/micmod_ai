@@ -1,0 +1,156 @@
+{% load more_tags %}
+<style>
+    .flow-wrapper {
+        direction: ltr;
+    }
+    .flow {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+    .flow-item {
+        margin: 0.75rem 1rem;
+        border: 1px solid black;
+        max-width: 150px;
+        min-width: 150px;
+    }
+    .flow-user {
+        border-bottom: 1px solid black;
+        text-align: center;
+        padding: 0.25rem 1rem;
+    }
+    .flow-action {
+        padding: 0.5rem;
+        text-align: center;
+        position: relative;
+    }
+    .flow-step {
+        font-size: 2rem;
+        color: #d0d0d0;
+    }
+    .flow-step:after {
+        content: '\2192';
+    }
+    .complete-step {
+        color: #325fc2;
+    }
+    .complete-action {
+        background-color: #99ffce;
+    }
+    .process-action {
+        background-color: #7bdcff;
+    }
+    .status {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 0.15rem;
+        letter-spacing: 0.08rem;
+        font-size: 0.5rem;
+        font-weight: 100;
+    }
+    .step-number {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 0.15rem;
+        font-size: 0.5rem;
+        font-weight: 100;
+        color: white;
+        background-color: #343434;
+        width: 20px;
+    }
+    .badge-complete {
+        color: whitesmoke;
+        background-color: green;
+    }
+    .badge-process {
+        color: whitesmoke;
+        background-color: blue;
+    }
+    .badge-wait {
+        color: whitesmoke;
+        background-color: #9a9a9a;
+    }
+</style>
+<div class="flow-wrapper">
+    <div class="flow">
+        {% for f in flow %}
+
+        <div class="flow-item">
+            <div class="flow-user">{{ f.from_user }}</div>
+            <div class="flow-action {% if f.status == 1 %} complete-action {% elif f.status == 2 %} process-action {% endif %}">
+                <p>{{ f.get_action_display }}</p>
+                <span class="status {% if f.status == 1 %} badge-complete {% elif f.status == 2 %} badge-process {% elif f.status == 3 %} badge-wait {% endif %}">{{ f.get_status_display }}</span>
+                <span class="step-number">{{ forloop.counter }}</span>
+            </div>
+        </div>
+        <span>to {% render_field wfform.to_user %}</span>
+        <span>action {% render_field wfform.action %}</span>
+        <span>action {% render_field wfform.deadline %}</span>
+            {% if not forloop.last %}
+                <div class="flow-step {% if f.status == 1 %}complete-step{% endif %}"></div>
+            {% endif %}
+
+        {% endfor %}
+    </div>
+</div>
+
+
+
+<div class="flow-wrapper">
+    <div class="flow">
+
+        <div class="flow-item">
+            <div class="flow-user">user</div>
+            <div class="flow-action complete-action">
+                <p> f.get_action_display </p>
+                <span class="status badge-complete"> complete </span>
+                <span class="step-number">1</span>
+            </div>
+        </div>
+        <div class="flow-step complete-step"></div>
+
+        <div class="flow-item">
+            <div class="flow-user">user</div>
+            <div class="flow-action complete-action">
+                <p> f.get_action_display </p>
+                <span class="status badge-complete"> complete </span>
+                <span class="step-number">2</span>
+            </div>
+        </div>
+        <div class="flow-step complete-step"></div>
+
+
+        <div class="flow-item">
+            <div class="flow-user">user</div>
+            <div class="flow-action process-action">
+                <p> f.get_action_display </p>
+                <span class="status badge-process"> process </span>
+                <span class="step-number">3</span>
+            </div>
+        </div>
+        <div class="flow-step"></div>
+
+        <div class="flow-item">
+            <div class="flow-user">user</div>
+            <div class="flow-action">
+                <p> f.get_action_display </p>
+                <span class="status badge-wait"> wait </span>
+                <span class="step-number">4</span>
+            </div>
+        </div>
+        <div class="flow-step"></div>
+
+        <div class="flow-item">
+            <div class="flow-user">user</div>
+            <div class="flow-action">
+                <p> f.get_action_display </p>
+                <span class="status badge-wait"> wait </span>
+                <span class="step-number">4</span>
+            </div>
+        </div>
+
+    </div>
+</div>

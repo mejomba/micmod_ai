@@ -1,0 +1,128 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+        <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css'%}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+{% load more_tags %}
+{% block form_content %}
+    <div class="mt-5"></div>
+    <div class="bg-white rounded py-4 px-2">
+        <span id="sender-id" class="d-none">{{ form.instance.sender }}</span>
+        {% csrf_token %}
+        <div class="row row-cols-4">
+            {% render_field_by_order form form.reply_to form.automation_status form.sender_type label='on-border' %}
+            <div id="sender"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">
+                {% render_field_by_order form form.abstract_text label='on-border' %}
+                {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
+            </div>
+            <div class="col-8">
+                {% render_field_by_order form form.text label='on-border' %}
+            </div>
+        </div>
+{#        <input type="submit" value="submit" class="btn btn-primary mt-3">#}
+    </div>
+{% endblock form_content %}
+
+{% block form_footer_extra %}
+    <a href="{% url 'tlg:message.list' %}" class="btn btn-outline-dark ms-1">بازگشت به لیست</a>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+       $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    </script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+
+    <script>
+        let options = ''
+        let htmlForSelectElement = ''
+        const originUrl = window.location.origin
+        const senders = document.querySelectorAll('.sender');
+        const sender = document.querySelector('#sender');
+        const messageForm = document.querySelector('#main-form');
+        const senderType = document.querySelector('#id_sender_type');
+        const senderId = document.querySelector('#sender-id');
+
+        const formInstancePk = senderId.textContent !== 'None' ? senderId.textContent : null
+        console.log(formInstancePk)
+        $.get(`${originUrl}/tlg/get_sender/?q=${senderType.value}`, function (data, status) {
+                options = ''
+                for (item in data) {
+                    if (item === 'label'){
+                        continue
+                    }
+                    if (formInstancePk == item){
+                        options += `<option value="${item}" selected>${data[item]}</option>`
+                    }else {
+                        options += `<option value="${item}" >${data[item]}</option>`
+                    }
+                    console.log({{ item }})
+                }
+                htmlForSelectElement = `
+                                        <div class="col on-border mb-3">
+                                            <select name="sender" class="form-control sender" id="id_sender">
+                                                ${options}
+                                            </select>
+                                            <label for="sender">${data['label']}</label>
+                                        </div>`
+                sender.innerHTML = htmlForSelectElement
+
+                if (!data['label']){
+                    sender.innerHTML = ''
+                }
+            })
+        senderType.addEventListener('change', function (e) {
+            $.get(`${originUrl}/tlg/get_sender/?q=${e.target.value}`, function (data, status) {
+                console.log(data, status)
+                options = ''
+
+                for (item in data) {
+                    if (item === 'label'){
+                        continue
+                    }
+                    options += `<option value="${item}" selected="">${data[item]}</option>`
+                }
+                console.log(options)
+                htmlForSelectElement = `
+                                        <div class="col on-border mb-3">
+                                            <select name="sender" class="form-control sender" id="id_sender">
+                                                ${options}
+                                            </select>
+                                            <label for="sender">${data['label']}</label>
+                                        </div>`
+                sender.innerHTML = htmlForSelectElement
+
+                if (!data['label']){
+                    sender.innerHTML = ''
+                }
+            })
+
+        })
+
+
+    </script>
+{% endblock extra_js %}

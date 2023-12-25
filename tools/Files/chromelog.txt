@@ -1,0 +1,773 @@
+[1679210218.924][INFO]: Starting ChromeDriver 111.0.5563.64 (c710e93d5b63b7095afe8c2c17df34408078439d-refs/branch-heads/5563@{#995}) on port 58448
+[1679210218.924][INFO]: Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.
+[1679210219.408][INFO]: [fa4573e6be9d57b01d2a8bc7b6f7ff32] COMMAND InitSession {
+   "capabilities": {
+      "alwaysMatch": {
+         "browserName": "chrome",
+         "goog:chromeOptions": {
+            "args": [ "user-data-dir=C:\\Site-Mic\\Dason-Django\\Default\\micmod\\tools\\Files/User_Data\\wpp/09909697140" ],
+            "extensions": [  ]
+         },
+         "pageLoadStrategy": "normal"
+      },
+      "firstMatch": [ {
+      } ]
+   }
+}
+[1679210219.413][INFO]: Populating Preferences file: {
+   "NewTabPage": {
+      "PrevNavigationTime": "13323683573159580"
+   },
+   "account_tracker_service_last_update": "13323680194662170",
+   "alternate_error_pages": {
+      "backup": false
+   },
+   "autocomplete": {
+      "retention_policy_last_version": 111
+   },
+   "autofill": {
+      "orphan_rows_removed": true
+   },
+   "browser": {
+      "check_default_browser": false,
+      "window_placement": {
+         "bottom": 1047,
+         "left": 616,
+         "maximized": false,
+         "right": 1561,
+         "top": 27,
+         "work_area_bottom": 1040,
+         "work_area_left": 0,
+         "work_area_right": 1920,
+         "work_area_top": 0
+      }
+   },
+   "commerce_daily_metrics_last_update_time": "13323680194640011",
+   "countryid_at_install": 21843,
+   "dips_timer_last_update": "13323680194532798",
+   "distribution": {
+      "import_bookmarks": false,
+      "import_history": false,
+      "import_search_engine": false,
+      "make_chrome_default_for_user": false,
+      "skip_first_run_ui": true
+   },
+   "dns_prefetching": {
+      "enabled": false
+   },
+   "domain_diversity": {
+      "last_reporting_timestamp": "13323680194659892"
+   },
+   "extensions": {
+      "alerts": {
+         "initialized": true
+      },
+      "chrome_url_overrides": {
+      }
+   },
+   "gaia_cookie": {
+      "changed_time": 1679206596.074055,
+      "hash": "2jmj7l5rSw0yVb/vlWAYkK/YBwk=",
+      "last_list_accounts_data": "[\"gaia.l.a.r\",[]]"
+   },
+   "gcm": {
+      "product_category_for_subtypes": "com.chrome.windows"
+   },
+   "google": {
+      "services": {
+         "consented_to_sync": false,
+         "signin_scoped_device_id": "62d8d71b-0b14-4ce5-a4e0-1d79bcf14971"
+      }
+   },
+   "intl": {
+      "selected_languages": "en-US,en"
+   },
+   "invalidation": {
+      "per_sender_topics_to_handler": {
+         "1013309121859": {
+         },
+         "8181035976": {
+         }
+      }
+   },
+   "language_model_counters": {
+      "en": 4
+   },
+   "media": {
+      "device_id_salt": "8FC3B17D701A984D9870425022D54549",
+      "engagement": {
+         "schema_version": 5
+      }
+   },
+   "media_router": {
+      "receiver_id_hash_token": "q0LOwOo7WUWO20MPdvpRJrXU2D9JoM2JF7jsUweYCPunb+3VjNuYFfvJod0NBcDUF8qbvaIYyEjwAAv5BrvkEw=="
+   },
+   "ntp": {
+      "num_personal_suggestions": 2
+   },
+   "optimization_guide": {
+      "hintsfetcher": {
+         "hosts_successfully_fetched": {
+         },
+         "last_fetch_attempt": "13323683587998166"
+      },
+      "predictionmodelfetcher": {
+         "last_fetch_attempt": "13323683598137337",
+         "last_fetch_success": "13323683598477638"
+      },
+      "previously_registered_optimization_types": {
+         "ABOUT_THIS_SITE": true,
+         "HISTORY_CLUSTERS": true,
+         "PRICE_TRACKING": true
+      },
+      "store_file_paths_to_delete": {
+      }
+   },
+   "plugins": {
+      "plugins_list": [  ]
+   },
+   "profile": {
+      "avatar_index": 26,
+      "content_settings": {
+         "enable_quiet_permission_ui_enabling_method": {
+            "notifications": 1
+         },
+         "exceptions": {
+            "accessibility_events": {
+            },
+            "app_banner": {
+               "https://web.whatsapp.com:443,*": {
+                  "last_modified": "13323680200368475",
+                  "setting": {
+                     "https://web.whatsapp.com/": {
+                        "couldShowBannerEvents": 1.3323680200368464e+16,
+                        "next_install_text_animation": {
+                           "delay": "86400000000",
+                           "last_shown": "13323680200368205"
+                        }
+                     }
+                  }
+               }
+            },
+            "ar": {
+            },
+            "auto_select_certificate": {
+            },
+            "automatic_downloads": {
+            },
+            "autoplay": {
+            },
+            "background_sync": {
+            },
+            "bluetooth_chooser_data": {
+            },
+            "bluetooth_guard": {
+            },
+            "bluetooth_scanning": {
+            },
+            "camera_pan_tilt_zoom": {
+            },
+            "client_hints": {
+            },
+            "clipboard": {
+            },
+            "cookies": {
+            },
+            "durable_storage": {
+            },
+            "fedcm_active_session": {
+            },
+            "fedcm_idp_signin": {
+            },
+            "fedcm_share": {
+            },
+            "file_system_access_chooser_data": {
+            },
+            "file_system_last_picked_directory": {
+            },
+            "file_system_read_guard": {
+            },
+            "file_system_write_guard": {
+            },
+            "formfill_metadata": {
+            },
+            "geolocation": {
+            },
+            "get_display_media_set_select_all_screens": {
+            },
+            "hid_chooser_data": {
+            },
+            "hid_guard": {
+            },
+            "http_allowed": {
+            },
+            "idle_detection": {
+            },
+            "images": {
+            },
+            "important_site_info": {
+            },
+            "insecure_private_network": {
+            },
+            "intent_picker_auto_display": {
+            },
+            "javascript": {
+            },
+            "javascript_jit": {
+            },
+            "legacy_cookie_access": {
+            },
+            "local_fonts": {
+            },
+            "media_engagement": {
+               "https://web.whatsapp.com:443,*": {
+                  "expiration": "13331459678250334",
+                  "last_modified": "13323683678250338",
+                  "setting": {
+                     "hasHighScore": false,
+                     "lastMediaPlaybackTime": 0.0,
+                     "mediaPlaybacks": 0,
+                     "visits": 2
+                  }
+               }
+            },
+            "media_stream_camera": {
+            },
+            "media_stream_mic": {
+            },
+            "midi_sysex": {
+            },
+            "mixed_script": {
+            },
+            "nfc_devices": {
+            },
+            "notification_interactions": {
+            },
+            "notification_permission_review": {
+            },
+            "notifications": {
+            },
+            "password_protection": {
+            },
+            "payment_handler": {
+            },
+            "permission_autoblocking_data": {
+            },
+            "permission_autorevocation_data": {
+            },
+            "popups": {
+            },
+            "private_network_chooser_data": {
+            },
+            "private_network_guard": {
+            },
+            "protected_media_identifier": {
+            },
+            "protocol_handler": {
+            },
+            "reduced_accept_language": {
+            },
+            "safe_browsing_url_check_data": {
+            },
+            "sensors": {
+            },
+            "serial_chooser_data": {
+            },
+            "serial_guard": {
+            },
+            "site_engagement": {
+               "https://web.whatsapp.com:443,*": {
+                  "last_modified": "13323683574577765",
+                  "setting": {
+                     "lastEngagementTime": 1.3323683574577748e+16,
+                     "lastShortcutLaunchTime": 0.0,
+                     "pointsAddedToday": 5.1,
+                     "rawScore": 5.1
+                  }
+               }
+            },
+            "sound": {
+            },
+            "ssl_cert_decisions": {
+            },
+            "storage_access": {
+            },
+            "subresource_filter": {
+            },
+            "subresource_filter_data": {
+            },
+            "top_level_storage_access": {
+            },
+            "unused_site_permissions": {
+            },
+            "usb_chooser_data": {
+            },
+            "usb_guard": {
+            },
+            "vr": {
+            },
+            "webid_api": {
+            },
+            "window_placement": {
+            }
+         },
+         "pattern_pairs": {
+            "https://*,*": {
+               "media-stream": {
+                  "audio": "Default",
+                  "video": "Default"
+               }
+            }
+         },
+         "pref_version": 1
+      },
+      "creation_time": "13323680193919315",
+      "default_content_setting_values": {
+         "geolocation": 1
+      },
+      "default_content_settings": {
+         "geolocation": 1,
+         "mouselock": 1,
+         "notifications": 1,
+         "popups": 1,
+         "ppapi-broker": 1
+      },
+      "exit_type": "Normal",
+      "last_engagement_time": "13323683574577748",
+      "last_time_obsolete_http_credentials_removed": 1679206654.53356,
+      "last_time_password_store_metrics_reported": 1679206624.531045,
+      "managed_user_id": "",
+      "name": "Person 1",
+      "password_manager_enabled": false,
+      "were_old_google_logins_removed": true
+   },
+   "safebrowsing": {
+      "enabled": false,
+      "event_timestamps": {
+      },
+      "metrics_last_log_time": "13323680194"
+   },
+   "search": {
+      "suggest_enabled": false
+   },
+   "segmentation_platform": {
+      "last_db_compaction_time": "13323571199000000"
+   },
+   "sessions": {
+      "event_log": [ {
+         "crashed": false,
+         "time": "13323680194384035",
+         "type": 0
+      }, {
+         "did_schedule_command": true,
+         "first_session_service": true,
+         "tab_count": 1,
+         "time": "13323681118618003",
+         "type": 2,
+         "window_count": 1
+      }, {
+         "crashed": false,
+         "time": "13323683573011311",
+         "type": 0
+      }, {
+         "did_schedule_command": true,
+         "first_session_service": true,
+         "tab_count": 1,
+         "time": "13323683678248449",
+         "type": 2,
+         "window_count": 1
+      } ],
+      "session_data_status": 5
+   },
+   "settings": {
+      "a11y": {
+         "apply_page_colors_only_on_increased_contrast": true
+      }
+   },
+   "signin": {
+      "allowed": true
+   },
+   "translate": {
+      "enabled": false
+   },
+   "translate_site_blacklist": [  ],
+   "translate_site_blocklist_with_time": {
+   },
+   "web_apps": {
+      "daily_metrics": {
+         "https://web.whatsapp.com/": {
+            "background_duration_sec": 0,
+            "effective_display_mode": 3,
+            "foreground_duration_sec": 0,
+            "installed": false,
+            "num_sessions": 0,
+            "promotable": true
+         }
+      },
+      "daily_metrics_date": "13323645000000000",
+      "did_migrate_default_chrome_apps": [ "MigrateDefaultChromeAppToWebAppsGSuite", "MigrateDefaultChromeAppToWebAppsNonGSuite" ],
+      "last_preinstall_synchronize_version": "111"
+   }
+}
+[1679210219.414][INFO]: Populating Local State file: {
+   "autofill": {
+      "states_data_dir": "C:\\Site-Mic\\Dason-Django\\Default\\micmod\\tools\\Files\\User_Data\\wpp\\09909697140\\AutofillStates\\2020.11.2.164946"
+   },
+   "background_mode": {
+      "enabled": false
+   },
+   "browser": {
+      "shortcut_migration_version": "111.0.5563.65"
+   },
+   "hardware_acceleration_mode_previous": true,
+   "invalidation": {
+      "per_sender_topics_to_handler": {
+      }
+   },
+   "legacy": {
+      "profile": {
+         "name": {
+            "migrated": true
+         }
+      }
+   },
+   "management": {
+      "platform": {
+         "azure_active_directory": 0,
+         "enterprise_mdm_win": 0
+      }
+   },
+   "os_crypt": {
+      "app_bound_fixed_data": "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAArMxAfEz/YUiWdVHdo4eStAAAAAACAAAAAAAQZgAAAAEAACAAAAB1hykzoO3l8aeJJ858Ryixr7RjE9XixwiSIkpF3+3hdAAAAAAOgAAAAAIAACAAAAD/fEhzJ3yjQPb0c0G3yUVCaiDikZqWmgw26/LXc9zhmmABAAD7ZI6dG47RK8tWotE0ugnoOHu7T8Rol+IQtWzyuXb3mSA/5Ew8HcmGSpITN8sFTWYesL/BM1M3xVrLo/jnNOnPLKQqzx5xpQ7j3R7z0aZPNPTlMx4Blal8TP8M0H8w5bZkUIMThnOtGYBSzlnJfsYqackGPfwvAwPUlRrcHPk8ntmjA5rLy1EH+WK2pLSE6KZmdlRwF581ew02nJrWPlH4+UnEX/oiL10B+XOBl1T1jQq2e/Ux6/tMY8A+6TjkCcR29kHWrYqGKt910Re96bnUPbYSLQJyBkB5CQcJ5AZIQb/onuJKrtr4ZKMJwkp3pX32wLwf5UfJ7glYOOy/7dN8mKGaNvv9VerOFUC307JKO9B9c51ENpXu2zGn1Wk9Yx+BdQBIRfgjXHthrHu57fxekE/+nqGnQ/wJQYZzC6j/op+9BIT3m8NQXN2a4bbFkya7Bs6XnEha7MV1iBqgKTPyQAAAACpvgj3l4uM43pruKhlskN48xakH1p6XDgW5aUXhlKm3hd0iOHWG6+mQz+Fv1Hx/HBo0FKkzBdCdXB2imB0m0g0=",
+      "encrypted_key": "RFBBUEkBAAAA0Iyd3wEV0RGMegDAT8KX6wEAAABRnN7RrbCYTJKLEA67TvWOAAAAAAIAAAAAABBmAAAAAQAAIAAAAPDyOJw6TB8M2Mu8XCYkLUhH7QEKKVcrJ+amSz2VDywxAAAAAA6AAAAAAgAAIAAAAIZnnUTd7vcZDWpnR5afL12x6yGzdEzh584tbqYOfo92MAAAAOokJzcwTCArOGTo5EKuF6W687V9rdJSuyEP4fCgQwn23w/2GaOPzBt5pKV2M1il1kAAAABVbBGZ40Gy/b3w1JZMgJ6obLeLvrqdQwLKTsGJZ+LzdyQzvorM1gcFFem5b/LIjJqGfVdsjzjeNFy3JoCNbJyU"
+   },
+   "policy": {
+      "last_statistics_update": "13323680194146794"
+   },
+   "profile": {
+      "info_cache": {
+         "Default": {
+            "active_time": 1679206594.608134,
+            "avatar_icon": "chrome://theme/IDR_PROFILE_AVATAR_26",
+            "background_apps": false,
+            "force_signin_profile_locked": false,
+            "gaia_given_name": "",
+            "gaia_id": "",
+            "gaia_name": "",
+            "hosted_domain": "",
+            "is_consented_primary_account": false,
+            "is_ephemeral": false,
+            "is_using_default_avatar": true,
+            "is_using_default_name": true,
+            "managed_user_id": "",
+            "metrics_bucket_index": 1,
+            "name": "Person 1",
+            "signin.with_credential_provider": false,
+            "user_name": ""
+         }
+      },
+      "last_active_profiles": [ "Default" ],
+      "metrics": {
+         "next_bucket_index": 2
+      },
+      "profile_counts_reported": "13323680194175724"
+   },
+   "profile_network_context_service": {
+      "http_cache_finch_experiment_groups": "None None None None"
+   },
+   "session_id_generator_last_value": "1691871571",
+   "shutdown": {
+      "num_processes": 2,
+      "num_processes_slow": 1,
+      "type": 4
+   },
+   "ssl": {
+      "rev_checking": {
+         "enabled": false
+      }
+   },
+   "subresource_filter": {
+      "ruleset_version": {
+         "checksum": 1656147204,
+         "content": "9.43.0",
+         "format": 35
+      }
+   },
+   "tab_stats": {
+      "discards_external": 0,
+      "discards_proactive": 0,
+      "discards_urgent": 0,
+      "last_daily_sample": "13323680194612913",
+      "max_tabs_per_window": 1,
+      "reloads_external": 0,
+      "reloads_proactive": 0,
+      "reloads_urgent": 0,
+      "total_tab_count_max": 1,
+      "window_count_max": 1
+   },
+   "ukm": {
+      "persisted_logs": [  ]
+   },
+   "uninstall_metrics": {
+      "installation_date2": "1676874243"
+   },
+   "updateclientdata": {
+      "apps": {
+         "dhlpobdgcjafebgbbhjdnapejmpkgiie": {
+            "cohort": "1:z9x:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.0c24e9bd976adffa987e08fc54dc0950c84cf18f9cdb4c5caabc6acf24887c4f",
+            "installdate": 5920,
+            "pf": "b2d2827b-1b66-4814-8cc7-ef215098e888",
+            "pv": "20220505"
+         },
+         "eeigpngbgcognadeebkilcpcaedhellh": {
+            "cohort": "1:w59:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.c64c9c1008f3ba5f6e18b3ca524bc98dcd8acfae0a2720a8f1f3ef0f8d643d05",
+            "installdate": 5920,
+            "pf": "f73555b8-bcc3-4723-a750-ae3ca0e17e92",
+            "pv": "2020.11.2.164946"
+         },
+         "efniojlnjndmcbiieegkicadnoecjjef": {
+            "cohort": "1:18ql:",
+            "cohortname": "Auto Stage3",
+            "dlrc": 5921,
+            "fp": "1.4503bca2634e267be4ec56ec7cba461f1137b1347ce7c28e591045a24bbc7c91",
+            "installdate": 5920,
+            "pf": "2b97fb6d-1c79-4b0a-88c2-1bce88110475",
+            "pv": "530"
+         },
+         "ehgidpndbllacpjalkiimkbadgjfnnmc": {
+            "cohort": "1:ofl:",
+            "cohortname": "stable64",
+            "dlrc": 5921,
+            "fp": "1.a8a79d350c2a5e3bc36226633a8e0bed0dfab184e77f38fc8f0820ebacf8eafc",
+            "installdate": 5920,
+            "pf": "3bc3d063-a9b3-4d98-8b9a-d54895ab006a",
+            "pv": "2018.8.8.0"
+         },
+         "gcmjkmgdlgnkkcocmoeiminaijmmjnii": {
+            "cohort": "1:bm1:1jjr@0.01",
+            "cohortname": "M54AndUp",
+            "dlrc": 5921,
+            "fp": "1.2f05b93b17882f6d46c35c7f6f7f9f90d7a34f888f796446d9b587e09c1987e8",
+            "installdate": 5920,
+            "pf": "8af3d52b-cafe-4b34-9320-5e0775927cfd",
+            "pv": "9.43.0"
+         },
+         "ggkkehgbnfjpeggfpleeakpidbkibbmn": {
+            "cohort": "1:ut9/1a0f:",
+            "cohortname": "108-and-above-all-users",
+            "dlrc": 5921,
+            "fp": "1.ed2f4d0fa9d2f99837719f80e3990498314290c6a294a72296ddcada784dd278",
+            "installdate": 5920,
+            "pf": "98d7456c-579e-4881-84bc-13379dcb8a23",
+            "pv": "2022.12.16.779"
+         },
+         "giekcmmlnklenlaomppkphknjmnnpneh": {
+            "cohort": "1:j5l:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.fd515ec0dc30d25a09641b8b83729234bc50f4511e35ce17d24fd996252eaace",
+            "installdate": 5920,
+            "pf": "e2ba2894-7917-426a-b46e-a3b0dc91341f",
+            "pv": "7"
+         },
+         "gonpemdgkjcecdgbnaabipppbmgfggbe": {
+            "cohort": "1:z1x:",
+            "cohortname": "General release",
+            "dlrc": 5921,
+            "fp": "1.c51d23bc0653142853b0d9dc8ba00f504aaae8a2a5b290e539b8790d88c0dcbe",
+            "installdate": 5920,
+            "pf": "3947c682-85bb-4995-b6ac-e30ff257f331",
+            "pv": "2022.2.15.1"
+         },
+         "hfnkpimlhhgieaddgfemjhofmfblmnib": {
+            "cohort": "1:jcl:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.b3708e30859863167615153fd257312095da8a3fd32bb8f13d28a732bc327779",
+            "installdate": 5920,
+            "pf": "9e58b5c5-95a6-41fb-a6b3-5c5f4636d195",
+            "pv": "7919"
+         },
+         "hnimpnehoodheedghdeeijklkeaacbdc": {
+            "cohort": "1::",
+            "cohortname": "",
+            "dlrc": 5921,
+            "fp": "1.6f6bc93dcd62dc251850d2ff458fda96083ceb7fbe8eeb11248b8485ef2aea23",
+            "installdate": 5920,
+            "pf": "9f2afa45-ec2f-4a12-9f6a-8ca8b7cb2d48",
+            "pv": "0.57.44.2492"
+         },
+         "ihnlcenocehgdaegdmhbidjhnhdchfmm": {
+            "cohort": "1:15j3:",
+            "cohortname": "Win (Including up-to-date)",
+            "dlrc": 5921,
+            "fp": "1.aeedb246d19256a956fedaa89fb62423ae5bd8855a2a1f3189161cf045645a19",
+            "installdate": 5920,
+            "pf": "49756191-b742-4cab-8a7d-349cb9d59ee1",
+            "pv": "1.3.36.141"
+         },
+         "imefjhfbkmcmebodilednhmaccmincoa": {
+            "cohort": "1:1iaf:",
+            "cohortname": "windows_flatbuffers",
+            "dlrc": 5921,
+            "fp": "1.3525bd7c472e4c85cadf1b8d0992ca8303b9e630831e4530e54a14a70f213a11",
+            "installdate": 5920,
+            "pf": "4f441ad7-bb8e-4e88-84b1-8f125ff0d7ca",
+            "pv": "30.2"
+         },
+         "jamhcnnkihinmdlkakkaopbjbbcngflc": {
+            "cohort": "1:wvr:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.a804b4c0d108cfe604c3fcdabc8c143752139445a14fd7cea044e068cd4a254a",
+            "installdate": 5920,
+            "pf": "35b6b4f2-239c-4755-ac76-b10f1d40afc5",
+            "pv": "113.0.5661.2"
+         },
+         "jflookgnkcckhobaglndicnbbgbonegd": {
+            "cohort": "1:s7x:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.e010d0c128003766c7bfe8c397718dcf8fc887102c1fe53e66d4c8e445bcb3d0",
+            "installdate": 5920,
+            "pf": "572775f5-85b7-40ea-9e85-06b02f06b086",
+            "pv": "2932"
+         },
+         "khaoiebndkojlmppeemjhbpbandiljpe": {
+            "cohort": "1:cux:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.4d4a9ece68f12d31fb4ebe458e7cbbce6bd27a5d363bce3344b1f4b5c6b024b4",
+            "installdate": 5920,
+            "pf": "7911b696-5aaf-464b-b3ba-9ccb6defb890",
+            "pv": "58"
+         },
+         "laoigpblnllgcgjnjnllmfolckpjlhki": {
+            "cohort": "1:10zr:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "installdate": 5920,
+            "pf": "a9017f3a-58eb-4b4d-a305-bfec81d61e12"
+         },
+         "llkgjffcdpffmhiakmfcdcblohccpfmo": {
+            "cohort": "1::",
+            "cohortname": "",
+            "dlrc": 5921,
+            "fp": "1.ab8d70a60ce0fba1355fad4edab88fd4d1bccc566b230998180183d1d776992b",
+            "installdate": 5920,
+            "pf": "8bde4746-b51c-4bce-a2f8-c838841cf5bc",
+            "pv": "1.0.0.13"
+         },
+         "lmelglejhemejginpboagddgdfbepgmp": {
+            "cohort": "1:lwl:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.ac770872a5df378210a80582c7392a3394b7dad071537309d694b38a2f19b138",
+            "installdate": 5920,
+            "pf": "d8382f46-1470-4113-8ee2-3d7cdf21549b",
+            "pv": "383"
+         },
+         "neifaoindggfcjicffkgpmnlppeffabd": {
+            "cohort": "1:1299:",
+            "cohortname": "Windows (102+, canary/dev/beta/stable)",
+            "dlrc": 5921,
+            "fp": "1.faef821457e35b44f92e45ae9c7c4424eb39c8f8bd02562a358bd2c5542570b9",
+            "installdate": 5920,
+            "pf": "0fc46657-8e71-40bb-885c-cf9f7080220b",
+            "pv": "1.0.2512.0"
+         },
+         "obedbbhbpmojnkanicioggnmelmoomoc": {
+            "cohort": "1:s6f:",
+            "cohortname": "Auto",
+            "dlrc": 5921,
+            "fp": "1.7cc99acd652d1bc8b164cd4837623eaca2e3ade45c1647f93c567d1838d85f85",
+            "installdate": 5920,
+            "pf": "11293457-7663-4656-9127-310da8d3aced",
+            "pv": "20230204.514197158"
+         },
+         "oimompecagnajdejgnnjijobebaeigek": {
+            "cohort": "1:1bk9:",
+            "cohortname": "4.10.2557.0 for Chrome 95+",
+            "dlrc": 5921,
+            "installdate": 5920,
+            "pf": "85811f1b-fe3e-4f1c-994e-556ff64bd4e5"
+         },
+         "ojhpjlocmbogdgmfpkhlaaeamibhnphh": {
+            "cohort": "1:w0x:",
+            "cohortname": "All users",
+            "dlrc": 5921,
+            "fp": "1.545666a4efd056351597bb386aea1368105ededc976ed5650d8682daab9f37ff",
+            "installdate": 5920,
+            "pf": "8ec52a17-188b-42c9-af94-949ae7c08358",
+            "pv": "3"
+         }
+      }
+   },
+   "user_experience_metrics": {
+      "client_id2": "e720af55-6369-4684-9d88-e14ca9d4a1a0",
+      "client_id_timestamp": "1676874243",
+      "low_entropy_source3": 325,
+      "machine_id": 3386516,
+      "pseudo_low_entropy_source": 181,
+      "session_id": 1,
+      "stability": {
+         "browser_last_live_timestamp": "13323683678265026",
+         "exited_cleanly": true,
+         "stats_buildtime": "1677911213",
+         "stats_version": "111.0.5563.65-64",
+         "system_crash_count": 0
+      }
+   },
+   "was": {
+      "restarted": false
+   }
+}
+[1679210219.416][INFO]: Launching chrome: "C:\Program Files\Google\Chrome\Application\chrome.exe" --allow-pre-commit-input --disable-background-networking --disable-backgrounding-occluded-windows --disable-client-side-phishing-detection --disable-default-apps --disable-hang-monitor --disable-popup-blocking --disable-prompt-on-repost --disable-sync --enable-automation --enable-blink-features=ShadowDOMV0 --enable-logging --log-level=0 --no-first-run --no-service-autorun --password-store=basic --remote-debugging-port=0 --test-type=webdriver --use-mock-keychain --user-data-dir="C:\Site-Mic\Dason-Django\Default\micmod\tools\Files/User_Data\wpp/09909697140"
+[1679210220.508][INFO]: resolved localhost to ["::1","127.0.0.1"]
+[1679210220.749][INFO]: [fa4573e6be9d57b01d2a8bc7b6f7ff32] RESPONSE InitSession {
+   "capabilities": {
+      "acceptInsecureCerts": false,
+      "browserName": "chrome",
+      "browserVersion": "111.0.5563.65",
+      "chrome": {
+         "chromedriverVersion": "111.0.5563.64 (c710e93d5b63b7095afe8c2c17df34408078439d-refs/branch-heads/5563@{#995})",
+         "userDataDir": "C:\\Site-Mic\\Dason-Django\\Default\\micmod\\tools\\Files/User_Data\\wpp/09909697140"
+      },
+      "goog:chromeOptions": {
+         "debuggerAddress": "localhost:58454"
+      },
+      "networkConnectionEnabled": false,
+      "pageLoadStrategy": "normal",
+      "platformName": "windows",
+      "proxy": {
+      },
+      "setWindowRect": true,
+      "strictFileInteractability": false,
+      "timeouts": {
+         "implicit": 0,
+         "pageLoad": 300000,
+         "script": 30000
+      },
+      "unhandledPromptBehavior": "dismiss and notify",
+      "webauthn:extension:credBlob": true,
+      "webauthn:extension:largeBlob": true,
+      "webauthn:extension:minPinLength": true,
+      "webauthn:extension:prf": true,
+      "webauthn:virtualAuthenticators": true
+   },
+   "sessionId": "fa4573e6be9d57b01d2a8bc7b6f7ff32"
+}
+[1679210220.754][INFO]: [fa4573e6be9d57b01d2a8bc7b6f7ff32] COMMAND Navigate {
+   "url": "https://web.whatsapp.com/"
+}
+[1679210220.754][INFO]: Waiting for pending navigations...
+[1679210220.811][INFO]: Done waiting for pending navigations. Status: ok
+[1679210221.604][INFO]: Waiting for pending navigations...
+[1679210222.973][INFO]: Done waiting for pending navigations. Status: ok
+[1679210222.973][INFO]: [fa4573e6be9d57b01d2a8bc7b6f7ff32] RESPONSE Navigate

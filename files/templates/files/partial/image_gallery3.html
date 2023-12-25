@@ -1,0 +1,133 @@
+{% load more_tags %}
+{% if not create %}
+<div class="mobile-slider LTR">
+{% if images %}
+    <span class="arrow left material-icons">keyboard_arrow_left</span>
+    <div class="slider-card-container">
+        {% for image in images %}
+            <div class="slider-card-inner" id="slider-card-inner-{{ image.pk }}">
+                <img src="{{ image.path.url }}" alt="{{ image.alt }}" width="100%" class="m-1 border rounded">
+
+                {% if editable %}
+                    <div style="position: relative;" class="w-100 h-100">
+                        <span id="remove-image-{{ image.pk }}" class="image-remove-btn" data-id="{{ image.pk }}">&times;</span>
+                    </div>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+    </div>
+        <span class="arrow right material-icons">keyboard_arrow_right</span>
+    {% else %}
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <p>هیچ تصویری آپلود نشده</p>
+    </div>
+{% endif %}
+</div>
+{% endif %}
+
+{% if upload %}
+<div class="col mb-5">
+    <label for="main_image_{{ group }}_1">تصاویر گروه {{group}}</label> <br>
+    <input type="file" id="main_image_{{ group }}_1" name="main_image_{{ group }}_1" multiple class="input-control">
+</div>
+{% else %}
+    <div class="col">
+        <label for="main_image_{{ group }}_1">تصاویر گروه {{group}}</label> <br>
+    </div>
+{% endif %}
+
+{% if js %}
+<script>
+    const leftArrow = document.querySelectorAll(".left");
+    const rightArrow = document.querySelectorAll(".right");
+
+    const sliderCardContainer = document.querySelectorAll('.slider-card-container');
+    const mobileSlider = document.querySelector('.mobile-slider');
+
+    const diff = 200;
+
+    let moving = false;
+    let mouseLastPosition = 0;
+    let transform = 0;
+    let lastPageX = 0;
+    let transformValue = 0;
+
+    console.log(mobileSlider.offsetWidth);
+    console.log(sliderCardContainer[0].offsetWidth);
+
+    sliderCardContainer.forEach(function (item, idx){
+        leftArrow[idx].addEventListener('click', function () {
+        transform = window.getComputedStyle(item)
+       .getPropertyValue('transform') !== 'none'
+       ? window.getComputedStyle(item)
+       .getPropertyValue('transform').split(',')[4].trim() : 0;
+
+            console.log(transformValue)
+            if (transformValue >= 0){
+                transformValue = 0;
+            }else {
+                transformValue += diff;
+            }
+            item.style.transform = `translateX(${transformValue}px)`;
+        })
+
+        rightArrow[idx].addEventListener('click', function (e) {
+            transform = window.getComputedStyle(item)
+           .getPropertyValue('transform') !== 'none'
+           ? window.getComputedStyle(item)
+           .getPropertyValue('transform').split(',')[4].trim() : 0;
+
+            console.log('slider: ', -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth))
+            if (transformValue <= -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth)-200){
+                transformValue = -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth);
+            }else {
+                transformValue -= diff;
+            }
+
+            //if (transformValue <= -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth)){
+              //  transformValue += diff;
+            //}else {
+              //  transformValue = -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth);
+            //}
+            //if (transformValue -= diff < -(sliderCardContainer[0].offsetWidth - mobileSlider.offsetWidth)){
+              //  transformValue = (mobileSlider.offsetWidth);
+            //}
+            console.log('transform ', transformValue, 'offset ', mobileSlider.offsetWidth)
+
+            item.style.transform = `translateX(${transformValue}px)`;
+            console.log('click right: ', item.style.transform)
+        })
+    }) // end forEach
+
+    // remove single image process
+    const removeBtns = document.querySelectorAll('.image-remove-btn')
+    removeBtns.forEach(function (removeBtn){
+        removeBtn.addEventListener('click', function (e){
+            e.preventDefault();
+            let imageId = removeBtn.getAttribute('data-id')
+            let imageArea = document.getElementById(`slider-card-inner-${imageId}`)
+            console.log('click on :', imageId)
+            console.log('image area :', imageArea)
+            $.ajax({
+                url: `/files/image/delete/single/${imageId}/`,
+                type: 'POST',
+                dataType: 'json',
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    console.log(data)
+                    imageArea.innerText = 'حذف شد'
+                    imageArea.classList.add('badge')
+                    imageArea.classList.add('badge-soft-danger')
+                },
+                error: function (rs, e){
+                    console.log('error.... ', rs)
+                }
+            })// end ajax
+        }) // end addEventListener
+    }) // end forEach
+</script>
+{% endif %}

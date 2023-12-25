@@ -1,0 +1,359 @@
+import string
+
+import django.views.defaults
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.humanize.templatetags.humanize import intcomma
+from django.http import JsonResponse
+from django.views import View
+from django.views.generic.list import ListView
+from django.urls import reverse_lazy, reverse
+
+import sepidar.models
+from core.views import BaseView
+from micmod_base.base import is_valid
+from .froms import DeviceForm
+from .models import Dl,Item,Device,APILogs
+from jalali_date.templatetags.jalali_tags import to_jalali
+from django.shortcuts import render, redirect
+from tools.google_sheet import price_wb
+from micmod_base.base import QTYDis,PMDisY,PMDisR
+from accounts.templatetags.accounts_tag import has_group, has_groups
+from translator import get_text as _
+
+from ajax_datatable.views import AjaxDatatableView
+from django.contrib.auth.models import Permission
+from .scripts.sepidar_classes import Urls
+import re
+
+# Create your views here.
+
+def test_get(request):
+    device = Device.objects.all().first()
+    res = APILogs.new_call(device,Urls.get_customer.url.format(500),Urls.get_customers.method)
+    print(res)
+    return JsonResponse(res[0], safe=False)
+
+
+def get_customers(request):
+    q = request.GET.get('q', None)
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+      for rep in reps:
+        q = q.replace(rep[1],rep[0])
+      Dls = Dl.get_list(q)
+      obj['items']=[]
+      for dl in Dls:
+          item = {}
+          item['id'] = dl.code
+          item['text'] = dl.name
+          item['pid'] = dl.PartyId
+          obj['items'].append(item)
+          count += 1
+    obj['total_count'] = count
+    return JsonResponse(obj,safe=False)
+
+def get_items(request):
+    q = request.GET.get('q', None)
+    party_id = request.GET.get('party_id', None)
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+        for rep in reps:
+            q = q.replace(rep[1], rep[0])
+        items = Item.get_items(q,party_id)
+        obj['items'] = []
+        for item_ in items:
+            item = {}
+            try:
+                item['id'] = item_.code
+                item['itemid'] = item_.itemid
+                item['text'] = item_.title
+                item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+                item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
+                item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
+                item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+                item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
+                item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
+                item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
+                # item['stock_str'] = item_.stock_str
+                item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
+                item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
+                item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
+                item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
+                item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
+                sh_price = price_wb.get_sheet_price(item_.code)
+                item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
+                item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
+                item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
+                #print('price_loaded')
+                item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+                item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
+                item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+                item['QTYDis'] = QTYDis
+                item['PMDisY'] = PMDisY
+                item['PMDisR'] = PMDisR
+                obj['items'].append(item)
+                count += 1
+            except Exception as e:
+                print(str(e))
+
+
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
+
+
+def get_items2(request):
+    q = request.GET.get('q', None)
+    party_id = request.GET.get('party_id', None)
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+        for rep in reps:
+            q = q.replace(rep[1], rep[0])
+        items = Item.get_items(q,party_id)
+        obj['items'] = []
+        for item_ in items:
+            item = {}
+            try:
+                item['itemid'] = item_.itemid
+                item['goods_code'] = item_.code, False
+                item['goods_name'] = item_.title, False
+                item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d"), True
+                item['last_price'] = (item_.f_fee_cust), False
+                item['f_qty_cust'] = (item_.f_qty_cust), False
+                item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d"), True
+                item['q_last_price'] = (item_.quotation_fee), False
+                item['q_total_sales'] = (item_.quotation_qty), False
+                item['avg_count'] = (item_.f_qty_all), False
+                item['min_price'] = (item_.min_price), False
+                item['avg_price'] = (item_.avg_price), False
+                item['max_price'] = (item_.max_price), False
+                item['stock_amount'] = (item_.stock_qty), False
+                item['stock_amount_res'] = (item_.stock_res_qty), False
+                sh_price = price_wb.get_sheet_price(item_.code)
+                item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None, False
+                item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None, False
+                item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None, False
+                item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price[
+                    'p'] else None, True
+                item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None, False
+                item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price[
+                    'market'] else None, True
+                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0, False
+                item['QTYDis'] = QTYDis, False
+                item['PMDisY'] = PMDisY, False
+                item['PMDisR'] = PMDisR, False
+                obj['items'].append(item)
+                count += 1
+            except Exception as e:
+                print(str(e))
+
+
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
+
+
+def get_item(request):
+    q = request.GET.get('q', None)
+    party_id = request.GET.get('party_id', None)
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+        for rep in reps:
+            q = q.replace(rep[1], rep[0])
+        items = Item.get_item(q,party_id)
+        obj['items'] = []
+        for item_ in items:
+            item = {}
+            try:
+                item['id'] = item_.code
+                item['itemid'] = item_.itemid
+                item['text'] = item_.title
+                item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+                item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
+                item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
+                item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+                item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
+                item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
+                item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
+                # item['stock_str'] = item_.stock_str
+                item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
+                item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
+                item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
+                item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
+                item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
+                sh_price = price_wb.get_sheet_price(item_.code)
+                item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
+                item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
+                item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
+                #print('price_loaded')
+                item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+                item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
+                item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+                item['QTYDis'] = QTYDis
+                item['PMDisY'] = PMDisY
+                item['PMDisR'] = PMDisR
+                obj['items'].append(item)
+                count += 1
+            except Exception as e:
+                print(str(e))
+
+
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
+
+
+def get_item2(request):
+    q = request.GET.get('q', None)
+    party_id = request.GET.get('party_id', None)
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+        for rep in reps:
+            q = q.replace(rep[1], rep[0])
+        items = Item.get_items(q, party_id)
+        obj['items'] = []
+        for item_ in items:
+            item = {}
+            try:
+                item['goods_code'] = item_.code
+                item['goods_name'] = item_.title
+                item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+                item['last_price'] = (item_.f_fee_cust)
+                item['f_qty_cust'] = (item_.f_qty_cust)
+                item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+                item['q_last_price'] = (item_.quotation_fee)
+                item['q_total_sales'] = (item_.quotation_qty)
+                item['avg_count'] = (item_.f_qty_all)
+                item['min_price'] = (item_.min_price)
+                item['avg_price'] = (item_.avg_price)
+                item['max_price'] = (item_.max_price)
+                item['stock_amount'] = (item_.stock_qty)
+                item['stock_amount_res'] = (item_.stock_res_qty)
+                sh_price = price_wb.get_sheet_price(item_.code)
+                item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None
+                item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None
+                item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None
+                item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+                item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None
+                item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+                item['QTYDis'] = QTYDis
+                item['PMDisY'] = PMDisY
+                item['PMDisR'] = PMDisR
+                obj['items'].append(item)
+                count += 1
+            except Exception as e:
+                print(str(e))
+
+
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
+
+
+class SuppliersAccountingList(LoginRequiredMixin,View):
+    def get(self, request):
+        if not has_groups(request.user,'trade_user,accounting_user'):
+            return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
+        item_list = []
+        mylist = (Dl.get_accounting_list())
+        for item in mylist:
+            if self.has_only_latin_letters(item.dl_title):
+                item_list.append(item)
+        # p = Paginator(quotations_record, 10)
+        # page = request.GET.get('page')
+        # if p == None:
+        #    page = int(1)
+        # page_obj = p.get_page(page)
+        greeting = {}
+        greeting['heading'] = ("سپیدار")
+        greeting['pageview'] = ("گزارش مانده حساب های پرداختنی")
+        greeting['list'] = item_list
+        # greeting['page_obj'] = page_obj
+
+        return render(request,'sepidar/suppliers_accounting.html',greeting)
+
+    @staticmethod
+    def has_only_latin_letters(m_str):
+        char_set = string.printable
+        return all((True if x in char_set else False for x in m_str))
+
+
+class SalesHistory(LoginRequiredMixin,View):
+    def get(self, requset):
+        # if not has_groups(request.user,['trade_user','accounting_user']):
+        #     return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
+        context = {}
+        context['customer_code'] = requset.GET.get('customer_code',"")
+        context['item_code'] = requset.GET.get('item_code',"")
+        context['g_p'] = requset.GET.get('g_p',"")
+        context['doc_type'] = requset.GET.get('doc_type',"")
+        print(context)
+        context['list'] = Dl.get_sales_history_list(self.request.GET)
+        return render(self.request,'sepidar/sales_history.html',context)
+
+
+class MessageView(BaseView):
+    form_class = DeviceForm
+    # main_form = ReceiptCreateForm2
+    model = Device
+    # formset = inlineformset_factory(Receipt, ReceiptDetail, form=ReceiptDetailCreateForm2, extra=1, )
+    # formset_model = ReceiptDetail
+    # formset_form = ReceiptDetailCreateForm2
+    template_name = 'sepidar/deivce_view.html'
+    # formset_fk_field = 'receipt_id'
+    # related_name_fk = 'receiptdetail_set'
+    success_url = reverse_lazy('sepidar:device.list')
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs)
+
+
+class DeviceList(ListView):
+    template_name = 'sepidar/device_list.html'
+    model = Device
+
+
+class BaseList(AjaxDatatableView):
+    model = None
+    title = 'base_list'
+    # initial_order = [["last_update_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sepidar/device_list.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'abstract_text', 'visible': True, 'title': _('abstract_text'), 'className': 'py-1 border'},
+        {'name': 'text', 'visible': True, 'title': _('text'), 'className': 'py-1 border'},
+        {'name': 'reply_to', 'visible': True, 'title': _('reply to'), 'className': 'py-1 border'},
+        {'name': 'sender_type', 'visible': True, 'title': _('sender type'), 'className': 'py-1 border'},
+        {'name': 'sender', 'visible': True, 'title': _('sender'), 'className': 'py-1 border'},
+        {'name': 'automation_status', 'visible': True, 'title': _('automation status'), 'className': 'py-1 border'},
+        {'name': 'id', 'visible': False, },
+    ]
+
+    def get_initial_queryset(self, request=None):
+        return self.model.objects.all()
+        # param = self.request.POST.get('q', 'all').strip('/')
+        # if param == 'all':
+        #     qs = self.model.objects.all()
+
+    def customize_row(self, row, obj):
+        row['abstract_text'] = '<a class="fw-bold" href="%s">%s</a>' % (
+                      reverse('tlg:message.create_update', args=(obj.id,)),
+                      obj.abstract_text if obj.abstract_text else '_'
+                    )
+
+
+
+
+

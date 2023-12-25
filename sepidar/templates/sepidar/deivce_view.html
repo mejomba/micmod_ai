@@ -1,0 +1,26 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load more_tags %}
+
+{% block title %}Quotation{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+
+{% block form_content %}
+    {% csrf_token %}
+    <div class="row row-cols-md-4 row-cols-1 bg-white rounded shadow align-items-end mt-5 pt-5 align-items-stretch">
+        {% render_field_by_order form form.base_url form.generation_version form.registration_code form.user_name form.password form.public_key label='on-border' %}
+    </div>
+{% endblock form_content %}
+
+{% block form_footer_extra %}
+    <a href="{% url 'tlg:receiver.list' %}" class="btn btn-outline-dark ms-1">بازگشت به لیست</a>
+{% endblock form_footer_extra %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock extra_js %}

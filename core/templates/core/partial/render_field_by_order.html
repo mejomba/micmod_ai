@@ -1,0 +1,46 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+{% load l10n %}
+{% for field in fields %}
+    {{ field.get_field_name_display }}
+    {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
+        {% if crispy %}
+
+            <div class="col {% if margin_b is not None %}mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+            {{ field|as_crispy_field }}
+            {{ field.errors }}
+
+        {% elif field.field.select2 %}
+
+            <div class="col {{ label }} {% if margin_b is not None %}mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+            {{ field.as_hidden }}
+            <div class="select2 {{ field|get_field_name }} w-100" id="{{ field.html_name }}" name="{{ field|get_field_name }}"></div>
+            <label data-key="{{ field|get_field_name }}"></label>
+            {{ field.errors }}
+
+        {% elif label %}
+
+            <div class="col {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+            {{ field }}
+            <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}">{% if label_text %}
+            {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
+            {{ field.errors }}
+
+
+        {% else %}
+
+            <div class="col {% if margin_b is not None %}mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+            {{ field }}
+{#            <label for="{{ field.html_name }}">{{ field.label }}</label>#}
+            {{ field.help_text }}
+            {{ field.errors }}
+
+        {% endif %}
+        </div>
+    {% else %}
+        <div class="position-absolute">
+        {{ field|as_crispy_field }}
+        </div>
+    {% endif %}
+{% endfor %}
+

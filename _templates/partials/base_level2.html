@@ -1,0 +1,32 @@
+{% extends 'layout/default.html' %}
+<!--========== if form present ==========-->
+{% block content_ %}
+    {% if form %}
+        <div class="main-content" id="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <form method="POST" enctype="multipart/form-data" id="main-form" class="form">
+                        {% block form_content %}{% endblock form_content %}
+                        <div class="d-flex position-fixed card-footer me-3 ms-0 p-0 rounded"
+                             style="bottom: 40px; width: -webkit-fill-available; width: -moz-available;"
+                             id="form-footer-container">
+                            {% include 'partials/form_buttons.html' with form=form flow_state_index=flow_state_index flow_state_list=flow_state_list %}
+                            {% block form_footer_extra %}
+                            {% endblock form_footer_extra %}
+                        </div>
+                    </form>
+
+                    {% block content %}
+                        {% block footer %}
+                        {% endblock footer %}
+                    {% endblock content %}
+
+                    {% block ajax %}
+                        {#                <div id="id_ajax"></div>#}
+                    {% endblock ajax %}
+
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock content_ %}

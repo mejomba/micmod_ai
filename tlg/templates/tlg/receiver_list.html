@@ -1,0 +1,100 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+
+{% endblock extra_css %}
+
+{% block content %}
+
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+<div class="main-content" id="main-content">
+    <div class="page-content">
+        <div class="d-flex justify-content-center align-items-baseline my-3">
+            <div class="border rounded p-3">
+                <span>استفاده از فیلتر</span>
+                <a href="{% url 'tlg:receiver.list' %}?q=new" class="btn btn-outline-primary mx-1">جدید</a>
+                <a href="{% url 'tlg:receiver.list' %}?q=no_phone" class="btn btn-outline-danger mx-1">بدونه شماره تلفن</a>
+                <a href="{% url 'tlg:receiver.list' %}?q=all" class="btn btn-outline-success mx-1">همه</a>
+{#                        <a href="{% url 'IMEI:imei_all_list' %}?q=err" class="btn btn-danger mx-1">خطا</a>#}
+
+            </div>
+        </div>
+        <div class="container-fluid">
+
+            <div class="table-responsive p-2">
+                <table id="tlg_receiver_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                </table>
+            </div>
+            <a href="{% url 'tlg:receiver.create_update' %}" target="_blank" class="btn btn-info text-xl-center py-0 px-3 me-1 d-flex align-items-center" style="width: fit-content;"><span class="mx-1" style="font-size: 1.5rem">&#x2b; </span>افزودن </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+    <script language="javascript">
+    $(document).ready(function() {
+        var url = new URL(window.location);
+        var q = url.searchParams.get("q");
+        AjaxDatatableViewUtils.initialize_table(
+            $('#tlg_receiver_list'),
+            "{% url 'tlg:receiver.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                q: q
+            },
+        );
+    });
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+{#    <script src="{% static 'js/image_gallery_slider.js' %}"></script>#}
+
+    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+{% endblock extra_js %}

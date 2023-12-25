@@ -1,0 +1,131 @@
+
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="{{ html_name }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+
+      <div class="modal-body">
+          <div class="modal-close d-flex justify-content-end">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">x</button>
+          </div>
+        <div class="">
+
+{#            ==========================================       #}
+
+            {% if not contents %}
+                <div class="d-flex align-items-center justify-content-center h-100">
+                    <p>چیزی آپلود نشده</p>
+                </div>
+            {% endif %}
+
+         <!-- Start DEMO HTML (Use the following code into your project)-->
+         <div class="px-1">
+          <!-- main images -->
+          <div class="holder" {% if contents.0.class_name == 'Image' %}style="min-height: 500px; max-height: 500px; overflow-y: scroll;"{% endif %}>
+              {% for content in contents %}
+                {% if content.class_name == 'Image' %}
+                    <div class="slides s-{{ slider_id }}">
+                      <img class="gallery_image" src="{{ content.path.url }}" alt="{{ content.alt }}" />
+                    </div>
+                {% endif %}
+              {% endfor %}
+
+          </div>
+
+         {% if contents.0.class_name == 'Image' %}
+{#           ========== navication button ========= #}
+          <div class="prevContainer">
+              <a class="prev" onclick="plusSlides(-1)">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path>
+                </svg>
+              </a>
+          </div>
+          <div class="nextContainer">
+              <a class="next" onclick="plusSlides(1)">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"></path>
+                </svg>
+              </a>
+          </div>
+             <hr>
+         {% endif %}
+
+
+
+          <!-- thumnails in a row -->
+
+          <div class="row {% if contents.0.class_name == 'Image' %}row-cols-6{% else %}row-cols-2{% endif %} px-3 pt-3 bg-soft-light justify-content-center">
+              {% for content in contents %}
+                    <div class="col mb-3" id="slider-card-inner-{{ content.pk }}">
+                        {% if content.class_name == 'File' %}
+                            <a href="{{ content.path.url }}" target="_blank" class="btn btn-sm btn-outline-dark ">
+                                <div class="d-flex align-items-center flex-wrap">
+                                    {{ content.name }}
+                                    <span class="material-icons">download</span>
+                                </div>
+                            </a>
+                            {% if editable %}
+                                <span id="remove-file-{{ content.pk }}" class="content-remove-btn file" data-id="{{ content.pk }}">&times;</span>
+                            {% endif %}
+
+                        {% elif content.class_name == 'Image' %}
+                              <img class="slide-thumbnail rounded" src="{{ content.path.url }}" onclick="currentSlide({{ forloop.counter }})" alt="{{ content.alt }}">
+                                {% if editable %}
+                                    <span id="remove-image-{{ content.pk }}" class="content-remove-btn image" data-id="{{ content.pk }}">&times;</span>
+                                {% endif %}
+                        {% endif %}
+
+                    </div>
+                {% endfor %}
+
+          </div>
+        </div>
+
+
+      <!-- Script JS -->
+      <script>
+            var slideIndex = 1;
+            showSlides(slideIndex);
+
+            function plusSlides(n) {
+              showSlides(slideIndex += n);
+            }
+
+            function currentSlide(n) {
+              showSlides(slideIndex = n);
+            }
+
+            function showSlides(n) {
+              var i;
+              {#var slides = document.getElementsByClassName("slides");#}
+              var slides = document.getElementsByClassName("s-{{ slider_id }}");
+              var dots = document.getElementsByClassName("slide-thumbnail");
+              if (n > slides.length) {slideIndex = 1}
+              if (n < 1) {slideIndex = slides.length}
+              console.log(slideIndex);
+
+              for (i = 0; i < slides.length; i++) {
+                  slides[i].style.display = "none";
+              }
+              for (i = 0; i < dots.length; i++) {
+                  dots[i].className = dots[i].className.replace(" active", "");
+              }
+              slides[slideIndex-1].style.display = "block";
+              dots[slideIndex-1].className += " active";
+            }
+      </script>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="myModal" class="image-popup modal-image">
+    <span class="close" id="close-image">&times;</span>
+    <img class="modal-content-image" id="img01">
+</div>

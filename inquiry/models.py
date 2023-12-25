@@ -1,0 +1,334 @@
+from django import forms
+from django.db import models
+from django.db.models import Count, Q
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+from itertools import chain
+
+from django.template.loader import render_to_string
+
+from micmod_base.base import CurrencyExchange
+from micmod_base.base import BaseModel, Currency, AbsBaseModel
+from micmod_base.models import QuotationItem
+from translator import get_text as _
+from queryable_properties.properties import queryable_property
+
+
+from extra_data.models import Item, ItemWeight, PriceSettings
+
+
+class Supplier(BaseModel):
+    name = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.name}'
+
+
+class PriceInquiryFile(BaseModel):
+    TYPE_CHOICE = (('p', _('pre invoice')), ('s', _('sourcing')))
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, verbose_name=_('sku'), related_name='sku_const')
+    target = models.CharField(max_length=100, verbose_name=_('target'), null=True, blank=True)
+    desired_quality = models.CharField(max_length=100, verbose_name=_('desired quality'), null=True, blank=True)
+    demanded_quantity = models.IntegerField(verbose_name=_('demanded quantity'), null=True, blank=True)
+    type = models.CharField(max_length=1, choices=TYPE_CHOICE, verbose_name=_('type'), null=True, blank=True)
+    brand = models.CharField(max_length=100, verbose_name=_('brand'), null=True, blank=True)
+
+    def __str__(self):
+        return f'[{self.id}] :  {self.item} - {self.get_type_display()}'
+
+
+class PriceInquiryResult(BaseModel):
+    sku = models.ForeignKey(Item, on_delete=models.DO_NOTHING, verbose_name=_('sku'), related_name='items', null=True,
+                            blank=True)
+    price_inquiry_file = models.ForeignKey(PriceInquiryFile, on_delete=models.DO_NOTHING,
+                                           verbose_name=_('price inquiry file'), related_name='inquery_result',
+                                           null=True, blank=True)
+    supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='supplier_rel')
+    price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
+    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'),null=True, blank=True)
+    local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
+    description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
+    currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
+    active = models.BooleanField(verbose_name=_('active'), default=False)
+    price_settings_ = None
+
+    quantity_ = None
+    customer_grade_ = None
+    payment_method_ = None
+    currency_ = None
+
+    def __str__(self):
+        return f'{self.id}: {self.price_inquiry_file} {self.sku}'
+
+    @queryable_property
+    def purchase_group(self):
+        return self.sku.purchase_group.title
+
+    @purchase_group.filter
+    @classmethod
+    def purchase_group(cls, lookup, value):
+        return Q(sku__purchase_group__title__icontains=value)
+
+    @queryable_property
+    def part_number(self):
+        return self.sku.part_number
+
+    @property
+    def rial_final_price(self):
+        if self.sku and self.transportations_cost:
+            self.currency_ = Currency.objects.filter(title_en="Rial").first() or self.currency_
+            free_rmb_rate = self.price_settings.free_rmb_rate
+            final_price = self.rmb_final_price_()
+            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
+                                   final_price.items()))
+            return final_price
+
+    @property
+    def rial_final_price_new_order(self):
+        self.currency_ = Currency.objects.filter(title_en="Rial").first() or self.currency_
+        free_rmb_rate_new_order = self.free_rmb_rate_new_order
+        final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
+                               self.rmb_final_price_().items()))
+        return final_price
+
+    @property
+    def rmb_final_price(self):
+        self.currency_ = Currency.objects.filter(title_en="RMB").first() or self.currency_
+        return self.rmb_final_price_()
+
+    def rmb_final_price_(self):
+        if self.sku and self.transportations_cost:
+            on_demand_discounts = 0
+            settings = self.price_settings
+            if self.quantity_:
+                on_demand_discounts += settings.get_discount_based_quantity(self.quantity_)
+            if self.customer_grade_:
+                on_demand_discounts += settings.get_discount_based_customer(self.customer_grade_)
+            if self.payment_method_ and self.currency_:
+                on_demand_discounts += settings.get_discount_based_payment_method(self.payment_method_,self.currency_)
+            # TODO calculate price in IRR
+            final_price = dict(map(lambda x: (x[0], x[1] + self.effective_rmb_price + self.customs_cost),
+                                   self.transportations_cost.items()))
+            final_price = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts)
+                                                        * (1 + 0.01 * (settings.get_discount_based_price(
+                                                            x[1]) + settings.interest_percentage)))),
+                                   final_price.items()))
+            return final_price
+
+    def rial_final_price_rendered(self):
+        return render_to_string('inquiry/partial/item_price_irr.html',
+                                {"data": "rial_final_price", "obj": self, 'detail': True})
+
+    def rmb_final_price_rendered(self):
+        return render_to_string('inquiry/partial/item_price_irr.html',
+                                {"data": "rmb_final_price", "obj": self, 'detail': True})
+
+    rial_final_price_rendered.allow_tags = True
+    rmb_final_price_rendered.allow_tags = True
+
+    def set_discount_params(self, quantity=None, customer_grade=None, payment_method=None, currency=None, price_setting=None):
+        if price_setting:
+            self.price_settings_ = price_setting
+        if quantity:
+            self.quantity_ = quantity
+        if customer_grade:
+            self.customer_grade_ = customer_grade
+        if payment_method:
+            self.payment_method_ = payment_method
+        if currency:
+            self.currency_ = currency
+        return self
+
+    @property
+    def price_settings(self):
+        if self.price_settings_:
+            return self.price_settings_
+        if self.sku:
+            if self.sku.price_settings:
+                return self.sku.price_settings
+            if self.sku.purchase_group:
+                if self.sku.purchase_group.price_settings:
+                    return self.sku.purchase_group.price_settings
+                elif self.sku.purchase_group.hs and self.sku.purchase_group.hs.price_settings:
+                    return self.sku.purchase_group.hs.price_settings
+        return PriceSettings.setting()
+
+    @price_settings.setter
+    def price_settings(self,value):
+        self.price_settings_ = value
+
+    @queryable_property
+    def weight(self):
+        if item := self.sku.item_weights.order_by('-created_date').first():
+            return item.weight
+
+    @weight.filter
+    @classmethod
+    def weight(cls, lookup, value):
+        if lookup != 'exact':  # Only allow equality checks for the simplicity of the example
+            raise NotImplementedError()
+        # Don't implement any validation to keep the example simple.
+        major, minor = value.split('.')
+        return Q(major=major, minor=minor)
+
+    @property
+    def free_rmb_rate_new_order(self):
+        return self.price_settings.free_rmb_rate_new_order #CurrencyExchange.rmb_rate().sell_exchange
+
+    @queryable_property
+    def rmb_price(self):
+        if self.currency_type.title_en == "RMB":
+            return self.price
+        else:
+            return self.price_settings.dollar_rmb_rate * self.price
+
+    @queryable_property
+    def effective_rmb_price(self):
+        free_rmb_rate = self.price_settings.free_rmb_rate
+        talar_rmb_rate = self.price_settings.talar_rmb_rate
+        customs_price = self.sku.get_customs_price
+        rmb_price = self.rmb_price
+
+        if rmb_price >= customs_price:
+            return (customs_price * talar_rmb_rate + (rmb_price - customs_price) * free_rmb_rate) / free_rmb_rate
+        else:
+            return rmb_price * talar_rmb_rate / free_rmb_rate
+
+    @queryable_property
+    def transportations_cost(self):
+        if not self.sku.purchase_group or not self.sku.purchase_group.hs:
+            return
+        weight = self.weight
+        settings = self.price_settings
+        effective_rmb_price = self.rmb_price
+        return {
+            "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
+                    + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+            "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
+                    + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+            "sea": self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
+                    + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+        }
+
+    @queryable_property
+    def customs_cost(self):
+        free_rmb_rate = self.price_settings.free_rmb_rate
+        settings = self.price_settings
+        customs_rmb_rate = settings.customs_rmb_rate
+        customs_price = self.sku.get_customs_price if self.sku.get_customs_price > 0 else self.rmb_price
+        return 0.01 * (settings.duty_on_value_percentage + self.sku.purchase_group.hs.customs_rate) * customs_price * customs_rmb_rate/free_rmb_rate
+
+    class Meta:
+        ordering = 'created_date',
+
+    def deactivate_other(self):
+        if p := self.price_inquiry_file:
+            sku = p.item
+            result = [pif.inquery_result.all() for pif in sku.sku_const.all()]
+            r2 = PriceInquiryResult.objects.filter(sku=sku)
+            result.append(r2)
+            result = list(chain(*result))
+            for res in result:
+                if self.active and self != res:
+                    res.active = False
+                    res.save()
+        else:
+            sku = self.sku
+            result = [pif.inquery_result.all() for pif in sku.sku_const.all()]
+            r2 = PriceInquiryResult.objects.filter(sku=sku)
+            result.append(r2)
+            result = list(chain(*result))
+            for res in result:
+                if self.active and self != res:
+                    res.active = False
+                    res.save()
+
+    def save(self, *args, **kwargs):
+        # deactivate other PriceInquiryFile
+        if self.price_inquiry_file and self.active:
+            self.deactivate_other()
+        elif self.active:
+            print(self.sku)
+            self.deactivate_other()
+        print('=== save inquiry result === ')
+        if self.price_inquiry_file:
+            print('=== IF: ', self.sku, self.price_inquiry_file.item)
+            self.sku = self.price_inquiry_file.item
+        elif not self.sku:
+            print('=== else: ', self.sku)
+            raise ValueError('فیلد اجباری')
+
+        super().save(*args, **kwargs)
+
+
+class SalesPriceInqueryLog(AbsBaseModel):
+    sku = models.ForeignKey(Item, related_name="sales_price_inquery", verbose_name=_('sku'), on_delete=models.DO_NOTHING)
+    quantity = models.FloatField(verbose_name=_('quantity'),blank=True,null=True)
+    grade = models.CharField(verbose_name=_('grade'), max_length=30,blank=True,null=True)
+    payment_method = models.CharField(verbose_name=_('payment_method'), max_length=30,blank=True,null=True)
+    currency = models.ForeignKey(Currency, verbose_name=_('currency'), on_delete=models.DO_NOTHING,blank=True,null=True)
+    price_setting = models.ForeignKey(PriceSettings, verbose_name=_('price_setting'), on_delete=models.DO_NOTHING,blank=True,null=True)
+    party_code = models.CharField(verbose_name=_('party_code'),blank=True,null=True,max_length=20)
+
+class InquiryResult(AbsBaseModel):
+    #  استعلام از گوگل شیت
+    # goods_sheet_date = models.DateField(null=True, blank=True, verbose_name=_("goods_sheet_date"))
+    # goods_price_sheet1 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
+    # goods_price_sheet2 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
+    # goods_price_sheet3 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
+
+    #  استعلام از بازار
+    goods_price_market = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_market"))
+    goods_market_date = models.DateField(null=True, blank=True, verbose_name=_("goods_market_date"))
+
+    #  قیمت ۶۰ روز اخیر
+    goods_avg_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_avg_price"))
+    goods_min_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_min_price"))
+    goods_max_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_max_price"))
+
+    #  آخرین فروش به مشتری (فاکتور)
+    goods_last_sale = models.DateField(null=True, blank=True, verbose_name=_("goods_last_sale"))
+    goods_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales"))
+    goods_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price"))
+
+    #  آخرین فروش به مشتری (پیش فاکتور)
+    goods_q_last_sale = models.DateField(null=True, blank=True, verbose_name=_("goods_last_sale_q"))
+    goods_q_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales_q"))
+    goods_q_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price_q"))
+
+    #  موجودی انبار
+    stock_amount = models.FloatField(null=True, blank=True)
+    stock_amount_res = models.FloatField(null=True, blank=True)
+
+    #  express - air - sea (1) => 7200
+    #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
+    express_transportation_cost_1 = models.FloatField(verbose_name=_('express_transportation_cost_1'), null=True, blank=True, default=73)
+    air_transportation_cost_1 = models.FloatField(verbose_name=_('air_transportation_cost_1'), null=True, blank=True, default=50)
+    sea_transportation_cost_1 = models.FloatField(verbose_name=_('sea_transportation_cost_1'), null=True, blank=True, default=6)
+
+    #  express - air - sea (2) => 7400
+    express_transportation_cost_2 = models.FloatField(verbose_name=_('express_transportation_cost_2'), null=True, blank=True, default=73)
+    air_transportation_cost_2 = models.FloatField(verbose_name=_('air_transportation_cost_2'), null=True, blank=True, default=50)
+    sea_transportation_cost_2 = models.FloatField(verbose_name=_('sea_transportation_cost_2'), null=True, blank=True, default=6)
+
+    #  express - air - sea (3) => transportations_cost
+    express_transportation_cost_3 = models.FloatField(verbose_name=_('express_transportation_cost_3'), null=True, blank=True, default=73)
+    air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True, default=50)
+    sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True, default=6)
+
+    quotation_item = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, related_name='quotation_item_rel', null=True, blank=True)
+    sales_price_inquery_log = models.ForeignKey(SalesPriceInqueryLog, on_delete=models.DO_NOTHING, related_name='sales_price_inquery_log_rel', null=True, blank=True)
+    price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel', blank=True, null=True)
+
+
+# @receiver(post_save, sender=PriceInquiryResult)
+# def deactivate_prev_inquiry_result(sender, instance, created, **kwargs):
+#     sku = instance.price_inquiry_file.item
+#     result = [pif.inquery_result.all() for pif in sku.sku_const.all()]
+#     result = list(chain(*result))
+#     for res in result:
+#         if instance.active and instance != res:
+#             res.active = False
+#             res.save()
+
+

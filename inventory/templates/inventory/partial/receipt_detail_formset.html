@@ -1,0 +1,49 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+
+{% if forloop.counter|divisibleby:2 == 0 %}
+    <div class="bg-white p-0 m-0">
+{% else %}
+    <div class="bg-light p-0 m-0">
+{% endif %} 
+
+    <div class="px-2">
+    <div class="row item">
+
+            {{ form.management_form }}
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+    <div class="col-12">
+        <div class="row row-cols-md-12 mt-2">
+            <div class="col row-counter mb-1 d-flex align-items-center" style="max-width: fit-content;">
+                {{ forloop.counter }}
+            </div>
+            <div class="col px-1">
+                <div class="w-100 LTR">
+                    <div class="select2 goods_code sku" name="sku"></div>
+                </div>
+            </div>
+
+            {% render_field_by_order form form.quantity form.batch_type form.batch_count form.item_in_batch form.location %}
+            {% show_image_gallery obj=receipt_detail form=form detail=True upload=True editable=True %}
+
+            <div class="col">
+            {% with counter=forloop.counter0 %}
+{#                            {% if not forloop.last %}#}
+                    {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}
+{#                            {% endif %}#}
+            {% endwith %}
+            </div>
+        </div>
+    </div>
+
+        <input type="hidden" value="{{ form.instance.sku }}" id="sku-{{ forloop.counter0 }}">
+        {{ form.errors }}
+        </div>
+
+    </div>
+</div>

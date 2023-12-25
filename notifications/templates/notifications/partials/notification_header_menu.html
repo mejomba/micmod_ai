@@ -1,0 +1,108 @@
+{% load static %}
+
+<div id="notifications_list">
+    {% include 'notifications/partials/notification_messages_list.html' with notifications=notifications %}
+</div>
+
+
+<script src="{% static 'js/endless_pagination/jquery.js' %}"></script>
+<script src="{% static 'js/endless_pagination/el-pagination.js' %}"></script>
+<script>
+    {#debugger#}
+    dd=$("#ktnotificationsbody")
+    dd.endlessPaginate({
+        paginateOnScroll: true,
+        paginateOnScrollChunkSize: 5,
+        paginateOnScrollMargin: 20,
+        {#contentSelector: '#notifications_list',#}
+    });
+</script>
+
+<script src="{% static 'lang/translate.js' %}"></script>
+<script src="{% static 'js/reconnecting-websocket.js' %}"></script>
+
+<script>
+    const ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    {% if user %}
+        const socket = new ReconnectingWebSocket(
+            'ws://' + window.location.host +
+            '/ws/notifications/' + {{user.id}} +'/');
+        const notification_count = document.querySelector('#notification_count');
+        socket.onopen = function (e) {
+            socket.send(JSON.stringify({'action': "start_listening"}));
+        }
+        socket.onmessage = function (e) {
+            {#debugger#}
+            const message = JSON.parse(e.data);
+            notification_count.innerHTML = message['count']
+            {#message['message_type']#}
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-left",
+                "preventDuplicates": false,
+                "showDuration": "600",
+                "hideDuration": "2000",
+                "timeOut": 10000,
+                "extendedTimeOut": 2000,
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut",
+                "tapToDismiss": false
+            }
+            toastr.options.onclick = function (e) {
+                {#debugger#}
+                {#notification_item = $("#notification_item").attr('notification_id') #}
+                {#socket.send()#}
+            }
+            const toast = toastr[message['message_type']](
+                message["body"]
+                , message["title"])
+        };
+        socket.onerror = function (e) {
+            console.log(e)
+        }
+        socket.onclose = function (e) {
+            console.log('Socket closed unexpectedly');
+        };
+    {% endif %}
+
+    function menu_btn_click() {
+        {#debugger#}
+        const notifications_header_menu_btn = $('#notifications_header_menu_btn')
+        const m_url = notifications_header_menu_btn.attr('m_url');
+        $.ajax({
+            type: 'POST',
+            url: m_url,
+            data: {'csrfmiddlewaretoken': '{{ csrf_token }}'},
+            dataType: 'json',
+            success: function (response) {
+                {#debugger#}
+                const d = $("#notifications_list")
+                $("#notifications_list").html(response['html'])
+                $(notification_count).text(response['unread_count'])
+            },
+            error: function (rs, e) {
+                console.log(rs.responseText);
+            },
+        });
+    }
+
+    function read_message(id) {
+        {#debugger#}
+        socket.send(JSON.stringify({'action': "read_message", 'id': id}))
+        let notification_count = $('#notification_count')
+        let unread_count = parseInt(notification_count.text())
+        let item = $("#notification_" + id)
+        let ribbon = item.find(".ribbon")
+        if(ribbon.length>0){
+            ribbon.addClass("d-none")
+            notification_count.text(unread_count - 1)
+        }
+    }
+</script>
+
+

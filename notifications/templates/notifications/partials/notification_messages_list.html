@@ -1,0 +1,25 @@
+{% load el_pagination_tags %}
+
+{% paginate notifications %}
+<div class="endless_content_wrapper ">
+    {% for notification in notifications %}
+        {% include "notifications/partials/notification_message.html" with notification=notification with_title=True %}
+    {% endfor %}
+</div>
+
+{% show_more label="موارد بیشتر" class_name="btn btn-primary hover-elevate-down w-100 text-white" %}
+
+{#{% if notifications|length >= 10 %}#}
+{#    {% show_more %}#}
+{##}
+{#    <script src="http://code.jquery.com/jquery-latest.js"></script>#}
+{#    <script src="/assets/js/el-pagination.js"></script>#}
+{#    <script>#}
+{#        $.endlessPaginate({#}
+            {#paginateOnScroll: true,#}
+            {#paginateOnScrollMargin: 20,#}
+            {#paginateOnScrollChunkSize: 5,#}
+{#            contentSelector: '.endless_content_wrapper',#}
+{#        });#}
+{#    </script>#}
+{#{% endif %}#}
