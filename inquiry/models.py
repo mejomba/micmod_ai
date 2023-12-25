@@ -12,7 +12,8 @@ from micmod_base.base import BaseModel, Currency, AbsBaseModel
 from micmod_base.models import QuotationItem
 from translator import get_text as _
 from queryable_properties.properties import queryable_property
-
+from tools.form_tools import get_dif_percentage
+from tools.utils import elapsed_time
 
 from extra_data.models import Item, ItemWeight, PriceSettings
 
@@ -43,19 +44,22 @@ class PriceInquiryResult(BaseModel):
     price_inquiry_file = models.ForeignKey(PriceInquiryFile, on_delete=models.DO_NOTHING,
                                            verbose_name=_('price inquiry file'), related_name='inquery_result',
                                            null=True, blank=True)
-    supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='supplier_rel')
+    supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
+                                 on_delete=models.DO_NOTHING, related_name='supplier_rel')
     price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
-    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'),null=True, blank=True)
+    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
     local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
     active = models.BooleanField(verbose_name=_('active'), default=False)
     price_settings_ = None
-
-    quantity_ = None
-    customer_grade_ = None
-    payment_method_ = None
-    currency_ = None
+    custom_properties = {
+        'quantity_': None,
+        'customer_grade_': None,
+        'payment_method_': None,
+        'currency_': None,
+    }
+    _rmb_final_price_ = None
 
     def __str__(self):
         return f'{self.id}: {self.price_inquiry_file} {self.sku}'
@@ -63,6 +67,10 @@ class PriceInquiryResult(BaseModel):
     @queryable_property
     def purchase_group(self):
         return self.sku.purchase_group.title
+
+    @property
+    def elapsed_from_last_price(self):
+        return elapsed_time(self.price_update_date)
 
     @purchase_group.filter
     @classmethod
@@ -76,44 +84,85 @@ class PriceInquiryResult(BaseModel):
     @property
     def rial_final_price(self):
         if self.sku and self.transportations_cost:
-            self.currency_ = Currency.objects.filter(title_en="Rial").first() or self.currency_
+            # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
             free_rmb_rate = self.price_settings.free_rmb_rate
-            final_price = self.rmb_final_price_()
+            final_price = self.rmb_final_price
             final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
                                    final_price.items()))
             return final_price
 
     @property
     def rial_final_price_new_order(self):
-        self.currency_ = Currency.objects.filter(title_en="Rial").first() or self.currency_
+        # self.custom_properties['currency_'] = self.currency_ or
         free_rmb_rate_new_order = self.free_rmb_rate_new_order
         final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
-                               self.rmb_final_price_().items()))
+                               self.rmb_final_price.items()))
         return final_price
 
     @property
     def rmb_final_price(self):
-        self.currency_ = Currency.objects.filter(title_en="RMB").first() or self.currency_
-        return self.rmb_final_price_()
+        if self._rmb_final_price_:
+            return self._rmb_final_price_
+        else:
+            return self.rmb_final_price_()
 
     def rmb_final_price_(self):
+        self.currency_ = (Currency.objects.filter(id=self.custom_properties.get('currency_')).first()
+                          or Currency.objects.filter(title_en="Rial").first())
         if self.sku and self.transportations_cost:
+            self.transportations_cost_ = self.transportations_cost
             on_demand_discounts = 0
+            quantity_discounts_percentage = 0
+            customer_grade_discounts_percentage = 0
+            payment_method_discount_percentage = 0
             settings = self.price_settings
-            if self.quantity_:
-                on_demand_discounts += settings.get_discount_based_quantity(self.quantity_)
-            if self.customer_grade_:
-                on_demand_discounts += settings.get_discount_based_customer(self.customer_grade_)
-            if self.payment_method_ and self.currency_:
-                on_demand_discounts += settings.get_discount_based_payment_method(self.payment_method_,self.currency_)
-            # TODO calculate price in IRR
-            final_price = dict(map(lambda x: (x[0], x[1] + self.effective_rmb_price + self.customs_cost),
-                                   self.transportations_cost.items()))
-            final_price = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts)
-                                                        * (1 + 0.01 * (settings.get_discount_based_price(
-                                                            x[1]) + settings.interest_percentage)))),
-                                   final_price.items()))
-            return final_price
+            if self.custom_properties.get('quantity_'):
+                quantity_discounts_percentage = settings.get_discount_based_quantity(self.custom_properties.get('quantity_'))
+                on_demand_discounts += quantity_discounts_percentage
+            if self.custom_properties.get('customer_grade_'):
+                customer_grade_discounts_percentage = settings.get_discount_based_customer(self.custom_properties.get('customer_grade_'))
+                on_demand_discounts += customer_grade_discounts_percentage
+            if self.custom_properties.get('payment_method_') and self.custom_properties.get('currency_'):
+                payment_method_discount_percentage = settings.get_discount_based_payment_method(self.custom_properties.get('payment_method_'),
+                                                                                          self.currency_)
+                on_demand_discounts += payment_method_discount_percentage
+            office_cost_percentage = self.price_settings.office_cost_percentage or 0
+
+            self.discount_percentage = {
+                'on_demand_discounts_percentage': on_demand_discounts,
+                'quantity_discounts_percentage': quantity_discounts_percentage,
+                'customer_grade_discounts_percentage': customer_grade_discounts_percentage,
+                'payment_method_discount_percentage': payment_method_discount_percentage,
+                'office_cost_percentage': office_cost_percentage,
+            }
+
+            self.rmb_final_price_custom_office = dict(map(lambda x: (x[0], (1 + 0.01 * office_cost_percentage) *
+                                                                     (x[
+                                                                          1] + self.effective_rmb_price + self.customs_cost)),
+                                                          self.transportations_cost_.items()))
+            self.rmb_final_price_before_ondemand = dict(
+                map(lambda x: (x[0], (x[1] * (1 + 0.01 * (settings.get_discount_based_price(x[1])
+                                                          + settings.interest_percentage)))),
+                    self.rmb_final_price_custom_office.items()))
+            self._rmb_final_price_ = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts))),
+                                              self.rmb_final_price_before_ondemand.items()))
+
+            self.get_discount_based_price_percentage = dict(
+                map(lambda x: (x[0], settings.get_discount_based_price(x[1])),
+                    self.rmb_final_price_custom_office.items()))
+            self.rmb_final_price_custom_office_percentage = dict(
+                map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
+                    self.rmb_final_price_custom_office.items()))
+            # self.rmb_final_price_before_ondemand_percentage = dict(
+            #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
+            #         self.rmb_final_price_before_ondemand.items()))
+            # self.rmb_final_price_percentage = dict(
+            #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
+            #         self._rmb_final_price_.items()))
+            self.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.rmb_final_price_before_ondemand, self.rmb_final_price_custom_office)
+            self.rmb_final_price_percentage = get_dif_percentage(self._rmb_final_price_, self.rmb_final_price_custom_office)
+
+            return self._rmb_final_price_
 
     def rial_final_price_rendered(self):
         return render_to_string('inquiry/partial/item_price_irr.html',
@@ -126,17 +175,17 @@ class PriceInquiryResult(BaseModel):
     rial_final_price_rendered.allow_tags = True
     rmb_final_price_rendered.allow_tags = True
 
-    def set_discount_params(self, quantity=None, customer_grade=None, payment_method=None, currency=None, price_setting=None):
+    def set_discount_params(self, quantity=None, customer_grade=None, payment_method=None, currency=None,
+                            price_setting=None):
         if price_setting:
             self.price_settings_ = price_setting
-        if quantity:
-            self.quantity_ = quantity
+        self.custom_properties['quantity_'] = quantity or 1
         if customer_grade:
-            self.customer_grade_ = customer_grade
+            self.custom_properties['customer_grade_'] = customer_grade
         if payment_method:
-            self.payment_method_ = payment_method
-        if currency:
-            self.currency_ = currency
+            self.custom_properties['payment_method_'] = payment_method
+        self.custom_properties['currency_'] = currency or "1"
+        self.rmb_final_price_()
         return self
 
     @property
@@ -154,7 +203,7 @@ class PriceInquiryResult(BaseModel):
         return PriceSettings.setting()
 
     @price_settings.setter
-    def price_settings(self,value):
+    def price_settings(self, value):
         self.price_settings_ = value
 
     @queryable_property
@@ -173,7 +222,7 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def free_rmb_rate_new_order(self):
-        return self.price_settings.free_rmb_rate_new_order #CurrencyExchange.rmb_rate().sell_exchange
+        return self.price_settings.free_rmb_rate_new_order  # CurrencyExchange.rmb_rate().sell_exchange
 
     @queryable_property
     def rmb_price(self):
@@ -203,11 +252,11 @@ class PriceInquiryResult(BaseModel):
         effective_rmb_price = self.rmb_price
         return {
             "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
-                    + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+                       + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
             "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
-                    + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+                   + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
             "sea": self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
-                    + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+                   + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
         }
 
     @queryable_property
@@ -216,7 +265,9 @@ class PriceInquiryResult(BaseModel):
         settings = self.price_settings
         customs_rmb_rate = settings.customs_rmb_rate
         customs_price = self.sku.get_customs_price if self.sku.get_customs_price > 0 else self.rmb_price
-        return 0.01 * (settings.duty_on_value_percentage + self.sku.purchase_group.hs.customs_rate) * customs_price * customs_rmb_rate/free_rmb_rate
+        self.customs_rate = self.sku.purchase_group.hs.customs_rate
+        return 0.01 * (
+                    settings.duty_on_value_percentage + self.customs_rate) * customs_price * customs_rmb_rate / free_rmb_rate
 
     class Meta:
         ordering = 'created_date',
@@ -262,13 +313,17 @@ class PriceInquiryResult(BaseModel):
 
 
 class SalesPriceInqueryLog(AbsBaseModel):
-    sku = models.ForeignKey(Item, related_name="sales_price_inquery", verbose_name=_('sku'), on_delete=models.DO_NOTHING)
-    quantity = models.FloatField(verbose_name=_('quantity'),blank=True,null=True)
-    grade = models.CharField(verbose_name=_('grade'), max_length=30,blank=True,null=True)
-    payment_method = models.CharField(verbose_name=_('payment_method'), max_length=30,blank=True,null=True)
-    currency = models.ForeignKey(Currency, verbose_name=_('currency'), on_delete=models.DO_NOTHING,blank=True,null=True)
-    price_setting = models.ForeignKey(PriceSettings, verbose_name=_('price_setting'), on_delete=models.DO_NOTHING,blank=True,null=True)
-    party_code = models.CharField(verbose_name=_('party_code'),blank=True,null=True,max_length=20)
+    sku = models.ForeignKey(Item, related_name="sales_price_inquery", verbose_name=_('sku'),
+                            on_delete=models.DO_NOTHING)
+    quantity = models.FloatField(verbose_name=_('quantity'), blank=True, null=True)
+    grade = models.CharField(verbose_name=_('grade'), max_length=30, blank=True, null=True)
+    payment_method = models.CharField(verbose_name=_('payment_method'), max_length=30, blank=True, null=True)
+    currency = models.ForeignKey(Currency, verbose_name=_('currency'), on_delete=models.DO_NOTHING, blank=True,
+                                 null=True)
+    price_setting = models.ForeignKey(PriceSettings, verbose_name=_('price_setting'), on_delete=models.DO_NOTHING,
+                                      blank=True, null=True)
+    party_code = models.CharField(verbose_name=_('party_code'), blank=True, null=True, max_length=20)
+
 
 class InquiryResult(AbsBaseModel):
     #  استعلام از گوگل شیت
@@ -302,24 +357,35 @@ class InquiryResult(AbsBaseModel):
 
     #  express - air - sea (1) => 7200
     #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
-    express_transportation_cost_1 = models.FloatField(verbose_name=_('express_transportation_cost_1'), null=True, blank=True, default=73)
-    air_transportation_cost_1 = models.FloatField(verbose_name=_('air_transportation_cost_1'), null=True, blank=True, default=50)
-    sea_transportation_cost_1 = models.FloatField(verbose_name=_('sea_transportation_cost_1'), null=True, blank=True, default=6)
+    express_transportation_cost_1 = models.FloatField(verbose_name=_('express_transportation_cost_1'), null=True,
+                                                      blank=True, default=73)
+    air_transportation_cost_1 = models.FloatField(verbose_name=_('air_transportation_cost_1'), null=True, blank=True,
+                                                  default=50)
+    sea_transportation_cost_1 = models.FloatField(verbose_name=_('sea_transportation_cost_1'), null=True, blank=True,
+                                                  default=6)
 
     #  express - air - sea (2) => 7400
-    express_transportation_cost_2 = models.FloatField(verbose_name=_('express_transportation_cost_2'), null=True, blank=True, default=73)
-    air_transportation_cost_2 = models.FloatField(verbose_name=_('air_transportation_cost_2'), null=True, blank=True, default=50)
-    sea_transportation_cost_2 = models.FloatField(verbose_name=_('sea_transportation_cost_2'), null=True, blank=True, default=6)
+    express_transportation_cost_2 = models.FloatField(verbose_name=_('express_transportation_cost_2'), null=True,
+                                                      blank=True, default=73)
+    air_transportation_cost_2 = models.FloatField(verbose_name=_('air_transportation_cost_2'), null=True, blank=True,
+                                                  default=50)
+    sea_transportation_cost_2 = models.FloatField(verbose_name=_('sea_transportation_cost_2'), null=True, blank=True,
+                                                  default=6)
 
     #  express - air - sea (3) => transportations_cost
-    express_transportation_cost_3 = models.FloatField(verbose_name=_('express_transportation_cost_3'), null=True, blank=True, default=73)
-    air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True, default=50)
-    sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True, default=6)
+    express_transportation_cost_3 = models.FloatField(verbose_name=_('express_transportation_cost_3'), null=True,
+                                                      blank=True, default=73)
+    air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True,
+                                                  default=50)
+    sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True,
+                                                  default=6)
 
-    quotation_item = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, related_name='quotation_item_rel', null=True, blank=True)
-    sales_price_inquery_log = models.ForeignKey(SalesPriceInqueryLog, on_delete=models.DO_NOTHING, related_name='sales_price_inquery_log_rel', null=True, blank=True)
-    price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel', blank=True, null=True)
-
+    quotation_item = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, related_name='quotation_item_rel',
+                                       null=True, blank=True)
+    sales_price_inquery_log = models.ForeignKey(SalesPriceInqueryLog, on_delete=models.DO_NOTHING,
+                                                related_name='sales_price_inquery_log_rel', null=True, blank=True)
+    price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
+                                       blank=True, null=True)
 
 # @receiver(post_save, sender=PriceInquiryResult)
 # def deactivate_prev_inquiry_result(sender, instance, created, **kwargs):
@@ -330,5 +396,3 @@ class InquiryResult(AbsBaseModel):
 #         if instance.active and instance != res:
 #             res.active = False
 #             res.save()
-
-

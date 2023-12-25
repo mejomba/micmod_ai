@@ -2,8 +2,14 @@
 {% load static %}
 {% load jalali_tags %}
 {% load humanize %}
+{% load accounts_tag %}
 
-<div class="card-body bg-gray-200 col-8">
+<div class="card col-8">
+<div class="card-title">
+    <div class="fw-bolder"><span class="me-10">وزن کالا در 1000 قطعه:</span>
+        {{ sku.n_price.weight|intcomma|floatformat:4 }}</div>
+</div>
+<div class="card-body bg-gray-200">
     <div class="d-flex">
         <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-40">
             <li class="nav-item w-100 me-0 mb-md-2">
@@ -21,8 +27,9 @@
             <li class="nav-item w-100 me-0 mb-md-2">
                 <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
                    href="#kt_tab_pane_2">
-                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-currency-dollar me-2"></i>اطلاعات
+                    <div class="anchor fw-bold position-relative" data-key="goods_information"><i class="bi bi-currency-dollar me-2"></i>اطلاعات
                         قیمت و فروش
+                        <span class="badge badge-square badge-light-danger ms-5">{{ sku.n_price.discount_percentage.on_demand_discounts_percentage }}</span>
                     </div>
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
                         <table class="table table-row-dashed table-row-gray-300">
@@ -56,21 +63,75 @@
                     <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-box-seam-fill me-2"></i>اطلاعات
                         موجودی کالا
                     </div>
-                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
-                        <div class="text-end me-2 min-h-30px"> {{ sku.part_number }} </div>
-                        <div class="text-end me-2 min-h-30px">{{ sku.purchase_group }} </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
+                        <table class="table table-row-dashed table-row-gray-300">
+                            <tr class="fw-bold fs-6 text-gray-800">
+                                <td class="w-40 text-primary"></td>
+                                <td class="w-30 text-primary">موجودی</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">انبار مرکزی</td>
+                                <td class="text-danger">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">انبار رزرو</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">در راه (کسری)</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">در راه (مشتری)</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </a>
             </li>
             <li class="nav-item w-100">
                 <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
-                   href="#kt_tab_pane_3">
+                   href="#kt_tab_pane_4">
                     <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
                         قیمت (مدیریتی)
                     </div>
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
-                        <div class="text-end me-2 min-h-30px"> {{ sku.part_number }} </div>
-                        <div class="text-end me-2 min-h-30px"> {{ sku.purchase_group }} </div>
+                        {% if request.user|has_group:"total_admin" %}
+                            <table class="table table-row-dashed table-row-gray-300 min-h-100px">
+                            <tr class="fw-bold fs-6 text-gray-800">
+                                <td class="w-40 text-primary">{{ sku.n_price.currency_type }}</td>
+                                <td class="w-30 text-primary">{{ sku.n_price.price|intcomma|floatformat:4 }}</td>
+                                <td class="w-30 text-warning">{{ sku.n_price.rmb_price|intcomma|floatformat:4 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_custom_office_percentage.express|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_custom_office.air|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_custom_office_percentage.air|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_custom_office.sea|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_custom_office_percentage.sea|intcomma|floatformat:1 }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_before_ondemand.express|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_before_ondemand_percentage.express|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_before_ondemand.air|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_before_ondemand_percentage.air|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price_before_ondemand.sea|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_before_ondemand_percentage.sea|intcomma|floatformat:1 }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price.express|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_percentage.express|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price.air|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_percentage.air|intcomma|floatformat:1 }}</span></td>
+                                <td class="text-primary">{{ sku.n_price.rmb_final_price.sea|intcomma|floatformat:4 }}
+                                <span class="badge badge-square badge-light-danger mt-1 ms-2">{{ sku.n_price.rmb_final_price_percentage.sea|intcomma|floatformat:1 }}</span></td>
+                            </tr>
+                        </table>
+
+                        {% else %}
+                        <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد </div>
+                        {% endif %}
                     </div>
                 </a>
             </li>
@@ -86,41 +147,18 @@
             <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel">
                 ...
             </div>
-        </div>
-    </div>
+            <div class="tab-pane fade" id="kt_tab_pane_4" role="tabpanel">
+                {% if request.user|has_group:"total_admin" %}
 
-    <div class="row">
-        <div class="col-md-12 col-lg-4">
-            <table class="table table-striped m-table border">
-                <thead>
-                <th class="p-2 caption text-center">عنوان</th>
-                <th class="p-2 caption text-center">مقدار</th>
-                </thead>
-                <tbody>
-                <tr>
-                    <td class="p-2 caption text-center" data-key="">آخرین تاریخ تغییر قیمت</td>
-                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.price_update_date|to_jalali }}</td>
-                </tr>
-                <tr>
-                    <td class="p-2 caption text-center" data-key="">قیمت داخلی</td>
-                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.local_price }}</td>
-                </tr>
-                <tr>
-                    <td class="p-2 caption text-center" data-key="">نوع ارز</td>
-                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.currency_type }}</td>
-                </tr>
-                <tr>
-                    <td class="p-2 caption text-center" data-key="">توضیحات</td>
-                    <td class="p-2 caption text-center" id="{{ k }}">{{ d.description }}</td>
-                </tr>
-                {% for k, v in items.items %}
-                    <tr>
-                        <td class="p-2 caption text-center" data-key="{{ k }}">{{ k }}</td>
-                        <td class="p-2 caption text-center" id="{{ k }}">{{ v }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                {% else %}
+                <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد </div>
+                {% endif %}
+            </div>
         </div>
     </div>
+</div>
+<div class="card-footer d-flex">
+    <div class="fw-bold"><span class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.n_price.price_update_date|to_jalali }}</div>
+    <div class="ms-10">{{ sku.n_price.elapsed_from_last_price }}</div>
+</div>
 </div>
