@@ -1,15 +1,8 @@
 window.addEventListener('load', (event) => {
-    let formsetContainer = document.getElementById('id_formset_container')
-    if (formsetContainer){
-        let line = document.createElement('hr')
-        line.classList.add('my-5')
-        formsetContainer.parentElement.insertBefore(line, formsetContainer);
-    }
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.value = commaSeperator(item.value.toString().reverse_string()).reverse_string()
     })
-    // addCommaSeperator()
     // get form template and total number of forms from management form
     const templateForm = document.getElementById('id_formset_empty_form');
     const inputTotalForms = document.querySelector('input[id$="-TOTAL_FORMS"]');
@@ -25,6 +18,7 @@ window.addEventListener('load', (event) => {
     for (let b in buttonsAdd) {
         buttonsAdd[b].onclick = addForm;
     }
+
     for (let b in buttonSubmit) {
         buttonSubmit[b].onclick = updateNameAttributes;
     }
@@ -44,12 +38,24 @@ window.addEventListener('load', (event) => {
         // a django form is rendered as_table (default), as_ul, or as_p, so
         // the fragment will contain one or more <tr>, <li>, or <p> elements,
         // respectively.
+        debugger
+        let elementInnerHtml
         for (let element of formFragment.children) {
             // replace the __prefix__ placeholders from the empty form by the
             // actual form index
-            element.innerHTML = element.innerHTML.replace(
-                /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
+            //  elementInnerHtml = element.innerHTML
+            elementInnerHtml = element.innerHTML.replace(
+                /(?<=\w+-)(0)(?=-\w+)/g,
+                '__prefix__');
+             elementInnerHtml = elementInnerHtml.replace(
+                /(?<=\w+_)(rel-__prefix__)(?=-\w+)/g,
+                'rel-0');
+            elementInnerHtml = elementInnerHtml.replace(
+                /(?<=\w+-)(__prefix__)(?=-\w+)/g,
                 nextFormIndex.toString());
+            element.innerHTML = elementInnerHtml
+            // /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
+
             // add a custom attribute to simplify bookkeeping
             element.dataset.formIndex = nextFormIndex.toString();
             // add a delete click handler (if formset can_delete)
@@ -141,18 +147,18 @@ window.addEventListener('load', (event) => {
         // make sure the name indices are consecutive and smaller than
         // TOTAL_FORMS (the name attributes end up as dict keys on the server)
         // note we do not need to update the indices in the id attributes etc.
-
-        for (let [consecutiveIndex, formIndex] of extraFormIndices.entries()) {
-            for (let formElement of getFormElements(formIndex)) {
-                for (let element of formElement.querySelectorAll('input, select')) {
-                    if ('name' in element) {
-                        element.name = element.name.replace(
-                            /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
-                            (initialForms + consecutiveIndex).toString());
-                    }
-                }
-            }
-        }
+        debugger
+        // for (let [consecutiveIndex, formIndex] of extraFormIndices.entries()) {
+        //     for (let formElement of getFormElements(formIndex)) {
+        //         for (let element of formElement.querySelectorAll('input, select')) {
+        //             if ('name' in element) {
+        //                 element.name = element.name.replace(
+        //                     /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
+        //                     (initialForms + consecutiveIndex).toString());
+        //             }
+        //         }
+        //     }
+        // }
         updateTotalFormCount();
         removeCommaSeperator()
     }

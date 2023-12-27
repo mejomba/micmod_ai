@@ -28,5 +28,8 @@ urlpatterns = [
 
     path('sku_list_datatable/', views.SkuListDataTableView.as_view(), name="sku.list.datatable"),
 
+    path('item_list/', views.get_item, name='item_list'),
+    path('items_list/', views.get_items, name='items_list'),
+
     path('sku/list/', views.sku_list, name='sku_list'),
 ]

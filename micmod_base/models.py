@@ -1,9 +1,11 @@
+import uuid
 
 # from django.contrib.auth.models import User
 from accounts.models import User
 from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
+from tools.utils import show_error
 
 from translator import get_text as _
 # Create your models here.
@@ -21,6 +23,7 @@ class QuotationManager(models.Manager):
 
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
+    customer_party_id = models.IntegerField(verbose_name=_('party_id'), null=True, blank=True)
     request_date = models.DateField(null=False, blank=False, verbose_name=_('request_date'))
     expiration_date = models.DateField(null=True, blank=True, verbose_name=_('expiration_date'))
     customer_code = models.CharField(max_length=20, null=True, blank=True, verbose_name=_('customer_code'))
@@ -33,10 +36,21 @@ class Quotation(SLSDoc):
     market_grade = models.CharField(choices=MarketGrade, max_length=10, null=True, blank=True,
                                     verbose_name=_('market_grade'), default="5,A")
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
+    guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
+    sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
+    sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
 
     objects = models.Manager()
 
     custom_objects = QuotationManager()
+
+    @property
+    def price(self):
+        try:
+            return sum(x.price for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return None
 
     def __str__(self):
         return str(self.id)
@@ -107,3 +121,34 @@ class QuotationItem(BaseModel):
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
     need_local_price_inquiry = models.BooleanField(verbose_name=_('need_local_price_inquiry'), default=False)
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
+
+    description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
+
+    @property
+    def fee(self):
+        iqr = self.quotation_item_rel.all().last()
+        match self.price_method:
+            case 'last_sale':
+                return iqr.goods_last_price
+            case 'last_sale_q':
+                return iqr.goods_q_last_price
+            case 'price_avg':
+                return iqr.goods_avg_price
+            case 'sales_admin':
+                return self.final_price
+            case 'price_sheet1':
+                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportaion_cost_3
+            case 'price_sheet2':
+                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportaion_cost_3
+            case 'price_sheet3':
+                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportaion_cost_3
+            case 'price_market':
+                return iqr.goods_price_market
+
+    @property
+    def price(self):
+        try:
+            return self.fee * self.quantity
+        except Exception as e:
+            show_error(e, __file__)
+            return None

@@ -358,27 +358,21 @@ class InquiryResult(AbsBaseModel):
     #  express - air - sea (1) => 7200
     #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
     express_transportation_cost_1 = models.FloatField(verbose_name=_('express_transportation_cost_1'), null=True,
-                                                      blank=True, default=73)
-    air_transportation_cost_1 = models.FloatField(verbose_name=_('air_transportation_cost_1'), null=True, blank=True,
-                                                  default=50)
-    sea_transportation_cost_1 = models.FloatField(verbose_name=_('sea_transportation_cost_1'), null=True, blank=True,
-                                                  default=6)
+                                                      blank=True)
+    air_transportation_cost_1 = models.FloatField(verbose_name=_('air_transportation_cost_1'), null=True, blank=True)
+    sea_transportation_cost_1 = models.FloatField(verbose_name=_('sea_transportation_cost_1'), null=True, blank=True)
 
     #  express - air - sea (2) => 7400
     express_transportation_cost_2 = models.FloatField(verbose_name=_('express_transportation_cost_2'), null=True,
-                                                      blank=True, default=73)
-    air_transportation_cost_2 = models.FloatField(verbose_name=_('air_transportation_cost_2'), null=True, blank=True,
-                                                  default=50)
-    sea_transportation_cost_2 = models.FloatField(verbose_name=_('sea_transportation_cost_2'), null=True, blank=True,
-                                                  default=6)
+                                                      blank=True)
+    air_transportation_cost_2 = models.FloatField(verbose_name=_('air_transportation_cost_2'), null=True, blank=True,)
+    sea_transportation_cost_2 = models.FloatField(verbose_name=_('sea_transportation_cost_2'), null=True, blank=True)
 
     #  express - air - sea (3) => transportations_cost
     express_transportation_cost_3 = models.FloatField(verbose_name=_('express_transportation_cost_3'), null=True,
-                                                      blank=True, default=73)
-    air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True,
-                                                  default=50)
-    sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True,
-                                                  default=6)
+                                                      blank=True)
+    air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True)
+    sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True)
 
     quotation_item = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, related_name='quotation_item_rel',
                                        null=True, blank=True)

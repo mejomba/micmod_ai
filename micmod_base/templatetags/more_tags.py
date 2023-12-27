@@ -103,12 +103,14 @@ def render_field(field, crispy=None):
 
 
 @register.inclusion_tag('core/partial/render_field_by_order.html')
-def render_field_by_order(form, *fields, crispy=None, margin_b=None, html_tag=None, label=None, label_text=None, disable=None):
+def render_field_by_order(form, *fields, crispy=None, margin_b=None, html_tag=None, label=None,
+                          label_text=None, disable=None, no_input=None, css=None, id=None):
     if form and crispy is None:
-        crispy = form.crispy
+        crispy = getattr(form, 'crispy', None)
     context = {'form': form, 'fields': fields, 'crispy': crispy,
                'html_tag': html_tag, 'margin_b': margin_b,
-               'label': label, 'label_text': label_text, 'disable': disable
+               'label': label, 'label_text': label_text, 'disable': disable,
+               'no_input': no_input, 'css': css, 'id': id
                }
     return context
 

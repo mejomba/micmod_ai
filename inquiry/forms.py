@@ -139,4 +139,7 @@ class InquiryResultForm(CustomBaseModelForm):
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
+        kwargs.pop('constraint', None)
         super(InquiryResultForm, self).__init__(*args, **kwargs)
+
+        self.make_hidden(self.fields)

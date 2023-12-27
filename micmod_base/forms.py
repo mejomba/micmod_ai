@@ -8,11 +8,13 @@ from jalali_date.fields import SplitJalaliDateTimeField, JalaliDateField
 from jalali_date.widgets import AdminSplitJalaliDateTime, AdminJalaliDateWidget
 
 from accounts.mixins import FormFieldAccessMixin
+from inquiry.forms import InquiryResultForm
+from inquiry.models import InquiryResult
 from micmod_base.base import CurrencyExchange, Currency
 from translator import get_text as _
 
 from micmod_base.models import Quotation, QuotationItem
-from django.forms import BaseInlineFormSet
+from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm
 
 
@@ -22,7 +24,8 @@ class QuotationForm(CustomBaseModelForm):
     class Meta:
         model = Quotation
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
-                  "customer_grade", "delivery_time", "payment_method", "market_grade", "description", "id", ]
+                  "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
+                  "description", "id", 'sepidar_number']
 
         widgets = {
             # 'customer_code': forms.Select(
@@ -41,10 +44,12 @@ class QuotationForm(CustomBaseModelForm):
 
         if self.form_state is not None:
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
+                access = c.pop('wf_access')
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
                 formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
                 request = c.pop('request')  # remove unnecessary kwargs
             elif kwargs.get('constraint'):
+                access = kwargs.get('constraint').get('wf_access')
                 form_constraint = kwargs.get('constraint').get('form_constraint')
                 formset_constraint = kwargs.get('constraint').get('formset_constraint')
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
@@ -54,11 +59,6 @@ class QuotationForm(CustomBaseModelForm):
             form_constraint_hide = form_constraint[self.form_state].get('hide')
             formset_constraint_read = formset_constraint[self.form_state][0].get('read')
             formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
-
-            # form_constraint_read = kwargs.get('form_constraint')[self.form_state].get('read')
-            # form_constraint_hide = kwargs.pop('form_constraint')[self.form_state].get('hide')
-            # formset_constraint_read = kwargs.get('formset_constraint')[self.form_state][0].get('read')
-            # formset_constraint_hide = kwargs.pop('formset_constraint')[self.form_state][0].get('hide')
 
         super(QuotationForm, self).__init__(*args, **kwargs)
         self.fields['request_date'] = JalaliDateField(label=_('request_date'),
@@ -77,20 +77,22 @@ class QuotationForm(CustomBaseModelForm):
                 self.make_hidden(formset_constraint_hide)
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
-        # self.fields['request_date'].widget.attrs['class'] = 'form-control'
-        # self.fields['expiration_date'].widget.attrs['class'] = 'form-control'
-        # self.fields['code'].label = 'salam'
-        # self.initial = {
-        #     'request_date': self.data.get('request_date') if self.data.get('request_date') else datetime2jalali(
-        #         datetime.datetime.now()).strftime('%Y-%m-%d'),
-        #     'expiration_date': self.data.get('expiration_date') if self.data.get('expiration_date') else datetime2jalali(
-        #         datetime.datetime.now() + datetime.timedelta(10)).strftime('%Y-%m-%d')
-        # }
+
+            if not access:
+                self.fields['customer_code'] = forms.CharField(widget=forms.TextInput(
+                    attrs={'class': 'form-control select2-selection__rendered',
+                           "style": "width:100%", 'name': 'customer_code'}
+                ))
+                self.make_disable(self.fields)
+                self.enable = False
 
         if not self.initial.get('create') and not self.initial.get('wf_access'):
-            self.make_disable(self.fields)
-            self.enable = False
+            ...
+            # self.make_disable(self.fields)
+            # self.enable = False
         self.select2(['customer_code'])
+        self.make_hidden(['customer_party_id'])
+        self.make_disable(['sepidar_number'])
 
 
 class QuotationItemForm(CustomBaseModelForm):
@@ -248,7 +250,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
 
-        if not request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
@@ -372,3 +374,130 @@ class CurrencyExchangeForm(CustomBaseModelForm):
     class Meta:
         model = CurrencyExchange
         fields = ['currency', 'buy_exchange', 'sell_exchange']
+
+
+iqr_fields = [
+    "goods_price_market",
+    "goods_market_date",
+    "goods_avg_price",
+    "goods_min_price",
+    "goods_max_price",
+    "goods_last_sale",
+    "goods_total_sales",
+    "goods_last_price",
+    "goods_q_last_sale",
+    "goods_q_total_sales",
+    "goods_q_last_price",
+    "stock_amount",
+    "stock_amount_res",
+    "express_transportation_cost_1",
+    "air_transportation_cost_1",
+    "sea_transportation_cost_1",
+    "express_transportation_cost_2",
+    "air_transportation_cost_2",
+    "sea_transportation_cost_2",
+    "express_transportation_cost_3",
+    "air_transportation_cost_3",
+    "sea_transportation_cost_3",
+    "quotation_item",
+    "price_settings",
+    # "price_update_date",
+]
+InquiryResultFormset = inlineformset_factory(QuotationItem, InquiryResult, form=InquiryResultForm, extra=1, fields=iqr_fields)
+
+
+class BaseQIFormset(BaseInlineFormSet):
+    def add_fields(self, form, index):
+        x = super(BaseQIFormset, self).add_fields(form, index)
+
+        form.nested = InquiryResultFormset(
+                        instance=form.instance,
+                        data=form.data if form.is_bound else None,
+                        files=form.files if form.is_bound else None,
+                        prefix='qir-%s-%s' % (
+                            form.prefix,
+                            InquiryResultFormset.get_default_prefix()),
+                        )
+        print('new form nested: ===== ', index)
+
+    def is_valid(self):
+        result = super(BaseQIFormset, self).is_valid()
+
+        if self.is_bound:
+            for form in self.forms:
+                if hasattr(form, 'nested'):
+                    result = result and form.nested.is_valid()
+                    result = True
+
+        return result
+
+    def save(self, commit=True, request=None, related_name_fk=None):
+
+        result = super(BaseQIFormset, self).save(commit=commit)
+
+        idx = 0
+        for form in self.forms:
+            if form.changed_data and hasattr(form, 'nested') and not self._should_delete_form(form):
+
+                old_details_ = getattr(result[idx], 'quotation_item_rel', None)
+                old_details = []
+                if old_details_:
+                    old_details = list(old_details_.all())
+                    old_details = [result[idx].attach_image_file(old_detail) for old_detail in old_details]
+
+                obj = form.nested.save(commit=commit)
+                if obj:
+                    obj[0].result_parameter = {
+                        'currency_ref': result[idx].quotation.currency_ref.pk,
+                        'payment_method': result[idx].quotation.payment_method,
+                        'quantity': result[idx].quantity,
+                        'customer_grade': result[idx].quotation.customer_grade,
+                        'customer_code': result[idx].quotation.customer_code
+                    }
+                    obj[0].save()
+                    obj[0].save_user(request)
+
+                    new_details = getattr(result[idx], 'quotation_item_rel', None)
+                    if new_details:
+                        new_details = list(new_details.all())
+                    idx += 1
+
+                    for d in new_details:
+                        if d not in old_details:
+                            d.attach_image_file(d)
+                            d.save_log(request, obj=d, action=1)
+                        else:
+                            for old_detail in old_details:
+                                if old_detail.id == d.id:
+                                    d.attach_image_file(d)
+                                    d.save_log(request, obj=d, old=old_detail, action=2)
+                                    break
+                elif hasattr(form, 'nested') and not self._should_delete_form(form):
+                    obj = form.nested.save(commit=commit)
+                    if obj:
+                        obj[0].save()
+                        obj[0].save_user(request)
+        return result
+
+
+qi_fields = [
+    'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
+    'delivery_time', 'goods_code', 'goods_code_alt', 'price_method',
+    'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
+    'goods_price_sheet3', 'final_price',
+    'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
+    'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
+    'stock_amount_res', 'goods_min_price', 'goods_max_price',
+    'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
+    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done'
+    ]
+
+
+QuotationItemFormset = inlineformset_factory(
+    Quotation,
+    QuotationItem,
+    formset=BaseQIFormset,
+    form=QuotationItemForm2,
+    extra=1,
+    fields=qi_fields,
+)

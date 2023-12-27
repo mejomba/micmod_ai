@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 import json
+
+from files.models import File, Image
 from tools.utils import elapsed_time
 from django.db.models import Q
 from accounts.models import User
@@ -253,6 +255,25 @@ class NoUserBaseModel(models.Model):
                                           action=action
                                           )
             ch.save_user(request)
+
+    @staticmethod
+    def attach_image_file(obj, form=None):
+        """attach image and file field to obj if exist"""
+        content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
+                                                  model=obj._meta.model_name,
+                                                  ).first()
+        if form is None or (form.image_groups and form.file_groups):
+            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.images = images
+            obj.files = files
+        elif form.image_groups:
+            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.images = images
+        elif form.file_groups:
+            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            obj.files = files
+        return obj
 
 
 class AbsBaseModel(NoUserBaseModel):

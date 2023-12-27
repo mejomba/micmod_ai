@@ -13,8 +13,10 @@ from django.views.generic.edit import FormView
 from jalali_date import datetime2jalali
 
 from changelog.models import ChangeLog
+from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm, QuotationItemForm2, CurrencyExchangeForm
+from micmod_base.forms import QuotationForm, QuotationItemForm, QuotationItemForm2, CurrencyExchangeForm, \
+    QuotationItemFormset
 from sepidar.models import Dl
 from tools.utils import show_error
 from translator import get_text as _
@@ -54,13 +56,15 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     form_class = QuotationForm
     model = Quotation
     has_flow = True
-    # flow_config = {
-    #     'flow_name': 'create quotation',
-    #     'flow_action': _('create'),
-    #     'flow_state_list': ['پیش فاکتور اولیه', 'استعلام قیمت', 'تایید پیش فاکتور', 'تایید مشتری', 'تایید کارشناس',],
-    #     'flow_users_groups': ['salse_users', 'base_user', 'wh_user', 'imei_admin', 'wh_user',],
-    #     'flow_deadline': [0, 3, 1, 1, 1],
-    # }
+    form_struct = {
+        'form': QuotationForm,
+        'childes': [
+            {
+                'form': QuotationItemFormset,
+                'childes': [{'form': InquiryResultForm}]
+            },
+        ]
+    }
     flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
     # print(flow_config)
 

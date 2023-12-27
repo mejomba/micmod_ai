@@ -52,13 +52,14 @@ class Messages(AbsBaseModel):
     @classmethod
     def send_message(cls, **kwargs):
         obj = cls.objects.first() #cls.objects.create(**kwargs)
-        unread_count = cls.get_unread_messages(obj.user).count()
-        rendered_html = render_to_string('notifications/partials/notification_message.html',
-                                         context={'notification': obj})
-        asyncio.run(cls._send_message(f"notify_group_{obj.user.id}",
-                                      {'type': "notification_msg", 'count': unread_count,
-                                       'title': obj.title,'body': rendered_html,
-                                       'message_type': dict(MessageType.choices)[obj.message_type]}))
+        if obj:
+            unread_count = cls.get_unread_messages(obj.user).count()
+            rendered_html = render_to_string('notifications/partials/notification_message.html',
+                                             context={'notification': obj})
+            asyncio.run(cls._send_message(f"notify_group_{obj.user.id}",
+                                          {'type': "notification_msg", 'count': unread_count,
+                                           'title': obj.title,'body': rendered_html,
+                                           'message_type': dict(MessageType.choices)[obj.message_type]}))
         return obj
 
 

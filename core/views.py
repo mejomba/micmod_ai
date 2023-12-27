@@ -6,17 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
-from django.forms import inlineformset_factory, modelformset_factory, formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.views import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
-
 from _keenthemes import KTLayout
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
-from files.models import Image, File
-from inquiry.models import PriceInquiryResult
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -55,6 +50,13 @@ class BaseView(UserPassesTestMixin,
     finish = None
     extra_formset = 1
     wf_access = None
+    form_partial = []
+    formset_partial = []
+    _form_partial = []
+    _formset_partial = []
+    form_struct = None
+    formset_l2 = None
+    form = None
 
     def get_object(self, queryset=None):
         try:
@@ -62,6 +64,24 @@ class BaseView(UserPassesTestMixin,
         except AttributeError as e:
             print('error ', __file__, e.__traceback__.tb_lineno, e)
             return None
+
+    def get_formset_from_struct(self):
+        try:
+            return self.form_struct.get('childes')[0].get('form')
+        except Exception as e:
+            return None
+
+    def get_form_from_struct(self):
+        return self.form_struct.get('form')
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.object = self.get_object()
+        self.formset_form = self.get_formset_from_struct()
+        self.state_index = self.get_flow_index(self.object)
+
+        if request.method == 'GET':
+            self.formset = self.get_formset_from_struct()
 
     def get(self, request, *args, **kwargs):
         if self.has_formset and not all([self.model, self.formset_model, self.formset_form]):
@@ -87,17 +107,30 @@ class BaseView(UserPassesTestMixin,
 
         if self.has_formset:
             self.formset_form.form_state = self.state_index
-            self.formset = inlineformset_factory(self.model, self.formset_model, form=self.formset_form, extra=self.extra_formset, )
-            print('has formset', self.formset)
+
         return super().get(request, *args, **kwargs)
 
+    def get_form_class(self):
+        if self.form_struct:
+            self.form_class = self.form_struct.get('form')
+        return self.form_class
+
     def post(self, request, *args, **kwargs):
+        self.form = self.get_form_class()(self.request.POST, instance=self.object, initial={
+                                                  "constraint": {
+                                                      "wf_access": self.wf_access,
+                                                      'form_state': self.state_index,
+                                                      'request': self.request,
+                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
+
         self.object = self.get_object()
-        if self.has_formset:
-            self.formset = inlineformset_factory(self.model, self.formset_model, form=self.formset_form, extra=self.extra_formset)
         if self.has_flow:
             self.state_index = self.get_flow_index(self.object)
-        form = self.get_form()
+
+        self.get_form_kwargs()
         if self.has_flow:
             try:
                 flow_obj = self.get_flow(self.object).order_by('id').last()
@@ -117,19 +150,19 @@ class BaseView(UserPassesTestMixin,
                                         content_type_model=self.model, current_user=self.request.user)
         else:
             wfform = None
-            form.wfform = wfform
-            if form.is_valid():
-                return self.form_valid(form)
-            if not form.is_valid():
-                print(form.errors.as_data())
-                return self.form_invalid(form)
+            self.form.wfform = wfform
+            if self.form.is_valid():
+                return self.form_valid(self.form)
+            if not self.form.is_valid():
+                print(self.form.errors.as_data())
+                return self.form_invalid(self.form)
 
-        form.wfform = wfform
-        if form.is_valid() and wfform.is_valid():
-            return self.form_valid(form)
-        if not form.is_valid():
-            print(form.errors.as_data())
-            return self.form_invalid(form)
+        self.form.wfform = wfform
+        if self.form.is_valid() and wfform.is_valid():
+            return self.form_valid(self.form)
+        if not self.form.is_valid():
+            print(self.form.errors.as_data())
+            return self.form_invalid(self.form)
         if not wfform.is_valid():
             print(wfform.errors.as_data())
             return self.form_invalid(wfform)
@@ -188,14 +221,11 @@ class BaseView(UserPassesTestMixin,
             context['belong_to_group'] = self.wf_initial.get('belong_to_group')
             context['current_user_groups'] = self.request.user.groups.values_list('name', flat=True)
             context['wf_last_step_is_open'] = self.wf_last_step_is_open
-            # context['flow_admin'] = self.is_group_admin(self.request.user, context['belong_to_group'])
-            # context['flow_admin'] = self.is_admin(self.object, self.request.user)
             context['flow_admin'] = FlowAdminGroup.is_admin_of_group(self.request.user, self.flow_config.get('flow_users_groups')[self.state_index])
             if flow := self.get_flow(self.object):
                 context['flow'] = flow.order_by('-id')
 
             try:
-                # context['finish'] = True if self.get_flow(self.object).filter(state=self.flow_config.get('flow_state_list')[-1]).order_by('id').last().wf_status == 3 else None
                 context['finish'] = self.finish
             except Exception as e:
                 context['finish'] = False
@@ -208,9 +238,8 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        if self.model and self.formset_model and self.formset_form:
-            context['formset'] = self.formset(initial=[self.get_form_kwargs()], instance=self.object,
-                                              form_kwargs={
+        context['object_logs'] = ChangeLog.get_log(self.object)
+        context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                   "constraint": {
                                                       "wf_access": self.wf_access,
                                                       'form_state': self.state_index,
@@ -218,20 +247,16 @@ class BaseView(UserPassesTestMixin,
                                                       'form_constraint': self.flow_config.get('flow_form_constraint'),
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
-                                              })
-            # context['formset'] = self.formset(instance=self.object, initial=self.initial.update(self.get_form_kwargs()))
-        context['object_logs'] = ChangeLog.get_log(self.object)
+                                              }) if self.formset else None
         print(__file__, 'super class context', context.get('current_user_groups'))
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # fields, action = self.field_access_by_user_permission()
         fields_access = self.field_access_by_user_permission()
 
         try:
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
-            # print('self.state_index', self.state_index)
             try:
                 belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
             except Exception as e:
@@ -247,9 +272,6 @@ class BaseView(UserPassesTestMixin,
                 print(__file__,'user none')
 
             elif self.state_index is not None and last_flow_objs.last().wf_status == 2:  # previous step is `back`
-                # next_flow = last_flow_objs.filter(state=self.flow_config.get('flow_state_list')[self.state_index]).order_by('id').last()
-                # from_user_ = get_user_model().objects.filter(
-                #         id=next_flow.from_user_id).first() if next_flow else None
                 from_user_ = last_flow_objs.last().to_user
 
             elif self.state_index is not None and last_flow_objs.last().wf_status == 3:  # previous step is `next`
@@ -268,8 +290,6 @@ class BaseView(UserPassesTestMixin,
                     to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
                 elif self.state_index is not None:
                     to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
-                # if 'draft' in self.request.POST:
-                #     to_user = self.request.user
 
             except Exception as e:
                 print('error: ', __file__, e.__traceback__.tb_lineno, e)
@@ -283,10 +303,8 @@ class BaseView(UserPassesTestMixin,
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
-                    # self.finish = True if flow.filter(state=self.flow_config.get('flow_state_list')[-2]).order_by('id').last().wf_status == 3 else None
                     print(__file__, flow.order_by('id').last())
                     last_flow = flow.order_by('id').last()
-                    # self.finish = True if last_flow.state == 'مرحله نهایی' and last_flow.wf_status != 2 else None
                     self.finish = True if last_flow.wf_status == 3 and last_flow.state == self.flow_config.get('flow_state_list')[-2] else None
                 if self.finish and not self.wf_last_step_is_open:
                     wf_access = False
@@ -325,16 +343,9 @@ class BaseView(UserPassesTestMixin,
                     'form_constraint': self.flow_config.get('flow_form_constraint'),
                     'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                     },
-                # 'permission_access': {'fields': fields, 'action': action},
                 'permission_access': fields_access,
-                                 # 'wf_access': from_user == self.request.user or self.request.user.is_superuser or not from_user,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
-            # kwargs['initial'].update({
-            #     'permission_access': self.formset_field_access_by_user_permission(),
-            #     # 'wf_access': from_user == self.request.user or self.request.user.is_superuser or not from_user,
-            #     'wf_access': wf_access if self.has_flow else True,
-            # })
         except Exception as e:
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
             self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
@@ -346,19 +357,17 @@ class BaseView(UserPassesTestMixin,
                                 'form_constraint': self.flow_config.get('flow_form_constraint'),
                                 'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                                 },
-                                 # 'permission_access': fields_access,
                                  'create': self.create
                                  }
         return kwargs
 
     def form_valid(self, form):
-        from operator import itemgetter
         if form.is_valid():
             """save main form"""
             old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
 
             if old_obj:
-                self.attach_image_file(old_obj)
+                old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
 
                 if self.has_flow and 'back' in self.request.POST:
@@ -465,62 +474,54 @@ class BaseView(UserPassesTestMixin,
                                           )
                 except Exception as e:
                     print('error: ', e.__traceback__.tb_lineno, e)
-                print("self.formset", self.formset)
-                if self.formset:
-                    """save formset"""
-                    formset = self.formset(self.request.POST, instance=new_obj,
-                                           form_kwargs={
-                                               "constraint": {
-                                                   'form_state': self.state_index,
-                                                   'request': self.request,
-                                                   "wf_access": self.wf_access,
-                                                   'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                   'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                               }
-                                           })
+
+                """save formset"""
+                if self.has_formset:
+
                     old_details_ = getattr(new_obj, self.related_name_fk, None)
                     old_details = []
                     if old_details_:
                         old_details = list(old_details_.all())
-                        old_details = [self.attach_image_file(old_detail) for old_detail in old_details]
+                        old_details = [old_detail.attach_image_file(old_detail) for old_detail in old_details]
 
-                    for idx, form_ in enumerate(formset):
-                        if form_.is_valid():
-                            print('delete: ', form_.cleaned_data.get('DELETE'))
-                            if form_.cleaned_data.get('DELETE') and form_.instance.id:
-                                form_.instance.delete()
-                                continue
-                            if form_.cleaned_data.get('DELETE') and not form_.instance.id:
-                                continue
-                            try:
-                                detail = form_.save(commit=True)
-                                if detail:
-                                    detail.save_user(self.request)
-                                    setattr(detail, self.formset_fk_field, new_obj)
-                                    # if isinstance(detail, PriceInquiryResult):
-                                    #     detail.deactivate_other()
+                    self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
+                                                  "constraint": {
+                                                      "wf_access": self.wf_access,
+                                                      'form_state': self.state_index,
+                                                      'request': self.request,
+                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
+                    if self.formset.is_valid():
+                        fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
+                    else:
+                        print(self.formset.errors)
+                        fo = None
 
-                                    if form_.image_model and form_.image_groups:
-                                        """save formset image and file"""
-                                        detail.save_image(
-                                            request=self.request,
-                                            image_groups=form_.image_groups,
-                                            image_model=form_.image_model,
-                                            obj=detail,
-                                            fk=self.related_name_fk,
-                                            form_idx=idx,
-                                        )
-                                    if form_.file_model and form_.file_groups:
-                                        detail.save_file(
-                                            request=self.request,
-                                            file_groups=form_.file_groups,
-                                            file_model=form_.file_model,
-                                            obj=detail,
-                                            fk=self.related_name_fk,
-                                            form_idx=idx,
-                                        )
-                            except Exception as e:
-                                print('error: ', __file__,  e.__traceback__.tb_lineno, e)
+                    if fo:
+                        for idx, fs_obj in enumerate(fo):
+                            fs_obj.save_user(self.request)
+                            setattr(fs_obj, self.formset_fk_field, new_obj)
+                            if self.formset.form.image_model and self.formset.form.image_groups:
+                                """save formset image and file"""
+                                fs_obj.save_image(
+                                    request=self.request,
+                                    image_groups=self.formset.form.image_groups,
+                                    image_model=self.formset.form.image_model,
+                                    obj=fs_obj,
+                                    fk=self.related_name_fk,
+                                    form_idx=idx,
+                                )
+                            if self.formset.form.file_model and self.formset.form.file_groups:
+                                fs_obj.save_file(
+                                    request=self.request,
+                                    file_groups=self.formset.form.file_groups,
+                                    file_model=self.formset.form.file_model,
+                                    obj=fs_obj,
+                                    fk=self.related_name_fk,
+                                    form_idx=idx,
+                                )
 
                     """save formset log"""
                     new_details = getattr(new_obj, self.related_name_fk, None)
@@ -529,20 +530,22 @@ class BaseView(UserPassesTestMixin,
 
                     for d in new_details:
                         if d not in old_details:
-                            d = self.attach_image_file(d)
+                            d.attach_image_file(d)
+                            # d = self.attach_image_file(d)
                             d.save_log(self.request, obj=d, action=1)
                         else:
                             for old_detail in old_details:
                                 if old_detail.id == d.id:
-                                    d = self.attach_image_file(d)
+                                    d.attach_image_file(d)
+                                    # d = self.attach_image_file(d)
                                     d.save_log(self.request, obj=d, old=old_detail, action=2)
                                     break
                 """save main form log"""
+                new_obj.attach_image_file(new_obj, form)
+                # new_obj = self.attach_image_file(new_obj, form)
                 if not old_obj:
-                    new_obj = self.attach_image_file(new_obj, form)
                     new_obj.save_log(self.request, obj=new_obj, action=1)
                 else:
-                    new_obj = self.attach_image_file(new_obj, form)
                     new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
 
                 print('form valid base view')
@@ -560,25 +563,6 @@ class BaseView(UserPassesTestMixin,
                 return super().form_valid(form)
             return super().form_valid(form)
         return HttpResponseRedirect('.')
-
-    @staticmethod
-    def attach_image_file(obj, form=None):
-        """attach image and file field to obj if exist"""
-        content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
-                                                  model=obj._meta.model_name,
-                                                  ).first()
-        if form is None or (form.image_groups and form.file_groups):
-            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
-            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.images = images
-            obj.files = files
-        elif form.image_groups:
-            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.images = images
-        elif form.file_groups:
-            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.files = files
-        return obj
 
 
 class Base:
