@@ -435,7 +435,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item = dict()
 
         if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': item_sku.n_price, 'form': form,"sku": item_sku, 'item': item},request)
+            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': item_sku.price, 'form': form,"sku": item_sku, 'item': item},request)
 
             return JsonResponse({'res': html})
         if request.POST:

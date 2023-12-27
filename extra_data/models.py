@@ -13,6 +13,11 @@ class DiscountBasedPriceType(models.TextChoices):
     SKU = "1", _("calculate_in_sku")
 
 
+class CalculationMethod(models.TextChoices):
+    Old = "0", _("old_calculation_method")
+    New = "1", _("new_calculation_method")
+
+
 def discount_based_price_json():
     return [
         {
@@ -164,6 +169,9 @@ class PriceSettings(AbsBaseModel):
     discount_based_quantity = models.JSONField(verbose_name=_('discount_based_quantity'), default=discount_based_quantity_json)
     discount_based_customer = models.JSONField(verbose_name=_('discount_based_customer'), default=discount_based_customer_json)
     discount_based_payment_method = models.JSONField(verbose_name=_('discount_based_payment_method'), default=discount_based_payment_method_json)
+    calculation_method = models.CharField(max_length=5, verbose_name=_('calculation_method'),choices=CalculationMethod.choices
+                                          ,default=CalculationMethod.Old)
+    max_discount_for_final_step = models.FloatField(default=-13, null=True,blank=True, verbose_name=_('max_discount_for_final_step'))
 
     @staticmethod
     def setting():
