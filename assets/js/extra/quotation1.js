@@ -65,6 +65,7 @@ $(document).ready(function () {
     })
 
     quantityInput.forEach(function (item){
+        debugger
         const draftBtn = document.querySelector('input[name*="draft"]')
         const backBtn = document.querySelector('input[name*="back"]')
         const nextBtn = document.querySelector('input[name*="next"]')
@@ -182,35 +183,12 @@ $(document).ready(function () {
 
 function set_item_classes(item) {
     // debugger
-    // debugger
+    debugger
     if(item.getElementsByClassName('goods_code')) {
-        // const cc = item.getElementsByClassName('goods_code')
         $(item).find('.goods_code').on("select2:select", function (e) {
         const elem = findAncestor(e.target, "item")
         const data = e.params.data;
             console.log(data)
-            // $.ajax({
-            //     url: '/inquiry/item_list/',
-            //     data: {
-            //         'q': e.currentTarget.value,
-            //         'party_id': document.getElementById('customer_pid').textContent || -1,
-            //         'id_currency_ref': document.getElementById('id_currency_ref').value,
-            //         'id_payment_method': document.getElementById('id_payment_method').value,
-            //         'id_market_grade': document.getElementById('id_market_grade').value,
-            //         'id_customer_grade': document.getElementById('id_customer_grade').value,
-            //         'quantity': item.querySelector('[id*="quantity"]').value,
-            //     },
-            //     cache: false,
-            //     type: 'GET',
-            //     success: function (response){
-            //         console.log(response)
-            //         set_price_data(response.items[0], elem, e.target)
-            //         console.log(response.items)
-            //     },
-            //     error: function (xhr) {
-            //         console.log(xhr)
-            //     }
-            // });
         set_price_data(data, elem, e.target)
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
@@ -294,7 +272,7 @@ function set_item_classes(item) {
             dropdownCssClass: 'goods_select2',
             minimumInputLength: 1,
             //placeholder: $(document).find("#hiden_customer_code").text(),
-            templateResult: formatRepoItem,
+            templateResult: newFormatRepoItem,
             templateSelection: formatRepoSelection
         });
     }
@@ -639,8 +617,7 @@ function set_price(target) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
             }
-            // final_price.value = elem.querySelector('[name*="express_transportation_cost_1"]').value;
-            // final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="express_transportation_cost_1"]').value);
+
             break;
         case 'price_sheet2':
             final_price.disabled = true;
@@ -658,8 +635,7 @@ function set_price(target) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
             }
-            // final_price.value = elem.querySelector('[name*="air_transportation_cost_1"]').value;
-            // final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="air_transportation_cost_1"]').value);
+
             break;
         case 'price_sheet3':
             final_price.disabled = true;
@@ -777,9 +753,24 @@ function newFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
     }
-    let repo_express = repo.rial_final_price ? repo.rial_final_price.express : repo.rmb_final_price.express
-    let repo_air = repo.rial_final_price ? repo.rial_final_price.air : repo.rmb_final_price.air
-    let repo_sea = repo.rial_final_price ? repo.rial_final_price.sea : repo.rmb_final_price.sea
+
+    let repo_express;
+    let repo_air;
+    let repo_sea;
+
+    if (repo.rial_final_price){repo_express = repo.rial_final_price.express; repo_air = repo.rial_final_price.air; repo_sea = repo.rial_final_price.sea}
+    if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express; repo_air = repo.rmb_final_price.air; repo_sea = repo.rmb_final_price.sea}
+
+
+    if (repo_express == undefined){
+        repo_express = '-'
+    }
+    if (repo_air == undefined){
+        repo_air = '-'
+    }
+    if (repo_sea == undefined){
+        repo_sea = '-'
+    }
     // debugger
     var $container = $(
         "<div class='w-100 replace-digits' dir='rtl' style='font-family: BYekan'>" +
@@ -926,9 +917,11 @@ function set_values(items, value, is_date = false) {
             if (value == '-') {
                 value = null
             }
+            if (value == undefined || value == '-'){value=''}
             items[i].value = value;
             //items[i].text = value;
         } else {
+            if (value_str == undefined || value_str == '-'){value_str=''}
             items[i].innerHTML = value_str;
         }
     }
