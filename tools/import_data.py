@@ -5,6 +5,9 @@ import math
 from django.db import models
 # Create your tests here.
 import os
+
+from tools.google_sheet import GSheet
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dason.settings")
 import django
 django.setup()
@@ -72,41 +75,50 @@ def set_foreign_key(datas:list[dict],model:models.Model,key,search_field,convert
 # your imports, e.g. Django models
 if __name__ == '__main__':
     extra_data = {"creator_user_id":1, "editor_user_id":1}
+    wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
     print(extra_data)
-    # datas = [
-    #     {"title":"ریال", "title_en":"Rial"},
-    #     {"title":"یوان", "title_en":"RMB"},
-    #     {"title":"دلار", "title_en":"Dollar"},
-    #     {"title":"یورو", "title_en":"Ero"},
-    #          ]
-    # update_model_based_excel(datas, Currency,update=True)
+    datas = [
+        {"title":"ریال", "title_en":"Rial"},
+        {"title":"یوان", "title_en":"RMB"},
+        {"title":"دلار", "title_en":"Dollar"},
+        {"title":"یورو", "title_en":"Ero"},
+             ]
+    update_model_based_excel(datas, Currency,update=True)
+
     # datas = read_excel_data("sheet data/hs.xlsx",header_row=0)
+    datas = wb.read_sheet("hs")
     # update_model_based_excel(datas, HS, extra_data=extra_data,truncate=True)
     #
-    datas = read_excel_data("sheet data/sales_groups.xlsx",header_row=0)
+    # datas = read_excel_data("sheet data/sales_groups.xlsx",header_row=0)
+    datas = wb.read_sheet("hs")
     update_model_based_excel(datas, SaleGroup, extra_data=extra_data,update=False)
     #
     # datas = read_excel_data("sheet data/brands.xlsx", header_row=0)
-    # update_model_based_excel(datas, Brand, extra_data=extra_data)
+    datas = wb.read_sheet("sales_group")
+    update_model_based_excel(datas, Brand, extra_data=extra_data)
     #
     # datas = read_excel_data("sheet data/purchase_groups.xlsx",header_row=0)
-    # datas = set_foreign_key(datas,HS,"hs","code",[int,str])
-    # update_model_based_excel(datas,PurchaseGroup,extra_data=extra_data,update=True)
+    datas = wb.read_sheet("purchase_group")
+    datas = set_foreign_key(datas,HS,"hs","code",[int,str])
+    update_model_based_excel(datas,PurchaseGroup,extra_data=extra_data,update=True)
     #
     # datas = read_excel_data("sheet data/items.xlsx", header_row=0)
-    # datas = convert_data(datas, ['sku'],[int,str])
-    # datas = set_foreign_key(datas, SaleGroup, "sale_group", "title", )
-    # datas = set_foreign_key(datas, Brand, "brand", "title", )
-    # datas = set_foreign_key(datas, PurchaseGroup, "purchase_group", "title", )
-    # update_model_based_excel(datas, Item, extra_data=extra_data, update=True)
+    datas = wb.read_sheet("item")
+    datas = convert_data(datas, ['sku'],[int,str])
+    datas = set_foreign_key(datas, SaleGroup, "sale_group", "title", )
+    datas = set_foreign_key(datas, Brand, "brand", "title", )
+    datas = set_foreign_key(datas, PurchaseGroup, "purchase_group", "title", )
+    update_model_based_excel(datas, Item, extra_data=extra_data, update=True)
     #
     # datas = read_excel_data("sheet data/item_weight.xlsx",header_row=0)
-    # datas = set_foreign_key(datas,Item,"sku","sku",[int,str])
-    # update_model_based_excel(datas,ItemWeight,extra_data=extra_data,update=True)
+    datas = wb.read_sheet("weight")
+    datas = set_foreign_key(datas,Item,"sku","sku",[int,str])
+    update_model_based_excel(datas,ItemWeight,extra_data=extra_data,update=True)
     #
-    # datas = read_excel_data("sheet data/price_inquery_results.xlsx", header_row=0)
-    # datas = set_foreign_key(datas, Item, "sku", "sku", [int,str])
-    # for data in datas:
-    #     data['active'] = True
-    # datas = set_foreign_key(datas, Currency, "currency_type", "title_en", )
-    # update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=True,pk=1,truncate=True)
+    # datas = read_excel_data("sheet data/price_inquery_results.xlsx",header_row=0)
+    datas = wb.read_sheet("price")
+    datas = set_foreign_key(datas, Item, "sku", "sku", [int,str])
+    for data in datas:
+        data['active'] = True
+    datas = set_foreign_key(datas, Currency, "currency_type", "title_en", )
+    update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=True,pk=1,truncate=True)

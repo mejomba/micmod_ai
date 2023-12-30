@@ -1,0 +1,23 @@
+{
+  "source_config": {
+    "host": "localhost",
+    "database": "pg02",
+    "user": "postgres",
+    "password": "1",
+    "port": "5439"
+  },
+  "destination_config": {
+    "host": "localhost",
+    "database": "pg02",
+    "user": "postgres",
+    "password": "1",
+    "port": "5437"
+  },
+  "tables": [
+    {
+      "source_table": "inquiry_priceinquiryresult",
+      "destination_table": "inquiry_priceinquiryresult",
+      "maps": {}
+    }
+  ]
+}

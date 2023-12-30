@@ -6,7 +6,7 @@ module.exports = function (grunt) {
         '// <%= pkg.author %>\n';
 
     grunt.initConfig({
-        pkg: grunt.file.readJSON('package.json'),
+        pkg: grunt.file.readJSON('copy_db.json'),
 
         preprocess : {
             options: {

@@ -1,0 +1,82 @@
+{% load jalali_tags %}
+{% load humanize %}
+{% load sekizai_tags %}
+{% addtoblock custom_css %}
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+{% endaddtoblock  %}
+<div>
+    <h4 class="card-title" data-key="sales_history">مرور فروش</h4>
+
+    <div class="table-rep-plugin table-responsive">
+        <div>
+            <table id="datatable{% if show_forms == "1" %}-buttons{% endif %}"
+                   class="m-table table-striped table-row-bordered table-rounded"
+                   data-order='[[0,"asc"],[ 2, "desc" ]]'
+                   {% if show_forms == "1" %}data-page-length="25"
+                   {% else %}data-page-length="10"{% endif %}
+                   paging='false'>
+                <thead>
+                <tr>
+                    <th data-key="doc_type">نوع سند</th>
+                    <th data-key="Number">شماره سند</th>
+                    <th data-key="date">تاریخ</th>
+                    <th data-key="customer_title">مشتری</th>
+                    <th data-key="customer_code">کد مشتری</th>
+                    <th data-key="sales_user_group">کارشناس</th>
+                    <th data-key="item_code">کد کالا</th>
+                    <th data-key="item_title">کالا</th>
+                    <th data-key="purchase_group">گروه خرید</th>
+                    <th data-key="sales_group">گروه فروش</th>
+                    {#                                                        <th data-key="coef">ضریب سند</th>#}
+                    <th data-key="sales_type">نوع فروش</th>
+                    <th data-key="Quantity">تعداد</th>
+                    <th data-key="Fee">فی</th>
+                    {#                                                        <th data-key="Price">ارزش ردیف</th>#}
+                    {#                                                        <th data-key="PriceInBaseCurrency">ارزش ریالی ردیف</th>#}
+                    {#                                                        <th data-key="NetPrice">ارزش خالص ردیف</th>#}
+                    {#                                                        <th data-key="NetPriceInBaseCurrency">ارزش ریالی خالص ریالی</th>#}
+                    <th data-key="currency">ارز</th>
+                    <th data-key="Rate">نرخ ارز</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in list %}
+                    <tr>
+                        <td>{{ item.doc_type }}</td>
+                        <td>{{ item.Number }}</td>
+                        <td>{{ item.Date|to_jalali:'%Y/%m/%d' }}</td>
+                        <td>{{ item.customer_title }}</td>
+                        <td>{{ item.customer_code }}</td>
+                        <td>{{ item.sales_user_group }}</td>
+                        <td>{{ item.item_code }}</td>
+                        <td>{{ item.item_title }}</td>
+                        <td>{{ item.purchase_group }}</td>
+                        <td>{{ item.sales_group }}</td>
+                        {#                                                        <td>{{ item.coef }}</td>#}
+                        <td>{{ item.sales_type }}</td>
+                        <td>{{ item.Quantity|floatformat:0|intcomma }}</td>
+                        <td>{{ item.Fee|floatformat:2|intcomma }}</td>
+                        {#                                                        <td>{{ item.Price|floatformat:2|intcomma }}</td>#}
+                        {#                                                        <td>{{ item.PriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
+                        {#                                                        <td>{{ item.NetPrice|floatformat:2|intcomma }}</td>#}
+                        {#                                                        <td>{{ item.NetPriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
+                        <td>{{ item.currency }}</td>
+                        <td>{{ item.Rate|floatformat:0|intcomma }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script src="{% static 'js/pages/datatables.init.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- Required datatable js -->
+<script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
