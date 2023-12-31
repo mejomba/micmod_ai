@@ -3,7 +3,8 @@
     <div class="menu-item">
         <!--begin:Menu link-->
         <a class="menu-link {% path_has_key request.path menu.path_key 'active' %}" {% if menu.link %}
-           href="{% url menu.link %}" {% endif %}>
+           href="{% url menu.link %}" {% endif %} {% if menu.direct_link %}
+           href="{{ menu.direct_link }}" {% endif %} target="{{ menu.target }}">
             {% if menu.icon %}
                 <span class="menu-icon">{% getIcon menu.icon 'fs-2' %}</span>
             {% else %}

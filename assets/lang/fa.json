@@ -416,6 +416,7 @@
     "sale_group": "گروه فروش",
     "customs_group": "گروه گمرکی",
     "price inquiry result for sale": "استعلام قیمت برای فروش",
+    "price_inquiry_result_for_sale": "استعلام قیمت برای فروش",
     "week1": "یک تا سه هفته",
     "week2":  "سه تا پنج هفته",
     "week3": "دوازده تا چهارده هفته",
@@ -437,5 +438,6 @@
     "sepidar": "سپیدار",
     "items": "محصولات",
     "accounting": "مانده حساب ارزی",
-    "Dashboard": "داشبورد"
+    "Dashboard": "داشبورد",
+    "information": "اطلاعات"
 }

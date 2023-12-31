@@ -1,8 +1,8 @@
 {% load more_tags %}
 
-<div class="row gap-2 mx-3">
-    <div class="card-body col-3">
-        <div class="align-items-center border border-dashed border-gray-300 rounded px-7 py-3 mb-5">
+<div class="row mx-3">
+    <div class="card-body col-4">
+        <div class="align-items-center px-7 py-3 mb-5">
             <div class="mb-4">
                 <span data-key="information">information</span>
             </div>
@@ -13,5 +13,7 @@
             {% endif %}
         </div>
     </div>
-    {% include "inquiry/partial/partial_result_inquiry_result_for_sales.html" %}
+    <div class="card col-8">
+        {% include "inquiry/partial/partial_result_inquiry_result_for_sales.html" %}
+    </div>
 </div>

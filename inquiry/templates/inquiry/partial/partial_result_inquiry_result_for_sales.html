@@ -3,14 +3,13 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load accounts_tag %}
-<div class="card col-8">
     <div class="card-title">
         <div class="fw-bolder"><span class="me-10">وزن کالا در 1000 قطعه:</span>
             {{ sku.n_price.weight|intcomma|floatformat:4 }}</div>
     </div>
     <div class="card-body bg-gray-200">
         <div class="d-flex">
-            <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-40">
+            <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
                 <li class="nav-item w-100 me-0 mb-md-2">
                     <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
                        href="#kt_tab_pane_1">
@@ -152,25 +151,6 @@
                     </a>
                 </li>
             </ul>
-
-            <div class="tab-content w-60" id="myTabContent">
-                <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel">
-                    {% include "inquiry/partial/for_sales_inquery/private_data.html" %}
-                </div>
-                <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel">
-                    test ali
-                </div>
-                <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel">
-                    ...
-                </div>
-                <div class="tab-pane fade" id="kt_tab_pane_4" role="tabpanel">
-                    {% if request.user|has_group:"total_admin" %}
-
-                    {% else %}
-                        <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد</div>
-                    {% endif %}
-                </div>
-            </div>
         </div>
     </div>
     <div class="card-footer d-flex">
@@ -178,4 +158,3 @@
                 class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.n_price.price_update_date|to_jalali }}</div>
         <div class="ms-10">{{ sku.n_price.elapsed_from_last_price }}</div>
     </div>
-</div>
