@@ -1,3 +1,4 @@
+{% load sekizai_tags %}
 <!DOCTYPE html>
 
 <html lang="ar" {% printHtmlAttributes 'html' %} data-bs-theme-mode="light">
@@ -98,6 +99,8 @@
 
     {% endblock css %}
 
+
+    {% render_block "custom_css" %}
     <!--begin::Tracking-->
     <!--end::Tracking-->
 </head>
@@ -111,7 +114,7 @@
 {% block layout %}
 {% endblock layout %}
 
-{% block javascript %}
+{% block js %}
 {#    <!--begin::Global Javascript(mandatory)-->#}
 {#    {% getGlobalAssets 'js' as assets_js %}#}
 {#    {% for file in assets_js %}#}
@@ -231,7 +234,8 @@
 
     {% endblock extra_js %}
     <!--end::Custom Javascript-->
-{% endblock javascript %}
+{% endblock  %}
+{% render_block "custom_js" %}
 
 </body>
 <!--end::Body-->

@@ -256,9 +256,17 @@
               "link": "inquiry:inquiry_result.list"
             },
             {
-              "title": "price inquiry result for sale",
+              "title": "price_inquiry_result_for_sale",
+              "icon": "burger-menu",
               "path_key": "inquiryresult/forsale",
               "link": "inquiry:inquiry_result.sale"
+            },
+            {
+              "title": "t-t-settings",
+              "icon": "setting-2",
+              "target": "_blank",
+              "path_key": "admin/extra_data/pricesettings",
+              "direct_link": "/admin/extra_data/pricesettings/"
             }
           ]
         },

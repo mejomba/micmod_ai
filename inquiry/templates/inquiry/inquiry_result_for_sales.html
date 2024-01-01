@@ -5,13 +5,20 @@
          role="alert">
         <span></span>
     </div>
-    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 " id="id_ajax">
+    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 " >
         {% csrf_token %}
-        {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
+        <div class="row" >
+            <div class="col-7" id="id_ajax">
+                {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
+            </div>
+            <div class="col-5">
+                {% include "inquiry/partial/for_sales_inquery/extra_data_tabs.html" %}
+            </div>
+        </div>
     </div>
 {% endblock form_content %}
 {% block content %}
-    <button onchange="refresh_data(event)">test</button>
+
 {% endblock %}
 
 {% block extra_js %}

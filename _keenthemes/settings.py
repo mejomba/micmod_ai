@@ -98,6 +98,7 @@ THIRD_PARTY_APPS = [
     'werkzeug_debugger_runserver',
     # 'django_celery_beat',
     'el_pagination',
+    'sekizai',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -153,6 +154,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
 
                 'django.template.context_processors.request', ## For EL-pagination
+                'sekizai.context_processors.sekizai', ## For addtoblock sekizai
             ],
             'libraries': {
                 'theme': '_keenthemes.templatetags.theme',
