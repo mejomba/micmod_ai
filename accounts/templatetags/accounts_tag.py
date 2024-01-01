@@ -1,5 +1,8 @@
 from django import template
 from django.contrib.auth.models import Permission
+from django.utils.safestring import mark_safe
+
+from accounts.extra_models import Profile
 
 register = template.Library()
 
@@ -30,6 +33,25 @@ def has_groups(user, group_names):
         if group_name in [gn[0] for gn in user.groups.values_list('name')]:
             return True
 
+@register.filter(name='get_avatar')
+def get_avatar(user, extra_class=''):
+    if user.profile.avatar:
+        res = f"""
+                <div class="symbol symbol-35px symbol-circle {extra_class}" data-bs-toggle="tooltip" aria-label="{user.profile.first_name}" 
+                data-bs-original-title="{user.profile.first_name}" 
+                data-kt-initialized="1">
+    				<img alt="Pic" src="{user.profile.avatar.url}">
+    			</div>
+                """
+    else:
+        res = f"""
+                <div class="symbol symbol-35px {extra_class} symbol-circle" data-bs-toggle="tooltip" aria-label="{user.profile.first_name}" 
+                data-bs-original-title="{user.profile.first_name}" 
+                data-kt-initialized="1">
+    				<span class="symbol-label bg-primary text-inverse-primary fw-bold">{user.profile.first_name[:4]}</span>
+    			</div>
+                """
+    return mark_safe(res)
 
 @register.filter(name='has_permission')
 def has_permission(user, permission):

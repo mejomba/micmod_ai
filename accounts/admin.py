@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 
 from django.utils.translation import gettext_lazy as _
 
+from .extra_models import Profile
 from .forms import ManageFormFieldAdminForm
 # admin.site.register(models.Role)
 
@@ -37,6 +38,7 @@ class AdminUser(UserAdmin):
 
 
 admin.site.register(models.User, AdminUser)
+admin.site.register([Profile])
 # admin.site.register(models.User)
 
 
