@@ -109,7 +109,7 @@ $(document).ready(function () {
             backBtn ? backBtn.disabled=false : ''
             nextBtn ? nextBtn.disabled=false : ''
         })
-        item.addEventListener('change', function (e) {
+        item.addEventListener('keyup', function (e) {
             debugger
             e.preventDefault();
             const elem = findAncestor(e.target, "item")

@@ -52,13 +52,15 @@ class WorkFlowModelForm(CustomBaseModelForm):
                                                 )
 
             if state_index and state_index < len(flow_user_groups) - 1:
-                try:
-                    next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index + 1]]).distinct()
-                except IndexError:
-                    pass
+                # try:
+                next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index + 1]]).distinct()
+                prev_state_user_list = None
+                # except IndexError:
+                #     pass
                     # next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index]]).distinct()
             else:
                 next_state_user_list = None
+                prev_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index]]).distinct()
 
             if self.initial.get('wf_access'):
                 self.make_optional(self.fields)
@@ -77,8 +79,8 @@ class WorkFlowModelForm(CustomBaseModelForm):
                 #     self.fields['action'].widget.attrs['class'] = 'LTR-RTL'
                 #     self.fields['action'].initial = self.initial.get('action')
 
-                if next_state_user_list:
-                    self.fields['to_user'].queryset = next_state_user_list
+                # if next_state_user_list:
+                self.fields['to_user'].queryset = next_state_user_list or prev_state_user_list
 
                 self.make_disable(['from_user', 'action', 'state', 'belong_to_group', 'belong_to_group_'])
                 # if FlowAdminGroup.is_group_admin(current_user, belong_to_group) or current_user.is_superuser:
@@ -91,8 +93,8 @@ class WorkFlowModelForm(CustomBaseModelForm):
                 self.make_disable(self.fields)
                 if self.initial.get('from_user'):
                     self.fields['from_user'].queryset = get_user_model().objects.filter(id=self.initial.get('from_user').id)
-                if next_state_user_list:
-                    self.fields['to_user'].queryset = next_state_user_list
+                # if next_state_user_list:
+                self.fields['to_user'].queryset = next_state_user_list or prev_state_user_list
 
             if self.initial.get('to_user'):
                 self.fields['to_user'].required = True

@@ -23,7 +23,7 @@
           },
           {
             "state": "استعلام قیمت",
-            "group": "base_user",
+            "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -38,7 +38,7 @@
           },
           {
             "state": "تایید پیش فاکتور",
-            "group": "wh_user",
+            "group": "sales_admin",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -53,7 +53,7 @@
           },
           {
             "state": "تایید مشتری",
-            "group": "imei_admin",
+            "group": "sales_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -68,7 +68,7 @@
           },
           {
             "state": "تایید کارشناس",
-            "group": "wh_user",
+            "group": "sales_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],

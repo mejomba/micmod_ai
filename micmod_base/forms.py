@@ -62,7 +62,7 @@ class QuotationForm(CustomBaseModelForm):
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                       )
         self.fields['expiration_date'] = JalaliDateField(label=_('expiration_date'),
-                                                         widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False
+                                                         widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                          )
 
         if not request.user.is_superuser:

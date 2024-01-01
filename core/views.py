@@ -139,15 +139,6 @@ class BaseView(UserPassesTestMixin,
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               })
-        self.formset = self.get_formset_from_struct()(self.request.POST, instance=self.object, form_kwargs={
-                                      "constraint": {
-                                          "wf_access": True,
-                                          'form_state': self.state_index,
-                                          'request': self.request,
-                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                          }
-                                  })
 
         self.object = self.get_object()
         if self.has_flow:
@@ -444,8 +435,9 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.save()
 
                     print(__file__, '========= wf save as change user')
-                    """save workflow form (main)"""
+                    return HttpResponseRedirect(self.get_success_url())
                 elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST):
+                    """save workflow form (main)"""
                     if form.wfform.is_valid():
                         wf_obj = form.wfform.save(commit=False)
                         wf_obj.from_user = self.request.user
@@ -520,15 +512,15 @@ class BaseView(UserPassesTestMixin,
                         old_details = list(old_details_.all())
                         old_details = [old_detail.attach_image_file(old_detail) for old_detail in old_details]
 
-                    # self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
-                    #                               "constraint": {
-                    #                                   "wf_access": self.wf_access,
-                    #                                   'form_state': self.state_index,
-                    #                                   'request': self.request,
-                    #                                   'form_constraint': self.flow_config.get('flow_form_constraint'),
-                    #                                   'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                    #                                   }
-                    #                           })
+                    self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
+                        "constraint": {
+                            "wf_access": True,
+                            'form_state': self.state_index,
+                            'request': self.request,
+                            'form_constraint': self.flow_config.get('flow_form_constraint'),
+                            'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                        }
+                    })
                     if self.formset.is_valid():
                         fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                     else:
