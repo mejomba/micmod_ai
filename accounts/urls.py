@@ -9,8 +9,8 @@ urlpatterns = [
     #     name="404",
     # ),
     path(
-        "me",
+        "profile/",
         view=ProfileView.as_view(),
-        name="404",
+        name="profile",
     ),
 ]
