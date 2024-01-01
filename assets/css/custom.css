@@ -538,3 +538,7 @@ div[comma-value] input{
 .inquiry-status:hover::after {
     width:100%;
 }
+.scrolltop {
+    bottom: 80px !important;
+    background-color: red !important;
+}

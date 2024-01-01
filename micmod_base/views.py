@@ -55,6 +55,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     # formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm, extra=1,)
     form_class = QuotationForm
     model = Quotation
+    wf_last_step_is_open = True
     has_flow = True
     form_struct = {
         'form': QuotationForm,

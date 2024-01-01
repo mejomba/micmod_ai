@@ -67,14 +67,14 @@
                                                         <div class="col-sm-6 ms-sm-auto rounded">
                                                             {% get_customer form.instance.customer_code as customer %}
                                                             {% if  customer %}
-                                                            <div class="p-2 pb-3 rounded bg-soft-success" id="customer_card">
+                                                            <div class="p-2 pb-3 rounded bg-success" id="customer_card">
                                                             {% else %}
-                                                            <div class="d-none p-2 pb-3 rounded bg-soft-success" id="customer_card">
+                                                            <div class="d-none p-2 pb-3 rounded bg-success" id="customer_card">
                                                             {% endif %}
                                                                 <div data-key="customer_title" class="rounded">customer title</div>
-                                                                <div class="bg-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
+                                                                <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
                                                                 <div data-key="party_id">party id</div>
-                                                                <div class="bg-info p-2 rounded text-black" id="customer_pid">{{ customer.PartyId }}</div>
+                                                                <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.PartyId }}</div>
                                                             </div>
 
                                                             </div>
@@ -98,7 +98,7 @@
                             </div>
 
                             <div class="card-body p-0" id="id_formset_container">
-                            <div class="d-flex justify-content-start align-items-end gap-4">
+                            <div class="d-flex justify-content-start align-items-end gap-4 mt-10">
                                 {% include 'partials/formset_header_buttons.html' %}
                                 {% if form.instance.get_inquiry_result_count %}
                                 <p class="font-size-14 inquiry-status">تعداد کل ردیف <strong>{{ form.instance.get_inquiry_result_count.0 }}</strong></p>
@@ -112,7 +112,7 @@
                                     {% include "micmod-base/quotation/item3.html" with form_s=form_ nested=form_.nested.forms.0 nested_manage=form_.nested detail_logs=detail_logs %}
                                 {% endfor %}
                             </div>
-                        <div class="mt-5 pt-5"></div>
+                        <div class="mt-20 pt-10"></div>
 
 
 
@@ -125,7 +125,7 @@
     <div class="px-2 mx-auto">
         {% include "micmod-base/base/create_info_bar.html" %}
     </div>
-    <div class="btn btn-outline-dark text-xl-center ms-auto" {% if not form.enable %}disabled="disabled"{% endif %}
+    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto" {% if not form.enable %}disabled="disabled"{% endif %}
          m-href="{% url 'sls:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
         پرینت پیش فاکتور
@@ -137,13 +137,13 @@
     {% endif %}
 
         <div class="d-flex w-30 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
-            <div class="btn btn-outline-info w-lg text-xl-center mx-1 text-center"
+            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
                  data-key="refresh" onclick="refresh_prices()">
                 به روز رسانی قیمت
             </div>
-            <div class="align-items-center text-primary bg-info w-100 rounded">
-                <h5 class="d-flex mt-2 px-1 text-primary bg-info replace-digits">
-                    <div class="w-30"> جمع کل</div>
+            <div class="align-items-center text-white bg-info w-65 rounded">
+                <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
+                    <div class="w-30 ms-2"> جمع کل</div>
                     <div class="quotation_total_price w-70 text-center "
                          name="quotation_total_price"></div>
                 </h5>

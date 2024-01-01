@@ -56,7 +56,19 @@ window.addEventListener('load', (event) => {
             element.innerHTML = elementInnerHtml
             // /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
 
-            // add a custom attribute to simplify bookkeeping
+            // qir-quotation-2-quotation_item_rel-0-quotation_item
+            const qi = element.querySelector("[name$='-quotation_item']")
+            const initialForms = element.querySelector("[name$='INITIAL_FORMS']")
+            const totalForms = element.querySelector("[name$='TOTAL_FORMS']")
+            if (qi){
+                qi.value = null
+            }
+            if (totalForms){
+                totalForms.value = 1
+            }
+            if (initialForms){
+                initialForms.value = 0
+            }
             element.dataset.formIndex = nextFormIndex.toString();
             // add a delete click handler (if formset can_delete)
             // setDeleteHandler(element);

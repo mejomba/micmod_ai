@@ -1,13 +1,13 @@
 from django import forms
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
-from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
 from tools.utils import show_error
 from translator import get_text as _
 
 from typing import List
 
-from jalali_date.fields import JalaliDateField
+from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 
 
 class CustomBaseForm(forms.Form):

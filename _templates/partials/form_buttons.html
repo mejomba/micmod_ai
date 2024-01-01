@@ -2,39 +2,39 @@
 
 <div class="d-flex justify-content-center">
     {% if formset and form.enable %}
-        <div name="id_formset_add_button" class="btn btn-info text-xl-center py-0 px-3 me-1" style="font-size: 1.5rem">&#x2b;</div>
+        <div name="id_formset_add_button" class="btn btn-info text-xl-center py-0 px-3 me-1" style="font-size: 2rem">&#x2b;</div>
     {% elif formset and not form.enable %}
-        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 1.5rem">&#x2b;</button>
+        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 2rem">&#x2b;</button>
     {% endif %}
     {% if form.enable %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>
         {% elif not finish and has_flow %}
-            <input type="submit" class="btn btn-outline-success me-1" name="draft" value="ذخیره پیشنویس"/>
+            <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس"/>
             <input type="submit" class="btn btn-primary me-1" name="next" value="ارسال به مرحله بعد"/>
         {% elif not has_flow and form %}
             <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
         {% else %}
-            <input type="submit" class="btn btn-outline-success me-1" name="x" value="ذخیره"/>
+            <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="x" value="ذخیره"/>
         {% endif %}
         {% if flow_state_index %}
-            <input type="submit" class="btn btn-outline-danger me-1" name="back" value="عودت کار"/>
+            <input type="submit" class="btn btn-outline-danger btn-bordered me-1" name="back" value="عودت کار"/>
         {% elif flow_state_index and finish and not wf_last_step_is_open %}
-            <input type="submit" class="btn btn-outline-danger me-1" disabled value="عودت کار"/>
+            <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>
         {% endif %}
     {% else %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
             <input type="button" class="btn btn-primary me-1" disabled name="submit" value="ثبت نهایی"/>
         {% elif not finish and has_flow %}
-            <input type="button" class="btn btn-outline-success me-1" disabled name="draft" value="ذخیره پیشنویس"/>
+            <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس"/>
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد"/>
         {% elif not has_flow %}
-            <input type="button" class="btn btn-outline-success me-1 px-4" disabled name="submit" value="ذخیره"/>
+            <input type="button" class="btn btn-outline-success btn-bordered me-1 px-4" disabled name="submit" value="ذخیره"/>
         {% else %}
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ذخیره"/>
         {% endif %}
         {% if flow_state_index %}
-            <input type="button" class="btn btn-outline-danger me-1" disabled name="back" value="عودت کار"/>
+            <input type="button" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار"/>
         {% endif %}
     {% endif %}
 

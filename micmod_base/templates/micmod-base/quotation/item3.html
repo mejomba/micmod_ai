@@ -5,14 +5,14 @@
 {% load more_tags %}
 
 
-<div class="card item p-0" dir="rtl">
+<div class="card item p-0 my-2" dir="rtl">
+
     {% for hidden in form_s.hidden_fields %}
         {{ hidden }}
     {% endfor %}
+
 {{ nested_manage.management_form }}
 {{ nested_manage.non_form_errors }}
-
-
 
     {% for h in nested.hidden_fields %}
         {{ h }}
@@ -76,7 +76,7 @@
                         <div class="d-flex justify-content-end">
                             {% render_field_by_order form_s form_s.goods_name label='on-border' %}
                             {#                            <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>#}
-                            <div class="w-25 bg-soft-pink text-center" onclick="hide_show_goods_alt(this)"
+                            <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
                                  data-key="show_alt">مشابه
                             </div>
                         </div>
@@ -229,7 +229,7 @@
                         </div>
                         <div class="bg-soft-info bold replace-digits h-75">
                             <div class="text-center">جمع کل (ردیف)</div>
-                            <h1 class="card-title text-center persian-digit" name="-total_price">-</h1>
+                            <h3 class="card-title text-center persian-digit" name="-total_price">-</h3>
                         </div>
                     </div>
                     <div class="col-lg-5 d-block p-0">
@@ -266,10 +266,10 @@
                             </div>
                             <div>
                                 <div class="d-flex justify-content-center mb-1">
-                                    <div class="d-flex justify-content-between align-items-center btn-sm bg-danger text-white rounded me-1">
-                                          {{ form_s.DELETE }} <label class="ms-1 mb-0" for="id_quotation-{{ forloop.counter0 }}-DELETE">حذف</label>
+                                    <div class="d-flex justify-content-around align-items-center btn-sm bg-danger text-white rounded me-1">
+                                          {{ form_s.DELETE }} <label class="ms-1 mb-0 p-1" for="id_quotation-{{ forloop.counter0 }}-DELETE">حذف</label>
                                     </div>
-                                    <div class="btn btn-sm btn-outline-info" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">
+                                    <div class="btn btn-sm btn-bordered btn-outline-info py-1" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">
                                         استعلام قیمت
                                     </div>
                                 </div>

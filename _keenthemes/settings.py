@@ -367,12 +367,12 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 # To Customised Forms fields style
 ACCOUNT_FORMS = {
-    "login": "dason.forms.UserLoginForm",
-    "signup": "dason.forms.UserSignupForm",
-    "reset_password": "dason.forms.UserResetPasswordForm",
-    "reset_password_from_key": "dason.forms.UserResetPasswordKeyForm",
-    "change_password": "dason.forms.UserChangePasswordForm",
-    "set_password": "dason.forms.UserSetPasswordForm",
+    "login": "_keenthemes.forms.UserLoginForm",
+    "signup": "_keenthemes.forms.UserSignupForm",
+    "reset_password": "_keenthemes.forms.UserResetPasswordForm",
+    "reset_password_from_key": "_keenthemes.forms.UserResetPasswordKeyForm",
+    "change_password": "_keenthemes.forms.UserChangePasswordForm",
+    "set_password": "_keenthemes.forms.UserSetPasswordForm",
 }
 
 DATE_INPUT_FORMATS = ('%d-%m-%Y', '%Y-%m-%d')

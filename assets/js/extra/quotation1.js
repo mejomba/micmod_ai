@@ -12,6 +12,35 @@ $(document).ready(function () {
     const quantityInput = document.querySelectorAll('input[name*="-quantity"]')
     const newInquiryResult = document.querySelectorAll('[id*="new-inquiry-result"]')
     const currencyRef = document.getElementById('id_currency_ref').value
+    const paymentMethod = document.getElementById('id_payment_method')
+    const customerGrade = document.getElementById('id_customer_grade')
+    function setPriceWithAjax(e, elem){
+        $.ajax({
+                url: '/inquiry/item_list/',
+                data: {
+                    'q': elem.querySelector('input[name*="goods_code"]').value,
+                    'party_id': document.getElementById('customer_pid').textContent || -1,
+                    'id_currency_ref': document.getElementById('id_currency_ref').value,
+                    'id_payment_method': document.getElementById('id_payment_method').value,
+                    'id_market_grade': document.getElementById('id_market_grade').value,
+                    'id_customer_grade': document.getElementById('id_customer_grade').value,
+                    'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                },
+                cache: false,
+                type: 'GET',
+                success: function (response){
+                    console.log(response)
+                    if (response.items){
+                        debugger
+                        set_price_data(response.items[0], elem, e.target)
+                    }
+                    console.log(response.items)
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            }); // end ajax
+    }
     if (currencyRef == '1'){
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_1"]'), 'show')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_1"]'), 'show')
@@ -39,28 +68,29 @@ $(document).ready(function () {
             // debugger
             e.preventDefault();
             const elem = findAncestor(e.target, "item")
-                $.ajax({
-                    url: '/inquiry/item_list/',
-                    data: {
-                        'q': e.currentTarget.dataset.value,
-                        'party_id': document.getElementById('customer_pid').textContent || -1,
-                        'id_currency_ref': document.getElementById('id_currency_ref').value,
-                        'id_payment_method': document.getElementById('id_payment_method').value,
-                        'id_market_grade': document.getElementById('id_market_grade').value,
-                        'id_customer_grade': document.getElementById('id_customer_grade').value,
-                        'quantity': elem.querySelector('[id*="quantity"]').value,
-                    },
-                    cache: false,
-                    type: 'GET',
-                    success: function (response){
-                        console.log(response)
-                        set_price_data(response.items[0], elem, e.target)
-                        console.log(response.items)
-                    },
-                    error: function (xhr) {
-                        console.log(xhr)
-                    }
-                }); // end ajax
+                setPriceWithAjax(e, elem)
+                // $.ajax({
+                //     url: '/inquiry/item_list/',
+                //     data: {
+                //         'q': e.currentTarget.dataset.value,
+                //         'party_id': document.getElementById('customer_pid').textContent || -1,
+                //         'id_currency_ref': document.getElementById('id_currency_ref').value,
+                //         'id_payment_method': document.getElementById('id_payment_method').value,
+                //         'id_market_grade': document.getElementById('id_market_grade').value,
+                //         'id_customer_grade': document.getElementById('id_customer_grade').value,
+                //         'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                //     },
+                //     cache: false,
+                //     type: 'GET',
+                //     success: function (response){
+                //         console.log(response)
+                //         set_price_data(response.items[0], elem, e.target)
+                //         console.log(response.items)
+                //     },
+                //     error: function (xhr) {
+                //         console.log(xhr)
+                //     }
+                // }); // end ajax
         })
     })
 
@@ -83,31 +113,7 @@ $(document).ready(function () {
             debugger
             e.preventDefault();
             const elem = findAncestor(e.target, "item")
-            $.ajax({
-                url: '/inquiry/item_list/',
-                data: {
-                    'q': elem.querySelector('input[name*="goods_code"]').value,
-                    'party_id': document.getElementById('customer_pid').textContent || -1,
-                    'id_currency_ref': document.getElementById('id_currency_ref').value,
-                    'id_payment_method': document.getElementById('id_payment_method').value,
-                    'id_market_grade': document.getElementById('id_market_grade').value,
-                    'id_customer_grade': document.getElementById('id_customer_grade').value,
-                    'quantity': elem.querySelector('[id*="quantity"]').value,
-                },
-                cache: false,
-                type: 'GET',
-                success: function (response){
-                    console.log(response)
-                    if (response.items){
-                        debugger
-                        set_price_data(response.items[0], elem, e.target)
-                    }
-                    console.log(response.items)
-                },
-                error: function (xhr) {
-                    console.log(xhr)
-                }
-            }); // end ajax
+            setPriceWithAjax(e, elem)
         })
     })
 
@@ -424,6 +430,7 @@ function t_replaceDigits(m_text) {
 }
 
 function refresh_prices() {
+    debugger
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {

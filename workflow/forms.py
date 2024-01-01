@@ -52,7 +52,11 @@ class WorkFlowModelForm(CustomBaseModelForm):
                                                 )
 
             if state_index and state_index < len(flow_user_groups) - 1:
-                next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index + 1]]).distinct()
+                try:
+                    next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index + 1]]).distinct()
+                except IndexError:
+                    pass
+                    # next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index]]).distinct()
             else:
                 next_state_user_list = None
 

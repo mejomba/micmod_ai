@@ -76,12 +76,23 @@ class BaseView(UserPassesTestMixin,
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
+
+        if self.has_flow and not self.flow_config.get("append_last_step"):
+            self.flow_config['flow_state_list'].append('مرحله نهایی')
+            self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
+            self.flow_config['flow_form_constraint'].append({"hide": [], "read": []})
+            self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
+            self.flow_config['flow_deadline'].append(0)
+            self.flow_config['append_last_step'] = True
+
         self.object = self.get_object()
         self.formset_form = self.get_formset_from_struct()
         self.state_index = self.get_flow_index(self.object)
 
         if request.method == 'GET':
             self.formset = self.get_formset_from_struct()
+
+
 
     def get(self, request, *args, **kwargs):
         if self.has_formset and not all([self.model, self.formset_model, self.formset_form]):
@@ -96,6 +107,9 @@ class BaseView(UserPassesTestMixin,
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
+            self.flow_config['flow_form_constraint'].append({"hide": [], "read": []})
+            self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
+            self.flow_config['flow_deadline'].append(0)
             self.flow_config['append_last_step'] = True
 
         self.object = self.get_object()
@@ -118,13 +132,22 @@ class BaseView(UserPassesTestMixin,
     def post(self, request, *args, **kwargs):
         self.form = self.get_form_class()(self.request.POST, instance=self.object, initial={
                                                   "constraint": {
-                                                      "wf_access": self.wf_access,
+                                                      "wf_access": True,
                                                       'form_state': self.state_index,
                                                       'request': self.request,
                                                       'form_constraint': self.flow_config.get('flow_form_constraint'),
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               })
+        self.formset = self.get_formset_from_struct()(self.request.POST, instance=self.object, form_kwargs={
+                                      "constraint": {
+                                          "wf_access": True,
+                                          'form_state': self.state_index,
+                                          'request': self.request,
+                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                          }
+                                  })
 
         self.object = self.get_object()
         if self.has_flow:
@@ -348,7 +371,20 @@ class BaseView(UserPassesTestMixin,
                                  }
         except Exception as e:
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
-            self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
+
+            # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
+            self.wf_initial = {
+                    'wf_access': wf_access,
+                    'from_user': from_user_,
+                    'to_user': to_user,
+                    'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
+                    'state_index': self.state_index,
+                    'belong_to_group': belong_to_group,
+                    'action': self.flow_config.get('flow_action'),
+                    'deadline': datetime.datetime.now() + datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index]) if self.has_flow else None,
+                    'flow_config': self.flow_config,
+                    'create': False if self.object else True
+                }
             kwargs['initial'] = {
                             "constraint": {
                                 'form_state': self.state_index,
@@ -484,15 +520,15 @@ class BaseView(UserPassesTestMixin,
                         old_details = list(old_details_.all())
                         old_details = [old_detail.attach_image_file(old_detail) for old_detail in old_details]
 
-                    self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
-                                                  "constraint": {
-                                                      "wf_access": self.wf_access,
-                                                      'form_state': self.state_index,
-                                                      'request': self.request,
-                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                      }
-                                              })
+                    # self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
+                    #                               "constraint": {
+                    #                                   "wf_access": self.wf_access,
+                    #                                   'form_state': self.state_index,
+                    #                                   'request': self.request,
+                    #                                   'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    #                                   'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                    #                                   }
+                    #                           })
                     if self.formset.is_valid():
                         fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                     else:

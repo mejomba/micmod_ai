@@ -269,7 +269,7 @@ class PriceInquiryResult(BaseModel):
 
     @queryable_property
     def transportations_cost(self):
-        if not self.sku.purchase_group or not self.sku.purchase_group.hs:
+        if not self.sku or not self.sku.purchase_group or not self.sku.purchase_group.hs:
             return
         weight = self.weight
         settings = self.price_settings
@@ -413,12 +413,13 @@ class InquiryResult(AbsBaseModel):
     air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True)
     sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True)
 
-    quotation_item = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, related_name='quotation_item_rel',
+    quotation_item = models.ForeignKey(QuotationItem, on_delete=models.SET_NULL, related_name='quotation_item_rel',
                                        null=True, blank=True)
     sales_price_inquery_log = models.ForeignKey(SalesPriceInqueryLog, on_delete=models.DO_NOTHING,
                                                 related_name='sales_price_inquery_log_rel', null=True, blank=True)
     price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
                                        blank=True, null=True)
+    price_update_date = models.DateField(null=True, blank=True)
 
 # @receiver(post_save, sender=PriceInquiryResult)
 # def deactivate_prev_inquiry_result(sender, instance, created, **kwargs):

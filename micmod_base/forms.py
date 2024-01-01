@@ -28,9 +28,6 @@ class QuotationForm(CustomBaseModelForm):
                   "description", "id", 'sepidar_number']
 
         widgets = {
-            # 'customer_code': forms.Select(
-            #     attrs={"class": "select2", "id": "customer_code", "style": "width:100%", }),
-            # 'customer_code': forms.TextInput(attrs={'hidden': True}),
             'description': forms.Textarea(attrs={"rows": 1}),
         }
 
@@ -93,6 +90,10 @@ class QuotationForm(CustomBaseModelForm):
         self.select2(['customer_code'])
         self.make_hidden(['customer_party_id'])
         self.make_disable(['sepidar_number'])
+        self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['payment_method'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
 
 
 class QuotationItemForm(CustomBaseModelForm):
@@ -401,7 +402,7 @@ iqr_fields = [
     "sea_transportation_cost_3",
     "quotation_item",
     "price_settings",
-    # "price_update_date",
+    "price_update_date",
 ]
 InquiryResultFormset = inlineformset_factory(QuotationItem, InquiryResult, form=InquiryResultForm, extra=1, fields=iqr_fields)
 
@@ -437,27 +438,35 @@ class BaseQIFormset(BaseInlineFormSet):
 
         idx = 0
         for form in self.forms:
-            if form.changed_data and hasattr(form, 'nested') and not self._should_delete_form(form):
+            qi_instance = form.instance
+            # if form.changed_data and hasattr(form, 'nested') and not self._should_delete_form(form):
+            if any([f.changed_data for f in form.nested.forms]) and hasattr(form, 'nested') and not self._should_delete_form(form):
 
-                old_details_ = getattr(result[idx], 'quotation_item_rel', None)
+                old_details_ = getattr(qi_instance, 'quotation_item_rel', None)
                 old_details = []
                 if old_details_:
                     old_details = list(old_details_.all())
-                    old_details = [result[idx].attach_image_file(old_detail) for old_detail in old_details]
+                    old_details = [qi_instance.attach_image_file(old_detail) for old_detail in old_details]
 
                 obj = form.nested.save(commit=commit)
+                import json
                 if obj:
-                    obj[0].result_parameter = {
-                        'currency_ref': result[idx].quotation.currency_ref.pk,
-                        'payment_method': result[idx].quotation.payment_method,
-                        'quantity': result[idx].quantity,
-                        'customer_grade': result[idx].quotation.customer_grade,
-                        'customer_code': result[idx].quotation.customer_code
-                    }
+                    obj[0].result_parameter = json.dumps({
+                        # 'currency_ref': result[idx].quotation.currency_ref.pk,
+                        # 'payment_method': result[idx].quotation.payment_method,
+                        # 'quantity': result[idx].quantity,
+                        # 'customer_grade': result[idx].quotation.customer_grade,
+                        # 'customer_code': result[idx].quotation.customer_code
+                        'currency_ref': qi_instance.quotation.currency_ref.pk,
+                        'payment_method': qi_instance.quotation.payment_method,
+                        'quantity': qi_instance.quantity,
+                        'customer_grade': qi_instance.quotation.customer_grade,
+                        'customer_code': qi_instance.quotation.customer_code
+                    })
                     obj[0].save()
                     obj[0].save_user(request)
 
-                    new_details = getattr(result[idx], 'quotation_item_rel', None)
+                    new_details = getattr(qi_instance, 'quotation_item_rel', None)
                     if new_details:
                         new_details = list(new_details.all())
                     idx += 1

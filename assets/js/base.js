@@ -7,11 +7,11 @@ if (footerToggle) {
     footerToggle.addEventListener('click', function (e) {
         if (footerOpen) {
             footerToggle.style.rotate = '-90deg';
-            formFooterContainer.style.bottom = "0px";
+            formFooterContainer.style.bottom = "-40px";
             footerOpen = !footerOpen
         } else {
             footerToggle.style.rotate = '90deg';
-            formFooterContainer.style.bottom = "40px";
+            formFooterContainer.style.bottom = "0";
             footerOpen = !footerOpen;
         }
     })
@@ -88,7 +88,6 @@ function commaSeperator(n) {
 }
 
 function addCommaSeperator() {
-    let commaIndex = 0;
     let inputNumberValue;
     let numberWithComma;
 
@@ -98,13 +97,6 @@ function addCommaSeperator() {
             inputNumberValue = e.currentTarget.value.replaceAll(',', '').reverse_string();
             numberWithComma = inputNumberValue;
             numberWithComma = commaSeperator(inputNumberValue)
-            // for (let i=0; i <= inputNumberValue.length; i++){
-            //     if (i % 3 === 0 && i !== 0 && i !== inputNumberValue.length){
-            //         numberWithComma = numberWithComma.insert(i + commaIndex, ',')
-            //         commaIndex++;
-            //     }
-            // }
-            // commaIndex = 0
             e.currentTarget.value = numberWithComma.reverse_string()
         })
     })
