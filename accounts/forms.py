@@ -28,3 +28,8 @@ class ProfileForm(CustomBaseModelForm):
     class Meta:
         model = Profile
         fields = '__all__'
+
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.make_hidden(['user'])
+

@@ -10,6 +10,7 @@ from accounts.extra_models import Profile
 from core.views import BaseView
 from .forms import ProfileForm
 from workflow.views import FlowBaseView
+from django.http import HttpResponseRedirect
 
 
 # Create your views here.
@@ -26,6 +27,20 @@ class ProfileView(BaseView):
     form_class = ProfileForm
     success_url = ''
 
+    # def get(self,request, *args, **kwargs):
+    #     ...
+    def post(self, request, *args, **kwargs):
+        frm = self.form_class(self.request.POST,self.request.FILES, instance=self.request.user.profile)
+        if frm.is_valid():
+            return self.form_valid(frm)
+
+    def form_valid(self, form):
+        form.save()
+        return HttpResponseRedirect(self.success_url)
+
     def get_context_data(self, **kwargs):
+
         context = super().get_context_data(**kwargs)
+        context['profile'], _ = Profile.objects.get_or_create(user=self.request.user)
+        context['form'] = ProfileForm(instance=context['profile'])
         return context

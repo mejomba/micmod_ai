@@ -388,7 +388,7 @@
     "phone number": "شماره تلفن",
     "sepidar phones": "تلفن سپیدار",
     "telegram username": "یوزرنیم تلگرام",
-    "email": "ایمیل",
+    "email": "پست الکترونیک",
     "bot is active": "ربات فعال",
     "session is active": "سشن فعال",
     "messaging is active": "پیام فعال",
@@ -439,5 +439,11 @@
     "items": "محصولات",
     "accounting": "مانده حساب ارزی",
     "Dashboard": "داشبورد",
-    "information": "اطلاعات"
+    "information": "اطلاعات",
+    "password1": "رمز عبور",
+    "password_again": "تکرار رمز عبور",
+    "email_address": "پست الکترونیک",
+    "sign-out": "خروج",
+    "account-settings": "پروفایل"
+
 }

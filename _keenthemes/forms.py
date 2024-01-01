@@ -1,3 +1,4 @@
+from core.forms import CustomBaseModelForm
 from translator import get_text as _
 from crispy_forms.helper import FormHelper
 from allauth.account.forms import (
@@ -19,18 +20,19 @@ class UserLoginForm(LoginForm):
 
         self.fields["login"].widget = forms.TextInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Username",
+                "class": "form-control",
+                # "placeholder": _("username"),
                 "id": "username",
-            }
-        )
+            })
+        self.fields["login"].label = _("username")
         self.fields["password"].widget = forms.PasswordInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Password",
+                "class": "form-control",
+                # "placeholder": _("password"),
                 "id": "password",
             }
         )
+        self.fields["password"].label = _("password")
 
 
 class UserSignupForm(SignupForm):
@@ -40,32 +42,39 @@ class UserSignupForm(SignupForm):
 
         self.fields["email"].widget = forms.EmailInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Email",
+                "class": "form-control",
+                # "placeholder": _("email"),
                 "id": "email",
             }
         )
+        self.fields["email"].label = _("email")
+
         self.fields["username"].widget = forms.TextInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Username",
+                "class": "form-control",
+                # "placeholder": _("username"),
                 "id": "username1",
             }
         )
+        self.fields["username"].label = _("username")
+
         self.fields["password1"].widget = forms.PasswordInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Password",
+                "class": "form-control",
+                # "placeholder": _("password"),
                 "id": "password1",
             }
         )
+        self.fields["password1"].label = _("password1")
+
         self.fields["password2"].widget = forms.PasswordInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Password Again",
+                "class": "form-control",
+                # "placeholder": _("password_again"),
                 "id": "password2",
             }
         )
+        self.fields["password2"].label = _("password_again")
 
 
 class UserResetPasswordForm(ResetPasswordForm):
@@ -73,15 +82,14 @@ class UserResetPasswordForm(ResetPasswordForm):
         super(UserResetPasswordForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 
-        self.fields["email"].label = "Email"
-
         self.fields["email"].widget = forms.EmailInput(
             attrs={
-                "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Email address",
+                "class": "form-control",
+                # "placeholder":  _("email_address"),
                 "id": "email1",
             }
         )
+        self.fields["email"].label = _("email")
 
 
 class UserResetPasswordKeyForm(ResetPasswordKeyForm):
@@ -89,20 +97,20 @@ class UserResetPasswordKeyForm(ResetPasswordKeyForm):
         super(UserResetPasswordKeyForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 
-        self.fields["password1"].label = "New Password"
-        self.fields["password2"].label = "Confirm New Password"
+        self.fields["password1"].label = _("password1")
+        self.fields["password2"].label = _("password_again")
 
         self.fields["password1"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "new password",
+                # "placeholder": "new password",
                 "id": "password3",
             }
         )
         self.fields["password2"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "confirm new password",
+                # "placeholder": "confirm new password",
                 "id": "password4",
             }
         )
@@ -114,8 +122,8 @@ class UserChangePasswordForm(ChangePasswordForm):
         self.helper = FormHelper(self)
 
         self.fields["oldpassword"].label = "Old Password"
-        self.fields["password1"].label = "New Password"
-        self.fields["password2"].label = "Confirm New Password"
+        self.fields["password1"].label = _("password1")
+        self.fields["password2"].label = _("password_again")
 
         self.fields["oldpassword"].widget = forms.PasswordInput(
             attrs={
@@ -127,14 +135,14 @@ class UserChangePasswordForm(ChangePasswordForm):
         self.fields["password1"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "New Password",
+                # "placeholder": "New Password",
                 "id": "password6",
             }
         )
         self.fields["password2"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Confirm New Password",
+                # "placeholder": "Confirm New Password",
                 "id": "password7",
             }
         )
@@ -145,20 +153,20 @@ class UserSetPasswordForm(SetPasswordForm):
         super(UserSetPasswordForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 
-        self.fields["password1"].label = "New Password"
-        self.fields["password2"].label = "Confirm New Password"
+        self.fields["password1"].label = _("password1")
+        self.fields["password2"].label = _("password_again")
 
         self.fields["password1"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "New Password",
+                # "placeholder": "New Password",
                 "id": "password8",
             }
         )
         self.fields["password2"].widget = forms.PasswordInput(
             attrs={
                 "class": "form-floating form-floating-custom mb-3",
-                "placeholder": "Confirm New Password",
+                # "placeholder": "Confirm New Password",
                 "id": "password9",
             }
         )

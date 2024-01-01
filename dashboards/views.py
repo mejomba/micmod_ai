@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django.conf import settings
@@ -12,7 +13,7 @@ Here you can override the page view layout.
 Refer to dashboards/urls.py file for more pages.
 """
 
-class DashboardsView(TemplateView):
+class DashboardsView(LoginRequiredMixin,TemplateView):
     # Default template file
     # Refer to dashboards/urls.py file for more pages and template files
     template_name = 'pages/dashboards/index.html'
