@@ -104,14 +104,32 @@ def render_field(field, crispy=None):
 
 @register.inclusion_tag('core/partial/render_field_by_order.html')
 def render_field_by_order(form, *fields, crispy=None, margin_b=None, html_tag=None, label=None,
-                          label_text=None, disable=None, no_input=None, css=None, id=None):
+                          label_text=None, disable=None, no_input=None, css=None, id=None, title=None):
     if form and crispy is None:
         crispy = getattr(form, 'crispy', None)
     context = {'form': form, 'fields': fields, 'crispy': crispy,
                'html_tag': html_tag, 'margin_b': margin_b,
                'label': label, 'label_text': label_text, 'disable': disable,
-               'no_input': no_input, 'css': css, 'id': id
+               'no_input': no_input, 'css': css, 'id': id,'title': title
                }
+    return context
+
+@register.inclusion_tag('core/partial/render_field_group.html')
+def render_field_group(*fields, title='', label_type=None, attrs='', classes='',
+                       field_attrs='', field_classes='', label_classes='', cols=None):
+    attrs_split = field_attrs.split(" ") if field_attrs else []
+    if not cols:
+        cols = len(fields)
+    for field in fields:
+        if field.field:
+            field.field.widget.attrs['class'] += f' {field_classes}'
+            for attr in attrs_split:
+                values = attr.split("=")
+                field.field.widget.attrs[values[0]] = values[1] if len(values) > 1 else values[0]
+    context = {'fields': fields, 'title': title,
+               'label_type': label_type, 'attrs': attrs,
+               'classes': classes, 'fields_attr': field_attrs, 'fields_classes': field_classes,
+               'cols': cols,'label_classes':label_classes}
     return context
 
 

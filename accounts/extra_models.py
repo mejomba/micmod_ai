@@ -12,6 +12,11 @@ from translator import get_text as _
 class Profile(NoUserBaseModel):
     user = models.OneToOneField(User, related_name="profile", on_delete=models.DO_NOTHING, verbose_name=_('user'))
     first_name = models.CharField(max_length=50, verbose_name=_('first_name'), null=True, blank=True)
+    last_name = models.CharField(max_length=50, verbose_name=_('last_name'), null=True, blank=True)
+    company = models.CharField(max_length=50, verbose_name=_('company'), null=True, blank=True)
+    phone = models.CharField(max_length=20, verbose_name=_('phone'), null=True, blank=True)
+    email = models.EmailField(max_length=50, verbose_name=_('email'), null=True, blank=True)
+    website = models.URLField(max_length=50, verbose_name=_('website'), null=True, blank=True)
     avatar = models.ImageField(verbose_name=_('avatar'), null=True, blank=True)
 
     @property

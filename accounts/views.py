@@ -25,7 +25,7 @@ class ProfileView(BaseView):
     template_name = 'accounts/profile_page.html'
     model = Profile
     form_class = ProfileForm
-    success_url = ''
+    success_url = '#'
 
     # def get(self,request, *args, **kwargs):
     #     ...
@@ -33,13 +33,13 @@ class ProfileView(BaseView):
         frm = self.form_class(self.request.POST,self.request.FILES, instance=self.request.user.profile)
         if frm.is_valid():
             return self.form_valid(frm)
+        return HttpResponseRedirect(self.success_url)
 
     def form_valid(self, form):
         form.save()
         return HttpResponseRedirect(self.success_url)
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
         context['profile'], _ = Profile.objects.get_or_create(user=self.request.user)
         context['form'] = ProfileForm(instance=context['profile'])
