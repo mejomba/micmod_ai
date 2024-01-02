@@ -1,3 +1,4 @@
+{% load accounts_tag %}
 <!--begin::Navbar-->
 <div class="app-navbar flex-lg-shrink-0">
     {#    lan#}
@@ -69,7 +70,7 @@
         <!--begin::Menu wrapper-->
         <div class="cursor-pointer symbol symbol-35px" data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
              data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
-            <img src="/assets/media/avatars/300-3.jpg" class="rounded-3" alt="user"/>
+            {{ request.user|get_avatar:"symbol-square" }}
         </div>
         {% include 'partials/menus/_user-account-menu.html' %}
         <!--end::Menu wrapper-->
