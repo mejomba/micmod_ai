@@ -1,17 +1,19 @@
 from ajax_datatable import AjaxDatatableView
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 
+from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.utils import show_error
 from .forms import ItemWeightForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
-from core.views import BaseView
+from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight
-from inquiry.forms import SkuCreateForm
+from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
 from translator import get_text as _
@@ -25,15 +27,24 @@ class SkuCreateView(LoginRequiredMixin,
     sku create view
     """
     has_flow = True
-    flow_config = {
-        'flow_action': _('create'),
-        'flow_state_list': ['تعریف اولیه', 'بررسی فنی'],
-        'flow_users_groups': ['base_user', 'technical_admin'],
-        'flow_deadline': [0, 2, 3],
+    # flow_config = {
+    #     'flow_action': _('create'),
+    #     'flow_state_list': ['تعریف اولیه', 'بررسی فنی'],
+    #     'flow_users_groups': ['base_user', 'technical_admin'],
+    #     'flow_deadline': [0, 2, 3],
+    # }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'SkuCreateView')
+    form_struct = {
+        'form': SkuCreateForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
     }
-
     allow_perms = ['extra_data.add_item']
-    form_class = SkuCreateForm
+    # form_class = SkuCreateForm
     model = Item
     template_name = 'extra_data/sku_create.html'
     success_url = reverse_lazy('extra_data:sku.list')
@@ -78,12 +89,22 @@ class SkuUpdateView(LoginRequiredMixin,
     sku update
     """
     has_flow = True
-    flow_config = {
-        'flow_name': 'create sku',
-        'flow_action': _('create'),
-        'flow_state_list': ['تعریف اولیه', 'بررسی فنی'],
-        'flow_users_groups': ['base_user', 'technical_admin'],
-        'flow_deadline': [0, 2, 3],
+    # flow_config = {
+    #     'flow_name': 'create sku',
+    #     'flow_action': _('create'),
+    #     'flow_state_list': ['تعریف اولیه', 'بررسی فنی'],
+    #     'flow_users_groups': ['base_user', 'technical_admin'],
+    #     'flow_deadline': [0, 2, 3],
+    # }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'SkuUpdateView')
+    form_struct = {
+        'form': SkuCreateForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
     }
     append_last_step = None
     # permission_required = 'extra_data.change_item'

@@ -7,6 +7,7 @@ class Method():
     Get = '1'
     Post = '2'
     Put = '3'
+    Del = '4'
 
 
 class Struct:
@@ -33,6 +34,7 @@ class Urls:
     get_quotations = Struct(**{"url": "/api/Items/Quotations","method": Method.Get})
     get_quotation = Struct(**{"url": "/api/Items/Quotations/{0}","method": Method.Get})#/id
     pos_quotations = Struct(**{"url": "/api/Items/Quotations/","method": Method.Post})
+    del_quotation = Struct(**{"url": "/api/Quotations/{0}", "method": Method.Del})
 
 
 class CustomerAddress:

@@ -137,11 +137,11 @@ class QuotationItem(BaseModel):
             case 'sales_admin':
                 return self.final_price
             case 'price_sheet1':
-                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportaion_cost_3
+                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
             case 'price_sheet2':
-                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportaion_cost_3
+                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
             case 'price_sheet3':
-                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportaion_cost_3
+                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
             case 'price_market':
                 return iqr.goods_price_market
 

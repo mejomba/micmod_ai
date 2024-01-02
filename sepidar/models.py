@@ -451,26 +451,32 @@ class APILogs(core.models.AbsBaseModel):
     api_result = models.JSONField(verbose_name=_('api_result'))
 
     @staticmethod
-    def new_call(device: Device, url, method: Method = Method.Get, data=None):
+    def new_call(device: Device, url, method: Method = Method.Get, data=None, save=False):
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)
         if method == Method.Get:
-            response = requests.get(url, headers=headers,data=data)
+            response = requests.get(url, headers=headers, data=data)
         elif method == Method.Post:
             response = requests.post(url, headers=headers, data=data)
         elif method == Method.Put:
             response = requests.put(url, headers=headers, data=data)
+        elif method == Method.Del:
+            response = requests.delete(url, headers=headers, data=data)
         else:
             response = None
 
         log_data = {'device': device, 'status': response.status_code,
-               'api_url': url, 'api_method': method, 'api_payload': data}
-        if response and (response.status_code == 200 or response.status_code == 201):
+                    'api_url': url, 'api_method': method, 'api_payload': data}
+        if response and response.status_code == 201:
             log_data['api_result'] = response.json()
-            log = APILogs.objects.create(**log_data)
-            return response.json(), log
+        elif response and response.status_code == 200 and method == Method.Del:
+            log_data['api_result'] = f'delete quotation {url.split("/")[-1]}'
         else:
-            # log_data['api_result'] = response.json()['Message']
-            # APILogs.objects.create(log_data)
-            raise Exception(response.json()['Message'])
+            log_data['api_result'] = response.json()['Message']
+        log = APILogs.objects.create(**log_data) if save else None
+        try:
+            response_json = response.json()
+        except Exception as e:
+            response_json = {}
+        return response.status_code, response_json, log

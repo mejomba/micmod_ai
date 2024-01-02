@@ -27,7 +27,7 @@
         <div class="mt-5 mb-2">
             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
         </div>
-        <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-4 pb-3 align-items-end">
+        <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-6 pb-4 align-items-end">
 
             {% render_field_by_order form form.sku form.part_number form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
 

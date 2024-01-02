@@ -87,15 +87,76 @@
       "att":3
     },
 
-  "QuotationsView2":
+  "SkuCreateView":
     {
       "workflow":
       {
-      "title":"QuotationsView",
+      "name":"SkuCreateView",
+      "action":"create",
         "list": [
           {
-            "tittle": "پیش فاکتور اولیه",
-            "group": "salse_users",
+            "state": "تعریف اولیه",
+            "group": "base_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "بررسی فنی",
+            "group": "technical_admin",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
+  "SkuUpdateView":
+    {
+      "workflow":
+      {
+      "name":"SkuCreateView",
+      "action":"create",
+        "list": [
+          {
+            "state": "تعریف اولیه",
+            "group": "base_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "بررسی فنی",
+            "group": "technical_admin",
             "deadline": 0,
             "form_constraint": {
               "hide": [],

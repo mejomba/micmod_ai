@@ -218,7 +218,7 @@ function set_item_classes(item) {
                         id_payment_method: document.getElementById('id_payment_method').value,
                         id_market_grade: document.getElementById('id_market_grade').value,
                         id_customer_grade: document.getElementById('id_customer_grade').value,
-                        quantity: item.querySelector('[id*="quantity"]').value,
+                        quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     }
                 },
                 processResults: function (data, params) {
@@ -254,7 +254,7 @@ function set_item_classes(item) {
                         id_payment_method: document.getElementById('id_payment_method').value,
                         id_market_grade: document.getElementById('id_market_grade').value,
                         id_customer_grade: document.getElementById('id_customer_grade').value,
-                        quantity: item.querySelector('[id*="quantity"]').value,
+                        quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     }
                 },
                 processResults: function (data, params){
@@ -459,7 +459,7 @@ function get_price_data(code, party_id, item) {
                 id_payment_method: document.getElementById('id_payment_method').value,
                 id_market_grade: document.getElementById('id_market_grade').value,
                 id_customer_grade: document.getElementById('id_customer_grade').value,
-                quantity: item.querySelector('[id*="quantity"]').value,
+                quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
             },
         cache: true,
         success: function (data) {
