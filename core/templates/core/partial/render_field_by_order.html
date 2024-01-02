@@ -6,15 +6,15 @@
         {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
 
             {% if crispy %}
-                <div class="col {% if margin_b is not None %}mb-
-                    {{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {{ field|as_crispy_field }}
                 {{ field.errors }}
 
             {% elif field.field.select2 %}
 
-                <div class="col {{ label }} {% if margin_b is not None %}mb-
-                    {{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                <div class="col {{ label }} {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {{ field.as_hidden }}
                 <div class="select2 {{ field|get_field_name }} form-control w-100" id="{{ field.html_name }}"
                      name="{{ field|get_field_name }}"></div>
@@ -24,8 +24,8 @@
             {% elif label %}
 
                 <div class="col
-                        {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}mb-
-                    {{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                        {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}
+                        mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {{ field }}
                 <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
@@ -34,8 +34,8 @@
 
 
             {% else %}
-                <div class="col {% if margin_b is not None %}mb-
-                    {{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {% if no_input %}
                     {% if css == 'no_label' %}
 
