@@ -1,0 +1,68 @@
+{% load crispy_forms_tags %}
+{% load more_tags %}
+{% load l10n %}
+<div class="col {{ classes }}" {{ attrs }}>
+    {% if title %}
+        <div class="h3" data-key="{{ title }}"> {{ title }}</div>
+        <hr>
+    {% endif %}
+    <div class=" row row-cols-{{ cols }}">
+        {% for field in fields %}
+            {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
+                {% if label_type == 'crispy' %}
+                    <div class="col {% if field.errors %} field-error {% endif %}">
+                        {{ field|as_crispy_field }}
+                        {{ field.errors }}
+                    </div>
+                {% elif not label_type %}
+                    <div class="col {% if field.errors %} field-error {% endif %}">
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% elif field.field.select2 %}
+                    <div class="col {{ label_type }}  {% if field.errors %} field-error {% endif %}">
+                        {{ field.as_hidden }}
+                        <div class="select2 {{ field|get_field_name }} form-control w-100" id="{{ field.html_name }}"
+                             name="{{ field|get_field_name }}"></div>
+                        <label data-key="{{ field|get_field_name }}" class="{{ label_classes }} text-muted"></label>
+                        {{ field.errors }}
+                    </div>
+                {% elif label_type != 'crispy' %}
+                    <div class="col
+
+                            {% if not field.field.widget.input_type == 'checkbox' %}{{ label_type }}{% endif %}  {% if field.errors %} field-error {% endif %}">
+                        {{ field }}
+                        <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}"
+                               class="{{ label_classes }} text-muted">{% if label_text %}
+                            {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
+                        {{ field.errors }}
+                    </div>
+                {% else %}
+                    {#                <div class="col {% if field.errors %} field-error {% endif %}">#}
+                    {#                {% if no_input %}#}
+                    {#                    {% if css == 'no_label' %}#}
+                    {##}
+                    {#                    {% else %}#}
+                    {#                        <label class="text-center w-100  card-title-desc h-25 {{ css }}"#}
+                    {#                               id={{ id }} name="{{ field|get_field_name }}"></label>#}
+                    {#                    {% endif %}#}
+                    {#                    {{ field.help_text }}#}
+                    {#                    {{ field.errors }}#}
+                    {#                {% endif %}#}
+
+                {% endif %}
+            {% else %}
+                <div class="position-absolute">
+                    {{ field|as_crispy_field }}
+                </div>
+                {% if no_input %}
+                    <label class="text-center w-100  card-title-desc h-25 {{ css }}"
+                           id={{ id }} name="{{ field|get_field_name }}">
+                        {% if field.value %}{{ field.value }}{% else %} - {% endif %} </label>
+                    {#            {{ field }}#}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
