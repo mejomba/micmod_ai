@@ -392,7 +392,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         dict_ = request.GET or request.POST
         sku = dict_.get('sku_c')
         party_code = dict_.get('party_code')
-        quantity = dict_.get('quantity')
+        quantity = dict_.get('quantity') or 1
         price_setting = dict_.get('price_setting')
         currency = dict_.get('currency')
         payment_method = dict_.get('payment_method')
@@ -421,7 +421,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
 
         if item_sku and item_sku.price is not None:
-            item_sku.n_price = item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
+            item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
                                                payment_method=payment_method, currency=currency,
                                                price_setting=price_setting_obj)
         sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
@@ -446,10 +446,6 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
             inquiry_log_obj.save_user(request)
 
-            express_transportation_cost_1, air_transportation_cost_1, sea_transportation_cost_1 = price.rial_final_price.values()
-            express_transportation_cost_2, air_transportation_cost_2, sea_transportation_cost_2 = price.rial_final_price_new_order.values()
-            express_transportation_cost_3, air_transportation_cost_3, sea_transportation_cost_3 = price.rmb_final_price.values()
-
             inquiry_result_params = {
                 #  استعلام از بازار
                 "goods_price_market": item.get('m_price') or None,
@@ -471,17 +467,17 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                 "stock_amount_res": item.get('stock_qty_res'),
                 #  express - air - sea (1) => 7200
                 #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
-                "express_transportation_cost_1": express_transportation_cost_1 or None,
-                "air_transportation_cost_1": air_transportation_cost_1 or None,
-                "sea_transportation_cost_1": sea_transportation_cost_1 or None,
+                "express_transportation_cost_1": price.rial_final_price.get('express'),
+                "air_transportation_cost_1": price.rial_final_price.get('air'),
+                "sea_transportation_cost_1": price.rial_final_price.get('sea'),
                 #  express - air - sea (2) => 7400
-                "express_transportation_cost_2": express_transportation_cost_2 or None,
-                "air_transportation_cost_2": air_transportation_cost_2 or None,
-                "sea_transportation_cost_2": sea_transportation_cost_2 or None,
+                "express_transportation_cost_2": price.rial_final_price_new_order.get('express'),
+                "air_transportation_cost_2": price.rial_final_price_new_order.get('air'),
+                "sea_transportation_cost_2": price.rial_final_price_new_order.get('sea'),
                 #  express - air - sea (3) => transportations_cost
-                "express_transportation_cost_3": express_transportation_cost_3 or None,
-                "air_transportation_cost_3": air_transportation_cost_3 or None,
-                "sea_transportation_cost_3": sea_transportation_cost_3 or None,
+                "express_transportation_cost_3": price.rmb_final_price.get('express'),
+                "air_transportation_cost_3": price.rmb_final_price.get('air'),
+                "sea_transportation_cost_3": price.rmb_final_price.get('sea'),
                 "quotation_item": None,
                 "price_settings": final_price_settings or None,
                 "sales_price_inquery_log_id": inquiry_log_obj.id or None
@@ -489,7 +485,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             obj = InquiryResult.objects.create(**inquiry_result_params)
             obj.save_user(request)
 
-        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price, 'form': form, 'items': inquiry_result_params, "sku": item_sku},request)
+        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price, 'form': form, 'item': inquiry_result_params, "sku": item_sku},request)
         # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
 
         return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})

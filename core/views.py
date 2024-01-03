@@ -10,6 +10,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
 from _keenthemes import KTLayout
+from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from workflow.forms import WorkFlowModelForm
@@ -91,8 +92,6 @@ class BaseView(UserPassesTestMixin,
 
         if request.method == 'GET':
             self.formset = self.get_formset_from_struct()
-
-
 
     def get(self, request, *args, **kwargs):
         if self.has_formset and not all([self.model, self.formset_model, self.formset_form]):
@@ -219,8 +218,8 @@ class BaseView(UserPassesTestMixin,
                     return False
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
+        self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
         context['has_flow'] = self.has_flow
         if self.has_flow:

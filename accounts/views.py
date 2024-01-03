@@ -41,6 +41,6 @@ class ProfileView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['profile'], _ = Profile.objects.get_or_create(user=self.request.user)
+        context['profile'] = Profile.get_or_create(user=self.request.user)
         context['form'] = ProfileForm(instance=context['profile'])
         return context

@@ -13,6 +13,11 @@ register = template.Library()
 def classname(obj):
     return obj.__class__.__name__
 
+@register.filter
+def set_suffix(value,suffix):
+    return f"{value}{suffix}" if value else ""
+
+
 @register.simple_tag
 def has_access(user_role_list=None, valid_role_str=None):
     if valid_role_str:
