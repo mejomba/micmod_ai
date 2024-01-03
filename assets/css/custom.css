@@ -376,10 +376,10 @@ a .next {
     position:absolute;
     top: -18px;
     right: 10px;
-    background-color:white;
+    background-color: #ffffff;
     color: var(--bs-gray-600);
     transform: translateY(40%);
-    padding: 0 1px;
+    padding: 1px 1px 0 1px;
 }
 .on-border>input:disabled+label,
 .on-border>select:disabled+label,
@@ -397,8 +397,8 @@ a .next {
 .on-border>input:required + label::after{
     color: red;
     content: '*';
-    font-size: 0.75rem;
-    font-weight: 600;
+    /*font-size: 0.75rem;*/
+    /*font-weight: 600;*/
 }
 .on-border>input:disabled,
 .on-border>select:disabled,

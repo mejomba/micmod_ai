@@ -36,6 +36,7 @@
             {% else %}
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                {{ field }}
                 {% if no_input %}
                     {% if css == 'no_label' %}
 

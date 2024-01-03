@@ -50,22 +50,6 @@
                         {% render_field_by_order form form.item form.target form.desired_quality form.demanded_quantity form.type form.brand form.creator_user form.editor_user %}
                         {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                     {% endif %}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3 d-flex justify-content-start">#}
-{#                        <button name="id_formset_submit_button" type="submit" value="submit"#}
-{#                                class="btn btn-primary w-lg mt-3" data-key="save"></button>#}
-{#                    </div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="col mb-3"></div>#}
-{#                    <div class="d-flex justify-content-end align-items-center">#}
-{#                        {% include 'changelog/changelog_popup.html' with logs=object_logs %}#}
-{#                    </div>#}
                 </div>
 
                 {% if formset and request.user|has_permission:"inquiry.view_inquiryresult" %}

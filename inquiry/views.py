@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.forms import inlineformset_factory
 from django import forms
 from django.http import JsonResponse
@@ -21,7 +22,7 @@ from sepidar.models import Item as SepidarItem, Dl
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, InquiryResultForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult
 from extra_data.models import Item, PriceSettings
-from core.views import BaseView, JsonTemplateResponseMixin
+from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list
@@ -34,11 +35,27 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
     """
     price inquiry file create
     """
-    form_class = PriceInquiryFileCreateForm
+    form_struct = {
+        'form': PriceInquiryFileCreateForm,
+        'childes': [
+            {
+                'form': inlineformset_factory(
+                        PriceInquiryFile,
+                        PriceInquiryResult,
+                        form=PriceInquiryResultCreateForm,
+                        extra=1,
+                        # fields=qi_fields,
+                    ),
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'PriceInquiryFileCreateView')
+    # form_class = PriceInquiryFileCreateForm
     model = PriceInquiryFile
     # formset = inlineformset_factory(PriceInquiryFile, PriceInquiryResult, form=PriceInquiryResultCreateForm, extra=1, )
     has_formset = True
-    formset_form = PriceInquiryResultCreateForm
+    # formset_form = PriceInquiryResultCreateForm
     formset_model = PriceInquiryResult
     extra_formset = 1
     template_name = 'inquiry/price_inquiry_file_update_or_create.html'
@@ -108,9 +125,25 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
     """
     price inquiry file update
     """
-    form_class = PriceInquiryFileCreateForm
+    form_struct = {
+        'form': PriceInquiryFileCreateForm,
+        'childes': [
+            {
+                'form': inlineformset_factory(
+                    PriceInquiryFile,
+                    PriceInquiryResult,
+                    form=PriceInquiryResultCreateForm,
+                    extra=1,
+                    # fields=qi_fields,
+                ),
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'PriceInquiryFileUpdateView')
+    # form_class = PriceInquiryFileCreateForm
     has_formset = True
-    formset_form = PriceInquiryResultCreateForm
+    # formset_form = PriceInquiryResultCreateForm
     formset_model = PriceInquiryResult
     model = PriceInquiryFile
     template_name = 'inquiry/price_inquiry_file_update_or_create.html'
@@ -271,21 +304,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
-    # column_defs = [
-    #     AjaxDatatableView.render_row_tools_column_def(),
-    #     {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'p-0 border sku-search', 'defaultContent': '<a href"#">test</a>' , 'lookup_field': '__sku__icontains'},
-    #     {'name': 'price_inquiry_file', 'visible': True, 'title': _('price_inquiry_file'), 'className': 'p-0 border', 'searchable': False},
-    #     {'name': 'supplier', 'visible': True, 'title': _('supplier'), 'className': 'p-0 border'},
-    #     {'name': 'price', 'visible': True, 'title': _('price'), 'className': 'p-0 border'},
-    #     {'name': 'local_price', 'visible': True, 'title': _('local_price'), 'className': 'p-0 border'},
-    #     {'name': 'description', 'visible': True, 'title': _('description'), 'className': 'p-0 border'},
-    #     {'name': 'currency_type', 'visible': True, 'title': _('currency_type'), 'className': 'p-0 border', 'lookup_field': '__title__icontains'},
-    #     {'name': 'active', 'visible': True, 'title': _('active'), 'className': 'p-0 border'},
-    #     {'name': 'price_irr', 'visible': True, 'title': _('rmb_final_price'), 'className': 'p-0 border', 'searchable': False,},
-    #     {'name': 'id', 'visible': False, },
-    #     {'name': 'last_update_date', 'orderable': True, 'visible': False, },
-    # ]
-
     def get_columns(self, fields):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
@@ -304,24 +322,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return res
 
     def get_column_defs(self, request):
-        # cols = self.get_columns([
-        #                         # {'name': 'sku', 'lookup_field': '__sku__icontains'},
-        #                          {'name':'sku','lookup_field': '__purchase_group__title__icontains'},
-        #                         "purchase_group",
-        #                          {'name': 'price_inquiry_file', 'searchable': False},
-        #                          {'name': 'supplier', 'lookup_field': '__name__icontains'},
-        #                          'price',
-        #                          'local_price',
-        #                          'description',
-        #                          {'name': 'currency_type', 'lookup_field': '__title__icontains'},
-        #                          'active',
-        #                          {'name': 'weight', 'searchable': False},
-        #                          {'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False},
-        #                          {'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False},
-        #                          {'name': 'id', 'visible': False},
-        #                          {'name': 'last_update_date', 'orderable': True, 'visible': False},
-        #                         ])
-
         cols = self.get_columns([
             {'name': 'sku', 'lookup_field': '__sku__icontains'},
             # {'name': 'sku', 'lookup_field': '__icontains'},

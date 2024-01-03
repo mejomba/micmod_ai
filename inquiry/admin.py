@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import PriceSettings,PriceInquiryResult,PriceInquiryFile
+from .models import PriceSettings, PriceInquiryResult, PriceInquiryFile, Supplier
+
 # Register your models here.
 
-admin.site.register([PriceSettings,PriceInquiryFile,PriceInquiryResult])
+admin.site.register([PriceSettings,PriceInquiryFile,PriceInquiryResult, Supplier])

@@ -219,6 +219,7 @@ class BaseView(UserPassesTestMixin,
                     return False
 
     def get_context_data(self, **kwargs):
+
         context = super().get_context_data(**kwargs)
         context = KTLayout.init(context)
         context['has_flow'] = self.has_flow
@@ -335,8 +336,9 @@ class BaseView(UserPassesTestMixin,
                     'create': False if self.object else True
                 }
             elif self.has_simple_flow:
+                self.wf_access = True
                 self.wf_initial = {
-                    'wf_access': True,
+                    'wf_access': self.wf_access,
                     'from_user': None,
                     'to_user': None,
                     'state': None,
@@ -522,7 +524,10 @@ class BaseView(UserPassesTestMixin,
                         }
                     })
                     if self.formset.is_valid():
-                        fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
+                        if hasattr(self.formset.forms[0], 'nested'):
+                            fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
+                        else:
+                            fo = self.formset.save()
                     else:
                         print(self.formset.errors)
                         fo = None

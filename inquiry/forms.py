@@ -71,18 +71,18 @@ class SkuCreateForm(CustomBaseModelForm):
                             'package', 'batch_type', 'batch_count',
                             'image_1', 'image_2', 'file_1'])
 
-        # try:
-        #     initial = kwargs.get('initial')
-        #     if initial:
-        #         permission_access = initial.get('permission_access')
-        #         # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
-        #         self.set_field_level_permission(permission_access)
-        # except Exception as e:
-        #     print(e)
-        #
-        # if not self.initial.get('create') and not self.initial.get('wf_access'):
-        #     self.make_disable(self.fields)
-        #     self.enable = False
+        try:
+            initial = kwargs.get('initial')
+            if initial:
+                permission_access = initial.get('permission_access')
+                # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
+                self.set_field_level_permission(permission_access)
+        except Exception as e:
+            print(e)
+
+        if not self.initial.get('create') and not self.initial.get('wf_access'):
+            self.make_disable(self.fields)
+            self.enable = False
 
     def save(self, commit=True):
         return super().save(commit=True)
@@ -134,21 +134,62 @@ class PriceInquiryResultCreateForm(CustomBaseModelForm):
         }
         
     def __init__(self, *args, **kwargs):
-        # kwargs.pop('constraint')
+        request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
+        if self.form_state is None:
+            if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
+                self.form_state = c.get('form_state')
+            elif kwargs.get('constraint'):
+                self.form_state = kwargs.get('constraint').get('form_state')
+
+        if self.form_state is not None:
+            if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
+                form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
+                formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
+                request = c.pop('request')  # remove unnecessary kwargs
+                access = c.get('wf_access')
+            elif kwargs.get('constraint'):
+                form_constraint = kwargs.get('constraint').get('form_constraint')
+                formset_constraint = kwargs.get('constraint').get('formset_constraint')
+                request = kwargs.get('constraint').get('request')
+                access = kwargs.get('constraint').get('wf_access')
+                kwargs.pop('constraint')  # remove unnecessary kwargs
+
+            form_constraint_read = form_constraint[self.form_state].get('read') if form_constraint else None
+            form_constraint_hide = form_constraint[self.form_state].get('hide') if form_constraint else None
+            formset_constraint_read = formset_constraint[self.form_state][0].get('read') if formset_constraint else None
+            formset_constraint_hide = formset_constraint[self.form_state][0].get('hide') if formset_constraint else None
+
         super(PriceInquiryResultCreateForm, self).__init__(*args, **kwargs)
         self.make_optional(['image_1', 'file_1'])
         self.make_hidden(['price_inquiry_file'])
         self.fields['active'].initial = True
 
-        try:
-            initial = kwargs.get('initial')
-            print(__file__, 'initial in formset ===== ', initial)
-            if initial:
-                permission_access = initial.get('permission_access')
-                # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
-                self.set_field_level_permission(initial)
-        except Exception as e:
-            show_error(e, __file__)
+        kwargs.pop('constraint', None)
+        super().__init__(*args, **kwargs)
+
+        if request and not request.user.is_superuser:
+            if form_constraint_hide:
+                self.make_hidden(form_constraint_hide)
+            if form_constraint_read:
+                self.make_disable(form_constraint_read)
+            if formset_constraint_hide:
+                self.make_hidden(formset_constraint_hide)
+            if formset_constraint_read:
+                self.make_disable(formset_constraint_read)
+
+        if not access:
+            self.make_disable(self.fields)
+            self.enable = False
+
+        # try:
+        #     initial = kwargs.get('initial')
+        #     print(__file__, 'initial in formset ===== ', initial)
+        #     if initial:
+        #         permission_access = initial.get('permission_access')
+        #         # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
+        #         self.set_field_level_permission(initial)
+        # except Exception as e:
+        #     show_error(e, __file__)
 
 
 class SalesPriceInqueryLogForm(CustomBaseModelForm):
