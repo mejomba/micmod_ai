@@ -420,7 +420,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         form.fields['grade'] = get_choice_field(grades, grade)
         form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
 
-        if item_sku.price is not None:
+        if item_sku and item_sku.price is not None:
             item_sku.n_price = item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
                                                payment_method=payment_method, currency=currency,
                                                price_setting=price_setting_obj)
@@ -435,7 +435,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item = dict()
 
         if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': item_sku.price, 'form': form,"sku": item_sku, 'item': item},request)
+            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price , 'form': form, "sku": item_sku, 'item': item},request)
 
             return JsonResponse({'res': html})
         if request.POST:
