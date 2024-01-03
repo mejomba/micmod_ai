@@ -35,7 +35,7 @@ def has_groups(user, group_names):
 
 @register.filter(name='get_avatar')
 def get_avatar(user, extra_class=''):
-    if user.profile.avatar:
+    if hasattr(user, 'profile') and user.profile.avatar:
         res = f"""
                 <div class="symbol symbol-35px symbol-circle {extra_class}" data-bs-toggle="tooltip" aria-label="{user.profile.first_name}" 
                 data-bs-original-title="{user.profile.first_name}" 
@@ -43,14 +43,22 @@ def get_avatar(user, extra_class=''):
     				<img alt="Pic" src="{user.profile.avatar.url}">
     			</div>
                 """
-    else:
+    elif hasattr(user, 'profile'):
         res = f"""
                 <div class="symbol symbol-35px {extra_class} symbol-circle" data-bs-toggle="tooltip" aria-label="{user.profile.first_name}" 
                 data-bs-original-title="{user.profile.first_name}" 
                 data-kt-initialized="1">
-    				<span class="symbol-label bg-primary text-inverse-primary fw-bold">{user.profile.first_name[:4]}</span>
+    				<span class="symbol-label bg-primary text-inverse-primary fw-bold">{user.profile.first_name[:4] if user.profile.first_name else "بدون نام"}</span>
     			</div>
                 """
+    else:
+        res = f"""
+                        <div class="symbol symbol-35px {extra_class} symbol-circle" data-bs-toggle="tooltip" aria-label="پروفایل تنظیم نشده" 
+                        data-bs-original-title="پروفایل تنظیم نشده" 
+                        data-kt-initialized="1">
+            				<span class="symbol-label bg-primary text-inverse-primary fw-bold">بدون نام</span>
+            			</div>
+                        """
     return mark_safe(res)
 
 @register.filter(name='has_permission')

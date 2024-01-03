@@ -450,13 +450,10 @@ class BaseView(UserPassesTestMixin,
                         if 'next' in self.request.POST:
                             """to_user submit as default to next user"""
                             wf_obj.wf_status = 3  # next
-                            print(__file__, '========= workflow save as next')
 
                         if 'submit' in self.request.POST:
                             """to_user submit as default to next user"""
                             wf_obj.wf_status = 3  # next
-                            # self.wf_finish = True
-                            print(__file__, '========= workflow save as submit')
 
                         wf_obj.save_user(self.request)
                         wf_obj.save()

@@ -51,7 +51,7 @@ class WorkFlowModelForm(CustomBaseModelForm):
                                                     label=_('to user'),
                                                 )
 
-            if state_index and state_index < len(flow_user_groups) - 1:
+            if state_index is not None and state_index < len(flow_user_groups) - 1:
                 # try:
                 next_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index + 1]]).distinct()
                 prev_state_user_list = None

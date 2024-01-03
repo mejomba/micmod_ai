@@ -94,6 +94,7 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['payment_method'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
+        # self.fields['customer_code'].widget.attrs['onchange'] = 'refresh_prices()'
 
 
 class QuotationItemForm(CustomBaseModelForm):
