@@ -130,7 +130,7 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
-        self.form = self.get_form_class()(self.request.POST, instance=self.object, initial={
+        self.form = self.get_form_class()(self.request.POST, self.request.FILES, instance=self.object, initial={
                                                   "constraint": {
                                                       "wf_access": True,
                                                       'form_state': self.state_index,

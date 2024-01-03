@@ -323,6 +323,7 @@
     "type": "نوع",
     "inquiry result": "نتیجه استعلام",
     "sku": "کالا / خدمت",
+    "sku_c": "کالا / خدمت",
     "invoice code": "کد فاکتور",
     "invoice year": "invoice year",
     "invoice date": "تاریخ فاکتور",

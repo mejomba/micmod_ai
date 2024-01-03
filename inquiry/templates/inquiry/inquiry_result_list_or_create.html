@@ -33,46 +33,23 @@
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-        <div class="main-content">
-
-            <div class="page-content">
-{#                <div class="container-fluid">#}
-{#                <div class="row">#}
-{#                            <div class="col-12">#}
-{#                                <div class="container-fluid">#}
-{#                                    <form method="POST" enctype="multipart/form-data" class="p-2 bg-white shadow rounded mb-2 mt-5 pt-5">#}
-{#                                        {% csrf_token %}#}
-{#                                        <div class="row row-cols-md-6 row-cols-1 align-items-end px-1">#}
-{#                                            {% render_field_by_order form form.sku form.price_inquiry_file form.supplier form.price form.currency_type label='on-border' %}#}
-{#                                            {% render_field_by_order form form.local_price form.description form.active label='on-border' %}#}
-{#                                            {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}#}
-{#                                            {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}#}
-{#                                        </div>#}
-{#                                        <input type="submit" class="btn btn-primary me-1" name="next" value="ذخیره"/>#}
-{#                                    </form>#}
+{#        <div class="main-content">#}
 {##}
-{#                                    <div class="table-responsive p-2">#}
-{#                                        <table id="inquiry_list" width="100%" class="m-table table-striped table-bordered w-100">#}
+{#            <div class="page-content">#}
 {##}
-{#                                        </table>#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                </div>#}
-
-                </div> <!-- container-fluid -->
-            </div>
-            <!-- End Page-content -->
-
-        </div>
-        <!-- end main content-->
+{#                </div> <!-- container-fluid -->#}
+{#            </div>#}
+{#            <!-- End Page-content -->#}
+{##}
+{#        </div>#}
+{#        <!-- end main content-->#}
 {% endblock content %}
 {% block form_content %}
     {% csrf_token %}
     <div class="row m-0 mt-5 align-items-center bg-white">
         <div class="col-10">
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3">
-                {% render_field_by_order form form.sku form.price_inquiry_file form.supplier form.price form.currency_type label='on-border' %}
+                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.currency_type label='on-border' %}
                 {% render_field_by_order form form.local_price form.description form.active form.update_price label='on-border' %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
@@ -102,15 +79,27 @@
 
 
 
-        $('#id_sku').on("select2:select", function (e) {
+        {#$('#id_sku').on("select2:select", function (e) {#}
+        {#    const skuSearch = document.querySelector('.sku-search>input')#}
+        {#    const skuss = document.querySelector('input')#}
+        {#    debugger#}
+        {#    skuSearch.value = e.target.options[e.target.selectedIndex].text;#}
+        {##}
+        {#    var event = new Event('change');#}
+        {#    skuSearch.dispatchEvent(event);#}
+        {##}
+        {#    })#}
+
+        $('#id_sku_c').on("input", function (e) {
             const skuSearch = document.querySelector('.sku-search>input')
-            const skuss = document.querySelector('input')
-            console.log(skuss)
-            debugger
-            skuSearch.value = e.target.options[e.target.selectedIndex].text;
+            const realSkuField = document.querySelector('#id_sku')
+
+            realSkuField.value = e.target.value;
+            skuSearch.value = e.target.value;
 
             var event = new Event('change');
             skuSearch.dispatchEvent(event);
+            realSkuField.dispatchEvent(event);
 
             })
 

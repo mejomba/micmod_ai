@@ -19,7 +19,8 @@ from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
-from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, InquiryResultForm
+from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
+    InquiryResultForm, PriceInquiryResult2CreateForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult
 from extra_data.models import Item, PriceSettings
 from core.views import BaseView, JsonTemplateResponseMixin, Base
@@ -242,7 +243,7 @@ def sku_list(request):
 
 class InquiryResultListView(BaseView):
     model = PriceInquiryResult
-    form_class = PriceInquiryResultCreateForm
+    form_class = PriceInquiryResult2CreateForm
     template_name = 'inquiry/inquiry_result_list_or_create.html'
     success_url = '.'
 
@@ -259,6 +260,10 @@ class InquiryResultListView(BaseView):
         })
         return context
 
+    def post(self, request, *args, **kwargs):
+        print('post')
+        return super().post(request, *args, **kwargs)
+
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
 
@@ -272,7 +277,7 @@ class InquiryResultListView(BaseView):
 
 class InquiryResultUpdateView(BaseView):
     model = PriceInquiryResult
-    form_class = PriceInquiryResultCreateForm
+    form_class = PriceInquiryResult2CreateForm
     template_name = 'inquiry/inquiry_result_update.html'
 
     def get_context_data(self, **kwargs):
@@ -323,11 +328,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            {'name': 'sku', 'lookup_field': '__sku__icontains'},
-            # {'name': 'sku', 'lookup_field': '__icontains'},
+            {'name': 'sku', 'lookup_field': '__sku__iexact'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
-            {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
+            # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
+            {"name": "purchase_group", "searchable": False},
             'price',
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
