@@ -12,10 +12,11 @@ from accounts.models import User
 
 from translator import get_text as _
 
+class ExtraData(object):
+    ...
 
 class BaseManager(models.Manager):
     # is_public = False
-
     def __init__(self, is_public=False):
         super().__init__()
         self.is_public = is_public
@@ -93,6 +94,7 @@ class BaseManager(models.Manager):
 
 
 class NoUserBaseModel(models.Model):
+    extra_data = ExtraData()
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 

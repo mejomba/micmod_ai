@@ -61,6 +61,7 @@ class PriceInquiryResult(BaseModel):
     }
     rmb_final_price_before_ondemand = None
     _rmb_final_price_ = None
+    rmb_final_price_before_ondemand_percentage = None
 
     def __str__(self):
         return f'{self.id}: {self.price_inquiry_file} {self.sku}'
@@ -132,16 +133,17 @@ class PriceInquiryResult(BaseModel):
                 on_demand_discounts += payment_method_discount_percentage
             office_cost_percentage = self.price_settings.office_cost_percentage or 0
 
-            self.discount_percentage = {
+            self.extra_data.discount_percentage = {
                 'on_demand_discounts_percentage': on_demand_discounts,
                 'quantity_discounts_percentage': quantity_discounts_percentage,
                 'customer_grade_discounts_percentage': customer_grade_discounts_percentage,
                 'payment_method_discount_percentage': payment_method_discount_percentage,
                 'office_cost_percentage': office_cost_percentage,
             }
-            m_cost = (1 + 0.01 * (office_cost_percentage)) * (self.effective_rmb_price + self.customs_cost)
-            m_cost *= (1 + 0.01 * (settings.get_discount_based_price(m_cost)))
-            self.rmb_final_price_custom_office = dict( map(lambda x: (x[0], x[1] + m_cost),
+            self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage)) * (self.effective_rmb_price + self.customs_cost)
+            self.extra_data.after_price_discount_price = (self.extra_data.after_office_price *
+                                                          (1 + 0.01 * (settings.get_discount_based_price(self.extra_data.after_office_price))))
+            self.extra_data.rmb_final_price_custom_office = dict( map(lambda x: (x[0], x[1] + self.extra_data.after_price_discount_price),
                                                           self.transportations_cost_.items()))
 
             # self.rmb_final_price_custom_office = dict(map(lambda x: (x[0], (1 + 0.01 * (office_cost_percentage)) *
@@ -151,38 +153,38 @@ class PriceInquiryResult(BaseModel):
             #                                               self.rmb_final_price_custom_office.items()))
 
 
-            self.rmb_final_price_before_ondemand = dict(
+            self.extra_data.rmb_final_price_before_ondemand = dict(
                 map(lambda x: (x[0], (x[1] * (1 + 0.01 * (
                                                     0#settings.get_discount_based_price(x[1])
                                                     + settings.max_discount_for_final_step
                                                     + settings.interest_percentage)))),
-                    self.rmb_final_price_custom_office.items()))
-            self.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
+                    self.extra_data.rmb_final_price_custom_office.items()))
+            self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
                                                                         (self.sku.express_extra_cost_percentage if x[0] == "express" else
                                                                          self.sku.air_extra_cost_percentage if x[0] == "air" else
                                                                          self.sku.sea_extra_cost_percentage)))),
-                                              self.rmb_final_price_before_ondemand.items()))
+                                              self.extra_data.rmb_final_price_before_ondemand.items()))
 
             self._rmb_final_price_ = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts))),
-                                              self.rmb_final_price_before_ondemand.items()))
+                                              self.extra_data.rmb_final_price_before_ondemand.items()))
 
 
-            self.get_discount_based_price_percentage = dict(
-                map(lambda x: (x[0], settings.get_discount_based_price(x[1])),
-                    self.rmb_final_price_custom_office.items()))
-            self.rmb_final_price_custom_office_percentage = dict(
+            # self.extra_data.get_discount_based_price_percentage = dict(
+            #     map(lambda x: (x[0], settings.get_discount_based_price(x[1])),
+            #         self.rmb_final_price_custom_office.items()))
+            self.extra_data.rmb_final_price_custom_office_percentage = dict(
                 map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
-                    self.rmb_final_price_custom_office.items()))
+                    self.extra_data.rmb_final_price_custom_office.items()))
             # self.rmb_final_price_before_ondemand_percentage = dict(
             #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
             #         self.rmb_final_price_before_ondemand.items()))
             # self.rmb_final_price_percentage = dict(
             #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
             #         self._rmb_final_price_.items()))
-            self.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.rmb_final_price_before_ondemand,
-                                                                                 self.rmb_final_price_custom_office)
-            self.rmb_final_price_percentage = get_dif_percentage(self._rmb_final_price_,
-                                                                 self.rmb_final_price_custom_office)
+            self.extra_data.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.extra_data.rmb_final_price_before_ondemand,
+                                                                                 self.extra_data.rmb_final_price_custom_office)
+            self.extra_data.rmb_final_price_percentage = get_dif_percentage(self._rmb_final_price_,
+                                                                 self.extra_data.rmb_final_price_custom_office)
 
             return self._rmb_final_price_
 
@@ -208,6 +210,7 @@ class PriceInquiryResult(BaseModel):
             self.custom_properties['payment_method_'] = payment_method
         self.custom_properties['currency_'] = currency or "1"
         self.rmb_final_price_()
+        self.extra_data.a = "123"
         return self
 
     @property
