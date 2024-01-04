@@ -3,11 +3,13 @@ import json
 
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from core.models import AbsBaseModel,Q
 from accounts.models import User
 from translator import get_text as _
 from django.template.loader import render_to_string
+from django.contrib.contenttypes.models import ContentType
 # Create your models here.
 
 
@@ -37,8 +39,11 @@ class Messages(AbsBaseModel):
     read_status = models.URLField(verbose_name=_("read_status"), default=ReadStatus.Unread)
     message_type = models.URLField(verbose_name=_("message_type"), default=MessageType.Info)
     send_to_group = models.BooleanField(verbose_name=_('send_to_group'),default=False)
-    content_type = models.BooleanField(verbose_name=_('content_type'),blank=True, null=True)
-    object_id = models.BooleanField(verbose_name=_('object_id'),blank=True, null=True)
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING, related_name='notification_content_type',
+                                     null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     @classmethod
     def send_unread_count(cls, user):
@@ -51,7 +56,7 @@ class Messages(AbsBaseModel):
 
     @classmethod
     def send_message(cls, **kwargs):
-        obj = cls.objects.first() #cls.objects.create(**kwargs)
+        obj = cls.objects.create(**kwargs)
         if obj:
             unread_count = cls.get_unread_messages(obj.user).count()
             rendered_html = render_to_string('notifications/partials/notification_message.html',
@@ -87,7 +92,7 @@ class Messages(AbsBaseModel):
     @classmethod
     @database_sync_to_async
     def start_connection(cls, user):
-        cls.send_message()
+        # cls.send_message()
         cls.send_unread_count(user)
 
     @classmethod
