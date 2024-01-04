@@ -9,7 +9,7 @@ from .models import Messages
 
 def notification_menu_list(request, template="notifications/partials/notification_messages_list.html"):
     context = dict()
-    context['notifications'] = Messages.objects.all().order_by('read_status')  # .get_unread_messages(request.user)
+    context['notifications'] = Messages.objects.all().get_unread_messages(request.user)
     context["unread_count"] = Messages.get_unread_messages(request.user).count()
     if request.method == "POST":
         if is_ajax(request):

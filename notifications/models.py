@@ -82,12 +82,14 @@ class Messages(AbsBaseModel):
         )
 
     @staticmethod
-    def get_unread_messages(user):
+    def get_unread_messages(user, status=None, order_by='read_status'):
         qs = Messages.objects.filter(user=user)
         user_ws_groups = user.ws_groups
         if user_ws_groups.count():
             qs = qs | Messages.objects.filter(ws_group__in=user_ws_groups,send_to_group=True)
-        return qs.filter(read_status=ReadStatus.Unread)
+        if status:
+            qs = qs.filter(read_status=ReadStatus.Unread)
+        return qs.order_by(order_by)
 
     @classmethod
     @database_sync_to_async
