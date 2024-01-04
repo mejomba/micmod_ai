@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -8,9 +10,12 @@ from tools.utils import elapsed_time
 from django.db.models import Q
 from accounts.models import User
 
+
 # from accounts.models import User
 
 from translator import get_text as _
+from django.contrib.contenttypes.fields import GenericRelation
+
 
 class ExtraData(object):
     ...
@@ -99,9 +104,24 @@ class NoUserBaseModel(models.Model):
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 
     is_deleted = models.BooleanField(default=False, verbose_name=_('is_deleted'))
+
+    # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
+
+
     is_public = False
+    workflows = GenericRelation('workflow.Workflow',related_query_name="model", related_name='parent_object',
+                                content_type_field=10)
 
     objects = BaseManager()
+
+    @classmethod
+    def content_type(cls):
+        return ContentType.objects.get(model=cls.__name__.lower(),app_label=cls._meta.app_label.lower())
+
+    @classmethod
+    def all_workflows(cls):
+        from workflow.models import WorkFlow
+        return WorkFlow.objects.filter(content_type=cls.content_type())
 
     def set_public(self):
         self.objects.is_public = True

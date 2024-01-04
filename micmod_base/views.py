@@ -30,6 +30,7 @@ from django.views import View
 
 from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
+from django.contrib.contenttypes.models import ContentType
 
 
 # from workflow.models import WorkFlowAction

@@ -74,7 +74,6 @@ class Currency(models.Model):
         return self.exchange_rates.order_by("-date")[0]
 
 
-
 class SLSDoc(BaseModel):
     # translations = TranslatedFields(
     currency_ref = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
