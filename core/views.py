@@ -455,7 +455,7 @@ class BaseView(UserPassesTestMixin,
                             wf_obj.wf_status = 3  # next
 
                         wf_obj.save_user(self.request)
-                        wf_obj.save()
+                        wf_obj.final_save()
                     else:
                         print(form.wfform.errors.as_data())
                 elif self.has_flow and 'draft' in self.request.POST:

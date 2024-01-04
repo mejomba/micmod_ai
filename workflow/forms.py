@@ -11,7 +11,7 @@ from .models import WorkFlow, FlowAdminGroup
 from django import forms
 
 from translator import get_text as _
-
+from notifications.models import Messages
 
 class WorkFlowModelForm(CustomBaseModelForm):
     belong_to_group_ = forms.CharField(max_length=255)
@@ -106,3 +106,4 @@ class WorkFlowModelForm(CustomBaseModelForm):
             self.fields['belong_to_group_'].widget.attrs['placeholder'] = FlowAdminGroup.get_name(belong_to_group)
         except Exception as e:
             print('error: ', __file__,  e.__traceback__.tb_lineno, e)
+

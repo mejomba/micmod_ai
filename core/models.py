@@ -107,10 +107,10 @@ class NoUserBaseModel(models.Model):
 
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
-
     is_public = False
-    # workflows = GenericRelation('workflow.Workflow',related_query_name="model", related_name='parent_object',
-    #                             content_type_field=10)
+
+    workflows = GenericRelation('workflow.Workflow',related_query_name="parent_object_wf")
+    notifications = GenericRelation('notifications.Messages',related_query_name="parent_object_no")
 
     objects = BaseManager()
 
