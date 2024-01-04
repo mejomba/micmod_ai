@@ -16,8 +16,7 @@ class WorkFlow(BaseModel):
     flow_name = models.CharField(max_length=100, null=True, blank=True)
     from_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='flow_from_user',
                                   null=True, blank=True, verbose_name=_('from user'))
-    to_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='flow_to_user',
-                                null=True, blank=True, verbose_name=_('to user'))
+    to_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='flow_to_user', verbose_name=_('to user'))
     state = models.CharField(max_length=255, null=True, blank=True, verbose_name=_('state'))
     duty = models.CharField(max_length=100, null=True, blank=True)
     deadline = models.DateTimeField(null=True, blank=True, verbose_name=_('deadline'))

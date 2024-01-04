@@ -17,7 +17,7 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["local_price_inquiry_done", "foreign_price_inquiry_done"]
               }
             ]
           },
@@ -32,7 +32,7 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry"]
               }
             ]
           },

@@ -1,5 +1,7 @@
 import uuid
 
+from django.contrib.contenttypes.fields import GenericRelation
+
 # from django.contrib.auth.models import User
 from accounts.models import User
 from django.db import models
@@ -39,6 +41,8 @@ class Quotation(SLSDoc):
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
     sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
+
+    workflows = GenericRelation('workflow.Workflow', related_query_name="model")
 
     objects = models.Manager()
 

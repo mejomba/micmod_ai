@@ -109,8 +109,8 @@ class NoUserBaseModel(models.Model):
 
 
     is_public = False
-    workflows = GenericRelation('workflow.Workflow',related_query_name="model", related_name='parent_object',
-                                content_type_field=10)
+    # workflows = GenericRelation('workflow.Workflow',related_query_name="model", related_name='parent_object',
+    #                             content_type_field=10)
 
     objects = BaseManager()
 
@@ -121,7 +121,8 @@ class NoUserBaseModel(models.Model):
     @classmethod
     def all_workflows(cls):
         from workflow.models import WorkFlow
-        return WorkFlow.objects.filter(content_type=cls.content_type())
+        # return WorkFlow.objects.filter(content_type=cls.content_type())
+        cls.workflows = GenericRelation('workflow.Workflow', related_query_name="mooo")
 
     def set_public(self):
         self.objects.is_public = True
