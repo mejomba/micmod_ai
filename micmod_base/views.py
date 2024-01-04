@@ -1,5 +1,8 @@
 from pprint import pprint
 import json
+
+from django.contrib.contenttypes.models import ContentType
+
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -30,6 +33,7 @@ from django.views import View
 
 from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
+from workflow.models import WorkFlow
 
 
 # from workflow.models import WorkFlowAction
@@ -40,16 +44,23 @@ from core.views import BaseView, Base
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
         quotations_record = Quotation.custom_objects.own_quotations(request)
-        # p = Paginator(quotations_record, 10)
-        # page = request.GET.get('page')
-        # if p == None:
-        #    page = int(1)
-        # page_obj = p.get_page(page)
+        q = self.request.GET.get('q')
+        quotations_record_lst = []
+        obj = quotations_record.first()
+        if obj and q == 'active':
+            content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
+            for item in quotations_record:
+                wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
+                if wf.creator_user == self.request.user or wf.editor_user == self.request.user or wf.to_user == self.request.user:
+                    quotations_record_lst.append(item)
+        else:
+            quotations_record_lst = quotations_record
+
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
-        greeting['quotations'] = quotations_record
-        # greeting['page_obj'] = page_obj
+        # greeting['quotations'] = quotations_record
+        greeting['quotations'] = quotations_record_lst
 
         return render (request,'micmod-base/quotation/list.html',greeting)
 

@@ -27,7 +27,11 @@
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-body">
-
+                                    <div class="border rounded p-3">
+                                        <span>استفاده از فیلتر</span>
+                                        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+                                        <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>
+                                    </div>
                                         <h4 class="card-title" data-key="t-quotation">Quotation</h4>
 
                                         <div class="table-rep-plugin">
