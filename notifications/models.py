@@ -47,7 +47,7 @@ class Messages(AbsBaseModel):
 
     @classmethod
     def send_unread_count(cls, user):
-        unread_count = cls.get_unread_messages(user).count()
+        unread_count = cls.get_unread_messages(user,ReadStatus.Unread).count()
         asyncio.run(cls._send_message(f"notify_group_{user.id}",
                                       {'type': "notification_count", 'count': unread_count,
                                             'title': 'System', 'body': f'You have {unread_count} messages',

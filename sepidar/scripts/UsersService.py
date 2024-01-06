@@ -1,7 +1,7 @@
 import requests
 
-from .CryptoHelper import md5_hash
-from .DevicesService import DevicesService
+from sepidar.scripts.CryptoHelper import md5_hash
+from sepidar.scripts.DevicesService import DevicesService
 
 
 class UsersService:

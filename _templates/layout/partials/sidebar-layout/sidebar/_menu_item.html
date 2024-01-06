@@ -1,4 +1,5 @@
 {% load accounts_tag %}
+{% load core_tags %}
 {% if not menu.permission or request.user|has_one_group_or_permission:menu.permission %}
     <div class="menu-item">
         <!--begin:Menu link-->
@@ -14,6 +15,11 @@
             {% endif %}
             {% if menu.title %}
                 <span class="menu-title" data-key={{ menu.title }}>{{ menu.title }}</span>
+            {% endif %}
+            {% if menu.count %}
+                <span class="menu-badge">
+					    <span class="badge badge-danger">{% get_object_count request.user menu.count %}</span>
+				    </span>
             {% endif %}
         </a>
         <!--end:Menu link-->

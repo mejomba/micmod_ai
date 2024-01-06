@@ -3,8 +3,8 @@ from uuid import uuid4
 
 import requests
 
-from .Configuration import Configuration
-from .CryptoHelper import aes_encrypt, aes_decrypt, rsa_encrypt
+from sepidar.scripts.Configuration import Configuration
+from sepidar.scripts.CryptoHelper import aes_encrypt, aes_decrypt, rsa_encrypt
 
 
 class DevicesService:

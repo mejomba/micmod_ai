@@ -105,8 +105,8 @@ def has_one_group_or_permission(user, permission):
     if user.is_superuser:
         return True
     has_perm = False
-    for group in permission.get('groups'):
+    for group in permission.get('groups', []):
         has_perm = has_perm or (group in [gn[0] for gn in user.groups.values_list('name')])
-    for permission_ in permission.get('permissions'):
+    for permission_ in permission.get('permissions', []):
         has_perm = has_perm or user.has_perm(permission_)
     return has_group

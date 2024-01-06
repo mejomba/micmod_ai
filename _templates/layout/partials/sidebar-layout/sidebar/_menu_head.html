@@ -1,4 +1,5 @@
 {% load accounts_tag %}
+{% load core_tags %}
 {% if not menu.permission or request.user|has_one_group_or_permission:menu.permission %}
     {% if not menu.menus %}
         {% include "layout/partials/sidebar-layout/sidebar/_menu_item.html" with menu=menu %}
@@ -6,7 +7,7 @@
         <div data-kt-menu-trigger="click"
              class="menu-item menu-accordion {% path_has_key request.path menu.path_key 'show' %}">
             <!--begin:Menu link-->
-            <a class="menu-link">
+            <a class="menu-link position-relative">
                 {% if menu.icon %}
                     <span class="menu-icon">{% getIcon menu.icon 'fs-2' %}</span>
                 {% else %}
@@ -17,6 +18,15 @@
                 {% if menu.title %}
                     <span class="menu-title fw-bold text-uppercase fs-3"
                           data-key={{ menu.title }}>{{ menu.title }}</span>
+                {% endif %}
+                {% if menu.count%}
+                    {% get_object_count request.user menu.count as count %}
+                    {% if count %}
+                    	<span class="bullet bullet-dot bg-warning h-6px w-6px position-absolute translate-middle top-50 end-0 animation-blink"></span>
+{#                        <span class="menu-badge">#}
+{#					    <span class="badge badge-danger">{%  get_object_count request.user menu.count %}</span>#}
+{#				    </span>#}
+                    {% endif %}
                 {% endif %}
                 <span class="menu-arrow"></span>
             </a>

@@ -44,18 +44,8 @@ from django.contrib.contenttypes.models import ContentType
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
-        quotations_record = Quotation.custom_objects.own_quotations(request)
         q = self.request.GET.get('q')
-        quotations_record_lst = []
-        obj = quotations_record.first()
-        if obj and q == 'active':
-            content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
-            for item in quotations_record:
-                wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
-                if wf.creator_user == self.request.user or wf.editor_user == self.request.user or wf.to_user == self.request.user:
-                    quotations_record_lst.append(item)
-        else:
-            quotations_record_lst = quotations_record
+        quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
 
         greeting = {}
         greeting['heading'] = _("quotation")

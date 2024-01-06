@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from translator import get_text as _
 
@@ -30,6 +32,8 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'auth_user'
+
+
 
     def get_target_user_from_group(self, group, level=1):
         from workflow.models import FlowAdminGroup
@@ -68,6 +72,12 @@ class User(AbstractUser):
 
 # MyUser = User.get_user_model().objects.get()
 
+
+@receiver(post_save, sender=User)
+def create_profile(sender, instance, created, **kwargs):
+    if created:
+        from accounts.extra_models import Profile
+        Profile.objects.create(first_name=instance.username,user=instance)
 
 class ManageFormField(models.Model):
     ACTION = ((1, _('create or update')), (2, _('hide')),)

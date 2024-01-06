@@ -79,7 +79,8 @@ class BaseManager(models.Manager):
     #         )
     #     return wf
 
-    def get_access_object(self, user):
+    def get_access_object(self, user,q="all"):
+        from workflow.models import WorkFlow
         if user.is_superuser:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name, app_label=self.model._meta.app_label).first()
@@ -95,7 +96,20 @@ class BaseManager(models.Manager):
             Q(editor_user__in=user_list)
         )
         objects_from_flow = self.model.objects.filter(pk__in=object_id_from_flow)
-        return objects_from_user | objects_from_flow
+
+        qry = objects_from_user | objects_from_flow
+        quotations_record_lst = []
+        obj = qry.first()
+        if obj and q == 'active':
+            content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
+            for item in qry:
+                wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
+                if wf.to_user == user:
+                    quotations_record_lst.append(item)
+        else:
+            quotations_record_lst = qry
+
+        return quotations_record_lst
 
 
 class NoUserBaseModel(models.Model):
