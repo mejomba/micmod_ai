@@ -10,7 +10,6 @@ class MessagesConsumer(AsyncConsumer):
         self.user = self.scope['user']
         self.user_id = self.scope['url_route']['kwargs']['user_id']
         self.notify_group_id = f"notify_group_{self.user.id}"
-        print(f'{self.user_id} is connected')
 
         if self.user and str(self.user.id) == self.user_id:
             await self.channel_layer.group_add(

@@ -1,6 +1,6 @@
 import requests
 
-from .UsersService import UsersService
+from sepidar.scripts.UsersService import UsersService
 
 
 
