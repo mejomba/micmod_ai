@@ -70,7 +70,7 @@ class WorkFlow(BaseModel):
 #
 #     def __str__(self):
 #         return f'{self.action}'
-
+group_memo = dict()
 class FlowAdminGroup(models.Model):
     group_name = models.CharField(max_length=255, verbose_name=_('group_name'), null=True, blank=True)
     group_rel = models.ForeignKey(Group, on_delete=models.DO_NOTHING, verbose_name=_('group_rel'), null=True,
@@ -100,14 +100,21 @@ class FlowAdminGroup(models.Model):
             group_name -> real name of group, from current state of flow
         return -> bool
         """
-        current_user_group = Group.objects.filter(name=group_name).first()
+        current_user_group = group_memo.get('target_group')
+        if not current_user_group:
+            current_user_group = Group.objects.filter(name=group_name).first()
+            group_memo['target_group'] = current_user_group
+
         # qs = cls.objects.filter(pk=-1)
         for ug in user.groups.all():
             for my_flow_admin in cls.objects.filter(group_rel=ug):
-                for ru in my_flow_admin.group_child.all():
-                    if current_user_group in my_flow_admin.group_child.all():
+                for ru in my_flow_admin.group_child.all():  # get all subgroups
+                    if ru == group_memo.get('prev'):
+                        continue
+                    elif current_user_group in my_flow_admin.group_child.all():
                         return True
                     else:
+                        group_memo['prev'] = ru
                         return cls.is_admin_of_group(user, ru.name)
         return False
 
