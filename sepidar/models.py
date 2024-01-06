@@ -406,6 +406,7 @@ class Method(models.TextChoices):
     Get = "1", _("Get")
     Post = "2", _("Post")
     Put = "3", _("Put")
+    Del = "4", _("Del")
 
 
 class Device(core.models.AbsBaseModel):
@@ -473,7 +474,7 @@ class APILogs(core.models.AbsBaseModel):
         elif response and response.status_code == 200 and method == Method.Del:
             log_data['api_result'] = f'delete quotation {url.split("/")[-1]}'
         else:
-            log_data['api_result'] = response.json()['Message']
+            log_data['api_result'] = response.reason
         log = APILogs.objects.create(**log_data) if save else None
         try:
             response_json = response.json()

@@ -44,8 +44,6 @@ class Quotation(SLSDoc):
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
 
-    objects = models.Manager()
-
     custom_objects = QuotationManager()
 
     @property

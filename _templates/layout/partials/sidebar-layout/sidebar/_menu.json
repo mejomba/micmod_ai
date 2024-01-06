@@ -66,12 +66,13 @@
         {
           "title": "t-quotation",
           "icon": "cheque",
-          "path_key": "quotations",
+          "path_key": "quotation",
           "permission": {
             "permissions": [
               "micmod_base.view_quotation"
             ]
           },
+          "count": "micmod_base.quotation:active",
           "menus": [
             {
               "icon": "message-add",
@@ -83,7 +84,8 @@
               "icon": "burger-menu",
               "title": "list",
               "path_key": "quotations/list",
-              "link": "sls:quotations.list"
+              "direct_link": "/micmod_base/quotations/list?q=active",
+              "count": "micmod_base.quotation:active"
             }
           ]
         },
