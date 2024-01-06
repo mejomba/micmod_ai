@@ -27,13 +27,13 @@ class Urls:
     stocks = Struct(**{"url": "/api/Stocks","method": Method.Get})
     items = Struct(**{"url": "/api/Items","method": Method.Get})
     item_image = Struct(**{"url": "/api/Items/{0}/Image/","method": Method.Get})
-    inventories = Struct(**{"url": "/api/Items/Inventories/","method": Method.Get})
-    sale_types = Struct(**{"url": "/api/Items/SaleTypes","method": Method.Get})
-    price_note_items = Struct(**{"url": "/api/Items/PriceNoteItems","method": Method.Get})
-    currencies = Struct(**{"url": "/api/Items/Currencies","method": Method.Get})
-    get_quotations = Struct(**{"url": "/api/Items/Quotations","method": Method.Get})
-    get_quotation = Struct(**{"url": "/api/Items/Quotations/{0}","method": Method.Get})#/id
-    pos_quotations = Struct(**{"url": "/api/Items/Quotations/","method": Method.Post})
+    inventories = Struct(**{"url": "/api/Inventories/","method": Method.Get})
+    sale_types = Struct(**{"url": "/api/SaleTypes","method": Method.Get})
+    price_note_items = Struct(**{"url": "/api/PriceNoteItems","method": Method.Get})
+    currencies = Struct(**{"url": "/api/Currencies","method": Method.Get})
+    get_quotations = Struct(**{"url": "/api/Quotations","method": Method.Get})
+    get_quotation = Struct(**{"url": "/api/Quotations/{0}","method": Method.Get})#/id
+    pos_quotations = Struct(**{"url": "/api/Quotations/", "method": Method.Post})
     del_quotation = Struct(**{"url": "/api/Quotations/{0}", "method": Method.Del})
 
 

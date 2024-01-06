@@ -96,66 +96,72 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
-        device = Device.objects.all().first()
-        if not self.object.guid:
-            self.object.guid = uuid.uuid4()
-            self.object.save()
-        elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
-            APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
-                             method=Urls.del_quotation.method)
+        try:
+            device = Device.objects.all().first()
+            if not self.object.guid:
+                self.object.guid = uuid.uuid4()
+                self.object.save()
+            elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
+                APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
+                                 method=Urls.del_quotation.method)
 
-        if self.state_index == 2 and 'next' in self.request.POST:
+            if self.state_index == 2 and 'next' in self.request.POST:
 
-            quotation_items = []
-            for idx, qi in enumerate(self.object.quotation.all(), 1):
-                qi_dict = {
-                    'RowID': idx,
-                    'ItemRef': qi.itemid,  # optional
-                    'StockRef': 2,  # optional
-                    'Quantity': qi.quantity,
-                    'SecondaryQuantity': 0,
-                    'Fee': qi.fee or 1,
-                    'Price': qi.price or 1,
-                    'Description': 'qi.description',
-                    'PriceInfoPercentDiscount': 0,
-                    'PriceInfoDiscountRate': 0,
-                    'AggregateAmountPercentDiscount': 0,
-                    'AggregateAmountPriceDiscount': 0,
-                    'AggregateAmountDiscountRate': 0,
-                    'CustomerDiscount': 0,
-                    'CustomerDiscountRate': 0,
+                quotation_items = []
+                for idx, qi in enumerate(self.object.quotation.all(), 1):
+                    qi_dict = {
+                        'RowID': idx,
+                        'ItemRef': qi.itemid,  # optional
+                        'StockRef': 2,  # optional
+                        'Quantity': qi.quantity,
+                        'SecondaryQuantity': 0,
+                        'Fee': qi.fee or 1,
+                        'Price': qi.price or 1,
+                        'Description': 'qi.description',
+                        'PriceInfoPercentDiscount': 0,
+                        'PriceInfoDiscountRate': 0,
+                        'AggregateAmountPercentDiscount': 0,
+                        'AggregateAmountPriceDiscount': 0,
+                        'AggregateAmountDiscountRate': 0,
+                        'CustomerDiscount': 0,
+                        'CustomerDiscountRate': 0,
+                        'Discount': 0,
+                        # 'DiscountParentRef': 1,  # optional
+                        'Tax': 0,
+                        'Duty': 0,
+                        'Addition': 0,
+                    }
+                    quotation_items.append(qi_dict)
+
+                quotation_data = {
+                    'GUID': str(self.object.guid),
+                    'CurrencyRef': self.object.currency_ref.pk,
+                    'Rate': 0,
+                    'ExpirationDate': str(self.object.expiration_date),
+                    'CustomerRef': self.object.customer_party_id,  # 11
+                    'SaleTypeRef': 2,
+                    # 'AddressRef': '1',  # optional
+                    'DiscountOnCustomer': 0,
+                    'Price': self.object.price or 1,
                     'Discount': 0,
-                    # 'DiscountParentRef': 1,  # optional
                     'Tax': 0,
                     'Duty': 0,
                     'Addition': 0,
+                    'items': quotation_items,
                 }
-                quotation_items.append(qi_dict)
+                d = json.dumps(quotation_data)
 
-            quotation_data = {
-                'GUID': str(self.object.guid),
-                'CurrencyRef': self.object.currency_ref.pk,
-                'Rate': 0,
-                'ExpirationDate': str(self.object.expiration_date),
-                'CustomerRef': self.object.customer_party_id,  # 11
-                'SaleTypeRef': 2,
-                # 'AddressRef': '1',  # optional
-                'DiscountOnCustomer': 0,
-                'Price': self.object.price or 1,
-                'Discount': 0,
-                'Tax': 0,
-                'Duty': 0,
-                'Addition': 0,
-                'items': quotation_items,
-            }
-            d = json.dumps(quotation_data)
-
-            api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
-                                       method=Urls.pos_quotations.method, data=d)
-            self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
-            self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-            self.object.save()
-
+                api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
+                                           method=Urls.pos_quotations.method, data=d)
+                self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
+                self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+                self.object.save()
+        except Exception as e:
+            print('rol back ....')
+            content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
+            flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
+            if flow_object:
+                flow_object.delete()
         return res
 
     def get_context_data(self, **kwargs):

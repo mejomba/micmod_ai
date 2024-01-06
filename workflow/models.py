@@ -106,12 +106,13 @@ class FlowAdminGroup(models.Model):
             group_memo['target_group'] = current_user_group
 
         # qs = cls.objects.filter(pk=-1)
-        for ug in user.groups.all():
+        user_all_groups = user.groups.all()
+        for ug in user_all_groups:
             for my_flow_admin in cls.objects.filter(group_rel=ug):
                 for ru in my_flow_admin.group_child.all():  # get all subgroups
                     if ru == group_memo.get('prev'):
                         continue
-                    elif current_user_group in my_flow_admin.group_child.all():
+                    elif current_user_group in my_flow_admin.group_child.all() or current_user_group in user_all_groups:
                         return True
                     else:
                         group_memo['prev'] = ru
