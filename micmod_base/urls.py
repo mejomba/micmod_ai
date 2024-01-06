@@ -5,7 +5,7 @@ app_name = "sls"
 urlpatterns = [
     # Ecommerce
     path(
-        r"quotations/view/<int:pk>",
+        r"quotation/view/<int:pk>",
         view=QuotationsView.as_view(),
         name="quotations.view",
     ),
