@@ -238,7 +238,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
         self.make_hidden(['price_inquiry_file', 'sku'])
-        # self.fields['active'].initial = True
+        self.fields['active'].initial = True
         #
         # kwargs.pop('constraint', None)
         # super().__init__(*args, **kwargs)
