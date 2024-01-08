@@ -176,7 +176,7 @@ class PriceSettings(AbsBaseModel):
                                           ,default=CalculationMethod.Old)
     max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
 
-    auto_complete = 'title'
+    # auto_complete = 'title'
     @staticmethod
     def setting():
         return PriceSettings.objects.filter(activate=True).first()

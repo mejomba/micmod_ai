@@ -62,27 +62,27 @@ class SkuCreateForm(CustomBaseModelForm):
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
 
-        if not access:
-            self.make_disable(self.fields)
-            self.enable = False
+        # if not access:
+        #     self.make_disable(self.fields)
+        #     self.enable = False
 
         self.make_optional(['brand', 'quality', 'sale_group',
                             'purchase_group', 'customs_group',
                             'package', 'batch_type', 'batch_count',
                             'image_1', 'image_2', 'file_1'])
 
-        try:
-            initial = kwargs.get('initial')
-            if initial:
-                permission_access = initial.get('permission_access')
-                # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
-                self.set_field_level_permission(permission_access)
-        except Exception as e:
-            print(e)
-
-        if not self.initial.get('create') and not self.initial.get('wf_access'):
-            self.make_disable(self.fields)
-            self.enable = False
+        # try:
+        #     initial = kwargs.get('initial')
+        #     if initial:
+        #         permission_access = initial.get('permission_access')
+        #         # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
+        #         self.set_field_level_permission(permission_access)
+        # except Exception as e:
+        #     print(e)
+        #
+        # if not self.initial.get('create') and not self.initial.get('wf_access'):
+        #     self.make_disable(self.fields)
+        #     self.enable = False
 
     def save(self, commit=True):
         return super().save(commit=True)

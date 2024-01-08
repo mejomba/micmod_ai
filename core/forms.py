@@ -118,14 +118,19 @@ class CustomBaseModelForm(forms.ModelForm):
         for f in fields:
             del self.fields[f]
 
+    def is_valid(self):
+        for field_str, field in self.fields.items():
+            if getattr(field, 'queryset', None) and getattr(field.queryset.model, 'auto_complete', None):
+                model = field.queryset.model
+                obj, _ = model.objects.get_or_create(title=self.data[field_str])
+                self.data._mutable = True
+                self.data[field_str] = obj.pk
+                self.data._mutable = False
+        return super().is_valid()
+
     def save(self, commit=True):
         # return super().save()
         """if formset empty not save"""
         if any(item for item in self.cleaned_data):
-            for field in self.fields:
-                if field.queryset.model.auto_complete:
-                    model = field.queryset.model
-                    obj = model.objects.get_or_create(title=self.cleaned_data[field])
-                    self.cleaned_data[field] = obj.pk
             return super().save()
         return None
