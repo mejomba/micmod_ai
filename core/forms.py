@@ -33,12 +33,12 @@ class CustomBaseModelForm(forms.ModelForm):
         if self.image_groups:
             for idx in range(1, self.image_groups + 1):
                 self.fields['image_{idx}'.format(idx=idx)] = forms.ImageField(widget=forms.FileInput(attrs={'multiple': 'off'}),
-                                                                              label=f' تصاویر گروه{idx}')
+                                                                              label=f' تصاویر گروه{idx}', required=False)
 
         if self.file_groups:
             for idx in range(1, self.file_groups + 1):
                 self.fields[f'file_{idx}'] = forms.FileField(widget=forms.FileInput(attrs={'multiple': 'on', 'accept': 'file'}),
-                                                             label=f' فایل(ها) پیوست{idx}')
+                                                             label=f' فایل(ها) پیوست{idx}', required=False)
 
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):

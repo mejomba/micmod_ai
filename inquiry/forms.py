@@ -99,6 +99,7 @@ class PriceInquiryFileCreateForm(CustomBaseModelForm):
     crispy = True
     image_groups = 1
     image_model = Image
+    # sku_c = forms.CharField(max_length=100, label=_('sku'))
 
     class Meta:
         model = PriceInquiryFile
@@ -111,11 +112,11 @@ class PriceInquiryFileCreateForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         try:
             kwargs.pop('constraint')
-            print("sdfsdf cons")
         except:
             print('err cons')
         super(PriceInquiryFileCreateForm, self).__init__(*args, **kwargs)
         self.make_optional(['image_1'])
+        # self.make_hidden(['item'])
 
 
 class PriceInquiryResultCreateForm(CustomBaseModelForm):
@@ -177,9 +178,9 @@ class PriceInquiryResultCreateForm(CustomBaseModelForm):
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
 
-        if not access:
-            self.make_disable(self.fields)
-            self.enable = False
+        # if not access:
+        #     self.make_disable(self.fields)
+        #     self.enable = False
 
         # try:
         #     initial = kwargs.get('initial')

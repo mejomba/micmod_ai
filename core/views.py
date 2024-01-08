@@ -510,7 +510,7 @@ class BaseView(UserPassesTestMixin,
                         old_details = list(old_details_.all())
                         old_details = [old_detail.attach_image_file(old_detail) for old_detail in old_details]
 
-                    self.formset = self.get_formset_from_struct()(self.request.POST, instance=new_obj, form_kwargs={
+                    self.formset = self.get_formset_from_struct()(self.request.POST, self.request.FILES, instance=new_obj, form_kwargs={
                         "constraint": {
                             "wf_access": True,
                             'form_state': self.state_index,

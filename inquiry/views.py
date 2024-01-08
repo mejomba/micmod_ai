@@ -72,7 +72,7 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
     #     'flow_users_groups': ['sales_admin', 'base_user', 'wh_user', 'wh_user', 'wh_user', 'wh_user', 'base_user'],
     #     'flow_deadline': [0, 2, 3, 1, 1, 1, 2],
     # }
-    wf_to_user_permission = 'inquiry.change_priceinquiryfile'
+    # wf_to_user_permission = 'inquiry.change_priceinquiryfile'
 
     def get_success_url(self):
         return reverse_lazy('inquiry:price_inquiry_file.view-related', kwargs={'pk': self.object.pk})
@@ -86,11 +86,10 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.has_perms(('inquiry.change_priceinquiryfile',)):
-            # context['formset'] = self.formset
-            if self.object:
-                context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
-            ...
+        # if self.request.user.has_perms(('inquiry.change_priceinquiryfile',)):
+        #     if self.object:
+        #         context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
+        #     ...
         return context
 
 
@@ -154,7 +153,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
     formset_fk_field = 'price_inquiry_file'
     wf_to_user_permission = 'inquiry.change_priceinquiryfile'
     # has_flow = True
-    has_simple_flow = True
+    # has_simple_flow = True
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -175,7 +174,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
         # context['flow'] = self.get_flow(context[self.context_object_name]).order_by('-id')
 
         context['object_logs'] = ChangeLog.get_log(context[self.context_object_name])
-        context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
+        # context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
 
         related_obj = context[self.context_object_name].inquery_result.all()
 
@@ -258,6 +257,7 @@ class InquiryResultListView(BaseView):
         context.update({
             'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         })
+        context['submit_copy'] = True
         return context
 
     def post(self, request, *args, **kwargs):

@@ -90,7 +90,8 @@
         {##}
         {#    })#}
 
-        $('#id_sku_c').on("input", function (e) {
+        const id_sku_c = $('#id_sku_c')
+        id_sku_c.on("input", function (e) {
             $('#main-form :input').prop('disabled', false)
             const skuSearch = document.querySelector('.sku-search>input')
             const realSkuField = document.querySelector('#id_sku')
@@ -103,7 +104,10 @@
             realSkuField.dispatchEvent(event);
 
             })
-        $('#id_sku_c').on("change", function (e) {
+
+        id_sku_c.val($('#id_sku').val())
+
+        id_sku_c.on("change", function (e) {
             const tableData = document.querySelector('#inquiry_list')
             if (tableData){
                 if (tableData.getElementsByTagName('td')[0].innerText == "No data available in table"){
