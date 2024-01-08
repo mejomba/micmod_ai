@@ -53,6 +53,10 @@ class CustomBaseModelForm(forms.ModelForm):
             self.fields['editor_user'].disabled = True
         except Exception as e:
             print(e)
+
+        # add source attribute for foreign keys
+        for field in self.fields:
+            ...
         # 'creator_user', 'editor_user'
 
     def make_optional(self, fields: List):
@@ -118,5 +122,10 @@ class CustomBaseModelForm(forms.ModelForm):
         # return super().save()
         """if formset empty not save"""
         if any(item for item in self.cleaned_data):
+            for field in self.fields:
+                if field.queryset.model.auto_complete:
+                    model = field.queryset.model
+                    obj = model.objects.get_or_create(title=self.cleaned_data[field])
+                    self.cleaned_data[field] = obj.pk
             return super().save()
         return None

@@ -5,6 +5,9 @@ import inquiry.models
 from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
+
+from sepidar.models import APILogs
+from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 
 
@@ -171,8 +174,9 @@ class PriceSettings(AbsBaseModel):
     discount_based_payment_method = models.JSONField(verbose_name=_('discount_based_payment_method'), default=discount_based_payment_method_json)
     calculation_method = models.CharField(max_length=5, verbose_name=_('calculation_method'),choices=CalculationMethod.choices
                                           ,default=CalculationMethod.Old)
-    max_discount_for_final_step = models.FloatField(default=-13, null=True,blank=True, verbose_name=_('max_discount_for_final_step'))
+    max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
 
+    auto_complete = 'title'
     @staticmethod
     def setting():
         return PriceSettings.objects.filter(activate=True).first()
@@ -223,6 +227,9 @@ class PurchaseGroup(AbsBaseModel):
     sea_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
     air_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
     express_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True,null=True,blank=True)
+    sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True,null=True,blank=True)
+    auto_complete = 'title'
 
     def __str__(self):
         return f'{self.title}'
@@ -233,6 +240,8 @@ class PurchaseGroup(AbsBaseModel):
 
 class SaleGroup(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
+    sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
 
     def __str__(self):
         return f'{self.title}'
@@ -243,6 +252,8 @@ class SaleGroup(AbsBaseModel):
 
 class CustomsGroup(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
+    sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
 
     def __str__(self):
         return f'{self.title}'
@@ -253,6 +264,8 @@ class CustomsGroup(AbsBaseModel):
 
 class Brand(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=50, unique=True)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
+    sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
 
     class Meta:
         ordering = ['title']
@@ -264,6 +277,7 @@ class Brand(AbsBaseModel):
 class Item(BaseModel):
     BATCH_TYPE = (('box', _('box')), ('rol', _('rol')))
     sku = models.CharField(max_length=10, verbose_name=_('sku'), null=True, blank=True, unique=True)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     part_number = models.CharField(max_length=150, verbose_name=_('part number'), unique=True)
     brand = models.ForeignKey(Brand, related_name="items", verbose_name=_('brand'), null=True, blank=True
                               ,on_delete=models.DO_NOTHING)
@@ -286,6 +300,12 @@ class Item(BaseModel):
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
     objects = BaseManager(is_public=True)
+
+    @property
+    def sepidar_stock(self):
+        if self.sepidar_id:
+            return  APILogs.new_call(Urls.item_inventories.url.format(self.sepidar_id))[1]
+        return dict()
 
     @property
     def price(self):

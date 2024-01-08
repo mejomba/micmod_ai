@@ -168,6 +168,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         if related_obj:
             for item in related_obj.all():
                 context['detail_logs'].append(ChangeLog.get_log(item))
+        # context['detail_logs'].reverse()
         return context
 
 

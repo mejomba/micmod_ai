@@ -154,3 +154,6 @@ class QuotationItem(BaseModel):
         except Exception as e:
             show_error(e, __file__)
             return None
+
+    class Meta:
+        ordering = ['id']

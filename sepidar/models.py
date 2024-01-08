@@ -268,6 +268,23 @@ join [FMK].[FiscalYear] as fy on fy.FiscalYearId = docs.FiscalYearRef
 class Item(models.Model):
     code = models.CharField(primary_key=True,max_length=250)
 
+    @staticmethod
+    def get_all_items(from_id):
+        qry = f"select Code as code, * from inv.item where itemid > {from_id}"
+        res = Item.objects.raw(qry, using='sepidar')
+        return res
+
+    @staticmethod
+    def get_all_purchase_groups():
+        qry = f"select Code as code, * from gnr.Grouping where EntityType = 'SG.Inventory.ItemManagement.Common.ItemPurchaseGroup'"
+        res = Item.objects.raw(qry, using='sepidar')
+        return res
+
+    @staticmethod
+    def get_all_sales_groups():
+        qry = f"select Code as code, * from gnr.Grouping where EntityType = 'SG.Inventory.ItemManagement.Common.ItemSaleGroup'"
+        res = Item.objects.raw(qry, using='sepidar')
+        return res
 
     @staticmethod
     def get_items(text, party_id=''):
@@ -325,7 +342,7 @@ ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f
     def get_item(code, party_id=-1):
         party_id = party_id or -1
         qry = f"""
-    SELECT        TOP (10) item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
+    SELECT        TOP (1) item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
     						 invoice_2.avg_fee AS avg_price, invoice_2.min_fee AS min_price,invoice_2.max_fee AS max_price,
                              invoice_2.qty AS f_qty_all, sum_stock.total_quantity AS stock_qty, sum_stock_res.total_quantity as stock_res_qty,
 							 quotation_1.Date as quotation_date, quotation_1.Fee as quotation_fee, quotation_1.Quantity as quotation_qty
@@ -452,7 +469,7 @@ class APILogs(core.models.AbsBaseModel):
     api_result = models.JSONField(verbose_name=_('api_result'))
 
     @staticmethod
-    def new_call(device: Device, url, method: Method = Method.Get, data=None, save=False):
+    def new_call( url, device: Device = Device.objects.all().first(), method: Method = Method.Get, data=None, save=False):
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)
@@ -470,6 +487,8 @@ class APILogs(core.models.AbsBaseModel):
         log_data = {'device': device, 'status': response.status_code,
                     'api_url': url, 'api_method': method, 'api_payload': data}
         if response and response.status_code == 201:
+            log_data['api_result'] = response.json()
+        elif response and response.status_code == 200 and method == Method.Get:
             log_data['api_result'] = response.json()
         elif response and response.status_code == 200 and method == Method.Del:
             log_data['api_result'] = f'delete quotation {url.split("/")[-1]}'

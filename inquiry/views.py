@@ -438,9 +438,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item['q_fee_cust'] = res.quotation_fee
         else:
             item = dict()
-
+        a = item_sku.sepidar_stock
         if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price , 'form': form, "sku": item_sku, 'item': item},request)
+            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, "sku": item_sku, 'item': item},request)
 
             return JsonResponse({'res': html})
         if request.POST:
@@ -490,7 +490,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             obj = InquiryResult.objects.create(**inquiry_result_params)
             obj.save_user(request)
 
-        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price, 'form': form, 'item': inquiry_result_params, "sku": item_sku},request)
+        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': inquiry_result_params, "sku": item_sku},request)
         # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
 
         return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})

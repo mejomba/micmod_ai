@@ -8,7 +8,7 @@ import os
 
 from tools.google_sheet import GSheet
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dason.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "_keenthemes.settings")
 import django
 django.setup()
 from tools.utils import read_excel_data
@@ -16,6 +16,80 @@ from django.db import connection
 from extra_data.models import PurchaseGroup,SaleGroup,HS,Item,CustomsGroup,Brand,ItemWeight
 from inquiry.models import PriceInquiryResult
 from micmod_base.base import Currency
+from sepidar.models import APILogs, Item as SepItem
+from sepidar.scripts.sepidar_classes import Urls
+
+
+def import_items_from_sepidar(extra_data):
+    max_importet_item = Item.objects.filter(sepidar_id__isnull=False).order_by('sepidar_id').last()
+    if max_importet_item:
+        max_importet_item = max_importet_item.sepidar_id
+    else:
+        max_importet_item = 0
+    # max_importet_item = 0
+    items = SepItem.get_all_items(max_importet_item) #APILogs.new_call(Urls.items.url)[1]
+    for item in items:
+        extra_data_item = Item.objects.filter(sku=item.Code)[0]
+        if extra_data_item:
+            if not extra_data_item.sepidar_id:
+                extra_data_item.sepidar_id = item.ItemID
+                if not extra_data_item.purchase_group or extra_data_item.sale_group:
+                    purchase_group = PurchaseGroup.objects.filter(sepidar_id=item.PurchaseGroupRef).first()
+                    extra_data_item.sale_group_id = purchase_group.id if purchase_group else None
+                if not extra_data_item.purchase_group or extra_data_item.sale_group:
+                    sales_group = SaleGroup.objects.filter(sepidar_id=item.SaleGroupRef).first()
+                    extra_data_item.sale_group_id = sales_group.id if sales_group else None
+                extra_data_item.save()
+        else:
+            sales_group = SaleGroup.objects.filter(sepidar_id=item.SaleGroupRef).first()
+            purchase_group = PurchaseGroup.objects.filter(sepidar_id=item.PurchaseGroupRef).first()
+            if purchase_group:
+                data = extra_data
+                data['sepidar_id'] = item.ItemID
+                data['sepidar_id'] = item.ItemID
+                data['sku'] = item.Code
+                data['id'] = item.Code
+                data['part_number'] = item.Title
+                data['technical_confirm'] = True
+                data['sale_group_id'] = sales_group.id if sales_group else None
+                data['purchase_group_id'] = purchase_group.id if purchase_group else None
+                Item.objects.create(**data)
+            else:
+                print(f'id:{item.ItemID}--code:{item.Code} has no purchase group')
+
+
+def import_purchase_groups_from_sepidar(extra_data):
+    items = SepItem.get_all_purchase_groups()
+    for item in items:
+        extra_data_item = PurchaseGroup.objects.filter(title=item.Title).first()
+        if extra_data_item:
+            extra_data_item.sepidar_id = item.GroupingID
+            extra_data_item.sepidar_code = item.Code
+            extra_data_item.save()
+        else:
+            data = extra_data
+            data['sepidar_id'] = item.GroupingID
+            data['sepidar_code'] = item.Code
+            data['title'] = item.Title
+            PurchaseGroup.objects.create(**data)
+
+
+def import_sales_groups_from_sepidar(extra_data):
+    items = SepItem.get_all_sales_groups()
+    for item in items:
+        extra_data_item = SaleGroup.objects.filter(title=item.Title).first()
+        if extra_data_item:
+            extra_data_item.sepidar_id = item.GroupingID
+            extra_data_item.sepidar_code = item.Code
+            extra_data_item.save()
+        else:
+            data = extra_data
+            data['sepidar_id'] = item.GroupingID
+            data['sepidar_code'] = item.Code
+            data['title'] = item.Title
+            SaleGroup.objects.create(**data)
+
+
 
 def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk=0,truncate=False,
                              extra_data=dict()):
@@ -24,7 +98,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
         if truncate:
             cursor = connection.cursor()
             try:
-                cursor.execute('TRUNCATE TABLE "{0}"'.format(model._meta.db_table))
+                cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY'.format(model._meta.db_table))
             except:
                 try:
                     model.objects.all().delete()
@@ -74,7 +148,10 @@ def set_foreign_key(datas:list[dict],model:models.Model,key,search_field,convert
 
 # your imports, e.g. Django models
 if __name__ == '__main__':
-    extra_data = {"creator_user_id":1, "editor_user_id":1}
+    extra_data = {"creator_user_id": 1, "editor_user_id": 1}
+    import_purchase_groups_from_sepidar(extra_data)
+    import_sales_groups_from_sepidar(extra_data)
+    import_items_from_sepidar(extra_data)
     wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
     print(extra_data)
     datas = [

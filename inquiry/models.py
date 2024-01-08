@@ -52,17 +52,16 @@ class PriceInquiryResult(BaseModel):
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
     active = models.BooleanField(verbose_name=_('active'), default=False)
-    price_settings_ = None
+    # price_settings_ = None
     custom_properties = {
         'quantity_': None,
         'customer_grade_': None,
         'payment_method_': None,
         'currency_': None,
     }
-    rmb_final_price_before_ondemand = None
-    _rmb_final_price_ = None
-    rmb_final_price_before_ondemand_percentage = None
-
+    # rmb_final_price_before_ondemand = dict()
+    # _rmb_final_price_ = dict()
+    # rmb_final_price_before_ondemand_percentage = dict()
     def __str__(self):
         return f'{self.id}: {self.price_inquiry_file} {self.sku}'
 
@@ -103,8 +102,8 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def rmb_final_price(self):
-        if self._rmb_final_price_:
-            return self._rmb_final_price_
+        if self.extra_data._rmb_final_price_:
+            return self.extra_data._rmb_final_price_
         else:
             return self.rmb_final_price_()
 
@@ -165,7 +164,7 @@ class PriceInquiryResult(BaseModel):
                                                                          self.sku.sea_extra_cost_percentage)))),
                                               self.extra_data.rmb_final_price_before_ondemand.items()))
 
-            self._rmb_final_price_ = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts))),
+            self.extra_data._rmb_final_price_ = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * on_demand_discounts))),
                                               self.extra_data.rmb_final_price_before_ondemand.items()))
 
 
@@ -180,13 +179,13 @@ class PriceInquiryResult(BaseModel):
             #         self.rmb_final_price_before_ondemand.items()))
             # self.rmb_final_price_percentage = dict(
             #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
-            #         self._rmb_final_price_.items()))
+            #         self.extra_data._rmb_final_price_.items()))
             self.extra_data.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.extra_data.rmb_final_price_before_ondemand,
                                                                                  self.extra_data.rmb_final_price_custom_office)
-            self.extra_data.rmb_final_price_percentage = get_dif_percentage(self._rmb_final_price_,
+            self.extra_data.rmb_final_price_percentage = get_dif_percentage(self.extra_data._rmb_final_price_,
                                                                  self.extra_data.rmb_final_price_custom_office)
 
-            return self._rmb_final_price_
+            return self.extra_data._rmb_final_price_
 
     def rial_final_price_rendered(self):
         return render_to_string('inquiry/partial/item_price_irr.html',
@@ -202,7 +201,7 @@ class PriceInquiryResult(BaseModel):
     def set_discount_params(self, quantity=None, customer_grade=None, payment_method=None, currency=None,
                             price_setting=None):
         if price_setting:
-            self.price_settings_ = price_setting
+            self.extra_data.price_settings_ = price_setting
         self.custom_properties['quantity_'] = quantity or 1
         if customer_grade:
             self.custom_properties['customer_grade_'] = customer_grade
@@ -210,13 +209,12 @@ class PriceInquiryResult(BaseModel):
             self.custom_properties['payment_method_'] = payment_method
         self.custom_properties['currency_'] = currency or "1"
         self.rmb_final_price_()
-        self.extra_data.a = "123"
         return self
 
     @property
     def price_settings(self):
-        if self.price_settings_:
-            return self.price_settings_
+        if getattr(self.extra_data,'price_settings_', None):
+            return self.extra_data.price_settings_
         if self.sku:
             if self.sku.price_settings:
                 return self.sku.price_settings
@@ -229,7 +227,7 @@ class PriceInquiryResult(BaseModel):
 
     @price_settings.setter
     def price_settings(self, value):
-        self.price_settings_ = value
+        self.extra_data.price_settings_ = value
 
     @queryable_property
     def weight(self):

@@ -292,7 +292,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'
-        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity',
+        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
                   'goods_price_sheet3',
@@ -347,6 +347,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'goods_total_sales': forms.HiddenInput(),
             'goods_q_last_price': forms.HiddenInput(),
             'goods_q_total_sales': forms.HiddenInput(),
+            'itemid': forms.HiddenInput(),
             # 'price_method': forms.RadioSelect(attrs={"class": "price_method","m-data":"price_method"}),
             # 'delivery_time': forms.RadioSelect(),
             # 'goods_name': forms.Textarea(attrs={'class': 'goods_name','hidden': False, "rows": 1}),

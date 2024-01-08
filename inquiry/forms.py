@@ -285,7 +285,7 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
         self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.fields['grade'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         for field_name, field in self.fields.items():
-            if field_name in ['sku_c','quantity','sku','party_code']:
+            if 1 == 2:#field_name in ['sku_c','quantity','sku','party_code']:
                 field.widget.attrs['onkeydown'] = "refresh_data(event)"
             else:
                 field.widget.attrs['onchange'] = "refresh_data(event)"
