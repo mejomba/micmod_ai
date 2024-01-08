@@ -3,6 +3,8 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load accounts_tag %}
+{{ sku.id }}
+{{ sku.sepidar_stock }}
     <div class="card-title">
         <div class="fw-bolder"><span class="me-10">وزن کالا در 1000 قطعه:</span>
             {{ sku.price.weight|intcomma|floatformat:4 }}</div>

@@ -29,7 +29,7 @@ import re
 
 def test_get(request):
     device = Device.objects.all().first()
-    res = APILogs.new_call(device,Urls.get_customer.url.format(500),Urls.get_customers.method)
+    res = APILogs.new_call(device=device,url=Urls.get_customer.url.format(500),method=Urls.get_customers.method)
     print(res)
     return JsonResponse(res[0], safe=False)
 

@@ -121,6 +121,7 @@ class NoUserBaseModel(models.Model):
 
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
+    auto_complete = False
     is_public = False
 
     workflows = GenericRelation('workflow.Workflow',related_query_name="parent_object_wf")

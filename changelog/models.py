@@ -2,10 +2,10 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from core.models import BaseModel
+from core.models import AbsBaseModel
 
 
-class ChangeLog(BaseModel):
+class ChangeLog(AbsBaseModel):
     ACTION = ((1, 'create'), (2, 'update'), (3, 'delete'))
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()

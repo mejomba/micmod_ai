@@ -99,6 +99,9 @@
 
     {% endblock css %}
 
+    {% block custom_css %}
+
+    {% endblock custom_css %}
 
     {% render_block "custom_css" %}
     <!--begin::Tracking-->
@@ -108,7 +111,6 @@
 
 <!--begin::Body-->
 <body {% printHtmlClasses 'body' %} {% printHtmlAttributes 'body' %}>
-
 {% include 'partials/theme-mode/_init.html' %}
 
 {% block layout %}
@@ -235,6 +237,8 @@
     {% endblock extra_js %}
     <!--end::Custom Javascript-->
 {% endblock  %}
+{% block custom_js %}
+{% endblock %}
 {% render_block "custom_js" %}
 
 </body>
