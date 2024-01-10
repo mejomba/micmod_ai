@@ -43,6 +43,7 @@ class Quotation(SLSDoc):
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
+    quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
 
     custom_objects = QuotationManager()
 

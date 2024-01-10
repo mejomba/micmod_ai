@@ -300,7 +300,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price',
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
-                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry'
+                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description'
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {
@@ -500,7 +500,7 @@ qi_fields = [
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
-    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done'
+    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description'
     ]
 
 

@@ -73,7 +73,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         ]
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
-    # print(flow_config)
 
     has_formset = True
     formset_form = QuotationItemForm2
@@ -86,6 +85,55 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        """..."""
+
+        for qi in self.object.quotation.all():
+            if bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry):
+                """create new quotation"""
+                """مجاز نیستن برن مرحله بعد"""
+
+                """quotation"""
+                quotation_data = dict()
+                pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user', 'editor_user']
+                for field in self.model._meta.fields:
+                    quotation_data[field.name] = getattr(self.object, field.name, None)
+                [quotation_data.pop(k) for k in pop_quotation_item]
+
+                # InquiryResultForm._meta.model.objects.create()
+                quotation_data['quotation_self'] = self.object
+                quotation_data['guid'] = uuid.uuid4()
+                new_quotation, _ = self.model.objects.get_or_create(**quotation_data)
+                new_quotation.save_user(self.request)
+
+                """quotation item"""
+                pop_qi_item = ['id', 'created_date', 'last_update_date', 'creator_user', 'editor_user']
+                qi_data = dict()
+                qi_data_copy = None
+                qi_list = []
+                for field in self.formset_model._meta.fields:
+                    qi_data[field.name] = getattr(qi, field.name, None)
+                    qi_data_copy = qi_data.copy()
+                if qi_data_copy:
+                    qi_list.append(qi_data_copy)
+                # for item in qi_list:
+                #     for k in pop_qi_item:
+                #         item.pop(k)
+                [item.pop(k) for k in pop_qi_item for item in qi_list]
+                [qi_data.pop(k) for k in pop_qi_item]
+
+                qi_obj_list = []
+                for data in qi_list:
+                    qi_obj_list.append(self.formset_model.objects.create(**data))
+
+                """inquiry result"""
+                for iqr in qi.quotation_item_rel.all():
+                    iqr._mata.model.objects.create()
+
+            else:
+                """به مرحله بعد میرود"""
+                next()
+                print('عدم نیاز به تایید', qi.quantity)
+        """..."""
         try:
             device = Device.objects.all().first()
             if not self.object.guid:

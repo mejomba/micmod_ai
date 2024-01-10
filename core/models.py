@@ -320,7 +320,6 @@ class AbsBaseModel(NoUserBaseModel):
     editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='%(app_label)s_updator_%(model_name)s',
                                     verbose_name=_('updator_user'))
 
-
     def save_user(self, request):
         try:
             if self.creator_user:
