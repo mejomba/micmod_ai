@@ -1,3 +1,4 @@
+{% load crispy_forms_filters %}
 {% load crispy_forms_tags %}
 {% load more_tags %}
 {% load l10n %}
@@ -8,7 +9,9 @@
             {% if crispy %}
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-                {{ field|as_crispy_field }}
+{#                {{ field|as_crispy_field }}#}
+                {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
+{#                {{ field|as_crispy_field }}#}
                 {{ field.errors }}
 
             {% elif field.field.select2 %}
@@ -26,7 +29,8 @@
                 <div class="col
                         {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}
                         mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-                {{ field }}
+{#                {{ field }}#}
+                {% include 'core/partial/auto_complete_field.html' with field=field %}
                 <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
                     {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
@@ -36,7 +40,8 @@
             {% else %}
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-                {{ field }}
+{#                {{ field }}#}
+                {% include 'core/partial/auto_complete_field.html' with field=field %}
                 {% if no_input %}
                     {% if css == 'no_label' %}
 
@@ -56,7 +61,8 @@
         </div>
         {% else %}
             <div class="position-absolute">
-                {{ field|as_crispy_field }}
+{#                {{ field|as_crispy_field }}#}
+            {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
             </div>
             {% if no_input %}
                 <label class="text-center w-100  card-title-desc h-25 {{ css }}"
