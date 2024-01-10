@@ -242,6 +242,7 @@ class SaleGroup(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
+    auto_complete = 'title'
 
     def __str__(self):
         return f'{self.title}'

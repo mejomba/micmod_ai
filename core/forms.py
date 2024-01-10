@@ -120,19 +120,19 @@ class CustomBaseModelForm(forms.ModelForm):
             del self.fields[f]
 
     def is_valid(self):
-        cleaned_data = self.cleaned_data if getattr(self,'cleaned_data',None) else None
-        self.data._mutable = True
-        if not self.change_data_for_validation:
-            for field_str, field in self.fields.items():
-                if getattr(field, 'queryset', None) and getattr(field.queryset.model, 'auto_complete', None):
-                    model = field.queryset.model
-                    field_data = self.data.get(f'inp_{field_str}') or self.data.get(field_str)
-                    obj, _ = model.objects.get_or_create(**{model.auto_complete: field_data})
-                    if cleaned_data:
-                        self.cleaned_data[field_str] = {obj.pk}
-                    self.data[field_str] = f'{obj.pk}'
-            self.change_data_for_validation = True
-        validation = super().is_valid()
+        # cleaned_data = self.cleaned_data if getattr(self,'cleaned_data',None) else None
+        # self.data._mutable = True
+        # if not self.change_data_for_validation:
+        #     for field_str, field in self.fields.items():
+        #         if getattr(field, 'queryset', None) and getattr(field.queryset.model, 'auto_complete', None):
+        #             model = field.queryset.model
+        #             field_data = self.data.get(f'inp_{field_str}') or self.data.get(field_str)
+        #             obj, _ = model.objects.get_or_create(**{model.auto_complete: field_data})
+        #             if cleaned_data:
+        #                 self.cleaned_data[field_str] = obj
+        #             self.data[field_str] = f'{obj.pk}'
+        #     self.change_data_for_validation = True
+        # validation = super().is_valid()
         # if not validation and self.change_data_for_validation:
         #     for field_str, field in self.fields.items():
         #         if getattr(field, 'queryset', None) and getattr(field.queryset.model, 'auto_complete', None):
@@ -141,8 +141,8 @@ class CustomBaseModelForm(forms.ModelForm):
         #             obj = model.objects.filter(**{model.auto_complete: field_data}).first()
         #             if obj:
         #                 self.data[field_str] = obj.str
-        self.data._mutable = False
-        return validation
+        # self.data._mutable = False
+        return super().is_valid()
 
     def save(self, commit=True):
         # return super().save()

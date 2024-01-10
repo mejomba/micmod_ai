@@ -1,41 +1,31 @@
-{% load  sekizai_tags %}
 {% load static %}
 {% load core_tags %}
 {% if field.widget_type == 'select' %}
-    {#    {% addtoblock "custom_css" %}#}
-    {#        <link rel="stylesheet" type="text/css" href="{% static 'custom_libs/vendors.css' %}">#}
-    {#        <link rel="stylesheet" type="text/css" href="{% static 'custom_libs/selectize/selectize.css' %}">#}
-    {#        <link rel="stylesheet" type="text/css" href="{% static 'custom_libs/selectize/selectize.default.css' %}">#}
-    {#        <link rel="stylesheet" type="text/css" href="{% static 'custom_libs/selectize/form-selectize.css' %}">#}
-    {#    {% endaddtoblock %}#}
     <div class="form-group" id="div_{{ field.name }}">
         {% get_list field as items_list %}
         {% if field.field.queryset.model.auto_complete %}
-            <input class="{{ field.field.widget.attrs.class }}"
-{#                   onchange="$({{ field.name }}).value= $('inp_'+{{ field.name }}).value"#}
-                   name="inp_{{ field.name }}" {% get_attrs_str field %} list="lst_{{ field.name }}" value={{ items_list.selected_str }}>
-            <datalist id="lst_{{ field.name }}">
-            {% for item in items_list.list %}
-                <option>{{ item.1 }}</option>
-            {% endfor %}
-            </datalist>
+            <div>
+                <input class="{{ field.field.widget.attrs.class }}"
+                       name="__auto__{{ field.name }}" {% get_attrs_str field %} list="lst_{{ field.name }}"
+                       value="{{ items_list.selected_str }}" autocomplete="off">
+                <datalist id="lst_{{ field.name }}">
+                    {% for item in items_list.list %}
+                        {% if item.0 %}
+                        <option>{{ item.1 }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </datalist>
+            </div>
         {% else %}
-            <select class="{{ field.field.widget.attrs.class }} border-warning selectize-select"
-                    name="{{ field.name }}" {% get_attrs_str field %}>
-                {% for item in items_list.list %}
-                    <option value="{{ item.0 }}" {{ item.2 }}>{{ item.1 }}</option>
-                {% endfor %}
-            </select>
+            {{ field }}
+            {#            <select class="{{ field.field.widget.attrs.class }} border-warning selectize-select"#}
+            {#                    name="{{ field.name }}" {% get_attrs_str field %}>#}
+            {#                {% for item in items_list.list %}#}
+            {#                    <option value="{{ item.0 }}" {{ item.2 }}>{{ item.1 }}</option>#}
+            {#                {% endfor %}#}
+            {#            </select>#}
         {% endif %}
     </div>
-    {#    <script src="{% static 'custom_libs/vendors.min.js' %}" type="text/javascript"></script>#}
-    {#    <script src="{% static 'custom_libs/selectize/selectize.min.js' %}" type="text/javascript"></script>#}
-    {#    <script src="{% static 'custom_libs/selectize/form-selectize.js' %}" type="text/javascript"></script>#}
-    {#    {% addtoblock "custom_js" %}#}
-    {#        <script src="{% static 'custom_libs/vendors.min.js' %}" type="text/javascript"></script>#}
-    {#        <script src="{% static 'custom_libs/selectize/selectize.min.js' %}" type="text/javascript"></script>#}
-    {#        <script src="{% static 'custom_libs/selectize/form-selectize.js' %}" type="text/javascript"></script>#}
-    {#    {% endaddtoblock %}#}
 {% else %}
     {{ field }}
 {% endif %}

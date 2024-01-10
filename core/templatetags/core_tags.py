@@ -21,23 +21,6 @@ def get_object_count(user, count_str):
 @register.simple_tag
 def get_list(field):
     m_list = []
-    # if field.widget_type == 'select' and getattr(field.field,'queryset',None):
-    #     model = field.field.queryset.model
-    #     if getattr(model,'auto_complete',None):
-    #         objs = model.objects.all()
-    #         for obj in objs:
-    #             m_item = getattr(obj, model.auto_complete, None)
-    #             if m_item:
-    #                 m_list.append((m_item,m_item,''))
-    #     else:
-    #         objs = field.subwidgets
-    #         for obj in objs:
-    #             value = obj.data['value']
-    #             m_list.append((value if value == '' else value.value,obj.data['label'],'selected' if obj.data['selected'] else ''))
-    # elif getattr(field.field,'choices', None):
-    #     objs = field.field.choices
-    #     for obj in objs:
-    #         m_list.append((obj[0], obj[1],''))
     objs = field.subwidgets
     selected_str = ''
     for obj in objs:
@@ -47,7 +30,7 @@ def get_list(field):
              obj.data['label'],
              'selected' if obj.data['selected'] else ''))
         if obj.data['selected']:
-            selected_str = obj.data['label']
+            selected_str = obj.data['label'] if obj.data['label'] != '---------' else ''
     return {'list': m_list, 'selected_str': selected_str}
 
 @register.simple_tag
