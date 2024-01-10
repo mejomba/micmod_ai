@@ -135,11 +135,30 @@ function custom_ajax_post(form, url, element) {
         contentType: false,
         beforeSend: block_main_container(),
         success: function (data) {
-            html = data['res']
-            element.html(html)
+            html = data['res'];
+            element.html(html);
+            run_scripts(element);
         },
         complete: release_main_container()
     }); // end ajax
+}
+
+function run_scripts(elem){
+    // const scripts = $('body')[0].innerHTML.match(/<script (.*?)<\/script>/g)
+    const scripts=['/assets/custom_libs/vendors.min.js' ,
+            '/assets/custom_libs/selectize/selectize.min.js' ,
+            '/assets/custom_libs/selectize/form-selectize.js']
+    $('.selectize-dropdown').remove()
+    scripts.map((script) => {
+        // script = script.replace('"><\/script>', '').replace('<script src="/', '');
+        loadJS(script);
+    })
+}
+function loadJS(file) {
+    const content = document.querySelector('body');
+    const jsElm = document.createElement("script");
+    jsElm.src = file;
+    content.appendChild(jsElm);
 }
 
 function custom_ajax_get(form, url, element) {
@@ -154,8 +173,9 @@ function custom_ajax_get(form, url, element) {
         contentType: false,
         beforeSend: block_main_container(),
         success: function (data) {
-            html = data['res']
-            element.html(html)
+            html = data['res'];
+            element.html(html);
+            run_scripts(element);
         },
         complete: release_main_container()
     });

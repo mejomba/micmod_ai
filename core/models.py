@@ -129,6 +129,11 @@ class NoUserBaseModel(models.Model):
 
     objects = BaseManager()
 
+    def __str__(self):
+        if self.auto_complete:
+            return getattr(self, self.auto_complete)
+        return super().__str__()
+
     @classmethod
     def content_type(cls):
         return ContentType.objects.get(model=cls.__name__.lower(),app_label=cls._meta.app_label.lower())
