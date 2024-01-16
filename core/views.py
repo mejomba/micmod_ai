@@ -129,7 +129,21 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
-        self.form = self.get_form_class()(self.request.POST, self.request.FILES, instance=self.object, initial={
+        self.form_class = self.get_form_class()
+
+        self.request.POST._mutable = True
+        for key, value in list(self.request.POST.items()):
+            if key.__contains__("__auto__"):
+                key = key.replace("__auto__", "")
+                value = value.strip()
+                if value:
+                    model = self.form_class.base_fields[key].queryset.model
+                    obj, _ = model.objects.get_or_create(**{model.auto_complete: value})
+                    value = getattr(obj, self.form_class.base_fields[key].to_field_name, None)
+                self.request.POST[key] = value
+        self.request.POST._mutable = False
+
+        self.form = self.form_class(self.request.POST, self.request.FILES, instance=self.object, initial={
                                                   "constraint": {
                                                       "wf_access": True,
                                                       'form_state': self.state_index,

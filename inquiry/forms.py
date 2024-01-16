@@ -67,7 +67,7 @@ class SkuCreateForm(CustomBaseModelForm):
         #     self.enable = False
 
         self.make_optional(['brand', 'quality', 'sale_group',
-                            'purchase_group', 'customs_group',
+                            'customs_group',
                             'package', 'batch_type', 'batch_count',
                             'image_1', 'image_2', 'file_1'])
 
