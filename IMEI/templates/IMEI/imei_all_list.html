@@ -68,10 +68,11 @@
                     <div class="col-12">
 {#                                new datatable#}
                         <div class="container-fluid">
+                            {{ imei_list }}
                             <div class="table-responsive p-2">
                                 <table id="datatable_imei_all" width="100%" class="m-table table-striped table-bordered w-100">
                                     <div>
-                                        {{ model }}
+
                                         {% include 'core/partial/download_excel.html' with model=model %}
                                     </div>
                                     <thead>

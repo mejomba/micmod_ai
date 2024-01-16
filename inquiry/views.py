@@ -1,5 +1,5 @@
 import datetime
-
+from django.core.cache import cache
 from django.conf import settings
 from django.forms import inlineformset_factory
 from django import forms
@@ -639,7 +639,6 @@ class SupplierView(BaseView):
     # template_name = 'inquiry/supplier_create_or_update.html'
 
     def get_success_url(self):
-        # return reverse_lazy('inquiry:supplier.detail_update', kwargs={'pk': self.object.pk})
         path = reverse_lazy('inquiry:supplier.list')
         if self.object:
             path += f'?name={self.object.name}'
@@ -652,18 +651,22 @@ class SupplierView(BaseView):
 
 
 class SupplierListView(BaseView):
-    model = PriceInquiryResult
+    model = Supplier
     form_class = SupplierModelForm
     template_name = 'inquiry/supplier_list_or_create.html'
     success_url = '.'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if 'submit/copy' in self.request.POST:
-            ...
-        context.update({
-            'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-        })
+        if cache.get('submit/copy'):
+            object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, [('name', object_for_copy.name), ])))
+            })
+        else:
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
+            })
         context['submit_copy'] = True
         return context
 

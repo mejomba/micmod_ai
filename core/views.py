@@ -1,5 +1,5 @@
 import datetime
-
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
@@ -58,6 +58,7 @@ class BaseView(UserPassesTestMixin,
     form_struct = None
     formset_l2 = None
     form = None
+    submit_copy = None
 
     def get_object(self, queryset=None):
         try:
@@ -129,6 +130,11 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
+        if 'submit/copy' in self.request.POST:
+            cache.set('submit/copy', True)
+        else:
+            cache.delete('submit/copy')
+
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True
