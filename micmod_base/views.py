@@ -36,7 +36,7 @@ from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 
-
+import datetime
 # from workflow.models import WorkFlowAction
 
 
@@ -85,55 +85,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
-        """..."""
-
-        for qi in self.object.quotation.all():
-            if bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry):
-                """create new quotation"""
-                """مجاز نیستن برن مرحله بعد"""
-
-                """quotation"""
-                quotation_data = dict()
-                pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user', 'editor_user']
-                for field in self.model._meta.fields:
-                    quotation_data[field.name] = getattr(self.object, field.name, None)
-                [quotation_data.pop(k) for k in pop_quotation_item]
-
-                # InquiryResultForm._meta.model.objects.create()
-                quotation_data['quotation_self'] = self.object
-                quotation_data['guid'] = uuid.uuid4()
-                new_quotation, _ = self.model.objects.get_or_create(**quotation_data)
-                new_quotation.save_user(self.request)
-
-                """quotation item"""
-                pop_qi_item = ['id', 'created_date', 'last_update_date', 'creator_user', 'editor_user']
-                qi_data = dict()
-                qi_data_copy = None
-                qi_list = []
-                for field in self.formset_model._meta.fields:
-                    qi_data[field.name] = getattr(qi, field.name, None)
-                    qi_data_copy = qi_data.copy()
-                if qi_data_copy:
-                    qi_list.append(qi_data_copy)
-                # for item in qi_list:
-                #     for k in pop_qi_item:
-                #         item.pop(k)
-                [item.pop(k) for k in pop_qi_item for item in qi_list]
-                [qi_data.pop(k) for k in pop_qi_item]
-
-                qi_obj_list = []
-                for data in qi_list:
-                    qi_obj_list.append(self.formset_model.objects.create(**data))
-
-                """inquiry result"""
-                for iqr in qi.quotation_item_rel.all():
-                    iqr._mata.model.objects.create()
-
-            else:
-                """به مرحله بعد میرود"""
-                next()
-                print('عدم نیاز به تایید', qi.quantity)
-        """..."""
+        new_quotation = None
         try:
             device = Device.objects.all().first()
             if not self.object.guid:
@@ -143,63 +95,138 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method)
 
-            if self.state_index == 2 and 'next' in self.request.POST:
+            if self.state_index == 2 and 'submit/copy' in self.request.POST:
+                flow_copy = False
 
+                """copy quotation"""
+                for qi in self.object.quotation.all():
+                    if bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
+                            bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
+                        """مجاز نیستن برن مرحله بعد"""
+                        """create new quotation"""
+
+                        """quotation"""
+                        quotation_data = dict()
+                        pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user',
+                                              'editor_user']
+                        for field in self.model._meta.fields:
+                            quotation_data[field.name] = getattr(self.object, field.name, None)
+                        [quotation_data.pop(k) for k in pop_quotation_item]
+
+                        quotation_data['quotation_self'] = self.object
+                        quotation_data['guid'] = uuid.uuid4()
+                        if not new_quotation:
+                            new_quotation = self.model.objects.create(**quotation_data)
+
+                            """تمام change log ها کپی بشن (فقط یک بار)"""
+                            logs = ChangeLog.get_log(self.object)
+                            for log in logs:
+                                log.pk = None
+                                log.content_type = ContentType.objects.get_for_model(Quotation)
+                                log.object_id = new_quotation.pk
+                                log.save()
+
+                            """تمام wf ها کپی بشن (فقط یک بار)"""
+                            if not flow_copy:
+                                flows = self.get_flow(self.object)
+                                for idx, flow in enumerate(flows):
+                                    if idx == len(flows) - 1:
+                                        break
+                                    flow.pk = None
+                                    flow.object_id = new_quotation.pk
+                                    flow.save()
+                                    flow_copy = True
+
+                            """این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند"""
+                            flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
+                            pad = 2 if self.state_index >= 2 else 1
+                            for item in flow_items:
+                                to_user = item.to_user if pad >= 2 else item.from_usre
+                                deadline = item.deadline
+                            data = {
+                                "wf_status": 2,  # back
+                                "action": self.flow_config.get('flow_action'),
+                                "flow_name": None,
+                                "from_user": self.request.user,
+                                "to_user": to_user,
+                                "state": self.flow_config.get('flow_state_list')[self.state_index],
+                                "duty": None,
+                                "deadline": deadline,
+                                "wf_description": "back in copy",
+                                "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
+                                "content_type": ContentType.objects.get_for_model(Quotation),
+                                "object_id": new_quotation.id
+                            }
+                            back = WorkFlow.objects.create(**data)
+
+                            new_quotation.quotation_self = self.object
+                            new_quotation.save_user(self.request)
+
+                        qi.quotation = new_quotation
+                        qi.save()
+
+                    else:
+                        """به مرحله بعد میرود"""
+                        """یک wf به مرحله بعد ثبت میکند"""
+                        flow_user_groups = self.flow_config.get('flow_users_groups', [])
+
+                """ثبت در سپیدار"""
                 quotation_items = []
-                for idx, qi in enumerate(self.object.quotation.all(), 1):
-                    qi_dict = {
-                        'RowID': idx,
-                        'ItemRef': qi.itemid,  # optional
-                        'StockRef': 2,  # optional
-                        'Quantity': qi.quantity,
-                        'SecondaryQuantity': 0,
-                        'Fee': qi.fee or 1,
-                        'Price': qi.price or 1,
-                        'Description': 'qi.description',
-                        'PriceInfoPercentDiscount': 0,
-                        'PriceInfoDiscountRate': 0,
-                        'AggregateAmountPercentDiscount': 0,
-                        'AggregateAmountPriceDiscount': 0,
-                        'AggregateAmountDiscountRate': 0,
-                        'CustomerDiscount': 0,
-                        'CustomerDiscountRate': 0,
-                        'Discount': 0,
-                        # 'DiscountParentRef': 1,  # optional
-                        'Tax': 0,
-                        'Duty': 0,
-                        'Addition': 0,
-                    }
-                    quotation_items.append(qi_dict)
+                # for idx, qi in enumerate(self.object.quotation.all(), 1):
+                #     qi_dict = {
+                #         'RowID': idx,
+                #         'ItemRef': qi.itemid,  # optional
+                #         'StockRef': 2,  # optional
+                #         'Quantity': qi.quantity,
+                #         'SecondaryQuantity': 0,
+                #         'Fee': qi.fee or 1,
+                #         'Price': qi.price or 1,
+                #         'Description': 'qi.description',
+                #         'PriceInfoPercentDiscount': 0,
+                #         'PriceInfoDiscountRate': 0,
+                #         'AggregateAmountPercentDiscount': 0,
+                #         'AggregateAmountPriceDiscount': 0,
+                #         'AggregateAmountDiscountRate': 0,
+                #         'CustomerDiscount': 0,
+                #         'CustomerDiscountRate': 0,
+                #         'Discount': 0,
+                       ## 'DiscountParentRef': 1,  # optional
+                        # 'Tax': 0,
+                        # 'Duty': 0,
+                        # 'Addition': 0,
+                    # }
+                    # quotation_items.append(qi_dict)
 
-                quotation_data = {
-                    'GUID': str(self.object.guid),
-                    'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 0,
-                    'ExpirationDate': str(self.object.expiration_date),
-                    'CustomerRef': self.object.customer_party_id,  # 11
-                    'SaleTypeRef': 2,
-                    # 'AddressRef': '1',  # optional
-                    'DiscountOnCustomer': 0,
-                    'Price': self.object.price or 1,
-                    'Discount': 0,
-                    'Tax': 0,
-                    'Duty': 0,
-                    'Addition': 0,
-                    'items': quotation_items,
-                }
-                d = json.dumps(quotation_data)
+                # quotation_data = {
+                #     'GUID': str(self.object.guid),
+                #     'CurrencyRef': self.object.currency_ref.pk,
+                #     'Rate': 0,
+                #     'ExpirationDate': str(self.object.expiration_date),
+                #     'CustomerRef': self.object.customer_party_id,  # 11
+                #     'SaleTypeRef': 2,
+                #   #  'AddressRef': '1',  # optional
+                    # 'DiscountOnCustomer': 0,
+                    # 'Price': self.object.price or 1,
+                    # 'Discount': 0,
+                    # 'Tax': 0,
+                    # 'Duty': 0,
+                    # 'Addition': 0,
+                    # 'items': quotation_items,
+                # }
+                # d = json.dumps(quotation_data)
 
-                api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
-                                           method=Urls.pos_quotations.method, data=d)
-                self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
-                self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-                self.object.save()
+                # api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
+                #                            method=Urls.pos_quotations.method, data=d)
+                # self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
+                # self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+                # self.object.save()
         except Exception as e:
-            print('rol back ....')
-            content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
-            flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
-            if flow_object:
-                flow_object.delete()
+            pass
+        #     print('rol back ....')
+        #     content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
+        #     flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
+        #     if flow_object:
+        #         flow_object.delete()
         return res
 
     def get_context_data(self, **kwargs):
@@ -217,6 +244,12 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             for item in related_obj.all():
                 context['detail_logs'].append(ChangeLog.get_log(item))
         # context['detail_logs'].reverse()
+        if self.object:
+            for qi in self.object.quotation.all():
+                if self.state_index == 2 and bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
+                        bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
+                    context['allow_next'] = False
+                    context['submit_copy'] = True
         return context
 
 

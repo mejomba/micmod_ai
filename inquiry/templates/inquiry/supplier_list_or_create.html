@@ -1,0 +1,155 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load more_tags %}
+
+{% block title %}Orders{% endblock title %}
+{% block extra_css %}
+    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+    <style>
+        span.select2-selection__rendered{
+            direction: ltr !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block form_content %}
+    {% csrf_token %}
+    <div class="row m-0 mt-5 align-items-center bg-white">
+        <div class="col-12">
+            <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3">
+                {% render_field_by_order form form.name label='on-border' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive p-2">
+        <table id="supplier_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+        </table>
+    </div>
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script language="javascript">
+    $(document).ready(function() {
+        let q, url;
+        url = new URL(window.location);
+        q = url.searchParams.get("name");
+
+        const id_name = $('#id_name')
+        id_name.on("input", function (e) {
+            $('#main-form :input').prop('disabled', false)
+            const supplierSearch = document.querySelector('#supplier_list_filter input')
+            supplierSearch.value = e.target.value;
+            var event = new Event('input');
+            supplierSearch.dispatchEvent(event);
+            })
+
+        {#id_name.on("change", function (e) {#}
+        {#    const tableData = document.querySelector('#supplier_list')#}
+        {#    if (tableData){#}
+        {#        if (tableData.getElementsByTagName('td')[0].innerText == "No data available in table"){#}
+        {#            $('#main-form :input').prop('disabled', true)#}
+        {#            $(this).prop('disabled', false)#}
+        {#        }#}
+        {#    }#}
+        //})
+
+        AjaxDatatableViewUtils.initialize_table(
+            $('#supplier_list'),
+            "{% url 'inquiry:supplier.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                name: q
+            },
+        );
+
+
+    });
+    </script>
+
+{#    <script>#}
+{#        function set_item_classes() {#}
+{#        }#}
+{##}
+{#        window.addEventListener('DOMContentLoaded', function (e) {#}
+{##}
+{#            function f(){#}
+{#                document.querySelectorAll('td').forEach(function (td){#}
+{#                    td.style.setProperty("padding", "0", "important");#}
+{#                })#}
+{#                const FreeRMBbtn = document.querySelectorAll('.free_rmb')#}
+{#                const FreeRMBNewbtn = document.querySelectorAll('.free_rmb_new')#}
+{#                FreeRMBbtn.forEach(function (btn){#}
+{#                    btn.addEventListener('click', function (e) {#}
+{#                        btn.parentElement.nextElementSibling.classList.remove('d-none')#}
+{#                        btn.parentElement.nextElementSibling.nextElementSibling.classList.add('d-none')#}
+{#                    })#}
+{#                })#}
+{#                FreeRMBNewbtn.forEach(function (btn){#}
+{#                    btn.addEventListener('click', function (e) {#}
+{#                        btn.parentElement.nextElementSibling.classList.add('d-none')#}
+{#                        btn.parentElement.nextElementSibling.nextElementSibling.classList.remove('d-none')#}
+{#                    })#}
+{#                })#}
+{#            }#}
+{##}
+{#            const targetNode = document.getElementById("supplier_list");#}
+{#            const config = { attributes: true, childList: true, subtree: true };#}
+{#            const callback = (mutationList, observer) => {#}
+{#            for (const mutation of mutationList) {#}
+{#                  if (mutation.type === "childList") {#}
+{#                    f()#}
+{#                  } else if (mutation.type === "attributes") {#}
+                      {#f()#}
+{#                  }#}
+{#                }#}
+{#            };#}
+{#            const observer = new MutationObserver(callback);#}
+{#            observer.observe(targetNode, config);#}
+{#            window.setTimeout(f, 1500)#}
+{#        })#}
+{#    </script>#}
+
+{#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    {{ form.media.js }}
+
+
+    <script>
+
+    </script>
+{% endblock extra_js %}
