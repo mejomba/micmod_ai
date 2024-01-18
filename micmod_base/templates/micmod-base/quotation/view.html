@@ -50,6 +50,7 @@
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
                                                         </div>
                                                     </div>
+                                                        <div>{% get_comments form.instance %}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -75,6 +76,7 @@
                                                                 <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
                                                                 <div data-key="party_id">party id</div>
                                                                 <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.PartyId }}</div>
+
                                                             </div>
 
                                                             </div>

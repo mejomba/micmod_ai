@@ -20,6 +20,7 @@ from core.forms import CustomBaseModelForm
 
 class QuotationForm(CustomBaseModelForm):
     form_state = None
+    has_comment = True
 
     class Meta:
         model = Quotation
@@ -138,6 +139,8 @@ class QuotationItemForm(CustomBaseModelForm):
         self.fields['goods_code'].name = ''
         # print(type(self.fields['goods_code']))
 
+
+
     class Meta:
         model = QuotationItem
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity',
@@ -148,7 +151,7 @@ class QuotationItemForm(CustomBaseModelForm):
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res','goods_min_price','goods_max_price',
                   'goods_q_last_sale','goods_q_last_price','goods_q_total_sales', 'need_local_price_inquiry',
-                  'local_price_inquiry_done', 'need_foreign_price_inquiry','foreign_price_inquiry_done'
+                  'local_price_inquiry_done', 'need_foreign_price_inquiry','foreign_price_inquiry_done',
                   ]
         widgets = {
             'goods_code': forms.Select(

@@ -17,6 +17,7 @@ from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
 from .forms import CustomBaseModelForm
+from comments.models import Comments
 
 import openpyxl
 
@@ -512,6 +513,12 @@ class BaseView(UserPassesTestMixin,
                                           obj=new_obj,
                                           input_prefix='file'
                                           )
+
+                    """***NEW***"""
+                    if form.has_comment:
+                        new_obj.save_comment(request=self.request)
+                    """***NEW***"""
+
                 except Exception as e:
                     print('error: ', e.__traceback__.tb_lineno, e)
 

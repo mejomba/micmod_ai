@@ -22,7 +22,7 @@ from jalali_date import datetime2jalali
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm, QuotationItemForm2, CurrencyExchangeForm, \
+from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
     QuotationItemFormset
 from sepidar.models import Dl
 from tools.utils import show_error
@@ -35,7 +35,7 @@ from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
-
+from core.models import AbsBaseModel
 
 # from workflow.models import WorkFlowAction
 
@@ -53,7 +53,7 @@ class QuotationsList(LoginRequiredMixin,View):
         # greeting['quotations'] = quotations_record
         greeting['quotations'] = quotations_record_lst
 
-        return render (request,'micmod-base/quotation/list.html',greeting)
+        return render(request,'micmod-base/quotation/list.html',greeting)
 
 
 class QuotationsView(LoginRequiredMixin, BaseView):
@@ -244,3 +244,5 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
                       reverse('sls:currency_exchange', args=(obj.id,)),
                       obj.currency if obj.currency else '_'
                     )
+
+
