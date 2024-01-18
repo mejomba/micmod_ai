@@ -61,6 +61,7 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
+{#                  <div  class="w-75">{% render_field_by_order form_s form_s.comment label="" %}</div>#}
             </div>
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
                 <div class="d-flex border-bottom px-1 align-items-start">
@@ -72,7 +73,9 @@
                             {{ form_s.goods_code }}
                             <label>کد کالا</label>
                         {% endif %}
+
                     </div>
+
                     <div class="w-75">
                         <div class="d-flex justify-content-end">
                             {% render_field_by_order form_s form_s.goods_name label='on-border' %}
@@ -103,15 +106,18 @@
                                 {{ form_s.goods_code_alt }}
                                 <label>کد کالا</label>
                             {% endif %}
+
                         </div>
                         <div class="w-75">
                             <div class="col on-border">
                                 <label>نام کالا</label>
                                 <textarea class="w-100 rounded form-control bg-white" rows="1"
                                           name="-goods_name_alt_lbl" disabled></textarea>
+
                             </div>
                             {#                            <div class="card-text bold" data-key="goods_name_alt">نام کالا</div>#}
                             {#                            <textarea class="w-100 rounded form_s-control" rows="1" name="-goods_name_alt_lbl" disabled></textarea>#}
+
                         </div>
                     </div>
                 </div>
@@ -128,7 +134,9 @@
                                 {% render_field_by_order nested nested.goods_total_sales nested.goods_q_total_sales no_input=True %}
 {#                                <div class="card-title-desc text-center" name="total_sales">-</div>#}
 {#                                <div class="card-title-desc text-center" name="q_total_sales">-</div>#}
+
                             </div>
+
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="price">قیمت</div>
                                 {% render_field_by_order nested nested.goods_last_price nested.goods_q_last_price no_input=True %}
