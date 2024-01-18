@@ -3,6 +3,8 @@ import uuid
 from django import template
 
 from django.contrib.contenttypes.models import ContentType
+
+from comments.models import Comments
 from files.models import File, Image
 from tools.utils import show_error
 
@@ -99,6 +101,23 @@ def show_modal(obj, field, target_model_name=None, editable=None):
     context['editable'] = editable
     # print(context['contents'].__dict__)
     return context
+
+
+"""***NEW***"""
+
+
+@register.inclusion_tag('comments/comment_tag.html')
+def get_comments(obj):
+    # target = globals().get(target_model_name)
+    comments = Comments.objects.none()
+    if hasattr(obj, '_meta'):
+        comments = Comments.objects.filter(object_id=obj.pk,
+                                           contenttype=ContentType.objects.get_for_model(obj._meta.model))
+
+    return {'comments': comments}
+
+"""***NEW***"""
+
 
 
 @register.inclusion_tag('core/partial/render_field.html')
