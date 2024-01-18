@@ -1,0 +1,88 @@
+<a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal" data-bs-target="#kt_modal_invite_friends">نظر
+    کاربران</a>
+
+<div class="modal fade" id="kt_modal_invite_friends" tabindex="-1" style="display: none;" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog mw-650px">
+        <!--begin::Modal content-->
+        <div class="modal-content">
+            <!--begin::Modal header-->
+            <div class="modal-header pb-0 border-0 justify-content-end">
+                <!--begin::Close-->
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i></div>
+                <!--end::Close-->
+            </div>
+            <!--begin::Modal header-->
+            <!--begin::Modal body-->
+            <div class="modal-body scroll-y mx-5 mx-xl-18 pt-0 pb-15">
+                <!--begin::Heading-->
+                <div class="text-center mb-13">
+                    <!--begin::Title-->
+                    <h1 class="mb-3">نظرات</h1>
+                    <!--end::Title-->
+
+                    <div>{% include "comments/comments.html" %}</div>
+                    {% for comment in comments %}
+                        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border border-gray-400 rounded p-3">
+                            <!--begin::Message header-->
+                            <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
+                                 data-kt-inbox-message="header">
+                                <!--begin::Author-->
+                                <div class="d-flex align-items-center">
+                                    {% load more_tags %}
+
+
+                                    <div class="pe-5">
+                                        <!--begin::Author details-->
+                                        <div class="d-flex align-items-center flex-wrap gap-1">
+                                            <h4><span class="me-5" style="color: purple" >{{ comment.creator_user }}</span></h4><span class="fw-semibold text-muted text-end me-3">{{ comment.elapsed_time }}</span>
+
+
+                                        </div>
+                                        <!--end::Author details-->
+                                    </div>
+                                </div>
+                                <!--end::Author-->
+
+                                <!--begin::Actions-->
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <!--begin::Date-->
+
+                                    <!--end::Date-->
+
+                                    <div class="d-flex">
+
+
+
+
+
+
+
+                                    </div>
+                                </div>
+                                <!--end::Actions-->    </div>
+                            <!--end::Message header-->
+
+                            <!--begin::Message content-->
+                            <div class="fade collapse show" data-kt-inbox-message="message" style="">
+                                <div class="py-5">
+                                    <b style="color:hotpink;" class="mb-3">{{ comment.get_comment_title_display }}</b>
+                                    <p>{{ comment.comment_content }}</p>
+                                </div>
+                            </div>
+                            <!--end::Message content-->
+
+                        </div>
+                    {% endfor %}
+
+
+                </div>
+                <!--end::Modal body-->
+            </div>
+            <!--end::Modal content-->
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+</div>
+
