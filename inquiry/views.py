@@ -1,4 +1,6 @@
 import datetime
+
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.conf import settings
 from django.forms import inlineformset_factory
@@ -14,6 +16,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
+
+from files.models import Image
 from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
@@ -246,11 +250,12 @@ class InquiryResultListView(BaseView):
     template_name = 'inquiry/inquiry_result_list_or_create.html'
     success_url = '.'
 
-    # def get_success_url(self):
-    #     sku = self.request.GET.get('sku')
-    #     path = reverse('inquiry:inquiry_result.list')
-    #     path += f"?sku={sku if sku else self.object.sku.pk}"
-    #     return path
+    def get_success_url(self):
+        sku = self.request.GET.get('sku')
+        path = reverse('inquiry:inquiry_result.list')
+        if cache.get(f'{self.request.user}__submit/copy'):
+            path += f"?sku={sku if sku else self.object.sku.pk}"
+        return path
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -259,7 +264,7 @@ class InquiryResultListView(BaseView):
         })
         context['submit_copy'] = True
 
-        if cache.get('submit/copy'):
+        if cache.get(f'{self.request.user}__submit/copy'):
             object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
             context.update({
                 'form': self.form_class(initial=dict(map(lambda x: x, [('sku', object_for_copy.sku),
@@ -445,8 +450,17 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         else:
             item = dict()
         a = item_sku.sepidar_stock
+        #  add image, weight, batch_type, batch_count
+        contenttype = ContentType.objects.get_for_model(item_sku._meta.model)
+        images = Image.objects.filter(content_type=contenttype, object_id=item_sku.pk)
+        item_weight = item_sku.item_weights.all().order_by('id').last().weight
+        item_batch_type = item_sku.batch_type
+        item_batch_count = item_sku.batch_count
         if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, "sku": item_sku, 'item': item},request)
+            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
+                                                                                              "sku": item_sku,
+                                                                                              'item': item,
+                                                                                              'images': images}, request)
 
             return JsonResponse({'res': html})
         if request.POST:
@@ -674,7 +688,8 @@ class SupplierListView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if cache.get('submit/copy'):
+
+        if cache.get(f'{self.request.user}__submit/copy'):
             object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
             context.update({
                 'form': self.form_class(initial=dict(map(lambda x: x, [('name', object_for_copy.name), ])))

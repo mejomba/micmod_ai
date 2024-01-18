@@ -131,9 +131,9 @@ class BaseView(UserPassesTestMixin,
 
     def post(self, request, *args, **kwargs):
         if 'submit/copy' in self.request.POST:
-            cache.set('submit/copy', True)
+            cache.set(f'{self.request.user}__submit/copy', True)
         else:
-            cache.delete('submit/copy')
+            cache.delete(f'{self.request.user}__submit/copy')
 
         self.form_class = self.get_form_class()
 

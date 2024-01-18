@@ -54,8 +54,8 @@
                             {% show_image_gallery obj=item upload=False form=form only_popup=True editable=False %}
                         </div>
                         <a href="{% url 'inquiry:price_inquiry_file.update' item.pk %}" class="btn btn-primary">ویرایش این آیتم</a>
-                        <a href="{% url 'inquiry:price_inquiry_file.list' %}" class="btn btn-outline-primary">مشاهده لیست پرونده ها</a>
-                        <a href="{% url 'extra_data:sku.view-related' item.item.pk %}" class="btn btn-outline-secondary">کالا/خدمت وابسته به این پرونده</a>
+                        <a href="{% url 'inquiry:price_inquiry_file.list' %}" class="btn btn-bordered btn-outline-primary">مشاهده لیست پرونده ها</a>
+                        <a href="{% url 'extra_data:sku.view-related' item.item.pk %}" class="btn btn-bordered btn-outline-secondary">کالا/خدمت وابسته به این پرونده</a>
                     </div>
                 </div>
 

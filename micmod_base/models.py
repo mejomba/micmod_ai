@@ -46,6 +46,7 @@ class Quotation(SLSDoc):
     quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
     self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, null=True, blank=True, validators=[MaxValueValidator(100)])
 
+
     custom_objects = QuotationManager()
 
     @property
