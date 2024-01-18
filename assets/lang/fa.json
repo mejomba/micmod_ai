@@ -445,6 +445,7 @@
     "password_again": "تکرار رمز عبور",
     "email_address": "پست الکترونیک",
     "sign-out": "خروج",
-    "account-settings": "پروفایل"
-
+    "account-settings": "پروفایل",
+    "self_discount": "درصد تخفیف روی همه",
+    "cancel": "لغو"
 }

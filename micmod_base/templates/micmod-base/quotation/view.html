@@ -49,6 +49,9 @@
                                                         <div class="col-sm-4 ms-lg-auto">
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
                                                         </div>
+                                                        <div class="col-sm-12">
+                                                            {% render_field_group form.addition form.tax form.duty label_type='on-border '%}
+                                                        </div>
                                                     </div>
                                                         <div>{% get_comments form.instance %}</div>
                                                 </div>
@@ -89,6 +92,7 @@
                                     </div>
                             </div>
                         </div>
+
                         <!--list start-->
                         {{ formset.management_form }}
                         {{ formset.non_form_errors }}
@@ -107,6 +111,9 @@
                                 <p class="font-size-14 inquiry-status">وضعیت استعلام داخلی <strong>{{ form.instance.get_inquiry_result_count.2 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.1 }}</small></p>
                                 <p class="font-size-14 inquiry-status">وضعیت استعلام خارجی <strong>{{ form.instance.get_inquiry_result_count.4 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.3 }}</small></p>
                                 {% endif %}
+                            <div>
+                                {% render_field_by_order form form.self_discount label='in-line' %}
+                            </div>
                             </div>
 
 
@@ -127,6 +134,11 @@
     <div class="px-2 mx-auto">
         {% include "micmod-base/base/create_info_bar.html" %}
     </div>
+        {% if form.instance.quotation_rel.all.last.id %}
+            <a href="{% url 'sls:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+            {% elif form.instance.quotation_self.id %}
+            <a href="{% url 'sls:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+        {% endif %}
     <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto" {% if not form.enable %}disabled="disabled"{% endif %}
          m-href="{% url 'sls:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
@@ -138,7 +150,7 @@
         </div>
     {% endif %}
 
-        <div class="d-flex w-30 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
+        <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
             <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
                  data-key="refresh" onclick="refresh_prices()">
                 به روز رسانی قیمت

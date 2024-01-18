@@ -30,6 +30,7 @@ class IMEIListRegCreateView(LoginRequiredMixin, View):
         context['heading'] = _("create")
         context['pageview'] = _("imei_list_reg")
         context['form'] = IMEIListRegFrm(initial={'action': '1'})
+        context['form'] = IMEIListRegFrm(initial={'action': '1'})
 
         return render(request, self.template_name, context)
 

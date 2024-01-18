@@ -2,7 +2,7 @@ from django import forms
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
 from tools.utils import show_error
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
 from extra_data.models import Item
 
 from translator import get_text as _
@@ -304,3 +304,14 @@ class InquiryResultForm(CustomBaseModelForm):
         super(InquiryResultForm, self).__init__(*args, **kwargs)
 
         self.make_hidden(self.fields)
+
+
+class SupplierModelForm(CustomBaseModelForm):
+
+    class Meta:
+        model = Supplier
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('constraint', None)
+        super(SupplierModelForm, self).__init__(*args, **kwargs)

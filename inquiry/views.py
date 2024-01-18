@@ -1,5 +1,7 @@
 import datetime
 
+from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.conf import settings
 from django.forms import inlineformset_factory
 from django import forms
@@ -14,14 +16,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
+
+from files.models import Image
 from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
-    InquiryResultForm, PriceInquiryResult2CreateForm
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult
+    InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
 from extra_data.models import Item, PriceSettings
 from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
@@ -246,17 +250,34 @@ class InquiryResultListView(BaseView):
     template_name = 'inquiry/inquiry_result_list_or_create.html'
     success_url = '.'
 
-    # def get_success_url(self):
-    #     sku = self.request.GET.get('sku')
-    #     path = reverse('inquiry:inquiry_result.list')
-    #     path += f"?sku={sku if sku else self.object.sku.pk}"
-    #     return path
+    def get_success_url(self):
+        sku = self.request.GET.get('sku')
+        path = reverse('inquiry:inquiry_result.list')
+        if cache.get(f'{self.request.user}__submit/copy'):
+            path += f"?sku={sku if sku else self.object.sku.pk}"
+        return path
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
             'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         })
+        context['submit_copy'] = True
+
+        if cache.get(f'{self.request.user}__submit/copy'):
+            object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, [('sku', object_for_copy.sku),
+                                                                       ('sku_c', object_for_copy.sku),
+                                                                       ]
+                                                         )
+                                                     )
+                                        )
+            })
+        else:
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
+            })
         context['submit_copy'] = True
         return context
 
@@ -367,16 +388,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
         row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
         row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
-        # for field, content in row.items():
-        #     try:
-        #         field_type = self.model._meta.get_field(field).get_internal_type()
-        #         if field_type == 'ForeignKey':
-        #             row[field] = '<a class="fw-bold" href="%s">%s</a>' % (
-        #                           reverse('inquiry:inquiry_result.update', args=(obj.id,)),
-        #                           obj.sku if obj.sku else '_'
-        #                         )
-        #     except Exception as e:
-        #         show_error(e, __file__)
 
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
@@ -439,8 +450,17 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         else:
             item = dict()
         a = item_sku.sepidar_stock
+        #  add image, weight, batch_type, batch_count
+        contenttype = ContentType.objects.get_for_model(item_sku._meta.model)
+        images = Image.objects.filter(content_type=contenttype, object_id=item_sku.pk)
+        item_weight = item_sku.item_weights.all().order_by('id').last().weight
+        item_batch_type = item_sku.batch_type
+        item_batch_count = item_sku.batch_count
         if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, "sku": item_sku, 'item': item},request)
+            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
+                                                                                              "sku": item_sku,
+                                                                                              'item': item,
+                                                                                              'images': images}, request)
 
             return JsonResponse({'res': html})
         if request.POST:
@@ -634,3 +654,95 @@ def get_items(request):
 
     obj['total_count'] = count
     return JsonResponse(obj, safe=False)
+
+
+class SupplierView(BaseView):
+    model = Supplier
+    form_struct = {
+        'form': SupplierModelForm,
+        'childes': [
+            {
+             'childes': [{}]
+            },
+        ]
+    }
+    # template_name = 'inquiry/supplier_create_or_update.html'
+
+    def get_success_url(self):
+        path = reverse_lazy('inquiry:supplier.list')
+        if self.object:
+            path += f'?name={self.object.name}'
+        return path
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        return context
+
+
+class SupplierListView(BaseView):
+    model = Supplier
+    form_class = SupplierModelForm
+    template_name = 'inquiry/supplier_list_or_create.html'
+    success_url = '.'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if cache.get(f'{self.request.user}__submit/copy'):
+            object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, [('name', object_for_copy.name), ])))
+            })
+        else:
+            context.update({
+                'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
+            })
+        context['submit_copy'] = True
+        return context
+
+
+class SupplierDataTableView(AjaxDatatableView):
+    model = Supplier
+    title = 'supplier_list'
+    initial_order = [["name", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    def get_columns(self, fields):
+        res = [AjaxDatatableView.render_row_tools_column_def()]
+        for field in fields:
+            col = dict()
+            col['className'] = 'p-0 border'
+            col['lookup_field'] = '__icontains'
+            col['defaultContent'] = ''
+            col['orderable'] = True
+            col['searchable'] = True
+            col['name'] = field if isinstance(field, str) else None
+            col['visible'] = True
+            if isinstance(field, dict):
+                for key in field.keys():
+                    col[key] = field[key]
+            res.append(col)
+        return res
+
+    def get_column_defs(self, request):
+        cols = self.get_columns([
+            'name',
+        ])
+        return cols
+
+    def get_initial_queryset(self, request=None):
+        param: str = self.request.POST.get('name')
+        if param:
+            qs = self.model.objects.filter(name=param)
+        else:
+            qs = self.model.objects.all()
+        return qs
+
+    def customize_row(self, row, obj):
+        row['name'] = '<a class="fw-bold" href="%s">%s</a>' % (
+                      reverse('inquiry:supplier.detail_update', args=(obj.id,)),
+                      obj.name if obj.name else '_'
+                    )

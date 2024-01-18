@@ -6,8 +6,28 @@
 {{ sku.id }}
 {{ sku.sepidar_stock }}
     <div class="card-title">
-        <div class="fw-bolder"><span class="me-10">وزن کالا در 1000 قطعه:</span>
-            {{ sku.price.weight|intcomma|floatformat:4 }}</div>
+        <div class="fw-bolder row row-cols-2">
+            <div class="col">
+                <span class="me-10">وزن کالا در 1000 قطعه:</span>
+                {{ sku.price.weight|intcomma|floatformat:4 }}
+            </div>
+            <div class="col">
+                <span class="me-10">وزن:</span>
+                {{ sku.item_weights.all.last.weight }}
+            </div>
+            <div class="col">
+                <span class="me-10">نوع بسته بندی:</span>
+                {{ sku.batch_type }}
+            </div>
+            <div class="col">
+                <span class="me-10">تعداد در بسته:</span>
+                {{ sku.batch_count }}
+            </div>
+            <div class="col">
+                <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal" data-bs-target="#kt_modal_share_earn">تصاویر</a>
+            </div>
+            {% include 'files/partial/modal_for_image.html' with images=images %}
+        </div>
     </div>
     <div class="card-body bg-gray-200">
         <div class="d-flex">

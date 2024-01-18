@@ -1,5 +1,5 @@
 import datetime
-
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
@@ -59,6 +59,7 @@ class BaseView(UserPassesTestMixin,
     form_struct = None
     formset_l2 = None
     form = None
+    submit_copy = None
 
     def get_object(self, queryset=None):
         try:
@@ -130,6 +131,11 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
+        if 'submit/copy' in self.request.POST:
+            cache.set(f'{self.request.user}__submit/copy', True)
+        else:
+            cache.delete(f'{self.request.user}__submit/copy')
+
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True
@@ -277,6 +283,7 @@ class BaseView(UserPassesTestMixin,
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               }) if self.formset else None
+        context['allow_next'] = True
         print(__file__, 'super class context', context.get('current_user_groups'))
         return context
 
@@ -452,7 +459,7 @@ class BaseView(UserPassesTestMixin,
 
                     print(__file__, '========= wf save as change user')
                     return HttpResponseRedirect(self.get_success_url())
-                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST):
+                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST or 'submit/copy' in self.request.POST):
                     """save workflow form (main)"""
                     if form.wfform.is_valid():
                         wf_obj = form.wfform.save(commit=False)
@@ -461,13 +468,14 @@ class BaseView(UserPassesTestMixin,
                         wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
                                                                          model=new_obj._meta.model_name).first()
 
-                        if 'next' in self.request.POST:
-                            """to_user submit as default to next user"""
-                            wf_obj.wf_status = 3  # next
-
-                        if 'submit' in self.request.POST:
-                            """to_user submit as default to next user"""
-                            wf_obj.wf_status = 3  # next
+                        wf_obj.wf_status = 3  # next
+                        # if 'next' in self.request.POST:
+                        #     """to_user submit as default to next user"""
+                        #     wf_obj.wf_status = 3  # next
+                        #
+                        # if 'submit' in self.request.POST:
+                        #     """to_user submit as default to next user"""
+                        #     wf_obj.wf_status = 3  # next
 
                         wf_obj.save_user(self.request)
                         wf_obj.final_save()

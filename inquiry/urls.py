@@ -32,4 +32,9 @@ urlpatterns = [
     path('items_list/', views.get_items, name='items_list'),
 
     path('sku/list/', views.sku_list, name='sku_list'),
+
+    # path('supplier/view/', views.SupplierView.as_view(), name='supplier.view'),
+    path('supplier/view/<int:pk>/', views.SupplierView.as_view(), name='supplier.detail_update'),
+    path('supplier/list/', views.SupplierListView.as_view(), name='supplier.list'),
+    path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable')
 ]
