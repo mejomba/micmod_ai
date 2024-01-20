@@ -102,7 +102,7 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def rmb_final_price(self):
-        if self.extra_data._rmb_final_price_:
+        if getattr(self.extra_data,'_rmb_final_price_', None):
             return self.extra_data._rmb_final_price_
         else:
             return self.rmb_final_price_()

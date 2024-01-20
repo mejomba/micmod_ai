@@ -26,7 +26,8 @@ class QuotationForm(CustomBaseModelForm):
         model = Quotation
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
-                  "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax']
+                  "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
+                  "is_official", "official_value"]
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
