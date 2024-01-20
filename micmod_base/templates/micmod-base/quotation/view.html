@@ -111,7 +111,7 @@
                                 <p class="font-size-14 inquiry-status">وضعیت استعلام داخلی <strong>{{ form.instance.get_inquiry_result_count.2 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.1 }}</small></p>
                                 <p class="font-size-14 inquiry-status">وضعیت استعلام خارجی <strong>{{ form.instance.get_inquiry_result_count.4 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.3 }}</small></p>
                                 {% endif %}
-                            <div class="row row-cols-3 align-items-baseline ms-3">
+                            <div class="row row-cols-3 align-items-baseline ms-5">
                                 {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
                             </div>
                             </div>
