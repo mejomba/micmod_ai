@@ -49,11 +49,14 @@
                                                         <div class="col-sm-4 ms-lg-auto">
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
                                                         </div>
+
                                                         <div class="col-sm-12">
                                                             {% render_field_group form.addition form.tax form.duty label_type='on-border '%}
                                                         </div>
                                                     </div>
-                                                        <div>{% get_comments form.instance %}</div>
+                                                        <div class="mb-5 mt-3">{% get_comments form.instance %}</div>
+                                                        <div>{% include "addition_tag.html" %}</div>
+
                                                 </div>
                                             </div>
                                         </div>
