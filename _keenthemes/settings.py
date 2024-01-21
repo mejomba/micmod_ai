@@ -356,7 +356,6 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"  # "mandatory"
 
 SITE_ID = 2
-SITE_ID = 2
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": [

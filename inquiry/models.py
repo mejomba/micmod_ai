@@ -102,10 +102,10 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def rmb_final_price(self):
-        if getattr(self.extra_data,'_rmb_final_price_', None):
-            return self.extra_data._rmb_final_price_
+        if getattr(self.extra_data,'_rmb_final_price_',None):
+           return self.extra_data._rmb_final_price_
         else:
-            return self.rmb_final_price_()
+             return self.rmb_final_price_()
 
     def rmb_final_price_(self):
         self.currency_ = (Currency.objects.filter(id=self.custom_properties.get('currency_')).first()
@@ -209,7 +209,7 @@ class PriceInquiryResult(BaseModel):
             self.custom_properties['payment_method_'] = payment_method
         self.custom_properties['currency_'] = currency or "1"
         self.rmb_final_price_()
-        return self
+        # return self
 
     @property
     def price_settings(self):

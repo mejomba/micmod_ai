@@ -115,7 +115,9 @@ class BaseManager(models.Manager):
 
 
 class NoUserBaseModel(models.Model):
-    extra_data = ExtraData()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extra_data = ExtraData()
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 
@@ -130,6 +132,8 @@ class NoUserBaseModel(models.Model):
     notifications = GenericRelation('notifications.Messages',related_query_name="parent_object_no")
 
     objects = BaseManager()
+
+
 
     def __str__(self):
         if self.auto_complete:

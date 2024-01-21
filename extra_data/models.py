@@ -304,13 +304,16 @@ class Item(BaseModel):
 
     @property
     def sepidar_stock(self):
+        return
         if self.sepidar_id:
             return  APILogs.new_call(Urls.item_inventories.url.format(self.sepidar_id))[1]
         return dict()
 
     @property
     def price(self):
-        return self.items.filter(sku=self).filter(active=True).first()
+        if not getattr(self.extra_data,'price',None):
+            self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
+        return self.extra_data.price
 
     @property
     def get_customs_price(self):
