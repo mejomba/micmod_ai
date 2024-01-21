@@ -94,9 +94,8 @@ def import_sales_groups_from_sepidar(extra_data):
 def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk=0,truncate=False,
                              extra_data=dict()):
     try:
-        pk_field = list(datas[0].keys())[pk]
+        cursor = connection.cursor()
         if truncate:
-            cursor = connection.cursor()
             try:
                 cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY'.format(model._meta.db_table))
             except:
@@ -104,6 +103,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
                     model.objects.all().delete()
                 except Exception as e:
                     print(str(e))
+        pk_field = list(datas[0].keys())[pk]
         for data in datas:
             row = extra_data.copy()
             for field in model._meta.get_fields():
@@ -111,7 +111,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
                     row[field.name] = data[field.name]
             try:
                 if update:
-                    obj, created = model.objects.aupdate_or_create(
+                    obj, created = model.objects.update_or_create(
                         **{pk_field: row[pk_field]},
                         defaults=row,
                     )
@@ -120,6 +120,10 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
                     obj = model.objects.create(**row)
             except Exception as e:
                 print(str(e))
+        cursor.execute(f'select max(id) from {model._meta.db_table}')
+        max_id = cursor.fetchall()
+        max_id = max_id[0][0] if max_id else 0
+        cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id}')
     except Exception as e:
         print(str(e))
 
@@ -149,11 +153,8 @@ def set_foreign_key(datas:list[dict],model:models.Model,key,search_field,convert
 # your imports, e.g. Django models
 if __name__ == '__main__':
     extra_data = {"creator_user_id": 1, "editor_user_id": 1}
-    import_purchase_groups_from_sepidar(extra_data)
-    import_sales_groups_from_sepidar(extra_data)
-    import_items_from_sepidar(extra_data)
     wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
-    print(extra_data)
+    # print(extra_data)
     datas = [
         {"title":"ریال", "title_en":"Rial"},
         {"title":"یوان", "title_en":"RMB"},
@@ -193,9 +194,15 @@ if __name__ == '__main__':
     update_model_based_excel(datas,ItemWeight,extra_data=extra_data,update=True)
     #
     # datas = read_excel_data("sheet data/price_inquery_results.xlsx",header_row=0)
+    cursor = connection.cursor()
+    cursor.execute(f'select max(id) from {PriceInquiryResult._meta.db_table}')
     datas = wb.read_sheet("price")
     datas = set_foreign_key(datas, Item, "sku", "sku", [int,str])
     for data in datas:
         data['active'] = True
     datas = set_foreign_key(datas, Currency, "currency_type", "title_en", )
-    update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=True,pk=1,truncate=True)
+    update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=True,pk=0,truncate=True)
+
+    import_purchase_groups_from_sepidar(extra_data)
+    import_sales_groups_from_sepidar(extra_data)
+    import_items_from_sepidar(extra_data)
