@@ -3,8 +3,10 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
+# from comments.models import Comments
 from files.models import File, Image
 from tools.utils import elapsed_time
 from django.db.models import Q
@@ -15,7 +17,6 @@ from accounts.models import User
 
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
-
 
 class ExtraData(object):
     ...
@@ -110,6 +111,7 @@ class BaseManager(models.Manager):
             quotations_record_lst = qry
 
         return quotations_record_lst
+
 
 
 class NoUserBaseModel(models.Model):
@@ -249,6 +251,35 @@ class NoUserBaseModel(models.Model):
             for idx, image in enumerate(images):
                 image_model.objects.create(path=image, content_object=obj, group=i+1, alt=alt[idx])
 
+    """***NEW***"""
+
+    def save_comment(self, request, idx=None):
+        from comments.models import Comments
+        title = request.POST.get('comment_title')
+        comment_input_name = f'comment_{idx}' if idx is not None else 'comment_'
+        content = request.POST.get(comment_input_name)
+        contenttype = ContentType.objects.get_for_model(self._meta.model)
+        #
+        # comment_input_name = f'{input_prefix}_{idx+1}'
+        # comments = request.POST.get(comment_input_name)
+        #
+        # for idx, comment in enumerate(comments):
+        #     comment_model.objects.create(title=title,
+        #                                  content=content,
+        #                                  contenttype=contenttype,
+        #                                  object_id=self.pk,
+        #                                  content_object=comment,
+        #                                  )
+
+        comment = Comments.objects.create(comment_title=title,
+                                comment_content=content,
+                                contenttype=contenttype,
+                                object_id=self.pk,
+                                )
+
+        comment.save_user(request)
+
+    """***NEW***"""
     def compare(self, obj=None, excluded_keys=None):
         if excluded_keys is None:
             excluded_keys = list()
@@ -329,7 +360,6 @@ class AbsBaseModel(NoUserBaseModel):
     editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='%(app_label)s_updator_%(model_name)s',
                                     verbose_name=_('updator_user'))
 
-
     def save_user(self, request):
         try:
             if self.creator_user:
@@ -352,3 +382,16 @@ class BaseModel(AbsBaseModel):
 
     class Meta:
         abstract = True
+
+
+class BaseContentType(AbsBaseModel):
+    contenttype = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('contenttype', 'object_id')
+
+    as_table = 'templates/core/partial/table.html'
+    as_list = 'templates/core/partial/list.html'
+
+    class Meta:
+        abstract = True
+

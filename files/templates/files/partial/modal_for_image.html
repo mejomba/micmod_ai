@@ -1,0 +1,58 @@
+<link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+<div class="modal fade" id="kt_modal_share_earn" tabindex="-1" style="display: none;" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mw-800px">
+        <!--begin::Modal content-->
+        <div class="modal-content">
+            <!--begin::Modal header-->
+            <div class="modal-header pb-0 border-0 justify-content-end">
+                <!--begin::Close-->
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>                </div>
+                <!--end::Close-->
+            </div>
+            <!--begin::Modal header-->
+
+            <!--begin::Modal body-->
+            <div class="modal-body scroll-y pt-0 pb-15">
+                <!--begin::Wrapper-->
+                <div class="mw-lg-850px mx-auto">
+                    {% for image in images %}
+                    <img src="{{ image.path.url }}" width="200" class="rounded gallery_image">
+                        {% empty %}
+                    <h3>چیزی آپلود نشده</h3>
+                    {% endfor %}
+                </div>
+                <!--end::Wrapper-->
+            </div>
+            <!--end::Modal body-->
+        </div>
+        <!--end::Modal content-->
+    </div>
+    <!--end::Modal dialog-->
+</div>
+
+<div id="myModal" class="image-popup modal-image">
+    <span class="close" id="close-image">&times;</span>
+    <img class="modal-content-image" id="img01">
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var modal = document.getElementById("myModal");
+    var img = document.querySelectorAll(".gallery_image");
+    var modalImg = document.getElementById("img01");
+    var closeImage = document.getElementById("close-image");
+    img.forEach(function (item){
+        item.onclick = function(){
+            modal.style.display = "block";
+            modalImg.src = this.src;
+        }
+    })
+
+    closeImage.onclick = function() {
+      modal.style.display = "none";
+    }
+
+</script>

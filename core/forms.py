@@ -14,6 +14,7 @@ class CustomBaseForm(forms.Form):
     image_groups = None
     file_groups = None
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -23,6 +24,7 @@ class CustomBaseModelForm(forms.ModelForm):
     file_groups = None
     image_model = None
     file_model = None
+    has_comment = None
     crispy = None
     action = None
     enable = True

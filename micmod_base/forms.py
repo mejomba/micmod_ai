@@ -20,12 +20,13 @@ from core.forms import CustomBaseModelForm
 
 class QuotationForm(CustomBaseModelForm):
     form_state = None
+    has_comment = True
 
     class Meta:
         model = Quotation
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
-                  "description", "id", 'sepidar_number']
+                  "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -138,6 +139,8 @@ class QuotationItemForm(CustomBaseModelForm):
         self.fields['goods_code'].name = ''
         # print(type(self.fields['goods_code']))
 
+
+
     class Meta:
         model = QuotationItem
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity',
@@ -148,7 +151,7 @@ class QuotationItemForm(CustomBaseModelForm):
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res','goods_min_price','goods_max_price',
                   'goods_q_last_sale','goods_q_last_price','goods_q_total_sales', 'need_local_price_inquiry',
-                  'local_price_inquiry_done', 'need_foreign_price_inquiry','foreign_price_inquiry_done'
+                  'local_price_inquiry_done', 'need_foreign_price_inquiry','foreign_price_inquiry_done',
                   ]
         widgets = {
             'goods_code': forms.Select(
@@ -292,7 +295,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'
-        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
+        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'cancel',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
                   'goods_price_sheet3',
@@ -300,7 +303,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price',
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
-                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry'
+                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description'
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {
@@ -429,7 +432,9 @@ class BaseQIFormset(BaseInlineFormSet):
         if self.is_bound:
             for form in self.forms:
                 if hasattr(form, 'nested'):
-                    result = result and form.nested.is_valid()
+                    # Todo use and
+                    nv = form.nested.is_valid()
+                    result = result and nv
                     result = True
 
         return result
@@ -500,7 +505,7 @@ qi_fields = [
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
-    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done'
+    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description'
     ]
 
 

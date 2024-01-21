@@ -99,16 +99,16 @@ $(document).ready(function () {
         const draftBtn = document.querySelector('input[name*="draft"]')
         const backBtn = document.querySelector('input[name*="back"]')
         const nextBtn = document.querySelector('input[name*="next"]')
-        item.addEventListener('focus', function (e) {
-            draftBtn ? draftBtn.disabled=true : ''
-            backBtn ? backBtn.disabled=true : ''
-            nextBtn ? nextBtn.disabled=true : ''
-        })
-        item.addEventListener('focusout', function (e) {
-            draftBtn ? draftBtn.disabled=false : ''
-            backBtn ? backBtn.disabled=false : ''
-            nextBtn ? nextBtn.disabled=false : ''
-        })
+        // item.addEventListener('focus', function (e) {
+        //     draftBtn ? draftBtn.disabled=true : ''
+        //     backBtn ? backBtn.disabled=true : ''
+        //     nextBtn ? nextBtn.disabled=true : ''
+        // })
+        // item.addEventListener('focusout', function (e) {
+        //     draftBtn ? draftBtn.disabled=false : ''
+        //     backBtn ? backBtn.disabled=false : ''
+        //     nextBtn ? nextBtn.disabled=false : ''
+        // })
         item.addEventListener('keyup', function (e) {
             debugger
             e.preventDefault();

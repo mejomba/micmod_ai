@@ -104,6 +104,13 @@ class WorkFlowModelForm(CustomBaseModelForm):
             if not FlowAdminGroup.get_name(belong_to_group):
                 raise ImproperlyConfigured(f"table flow admin don't have value for <{belong_to_group}>")
             self.fields['belong_to_group_'].widget.attrs['placeholder'] = FlowAdminGroup.get_name(belong_to_group)
+
+            self.make_disable(['deadline'])
+            if FlowAdminGroup.is_admin_of_group(current_user, belong_to_group):
+                self.fields['deadline'].disabled = False
+            elif getattr(current_user, 'is_superuser', None):
+                self.fields['deadline'].disabled = False
+
         except Exception as e:
             print('error: ', __file__,  e.__traceback__.tb_lineno, e)
 

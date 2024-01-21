@@ -11,11 +11,20 @@
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>
         {% elif not finish and has_flow %}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس"/>
-            <input type="submit" class="btn btn-primary me-1" name="next" value="ارسال به مرحله بعد"/>
+            {% if not allow_next %}
+                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="برخی از رکوردها قابل تایید نیستن!">
+                    <input type="submit" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد"/>
+                </span>
+            {% else %}
+                <input type="submit" class="btn btn-primary me-1" name="next" value="ارسال به مرحله بعد"/>
+            {% endif %}
+            {% if submit_copy %}
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+            {% endif %}
         {% elif not has_flow and form %}
             <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
             {% if submit_copy %}
-                <input type="submit" class="btn btn-bordered btn-outline-primary me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
             {% endif %}
         {% else %}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="x" value="ذخیره"/>
@@ -31,6 +40,9 @@
         {% elif not finish and has_flow %}
             <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس"/>
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد"/>
+            {% if submit_copy %}
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+            {% endif %}
         {% elif not has_flow %}
             <input type="button" class="btn btn-outline-success btn-bordered me-1 px-4" disabled name="submit" value="ذخیره"/>
         {% else %}
@@ -49,3 +61,9 @@
 </div>
 <span class="footer-toggle">&#10148;</span>
 {#{% endif %}#}
+<style>
+    .tooltip{
+        font-family: Sahel;
+        padding: 0rem;
+}
+</style>
