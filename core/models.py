@@ -280,6 +280,30 @@ class NoUserBaseModel(models.Model):
         comment.save_user(request)
 
     """***NEW***"""
+
+    """***NEW***"""
+    def save_additions(self, request):
+        from additions.models import Additions
+        from micmod_base.base import Currency
+
+        addition_title = request.POST.get('addition_title')
+        addition_description = request.POST.get('addition_description')
+        addition_count = request.POST.get('addition_count')
+        addition_currency = request.POST.get('addition_currency')
+        currency = Currency.objects.get(pk=int(addition_currency))
+        contenttype = ContentType.objects.get_for_model(self._meta.model)
+
+        addition = Additions.objects.create(addition_title=addition_title,
+                                            addition_description=addition_description,
+                                            addition_count=addition_count,
+                                            addition_currency=currency,
+                                            contenttype=contenttype,
+                                            object_id=self.pk,
+                                            )
+
+        addition.save_user(request=request)
+
+    """***NEW***"""
     def compare(self, obj=None, excluded_keys=None):
         if excluded_keys is None:
             excluded_keys = list()

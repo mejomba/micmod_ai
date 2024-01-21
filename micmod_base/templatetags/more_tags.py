@@ -143,6 +143,19 @@ def get_comment_link(comment_str):
 
 """***NEW***"""
 
+"""***NEW***"""
+@register.inclusion_tag('addition_tag.html')
+def get_additions(obj):
+    from additions.models import Additions
+    addition = Additions.objects.none()
+    if hasattr(obj, '_meta'):
+        addition = Additions.objects.filter(object_id=obj.pk,
+                                            contenttype=ContentType.objects.get_for_model(obj._meta))
+
+    return {'addition': addition}
+
+"""***NEW***"""
+
 
 
 @register.inclusion_tag('core/partial/render_field.html')

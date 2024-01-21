@@ -25,6 +25,7 @@ class CustomBaseModelForm(forms.ModelForm):
     image_model = None
     file_model = None
     has_comment = None
+    has_addition = None
     crispy = None
     action = None
     enable = True

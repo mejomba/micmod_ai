@@ -527,6 +527,14 @@ class BaseView(UserPassesTestMixin,
                         new_obj.save_comment(request=self.request)
                     """***NEW***"""
 
+                    """***NEW***"""
+                    if form.has_addition:
+                        new_obj.save_additions(request=self.request)
+
+                    """***NEW***"""
+
+
+
                 except Exception as e:
                     print('error: ', e.__traceback__.tb_lineno, e)
 
