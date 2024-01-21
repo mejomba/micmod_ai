@@ -107,27 +107,18 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 
 
 @register.inclusion_tag('comment_tag.html')
-def get_comments(obj):
-    # import re
-    # from django.urls import reverse_lazy
-    # target = globals().get(target_model_name)
+def get_comments(obj, button_text=None, button_style=None):
+    if button_text is None:
+        button_text = 'نظر کاربران'
+    if button_style is None:
+        button_style = "btn btn-primary"
+
     comments = Comments.objects.none()
     if hasattr(obj, '_meta'):
         comments = Comments.objects.filter(object_id=obj.pk,
                                            contenttype=ContentType.objects.get_for_model(obj._meta.model))
-    # pattern_sku = r'sku_\d+'
-    # pattern_pk = r'sku_(\d+)'
-    # new_comments = []
-    # for idx, comment in enumerate(comments):
-    #     comment_str = comment.comment_content.lower()
-    #     pks = re.findall(pattern_pk, comment_str)
-    #     for pk in pks:
-    #         url = reverse_lazy('sls:quotations.view', kwargs={'pk': pk})
-    #         link = f'<a href="{url.__str__()}">xxxx</a>'
-    #         comment_str = re.sub(pattern_sku, link, comment_str, count=1)
-    #     new_comments.append(comment)
 
-    return {'comments': comments}
+    return {'comments': comments, 'button_text': button_text, 'button_style': button_style}
     # return {'comments': new_comments}
 
 

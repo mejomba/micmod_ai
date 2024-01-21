@@ -447,5 +447,7 @@
     "sign-out": "خروج",
     "account-settings": "پروفایل",
     "self_discount": "درصد تخفیف روی همه",
-    "cancel": "لغو"
+    "cancel": "لغو",
+    "is_official": "نوع ۱",
+    "official_value": "تخفیف نوع ۱"
 }

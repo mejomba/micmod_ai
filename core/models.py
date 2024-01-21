@@ -115,7 +115,9 @@ class BaseManager(models.Manager):
 
 
 class NoUserBaseModel(models.Model):
-    extra_data = ExtraData()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extra_data = ExtraData()
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 
@@ -131,6 +133,8 @@ class NoUserBaseModel(models.Model):
 
     objects = BaseManager()
 
+
+
     def __str__(self):
         if self.auto_complete:
             return getattr(self, self.auto_complete)
@@ -138,7 +142,7 @@ class NoUserBaseModel(models.Model):
 
     @classmethod
     def content_type(cls):
-        return ContentType.objects.get(model=cls.__name__.lower(),app_label=cls._meta.app_label.lower())
+        return ContentType.objects.get(model=cls.__name__.lower(), app_label=cls._meta.app_label.lower())
 
     @classmethod
     def all_workflows(cls):
