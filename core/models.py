@@ -142,7 +142,7 @@ class NoUserBaseModel(models.Model):
 
     @classmethod
     def content_type(cls):
-        return ContentType.objects.get(model=cls.__name__.lower(),app_label=cls._meta.app_label.lower())
+        return ContentType.objects.get(model=cls.__name__.lower(), app_label=cls._meta.app_label.lower())
 
     @classmethod
     def all_workflows(cls):

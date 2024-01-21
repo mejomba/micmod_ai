@@ -45,6 +45,9 @@ class Quotation(SLSDoc):
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
     quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
     self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, null=True, blank=True, validators=[MaxValueValidator(100)])
+    is_official = models.BooleanField(default=False, verbose_name=_('is_official'))
+    official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
+    cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
 
     custom_objects = QuotationManager()
@@ -128,7 +131,6 @@ class QuotationItem(BaseModel):
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
 
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
-    cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
     @property
     def fee(self):

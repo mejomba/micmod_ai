@@ -31,7 +31,7 @@
                         mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
 {#                {{ field }}#}
                 {% include 'core/partial/auto_complete_field.html' with field=field %}
-                <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}"
+                <label data-key="{{ field|get_field_name }}" for="{{ field.auto_id }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
                     {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
                 {{ field.errors }}

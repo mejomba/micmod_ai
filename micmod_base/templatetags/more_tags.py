@@ -106,15 +106,40 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 """***NEW***"""
 
 
-@register.inclusion_tag('comments/comment_tag.html')
-def get_comments(obj):
-    # target = globals().get(target_model_name)
+@register.inclusion_tag('comment_tag.html')
+def get_comments(obj, button_text=None, button_style=None):
+    if button_text is None:
+        button_text = 'نظر کاربران'
+    if button_style is None:
+        button_style = "btn btn-primary"
+
     comments = Comments.objects.none()
     if hasattr(obj, '_meta'):
         comments = Comments.objects.filter(object_id=obj.pk,
                                            contenttype=ContentType.objects.get_for_model(obj._meta.model))
 
-    return {'comments': comments}
+    return {'comments': comments, 'button_text': button_text, 'button_style': button_style}
+    # return {'comments': new_comments}
+
+
+@register.filter
+def get_comment_link(comment_str):
+    import re
+    from django.urls import reverse_lazy
+    from django.utils.safestring import mark_safe
+    pattern_sku = r'sku_\d+'
+    pattern_pk = r'sku_(\d+)'
+
+    comment_str_lower = comment_str.lower()
+    pks = re.findall(pattern_pk, comment_str_lower)
+    for pk in pks:
+        url = reverse_lazy('extra_data:sku.update', kwargs={'pk': pk})
+        link = f'<a href="{url.__str__()}" target=_blank>{pk}</a>'
+        comment_str_lower = re.sub(pattern_sku, link, comment_str_lower, count=1)
+        comment_str = comment_str_lower
+        comment_str = mark_safe(comment_str)
+
+    return comment_str
 
 """***NEW***"""
 

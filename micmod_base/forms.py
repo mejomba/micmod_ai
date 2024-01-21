@@ -26,7 +26,8 @@ class QuotationForm(CustomBaseModelForm):
         model = Quotation
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
-                  "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax']
+                  "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
+                  "is_official", "official_value", 'cancel']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -295,7 +296,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'
-        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'cancel',
+        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
                   'goods_price_sheet3',
