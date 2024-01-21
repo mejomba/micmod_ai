@@ -46,7 +46,7 @@ class PriceInquiryResult(BaseModel):
                                            null=True, blank=True)
     supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                  on_delete=models.DO_NOTHING, related_name='supplier_rel')
-    price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
+    price = models.FloatField(verbose_name=_('price'))
     price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
     local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
