@@ -448,6 +448,6 @@
     "account-settings": "پروفایل",
     "self_discount": "درصد تخفیف روی همه",
     "cancel": "لغو",
-    "is_official": "رسمی است",
-    "official_value": "درصد رسمی"
+    "is_official": "نوع ۱",
+    "official_value": "تخفیف نوع ۱"
 }
