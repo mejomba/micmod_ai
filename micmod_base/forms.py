@@ -21,6 +21,7 @@ from core.forms import CustomBaseModelForm
 class QuotationForm(CustomBaseModelForm):
     form_state = None
     has_comment = True
+    has_addition = True
 
     class Meta:
         model = Quotation
@@ -53,6 +54,8 @@ class QuotationForm(CustomBaseModelForm):
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
+
+
             form_constraint_read = form_constraint[self.form_state].get('read')
             form_constraint_hide = form_constraint[self.form_state].get('hide')
             formset_constraint_read = formset_constraint[self.form_state][0].get('read')
@@ -65,6 +68,12 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['expiration_date'] = JalaliDateField(label=_('expiration_date'),
                                                          widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                          )
+
+        if self.has_addition:
+            self.fields['addition_currency'] = forms.ModelChoiceField(queryset=Currency.objects.all(), widget=forms.Select(attrs={'class': 'form-control mb-3 ', 'placeholder': 'نوع ارز', 'id': 'id_addition_currency'}), required=False)
+            self.fields['addition_title'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control mb-3 ', 'placeholder': 'عنوان'}))
+            self.fields['addition_description'] = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control mb-3 ','placeholder': 'توضیحات خود را بنویسید :)'}))
+            self.fields['addition_count'] = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'تعداد'}))
 
         if not request.user.is_superuser:
             if form_constraint_hide:
