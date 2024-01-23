@@ -126,12 +126,16 @@ def get_comments(obj, comment_form, button_text=None, button_style=None, comment
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
-def get_comment_user_list(obj):
+def get_comment_user_list(form):
     creator_users = set()
+    obj = form.instance
     comments = obj.comments.all()
     for comment in comments:
-        creator_users.add(comment.creator_user)
-    context = {'comment_users': creator_users}
+        try:
+            creator_users.add(comment.creator_user.profile.get_user_image)
+        except Exception as e:
+            creator_users.add('/assets/media/auth/no_image.png')
+    context = {'comment_users': creator_users, 'obj': obj}
     return context
 @register.filter
 def get_comment_link(comment_str):
