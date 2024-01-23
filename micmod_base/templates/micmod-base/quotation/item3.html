@@ -63,9 +63,9 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
-                creator_users = set()
-                for comment in comments:
-                    creator_users.add(comment.creator_user)
+{#                creator_users = set()#}
+{#                for comment in comments:#}
+{#                    creator_users.add(comment.creator_user)#}
 {#                {% get_comments_button %}#}
                 <div class="btn btn-sm btn-primary" id="id_comment__{{ form_s.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" data-pk="{{ form_s.instance.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ form_s.instance.comments.content_type.pk }}/{{ form_s.instance.pk }}">ثبت نظر</div>
 {#                {% get_comments %}#}
