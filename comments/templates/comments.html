@@ -1,14 +1,10 @@
+{% load more_tags %}
 <div id="div_id_wf_description" class="form-group mb-5">
 
-        <div class="mb-5" style="text-align: right">
-            <label class="required mb-5" for="id_comment_title">یک گزینه را انتخاب کنید:)</label>
-            <select name="comment_title" id="id_comment_title" class="form-select mb-2">
-                <option value="O">موارد دیگر</option>
-                <option value="C">کنسلی</option>
-            </select>
-            <textarea rows="2" placeholder="توضیحات خود را بنویسید :)" name="comment_{{ forloop.counter0 }}" class="form-control textinput textInput"></textarea>
+    {% render_field_by_order comment_form comment_form.comment_title comment_form.comment_content %}
+    <div class="d-flex">
+        <button type="submit" name="{{ comment_form.submit_type }}" class="btn btn-primary mt-4" data-key="{{ comment_form.submit_type }}">{{ comment_form.submit_type }}</button>
         </div>
-    <button class="btn btn-primary">تایید</button>
 </div>
 
 <hr width="100%" size="100%" style="color: midnightblue">

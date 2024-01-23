@@ -107,21 +107,32 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 
 
 @register.inclusion_tag('comment_tag.html')
-def get_comments(obj, button_text=None, button_style=None):
+def get_comments(obj, comment_form, button_text=None, button_style=None, comment_type=None):
     if button_text is None:
         button_text = 'نظر کاربران'
     if button_style is None:
         button_style = "btn btn-primary"
+    if comment_type is None:
+        comment_type = 'نظرات'
 
     comments = Comments.objects.none()
     if hasattr(obj, '_meta'):
         comments = Comments.objects.filter(object_id=obj.pk,
-                                           contenttype=ContentType.objects.get_for_model(obj._meta.model))
+                                           content_type=ContentType.objects.get_for_model(obj._meta.model))
 
-    return {'comments': comments, 'button_text': button_text, 'button_style': button_style}
+    return {'comments': comments, 'button_text': button_text, 'comment_type': comment_type,
+            'button_style': button_style, 'comment_form': comment_form, 'obj': obj}
     # return {'comments': new_comments}
 
 
+@register.inclusion_tag('core/partial/comment_user_list.html')
+def get_comment_user_list(obj):
+    creator_users = set()
+    comments = obj.comments.all()
+    for comment in comments:
+        creator_users.add(comment.creator_user)
+    context = {'comment_users': creator_users}
+    return context
 @register.filter
 def get_comment_link(comment_str):
     import re

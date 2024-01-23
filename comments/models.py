@@ -1,6 +1,7 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from core.models import BaseContentType
-# Create your models here.
+from translator import get_text as _
 
 
 class Comments(BaseContentType):
@@ -8,7 +9,5 @@ class Comments(BaseContentType):
         ('C', 'کنسلی'),
         ('O','موارد دیگر')
     )
-    comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O')
-    comment_content = models.TextField(max_length=1000, null=True, blank=True)
-
-
+    comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))
+    comment_content = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('comment_content'))

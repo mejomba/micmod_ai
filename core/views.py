@@ -6,13 +6,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.template.loader import render_to_string
+from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
 from _keenthemes import KTLayout
 from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
+from comments.forms import CommentsForm
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -336,6 +340,8 @@ class BaseView(UserPassesTestMixin,
                     FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index]) or \
                     (belong_to_group in self.request.user.groups.values_list('name', flat=True) and
                     (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+                # if self.object.cancel:
+                #     self.wf_access = False
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
@@ -441,7 +447,25 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.save()
                     # return super().form_valid(form)
 
-            new_obj = form.save(commit=True) if 'back' not in self.request.POST else None
+            if 'back' in self.request.POST:
+                return super().form_valid(form)
+            elif 'cancel' in self.request.POST:
+                old_obj.cancel = True
+                old_obj.save()
+                old_obj.save_comment(request=self.request)
+                return HttpResponseRedirect(self.get_success_url())
+                # return super().form_valid(form)
+            elif 'uncanceled' in self.request.POST:
+                old_obj.cancel = False
+                old_obj.save()
+                old_obj.save_comment(request=self.request)
+                return HttpResponseRedirect(self.get_success_url())
+                # return super().form_valid(form)
+            else:
+                new_obj = form.save(commit=True)
+
+            # new_obj = form.save(commit=True) if 'back' in self.request.POST else None
+
             if new_obj:
                 new_obj.save_user(self.request)
                 last_flow_obj = self.get_last_flow(new_obj)
@@ -595,6 +619,17 @@ class BaseView(UserPassesTestMixin,
                         new_details = list(new_details.all())
 
                     for d in new_details:
+                        # ToDo make dynamic
+                        app_label = 'micmod_base'
+                        model_name = 'quotationitem'
+                        ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
+                        object_id = d.pk
+                        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+                        comment_form = CommentsForm(self.request.POST, prefix=prefix)
+                        if comment_form.is_valid():
+                            cmnt = comment_form.save()
+                            cmnt.save_user(self.request)
+
                         if d not in old_details:
                             d.attach_image_file(d)
                             # d = self.attach_image_file(d)
@@ -707,3 +742,25 @@ class JsonTemplateResponseMixin:
             print(request.GET)
 
         return super().dispatch(request, *args, **kwargs)
+
+
+class CommentsFormView(View):
+    def get(self, request, *args, **kwargs):
+        from django.apps import apps
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get('model_name')
+        ctt_id = kwargs.get('content_type')
+        object_id = kwargs.get('object_id')
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).first()
+        comments = obj.comments.all().order_by('-created_date')
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        kwargs['comment_title'] = self.request.GET.get('comment_title', '')
+        kwargs['comment_content'] = self.request.GET.get('comment_content', '')
+        kwargs['submit_type'] = 'save_comment'
+        form = CommentsForm(prefix=prefix, initial=kwargs)
+
+        context = {'form': form, 'object_id': object_id, 'ctt_id': ctt_id, 'comments': comments}
+        x = render_to_string('core/partial/form.html', context)
+
+        return JsonResponse({'res': x})

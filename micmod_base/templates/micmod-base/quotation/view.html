@@ -55,8 +55,8 @@
                                                         </div>
                                                     </div>
 
-                                                        <div class="mb-5 mt-3">{% get_comments form.instance %}</div>
-                                                        <div>{% include "addition_tag.html" %}</div>
+{#                                                        <div class="mb-5 mt-3">{% get_comments form.instance %}</div>#}
+{#                                                        <div>{% include "addition_tag.html" %}</div>#}
 
 
                                                 </div>
@@ -118,8 +118,8 @@
                                 {% endif %}
                             <div class="row row-cols-4 align-items-baseline ms-5">
                                 {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
-{#                                <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>#}
-                                {% get_comments form.instance "کنسل" "btn btn-danger" %}
+{#                                {% get_comments form.instance comment_form "کنسل" "btn btn-danger" 'کنسلی' %}#}
+                                {% get_comments obj=form.instance comment_form=comment_form button_text="کنسل/لغو کنسلی" button_style="btn btn-danger" comment_type='کنسلی' %}
                             </div>
                             </div>
                                 {% for form_ in formset.forms %}
@@ -215,6 +215,43 @@
         }
     }
 
-    </script>
+    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
+    submitCommentBtns.forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            debugger
+            let comment_url = item.dataset.form_url;
+            const pk = item.dataset.pk;
+            const comment_input_id = comment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const comment_element = $('#id-empty-modal-body')
+            const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+            const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+            debugger
+            const title = commentFormGroup.querySelector('[id*="title"]')
+            const content = commentFormGroup.querySelector('[id*="content"]')
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}`}
+            custom_ajax_get(comment_form, comment_url, comment_element)
+        }) // end eventListener
+    }) // end forEach
+
+    function addCommentInput(){
+        debugger
+        const pkElement = document.querySelector('[id*="object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+        commentFormGroup.appendChild(commentFormForCopy)
+    }
+
+    const emptyModal = document.getElementById('id_kt_empty_modal')
+    emptyModal.addEventListener('hidden.bs.modal', function (e) {
+        console.log('hkldjfds')
+        document.querySelector('#id-empty-modal-body').innerHTML = ''
+    })
+
+</script>
 
 {% endblock extra_js %}

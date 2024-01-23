@@ -128,8 +128,9 @@ class NoUserBaseModel(models.Model):
     auto_complete = False
     is_public = False
 
-    workflows = GenericRelation('workflow.Workflow',related_query_name="parent_object_wf")
-    notifications = GenericRelation('notifications.Messages',related_query_name="parent_object_no")
+    workflows = GenericRelation('workflow.Workflow', related_query_name="parent_object_wf")
+    notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
+    comments = GenericRelation('comments.comments', related_query_name="parent_object_no")
 
     objects = BaseManager()
 
@@ -256,28 +257,19 @@ class NoUserBaseModel(models.Model):
     def save_comment(self, request, idx=None):
         from comments.models import Comments
         title = request.POST.get('comment_title')
-        comment_input_name = f'comment_{idx}' if idx is not None else 'comment_'
+        comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
         content = request.POST.get(comment_input_name)
-        contenttype = ContentType.objects.get_for_model(self._meta.model)
-        #
-        # comment_input_name = f'{input_prefix}_{idx+1}'
-        # comments = request.POST.get(comment_input_name)
-        #
-        # for idx, comment in enumerate(comments):
-        #     comment_model.objects.create(title=title,
-        #                                  content=content,
-        #                                  contenttype=contenttype,
-        #                                  object_id=self.pk,
-        #                                  content_object=comment,
-        #                                  )
+        content_type = ContentType.objects.get_for_model(self._meta.model)
 
-        comment = Comments.objects.create(comment_title=title,
-                                comment_content=content,
-                                contenttype=contenttype,
-                                object_id=self.pk,
-                                )
+        if content:
+            comment = Comments.objects.create(
+                                            comment_title=title,
+                                            comment_content=content,
+                                            content_type=content_type,
+                                            object_id=self.pk,
+                                    )
 
-        comment.save_user(request)
+            comment.save_user(request)
 
     """***NEW***"""
 
@@ -409,9 +401,9 @@ class BaseModel(AbsBaseModel):
 
 
 class BaseContentType(AbsBaseModel):
-    contenttype = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
+    content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('contenttype', 'object_id')
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     as_table = 'templates/core/partial/table.html'
     as_list = 'templates/core/partial/list.html'

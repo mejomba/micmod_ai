@@ -1,0 +1,46 @@
+{% load more_tags %}
+{% for comment in comments %}
+        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border-right-1 pt-2 px-1" style="border-right: 1px solid var(--bs-gray-400)">
+            <!--begin::Message header-->
+            <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
+                 data-kt-inbox-message="header">
+                <!--begin::Author-->
+                <div class="d-flex align-items-baseline">
+                    <!--begin::Author details-->
+                    <div>
+                        {% if comment.creator_user.profile %}
+                            <img src="{{ comment.creator_user.profile.get_user_image }}" alt="user_image__{{ comment.creator_user.firstname }}" class="rounded-circle" width="32" height="32">
+                        {% endif %}
+
+
+                    </div>
+                    <p class="me-4 ms-2 fw-bold text-active-gray-800" >
+                        {{ comment.creator_user }}
+                    </p>
+                    <p class="font-size-10 font-italic text-muted text-end" style="font-style: italic">
+                        {{ comment.elapsed_time }}
+                    </p>
+                    <!--end::Author details-->
+                </div>
+                <!--end::Author-->
+
+                <!--begin::Actions-->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!--begin::Date-->
+                    <p class="badge ms-auto {% if comment.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
+                        {{ comment.get_comment_title_display }}
+                    </p>
+                    <!--end::Date-->
+                    <div class="d-flex">
+                    </div>
+                </div>
+                <!--end::Actions-->
+            </div>
+            <!--end::Message header-->
+
+            <!--begin::Message content-->
+            <div class="d-flex justify-content-start">
+                <p class="px-4" style="text-align: right">{{ comment.comment_content|get_comment_link }}</p>
+            </div>
+        </div>
+    {% endfor %}

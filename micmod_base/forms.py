@@ -70,11 +70,11 @@ class QuotationForm(CustomBaseModelForm):
                                                          widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                          )
 
-        if self.has_addition:
-            self.fields['addition_currency'] = forms.ModelChoiceField(queryset=Currency.objects.all(), widget=forms.Select(attrs={'class': 'form-control mb-3 ', 'placeholder': 'نوع ارز', 'id': 'id_addition_currency'}), required=False)
-            self.fields['addition_title'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control mb-3 ', 'placeholder': 'عنوان'}))
-            self.fields['addition_description'] = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control mb-3 ','placeholder': 'توضیحات خود را بنویسید :)'}))
-            self.fields['addition_count'] = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'تعداد'}))
+        # if self.has_addition:
+        #     self.fields['addition_currency'] = forms.ModelChoiceField(queryset=Currency.objects.all(), widget=forms.Select(attrs={'class': 'form-control mb-3 ', 'placeholder': 'نوع ارز', 'id': 'id_addition_currency'}), required=False)
+        #     self.fields['addition_title'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control mb-3 ', 'placeholder': 'عنوان'}))
+        #     self.fields['addition_description'] = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control mb-3 ','placeholder': 'توضیحات خود را بنویسید :)'}))
+        #     self.fields['addition_count'] = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'تعداد'}))
 
         if not request.user.is_superuser:
             if form_constraint_hide:
@@ -93,6 +93,8 @@ class QuotationForm(CustomBaseModelForm):
                 ))
                 self.make_disable(self.fields)
                 self.enable = False
+            if self.instance and self.instance.cancel:
+                self.make_disable(self.fields)
 
         if not self.initial.get('create') and not self.initial.get('wf_access'):
             ...
@@ -275,18 +277,18 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
 
-        initial = kwargs.get('initial')
-        if not access:
-            self.fields['goods_code'] = forms.CharField(widget=forms.TextInput(
-                attrs={"class": "form-control select2-selection__rendered", "style": "width:100%", 'name': '-goods_name_lbl'}
-            ))
-            self.fields['goods_code_alt'] = forms.CharField(widget=forms.TextInput(
-                attrs={"class": "form-control ", "style": "width:100%", 'name': '-goods_name_lbl'}
-            ))
-            self.make_disable(self.fields)
-            self.enable = False
+            if not access:
+                self.fields['goods_code'] = forms.CharField(widget=forms.TextInput(
+                    attrs={"class": "form-control select2-selection__rendered", "style": "width:100%", 'name': '-goods_name_lbl'}
+                ))
+                self.fields['goods_code_alt'] = forms.CharField(widget=forms.TextInput(
+                    attrs={"class": "form-control ", "style": "width:100%", 'name': '-goods_name_lbl'}
+                ))
+                self.make_disable(self.fields)
+                self.enable = False
+            if self.instance and getattr(self.instance, 'quotation', None) and getattr(self.instance.quotation, 'cancel', None):
+                self.make_disable(self.fields)
 
-        main_initial = self.initial.get('initial')
 
         self.select2(['goods_code', 'goods_code_alt', 'goods_name_alt'])
         self.display_as_input(['customer_goods_name', 'customer_goods_code', 'quantity', 'goods_code', 'goods_code_alt',

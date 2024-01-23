@@ -3,6 +3,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 
+from comments.forms import CommentsForm
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -80,6 +81,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        if not self.object.is_official:
+            self.object.official_value = 0
+            self.object.save()
+
         new_quotation = None
         try:
             device = Device.objects.all().first()
@@ -245,6 +250,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
                     context['allow_next'] = False
                     context['submit_copy'] = True
+        if self.object and self.object.cancel:
+            context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
+        else:
+            context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
         return context
 
 
