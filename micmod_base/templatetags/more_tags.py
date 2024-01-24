@@ -4,7 +4,7 @@ from django import template
 
 from django.contrib.contenttypes.models import ContentType
 
-from comments.models import Comments
+from comments.models import Comments, CommentSeen
 from files.models import File, Image
 from tools.utils import show_error
 
@@ -126,16 +126,46 @@ def get_comments(obj, comment_form, button_text=None, button_style=None, comment
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
-def get_comment_user_list(form):
-    creator_users = set()
+def get_comment_user_list(form, current_user):
+    # seen_comment = list()
+    unseen_comment = list()
+
+    comments_info = list()
+    unseen_comment_count = 0
+
+
+    # creator_users = set()
+    creator_users = dict()
     obj = form.instance
     comments = obj.comments.all()
+    comment_seen = CommentSeen.objects.all()
     for comment in comments:
         try:
-            creator_users.add(comment.creator_user.profile.get_user_image)
+            # creator_users.add(comment.creator_user.profile.get_user_image)
+            if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = True
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                # seen_comment.append(comment)
+                comments_info.append([comment,
+                                     comment.creator_user,
+                                     comment.creator_user.profile.get_user_image])
+
+
+            if not comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = False
+                comments_info.append([comment,
+                                      comment.creator_user,
+                                      comment.creator_user.profile.get_user_image])
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                unseen_comment.append(comment)
+                unseen_comment_count += 1
         except Exception as e:
-            creator_users.add('/assets/media/auth/no_image.png')
-    context = {'comment_users': creator_users, 'obj': obj}
+            creator_users[comment.creator_user] = '/assets/media/auth/no_image.png'
+            # creator_users.add('/assets/media/auth/no_image.png')
+
+    context = {'comments_info': comments_info,
+               'obj': obj,
+               'unseen_comment_count': unseen_comment_count}
     return context
 @register.filter
 def get_comment_link(comment_str):

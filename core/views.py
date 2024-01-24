@@ -759,6 +759,7 @@ class JsonTemplateResponseMixin:
 class CommentsFormView(View):
     def get(self, request, *args, **kwargs):
         from django.apps import apps
+        from comments.models import CommentSeen
         app_label = kwargs.get("app_label")
         model_name = kwargs.get('model_name')
         ctt_id = kwargs.get('content_type')
@@ -772,7 +773,19 @@ class CommentsFormView(View):
         kwargs['submit_type'] = 'save_comment'
         form = CommentsForm(prefix=prefix, initial=kwargs)
 
-        context = {'form': form, 'object_id': object_id, 'ctt_id': ctt_id, 'comments': comments}
+        for comment in comments:
+            try:
+                comment_seen = CommentSeen.objects.get_or_create(comment=comment,
+                                                                 creator_user=request.user,
+                                                                 editor_user=request.user)
+                comment_seen.save_user(self.request)
+            except Exception:
+                continue
+
+        context = {'form': form,
+                   'object_id': object_id,
+                   'ctt_id': ctt_id,
+                   'comments': comments}
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
