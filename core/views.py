@@ -135,11 +135,6 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
-        if 'submit/copy' in self.request.POST:
-            cache.set(f'{self.request.user}__submit/copy', True)
-        else:
-            cache.delete(f'{self.request.user}__submit/copy')
-
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True
@@ -190,14 +185,30 @@ class BaseView(UserPassesTestMixin,
             wfform = None
             self.form.wfform = wfform
             if self.form.is_valid():
-                return self.form_valid(self.form)
+                x = self.form_valid(self.form)
+                if 'submit/copy' in self.request.POST:
+                    self.form.instance.pk = None
+                    s = super().get_context_data(form=self.form)
+                    return self.render_to_response(s)
+                else:
+                    return x
             if not self.form.is_valid():
                 print(self.form.errors.as_data())
                 return self.form_invalid(self.form)
 
         self.form.wfform = wfform
         if self.form.is_valid() and wfform.is_valid():
-            return self.form_valid(self.form)
+            # if 'submit/copy' in self.request.POST:
+                # cache.set(f'{self.request.user}__submit/copy', True)
+            # else:
+            #     cache.delete(f'{self.request.user}__submit/copy')
+
+            x = self.form_valid(self.form)
+            if 'submit/copy' in self.request.POST:
+                self.form.instance.pk = None
+                return self.render_to_response(super().get_context_data(form=self.form))
+            else:
+                return x
         if not self.form.is_valid():
             print(self.form.errors.as_data())
             return self.form_invalid(self.form)
@@ -661,6 +672,7 @@ class BaseView(UserPassesTestMixin,
                     print('========= workflow save as next')
                     wf_obj.save_user(self.request)
                     wf_obj.save()
+                # form.instance.pk = None
                 return super().form_valid(form)
             return super().form_valid(form)
         return HttpResponseRedirect('.')
