@@ -170,6 +170,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         """یک wf به مرحله بعد ثبت میکند"""
                         flow_user_groups = self.flow_config.get('flow_users_groups', [])
 
+            if self.state_index == 2 and ('submit/copy' in self.request.POST or 'next' in self.request.POST):
                 """ثبت در سپیدار"""
                 quotation_items = []
                 for idx, qi in enumerate(self.object.quotation.all(), 1):
