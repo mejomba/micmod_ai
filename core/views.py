@@ -464,12 +464,16 @@ class BaseView(UserPassesTestMixin,
                 old_obj.cancel = True
                 old_obj.save()
                 old_obj.save_comment(request=self.request)
+                self.object.cancel = True
+                self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
                 # return super().form_valid(form)
             elif 'uncanceled' in self.request.POST:
                 old_obj.cancel = False
                 old_obj.save()
                 old_obj.save_comment(request=self.request)
+                self.object.cancel = False
+                self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
                 # return super().form_valid(form)
             else:
