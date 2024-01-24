@@ -218,9 +218,18 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 #
                 api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
                                            method=Urls.pos_quotations.method, data=d)
+
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
                 self.object.save()
+                if api_res[0] == 400:
+                    print('rol back .... for status 400')
+                    content_type = ContentType.objects.filter(model=self.object._meta.model_name,
+                                                              app_label=self.object._meta.app_label).first()
+                    flow_object = self.flow_model.objects.filter(object_id=self.object.id,
+                                                                 content_type=content_type).last()
+                    if flow_object:
+                        flow_object.delete()
         except Exception as e:
             pass
             print('rol back ....')
