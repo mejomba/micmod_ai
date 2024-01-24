@@ -14,8 +14,9 @@
 
     <div href="#" class="symbol symbol-35px symbol-circle" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ obj.comments.content_type.pk }}/{{ obj.pk }}">
         <span class="symbol-label bg-dark text-gray-400 fs-8 fw-bold">+</span>
-{#        <span>{{ unseen_comment_count }}</span>#}
     </div>
-    <div class="badge badge-light-success mx-3 text-wrap fw-bolder"><span>{{ unseen_comment_count }}</span></div>
+    <div class="badge badge-light-success mx-3 text-wrap fw-bolder">
+        <span>{{ unseen_comment_count }}</span>
+    </div>
 </div>
 

@@ -33,16 +33,7 @@
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-{#        <div class="main-content">#}
-{##}
-{#            <div class="page-content">#}
-{##}
-{#                </div> <!-- container-fluid -->#}
-{#            </div>#}
-{#            <!-- End Page-content -->#}
-{##}
-{#        </div>#}
-{#        <!-- end main content-->#}
+
 {% endblock content %}
 {% block form_content %}
     {% csrf_token %}
@@ -107,7 +98,10 @@
 
         id_sku_c.val($('#id_sku').val())
 
-        id_sku_c.on("change", function (e) {
+        id_sku_c.on("change", handler)
+        id_sku_c.on("focusout", handler)
+
+        function handler (e) {
             const tableData = document.querySelector('#inquiry_list')
             if (tableData){
                 if (tableData.getElementsByTagName('td')[0].innerText == "No data available in table"){
@@ -116,8 +110,7 @@
                     $(this).prop('disabled', false)
                 }
             }
-        })
-
+        }
         AjaxDatatableViewUtils.initialize_table(
             $('#inquiry_list'),
             "{% url 'inquiry:inquiry_result.list.datatable' %}",
