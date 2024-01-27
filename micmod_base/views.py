@@ -255,11 +255,16 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 context['detail_logs'].append(ChangeLog.get_log(item))
         # context['detail_logs'].reverse()
         if self.object:
-            for qi in self.object.quotation.all():
+            qis = self.object.quotation.all()
+            counter = 0
+            for qi in qis:
                 if self.state_index == 2 and bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
+                    counter += 1
                     context['allow_next'] = False
                     context['submit_copy_q'] = True
+            if counter == len(qis):
+                context['submit_copy_q'] = False
         if self.object and self.object.cancel:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
