@@ -106,6 +106,15 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 """***NEW***"""
 
 
+@register.filter
+def model_name(obj):
+    return obj._meta.model_name
+
+
+@register.filter
+def app_label(obj):
+    return obj._meta.app_label
+
 @register.inclusion_tag('comment_tag.html')
 def get_comments(obj, comment_form, button_text=None, button_style=None, comment_type=None):
     if button_text is None:
