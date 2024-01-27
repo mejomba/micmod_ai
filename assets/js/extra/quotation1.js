@@ -852,6 +852,17 @@ function calculate_price(target) {
     const quantity = elem.querySelector('input[id$="quantity"]')
     debugger
     const selfDiscount = document.querySelector('input[name*="self_discount"]')
+    const isOfficial =  document.querySelector('#id_is_official')
+    const isOfficialValue = document.querySelector('#id_official_value')
+    let isOfficialValue_number = 0
+    let tax = 0;
+    let totalDiscount = 0
+    if (isOfficial && isOfficial.checked){
+        tax = 9
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue.value);
+        }
+    }
 
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
@@ -862,7 +873,8 @@ function calculate_price(target) {
     if (isNaN(price)) {
         price = final_price.value
     }
-    total_price.innerHTML = numberWithCommas((price * qty) - ((price * qty) * selfDiscountValue/100))
+    totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
+    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount)
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0
