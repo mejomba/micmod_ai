@@ -447,7 +447,11 @@
     "sign-out": "خروج",
     "account-settings": "پروفایل",
     "self_discount": "درصد تخفیف روی همه",
-    "cancel": "لغو",
+    "cancel": "کنسل",
     "is_official": "نوع ۱",
-    "official_value": "تخفیف نوع ۱"
+    "official_value": "تخفیف نوع ۱",
+    "uncanceled": "لغو کنسلی",
+    "save_comment": "تایید",
+    "comment_title": "موضوع",
+    "comment_content": "توضیحات"
 }

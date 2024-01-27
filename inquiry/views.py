@@ -264,20 +264,20 @@ class InquiryResultListView(BaseView):
         })
         context['submit_copy'] = True
 
-        if cache.get(f'{self.request.user}__submit/copy'):
-            object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
-            context.update({
-                'form': self.form_class(initial=dict(map(lambda x: x, [('sku', object_for_copy.sku),
-                                                                       ('sku_c', object_for_copy.sku),
-                                                                       ]
-                                                         )
-                                                     )
-                                        )
-            })
-        else:
-            context.update({
-                'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-            })
+        # if cache.get(f'{self.request.user}__submit/copy'):
+        #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
+        #     context.update({
+        #         'form': self.form_class(initial=dict(map(lambda x: x, [('sku', object_for_copy.sku),
+        #                                                                ('sku_c', object_for_copy.sku),
+        #                                                                ]
+        #                                                  )
+        #                                              )
+        #                                 )
+        #     })
+        # else:
+        #     context.update({
+        #         'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
+        #     })
         context['submit_copy'] = True
         return context
 
@@ -293,7 +293,8 @@ class InquiryResultListView(BaseView):
             print('update price')
         else:
             print('no update price D:')
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        return res
 
 
 class InquiryResultUpdateView(BaseView):

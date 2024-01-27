@@ -4,7 +4,7 @@ from django import template
 
 from django.contrib.contenttypes.models import ContentType
 
-from comments.models import Comments
+from comments.models import Comments, CommentSeen
 from files.models import File, Image
 from tools.utils import show_error
 
@@ -107,21 +107,66 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 
 
 @register.inclusion_tag('comment_tag.html')
-def get_comments(obj, button_text=None, button_style=None):
+def get_comments(obj, comment_form, button_text=None, button_style=None, comment_type=None):
     if button_text is None:
         button_text = 'نظر کاربران'
     if button_style is None:
         button_style = "btn btn-primary"
+    if comment_type is None:
+        comment_type = 'نظرات'
 
     comments = Comments.objects.none()
     if hasattr(obj, '_meta'):
         comments = Comments.objects.filter(object_id=obj.pk,
-                                           contenttype=ContentType.objects.get_for_model(obj._meta.model))
+                                           content_type=ContentType.objects.get_for_model(obj._meta.model))
 
-    return {'comments': comments, 'button_text': button_text, 'button_style': button_style}
+    return {'comments': comments, 'button_text': button_text, 'comment_type': comment_type,
+            'button_style': button_style, 'comment_form': comment_form, 'obj': obj}
     # return {'comments': new_comments}
 
 
+@register.inclusion_tag('core/partial/comment_user_list.html')
+def get_comment_user_list(form, current_user):
+    # seen_comment = list()
+    unseen_comment = list()
+
+    comments_info = list()
+    unseen_comment_count = 0
+
+
+    # creator_users = set()
+    creator_users = dict()
+    obj = form.instance
+    comments = obj.comments.all()
+    comment_seen = CommentSeen.objects.all()
+    for comment in comments:
+        try:
+            # creator_users.add(comment.creator_user.profile.get_user_image)
+            if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = True
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                # seen_comment.append(comment)
+                comments_info.append([comment,
+                                     comment.creator_user,
+                                     comment.creator_user.profile.get_user_image])
+
+
+            if not comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = False
+                comments_info.append([comment,
+                                      comment.creator_user,
+                                      comment.creator_user.profile.get_user_image])
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                unseen_comment.append(comment)
+                unseen_comment_count += 1
+        except Exception as e:
+            creator_users[comment.creator_user] = '/assets/media/auth/no_image.png'
+            # creator_users.add('/assets/media/auth/no_image.png')
+
+    context = {'comments_info': comments_info,
+               'obj': obj,
+               'unseen_comment_count': unseen_comment_count}
+    return context
 @register.filter
 def get_comment_link(comment_str):
     import re
@@ -140,6 +185,19 @@ def get_comment_link(comment_str):
         comment_str = mark_safe(comment_str)
 
     return comment_str
+
+"""***NEW***"""
+
+"""***NEW***"""
+@register.inclusion_tag('addition_tag.html')
+def get_additions(obj):
+    from additions.models import Additions
+    addition = Additions.objects.none()
+    if hasattr(obj, '_meta'):
+        addition = Additions.objects.filter(object_id=obj.pk,
+                                            contenttype=ContentType.objects.get_for_model(obj._meta))
+
+    return {'addition': addition}
 
 """***NEW***"""
 

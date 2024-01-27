@@ -75,6 +75,8 @@ LOCAL_APPS = [
     'dashboards.apps.DashboardsConfig',
     'auth.apps.AuthConfig',
     'comments',
+    'additions',
+
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
