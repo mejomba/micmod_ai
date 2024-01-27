@@ -136,9 +136,11 @@ def get_comment_user_list(form, current_user):
 
     # creator_users = set()
     creator_users = dict()
-    obj = form.instance
-    comments = obj.comments.all()
+    obj = form.instance if form else None
+    comments = obj.comments.all() if obj else None
     comment_seen = CommentSeen.objects.all()
+    if comments is None:
+        return {}
     for comment in comments:
         try:
             # creator_users.add(comment.creator_user.profile.get_user_image)
@@ -161,7 +163,9 @@ def get_comment_user_list(form, current_user):
                 unseen_comment_count += 1
         except Exception as e:
             creator_users[comment.creator_user] = '/assets/media/auth/no_image.png'
-            # creator_users.add('/assets/media/auth/no_image.png')
+
+        if comments_info:
+            comments_info.reverse()
 
     context = {'comments_info': comments_info,
                'obj': obj,

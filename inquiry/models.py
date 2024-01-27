@@ -59,6 +59,7 @@ class PriceInquiryResult(BaseModel):
         'payment_method_': None,
         'currency_': None,
     }
+    submit_copy = True
     # rmb_final_price_before_ondemand = dict()
     # _rmb_final_price_ = dict()
     # rmb_final_price_before_ondemand_percentage = dict()

@@ -850,16 +850,19 @@ function calculate_price(target) {
     const final_price = elem.querySelector('[name*="-final_price"]')
     const total_price = elem.querySelector('[name*="-total_price"]')
     const quantity = elem.querySelector('input[id$="quantity"]')
+    debugger
+    const selfDiscount = document.querySelector('input[name*="self_discount"]')
 
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
     let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
     if (isNaN(price)) {
         price = final_price.value
     }
-    total_price.innerHTML = numberWithCommas(price * qty)
+    total_price.innerHTML = numberWithCommas((price * qty) - ((price * qty) * selfDiscountValue/100))
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0

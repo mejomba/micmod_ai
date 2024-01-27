@@ -498,7 +498,7 @@ class BaseView(UserPassesTestMixin,
 
                     print(__file__, '========= wf save as change user')
                     return HttpResponseRedirect(self.get_success_url())
-                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST or 'submit/copy' in self.request.POST):
+                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST or 'submit/copy' in self.request.POST or 'submit/copy_q' in self.request.POST):
                     """save workflow form (main)"""
                     if form.wfform.is_valid():
                         wf_obj = form.wfform.save(commit=False)
