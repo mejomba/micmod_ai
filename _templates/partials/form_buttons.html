@@ -18,13 +18,18 @@
             {% else %}
                 <input type="submit" class="btn btn-primary me-1" name="next" value="ارسال به مرحله بعد"/>
             {% endif %}
-            {% if submit_copy %}
+
+            {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+            {% elif submit_copy_q %}
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="ثبت / کپی"/>
             {% endif %}
         {% elif not has_flow and form %}
             <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
-            {% if submit_copy %}
+            {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+            {% elif submit_copy_q %}
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="ثبت / کپی"/>
             {% endif %}
         {% else %}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="x" value="ذخیره"/>
@@ -40,8 +45,10 @@
         {% elif not finish and has_flow %}
             <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس"/>
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد"/>
-            {% if submit_copy %}
+            {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
+            {% elif submit_copy_q %}
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="ثبت / کپی"/>
             {% endif %}
         {% elif not has_flow %}
             <input type="button" class="btn btn-outline-success btn-bordered me-1 px-4" disabled name="submit" value="ذخیره"/>

@@ -95,7 +95,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method)
 
-            if self.state_index == 2 and 'submit/copy' in self.request.POST:
+            if self.state_index == 2 and 'submit/copy_q' in self.request.POST:
                 flow_copy = False
 
                 """copy quotation"""
@@ -170,7 +170,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         """یک wf به مرحله بعد ثبت میکند"""
                         flow_user_groups = self.flow_config.get('flow_users_groups', [])
 
-            if self.state_index == 2 and ('submit/copy' in self.request.POST or 'next' in self.request.POST):
+            if self.state_index == 2 and ('submit/copy' in self.request.POST or 'next' in self.request.POST or 'submit/copy_q' in self.request.POST):
                 """ثبت در سپیدار"""
                 quotation_items = []
                 for idx, qi in enumerate(self.object.quotation.all(), 1):
@@ -259,7 +259,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 if self.state_index == 2 and bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
                     context['allow_next'] = False
-                    context['submit_copy'] = True
+                    context['submit_copy_q'] = True
         if self.object and self.object.cancel:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:

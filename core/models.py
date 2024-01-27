@@ -132,6 +132,7 @@ class NoUserBaseModel(models.Model):
     notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
     comments = GenericRelation('comments.comments', related_query_name="parent_object_no")
 
+    submit_copy = False
     objects = BaseManager()
 
 

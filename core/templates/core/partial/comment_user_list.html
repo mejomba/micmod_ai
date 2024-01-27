@@ -1,7 +1,7 @@
 <div class="symbol-group symbol-hover flex-nowrap">
     {% for comment_info in comments_info %}
         {% if forloop.counter <= 5 %}
-            <div class="symbol symbol-35px symbol-circle" data-bs-toggle="tooltip" data-bs-original-title="{{ comment_info.1.username }}: {{ comment_info.0.comment_content|truncatechars:45 }}" data-bs-original-title="{{ comment_info.1.username }}" data-kt-initialized="1">
+            <div id="id_comment_user_list" class="symbol symbol-35px symbol-circle" data-bs-toggle="tooltip" data-bs-original-title="{{ comment_info.1.username }}: {{ comment_info.0.comment_content|truncatechars:45 }}" data-bs-original-title="{{ comment_info.1.username }}" data-kt-initialized="1">
 {#                {% if not comment_info.0.seen %}#}
                     <img alt="Pic" class="{% if not comment_info.0.seen %}border border-success border-3{% endif %}" src="{{ comment_info.2 }}" data-bs-target="#id_kt_empty_modal" data-pk="{{ obj.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ obj.comments.content_type.pk }}/{{ obj.pk }}">
 {#                {% else %}#}
@@ -14,8 +14,8 @@
     <div href="#" class="symbol symbol-35px symbol-circle" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ obj.comments.content_type.pk }}/{{ obj.pk }}">
         <span class="symbol-label bg-dark text-gray-400 fs-8 fw-bold">+</span>
     </div>
-    <div class="badge badge-light-success mx-3 text-wrap fw-bolder">
-        <span>{{ unseen_comment_count }}</span>
-    </div>
+    <span class="badge badge-light-success mx-3 text-wrap fw-bolder">
+        {{ unseen_comment_count }}
+    </span>
 </div>
 

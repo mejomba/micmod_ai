@@ -248,13 +248,15 @@ class InquiryResultListView(BaseView):
     model = PriceInquiryResult
     form_class = PriceInquiryResult2CreateForm
     template_name = 'inquiry/inquiry_result_list_or_create.html'
-    success_url = '.'
+    # success_url = '.'
 
     def get_success_url(self):
         sku = self.request.GET.get('sku')
         path = reverse('inquiry:inquiry_result.list')
-        if cache.get(f'{self.request.user}__submit/copy'):
+        if 'submit/copy' in self.request.POST:
             path += f"?sku={sku if sku else self.object.sku.pk}"
+        # if cache.get(f'{self.request.user}__submit/copy'):
+        #     pass
         return path
 
     def get_context_data(self, **kwargs):

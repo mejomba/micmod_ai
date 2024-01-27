@@ -227,9 +227,15 @@
             const comment_element = $('#id-empty-modal-body')
             const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
             const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
-            debugger
             const title = commentFormGroup.querySelector('[id*="title"]')
             const content = commentFormGroup.querySelector('[id*="content"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            const images = father.querySelectorAll('img')
+            images.forEach(function (img){
+                img.classList.remove('border')
+                commentCounter.innerHTML = '0'
+            })
             if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}`}
             custom_ajax_get(comment_form, comment_url, comment_element)
         }) // end eventListener
