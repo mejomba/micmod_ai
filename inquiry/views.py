@@ -415,8 +415,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         grade = dict_.get('grade')
 
         dl_obj = Dl.get_dl(party_code)
-        party_id = dl_obj[0].PartyId if dl_obj else None
-
+        party_id = dl_obj[0].PartyId if len(dl_obj) else None
+        # party_id = None
         item_sku = Item.objects.filter(sku=sku).first()
         currency_obj = Currency.objects.filter(pk=currency).first()
         price = item_sku.price if item_sku else None

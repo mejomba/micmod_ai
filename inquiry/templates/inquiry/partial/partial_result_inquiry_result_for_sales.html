@@ -24,6 +24,10 @@
                 {{ sku.batch_count }}
             </div>
             <div class="col">
+                <span class="me-10">روش تعیین قیمت </span>
+                <a target="_blank" href="/admin/extra_data/pricesettings/{{ sku.price.price_settings.pk }}/change/">{{ sku.price.price_settings.title }}</a>
+            </div>
+            <div class="col">
                 <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal" data-bs-target="#kt_modal_share_earn">تصاویر</a>
             </div>
             {% include 'files/partial/modal_for_image.html' with images=images %}

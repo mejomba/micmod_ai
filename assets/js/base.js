@@ -158,8 +158,8 @@ function loadJS(file) {
 }
 
 function custom_ajax_get(form, url, element) {
+    debugger
     const formSerialize = form.serialize();
-
     $.ajax({
         type: 'GET',
         url: `${url}?${formSerialize}`,

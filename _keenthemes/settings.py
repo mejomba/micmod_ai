@@ -407,7 +407,8 @@ JALALI_DATE_DEFAULTS = {
 AUTH_USER_MODEL = 'accounts.User'
 
 # ========== redis settings ==========
-REDIS_URL = 'redis' if os.environ.get('IS_DOCKER') else '127.0.0.1'
+REDIS_URL = 'redis' if os.environ.get('IS_DOCKER') == '1' else '127.0.0.1'
+REDIS_URL = 'redis'
 print(REDIS_URL)
 CACHES = {
     # … default cache config and others

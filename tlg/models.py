@@ -129,16 +129,21 @@ class ReceiverTelegramBotSession(AbsBaseModel):
     is_admin = models.BooleanField(verbose_name=_('is_admin'), default=False)
 
     @staticmethod
-    async def get_receiver_by_phone(session, phone):
+    async def get_receiver_by_phone(session, phone, user_id=None):
         if os.environ.get("DJANGO_ALLOW_ASYNC_UNSAFE"):
             obj = ReceiverTelegramBotSession.objects.filter(telegram_phone=phone).first()
         else:
             obj = await ReceiverTelegramBotSession.objects.filter(telegram_phone=phone).afirst()
         if not obj:
-            receiver_ses = await session.get_user_by_phone(phone)
+            if user_id:
+                try:
+                    user_id = int(user_id)
+                except:
+                    ...
+            receiver_ses = await session.get_user_by_phone(phone, user_id)
             receiver_data = {
                 'active_sender_session_tlg': session.session_data,
-                'telegram_phone': receiver_ses.phone,
+                'telegram_phone': phone,
                 'telegram_username': receiver_ses.username,
                 'telegram_name': f'{receiver_ses.first_name if receiver_ses.first_name else ""}{" - " + receiver_ses.last_name if receiver_ses.last_name else ""}',
                 'telegram_id': receiver_ses.id,
