@@ -47,3 +47,10 @@ class Profile(NoUserBaseModel):
             """
         return mark_safe(res)
 
+    @property
+    def get_user_image(self):
+        if self.avatar:
+            return self.avatar.url
+        else:
+            return '/assets/media/auth/no_image.png'
+

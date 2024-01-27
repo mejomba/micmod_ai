@@ -39,7 +39,9 @@
             </div>
             <div class="col">
                 <span class="me-2">قیمت کل:</span>
-                <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>
+                {% if form_s %}
+                    <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>
+                {% endif %}
             </div>
         </div>
         <div class="row answer m-0">
@@ -61,6 +63,12 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
+{#                creator_users = set()#}
+{#                for comment in comments:#}
+{#                    creator_users.add(comment.creator_user)#}
+{#                {% get_comments_button %}#}
+{#                <div class="btn btn-sm btn-primary" id="id_comment__{{ form_s.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" data-pk="{{ form_s.instance.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ form_s.instance.comments.content_type.pk }}/{{ form_s.instance.pk }}">ثبت نظر</div>#}
+                {% get_comment_user_list form_s request.user %}
 {#                  <div  class="w-75">{% render_field_by_order form_s form_s.comment label="" %}</div>#}
             </div>
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
@@ -282,10 +290,10 @@
                                         استعلام قیمت
                                     </div>
                                 </div>
-                                <div class="mb-1">
+{#                                <div class="mb-1">#}
 {#                                    {% render_field_by_order form_s form_s.cancel label='in-line' %}#}
-                                    <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>
-                                </div>
+{#                                    <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>#}
+{#                                </div>#}
                                 {% if object_logs or detail_logs%}
                                     <div class="text-center">
                                     {% with counter=forloop.counter0 %}
@@ -300,7 +308,9 @@
                 </div>
             </div>
 
-
+            {% include 'core/partial/empty_modal.html' %}
+<div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
+</div>
         </div>
     </div>
 </div>

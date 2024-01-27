@@ -128,9 +128,11 @@ class NoUserBaseModel(models.Model):
     auto_complete = False
     is_public = False
 
-    workflows = GenericRelation('workflow.Workflow',related_query_name="parent_object_wf")
-    notifications = GenericRelation('notifications.Messages',related_query_name="parent_object_no")
+    workflows = GenericRelation('workflow.Workflow', related_query_name="parent_object_wf")
+    notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
+    comments = GenericRelation('comments.comments', related_query_name="parent_object_no")
 
+    submit_copy = False
     objects = BaseManager()
 
 
@@ -142,7 +144,7 @@ class NoUserBaseModel(models.Model):
 
     @classmethod
     def content_type(cls):
-        return ContentType.objects.get(model=cls.__name__.lower(),app_label=cls._meta.app_label.lower())
+        return ContentType.objects.get(model=cls.__name__.lower(), app_label=cls._meta.app_label.lower())
 
     @classmethod
     def all_workflows(cls):
@@ -256,28 +258,43 @@ class NoUserBaseModel(models.Model):
     def save_comment(self, request, idx=None):
         from comments.models import Comments
         title = request.POST.get('comment_title')
-        comment_input_name = f'comment_{idx}' if idx is not None else 'comment_'
+        comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
         content = request.POST.get(comment_input_name)
+        content_type = ContentType.objects.get_for_model(self._meta.model)
+
+        if content:
+            comment = Comments.objects.create(
+                                            comment_title=title,
+                                            comment_content=content,
+                                            content_type=content_type,
+                                            object_id=self.pk,
+                                    )
+
+            comment.save_user(request)
+
+    """***NEW***"""
+
+    """***NEW***"""
+    def save_additions(self, request):
+        from additions.models import Additions
+        from micmod_base.base import Currency
+
+        addition_title = request.POST.get('addition_title')
+        addition_description = request.POST.get('addition_description')
+        addition_count = request.POST.get('addition_count')
+        addition_currency = request.POST.get('addition_currency')
+        currency = Currency.objects.get(pk=int(addition_currency))
         contenttype = ContentType.objects.get_for_model(self._meta.model)
-        #
-        # comment_input_name = f'{input_prefix}_{idx+1}'
-        # comments = request.POST.get(comment_input_name)
-        #
-        # for idx, comment in enumerate(comments):
-        #     comment_model.objects.create(title=title,
-        #                                  content=content,
-        #                                  contenttype=contenttype,
-        #                                  object_id=self.pk,
-        #                                  content_object=comment,
-        #                                  )
 
-        comment = Comments.objects.create(comment_title=title,
-                                comment_content=content,
-                                contenttype=contenttype,
-                                object_id=self.pk,
-                                )
+        addition = Additions.objects.create(addition_title=addition_title,
+                                            addition_description=addition_description,
+                                            addition_count=addition_count,
+                                            addition_currency=currency,
+                                            contenttype=contenttype,
+                                            object_id=self.pk,
+                                            )
 
-        comment.save_user(request)
+        addition.save_user(request=request)
 
     """***NEW***"""
     def compare(self, obj=None, excluded_keys=None):
@@ -385,9 +402,9 @@ class BaseModel(AbsBaseModel):
 
 
 class BaseContentType(AbsBaseModel):
-    contenttype = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
+    content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('contenttype', 'object_id')
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     as_table = 'templates/core/partial/table.html'
     as_list = 'templates/core/partial/list.html'

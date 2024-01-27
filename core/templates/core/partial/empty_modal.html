@@ -1,7 +1,6 @@
-<a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal" data-bs-target="#kt_modal_invite_friends">نظر
-    کاربران</a>
+{% load more_tags %}
 
-<div class="modal fade" id="kt_modal_invite_friends" tabindex="-1" style="display: none;" aria-hidden="true">
+<div class="modal fade" id="id_kt_empty_modal" tabindex="-1" style="display: none;" aria-hidden="true">
     <!--begin::Modal dialog-->
     <div class="modal-dialog mw-650px">
         <!--begin::Modal content-->
@@ -15,66 +14,53 @@
             </div>
             <!--begin::Modal header-->
             <!--begin::Modal body-->
-            <div class="modal-body scroll-y mx-5 mx-xl-18 pt-0 pb-15">
+            <div class="modal-body scroll-y mx-5 mx-xl-18 pt-0 pb-15" id="id-empty-modal-body">
                 <!--begin::Heading-->
                 <div class="text-center mb-13">
                     <!--begin::Title-->
-                    <h1 class="mb-3">نظرات</h1>
+                    <h1 class="mb-3"></h1>
                     <!--end::Title-->
 
-                    <div>{% include "comments/comments.html" %}</div>
-                    {% for comment in comments %}
-                        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border border-gray-400 rounded p-3">
+                    <div></div>
+
+                        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border-right-1 pt-2 px-1">
                             <!--begin::Message header-->
                             <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
                                  data-kt-inbox-message="header">
                                 <!--begin::Author-->
-                                <div class="d-flex align-items-center">
-                                    {% load more_tags %}
+                                <div class="d-flex align-items-baseline">
+                                    <!--begin::Author details-->
+                                    <div></div>
+                                    <p class="me-4 ms-2 fw-bold text-active-gray-800" >
 
+                                    </p>
+                                    <p class="font-size-10 font-italic text-muted text-end" style="font-style: italic">
 
-                                    <div class="pe-5">
-                                        <!--begin::Author details-->
-                                        <div class="d-flex align-items-center flex-wrap gap-1">
-                                            <h4><span class="me-5" style="color: purple" >{{ comment.creator_user }}</span></h4><span class="fw-semibold text-muted text-end me-3">{{ comment.elapsed_time }}</span>
-
-
-                                        </div>
-                                        <!--end::Author details-->
-                                    </div>
+                                    </p>
+                                    <!--end::Author details-->
                                 </div>
                                 <!--end::Author-->
 
                                 <!--begin::Actions-->
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <!--begin::Date-->
+                                    <p class="badge ms-auto">
 
+                                    </p>
                                     <!--end::Date-->
-
                                     <div class="d-flex">
-
-
-
-
-
-
-
                                     </div>
                                 </div>
-                                <!--end::Actions-->    </div>
+                                <!--end::Actions-->
+                            </div>
                             <!--end::Message header-->
 
                             <!--begin::Message content-->
-                            <div class="fade collapse show" data-kt-inbox-message="message" style="">
-                                <div class="py-5">
-                                    <b style="color:hotpink;" class="mb-3">{{ comment.get_comment_title_display }}</b>
-                                    <p>{{ comment.comment_content }}</p>
-                                </div>
+                            <div class="d-flex justify-content-start">
+                                <p class="px-4" style="text-align: right"></p>
                             </div>
-                            <!--end::Message content-->
-
                         </div>
-                    {% endfor %}
+
 
 
                 </div>

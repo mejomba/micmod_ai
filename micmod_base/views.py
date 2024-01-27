@@ -3,6 +3,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 
+from comments.forms import CommentsForm
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -80,6 +81,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        if not self.object.is_official:
+            self.object.official_value = 0
+            self.object.save()
+
         new_quotation = None
         try:
             device = Device.objects.all().first()
@@ -90,7 +95,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method)
 
-            if self.state_index == 2 and 'submit/copy' in self.request.POST:
+            if self.state_index == 2 and 'submit/copy_q' in self.request.POST:
                 flow_copy = False
 
                 """copy quotation"""
@@ -165,63 +170,73 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         """یک wf به مرحله بعد ثبت میکند"""
                         flow_user_groups = self.flow_config.get('flow_users_groups', [])
 
+            if self.state_index == 2 and ('submit/copy' in self.request.POST or 'next' in self.request.POST or 'submit/copy_q' in self.request.POST):
                 """ثبت در سپیدار"""
                 quotation_items = []
-                # for idx, qi in enumerate(self.object.quotation.all(), 1):
-                #     qi_dict = {
-                #         'RowID': idx,
-                #         'ItemRef': qi.itemid,  # optional
-                #         'StockRef': 2,  # optional
-                #         'Quantity': qi.quantity,
-                #         'SecondaryQuantity': 0,
-                #         'Fee': qi.fee or 1,
-                #         'Price': qi.price or 1,
-                #         'Description': 'qi.description',
-                #         'PriceInfoPercentDiscount': 0,
-                #         'PriceInfoDiscountRate': 0,
-                #         'AggregateAmountPercentDiscount': 0,
-                #         'AggregateAmountPriceDiscount': 0,
-                #         'AggregateAmountDiscountRate': 0,
-                #         'CustomerDiscount': 0,
-                #         'CustomerDiscountRate': 0,
-                #         'Discount': 0,
-                       ## 'DiscountParentRef': 1,  # optional
-                        # 'Tax': 0,
-                        # 'Duty': 0,
-                        # 'Addition': 0,
-                    # }
-                    # quotation_items.append(qi_dict)
+                for idx, qi in enumerate(self.object.quotation.all(), 1):
+                    qi_dict = {
+                        'RowID': idx,
+                        'ItemRef': qi.itemid,  # optional
+                        'StockRef': 2,  # optional
+                        'Quantity': qi.quantity,
+                        'SecondaryQuantity': 0,
+                        'Fee': qi.fee or 1,
+                        'Price': qi.price or 1,
+                        'Description': 'qi.description',
+                        'PriceInfoPercentDiscount': 0,
+                        'PriceInfoDiscountRate': 0,
+                        'AggregateAmountPercentDiscount': 0,
+                        'AggregateAmountPriceDiscount': 0,
+                        'AggregateAmountDiscountRate': 0,
+                        'CustomerDiscount': 0,
+                        'CustomerDiscountRate': 0,
+                        'Discount': 0,
+                       # 'DiscountParentRef': 1,  # optional
+                        'Tax': 0,
+                        'Duty': 0,
+                        'Addition': 0,
+                    }
+                    quotation_items.append(qi_dict)
+                #
+                quotation_data = {
+                    'GUID': str(self.object.guid),
+                    'CurrencyRef': self.object.currency_ref.pk,
+                    'Rate': 0,
+                    'ExpirationDate': str(self.object.expiration_date),
+                    'CustomerRef': self.object.customer_party_id,  # 11
+                    'SaleTypeRef': 2,
+                  #  'AddressRef': '1',  # optional
+                    'DiscountOnCustomer': 0,
+                    'Price': self.object.price or 1,
+                    'Discount': 0,
+                    'Tax': 0,
+                    'Duty': 0,
+                    'Addition': 0,
+                    'items': quotation_items,
+                }
+                d = json.dumps(quotation_data)
+                #
+                api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
+                                           method=Urls.pos_quotations.method, data=d)
 
-                # quotation_data = {
-                #     'GUID': str(self.object.guid),
-                #     'CurrencyRef': self.object.currency_ref.pk,
-                #     'Rate': 0,
-                #     'ExpirationDate': str(self.object.expiration_date),
-                #     'CustomerRef': self.object.customer_party_id,  # 11
-                #     'SaleTypeRef': 2,
-                #   #  'AddressRef': '1',  # optional
-                    # 'DiscountOnCustomer': 0,
-                    # 'Price': self.object.price or 1,
-                    # 'Discount': 0,
-                    # 'Tax': 0,
-                    # 'Duty': 0,
-                    # 'Addition': 0,
-                    # 'items': quotation_items,
-                # }
-                # d = json.dumps(quotation_data)
-
-                # api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
-                #                            method=Urls.pos_quotations.method, data=d)
-                # self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
-                # self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-                # self.object.save()
+                self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
+                self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+                self.object.save()
+                if api_res[0] == 400:
+                    print('rol back .... for status 400')
+                    content_type = ContentType.objects.filter(model=self.object._meta.model_name,
+                                                              app_label=self.object._meta.app_label).first()
+                    flow_object = self.flow_model.objects.filter(object_id=self.object.id,
+                                                                 content_type=content_type).last()
+                    if flow_object:
+                        flow_object.delete()
         except Exception as e:
             pass
-        #     print('rol back ....')
-        #     content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
-        #     flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
-        #     if flow_object:
-        #         flow_object.delete()
+            print('rol back ....')
+            content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
+            flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
+            if flow_object:
+                flow_object.delete()
         return res
 
     def get_context_data(self, **kwargs):
@@ -244,7 +259,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 if self.state_index == 2 and bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
                     context['allow_next'] = False
-                    context['submit_copy'] = True
+                    context['submit_copy_q'] = True
+        if self.object and self.object.cancel:
+            context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
+        else:
+            context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
         return context
 
 

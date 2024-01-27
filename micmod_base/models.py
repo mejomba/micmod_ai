@@ -44,7 +44,10 @@ class Quotation(SLSDoc):
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
     quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
-    self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, null=True, blank=True, validators=[MaxValueValidator(100)])
+    self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, validators=[MaxValueValidator(100)])
+    is_official = models.BooleanField(default=False, verbose_name=_('is_official'))
+    official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
+    cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
 
     custom_objects = QuotationManager()
@@ -128,10 +131,8 @@ class QuotationItem(BaseModel):
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
 
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
-    cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
-    @property
-    def fee(self):
+    def fee_(self):
         iqr = self.quotation_item_rel.all().last()
         match self.price_method:
             case 'last_sale':
@@ -152,9 +153,20 @@ class QuotationItem(BaseModel):
                 return iqr.goods_price_market
 
     @property
+    def fee(self):
+        if self.quotation.is_official:
+            total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+        else:
+            total_ = (100 - self.quotation.self_discount) / 100
+        return self.fee_() * total_
+
+    @property
     def price(self):
         try:
-            return self.fee * self.quantity
+            if self.quotation.is_official:
+                return self.fee * self.quantity * 1.09
+            else:
+                return self.fee * self.quantity
         except Exception as e:
             show_error(e, __file__)
             return None

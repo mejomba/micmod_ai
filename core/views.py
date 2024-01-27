@@ -6,13 +6,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.template.loader import render_to_string
+from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
 from _keenthemes import KTLayout
 from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
+from comments.forms import CommentsForm
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -131,11 +135,6 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
-        if 'submit/copy' in self.request.POST:
-            cache.set(f'{self.request.user}__submit/copy', True)
-        else:
-            cache.delete(f'{self.request.user}__submit/copy')
-
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True
@@ -186,14 +185,30 @@ class BaseView(UserPassesTestMixin,
             wfform = None
             self.form.wfform = wfform
             if self.form.is_valid():
-                return self.form_valid(self.form)
+                x = self.form_valid(self.form)
+                if 'submit/copy' in self.request.POST:
+                    self.form.instance.pk = None
+                    s = super().get_context_data(form=self.form)
+                    return self.render_to_response(s)
+                else:
+                    return x
             if not self.form.is_valid():
                 print(self.form.errors.as_data())
                 return self.form_invalid(self.form)
 
         self.form.wfform = wfform
         if self.form.is_valid() and wfform.is_valid():
-            return self.form_valid(self.form)
+            # if 'submit/copy' in self.request.POST:
+                # cache.set(f'{self.request.user}__submit/copy', True)
+            # else:
+            #     cache.delete(f'{self.request.user}__submit/copy')
+
+            x = self.form_valid(self.form)
+            if 'submit/copy' in self.request.POST:
+                self.form.instance.pk = None
+                return self.render_to_response(super().get_context_data(form=self.form))
+            else:
+                return x
         if not self.form.is_valid():
             print(self.form.errors.as_data())
             return self.form_invalid(self.form)
@@ -336,6 +351,8 @@ class BaseView(UserPassesTestMixin,
                     FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index]) or \
                     (belong_to_group in self.request.user.groups.values_list('name', flat=True) and
                     (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+                # if self.object.cancel:
+                #     self.wf_access = False
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
@@ -441,7 +458,29 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.save()
                     # return super().form_valid(form)
 
-            new_obj = form.save(commit=True) if 'back' not in self.request.POST else None
+            if 'back' in self.request.POST:
+                return super().form_valid(form)
+            elif 'cancel' in self.request.POST:
+                old_obj.cancel = True
+                old_obj.save()
+                old_obj.save_comment(request=self.request)
+                self.object.cancel = True
+                self.object.save()
+                return HttpResponseRedirect(self.get_success_url())
+                # return super().form_valid(form)
+            elif 'uncanceled' in self.request.POST:
+                old_obj.cancel = False
+                old_obj.save()
+                old_obj.save_comment(request=self.request)
+                self.object.cancel = False
+                self.object.save()
+                return HttpResponseRedirect(self.get_success_url())
+                # return super().form_valid(form)
+            else:
+                new_obj = form.save(commit=True)
+
+            # new_obj = form.save(commit=True) if 'back' in self.request.POST else None
+
             if new_obj:
                 new_obj.save_user(self.request)
                 last_flow_obj = self.get_last_flow(new_obj)
@@ -459,7 +498,7 @@ class BaseView(UserPassesTestMixin,
 
                     print(__file__, '========= wf save as change user')
                     return HttpResponseRedirect(self.get_success_url())
-                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST or 'submit/copy' in self.request.POST):
+                elif self.has_flow and ('next' in self.request.POST or 'submit' in self.request.POST or 'submit/copy' in self.request.POST or 'submit/copy_q' in self.request.POST):
                     """save workflow form (main)"""
                     if form.wfform.is_valid():
                         wf_obj = form.wfform.save(commit=False)
@@ -527,6 +566,14 @@ class BaseView(UserPassesTestMixin,
                         new_obj.save_comment(request=self.request)
                     """***NEW***"""
 
+                    """***NEW***"""
+                    if form.has_addition:
+                        new_obj.save_additions(request=self.request)
+
+                    """***NEW***"""
+
+
+
                 except Exception as e:
                     print('error: ', e.__traceback__.tb_lineno, e)
 
@@ -587,6 +634,17 @@ class BaseView(UserPassesTestMixin,
                         new_details = list(new_details.all())
 
                     for d in new_details:
+                        # ToDo make dynamic
+                        app_label = 'micmod_base'
+                        model_name = 'quotationitem'
+                        ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
+                        object_id = d.pk
+                        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+                        comment_form = CommentsForm(self.request.POST, prefix=prefix)
+                        if comment_form.is_valid():
+                            cmnt = comment_form.save()
+                            cmnt.save_user(self.request)
+
                         if d not in old_details:
                             d.attach_image_file(d)
                             # d = self.attach_image_file(d)
@@ -618,6 +676,7 @@ class BaseView(UserPassesTestMixin,
                     print('========= workflow save as next')
                     wf_obj.save_user(self.request)
                     wf_obj.save()
+                # form.instance.pk = None
                 return super().form_valid(form)
             return super().form_valid(form)
         return HttpResponseRedirect('.')
@@ -699,3 +758,38 @@ class JsonTemplateResponseMixin:
             print(request.GET)
 
         return super().dispatch(request, *args, **kwargs)
+
+
+class CommentsFormView(View):
+    def get(self, request, *args, **kwargs):
+        from django.apps import apps
+        from comments.models import CommentSeen
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get('model_name')
+        ctt_id = kwargs.get('content_type')
+        object_id = kwargs.get('object_id')
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).first()
+        comments = obj.comments.all().order_by('-created_date')
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        kwargs['comment_title'] = self.request.GET.get('comment_title', '')
+        kwargs['comment_content'] = self.request.GET.get('comment_content', '')
+        kwargs['submit_type'] = 'save_comment'
+        form = CommentsForm(prefix=prefix, initial=kwargs)
+
+        for comment in comments:
+            try:
+                comment_seen = CommentSeen.objects.get_or_create(comment=comment,
+                                                                 creator_user=request.user,
+                                                                 editor_user=request.user)
+                comment_seen.save_user(self.request)
+            except Exception:
+                continue
+
+        context = {'form': form,
+                   'object_id': object_id,
+                   'ctt_id': ctt_id,
+                   'comments': comments}
+        x = render_to_string('core/partial/form.html', context)
+
+        return JsonResponse({'res': x})
