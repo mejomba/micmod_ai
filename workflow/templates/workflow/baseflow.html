@@ -77,7 +77,6 @@
 <div class="flow-wrapper">
     <div class="flow">
         {% for f in flow %}
-
         <div class="flow-item">
             <div class="flow-user">{{ f.from_user }}</div>
             <div class="flow-action {% if f.status == 1 %} complete-action {% elif f.status == 2 %} process-action {% endif %}">

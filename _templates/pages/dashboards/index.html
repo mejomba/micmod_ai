@@ -11,8 +11,7 @@ context.update({
 {% block title %}{% translate "Dashboard" %}{% endblock %}
 
 {% block content_ %}
-    {{ form }}
-{% if request.user %}
+{% if request.user.is_superuser %}
 <!--begin::Row-->
 <div class="row g-5 g-xl-10 mb-5 mb-xl-10">
     <!--begin::Col-->
