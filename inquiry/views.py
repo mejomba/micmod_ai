@@ -452,7 +452,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item['q_fee_cust'] = res.quotation_fee
         else:
             item = dict()
-        a = item_sku.sepidar_stock
+        #a = item_sku.sepidar_stock
         #  add image, weight, batch_type, batch_count
         contenttype = ContentType.objects.get_for_model(item_sku._meta.model)
         images = Image.objects.filter(content_type=contenttype, object_id=item_sku.pk)
