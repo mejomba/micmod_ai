@@ -1,4 +1,9 @@
 {
+  "permission": {
+          "groups": [
+            "base_user"
+          ]
+        },
   "comment": {
     "menus": [
       {
@@ -11,7 +16,7 @@
             ""
           ],
           "groups": [
-            ""
+            "base_user"
           ]
         },
         "menus": [
