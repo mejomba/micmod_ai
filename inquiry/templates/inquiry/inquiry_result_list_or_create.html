@@ -95,6 +95,15 @@
             realSkuField.dispatchEvent(event);
 
             })
+        debugger
+        setTimeout(function (){
+            const id_sku_c_value = id_sku_c.val();
+            const skuSearch = document.querySelector('.sku-search>input')
+            if (id_sku_c_value && skuSearch){
+                skuSearch.value = id_sku_c_value
+                skuSearch.dispatchEvent(new Event('change'))
+            }
+        }, 1500)
 
         id_sku_c.val($('#id_sku').val())
 
