@@ -258,8 +258,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             qis = self.object.quotation.all()
             counter = 0
             for qi in qis:
-                if self.state_index == 2 and bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
-                        bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
+                if self.state_index == 2 and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
+                        bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)):
                     counter += 1
                     context['allow_next'] = False
                     context['submit_copy_q'] = True
