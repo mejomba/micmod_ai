@@ -557,7 +557,9 @@ def get_item(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(sku__sku=item_.code).first()
+                    item_obj = Item.objects.filter(sku=q).first()
+
+                    price_inquiry_result: PriceInquiryResult = item_obj.price #PriceInquiryResult = PriceInquiryResult.objects.filter(sku__sku=item_.code).first()
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(
