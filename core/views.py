@@ -460,7 +460,7 @@ class BaseView(UserPassesTestMixin,
 
             if 'back' in self.request.POST:
                 return super().form_valid(form)
-            elif 'cancel' in self.request.POST:
+            elif 'canceled' in self.request.POST:
                 old_obj.cancel = True
                 old_obj.save()
                 old_obj.save_comment(request=self.request)
@@ -635,8 +635,8 @@ class BaseView(UserPassesTestMixin,
 
                     for d in new_details:
                         # ToDo make dynamic
-                        app_label = 'micmod_base'
-                        model_name = 'quotationitem'
+                        app_label = d._meta.app_label
+                        model_name = d._meta.model_name
                         ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
                         object_id = d.pk
                         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
@@ -768,20 +768,27 @@ class CommentsFormView(View):
         model_name = kwargs.get('model_name')
         ctt_id = kwargs.get('content_type')
         object_id = kwargs.get('object_id')
+        comment_type = self.request.GET.get('comment_type')
         model = apps.get_model(app_label, model_name)
         obj = model.objects.filter(pk=object_id).first()
-        comments = obj.comments.all().order_by('-created_date')
+        comments = Comments.objects.none()
+        if comment_type == 'cancel':
+            kwargs['submit_type'] = 'cancel'
+            comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
+        elif comment_type == 'comment':
+            kwargs['submit_type'] = 'save_comment'
+            comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')
-        kwargs['submit_type'] = 'save_comment'
+
         form = CommentsForm(prefix=prefix, initial=kwargs)
 
         for comment in comments:
             try:
-                comment_seen = CommentSeen.objects.get_or_create(comment=comment,
-                                                                 creator_user=request.user,
-                                                                 editor_user=request.user)
+                comment_seen, _ = CommentSeen.objects.get_or_create(comment=comment,
+                                                                    creator_user=request.user,
+                                                                    editor_user=request.user)
                 comment_seen.save_user(self.request)
             except Exception:
                 continue
@@ -789,7 +796,9 @@ class CommentsFormView(View):
         context = {'form': form,
                    'object_id': object_id,
                    'ctt_id': ctt_id,
-                   'comments': comments}
+                   'comments': comments,
+                   'comment_type': comment_type,
+                   'cancel_btn_text': 'uncanceled' if getattr(obj, 'cancel', None) else 'canceled'}
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
