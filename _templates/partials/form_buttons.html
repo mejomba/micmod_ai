@@ -1,11 +1,11 @@
 {#{% if not finish or wf_last_step_is_open %}#}
 
 <div class="d-flex justify-content-center">
-    {% if formset and form.enable %}
-        <div name="id_formset_add_button" class="btn btn-info text-xl-center py-0 px-3 me-1" style="font-size: 2rem">&#x2b;</div>
-    {% elif formset and not form.enable %}
-        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 2rem">&#x2b;</button>
-    {% endif %}
+{#    {% if formset and form.enable %}#}
+{#        <div name="id_formset_add_button" class="btn btn-info text-xl-center py-0 px-3 me-1" style="font-size: 2rem">&#x2b;</div>#}
+{#    {% elif formset and not form.enable %}#}
+{#        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 2rem">&#x2b;</button>#}
+{#    {% endif %}#}
     {% if form.enable %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>

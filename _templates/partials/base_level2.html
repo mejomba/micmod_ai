@@ -10,6 +10,8 @@
                         <div class="d-flex position-fixed card-footer me-3 ms-0 p-0 rounded bg-white"
                              style="bottom: 0; height: 40px; width: -webkit-fill-available; width: -moz-available;"
                              id="form-footer-container">
+                            {% block before_button %}
+                            {% endblock before_button %}
                             {% include 'partials/form_buttons.html' with form=form flow_state_index=flow_state_index flow_state_list=flow_state_list %}
                             {% block form_footer_extra %}
                             {% endblock form_footer_extra %}
