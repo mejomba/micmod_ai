@@ -2,6 +2,7 @@ from pprint import pprint
 import json
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 
 from comments.forms import CommentsForm
 from sepidar.models import APILogs
@@ -346,3 +347,22 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
                     )
 
 
+class QuotationItemPending(LoginRequiredMixin, View):
+    def get(self, request):
+        # q = self.request.GET.get('q')
+        # bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or
+        # bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)
+        quotations_record_lst = QuotationItem.objects.filter(
+            Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
+            Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+            Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+        )
+
+        greeting = {}
+        greeting['heading'] = _("quotation")
+        greeting['pageview'] = _("micmod_base")
+        # greeting['quotations'] = quotations_record
+        greeting['quotationitems'] = quotations_record_lst
+
+        return render(request,'micmod-base/quotation/pending_list.html',greeting)

@@ -81,6 +81,7 @@ class BaseManager(models.Manager):
     #     return wf
 
     def get_access_object(self, user,q="all"):
+        import time
         from workflow.models import WorkFlow
         if user.is_superuser:
             return self.model.objects.all()
@@ -109,6 +110,8 @@ class BaseManager(models.Manager):
                     quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry
+
+        return [x for x in quotations_record_lst if x]
 
         return quotations_record_lst
 
