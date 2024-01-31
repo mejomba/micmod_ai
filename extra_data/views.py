@@ -1,6 +1,7 @@
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
@@ -147,7 +148,8 @@ class SkuUpdateView(LoginRequiredMixin,
             return super().form_valid(form)
         if self.state_index == 1 and not form.cleaned_data.get('technical_confirm'):
             self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
-            return HttpResponseRedirect('.')
+            # return HttpResponseRedirect('.')
+            return super(SuccessMessageMixin, self).form_valid(form)
 
         return super().form_valid(form)
         # if self.request.POST.get('draft'):

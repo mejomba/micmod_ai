@@ -117,17 +117,22 @@ def app_label(obj):
 
 @register.inclusion_tag('comment_tag.html')
 def get_comments(obj, comment_form, button_text=None, button_style=None, comment_type=None):
+
     if button_text is None:
         button_text = 'نظر کاربران'
     if button_style is None:
         button_style = "btn btn-primary"
     if comment_type is None:
         comment_type = 'نظرات'
+        comment_type_filter = 'O'
+    else:
+        comment_type_filter = 'C'
 
     comments = Comments.objects.none()
     if hasattr(obj, '_meta'):
         comments = Comments.objects.filter(object_id=obj.pk,
-                                           content_type=ContentType.objects.get_for_model(obj._meta.model))
+                                           content_type=ContentType.objects.get_for_model(obj._meta.model),
+                                           comment_title=comment_type_filter)
 
     return {'comments': comments, 'button_text': button_text, 'comment_type': comment_type,
             'button_style': button_style, 'comment_form': comment_form, 'obj': obj}
@@ -135,7 +140,7 @@ def get_comments(obj, comment_form, button_text=None, button_style=None, comment
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
-def get_comment_user_list(form, current_user):
+def get_comment_user_list(form, current_user, cancel=None):
     # seen_comment = list()
     unseen_comment = list()
 
@@ -146,7 +151,7 @@ def get_comment_user_list(form, current_user):
     # creator_users = set()
     creator_users = dict()
     obj = form.instance if form else None
-    comments = obj.comments.all() if obj else None
+    comments = obj.comments.all().filter(~Q(comment_title="C")) if obj else None
     comment_seen = CommentSeen.objects.all()
     if comments is None:
         return {}
@@ -178,7 +183,8 @@ def get_comment_user_list(form, current_user):
 
     context = {'comments_info': comments_info,
                'obj': obj,
-               'unseen_comment_count': unseen_comment_count}
+               'unseen_comment_count': unseen_comment_count,
+               'cancel': cancel}
     return context
 @register.filter
 def get_comment_link(comment_str):
@@ -332,7 +338,7 @@ def get_field_name(field):
         return None
 
 
-from django.db.models import ForeignKey
+from django.db.models import ForeignKey, Q
 
 
 @register.simple_tag
