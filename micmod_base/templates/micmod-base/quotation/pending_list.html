@@ -24,14 +24,21 @@
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
+
+
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-body">
-{#                                    <div class="border rounded p-3">#}
-{#                                        <span>استفاده از فیلتر</span>#}
+
+                                    <div class="border rounded p-3">
+                                        <strong>استفاده از فیلتر</strong>
+                                        <a href="{% url 'sls:quotationitem.pending' %}?q=all" type="button" class="btn btn-info ms-3">همه</a>
+                                        <a href="{% url 'sls:quotationitem.pending' %}?q=local" type="button" class="btn btn-success mx-3">داخلی</a>
+                                        <a href="{% url 'sls:quotationitem.pending' %}?q=foreign" type="button" class="btn btn-primary">خارجی</a>
+
 {#                                        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>#}
 {#                                        <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>#}
-{#                                    </div>#}
+                                    </div>
                                         <h4 class="card-title" data-key="t-quotation">QuotationItem</h4>
 
                                         <div class="table-rep-plugin">

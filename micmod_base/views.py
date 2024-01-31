@@ -349,15 +349,33 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
 
 class QuotationItemPending(LoginRequiredMixin, View):
     def get(self, request):
-        # q = self.request.GET.get('q')
-        # bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or
-        # bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)
-        quotations_record_lst = QuotationItem.objects.filter(
-            Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
-            Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-            Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-        )
+        q = self.request.GET.get('q')
+        if q == 'local':
+            quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
+                                         Q(need_local_price_inquiry=False) |
+                                         Q(local_price_inquiry_done=False) &
+                                         Q(need_local_price_inquiry=True)
+                                         )
+        elif q == 'foreign':
+            quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
+                                         Q(need_foreign_price_inquiry=False) |
+                                         Q(foreign_price_inquiry_done=False) &
+                                         Q(need_foreign_price_inquiry=True))
+        else:
+            quotations_record_lst = QuotationItem.objects.filter(
+                Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
+                Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+            )
+
+        # local_pending = QuotationItem.objects.filter(need_local_price_inquiry=False)
+        # quotations_record_lst = QuotationItem.objects.filter(
+        #     Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+        #     Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
+        #     Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+        #     Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+        # )
 
         greeting = {}
         greeting['heading'] = _("quotation")
