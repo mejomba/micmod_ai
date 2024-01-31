@@ -432,7 +432,7 @@
     "q_date_cust":  "تاریخ آخرین پیشش فاکتور",
     "q_qty_cust": "تعداد آخرین پیش فاکتور",
     "q_fee_cust":  "قیمت آخرین پیش فاکتور",
-    "update_price": "بروز کردن قیمت",
+    "update_price": "بروز کردن تاریخ قیمت",
     "sales": "فروش",
     "sales_history": "مرور فروش",
     "Default": "پیش فرض",
@@ -453,5 +453,6 @@
     "uncanceled": "لغو کنسلی",
     "save_comment": "تایید",
     "comment_title": "موضوع",
-    "comment_content": "توضیحات"
+    "comment_content": "توضیحات",
+    "force_inquiry": "استعلام سریع"
 }

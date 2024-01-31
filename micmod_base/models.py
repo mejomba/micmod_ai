@@ -131,6 +131,7 @@ class QuotationItem(BaseModel):
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
 
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
+    force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
