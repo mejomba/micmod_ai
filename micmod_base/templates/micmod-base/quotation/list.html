@@ -31,6 +31,15 @@
                                         <span>استفاده از فیلتر</span>
                                         <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
                                         <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>
+                                        <div class="d-flex mt-2 align-items-center w-25">
+                                            <label for="cars" class="mx-2">برای:</label>
+                                            <select name="user_select" id="user_select" class="form-select">
+                                                <option value="volvo">a</option>
+                                                <option value="saab">b</option>
+                                                <option value="mercedes">c</option>
+                                                <option value="audi">d</option>
+                                            </select>
+                                        </div>
                                     </div>
                                         <h4 class="card-title" data-key="t-quotation">Quotation</h4>
 

@@ -1,12 +1,12 @@
 {% if data %}
-<div class="d-flex justify-content-center text-muted">
+<div class="d-flex justify-content-center text-muted mx-2">
     <div class="d-flex">
 {#        <div class="me-2 text-center">#}
 {#            <p data-key="creator_user" class="p-0 m-0">ایجاد کننده</p>#}
 {#            <p class="p-0 m-0">{{ data.creator_user }}</p>#}
 {#        </div>#}
         <div id="id_create_info" class="symbol symbol-35px symbol-circle me-2 border border-success border-3" data-bs-toggle="tooltip" data-bs-original-title="{{ data.creator_user }}: {{ data.created_date }}" data-kt-initialized="1">
-                    <img alt="Pic" class="" src="{{ data.creator_user.profile.avatar.url }}" data-bs-target="#id_kt_empty_modal">
+            <img alt="Pic" class="" src="{{ data.creator_user.profile.get_user_image }}" data-bs-target="#id_kt_empty_modal">
         </div>
 {#        <div class="me-2 text-center">#}
 {#            <p data-key="create_date" class="p-0 m-0">تاریخ ایجاد</p>#}
@@ -23,7 +23,7 @@
 {#            <p class="p-0 m-0">{{ data.last_update_date }}</p>#}
 {#        </div>#}
         <div id="id_edit_info" class="symbol symbol-35px symbol-circle border border-primary border-3" data-bs-toggle="tooltip" data-bs-original-title="{{ data.editor_user }}: {{ data.created_date }}" data-kt-initialized="1">
-                    <img alt="Pic" class="" src="{{ data.editor_user.profile.avatar.url }}" data-bs-target="#id_kt_empty_modal">
+            <img alt="Pic" class="" src="{{ data.editor_user.profile.get_user_image }}" data-bs-target="#id_kt_empty_modal">
         </div>
     </div>
 </div>

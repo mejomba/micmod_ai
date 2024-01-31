@@ -135,11 +135,14 @@
                 {# this tag maybe need to close #}
                         </div>
             {% endblock form_content %}
+{% block before_button %}
+    {% include "micmod-base/base/create_info_bar.html" %}
+{% endblock before_button %}
 {% block form_footer_extra %}
-
+{% include "core/partial/add_formset_button.html" %}
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
-        {% include "micmod-base/base/create_info_bar.html" %}
+{#        {% include "micmod-base/base/create_info_bar.html" %}#}
     </div>
         {% if form.instance.quotation_rel.all.last.id %}
             <a href="{% url 'sls:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
@@ -153,7 +156,7 @@
     </div>
     {% else %}
         <div class="px-2 mx-auto">
-            {% include "micmod-base/base/create_info_bar.html" %}
+{#            {% include "micmod-base/base/create_info_bar.html" %}#}
         </div>
     {% endif %}
 
