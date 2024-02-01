@@ -774,10 +774,12 @@ class CommentsFormView(View):
         comments = Comments.objects.none()
         if comment_type == 'cancel':
             kwargs['submit_type'] = 'cancel'
-            comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
+            # comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
-            comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')
