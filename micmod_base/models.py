@@ -131,6 +131,15 @@ class QuotationItem(BaseModel):
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
 
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
+    force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
+
+    @property
+    def local_pending(self):
+        return self.need_local_price_inquiry != self.local_price_inquiry_done
+
+    @property
+    def foreign_pending(self):
+        return self.need_foreign_price_inquiry != self.foreign_price_inquiry_done
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()

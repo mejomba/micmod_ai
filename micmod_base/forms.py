@@ -69,6 +69,7 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['expiration_date'] = JalaliDateField(label=_('expiration_date'),
                                                          widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                          )
+        self.fields['cancel'].widget = forms.HiddenInput()
 
         # if self.has_addition:
         #     self.fields['addition_currency'] = forms.ModelChoiceField(queryset=Currency.objects.all(), widget=forms.Select(attrs={'class': 'form-control mb-3 ', 'placeholder': 'نوع ارز', 'id': 'id_addition_currency'}), required=False)
@@ -310,7 +311,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-                  'goods_price_sheet3',
+                  'goods_price_sheet3','force_inquiry',
                   'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price',
@@ -512,7 +513,7 @@ qi_fields = [
     'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
     'delivery_time', 'goods_code', 'goods_code_alt', 'price_method',
     'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-    'goods_price_sheet3', 'final_price',
+    'goods_price_sheet3', 'final_price', 'force_inquiry',
     'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',

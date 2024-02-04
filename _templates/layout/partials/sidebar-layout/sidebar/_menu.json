@@ -91,6 +91,12 @@
               "path_key": "quotations/list",
               "direct_link": "/micmod_base/quotations/list?q=active",
               "count": "micmod_base.quotation:active"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "pending_list",
+              "path_key": "quotationitem/list/pending/",
+              "direct_link": "/micmod_base/quotationitem/list/pending/"
             }
           ]
         },
