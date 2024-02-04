@@ -106,7 +106,7 @@ class BaseManager(models.Manager):
             content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
             for item in qry:
                 wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
-                if wf.to_user == user:
+                if wf and wf.to_user == user:
                     quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry

@@ -116,7 +116,7 @@ def app_label(obj):
     return obj._meta.app_label
 
 @register.inclusion_tag('comment_tag.html')
-def get_comments(obj, comment_form, button_text=None, button_style=None, comment_type=None):
+def get_comments(obj, comment_form=None, button_text=None, button_style=None, comment_type=None):
 
     if button_text is None:
         button_text = 'نظر کاربران'
