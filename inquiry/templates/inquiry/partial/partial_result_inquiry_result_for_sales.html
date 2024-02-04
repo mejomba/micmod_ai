@@ -179,6 +179,7 @@
             </ul>
         </div>
     </div>
+{% include 'core/partial/table.html' with data_frame=sku.sepidar_stocks header=True %}
     <div class="card-footer d-flex">
         <div class="fw-bold"><span
                 class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.price.price_update_date|to_jalali }}</div>

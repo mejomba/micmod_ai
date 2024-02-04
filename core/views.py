@@ -648,20 +648,24 @@ class BaseView(UserPassesTestMixin,
                         if d not in old_details:
                             d.attach_image_file(d)
                             # d = self.attach_image_file(d)
+                            # d.extra_data.request = self.request
                             d.save_log(self.request, obj=d, action=1)
                         else:
                             for old_detail in old_details:
                                 if old_detail.id == d.id:
                                     d.attach_image_file(d)
                                     # d = self.attach_image_file(d)
+                                    # d.extra_data.request = self.request
                                     d.save_log(self.request, obj=d, old=old_detail, action=2)
                                     break
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
                 # new_obj = self.attach_image_file(new_obj, form)
                 if not old_obj:
+                    # new_obj.extra_data.request = self.request
                     new_obj.save_log(self.request, obj=new_obj, action=1)
                 else:
+                    # new_obj.extra_data.request = self.request
                     new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
 
                 print('form valid base view')

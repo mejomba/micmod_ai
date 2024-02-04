@@ -9,7 +9,8 @@ from django.apps import apps
 from sepidar.models import APILogs
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
-
+from sepidar.models import BaseData
+from tools.form_tools import select_cquery
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
@@ -157,7 +158,7 @@ class PriceSettings(AbsBaseModel):
     dollar_rmb_rate = models.FloatField(verbose_name=_('dollar_rmb_rate'), default=7)
     customs_rmb_rate = models.FloatField(verbose_name=_('customs_rmb_rate'), default=67000)
     free_rmb_rate = models.FloatField(verbose_name=_('free_rmb_rate'), default=72000)
-    free_rmb_rate_new_order = models.FloatField(verbose_name=_('free_rmb_rate'), default=74000)
+    free_rmb_rate_new_order = models.FloatField(verbose_name=_('free_rmb_rate_new_order'), default=74000)
     talar_rmb_rate = models.FloatField(verbose_name=_('talar_rmb_rate'), default=67000)
     office_cost_percentage = models.FloatField(verbose_name=_('office_cost_percentage'), default=8)
     duty_on_value_percentage = models.FloatField(verbose_name=_('duty_on_value_percentage'), default=9)
@@ -303,13 +304,6 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     @property
-    def sepidar_stock(self):
-        return
-        if self.sepidar_id:
-            return  APILogs.new_call(Urls.item_inventories.url.format(self.sepidar_id))[1]
-        return dict()
-
-    @property
     def price(self):
         if not getattr(self.extra_data,'price',None):
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
@@ -318,6 +312,15 @@ class Item(BaseModel):
     @property
     def get_customs_price(self):
         return 0
+
+    @property
+    def sepidar_stocks(self):
+        curr_year = BaseData.current_year_ref()
+        qry = f"""select s.code, s.Title, iss.Quantity
+from inv.ItemStockSummary iss
+join inv.Stock s on s.StockID = iss.StockRef
+where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
+        return select_cquery(qry, "sepidar")
 
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search

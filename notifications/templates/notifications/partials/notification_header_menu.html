@@ -4,12 +4,10 @@
     {% include 'notifications/partials/notification_messages_list.html' with notifications=notifications %}
 </div>
 
-
 <script src="{% static 'js/endless_pagination/jquery.js' %}"></script>
 <script src="{% static 'js/endless_pagination/el-pagination.js' %}"></script>
 <script>
-    {#debugger#}
-    dd=$("#ktnotificationsbody")
+    dd = $("#ktnotificationsbody")
     dd.endlessPaginate({
         paginateOnScroll: true,
         paginateOnScrollChunkSize: 5,
@@ -20,13 +18,13 @@
 
 <script src="{% static 'lang/translate.js' %}"></script>
 <script src="{% static 'js/reconnecting-websocket.js' %}"></script>
-
 <script>
     const ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    const ws_url = 'ws://' + window.location.host +
+        '/ws/notifications/' + {{user.id}} +'/'
     {% if user %}
         const socket = new ReconnectingWebSocket(
-            'ws://' + window.location.host +
-            '/ws/notifications/' + {{user.id}} +'/');
+            ws_url);
         const notification_count = document.querySelector('#notification_count');
         socket.onopen = function (e) {
             socket.send(JSON.stringify({'action': "start_listening"}));
@@ -61,6 +59,11 @@
             const toast = toastr[message['message_type']](
                 message["body"]
                 , message["title"])
+            if(message['message_type'] !== 'success') {
+                console.log(message['message_type'] )
+                let audio = new Audio('{% static "alerts/blup.ogg" %}');
+                audio.play()
+            }
         };
         socket.onerror = function (e) {
             console.log(e)
@@ -98,7 +101,7 @@
         let unread_count = parseInt(notification_count.text())
         let item = $("#notification_" + id)
         let ribbon = item.find(".ribbon")
-        if(ribbon.length>0){
+        if (ribbon.length > 0) {
             ribbon.addClass("d-none")
             notification_count.text(unread_count - 1)
         }
