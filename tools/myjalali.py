@@ -122,6 +122,7 @@ class Gregorian:
         return date_format.format(self.persian_year, self.persian_month, self.persian_day)
 
 
+
 class Persian:
 
     def __init__(self, *date):
@@ -194,6 +195,51 @@ class Persian:
 
     def gregorian_datetime(self):
         return datetime.date(self.gregorian_year, self.gregorian_month, self.gregorian_day)
+
+
+
+class JalalyDate:
+    def __init__(self, date):
+        if isinstance(date,datetime.date) or isinstance(date,datetime.datetime):
+            self.date = date
+
+    def get_persian_date_time(self,date_format="{y}/{m}/{d} \n{H}:{M}"):
+        year = self.date.year
+        month = self.date.month
+        day = self.date.day
+        # Convert date to Jalali
+        d_4 = year % 4
+        g_a = [0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+        doy_g = g_a[month] + day
+        if d_4 == 0 and month > 2:
+            doy_g += 1
+        d_33 = int(((year - 16) % 132) * .0305)
+        a = 286 if (d_33 == 3 or d_33 < (d_4 - 1) or d_4 == 0) else 287
+        if (d_33 == 1 or d_33 == 2) and (d_33 == d_4 or d_4 == 1):
+            b = 78
+        else:
+            b = 80 if (d_33 == 3 and d_4 == 0) else 79
+        if int((year - 10) / 63) == 30:
+            a -= 1
+            b += 1
+        if doy_g > b:
+            jy = year - 621
+            doy_j = doy_g - b
+        else:
+            jy = year - 622
+            doy_j = doy_g + a
+        if doy_j < 187:
+            jm = int((doy_j - 1) / 31)
+            jd = doy_j - (31 * jm)
+            jm += 1
+        else:
+            jm = int((doy_j - 187) / 30)
+            jd = doy_j - 186 - (jm * 30)
+            jm += 7
+        self.persian_year = jy
+        self.persian_month = jm
+        self.persian_day = jd
+        return date_format.format(y=self.persian_year, m=self.persian_month,d=self.persian_day,H=self.date.hour, M=self.date.minute)
 
 
 if __name__ == '__main__':

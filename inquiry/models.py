@@ -274,6 +274,7 @@ class PriceInquiryResult(BaseModel):
     def transportations_cost(self):
         if not self.sku or not self.sku.purchase_group or not self.sku.purchase_group.hs:
             return
+        cost_multiplier = 1/self.price_settings.free_rmb_rate if self.price_settings.calculation_method == CalculationMethod.Old else 1
         weight = self.weight
         settings = self.price_settings
         effective_rmb_price = self.rmb_price
@@ -281,18 +282,18 @@ class PriceInquiryResult(BaseModel):
             return {
                 # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
                 #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
-                "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
+                "air": cost_multiplier * self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
                        ,#+ 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
+                "sea": cost_multiplier * self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
                        ,#+ 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
             }
         else:
             return {
-                "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
+                "express": cost_multiplier * self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
                            ,#+ 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
                 # "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
                 #        + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
+                "sea": cost_multiplier * self.sku.purchase_group.sea_transportation * settings.sea_transportation_cost * weight / 1000
                        ,#+ 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
             }
 

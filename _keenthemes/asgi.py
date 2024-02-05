@@ -16,7 +16,7 @@ from channels.sessions import SessionMiddlewareStack
 from django.core.asgi import get_asgi_application
 from notifications import routing as notifications_routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', '_keenthemes.settings')
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', '_keenthemes.settings')
 
 # application = get_asgi_application()
 

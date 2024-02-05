@@ -137,16 +137,18 @@ function custom_ajax_post(form, url, element) {
         success: function (data) {
             html = data['res'];
             element.html(html);
-            // run_scripts(element);
+            run_scripts(html);
         },
         complete: release_main_container()
     }); // end ajax
 }
 
 function run_scripts(elem){
-    // const scripts = $('body')[0].innerHTML.match(/<script (.*?)<\/script>/g)
-    scripts.map((script) => {
-        // script = script.replace('"><\/script>', '').replace('<script src="/', '');
+    debugger
+    const scripts = elem.match(/<script (.*?)<\/script>/g)
+    const u_scripts = new Set(scripts)
+    u_scripts.map((script) => {
+        script = script.replace('"><\/script>', '').replace('<script src="/', '');
         loadJS(script);
     })
 }
@@ -174,7 +176,7 @@ function custom_ajax_get(form, url, element) {
         success: function (data) {
             html = data['res'];
             element.html(html);
-            // run_scripts(element);
+            run_scripts(html);
         },
         complete: release_main_container()
     });

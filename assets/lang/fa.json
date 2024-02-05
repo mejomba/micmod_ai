@@ -453,5 +453,8 @@
     "uncanceled": "لغو کنسلی",
     "save_comment": "تایید",
     "comment_title": "موضوع",
-    "comment_content": "توضیحات"
+    "comment_content": "توضیحات",
+    "min": "حداقل",
+    "max": "حداکثر",
+    "mean": "میانگین"
 }

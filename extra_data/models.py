@@ -396,15 +396,15 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
         """
         self.extra_data.sepidar_data['mean_price'] = select_cquery(qry,"sepidar")
 
-
-        qry = f"""
-select dl.*,p.* 
-from gnr.Party as p
-join acc.dl as dl on dl.DLId = p.DLRef
-where dl.Code = {customer_code}        
-        """
-        self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
-
+        if customer_code:
+            qry = f"""
+    select dl.*,p.* 
+    from gnr.Party as p
+    join acc.dl as dl on dl.DLId = p.DLRef
+    where dl.Code = {customer_code}        
+            """
+            self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
+        return self.extra_data.sepidar_data
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search
         return f'{self.sku}'

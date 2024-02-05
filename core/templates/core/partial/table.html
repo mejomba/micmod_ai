@@ -1,4 +1,9 @@
-<table class="table table-striped">
+{% load core_tags %}
+{% load static %}
+<table class="table table-striped" dir="rtl">
+  {% if transpose %}
+    {#    To do#}
+  {% else %}
     {% if header %}
     <tr>
         {% for col in data_frame.columns %}
@@ -9,8 +14,10 @@
     {% for row in data_frame.values %}
         <tr>
         {% for col in row %}
-            <td>{{ col }}</td>
+            <td>{{ col|humanized_format }}</td>
         {% endfor %}
         </tr>
     {% endfor %}
+  {% endif %}
 </table>
+<script src="{% static 'lang/translate.js' %}"></script>
