@@ -261,9 +261,12 @@ class InquiryResultListView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.request.GET._mutable = True
+        self.request.GET.update({'user': self.request.user})
         context.update({
             'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         })
+        self.request.GET._mutable = False
         context['submit_copy'] = True
 
         # if cache.get(f'{self.request.user}__submit/copy'):
@@ -280,7 +283,7 @@ class InquiryResultListView(BaseView):
         #     context.update({
         #         'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         #     })
-        context['submit_copy'] = True
+        # context['submit_copy'] = True
         return context
 
     def post(self, request, *args, **kwargs):
@@ -291,10 +294,14 @@ class InquiryResultListView(BaseView):
         return super().get(*args, **kwargs)
 
     def form_valid(self, form):
+        from django.utils import timezone
         if form.cleaned_data['update_price']:
-            print('update price')
+            obj = form.save(commit=False)
+            obj.price_update_date = timezone.now()
+            obj.save()
         else:
-            print('no update price D:')
+            pass
+        print('no update price Deee :)')
         res = super().form_valid(form)
         return res
 
@@ -306,6 +313,13 @@ class InquiryResultUpdateView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # self.request.GET._mutable = True
+        # self.request.GET.update({'user': self.request.user})
+        context.update({
+            'form': self.form_class(instance=self.object, initial={'user': self.request.user})
+        })
+        # self.request.GET._mutable = False
+        context['submit_copy'] = False
         return context
 
     def get_success_url(self):
@@ -378,9 +392,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
         except TypeError as e:
             show_error(e, __file__)
         if param:
-            qs = self.model.objects.filter(sku=param)
+            # qs = self.model.objects.filter(sku=param)
+            qs = self.model.inquiry_list_datatable(user=self.request.user, param=param)
         else:
-            qs = self.model.objects.all()
+            qs = self.model.inquiry_list_datatable(user=self.request.user)
+            # qs = self.model.objects.all()
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):

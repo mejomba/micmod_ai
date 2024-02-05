@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from comments.forms import CommentsForm
+from inquiry.models import InquiryResult
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -25,7 +26,7 @@ from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset
+    QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
 from tools.utils import show_error
 from translator import get_text as _
@@ -369,14 +370,6 @@ class QuotationItemPending(LoginRequiredMixin, View):
                 Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
             )
 
-        # local_pending = QuotationItem.objects.filter(need_local_price_inquiry=False)
-        # quotations_record_lst = QuotationItem.objects.filter(
-        #     Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #     Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
-        #     Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #     Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-        # )
-
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
@@ -384,3 +377,120 @@ class QuotationItemPending(LoginRequiredMixin, View):
         greeting['quotationitems'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/pending_list.html',greeting)
+
+
+class QuotationItemFormPending(LoginRequiredMixin, View):
+    template_name = 'micmod-base/quotation/pending_list.html'
+    form_struct = {
+        'form': QuotationItemForm2,
+        'childes': [
+            {
+                'form': InquiryResultForm,
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     self.formset_form = self.get_formset_from_struct()
+    #     quotations_record_lst = QuotationItem.objects.filter(
+    #         Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+    #         Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
+    #         Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+    #         Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+    #     )
+    #     for obj in quotations_record_lst:
+    #         context['formset'] = self.formset(instance=obj, form_kwargs={
+    #                                                   "constraint": {
+    #                                                       "wf_access": self.wf_access,
+    #                                                       'form_state': self.state_index,
+    #                                                       'request': self.request,
+    #                                                       'form_constraint': self.flow_config.get('flow_form_constraint'),
+    #                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
+    #                                                       }
+    #                                               }) if self.formset else None
+    #     return context
+
+    def get(self, request):
+        from django.forms import inlineformset_factory
+        from django.forms import formset_factory, modelformset_factory
+        from .forms import iqr_fields
+
+        q = self.request.GET.get('q')
+        if q == 'local':
+            quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
+                                                                 Q(need_local_price_inquiry=False) |
+                                                                 Q(local_price_inquiry_done=False) &
+                                                                 Q(need_local_price_inquiry=True) &
+            Q()
+                                                                 )
+        elif q == 'foreign':
+            quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
+                                                                 Q(need_foreign_price_inquiry=False) |
+                                                                 Q(foreign_price_inquiry_done=False) &
+                                                                 Q(need_foreign_price_inquiry=True))
+        else:
+            quotations_record_lst = QuotationItem.objects.filter(
+                Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
+                Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+            )
+
+        greeting = {}
+        greeting['heading'] = _("quotation")
+        greeting['pageview'] = _("micmod_base")
+        forms = list()
+        for qi in quotations_record_lst:
+            # form = formset_factory(QuotationItemForm2)
+            form = QuotationItemForm2(instance=qi, initial={
+                                                  "constraint": {
+                                                      "wf_access": True,
+                                                      'form_state': 0,
+                                                      'request': self.request,
+                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
+            form.enable = False
+
+            # nestedFormset = modelformset_factory(InquiryResult, fields=iqr_fields)
+            # nestedFormset = inlineformset_factory(
+            #     QuotationItem,
+            #     InquiryResult,
+            #     formset=InquiryResultForm,
+            #     form=QuotationItemForm2,
+            #     extra=1,
+            #     fields=iqr_fields,
+            # )
+            # form.formset = nestedFormset(instance=qi,
+            #                              form_kwargs={
+            #                                       "constraint": {
+            #                                           "wf_access": self.wf_access,
+            #                                           'form_state': self.state_index,
+            #                                           'request': self.request,
+            #                                           'form_constraint': self.flow_config.get('flow_form_constraint'),
+            #                                           'formset_constraint': self.flow_config.get('flow_formset_constraint')
+            #                                           }
+            #                                   }
+            #                              ) #if self.formset else None
+            # form.formset = nestedFormset()
+            forms.append(form)
+        greeting['forms'] = forms
+
+        return render(request, 'micmod-base/quotation/form_pending_list.html', greeting)
+
+    def post(self, request):
+        if obj_pk := self.request.POST.get('obj_pk'):
+            obj = QuotationItem.objects.filter(pk=obj_pk).first()
+            if self.request.POST.get('foreign_price_inquiry_done'):
+                obj.foreign_price_inquiry_done = True
+            if self.request.POST.get('local_price_inquiry_done'):
+                obj.local_price_inquiry_done = True
+            obj.save()
+            obj.save_comment(self.request)
+
+        return redirect(reverse('sls:quotationitem.form.pending'))
+
+

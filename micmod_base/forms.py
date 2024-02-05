@@ -28,7 +28,7 @@ class QuotationForm(CustomBaseModelForm):
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
-                  "is_official", "official_value", 'cancel']
+                  "is_official", "official_value", 'cancel', 'force_inquiry']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -311,7 +311,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-                  'goods_price_sheet3','force_inquiry',
+                  'goods_price_sheet3',
                   'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price',
@@ -513,7 +513,7 @@ qi_fields = [
     'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
     'delivery_time', 'goods_code', 'goods_code_alt', 'price_method',
     'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-    'goods_price_sheet3', 'final_price', 'force_inquiry',
+    'goods_price_sheet3', 'final_price',
     'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',

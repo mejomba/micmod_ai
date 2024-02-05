@@ -11,15 +11,22 @@ function hideShowQuotationItemTransportationCost(nodeList, action) {
 $(document).ready(function () {
     const quantityInput = document.querySelectorAll('input[name*="-quantity"]')
     const newInquiryResult = document.querySelectorAll('[id*="new-inquiry-result"]')
-    const currencyRef = document.getElementById('id_currency_ref').value
+    const currencyRef = document.getElementById('id_currency_ref')
+    let currencyRefValue = ''
+    if (currencyRef){currencyRefValue = currencyRef.value}
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
     function setPriceWithAjax(e, elem){
+        debugger
+        let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
+        if (party_id == 'None'){
+            party_id = -1
+        }
         $.ajax({
                 url: '/inquiry/item_list/',
                 data: {
                     'q': elem.querySelector('input[name*="goods_code"]').value,
-                    'party_id': document.getElementById('customer_pid').textContent || -1,
+                    'party_id': party_id,
                     'id_currency_ref': document.getElementById('id_currency_ref').value,
                     'id_payment_method': document.getElementById('id_payment_method').value,
                     'id_market_grade': document.getElementById('id_market_grade').value,
@@ -31,7 +38,6 @@ $(document).ready(function () {
                 success: function (response){
                     console.log(response)
                     if (response.items){
-                        debugger
                         set_price_data(response.items[0], elem, e.target)
                     }
                     console.log(response.items)
@@ -41,7 +47,7 @@ $(document).ready(function () {
                 }
             }); // end ajax
     }
-    if (currencyRef == '1'){
+    if (currencyRefValue == '1'){
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_1"]'), 'show')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_1"]'), 'show')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="sea_transportation_cost_1"]'), 'show')
@@ -51,7 +57,7 @@ $(document).ready(function () {
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_3"]'), 'hide')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_3"]'), 'hide')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="sea_transportation_cost_3"]'), 'hide')
-    } else if (currencyRef == '2') {
+    } else if (currencyRefValue == '2') {
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_1"]'), 'hide')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_1"]'), 'hide')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="sea_transportation_cost_1"]'), 'hide')
@@ -65,9 +71,9 @@ $(document).ready(function () {
 
     newInquiryResult.forEach(function (item){
         item.addEventListener('click', function (e){
-            // debugger
             e.preventDefault();
             const elem = findAncestor(e.target, "item")
+            debugger
                 setPriceWithAjax(e, elem)
                 // $.ajax({
                 //     url: '/inquiry/item_list/',
@@ -95,7 +101,6 @@ $(document).ready(function () {
     })
 
     quantityInput.forEach(function (item){
-        debugger
         const draftBtn = document.querySelector('input[name*="draft"]')
         const backBtn = document.querySelector('input[name*="back"]')
         const nextBtn = document.querySelector('input[name*="next"]')
@@ -110,7 +115,6 @@ $(document).ready(function () {
         //     nextBtn ? nextBtn.disabled=false : ''
         // })
         item.addEventListener('keyup', function (e) {
-            debugger
             e.preventDefault();
             const elem = findAncestor(e.target, "item")
             setPriceWithAjax(e, elem)
@@ -189,7 +193,6 @@ $(document).ready(function () {
 
 function set_item_classes(item) {
     // debugger
-    debugger
     if(item.getElementsByClassName('goods_code')) {
         $(item).find('.goods_code').on("select2:select", function (e) {
         const elem = findAncestor(e.target, "item")
@@ -283,7 +286,6 @@ function set_item_classes(item) {
         });
     }
     $(item).find('[id$="final_price"]').on('change keydown paste input', function (e) {
-        debugger
         calculate_price(e.target);
     });
     // $(item).find('.quantity').on('change keydown paste input', function (e) {
@@ -292,7 +294,6 @@ function set_item_classes(item) {
         calculate_price(e.target);
     });
     $(item).find('[id$="price_method"]').on('change', function (e) {
-        debugger
         set_price(e.target)
     })
     // debugger;
@@ -430,7 +431,6 @@ function t_replaceDigits(m_text) {
 }
 
 function refresh_prices() {
-    debugger
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
@@ -447,7 +447,6 @@ function refresh_prices() {
 }
 
 function get_price_data(code, party_id, item) {
-    debugger
     $.ajax({
         url: '/inquiry/item_list',
         dataType: "json",
@@ -472,7 +471,6 @@ function get_price_data(code, party_id, item) {
 }
 
 function set_price_data(data, elem, target) {
-    debugger
     if (data){
         set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
@@ -572,7 +570,6 @@ function set_alt_price_data(data, elem) {
 }
 
 function set_price(target) {
-    debugger
     const elem = findAncestor(target, "item")
     const price_method = elem.querySelector('[name*="price_method"]')
     const final_price = elem.querySelector('[name*="-final_price"]')
@@ -589,79 +586,87 @@ function set_price(target) {
         p_m = price_method.value
     }
     switch (p_m) {
-        case 'last_sale':
+        case
+            'last_sale':
             final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_last_price"]').value);
             break;
-        case 'last_sale_q':
+        case
+            'last_sale_q':
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_q_last_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
             break;
-        case 'price_avg':
+        case
+            'price_avg':
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_avg_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
             break;
-        case 'sales_admin':
+        case
+            'sales_admin':
             final_price.disabled = false;
             break;
-        case 'price_sheet1':
+        case
+            'price_sheet1':
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="express_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="express_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="express_transportation_cost_3"]')
 
-            if (!cost1.classList.contains('d-none')){
+            if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
-            } else if (!cost2.classList.contains('d-none')){
+            } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
-            } else if (!cost3.classList.contains('d-none')){
+            } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
             }
 
             break;
-        case 'price_sheet2':
+        case
+            'price_sheet2':
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="air_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="air_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="air_transportation_cost_3"]')
 
-            if (!cost1.classList.contains('d-none')){
+            if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
-            } else if (!cost2.classList.contains('d-none')){
+            } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
-            } else if (!cost3.classList.contains('d-none')){
+            } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
             }
 
             break;
-        case 'price_sheet3':
+        case
+            'price_sheet3':
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="sea_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="sea_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="sea_transportation_cost_3"]')
 
-            if (!cost1.classList.contains('d-none')){
+            if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
-            } else if (!cost2.classList.contains('d-none')){
+            } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
-            } else if (!cost3.classList.contains('d-none')){
+            } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
             }
             break;
-        case 'price_market':
+        case
+            'price_market':
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_price_market"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
@@ -845,12 +850,11 @@ function numberWithCommas(x, digits = 2) {
 }
 
 function calculate_price(target) {
-    // debugger
+    debugger
     const elem = findAncestor(target, "item")
     const final_price = elem.querySelector('[name*="-final_price"]')
     const total_price = elem.querySelector('[name*="-total_price"]')
     const quantity = elem.querySelector('input[id$="quantity"]')
-    debugger
     const selfDiscount = document.querySelector('input[name*="self_discount"]')
     const isOfficial =  document.querySelector('#id_is_official')
     const isOfficialValue = document.querySelector('#id_official_value')
@@ -874,7 +878,7 @@ function calculate_price(target) {
         price = final_price.value
     }
     totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
-    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount)
+    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0

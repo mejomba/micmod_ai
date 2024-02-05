@@ -228,6 +228,35 @@
       },
       "attr1":2,
       "att":3
+    },
+  "QuotationItemsFormPendingView":  {
+      "workflow": {
+        "name": "pending qi",
+        "action": "create",
+        "list": [
+          {
+            "state": "بلاتکلیف ها",
+            "group": "trade_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": [
+                "need_local_price_inquiry",
+                "need_foreign_price_inquiry",
+                "quantity",
+                "stock_amount",
+                "stock_amount_res"
+              ]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      }
     }
 }
 

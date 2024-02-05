@@ -20,8 +20,8 @@
     <div class="row m-0 mt-5 align-items-center bg-white">
         <div class="col-10">
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3">
-                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.currency_type label='on-border' %}
-                {% render_field_by_order form form.local_price form.description form.active form.update_price label='on-border' %}
+                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
+                {% render_field_by_order form form.description form.active form.update_price label='on-border' %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
             </div>

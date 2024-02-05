@@ -27,9 +27,8 @@ window.addEventListener('load', (event) => {
     // because django's formset will create empty forms for any missing
     // indices, and will discard forms with indices >= TOTAL_FORMS, which can
     // lead to funny behavior in some edge cases)
-    const initialForms = Number(inputTotalForms.value);
+    if (inputTotalForms){const initialForms = Number(inputTotalForms.value); let nextFormIndex = Number(inputTotalForms.value)}
     let extraFormIndices = [];
-    let nextFormIndex = Number(inputTotalForms.value);
 
     function addForm(headerData) {
         debugger
@@ -249,9 +248,10 @@ function closeAllFormset(headerData){
     }
 }
 function setFormsetHeader(header, body, headerData, idx){
+        debugger
     for(const [x, y] of Object.entries(headerData)){
         if (y[0] === 'class' && y[2] === 'lbl') {
-            header.querySelector(`[class=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
+            header.querySelector(`[class*=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
         }else if (y[0] === 'class' && y[2] === 'input'){
             header.querySelector(`[class=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).value;
         }else if (y[0] === 'name' && y[2] === 'lbl'){

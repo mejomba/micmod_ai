@@ -54,3 +54,8 @@ def contains(m_str, search):
         return "m_str".__contains__(search)
     else:
         return False
+
+
+@register.simple_tag
+def show_field_value(field):
+    ...

@@ -1,8 +1,11 @@
 from django import forms
+from django.db.models import Q
+
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
 from tools.utils import show_error
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
+    InquiryResultVariant
 from extra_data.models import Item
 
 from translator import get_text as _
@@ -209,37 +212,27 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         # }
 
     def __init__(self, *args, **kwargs):
-        # request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
-        # if self.form_state is None:
-        #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
-        #         self.form_state = c.get('form_state')
-        #     elif kwargs.get('constraint'):
-        #         self.form_state = kwargs.get('constraint').get('form_state')
-        #
-        # if self.form_state is not None:
-        #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
-        #         form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
-        #         formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
-        #         request = c.pop('request')  # remove unnecessary kwargs
-        #         access = c.get('wf_access')
-        #     elif kwargs.get('constraint'):
-        #         form_constraint = kwargs.get('constraint').get('form_constraint')
-        #         formset_constraint = kwargs.get('constraint').get('formset_constraint')
-        #         request = kwargs.get('constraint').get('request')
-        #         access = kwargs.get('constraint').get('wf_access')
-        #         kwargs.pop('constraint')  # remove unnecessary kwargs
-        #
-        #     form_constraint_read = form_constraint[self.form_state].get('read') if form_constraint else None
-        #     form_constraint_hide = form_constraint[self.form_state].get('hide') if form_constraint else None
-        #     formset_constraint_read = formset_constraint[self.form_state][0].get('read') if formset_constraint else None
-        #     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide') if formset_constraint else None
-        #
         super(PriceInquiryResult2CreateForm, self).__init__(*args, **kwargs)
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
         self.make_hidden(['price_inquiry_file', 'sku'])
         self.fields['active'].initial = True
+        try:
+            user = kwargs.get('initial').get('user')
+            if not user.is_superuser:
+                g = user.groups.values_list(flat=True)
+                qs = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
+            else:
+                qs = InquiryResultVariant.objects.all()
+
+            self.fields['inquiry_type'] = forms.ModelChoiceField(
+                queryset=qs,
+                widget=forms.Select(attrs={'class': 'form-control'}),
+                initial=self.instance.inquiry_type or qs.first()
+            )
+        except Exception as e:
+            show_error(e, __file__)
         #
         # kwargs.pop('constraint', None)
         # super().__init__(*args, **kwargs)
