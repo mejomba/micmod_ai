@@ -14,7 +14,7 @@ class Comments(BaseContentType):
 
 
 class CommentSeen(AbsBaseModel):
-    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING)
+    comment = models.ForeignKey(Comments, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('comment', 'creator_user', 'editor_user')

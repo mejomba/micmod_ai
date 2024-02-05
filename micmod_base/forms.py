@@ -28,7 +28,7 @@ class QuotationForm(CustomBaseModelForm):
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
-                  "is_official", "official_value", 'cancel']
+                  "is_official", "official_value", 'cancel', 'force_inquiry']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -69,6 +69,7 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['expiration_date'] = JalaliDateField(label=_('expiration_date'),
                                                          widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                          )
+        self.fields['cancel'].widget = forms.HiddenInput()
 
         # if self.has_addition:
         #     self.fields['addition_currency'] = forms.ModelChoiceField(queryset=Currency.objects.all(), widget=forms.Select(attrs={'class': 'form-control mb-3 ', 'placeholder': 'نوع ارز', 'id': 'id_addition_currency'}), required=False)

@@ -351,7 +351,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return res
 
     def get_column_defs(self, request):
-        cols = self.get_columns([
+        cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
@@ -360,12 +360,14 @@ class InquiryResultDataTableView(AjaxDatatableView):
             'price',
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
-            {'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False},
-            {'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False},
             {'name': 'id', 'visible': False},
             {'name': 'last_update_date', 'orderable': True, 'visible': False},
             'active',
-        ])
+        ]
+        if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
+            cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
+            cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
+        cols = self.get_columns(cols)
         return cols
 
     def get_initial_queryset(self, request=None):

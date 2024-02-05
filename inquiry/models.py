@@ -424,6 +424,8 @@ class InquiryResult(AbsBaseModel):
                                        blank=True, null=True)
     price_update_date = models.DateField(null=True, blank=True)
 
+    # Todo `FK to -> bazar-price, price` -> priceInquiryResult
+
 # @receiver(post_save, sender=PriceInquiryResult)
 # def deactivate_prev_inquiry_result(sender, instance, created, **kwargs):
 #     sku = instance.price_inquiry_file.item
