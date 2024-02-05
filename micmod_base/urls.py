@@ -33,5 +33,5 @@ urlpatterns = [
     path("currency/exchange/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
     path("currency/exchange/<int:pk>/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
     path('currency_exchange_list_datatable/', CurrencyExchangeDataTableView.as_view(), name="currency_exchange.list.datatable"),
-    # path('currency_exchange/view/<int:pk>/', CurrencyExchangeUpdateView.as_view(), name='currency_exchange.update'),
+    path('quotationitem/list/pending/', QuotationItemPending.as_view(), name='quotationitem.pending'),
 ]

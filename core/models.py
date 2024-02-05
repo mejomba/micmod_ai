@@ -81,6 +81,7 @@ class BaseManager(models.Manager):
     #     return wf
 
     def get_access_object(self, user,q="all"):
+        import time
         from workflow.models import WorkFlow
         if user.is_superuser or self.is_public:
             return self.model.objects.all()
@@ -105,10 +106,12 @@ class BaseManager(models.Manager):
             content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
             for item in qry:
                 wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
-                if wf.to_user == user:
+                if wf and wf.to_user == user:
                     quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry
+
+        return [x for x in quotations_record_lst if x]
 
         return quotations_record_lst
 
@@ -258,8 +261,14 @@ class NoUserBaseModel(models.Model):
 
     def save_comment(self, request, idx=None):
         from comments.models import Comments
-        title = request.POST.get('comment_title')
-        comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
+        app_label = self._meta.app_label
+        model_name = self._meta.model_name
+        ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
+        obj_id = self.pk
+        # title = request.POST.get('comment_title')
+        title = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_title')
+        # comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
+        comment_input_name = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_content'
         content = request.POST.get(comment_input_name)
         content_type = ContentType.objects.get_for_model(self._meta.model)
 

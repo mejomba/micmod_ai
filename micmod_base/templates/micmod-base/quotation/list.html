@@ -31,6 +31,15 @@
                                         <span>استفاده از فیلتر</span>
                                         <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
                                         <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>
+                                        <div class="d-flex mt-2 align-items-center w-25">
+                                            <label for="cars" class="mx-2">برای:</label>
+                                            <select name="user_select" id="user_select" class="form-select">
+                                                <option value="volvo">a</option>
+                                                <option value="saab">b</option>
+                                                <option value="mercedes">c</option>
+                                                <option value="audi">d</option>
+                                            </select>
+                                        </div>
                                     </div>
                                         <h4 class="card-title" data-key="t-quotation">Quotation</h4>
 
@@ -47,20 +56,34 @@
                                                         <th data-key="expiration_date">Expiration date</th>
                                                         <th data-key="creator_user">Creator user</th>
                                                         <th data-key="description">Description</th>
+                                                        <th data-key="">وضعیت استعلام</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody>
                                                     {% for quotation in quotations %}
-                                                        {% get_customer quotation.customer_code as customer %}
+{#                                                        {% get_customer quotation.customer_code as customer %}#}
                                                     <tr>
                                                         <th><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.id}}</a></th>
                                                         <td><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.title}}</a></td>
-                                                        <td>{{ customer.name }}</td>
+{#                                                        <td>{{ customer.name }}</td>#}
                                                         <td >{{ quotation.created_date|to_jalali:'%Y/%m/%d - %H:%M:%S'}}</td>
                                                         <td>{{ quotation.last_update_date|to_jalali:'%Y/%m/%d - %H:%M:%S' }}</td>
                                                         <td>{{ quotation.expiration_date|to_jalali:'%Y/%m/%d' }}</td>
                                                         <td>{{ quotation.creator_user}}</td>
                                                         <td>{{ quotation.description }}</td>
+                                                        <td>
+                                                            <div class="d-flex flex-column align-items-baseline">
+                                                            <span>کل: {{ quotation.get_inquiry_result_count.0 }}</span>
+<span>
+                                                            داخلی
+                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.1 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.2 }}</strong>
+      </span>
+                                                                <span>
+                                                            خارجی:
+                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.3 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.4 }}</strong>
+                                                                    </span>
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                     {% endfor %}
                                                     </tbody>

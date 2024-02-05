@@ -3,8 +3,12 @@
     {{ form }}
 </div>
     <div class="d-flex gap-2 mt-5 mb-15" id="object_id__" data-pk="{{ object_id }}" data-ctt_id="{{ ctt_id }}">
-        <div class="btn btn-success" id="id_btn_success" onclick="addCommentInput()" data-bs-dismiss="modal">تایید</div>
-        <div class="btn btn-danger" id="id_btn_cancel" data-bs-dismiss="modal">لغو</div>
+        {% if comment_type == 'cancel' %}
+            <button type="submit" name="{{ cancel_btn_text }}" class="btn btn-primary mt-4" data-key="{{ cancel_btn_text }}">{{ cancel_btn_text }}</button>
+        {% else %}
+            <div class="btn btn-success" id="id_btn_success" onclick="addCommentInput()" data-bs-dismiss="modal">تایید</div>
+            <div class="btn btn-danger" id="id_btn_cancel" data-bs-dismiss="modal">لغو</div>
+        {% endif %}
     </div>
 
 

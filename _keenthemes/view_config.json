@@ -42,7 +42,7 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["force_inquiry"]
             },
             "formset_constraint": [
               {
