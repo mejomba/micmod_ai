@@ -12,6 +12,7 @@ import TelethonFakeTLS
 from getpass import getpass
 from celery import shared_task
 from django.core.cache import cache
+from telethon import connection
 
 import tools.utils
 from _keenthemes.settings import CACHES
@@ -38,10 +39,12 @@ def pri():
     bot.async_event_loop(bot.send_message())
     print("test2")
 
-con_ = TelethonFakeTLS.ConnectionTcpMTProxyFakeTLS
-proxy_ = proxy=('135.181.86.139',
-                8085,
-                'QAAAAAAAAAAAAAAAAAAAAA=')
+
+con_ = connection.ConnectionTcpMTProxyAbridged# TelethonFakeTLS.ConnectionTcpMTProxyFakeTLS
+# con_ = TelethonFakeTLS.ConnectionTcpMTProxyFakeTLS
+proxy_ = ('185.221.237.107',
+            6969,
+            'f68ffa65cd760e1653f1b3e3e89a9abe')
 # proxy_ = proxy=('88.99.100.137',
 #                 3443,
 #                 '1603010200010001fc030386e24c3add646e2e79656b74616e65742e636f6d646c2e676f6f676c652e636f6d666172616B61762E636F6D160301020001000100000000000000000000000000000000')
@@ -96,13 +99,20 @@ class Session:
 
 
     async def m_init(self):
-        self.client = TelegramClient(
-            f'{self.folder}/{self.phone}.session'
-            , 2626653
-            , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
-            # , connection=con_
-            # , proxy=proxy_
-        )
+        if proxy_:
+            self.client = TelegramClient(
+                f'{self.folder}/{self.phone}.session'
+                , 2626653
+                , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
+                , connection=con_
+                , proxy=proxy_
+            )
+        else:
+            self.client = TelegramClient(
+                f'{self.folder}/{self.phone}.session'
+                , 2626653
+                , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
+            )
         # await self.connect()
 
         #time.sleep(5)
@@ -162,9 +172,11 @@ class Session:
             await self.client.disconnect()
             return True
 
-    async def get_user_by_phone(self, phone, disconnect=True):
+    async def get_user_by_phone(self, phone, user_id=None, disconnect=True):
         try:
             await self.client.connect()
+            if user_id:
+                return await self.client.get_entity(user_id)
             contact = InputPhoneContact(client_id=0, phone=phone, first_name="", last_name="")
             result = await self.client(ImportContactsRequest([contact]))
             return result.users[0]
@@ -242,11 +254,20 @@ class Bot:
         self.run_event_lissener = False
 
     async def m_init(self):
-        self.client = TelegramClient(f"{self.folder}/{self.name}", 2626653
-                       , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
-                       # , connection=con_# connection.ConnectionTcpMTProxyRandomizedIntermediate
-                       # , proxy=proxy_
-                       )
+        if proxy_:
+            self.client = TelegramClient(
+                f"{self.folder}/{self.name}"
+                , 2626653
+                , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
+                , connection=con_
+                , proxy=proxy_
+            )
+        else:
+            self.client = TelegramClient(
+                f"{self.folder}/{self.name}"
+                , 2626653
+                , 'b8d22c3c3c57c4e4ff7d3c523d99dc8c'
+            )
         self.client.parent = self
         await self.start()
 
@@ -309,7 +330,7 @@ f'''
                 if receiver:
                     phone_number = f'98{receiver.phone_number[1:]}' if receiver.phone_number.startswith('0') else receiver.phone_number
                     reg_code = f'{random.randint(10000,99999)}'
-                    receiver_obj = await RTBS.get_receiver_by_phone(event.client.parent.session,phone_number)
+                    receiver_obj = await RTBS.get_receiver_by_phone(event.client.parent.session, phone=phone_number, user_id=receiver.telegram_username)
                     await MessageDetail.send_message(SenderType.Usr,
                                                      event.client.parent.session,receiver_obj,
 f"""کد اعتبار سنجی برای ثبت مشتری در ربات تلگرام مشتریان <b>رهاورد تجارت آینده</b>: 
@@ -351,9 +372,11 @@ f"""کد اعتبار سنجی برای ثبت مشتری در ربات تلگر
             else:
                 receiver = await Receiver.objects.filter(pk=sender_obj.receiver_id).afirst()
             from dw.models import NewOrder
+            print(event.message_text)
             if event.message_text == "همه سفارشات" or\
                 event.message_text == "سفارشات در جریان":
                 min_status = 1 if event.message_text=="همه سفارشات" else 3
+                print(min_status)
                 f_str = '''/{order.code.replace("-", "_").upper()} ({to_jalali_date(order.create_date)})
     📌 <b>{order.m_status}</b>
     📦- {order.part_number[:100]} 

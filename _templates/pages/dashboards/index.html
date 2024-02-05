@@ -11,7 +11,7 @@ context.update({
 {% block title %}{% translate "Dashboard" %}{% endblock %}
 
 {% block content_ %}
-
+{% if request.user.is_superuser %}
 <!--begin::Row-->
 <div class="row g-5 g-xl-10 mb-5 mb-xl-10">
     <!--begin::Col-->
@@ -95,5 +95,5 @@ context.update({
     <!--end::Col-->
 </div>
 <!--end::Row-->
-
+{% endif %}
 {% endblock content_ %}

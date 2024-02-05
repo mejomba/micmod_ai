@@ -365,7 +365,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return res
 
     def get_column_defs(self, request):
-        cols = self.get_columns([
+        cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
@@ -374,12 +374,14 @@ class InquiryResultDataTableView(AjaxDatatableView):
             'price',
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
-            {'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False},
-            {'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False},
             {'name': 'id', 'visible': False},
             {'name': 'last_update_date', 'orderable': True, 'visible': False},
             'active',
-        ])
+        ]
+        if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
+            cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
+            cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
+        cols = self.get_columns(cols)
         return cols
 
     def get_initial_queryset(self, request=None):
@@ -434,8 +436,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         grade = dict_.get('grade')
 
         dl_obj = Dl.get_dl(party_code)
-        party_id = dl_obj[0].PartyId if dl_obj else None
-
+        party_id = dl_obj[0].PartyId if len(dl_obj) else None
+        # party_id = None
         item_sku = Item.objects.filter(sku=sku).first()
         currency_obj = Currency.objects.filter(pk=currency).first()
         price = item_sku.price if item_sku else None
@@ -468,7 +470,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item['q_fee_cust'] = res.quotation_fee
         else:
             item = dict()
-        a = item_sku.sepidar_stock
+        #a = item_sku.sepidar_stock
         #  add image, weight, batch_type, batch_count
         contenttype = ContentType.objects.get_for_model(item_sku._meta.model)
         images = Image.objects.filter(content_type=contenttype, object_id=item_sku.pk)

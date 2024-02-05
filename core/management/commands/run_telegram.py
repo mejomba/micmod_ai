@@ -15,7 +15,7 @@ class Command(BaseCommand):
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         import django
         django.setup()
-        dason.settings.DATABASES = {
+        _keenthemes.settings.DATABASES = {
             'default': {
                 'ENGINE': os.environ.get('PG_ENGIN'),
                 'NAME': os.environ.get('PG_NAME'),
@@ -43,6 +43,24 @@ class Command(BaseCommand):
                 'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
             },
         }
+        # _keenthemes.CACHES = {
+        #     # … default cache config and others
+        #     "default": {
+        #         "BACKEND": f"django_redis.cache.RedisCache",
+        #         "LOCATION": f"redis://{'redis'}:6379/2",
+        #         "OPTIONS": {
+        #             "CLIENT_CLASS": f"django_redis.client.DefaultClient",
+        #         }
+        #     }
+        # }
+        # _keenthemes.CHANNEL_LAYERS = {
+        #     'default': {
+        #         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        #         'CONFIG': {
+        #             "hosts": [('redis', 6379)],
+        #         },
+        #     },
+        # }
         from tlg.models import Bot as BotModel, Session as SessionModel
         Bot.folder = f"tlg/scripts/Files/Sessions"
         Session.folder = f"tlg/scripts/Files/Sessions"

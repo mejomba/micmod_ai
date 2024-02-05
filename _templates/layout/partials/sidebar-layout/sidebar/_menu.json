@@ -1,4 +1,9 @@
 {
+  "permission": {
+    "groups": [
+      "base_user"
+    ]
+  },
   "comment": {
     "menus": [
       {
@@ -11,7 +16,7 @@
             ""
           ],
           "groups": [
-            ""
+            "base_user"
           ]
         },
         "menus": [
@@ -97,8 +102,8 @@
         },
         {
           "permission": {
-            "groups": [
-              "base_user"
+            "permissions": [
+              "micmod_base.view_currency_exchange"
             ]
           },
           "icon": "dollar",
@@ -251,7 +256,9 @@
       "menus": [
         {
           "permission": {
-            "permissions": "inquiry.view_priceinquiryfile"
+            "permissions": [
+              "inquiry.add_priceinquiryresult"
+            ]
           },
           "title": "inquiry",
           "icon": "search-list",
@@ -264,12 +271,6 @@
               "link": "inquiry:inquiry_result.list"
             },
             {
-              "title": "price_inquiry_result_for_sale",
-              "icon": "burger-menu",
-              "path_key": "inquiryresult/forsale",
-              "link": "inquiry:inquiry_result.sale"
-            },
-            {
               "title": "t-t-settings",
               "icon": "setting-2",
               "target": "_blank",
@@ -277,6 +278,15 @@
               "direct_link": "/admin/extra_data/pricesettings/"
             }
           ]
+        },
+        {
+          "title": "price_inquiry_result_for_sale",
+          "icon": "burger-menu",
+          "path_key": "inquiryresult/forsale",
+          "link": "inquiry:inquiry_result.sale",
+          "permission": {
+            "groups": ["sales_user","sales_admin","total_admin"]
+          }
         },
         {
           "title": "price inquiry file",
