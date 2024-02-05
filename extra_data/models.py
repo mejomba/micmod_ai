@@ -277,6 +277,10 @@ class Brand(AbsBaseModel):
 
 
 class Item(BaseModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extra_data.dl_code = None
+
     BATCH_TYPE = (('box', _('box')), ('rol', _('rol')))
     sku = models.CharField(max_length=10, verbose_name=_('sku'), null=True, blank=True, unique=True)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
@@ -313,14 +317,93 @@ class Item(BaseModel):
     def get_customs_price(self):
         return 0
 
-    @property
-    def sepidar_stocks(self):
+    def set_extra_data_sepidar(self, customer_code=None):
+        self.extra_data.sepidar_data = dict()
+        self.extra_data.sepidar_data['customer_code'] = customer_code
         curr_year = BaseData.current_year_ref()
-        qry = f"""select s.code, s.Title, iss.Quantity
+        qry = f"""select s.Title, iss.Quantity
 from inv.ItemStockSummary iss
 join inv.Stock s on s.StockID = iss.StockRef
 where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
-        return select_cquery(qry, "sepidar")
+        self.extra_data.sepidar_data['stocks'] = select_cquery(qry, "sepidar")
+        self.extra_data.sepidar_data['stocks_sum'] = float(self.extra_data.sepidar_data['stocks'].sum()[1])
+
+
+        dl_filter = f" and dl.Code={customer_code}" if customer_code else ""
+        qry = """
+        select top 5
+                docs.Date
+                --,docs.Number,docs.coef,docs.doc_type
+                --,docs.Fee
+                --,docs.itemId,docs.NetPrice
+                ,docs.NetPriceInBaseCurrency/docs.Quantity as fee
+                --,docs.Price,docs.PriceInBaseCurrency
+                ,docs.Quantity
+                --,docs.Rate
+                --,st.Number sales_type_code
+                , Convert(nvarchar(20),st.Title) sales_type
+                --,p.CreationDate customer_creation_date,dl.Title customer_title,dl.Code customer_code ,dl.DLId
+                --,g1.Code sales_user_code, g1.Title sales_user_group
+                --,item.Code item_code, Item.Title item_title
+                --,g_p.Code purchase_group_code, g_p.Title purchase_group, g_s.Code sales_group_code, g_s.Title sales_group
+                ,fy.Title year_title
+                --,curr.Title currency
+        from
+        (
+        select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+                ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.InvoiceItemID itemId
+                ,1 as coef,'invoice' as doc_type
+        from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.InvoiceId
+        union
+        select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+                ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.QuotationItemID itemId
+                ,0 as coef,'qutation' as doc_type
+        from [SLS].[Quotation] as I Join [SLS].[QuotationItem] as II on II.QuotationRef = I.QuotationId
+        union
+        select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+                ,II.ItemRef, II.Quantity,II.Fee,-II.NetPrice,-II.NetPriceInBaseCurrency,-II.Price,-II.PriceInBaseCurrency,II.ReturnedInvoiceItemID itemId
+                ,-1 as coef,'returned_invoice' as doc_type
+        from [SLS].[ReturnedInvoice] as I Join [SLS].[ReturnedInvoiceItem] as II on II.ReturnedInvoiceRef = I.ReturnedInvoiceId
+        )as docs
+        join [SLS].[SaleType] as st on st.SaleTypeId = docs.SaleTypeRef
+        join [INV].[Item] as Item on Item.ItemID = docs.ItemRef
+        left join [GNR].[Grouping] as g_p on g_p.GroupingID = Item.PurchaseGroupRef
+        --left join [GNR].[Grouping] as g_s on g_s.GroupingID = Item.SaleGroupRef
+        join [GNR].[Party] as p on p.PartyId = docs.CustomerPartyRef join [ACC].[DL] as dl on dl.DLId = p.DLRef
+        join [GNR].[Grouping] as g1 on g1.GroupingID = p.CustomerGroupingRef
+        join [FMK].[FiscalYear] as fy on fy.FiscalYearId = docs.FiscalYearRef
+        join [GNR].[Currency] as curr on curr.CurrencyID = docs.CurrencyRef
+        where 1=1 {dl_filter} 
+                  and Item.Code={sku}
+                  and docs.doc_type like N'%%{doc_type}%%'
+        order by docs.Date desc
+                    """
+        self.extra_data.sepidar_data['invoice'] = select_cquery(
+            qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='invoice'),
+            "sepidar")
+        self.extra_data.sepidar_data['qutations'] = select_cquery(
+            qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='qutation'),
+            "sepidar")
+
+
+        qry = f"""
+select min(fee) as min,avg(fee) as mean, max(fee) as max from 
+(select II.NetPriceInBaseCurrency/II.Quantity as fee
+from SLS.InvoiceItem as II 
+join SLS.Invoice as inv on inv.InvoiceId = II.InvoiceRef
+join Inv.Item as I on I.ItemID = II.ItemRef
+where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_items        
+        """
+        self.extra_data.sepidar_data['mean_price'] = select_cquery(qry,"sepidar")
+
+
+        qry = f"""
+select dl.*,p.* 
+from gnr.Party as p
+join acc.dl as dl on dl.DLId = p.DLRef
+where dl.Code = {customer_code}        
+        """
+        self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
 
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search

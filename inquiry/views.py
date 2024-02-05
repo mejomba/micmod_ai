@@ -438,8 +438,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
         form.fields['grade'] = get_choice_field(grades, grade)
         form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
-        s = item_sku.sepidar_stocks
-        s = item_sku.sepidar_stocks
+        item_sku.set_extra_data_sepidar(customer_code=party_code)
 
         if item_sku and item_sku.price is not None:
             item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,

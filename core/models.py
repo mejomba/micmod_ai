@@ -82,7 +82,7 @@ class BaseManager(models.Manager):
 
     def get_access_object(self, user,q="all"):
         from workflow.models import WorkFlow
-        if user.is_superuser:
+        if user.is_superuser or self.is_public:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name, app_label=self.model._meta.app_label).first()
 
