@@ -11,6 +11,8 @@ function hideShowQuotationItemTransportationCost(nodeList, action) {
 $(document).ready(function () {
     const quantityInput = document.querySelectorAll('input[name*="-quantity"]')
     const newInquiryResult = document.querySelectorAll('[id*="new-inquiry-result"]')
+    const newInquiryResultDoneLocal = document.querySelectorAll('[id*="local_price_inquiry_done"]')
+    const newInquiryResultDoneForeign = document.querySelectorAll('[id*="foreign_price_inquiry_done"]')
     const currencyRef = document.getElementById('id_currency_ref')
     let currencyRefValue = ''
     if (currencyRef){currencyRefValue = currencyRef.value}
@@ -75,28 +77,24 @@ $(document).ready(function () {
             const elem = findAncestor(e.target, "item")
             debugger
                 setPriceWithAjax(e, elem)
-                // $.ajax({
-                //     url: '/inquiry/item_list/',
-                //     data: {
-                //         'q': e.currentTarget.dataset.value,
-                //         'party_id': document.getElementById('customer_pid').textContent || -1,
-                //         'id_currency_ref': document.getElementById('id_currency_ref').value,
-                //         'id_payment_method': document.getElementById('id_payment_method').value,
-                //         'id_market_grade': document.getElementById('id_market_grade').value,
-                //         'id_customer_grade': document.getElementById('id_customer_grade').value,
-                //         'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
-                //     },
-                //     cache: false,
-                //     type: 'GET',
-                //     success: function (response){
-                //         console.log(response)
-                //         set_price_data(response.items[0], elem, e.target)
-                //         console.log(response.items)
-                //     },
-                //     error: function (xhr) {
-                //         console.log(xhr)
-                //     }
-                // }); // end ajax
+        })
+    })
+
+    newInquiryResultDoneLocal.forEach(function (item){
+        item.addEventListener('change', function (e){
+            e.preventDefault();
+            const elem = findAncestor(e.target, "item")
+            debugger
+                setPriceWithAjax(e, elem)
+        })
+    })
+
+    newInquiryResultDoneForeign.forEach(function (item){
+        item.addEventListener('change', function (e){
+            e.preventDefault();
+            const elem = findAncestor(e.target, "item")
+            debugger
+                setPriceWithAjax(e, elem)
         })
     })
 
