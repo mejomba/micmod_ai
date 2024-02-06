@@ -422,8 +422,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
                                                                  Q(need_local_price_inquiry=False) |
                                                                  Q(local_price_inquiry_done=False) &
-                                                                 Q(need_local_price_inquiry=True) &
-            Q()
+                                                                 Q(need_local_price_inquiry=True)
                                                                  )
         elif q == 'foreign':
             quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
@@ -438,9 +437,9 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
             )
 
-        greeting = {}
-        greeting['heading'] = _("quotation")
-        greeting['pageview'] = _("micmod_base")
+        context = dict()
+        context['heading'] = _("quotation")
+        context['pageview'] = _("micmod_base")
         forms = list()
         for qi in quotations_record_lst:
             # form = formset_factory(QuotationItemForm2)
@@ -454,32 +453,10 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                                                       }
                                               })
             form.enable = False
-
-            # nestedFormset = modelformset_factory(InquiryResult, fields=iqr_fields)
-            # nestedFormset = inlineformset_factory(
-            #     QuotationItem,
-            #     InquiryResult,
-            #     formset=InquiryResultForm,
-            #     form=QuotationItemForm2,
-            #     extra=1,
-            #     fields=iqr_fields,
-            # )
-            # form.formset = nestedFormset(instance=qi,
-            #                              form_kwargs={
-            #                                       "constraint": {
-            #                                           "wf_access": self.wf_access,
-            #                                           'form_state': self.state_index,
-            #                                           'request': self.request,
-            #                                           'form_constraint': self.flow_config.get('flow_form_constraint'),
-            #                                           'formset_constraint': self.flow_config.get('flow_formset_constraint')
-            #                                           }
-            #                                   }
-            #                              ) #if self.formset else None
-            # form.formset = nestedFormset()
             forms.append(form)
-        greeting['forms'] = forms
+        context['forms'] = forms
 
-        return render(request, 'micmod-base/quotation/form_pending_list.html', greeting)
+        return render(request, 'micmod-base/quotation/form_pending_list.html', context)
 
     def post(self, request):
         if obj_pk := self.request.POST.get('obj_pk'):

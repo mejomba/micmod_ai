@@ -33,6 +33,9 @@ class WorkFlow(BaseModel):
     def submit_flow(self):
         pass
 
+    def flow_step_index(self):
+        self.flow_step_index()
+
     def get_flow(self):
         return self
 
