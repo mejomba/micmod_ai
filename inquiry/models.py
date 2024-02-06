@@ -54,6 +54,8 @@ class PriceInquiryResult(BaseModel):
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
     active = models.BooleanField(verbose_name=_('active'), default=False)
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), null=True, blank=True)
+    item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
+
     # price_settings_ = None
     custom_properties = {
         'quantity_': None,

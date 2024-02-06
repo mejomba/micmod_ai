@@ -330,13 +330,19 @@ class InquiryResultUpdateView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
+        from extra_data.models import ItemWeight
         if form.cleaned_data['update_price']:
             obj = form.save(commit=False)
             obj.price_update_date = timezone.now()
             obj.save()
         else:
             pass
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        sku = self.object.sku
+        item_weight = self.object.item_weight
+        ItemWeight.objects.create(sku=sku, weight=item_weight)
+
+        return res
 
 
 class InquiryResultDataTableView(AjaxDatatableView):
