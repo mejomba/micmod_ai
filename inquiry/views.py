@@ -26,7 +26,7 @@ from sepidar.models import Item as SepidarItem, Dl
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
-from extra_data.models import Item, PriceSettings
+from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
 
@@ -320,6 +320,11 @@ class InquiryResultUpdateView(BaseView):
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
+        if not self.object.item_weight:
+            sku = self.object.sku
+            # TODO: filter by user type
+            context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
+
         return context
 
     def get_success_url(self):
@@ -341,6 +346,7 @@ class InquiryResultUpdateView(BaseView):
         sku = self.object.sku
         item_weight = self.object.item_weight
         ItemWeight.objects.create(sku=sku, weight=item_weight)
+
 
         return res
 
@@ -391,17 +397,17 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return cols
 
     def get_initial_queryset(self, request=None):
-        param: str = self.request.POST.get('sku')
+        sku: str = self.request.POST.get('sku')
         try:
-            if param and param.isdigit():
-                param = int(param)
+            if sku and sku.isdigit():
+                sku = int(sku)
             else:
-                param = ''
+                sku = ''
         except TypeError as e:
             show_error(e, __file__)
-        if param:
+        if sku:
             # qs = self.model.objects.filter(sku=param)
-            qs = self.model.inquiry_list_datatable(user=self.request.user, param=param)
+            qs = self.model.inquiry_list_datatable(user=self.request.user, param={"sku": sku})
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
             # qs = self.model.objects.all()
