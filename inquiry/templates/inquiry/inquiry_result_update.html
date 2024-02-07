@@ -23,9 +23,9 @@
                 {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
                 {% render_field_by_order form form.description form.active form.update_price label='on-border' %}
                 <div>
-                    {% render_field_by_order form form.item_weight %}
+                    {% render_field_by_order form form.item_weight label='on-border' %}
                     {% if pre_item_weight %}
-                        <small>وزن قبلی: {{ pre_item_weight.weight }}</small>
+                        <small>وزن قبلی: {{ pre_item_weight.weight }}</small><small class="mx-3">ثبت شده توسط:  {{ pre_item_weight.creator_user }}</small>
                     {% endif %}
                 </div>
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
