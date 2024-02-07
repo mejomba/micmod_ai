@@ -35,14 +35,14 @@
             <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal"
                data-bs-target="#kt_modal_share_earn">تصاویر</a>
         </div>
-        {% include 'files/partial/modal_for_image.html' with images=images %}
+        {% include 'files/partial/modal_for_image.html' with images=sku.images.all %}
     </div>
     {% include "core/partial/table.html" with data_frame=sepidar_data.mean_price header=True %}
 </div>
 <div class="card-body bg-gray-200">
     <div class="d-flex">
         <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
-            <li class="nav-item w-100 me-0 mb-md-2">
+            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',1)">
                 <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
                    href="#kt_tab_pane_1">
                     <div class="anchor fw-bold" data-key="goods_information"><i
@@ -55,7 +55,7 @@
                     </div>
                 </a>
             </li>
-            <li class="nav-item w-100 me-0 mb-md-2">
+            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',2)">
                 <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
                    href="#kt_tab_pane_2">
                     <div class="anchor fw-bold position-relative" data-key="goods_information"><i
@@ -89,7 +89,7 @@
                     </div>
                 </a>
             </li>
-            <li class="nav-item w-100">
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',3)">
                 <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
                    href="#kt_tab_pane_3">
                     <div class="anchor fw-bold" data-key="goods_information"><i
@@ -122,7 +122,7 @@
                     </div>
                 </a>
             </li>
-            <li class="nav-item w-100">
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',4)">
                 <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
                    href="#kt_tab_pane_4">
                     <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
@@ -185,7 +185,6 @@
         </ul>
     </div>
 </div>
-{% include 'core/partial/table.html' with data_frame=sku.sepidar_stocks header=True %}
 <div class="card-footer d-flex">
     <div class="fw-bold"><span
             class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.price.price_update_date|to_jalali }}</div>

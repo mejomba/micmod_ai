@@ -206,6 +206,9 @@ class PriceSettings(AbsBaseModel):
                 return line.get(currency.title_en.lower(),line.get('rial_percentage'))
         return 0
 
+    def __str__(self):
+        return self.title
+
 
 class HS(AbsBaseModel):
     code = models.CharField(verbose_name=_('code'),max_length=8,unique=True)
@@ -280,6 +283,8 @@ class Item(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data.dl_code = None
+        self.extra_data.price = None
+        self.extra_data.prices = None
 
     BATCH_TYPE = (('box', _('box')), ('rol', _('rol')))
     sku = models.CharField(max_length=10, verbose_name=_('sku'), null=True, blank=True, unique=True)
@@ -309,9 +314,20 @@ class Item(BaseModel):
 
     @property
     def price(self):
-        if not getattr(self.extra_data,'price',None):
+        if not self.extra_data.price:
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
         return self.extra_data.price
+
+    def set_price(self, price_id):
+        if not self.extra_data.price and not price_id:
+            self.extra_data.price = self.items.filter(sku=self).filter(active=True, id=price_id)
+        return self.extra_data.price
+
+    @property
+    def prices(self):
+        if not self.extra_data.prices:
+            self.extra_data.prices = self.items.filter(sku=self).filter(active=True)
+        return self.extra_data.prices
 
     @property
     def get_customs_price(self):
@@ -346,7 +362,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
                 --,g1.Code sales_user_code, g1.Title sales_user_group
                 --,item.Code item_code, Item.Title item_title
                 --,g_p.Code purchase_group_code, g_p.Title purchase_group, g_s.Code sales_group_code, g_s.Title sales_group
-                ,fy.Title year_title
+                --,fy.Title year_title
                 --,curr.Title currency
         from
         (
@@ -378,7 +394,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
                   and docs.doc_type like N'%%{doc_type}%%'
         order by docs.Date desc
                     """
-        self.extra_data.sepidar_data['invoice'] = select_cquery(
+        self.extra_data.sepidar_data['invoices'] = select_cquery(
             qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='invoice'),
             "sepidar")
         self.extra_data.sepidar_data['qutations'] = select_cquery(

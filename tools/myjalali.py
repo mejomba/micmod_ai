@@ -199,11 +199,14 @@ class Persian:
 
 
 class JalalyDate:
-    def __init__(self, date):
+    def __init__(self, date, d_type="Georgian"):
+        self.date = None
         if isinstance(date,datetime.date) or isinstance(date,datetime.datetime):
             self.date = date
 
     def get_persian_date_time(self,date_format="{y}/{m}/{d} \n{H}:{M}"):
+        if not self.date:
+            return ""
         year = self.date.year
         month = self.date.month
         day = self.date.day
@@ -239,7 +242,17 @@ class JalalyDate:
         self.persian_year = jy
         self.persian_month = jm
         self.persian_day = jd
-        return date_format.format(y=self.persian_year, m=self.persian_month,d=self.persian_day,H=self.date.hour, M=self.date.minute)
+        if self.date.hour + self.date.minute:
+            return date_format.format(y=self.persian_year, m=self.persian_month,d=self.persian_day,H=self.date.hour, M=self.date.minute)
+        else:
+            date_format = date_format.replace("{H}:{M}","")
+            return date_format.format(y=self.persian_year, m=self.persian_month,d=self.persian_day)
+
+    def get_elapsed_time(self):
+        if not self.date:
+            return ""
+        from tools.utils import elapsed_time
+        return elapsed_time(self.date)
 
 
 if __name__ == '__main__':

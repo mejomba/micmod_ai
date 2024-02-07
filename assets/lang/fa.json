@@ -44,6 +44,7 @@
     "t-alert-email":"Alert Email",
     "t-bill-email":"Billing Email",
     "t-invoices" :"Invoices",
+    "invoices" :"فاکتورها",
     "t-invoice-list" :"Invoice List",
     "t-invoice-detail" :"Invoice Detail",
     "t-projects" :"Projects",
@@ -111,6 +112,7 @@
     "t-colors":"Colors",
     "t-rating":"Rating",
     "t-notifications":"هشدارها",
+    "qutations":"پیش فاکتورها",
     "t-image-cropper":"Image Cropper",
     "t-forms":"Forms",
     "t-form-elements" :"Forms Elements",
@@ -460,5 +462,10 @@
     "force_inquiry": "استعلام سریع",
     "pending_type": "نوع بلاتکلیفی",
     "pending_list": "لیست بلاتکلیف ها",
-    "quotation_code": "کد پیش فاکتور"
+    "quotation_code": "کد پیش فاکتور",
+    "fee": "فی",
+    "sales_type": "نوع فروش",
+    "year_title": "سال",
+    "no_data_found": "اطلاعاتی پیدا نشد",
+    "price_in_60": "قیمت در 60 روز اخیر"
 }

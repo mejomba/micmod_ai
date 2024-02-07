@@ -134,7 +134,9 @@ class NoUserBaseModel(models.Model):
     workflows = GenericRelation('workflow.Workflow', related_query_name="parent_object_wf")
     notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
     change_logs = GenericRelation('changelog.ChangeLog', related_query_name="parent_object_no")
-    comments = GenericRelation('comments.comments', related_query_name="parent_object_no")
+    comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
+    images = GenericRelation('files.Image', related_query_name="parent_object_no")
+    files = GenericRelation('files.File', related_query_name="parent_object_no")
 
     submit_copy = False
     objects = BaseManager()

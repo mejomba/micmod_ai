@@ -5,15 +5,10 @@
          role="alert">
         <span></span>
     </div>
-    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 " >
+    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 ">
         {% csrf_token %}
-        <div class="row" >
-            <div class="col-7" id="id_ajax">
-                {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
-            </div>
-            <div class="col-5">
-                {% include "inquiry/partial/for_sales_inquery/extra_data_tabs.html" %}
-            </div>
+        <div id="id_ajax">
+            {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
         </div>
     </div>
 {% endblock form_content %}
@@ -26,7 +21,7 @@
     <script>
         function refresh_data(e) {
             debugger
-            if(e.type==="change"||e.keyCode===13) {
+            if (e.type === "change" || e.keyCode === 13) {
                 e.preventDefault();
                 const skuInput = document.querySelector('#id_sku_c')
                 const requiredField = [skuInput.value]
