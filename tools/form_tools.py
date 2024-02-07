@@ -1,5 +1,20 @@
+import pandas as pd
 from django import forms
+from django.db import connections
 
+
+def select_cquery(query, using_db='default'):
+    with connections[using_db].cursor() as cursor:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = cursor.description
+        cursor.close()
+        column = []
+        for col in columns:
+            column.append(col[0])
+        df = pd.DataFrame(result, columns=column)
+        df.to_html()
+        return df
 
 def get_choice_field(items, selected_item=None):
     field = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}),choices=items)

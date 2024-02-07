@@ -83,7 +83,7 @@ class BaseManager(models.Manager):
     def get_access_object(self, user,q="all"):
         import time
         from workflow.models import WorkFlow
-        if user.is_superuser:
+        if user.is_superuser or self.is_public:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name, app_label=self.model._meta.app_label).first()
 
@@ -133,7 +133,10 @@ class NoUserBaseModel(models.Model):
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="parent_object_wf")
     notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
-    comments = GenericRelation('comments.comments', related_query_name="parent_object_no")
+    change_logs = GenericRelation('changelog.ChangeLog', related_query_name="parent_object_no")
+    comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
+    images = GenericRelation('files.Image', related_query_name="parent_object_no")
+    files = GenericRelation('files.File', related_query_name="parent_object_no")
 
     submit_copy = False
     objects = BaseManager()
@@ -309,7 +312,7 @@ class NoUserBaseModel(models.Model):
     def compare(self, obj=None, excluded_keys=None):
         if excluded_keys is None:
             excluded_keys = list()
-        excluded_keys.extend(['created_date', 'last_update_date', '_state'])
+        excluded_keys.extend(['created_date', 'last_update_date', 'editor_user', '_state', 'extra_data'])
         return self._compare(obj, excluded_keys)
 
     def _compare(self, old_obj=None, excluded_keys=None):
@@ -359,6 +362,7 @@ class NoUserBaseModel(models.Model):
                                           action=action
                                           )
             ch.save_user(request)
+
 
     @staticmethod
     def attach_image_file(obj, form=None):

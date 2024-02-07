@@ -1,19 +1,28 @@
+{% load accounts_tag %}
 {% load more_tags %}
 
-<div class="row mx-3">
-    <div class="card-body col-4">
+<div class="row mx-1">
+    <div class="card-body col-3">
         <div class="align-items-center px-7 py-3 mb-5">
             <div class="mb-4">
                 <span data-key="information">information</span>
             </div>
             <hr class="mb-6">
             {% render_field_by_order form form.sku form.sku_c form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
-            {% if 1 == 1 %}
-{#                {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}#}
+            {% if request.user|has_group:"total_admin" %}
+                {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
             {% endif %}
         </div>
     </div>
-    <div class="card col-8">
-        {% include "inquiry/partial/partial_result_inquiry_result_for_sales.html" %}
+    <div class="card-body col-9">
+        <div class="row">
+            <div class="col-5">
+                {% include "inquiry/partial/partial_result_inquiry_result_for_sales.html" %}
+            </div>
+            <div class="col-7">
+                {% include "inquiry/partial/for_sales_inquery/extra_data_tabs.html" %}
+            </div>
+        </div>
+
     </div>
 </div>

@@ -1,9 +1,16 @@
 import datetime
 
-from django.db import models, connections
+from django.db import models, connections, connection
 from translator import get_text as _
+from tools.form_tools import select_cquery
 
-
+class BaseData():
+    current_year_ref_ = None
+    @classmethod
+    def current_year_ref(cls):
+        if cls.current_year_ref_ == None:
+            cls.current_year_ref_ = int(select_cquery("select max(FiscalYearId) as current_year from fmk.FiscalYear","sepidar").current_year)
+        return cls.current_year_ref_
 # Create your models here.
 # class CustomManager(manager.Manager):
 #     def get_for_index(self, index_id):

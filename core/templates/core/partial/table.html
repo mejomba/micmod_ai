@@ -1,3 +1,34 @@
-<table>
-
-</table>
+{% load core_tags %}
+{% load static %}
+<div class="{{ rma_class }}">
+    {% if rma_title %}
+        <div class="bold py-1" data-key="{{ rma_title }}">
+            {{ rma_title }}
+        </div>
+    {% endif %}
+    <table class="table table-striped" dir="rtl">
+        {% if rma_transpose %}
+            {#    To do#}
+        {% else %}
+            {% if rma_has_header %}
+                <tr class="bg-dark text-white">
+                    {% for col in rma_data_frame.columns %}
+                        <td data-key="{{ col|lower }}">{{ col }}</td>
+                    {% endfor %}
+                </tr>
+            {% endif %}
+            {% if not rma_data_frame.values is None %}
+                {% for row in rma_data_frame.values %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{ col|humanized_format }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% elif rma_has_header or rma_title %}
+                <tr><td class="text-danger"  colspan="10" data-key="no_data_found">no data found</td></tr>
+            {% endif %}
+        {% endif %}
+    </table>
+</div>
+<script src="{% static 'lang/translate.js' %}"></script>

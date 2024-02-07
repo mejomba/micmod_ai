@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from django.utils.safestring import mark_safe
@@ -8,8 +9,38 @@ from pprint import pprint
 from django.apps import apps
 from django.apps import apps
 register = template.Library()
+import ast
+from django.contrib.humanize.templatetags.humanize import intcomma,number_format
+from tools.myjalali import JalalyDate
 
 # Register tags as an adapter for the Theme class usage in the HTML template
+
+@register.filter
+def humanized_format(value, digits=None, use_l10n=True):
+    if value and isinstance(value, datetime.date):
+        if not digits:
+            digits = "{y}/{m}/{d} \n{H}:{M}"
+        return JalalyDate(value).get_persian_date_time(digits)
+    if value and isinstance(value, datetime.datetime):
+        if not digits:
+            digits = "{y}/{m}/{d} \n{H}:{M}"
+        return JalalyDate(value).get_persian_date_time(digits)
+    try:
+        value = float(value)
+    except:
+        return value
+    if not digits or isinstance(digits, str):
+        value_ = abs(value)
+        if value_ < 100:
+            digits = 4
+        elif value_ < 1000:
+            digits = 2
+        else:
+            digits = 0
+        if int(value) == value:
+            digits = 0
+    value = number_format(value=value,decimal_pos=digits,use_l10n=use_l10n,force_grouping=True)
+    return value
 
 @register.simple_tag
 def get_object_count(user, count_str):
@@ -59,3 +90,15 @@ def contains(m_str, search):
 @register.simple_tag
 def show_field_value(field):
     ...
+    
+    
+@register.simple_tag
+def call_function(obj, function_name, *args, kwargs=None):
+    function = getattr(obj, function_name, None)
+    if function:
+        if isinstance(kwargs, str):
+            kwargs = ast.literal_eval(kwargs)
+        if kwargs:
+            return function(*args, **kwargs)
+        else:
+            return function(*args)
