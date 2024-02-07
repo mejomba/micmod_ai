@@ -1,186 +1,192 @@
 {% load more_tags %}
+{% load core_tags %}
 {% load static %}
 {% load jalali_tags %}
 {% load humanize %}
 {% load accounts_tag %}
-{{ sku.id }}
-{{ sku.sepidar_stock }}
-    <div class="card-title">
-        <div class="fw-bolder row row-cols-2">
-            <div class="col">
-                <span class="me-10">وزن کالا در 1000 قطعه:</span>
-                {{ sku.price.weight|intcomma|floatformat:4 }}
-            </div>
-            <div class="col">
-                <span class="me-10">وزن:</span>
-                {{ sku.item_weights.all.last.weight }}
-            </div>
-            <div class="col">
-                <span class="me-10">نوع بسته بندی:</span>
-                {{ sku.batch_type }}
-            </div>
-            <div class="col">
-                <span class="me-10">تعداد در بسته:</span>
-                {{ sku.batch_count }}
-            </div>
-            <div class="col">
-                <span class="me-10">روش تعیین قیمت </span>
-                <a target="_blank" href="/admin/extra_data/pricesettings/{{ sku.price.price_settings.pk }}/change/">{{ sku.price.price_settings.title }}</a>
-            </div>
-            <div class="col">
-                <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal" data-bs-target="#kt_modal_share_earn">تصاویر</a>
-            </div>
-            {% include 'files/partial/modal_for_image.html' with images=images %}
-        </div>
+{% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
+<div class="card-title">
+    <div>
+        {{ sepidar_data.customer.Title.0 }}
     </div>
-    <div class="card-body bg-gray-200">
-        <div class="d-flex">
-            <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
-                <li class="nav-item w-100 me-0 mb-md-2">
-                    <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
-                       href="#kt_tab_pane_1">
-                        <div class="anchor fw-bold" data-key="goods_information"><i
-                                class="bi bi-info-square-fill me-2"></i>
-                            اطلاعات کلی کالا
-                        </div>
-                        <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
-                            <div class="text-end me-2 min-h-30px"> {{ item.title }} </div>
-                            <div class="text-end me-2 min-h-30px fw-bold"> {{ sku.purchase_group }} </div>
-                        </div>
-                    </a>
-                </li>
-                <li class="nav-item w-100 me-0 mb-md-2">
-                    <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
-                       href="#kt_tab_pane_2">
-                        <div class="anchor fw-bold position-relative" data-key="goods_information"><i
-                                class="bi bi-currency-dollar me-2"></i>اطلاعات
-                            قیمت و فروش
-                            <span class="badge badge-square badge-light-danger ms-2"> % {{ sku.price.extra_data.discount_percentage.on_demand_discounts_percentage }}</span>
-                        </div>
-                        <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
-                            <table class="table table-row-dashed table-row-gray-300">
+    <div class="fw-bolder row row-cols-2">
+        <div class="col">
+            <span class="me-10">وزن کالا در 1000 قطعه:</span>
+            {{ sku.price.weight|intcomma|floatformat:4 }}
+        </div>
+        <div class="col">
+            <span class="me-10">وزن:</span>
+            {{ sku.item_weights.all.last.weight }}
+        </div>
+        <div class="col">
+            <span class="me-10">نوع بسته بندی:</span>
+            {{ sku.batch_type }}
+        </div>
+        <div class="col">
+            <span class="me-10">تعداد در بسته:</span>
+            {{ sku.batch_count }}
+        </div>
+        <div class="col">
+            <span class="me-10">روش تعیین قیمت </span>
+            <a target="_blank"
+               href="/admin/extra_data/pricesettings/{{ sku.price.price_settings.pk }}/change/">{{ sku.price.price_settings.title }}</a>
+        </div>
+        <div class="col">
+            <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal"
+               data-bs-target="#kt_modal_share_earn">تصاویر</a>
+        </div>
+        {% include 'files/partial/modal_for_image.html' with images=sku.images.all %}
+    </div>
+    {% include "core/partial/table.html" with data_frame=sepidar_data.mean_price header=True %}
+</div>
+<div class="card-body bg-gray-200">
+    <div class="d-flex">
+        <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
+            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',1)">
+                <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
+                   href="#kt_tab_pane_1">
+                    <div class="anchor fw-bold" data-key="goods_information"><i
+                            class="bi bi-info-square-fill me-2"></i>
+                        اطلاعات کلی کالا
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
+                        <div class="text-end me-2 min-h-30px"> {{ item.title }} </div>
+                        <div class="text-end me-2 min-h-30px fw-bold"> {{ sku.purchase_group }} </div>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',2)">
+                <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
+                   href="#kt_tab_pane_2">
+                    <div class="anchor fw-bold position-relative" data-key="goods_information"><i
+                            class="bi bi-currency-dollar me-2"></i>اطلاعات
+                        قیمت و فروش
+                        <span class="badge badge-square badge-light-danger ms-2"> % {{ sku.price.extra_data.discount_percentage.on_demand_discounts_percentage }}</span>
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
+                        <table class="table table-row-dashed table-row-gray-300">
+                            <tr class="fw-bold fs-6 text-gray-800">
+                                <td class="w-40 text-primary"></td>
+                                <td class="w-30 text-primary">یوانی</td>
+                                <td class="w-30 text-primary">ریالی</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت اکسپرس</td>
+                                <td class="text-danger">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.price.rial_final_price.express|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت هوایی</td>
+                                <td class="text-danger">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.price.rial_final_price.air|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">قیمت دریایی</td>
+                                <td class="text-danger">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger">{{ sku.price.rial_final_price.sea|intcomma }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',3)">
+                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                   href="#kt_tab_pane_3">
+                    <div class="anchor fw-bold" data-key="goods_information"><i
+                            class="bi bi-box-seam-fill me-2"></i>اطلاعات
+                        موجودی کالا
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
+                        <table class="table table-row-dashed table-row-gray-300">
+                            <tr class="fw-bold fs-6 text-gray-800">
+                                <td class="w-40 text-primary"></td>
+                                <td class="w-30 text-primary">موجودی</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">انبار مرکزی</td>
+                                <td class="text-danger">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">انبار رزرو</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">در راه (کسری)</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-primary">در راه (مشتری)</td>
+                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </a>
+            </li>
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',4)">
+                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                   href="#kt_tab_pane_4">
+                    <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
+                        قیمت (مدیریتی)
+                    </div>
+                    <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
+                        {% if request.user|has_group:"total_admin" %}
+                            <table class="table table-row-dashed table-row-gray-300 min-h-100px">
                                 <tr class="fw-bold fs-6 text-gray-800">
-                                    <td class="w-40 text-primary"></td>
-                                    <td class="w-30 text-primary">یوانی</td>
-                                    <td class="w-30 text-primary">ریالی</td>
+                                    <td class="w-40 text-primary">{{ sku.price.currency_type }}</td>
+                                    <td class="w-30 text-primary">{{ sku.price.price|intcomma|floatformat:4 }}</td>
+                                    <td class="w-30 text-warning">{{ sku.price.rmb_price|intcomma|floatformat:4 }}</td>
+                                </tr>
+                                <tr class="fw-bold fs-6 bg-primary text-inverse-primary">
+                                    <td class="">اکسپرس</td>
+                                    <td class="">هوایی</td>
+                                    <td class="">دریایی</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">قیمت اکسپرس</td>
-                                    <td class="text-danger">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
-                                    <td class="text-danger">{{ sku.price.rial_final_price.express|intcomma }}</td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.air|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.sea|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">قیمت هوایی</td>
-                                    <td class="text-danger">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
-                                    <td class="text-danger">{{ sku.price.rial_final_price.air|intcomma }}</td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.express|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.air|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.sea|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">قیمت دریایی</td>
-                                    <td class="text-danger">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
-                                    <td class="text-danger">{{ sku.price.rial_final_price.sea|intcomma }}</td>
+                                    <td class="text-primary">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
+                                    <td class="text-primary">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}
+                                        <span class="badge badge-square text-danger  mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                    </td>
                                 </tr>
                             </table>
-                        </div>
-                    </a>
-                </li>
-                <li class="nav-item w-100">
-                    <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
-                       href="#kt_tab_pane_3">
-                        <div class="anchor fw-bold" data-key="goods_information"><i
-                                class="bi bi-box-seam-fill me-2"></i>اطلاعات
-                            موجودی کالا
-                        </div>
-                        <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
-                            <table class="table table-row-dashed table-row-gray-300">
-                                <tr class="fw-bold fs-6 text-gray-800">
-                                    <td class="w-40 text-primary"></td>
-                                    <td class="w-30 text-primary">موجودی</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-primary">انبار مرکزی</td>
-                                    <td class="text-danger">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-primary">انبار رزرو</td>
-                                    <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-primary">در راه (کسری)</td>
-                                    <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-primary">در راه (مشتری)</td>
-                                    <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </a>
-                </li>
-                <li class="nav-item w-100">
-                    <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
-                       href="#kt_tab_pane_4">
-                        <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
-                            قیمت (مدیریتی)
-                        </div>
-                        <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
-                            {% if request.user|has_group:"total_admin" %}
-                                <table class="table table-row-dashed table-row-gray-300 min-h-100px">
-                                    <tr class="fw-bold fs-6 text-gray-800">
-                                        <td class="w-40 text-primary">{{ sku.price.currency_type }}</td>
-                                        <td class="w-30 text-primary">{{ sku.price.price|intcomma|floatformat:4 }}</td>
-                                        <td class="w-30 text-warning">{{ sku.price.rmb_price|intcomma|floatformat:4 }}</td>
-                                    </tr>
-                                    <tr class="fw-bold fs-6 bg-primary text-inverse-primary">
-                                        <td class="">اکسپرس</td>
-                                        <td class="">هوایی</td>
-                                        <td class="">دریایی</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.air|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_custom_office.sea|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_custom_office_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.express|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.air|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.extra_data.rmb_final_price_before_ondemand.sea|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_before_ondemand_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-primary">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                        <td class="text-primary">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}
-                                            <span class="badge badge-square text-danger  mt-1 ms-2">{{ sku.price.extra_data.rmb_final_price_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                        </td>
-                                    </tr>
-                                </table>
 
-                            {% else %}
-                                <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد</div>
-                            {% endif %}
-                        </div>
-                    </a>
-                </li>
-            </ul>
-        </div>
+                        {% else %}
+                            <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد</div>
+                        {% endif %}
+                    </div>
+                </a>
+            </li>
+        </ul>
     </div>
-    <div class="card-footer d-flex">
-        <div class="fw-bold"><span
-                class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.price.price_update_date|to_jalali }}</div>
-        <div class="ms-10">{{ sku.price.elapsed_from_last_price }}</div>
-    </div>
+</div>
+<div class="card-footer d-flex">
+    <div class="fw-bold"><span
+            class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.price.price_update_date|to_jalali }}</div>
+    <div class="ms-10">{{ sku.price.elapsed_from_last_price }}</div>
+</div>

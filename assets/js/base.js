@@ -137,16 +137,18 @@ function custom_ajax_post(form, url, element) {
         success: function (data) {
             html = data['res'];
             element.html(html);
-            // run_scripts(element);
+            run_scripts(html);
         },
         complete: release_main_container()
     }); // end ajax
 }
 
 function run_scripts(elem){
-    // const scripts = $('body')[0].innerHTML.match(/<script (.*?)<\/script>/g)
-    scripts.map((script) => {
-        // script = script.replace('"><\/script>', '').replace('<script src="/', '');
+    debugger
+    const scripts = elem.match(/<script (.*?)<\/script>/g)
+    const u_scripts = new Set(scripts)
+    u_scripts.map((script) => {
+        script = script.replace('"><\/script>', '').replace('<script src="/', '');
         loadJS(script);
     })
 }
@@ -174,9 +176,45 @@ function custom_ajax_get(form, url, element) {
         success: function (data) {
             html = data['res'];
             element.html(html);
-            // run_scripts(element);
+            run_scripts(html);
         },
         complete: release_main_container()
     });
+}
+
+
+function setCookie(cname, cvalue, exdays=null) {
+  const d = new Date();
+  if(exdays==null){exdays=365}
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  let expires = "expires="+d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+  let name = cname + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
+function checkCookie() {
+  let user = getCookie("username");
+  if (user != "") {
+    alert("Welcome again " + user);
+  } else {
+    user = prompt("Please enter your name:", "");
+    if (user != "" && user != null) {
+      setCookie("username", user, 365);
+    }
+  }
 }
 

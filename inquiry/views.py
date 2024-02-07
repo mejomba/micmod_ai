@@ -472,6 +472,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
         form.fields['grade'] = get_choice_field(grades, grade)
         form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
+        # item_sku.set_extra_data_sepidar(customer_code=party_code)
 
         if item_sku and item_sku.price is not None:
             item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
@@ -486,18 +487,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             item['q_fee_cust'] = res.quotation_fee
         else:
             item = dict()
-        #a = item_sku.sepidar_stock
-        #  add image, weight, batch_type, batch_count
-        contenttype = ContentType.objects.get_for_model(item_sku._meta.model)
-        images = Image.objects.filter(content_type=contenttype, object_id=item_sku.pk)
-        item_weight = item_sku.item_weights.all().order_by('id').last().weight
-        item_batch_type = item_sku.batch_type
-        item_batch_count = item_sku.batch_count
         if request.GET:
             html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
                                                                                               "sku": item_sku,
                                                                                               'item': item,
-                                                                                              'images': images}, request)
+                                                                                              }, request)
 
             return JsonResponse({'res': html})
         if request.POST:
@@ -547,7 +541,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             obj = InquiryResult.objects.create(**inquiry_result_params)
             obj.save_user(request)
 
-        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': inquiry_result_params, "sku": item_sku},request)
+        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': item, "sku": item_sku},request)
         # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
 
         return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})
