@@ -341,7 +341,7 @@
       "section": "False",
       "permission": {
         "groups": [
-          "base_user"
+          "sales_admin"
         ]
       },
       "menus": [
