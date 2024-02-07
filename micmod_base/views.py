@@ -380,7 +380,7 @@ class QuotationItemPending(LoginRequiredMixin, View):
 
 
 class QuotationItemFormPending(LoginRequiredMixin, View):
-    template_name = 'micmod-base/quotation/pending_list.html'
+    template_name = 'micmod-base/quotation/form_pending_list.html'
     form_struct = {
         'form': QuotationItemForm2,
         'childes': [
@@ -391,32 +391,12 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         ]
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     self.formset_form = self.get_formset_from_struct()
-    #     quotations_record_lst = QuotationItem.objects.filter(
-    #         Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-    #         Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
-    #         Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-    #         Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-    #     )
-    #     for obj in quotations_record_lst:
-    #         context['formset'] = self.formset(instance=obj, form_kwargs={
-    #                                                   "constraint": {
-    #                                                       "wf_access": self.wf_access,
-    #                                                       'form_state': self.state_index,
-    #                                                       'request': self.request,
-    #                                                       'form_constraint': self.flow_config.get('flow_form_constraint'),
-    #                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
-    #                                                       }
-    #                                               }) if self.formset else None
-    #     return context
 
     def get(self, request):
         from django.forms import inlineformset_factory
         from django.forms import formset_factory, modelformset_factory
         from .forms import iqr_fields
-
+        user_groups_name = self.request.user.groups.values_list('name', flat=True)
         q = self.request.GET.get('q')
         if q == 'local':
             quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
@@ -430,12 +410,25 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                                                                  Q(foreign_price_inquiry_done=False) &
                                                                  Q(need_foreign_price_inquiry=True))
         else:
-            quotations_record_lst = QuotationItem.objects.filter(
-                Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True) |
-                Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-            )
+            if self.request.user.is_superuser:
+                quotations_record_lst = QuotationItem.objects.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                )
+            elif 'trade_user' in user_groups_name:
+                quotations_record_lst = QuotationItem.objects.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+                )
+            elif 'bazar_user' in user_groups_name:
+                quotations_record_lst = QuotationItem.objects.filter(
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                )
+            else:
+                quotations_record_lst = []
 
         context = dict()
         context['heading'] = _("quotation")
@@ -452,13 +445,16 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               })
+            form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
             form.enable = False
             forms.append(form)
         context['forms'] = forms
 
-        return render(request, 'micmod-base/quotation/form_pending_list.html', context)
+        return render(request, self.template_name, context)
 
     def post(self, request):
+        # qi_form = QuotationItemForm2(self.request.POST)
+
         if obj_pk := self.request.POST.get('obj_pk'):
             obj = QuotationItem.objects.filter(pk=obj_pk).first()
             if self.request.POST.get('foreign_price_inquiry_done'):
@@ -467,6 +463,12 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 obj.local_price_inquiry_done = True
             obj.save()
             obj.save_comment(self.request)
+            iqr_obj = obj.quotation_item_rel.first()
+            iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
+            if iqr_form.is_valid():
+                iqr_obj = iqr_form.save()
+                iqr_obj.quotation_item = obj
+                iqr_obj.save()
 
         return redirect(reverse('sls:quotationitem.form.pending'))
 

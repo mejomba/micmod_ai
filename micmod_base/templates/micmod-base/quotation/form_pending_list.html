@@ -32,7 +32,7 @@
 {#    {% for h in nested.hidden_fields %}#}
 {#        {{ h }}#}
 {#    {% endfor %}#}
-
+{{ form_s.nested }}
 
     <div class="card-body p-0">
         <input type="hidden" value="{{ form_s.instance.quotation.pk }}">
@@ -185,33 +185,39 @@
 
                         <div class="w-25">
                             <div class="card-title-desc text-center">2-3 هفته</div>
-                            {% if form_s.instance.quotation_item_rel.all.0.express_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.express_transportation_cost_2 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.express_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.express_transportation_cost_2 no_input=True margin_b=0 %}
-                            {% endif %}
-                            {% if form_s.instance.quotation_item_rel.all.0.express_transportation_cost_3 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.express_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}
-                            {% endif %}
+                                {% render_field_by_order form_s.nested form_s.nested.express_transportation_cost_1 form_s.nested.express_transportation_cost_2 no_input=True %}
+                                {% render_field_by_order form_s.nested form_s.nested.express_transportation_cost_3 no_input=True css='d-none' %}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.express_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.express_transportation_cost_2 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.express_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.express_transportation_cost_2 no_input=True margin_b=0 %}#}
+{#                            {% endif %}#}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.express_transportation_cost_3 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.express_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}#}
+{#                            {% endif %}#}
                         </div>
 
 
                         <div class="w-25">
                             <div class="card-title-desc text-center">3 تا 5 هفته</div>
-                            {% if form_s.instance.quotation_item_rel.all.0.air_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.air_transportation_cost_2 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.air_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.air_transportation_cost_2 no_input=True margin_b=0 %}
-                            {% endif %}
-                            {% if form_s.instance.quotation_item_rel.all.0.air_transportation_cost_3 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.air_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}
-                            {% endif %}
+                                {% render_field_by_order form_s.nested form_s.nested.air_transportation_cost_1 form_s.nested.air_transportation_cost_2 no_input=True %}
+                                {% render_field_by_order form_s.nested form_s.nested.air_transportation_cost_3 no_input=True css='d-none' %}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.air_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.air_transportation_cost_2 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.air_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.air_transportation_cost_2 no_input=True margin_b=0 %}#}
+{#                            {% endif %}#}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.air_transportation_cost_3 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.air_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}#}
+{#                            {% endif %}#}
                         </div>
 
                         <div class="w-25">
                             <div class="card-title-desc text-center">12 تا 14 هفته</div>
-                            {% if form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_2 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_2 no_input=True margin_b=0 %}
-                            {% endif %}
-                            {% if form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_3 %}
-                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}
-                            {% endif %}
+                                {% render_field_by_order form_s.nested form_s.nested.sea_transportation_cost_1 form_s.nested.sea_transportation_cost_2 no_input=True %}
+                                {% render_field_by_order form_s.nested form_s.nested.sea_transportation_cost_3 no_input=True css='d-none' %}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_1 and form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_2 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_1 form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_2 no_input=True margin_b=0 %}#}
+{#                            {% endif %}#}
+{#                            {% if form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_3 %}#}
+{#                                {% render_field_by_order form_s.instance form_s.instance.quotation_item_rel.all.0.sea_transportation_cost_3 no_input=True css='d-none' margin_b=0 %}#}
+{#                            {% endif %}#}
                         </div>
 
                     </div>
@@ -259,21 +265,24 @@
                                         {% render_field_by_order form_s form_s.force_inquiry label='on-border' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between mt-1">
-{#                                        {{ form_s.need_local_price_inquiry }}#}
                                         {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between">
-{#                                        {{ form_s.local_price_inquiry_done }}#}
                                         {% render_field_by_order form_s form_s.local_price_inquiry_done label='on-border' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        {% render_field_by_order form_s form_s.bazar_price_code margin_b=0 %}
                                     </div>
                                 </div>
                                 <div class="border-top ps-1">
                                     <div class="d-flex justify-content-between mt-1">
-{#                                        {{ form_s.need_foreign_price_inquiry }}#}
                                         {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         {% render_field_by_order form_s form_s.foreign_price_inquiry_done label='on-order' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        {% render_field_by_order form_s form_s.trade_price_code margin_b=0 %}
                                     </div>
                                 </div>
                             </div>

@@ -265,12 +265,13 @@
 {#                                        {% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}#}
 {#                                    </div>#}
                                     <div class="d-flex justify-content-between mt-1">
-{#                                        {{ form_s.need_local_price_inquiry }}#}
                                         {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between">
-{#                                        {{ form_s.local_price_inquiry_done }}#}
                                         {% render_field_by_order form_s form_s.local_price_inquiry_done label='on-border' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        {% render_field_by_order form_s form_s.bazar_price_code margin_b=0 %}
                                     </div>
                                 </div>
                                 <div class="border-top ps-1">
@@ -281,6 +282,10 @@
                                     <div class="d-flex justify-content-between">
 {#                                        {{ form_s.foreign_price_inquiry_done }}#}
                                         {% render_field_by_order form_s form_s.foreign_price_inquiry_done label='on-order' margin_b=0 %}
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+{#                                        {{ form_s.foreign_price_inquiry_done }}#}
+                                        {% render_field_by_order form_s form_s.trade_price_code margin_b=0 %}
                                     </div>
                                 </div>
                             </div>
