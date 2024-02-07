@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import Count, Q
 from django.db.models.signals import post_save, pre_save
@@ -48,10 +49,13 @@ class PriceInquiryResult(BaseModel):
                                  on_delete=models.DO_NOTHING, related_name='supplier_rel')
     price = models.FloatField(verbose_name=_('price'))
     price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
-    local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
+    # local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
     active = models.BooleanField(verbose_name=_('active'), default=False)
+    inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), null=True, blank=True)
+    item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
+
     # price_settings_ = None
     custom_properties = {
         'quantity_': None,
@@ -65,6 +69,13 @@ class PriceInquiryResult(BaseModel):
     # rmb_final_price_before_ondemand_percentage = dict()
     def __str__(self):
         return f'{self.id}: {self.price_inquiry_file} {self.sku}'
+
+    @classmethod
+    def inquiry_list_datatable(cls, user, param={}):
+        qs = cls.objects.filter(**param)
+        g = user.groups.values_list(flat=True)
+        qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
+        return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
 
     @queryable_property
     def purchase_group(self):
@@ -436,3 +447,12 @@ class InquiryResult(AbsBaseModel):
 #         if instance.active and instance != res:
 #             res.active = False
 #             res.save()
+
+
+class InquiryResultVariant(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('variant_title'))
+    value = models.CharField(max_length=100, verbose_name=_('value'))
+    base_group = models.ForeignKey(Group, on_delete=models.DO_NOTHING, verbose_name=_('base_group'), null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.title}: {self.value}'

@@ -337,7 +337,9 @@ class BaseView(UserPassesTestMixin,
 
             try:
                 """work flow last step to_user should be to current user"""
-                if self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
+                if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
+                    to_user = self.request.user
+                elif self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
                     to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
                 elif self.state_index is not None:
                     to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
@@ -778,10 +780,12 @@ class CommentsFormView(View):
         comments = Comments.objects.none()
         if comment_type == 'cancel':
             kwargs['submit_type'] = 'cancel'
-            comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
+            # comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
-            comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')

@@ -26,7 +26,7 @@ from sepidar.models import Item as SepidarItem, Dl
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
-from extra_data.models import Item, PriceSettings
+from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
 
@@ -261,9 +261,12 @@ class InquiryResultListView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        self.request.GET._mutable = True
+        self.request.GET.update({'user': self.request.user})
         context.update({
             'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         })
+        self.request.GET._mutable = False
         context['submit_copy'] = True
 
         # if cache.get(f'{self.request.user}__submit/copy'):
@@ -280,7 +283,7 @@ class InquiryResultListView(BaseView):
         #     context.update({
         #         'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
         #     })
-        context['submit_copy'] = True
+        # context['submit_copy'] = True
         return context
 
     def post(self, request, *args, **kwargs):
@@ -291,10 +294,14 @@ class InquiryResultListView(BaseView):
         return super().get(*args, **kwargs)
 
     def form_valid(self, form):
+        from django.utils import timezone
         if form.cleaned_data['update_price']:
-            print('update price')
+            obj = form.save(commit=False)
+            obj.price_update_date = timezone.now()
+            obj.save()
         else:
-            print('no update price D:')
+            pass
+        print('no update price Deee :)')
         res = super().form_valid(form)
         return res
 
@@ -306,6 +313,22 @@ class InquiryResultUpdateView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # self.request.GET._mutable = True
+        # self.request.GET.update({'user': self.request.user})
+        context.update({
+            'form': self.form_class(instance=self.object, initial={'user': self.request.user})
+        })
+        # self.request.GET._mutable = False
+        context['submit_copy'] = False
+        if not self.object.item_weight:
+            sku = self.object.sku
+            # TODO: filter by user type
+            qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
+            # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
+            try:
+                context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
+            except Exception:
+                context['pre_item_weight'] = []
         return context
 
     def get_success_url(self):
@@ -316,13 +339,20 @@ class InquiryResultUpdateView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
+        from extra_data.models import ItemWeight
         if form.cleaned_data['update_price']:
             obj = form.save(commit=False)
             obj.price_update_date = timezone.now()
             obj.save()
         else:
             pass
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        sku = self.object.sku
+        item_weight = self.object.item_weight
+        ItemWeight.objects.create(sku=sku, weight=item_weight)
+
+
+        return res
 
 
 class InquiryResultDataTableView(AjaxDatatableView):
@@ -371,18 +401,20 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return cols
 
     def get_initial_queryset(self, request=None):
-        param: str = self.request.POST.get('sku')
+        sku: str = self.request.POST.get('sku')
         try:
-            if param and param.isdigit():
-                param = int(param)
+            if sku and sku.isdigit():
+                sku = int(sku)
             else:
-                param = ''
+                sku = ''
         except TypeError as e:
             show_error(e, __file__)
-        if param:
-            qs = self.model.objects.filter(sku=param)
+        if sku:
+            # qs = self.model.objects.filter(sku=param)
+            qs = self.model.inquiry_list_datatable(user=self.request.user, param={"sku": sku})
         else:
-            qs = self.model.objects.all()
+            qs = self.model.inquiry_list_datatable(user=self.request.user)
+            # qs = self.model.objects.all()
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):

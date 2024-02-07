@@ -305,6 +305,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
         self.fields['final_price'].widget.attrs['class'] += ' replace-digits'
 
+        if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
+            self.make_disable(['local_price_inquiry_done', 'foreign_price_inquiry_done'])
+
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'

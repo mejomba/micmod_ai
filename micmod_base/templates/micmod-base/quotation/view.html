@@ -79,7 +79,7 @@
                                                             {% get_comment_user_list form request.user %}
                                                         </div>
                                                         <div class="col-sm-6 ms-sm-auto rounded">
-{#                                                            {% get_customer form.instance.customer_code as customer %}#}
+                                                            {% get_customer form.instance.customer_code as customer %}
                                                             {% if  customer %}
                                                             <div class="p-2 pb-3 rounded bg-success" id="customer_card">
                                                             {% else %}
@@ -154,8 +154,9 @@
             <a href="{% url 'sls:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
         {% endif %}
     <div class="d-flex justify-content-between mt-1">
+    <div><label class="col-3 col-form-label">استعلام سریع</label></div>
     <div>
-        <span class="switch switch-outline switch-icon switch-success">
+        <span class="switch switch-brand">
 								<label>
 									{{ form.force_inquiry }}
 									<span></span>

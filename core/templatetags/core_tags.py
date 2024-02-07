@@ -86,6 +86,12 @@ def contains(m_str, search):
     else:
         return False
 
+
+@register.simple_tag
+def show_field_value(field):
+    ...
+    
+    
 @register.simple_tag
 def call_function(obj, function_name, *args, kwargs=None):
     function = getattr(obj, function_name, None)
