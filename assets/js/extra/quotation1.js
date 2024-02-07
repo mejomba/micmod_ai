@@ -11,6 +11,8 @@ function hideShowQuotationItemTransportationCost(nodeList, action) {
 $(document).ready(function () {
     const quantityInput = document.querySelectorAll('input[name*="-quantity"]')
     const newInquiryResult = document.querySelectorAll('[id*="new-inquiry-result"]')
+    const tradePriceCodeElem = document.querySelectorAll('[id*="trade_price_code"]')
+    const bazarPriceCodeElem = document.querySelectorAll('[id*="bazar_price_code"]')
     const newInquiryResultDoneLocal = document.querySelectorAll('[id*="local_price_inquiry_done"]')
     const newInquiryResultDoneForeign = document.querySelectorAll('[id*="foreign_price_inquiry_done"]')
     const currencyRef = document.getElementById('id_currency_ref')
@@ -18,12 +20,24 @@ $(document).ready(function () {
     if (currencyRef){currencyRefValue = currencyRef.value}
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
-    function setPriceWithAjax(e, elem){
+    function setPriceWithAjax(e, elem, price_code=''){
         debugger
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
             party_id = -1
         }
+
+        const tradePriceCode = elem.querySelector('#id_trade_price_code')
+        const bazarPriceCode = elem.querySelector('#id_bazar_price_code')
+        let tradePriceCodeValue;
+        let bazarPriceCodeValue;
+        if (tradePriceCode && tradePriceCode == e.target){
+            tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
+        }
+        if (bazarPriceCode && bazarPriceCode == e.target){
+            bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
+        }
+
         $.ajax({
                 url: '/inquiry/item_list/',
                 data: {
@@ -34,6 +48,8 @@ $(document).ready(function () {
                     'id_market_grade': document.getElementById('id_market_grade').value,
                     'id_customer_grade': document.getElementById('id_customer_grade').value,
                     'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    'trade_price_code': tradePriceCodeValue,
+                    'bazar_price_code': bazarPriceCodeValue,
                 },
                 cache: false,
                 type: 'GET',
@@ -75,7 +91,6 @@ $(document).ready(function () {
         item.addEventListener('click', function (e){
             e.preventDefault();
             const elem = findAncestor(e.target, "item")
-            debugger
                 setPriceWithAjax(e, elem)
         })
     })
@@ -83,18 +98,36 @@ $(document).ready(function () {
     newInquiryResultDoneLocal.forEach(function (item){
         item.addEventListener('change', function (e){
             e.preventDefault();
-            const elem = findAncestor(e.target, "item")
-            debugger
+            if (item.checked){
+                const elem = findAncestor(e.target, "item")
                 setPriceWithAjax(e, elem)
+                }
         })
     })
 
     newInquiryResultDoneForeign.forEach(function (item){
         item.addEventListener('change', function (e){
             e.preventDefault();
-            const elem = findAncestor(e.target, "item")
-            debugger
+            if (item.checked){
+                const elem = findAncestor(e.target, "item")
                 setPriceWithAjax(e, elem)
+                }
+        })
+    })
+
+    tradePriceCodeElem.forEach(function (item){
+        item.addEventListener('change', function (e){
+            e.preventDefault();
+            const elem = findAncestor(e.target, "item")
+            setPriceWithAjax(e, elem)
+        })
+    })
+
+    bazarPriceCodeElem.forEach(function (item){
+        item.addEventListener('change', function (e){
+            e.preventDefault();
+            const elem = findAncestor(e.target, "item")
+            setPriceWithAjax(e, elem)
         })
     })
 

@@ -349,7 +349,8 @@ class InquiryResultUpdateView(BaseView):
         res = super().form_valid(form)
         sku = self.object.sku
         item_weight = self.object.item_weight
-        ItemWeight.objects.create(sku=sku, weight=item_weight)
+        if item_weight:
+            ItemWeight.objects.create(sku=sku, weight=item_weight)
 
 
         return res
@@ -555,6 +556,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
 
 def get_item(request):
+    trade_price_code = request.GET.get('trade_price_code')
+    bazar_price_code = request.GET.get('bazar_price_code')
     q = request.GET.get('q', None)
     party_id = request.GET.get('party_id', None)
     id_currency_ref = request.GET.get('id_currency_ref', None)
@@ -593,7 +596,9 @@ def get_item(request):
                 try:
                     item_obj = Item.objects.filter(sku=q).first()
 
-                    price_inquiry_result: PriceInquiryResult = item_obj.price #PriceInquiryResult = PriceInquiryResult.objects.filter(sku__sku=item_.code).first()
+                    # if trade_price_code or bazar_price_code:
+                    price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(pk=trade_price_code or bazar_price_code).first() if (trade_price_code or bazar_price_code) else item_obj.price
+                    # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(

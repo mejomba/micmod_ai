@@ -9,7 +9,7 @@ from jalali_date.widgets import AdminSplitJalaliDateTime, AdminJalaliDateWidget
 
 from accounts.mixins import FormFieldAccessMixin
 from inquiry.forms import InquiryResultForm
-from inquiry.models import InquiryResult
+from inquiry.models import InquiryResult, PriceInquiryResult
 from micmod_base.base import CurrencyExchange, Currency
 from translator import get_text as _
 
@@ -305,7 +305,14 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
         self.fields['final_price'].widget.attrs['class'] += ' replace-digits'
 
-        if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
+        self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1'}),
+                                                                 queryset=PriceInquiryResult.objects.filter(creator_user__groups__name='trade_user', sku__exact=self.instance.goods_code))
+        self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': ''}),
+                                                                 queryset=PriceInquiryResult.objects.filter(creator_user__groups__name='bazar_user', sku__exact=self.instance.goods_code))
+
+        # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
+        user_groups = request.user.groups.values_list('name', flat=True)
+        if not request.user.is_superuser and ('trade_user' not in user_groups or 'bazar_user' not in user_groups):
             self.make_disable(['local_price_inquiry_done', 'foreign_price_inquiry_done'])
 
     class Meta:
@@ -317,7 +324,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_price_sheet3',
                   'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
-                  'stock_amount_res', 'goods_min_price', 'goods_max_price',
+                  'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description'
                   ]
