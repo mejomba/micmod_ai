@@ -10,8 +10,11 @@
     <div class="tab-pane fade {% if request.COOKIES.inquery_tabs_selected_li == '2' %}show active{% endif %}" id="kt_tab_pane_2" role="tabpanel">
         <div class="border-gray-600 border-dotted row w-100 py-5">
             {% include 'core/partial/components/key_value_text.html' with rma_key="customer" rma_value=sku.extra_data.sepidar_data.customer.Title.0 rma_class="d-flex col-12 py-2" %}
-            {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.invoices rma_title="invoices" rma_has_header=True rma_class="col-6"%}
-            {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.qutations rma_title="qutations" rma_has_header=True rma_class="col-6" %}
+            {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.customer_invoices rma_title="invoices" rma_has_header=True rma_class="col-6"%}
+            {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.customer_qutations rma_title="qutations" rma_has_header=True rma_class="col-6" %}
+            <div data-key="other_customers" class="col-12 bold"></div>
+             {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.other_invoices rma_has_header=True rma_class="col-6"%}
+            {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.other_qutations rma_has_header=True rma_class="col-6" %}
         </div>
     <div class="row py-5">
         {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.mean_price rma_title="price_in_60" rma_has_header=True rma_class="col-6" %}

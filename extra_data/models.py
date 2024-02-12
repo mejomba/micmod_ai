@@ -345,7 +345,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
         self.extra_data.sepidar_data['stocks_sum'] = float(self.extra_data.sepidar_data['stocks'].sum()[1])
 
 
-        dl_filter = f" and dl.Code={customer_code}" if customer_code else ""
+        dl_filter = f" and dl.Code={customer_code or -1}"
         qry = """
         select top 5
                 docs.Date
@@ -394,11 +394,19 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
                   and docs.doc_type like N'%%{doc_type}%%'
         order by docs.Date desc
                     """
-        self.extra_data.sepidar_data['invoices'] = select_cquery(
+        self.extra_data.sepidar_data['customer_invoices'] = select_cquery(
             qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='invoice'),
             "sepidar")
-        self.extra_data.sepidar_data['qutations'] = select_cquery(
+        self.extra_data.sepidar_data['customer_qutations'] = select_cquery(
             qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='qutation'),
+            "sepidar")
+
+        dl_filter = f" and dl.Code<>{customer_code or -1}"
+        self.extra_data.sepidar_data['other_invoices'] = select_cquery(
+            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='invoice'),
+            "sepidar")
+        self.extra_data.sepidar_data['other_qutations'] = select_cquery(
+            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='qutation'),
             "sepidar")
 
 

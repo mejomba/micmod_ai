@@ -17,7 +17,7 @@
                     {% endfor %}
                 </tr>
             {% endif %}
-            {% if not rma_data_frame.values is None %}
+            {% if rma_data_frame.values.size > 0 %}
                 {% for row in rma_data_frame.values %}
                     <tr>
                         {% for col in row %}
