@@ -313,6 +313,10 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     @property
+    def weight(self):
+        return self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
+
+    @property
     def price(self):
         if not self.extra_data.price:
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
@@ -429,6 +433,7 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
             """
             self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
         return self.extra_data.sepidar_data
+
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search
         return f'{self.sku}'

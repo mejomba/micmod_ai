@@ -26,7 +26,7 @@
                     </tr>
                 {% endfor %}
             {% elif rma_has_header or rma_title %}
-                <tr><td class="text-danger"  colspan="10" data-key="no_data_found">no data found</td></tr>
+                <tr><td colspan="10">{% include "core/partial/components/blank_data.html" %}</td></tr>
             {% endif %}
         {% endif %}
     </table>
