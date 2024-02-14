@@ -1,5 +1,6 @@
 {% load accounts_tag %}
 {% load more_tags %}
+{% load core_tags %}
 
 <div class="row mx-1">
     <div class="card-body col-3">
@@ -11,6 +12,9 @@
             {% render_field_by_order form form.sku form.sku_c form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
             {% if request.user|has_group:"total_admin" %}
                 {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
+                {% if sku %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:sku.price.price_settings.pk|add:'/change/' rma_value=sku.price.price_settings.title rma_class="d-flex py-3" %}
+                {% endif %}
             {% endif %}
         </div>
     </div>
