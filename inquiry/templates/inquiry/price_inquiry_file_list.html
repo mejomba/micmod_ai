@@ -45,7 +45,7 @@
                                                     </thead>
                                                     <tbody>
                                                     {% for item in items %}
-{#                                                        {% get_customer quotation.customer_code as customer %}#}
+                                                        {% get_customer quotation.customer_code as customer %}
                                                     <tr>
                                                         <td><a href="{% url 'inquiry:price_inquiry_file.view-related' item.pk %}">{{ item }}</a></td>
                                                         <td>{{ item.target }}</td>
