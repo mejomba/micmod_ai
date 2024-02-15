@@ -268,6 +268,16 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
 
+        self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100'}),
+                                                                 queryset=PriceInquiryResult.objects.filter(
+                                                                 creator_user__groups__name='trade_user',
+                                                                 sku__exact=self.instance.goods_code),
+                                                                 initial=(self.instance.trade_price_code, self.instance.trade_price_code))
+        self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
+                                                                 queryset=PriceInquiryResult.objects.filter(
+                                                                     creator_user__groups__name='bazar_user',
+                                                                     sku__exact=self.instance.goods_code),
+                                                                 initial=(self.instance.bazar_price_code, self.instance.bazar_price_code))
         if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
@@ -305,15 +315,14 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
         self.fields['final_price'].widget.attrs['class'] += ' replace-digits'
 
-        self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1'}),
-                                                                 queryset=PriceInquiryResult.objects.filter(creator_user__groups__name='trade_user', sku__exact=self.instance.goods_code))
-        self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': ''}),
-                                                                 queryset=PriceInquiryResult.objects.filter(creator_user__groups__name='bazar_user', sku__exact=self.instance.goods_code))
-
+        self.make_optional(['bazar_price_code', 'trade_price_code'])
         # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
         user_groups = request.user.groups.values_list('name', flat=True)
-        if not request.user.is_superuser and ('trade_user' not in user_groups or 'bazar_user' not in user_groups):
-            self.make_disable(['local_price_inquiry_done', 'foreign_price_inquiry_done'])
+        if not request.user.is_superuser:
+            if 'trade_user' not in user_groups:
+                self.make_disable(['foreign_price_inquiry_done'])
+            if 'bazar_user' not in user_groups:
+                self.make_disable(['local_price_inquiry_done'])
 
     class Meta:
         model = QuotationItem
