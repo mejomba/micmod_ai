@@ -272,12 +272,14 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                                  queryset=PriceInquiryResult.objects.filter(
                                                                  creator_user__groups__name='trade_user',
                                                                  sku__exact=self.instance.goods_code),
-                                                                 initial=(self.instance.trade_price_code, self.instance.trade_price_code))
+                                                                 initial=(self.instance.trade_price_code,
+                                                                          self.instance.trade_price_code))
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
                                                                  queryset=PriceInquiryResult.objects.filter(
                                                                      creator_user__groups__name='bazar_user',
                                                                      sku__exact=self.instance.goods_code),
-                                                                 initial=(self.instance.bazar_price_code, self.instance.bazar_price_code))
+                                                                 initial=(self.instance.bazar_price_code,
+                                                                          self.instance.bazar_price_code))
         if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
