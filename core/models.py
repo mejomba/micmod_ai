@@ -373,14 +373,14 @@ class NoUserBaseModel(models.Model):
         if form is None or (form.image_groups and form.file_groups):
             images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
             files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.images = images
-            obj.files = files
+            obj.images_ = images
+            obj.files_ = files
         elif form.image_groups:
             images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.images = images
+            obj.images_ = images
         elif form.file_groups:
             files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
-            obj.files = files
+            obj.files_ = files
         return obj
 
 

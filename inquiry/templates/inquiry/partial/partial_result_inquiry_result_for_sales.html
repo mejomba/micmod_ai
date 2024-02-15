@@ -6,44 +6,12 @@
 {% load accounts_tag %}
 {% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
 <div class="card-title">
-    <div>
-        {{ sepidar_data.customer.Title.0 }}
-    </div>
-    <div class="fw-bolder row row-cols-2">
-        <div class="col">
-            <span class="me-10">وزن کالا در 1000 قطعه:</span>
-            {{ sku.price.weight|intcomma|floatformat:4 }}
-        </div>
-        <div class="col">
-            <span class="me-10">وزن:</span>
-            {{ sku.item_weights.all.last.weight }}
-        </div>
-        <div class="col">
-            <span class="me-10">نوع بسته بندی:</span>
-            {{ sku.batch_type }}
-        </div>
-        <div class="col">
-            <span class="me-10">تعداد در بسته:</span>
-            {{ sku.batch_count }}
-        </div>
-        <div class="col">
-            <span class="me-10">روش تعیین قیمت </span>
-            <a target="_blank"
-               href="/admin/extra_data/pricesettings/{{ sku.price.price_settings.pk }}/change/">{{ sku.price.price_settings.title }}</a>
-        </div>
-        <div class="col">
-            <a href="#" class="btn btn-primary er fs-6 px-8 py-4" data-bs-toggle="modal"
-               data-bs-target="#kt_modal_share_earn">تصاویر</a>
-        </div>
-        {% include 'files/partial/modal_for_image.html' with images=sku.images.all %}
-    </div>
-    {% include "core/partial/table.html" with data_frame=sepidar_data.mean_price header=True %}
 </div>
 <div class="card-body bg-gray-200">
     <div class="d-flex">
         <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
-            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',1)">
-                <a class="nav-link w-100 active btn btn-active-light-success" data-bs-toggle="tab"
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',1)">
+                <a class="nav-link w-100 btn btn-active-light-success {% if request.COOKIES.inquery_tabs_selected_li == '1' %}active{% endif %}" data-bs-toggle="tab"
                    href="#kt_tab_pane_1">
                     <div class="anchor fw-bold" data-key="goods_information"><i
                             class="bi bi-info-square-fill me-2"></i>
@@ -55,8 +23,8 @@
                     </div>
                 </a>
             </li>
-            <li class="nav-item w-100 me-0 mb-md-2" onclick="setCookie('inquery_tabs_selected_li',2)">
-                <a class="nav-link w-100 btn btn-active-light-info" data-bs-toggle="tab"
+            <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',2)">
+                <a class="nav-link w-100 btn btn-active-light-info {% if request.COOKIES.inquery_tabs_selected_li == '2' %}active{% endif %}" data-bs-toggle="tab"
                    href="#kt_tab_pane_2">
                     <div class="anchor fw-bold position-relative" data-key="goods_information"><i
                             class="bi bi-currency-dollar me-2"></i>اطلاعات
@@ -90,7 +58,7 @@
                 </a>
             </li>
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',3)">
-                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                <a class="nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '3' %}active{% endif %}" data-bs-toggle="tab"
                    href="#kt_tab_pane_3">
                     <div class="anchor fw-bold" data-key="goods_information"><i
                             class="bi bi-box-seam-fill me-2"></i>اطلاعات
@@ -123,7 +91,7 @@
                 </a>
             </li>
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',4)">
-                <a class="nav-link w-100 btn btn-active-light-danger" data-bs-toggle="tab"
+                <a class="nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '4' %}active{% endif %}" data-bs-toggle="tab"
                    href="#kt_tab_pane_4">
                     <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
                         قیمت (مدیریتی)
@@ -186,7 +154,5 @@
     </div>
 </div>
 <div class="card-footer d-flex">
-    <div class="fw-bold"><span
-            class="me-10">آخرن به روز رسانی قیمت:</span>{{ sku.price.price_update_date|to_jalali }}</div>
-    <div class="ms-10">{{ sku.price.elapsed_from_last_price }}</div>
+    {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" %}
 </div>

@@ -313,6 +313,10 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     @property
+    def weight(self):
+        return self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
+
+    @property
     def price(self):
         if not self.extra_data.price:
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
@@ -345,7 +349,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
         self.extra_data.sepidar_data['stocks_sum'] = float(self.extra_data.sepidar_data['stocks'].sum()[1])
 
 
-        dl_filter = f" and dl.Code={customer_code}" if customer_code else ""
+        dl_filter = f" and dl.Code={customer_code or -1}"
         qry = """
         select top 5
                 docs.Date
@@ -394,11 +398,19 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
                   and docs.doc_type like N'%%{doc_type}%%'
         order by docs.Date desc
                     """
-        self.extra_data.sepidar_data['invoices'] = select_cquery(
+        self.extra_data.sepidar_data['customer_invoices'] = select_cquery(
             qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='invoice'),
             "sepidar")
-        self.extra_data.sepidar_data['qutations'] = select_cquery(
+        self.extra_data.sepidar_data['customer_qutations'] = select_cquery(
             qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='qutation'),
+            "sepidar")
+
+        dl_filter = f" and dl.Code<>{customer_code or -1}"
+        self.extra_data.sepidar_data['other_invoices'] = select_cquery(
+            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='invoice'),
+            "sepidar")
+        self.extra_data.sepidar_data['other_qutations'] = select_cquery(
+            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='qutation'),
             "sepidar")
 
 
@@ -421,6 +433,7 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
             """
             self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
         return self.extra_data.sepidar_data
+
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search
         return f'{self.sku}'

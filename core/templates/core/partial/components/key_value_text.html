@@ -1,6 +1,11 @@
-<div class="col gap-1 {{ rma_class }}">
+{% load core_tags %}
+<div class="gap-2 bg-hover-light {{ rma_class }}">
     <div class="bold">
         <span data-key="{{ rma_key }}">{{ rma_key }} </span><span>:</span>
     </div>
-    <div>{{ rma_value }}</div>
+    {% if rma_href %}
+        <a class="text-hover-primary" href="{{ rma_href }}" target="{% if rma_target %}{{ rma_target }}{% else %}_blank{% endif %}">{% if rma_value %}{{ rma_value|humanized_format }}{% else %}<span data-key="unknown"></span>{% endif %}</a>
+    {% else %}
+        <div class="text-hover-primary">{% if rma_value %}{{ rma_value|humanized_format }}{% else %}<span data-key="unknown"></span>{% endif %}</div>
+    {% endif %}
 </div>

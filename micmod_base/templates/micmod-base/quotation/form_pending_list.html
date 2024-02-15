@@ -14,7 +14,7 @@
         <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
 
 <div class="card item p-0 my-2" dir="rtl">
-    <input type="hidden" name="-final_price">
+
     <input type="hidden" name="self_discount">
 
     <span id="customer_pid" class="d-none">{{ form_s.instance.quotation.customer_party_id }}</span>
@@ -62,6 +62,7 @@
             </div>
         </div>
         <div class="row answer m-0">
+        <input type="hidden" name="-final_price">
             <div class="col-lg-2 border rounded">
                 <div class="d-flex">
                     <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
@@ -346,9 +347,31 @@
             'code_h': ['class', 'select2-selection__rendered', 'lbl'],
             'name_h': ['name', 'goods_name_lbl', 'lbl'],
             'quantity_h': ['name', 'quantity', 'input'],
-            'unit-price_h': ['name', 'final_price', 'input'],
+            'unit-price_h': ['name', '-final_price', 'input'],
             'total-price_h': ['name', '-total_price', 'lbl']
         })
+
+        items.forEach(function(item, idx) {
+            // item.onclick = collapseFormset
+          item.addEventListener('click', function(e) {
+          const answer = e.currentTarget.nextElementSibling;
+          {#answer.classList.toggle('close')#}
+          if (answer.offsetHeight > 0) {
+              answer.previousElementSibling.classList.remove('active-form')
+              setFormsetHeader(e.currentTarget, answer, {
+                    'code_h': ['class', 'select2-selection__rendered', 'lbl'],
+                    'name_h': ['name', 'goods_name_lbl', 'lbl'],
+                    'quantity_h': ['name', 'quantity', 'input'],
+                    'unit-price_h': ['name', '-final_price', 'input'],
+                    'total-price_h': ['name', '-total_price', 'lbl']
+                }, idx)
+              showQuotationFormsetHeader(answer)
+          } else {
+              answer.previousElementSibling.classList.add('active-form')
+              hideQuotationFormsetHeader(answer)
+          }
+         })
+        }) // forEach
     })
 
     const isOfficial = document.getElementById('id_is_official');

@@ -74,12 +74,14 @@
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
                 <div class="d-flex border-bottom px-1 align-items-start">
                     <div class="w-25 mt-3 on-border">
-                        {% if form_s.enable %}
+                        {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
                         {% else %}
-                            {{ form_s.goods_code }}
                             <label>کد کالا</label>
+                            <div class="mt-4">
+                            {{ form_s.instance.goods_code }}
+                            </div>
                         {% endif %}
 
                     </div>
@@ -107,11 +109,13 @@
                             {#                            <div class="card-text bold">کد کالا (قیمت)</div>#}
 {#                            <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>#}
 {#                            <label>کد کالا</label>#}
-                            {% if form_s.enable %}
+                            {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
                                 <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
                                 <label>کد کالا</label>
                             {% else %}
-                                {{ form_s.goods_code_alt }}
+                                <div class="mt-4">
+                                {{ form_s.instance.goods_code_alt }}
+                                </div>
                                 <label>کد کالا</label>
                             {% endif %}
 

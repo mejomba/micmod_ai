@@ -29,7 +29,7 @@
         </div>
         <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-6 pb-4 align-items-end">
 
-            {% render_field_by_order form form.sku form.part_number form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
+            {% render_field_by_order form form.sepidar_id form.sku form.part_number form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}

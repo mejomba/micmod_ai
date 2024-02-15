@@ -16,6 +16,16 @@ from tools.myjalali import JalalyDate
 # Register tags as an adapter for the Theme class usage in the HTML template
 
 @register.filter
+def c_add(m_str, value):
+    if value and (isinstance(value,datetime.date) or isinstance(value,datetime.datetime)):
+        value = JalalyDate(value).get_persian_date_time('{y}/{m}/{d}')
+    return f'{m_str}{value}'
+
+@register.filter
+def default(value, m_default):
+    return value or m_default
+
+@register.filter
 def humanized_format(value, digits=None, use_l10n=True):
     if value and isinstance(value, datetime.date):
         if not digits:

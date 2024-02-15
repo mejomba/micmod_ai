@@ -248,7 +248,7 @@
     "quantity": "تعداد",
     "goods_code": "کد کالا (SKU)",
     "goods_code_alt": "کد کالا-قیمت ",
-    "price_method": "تعیین قیمت",
+    "price_method": "روش تعیین قیمت",
     "delete": "حذف",
     "last_sale": "آخرین فروش",
     "price_sheet": "شیت",
@@ -256,6 +256,7 @@
     "sales_admin": "مصوب مدیر",
     "upldate": "بروزرسانی",
     "stock_amount": "موجودی",
+    "sum_stock_amount": "جمع موجودی",
     "goods_price_sheet": "قیمت شیت",
     "price_sheet1": "قیمت شیت 2-3",
     "price_sheet2": "قیمت شیت 3-5",
@@ -470,5 +471,11 @@
     "sales_type": "نوع فروش",
     "year_title": "سال",
     "no_data_found": "اطلاعاتی پیدا نشد",
-    "price_in_60": "قیمت در 60 روز اخیر"
+    "price_in_60": "قیمت در 60 روز اخیر",
+    "all_customers": "تمام مشتریان",
+    "other_customers": "مابقی مشتریان",
+    "unknown": "نامشخص",
+    "weight_in_1000": "وزن در 1000 قطعه",
+    "images": "تصاویر",
+    "last_update": "آخرین بروزرسانی"
 }

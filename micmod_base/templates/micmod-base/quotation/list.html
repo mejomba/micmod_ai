@@ -61,11 +61,11 @@
                                                     </thead>
                                                     <tbody>
                                                     {% for quotation in quotations %}
-{#                                                        {% get_customer quotation.customer_code as customer %}#}
+                                                        {% get_customer quotation.customer_code as customer %}
                                                     <tr>
                                                         <th><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.id}}</a></th>
                                                         <td><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.title}}</a></td>
-{#                                                        <td>{{ customer.name }}</td>#}
+                                                        <td>{{ customer.name }}</td>
                                                         <td >{{ quotation.created_date|to_jalali:'%Y/%m/%d - %H:%M:%S'}}</td>
                                                         <td>{{ quotation.last_update_date|to_jalali:'%Y/%m/%d - %H:%M:%S' }}</td>
                                                         <td>{{ quotation.expiration_date|to_jalali:'%Y/%m/%d' }}</td>
