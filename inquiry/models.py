@@ -170,7 +170,7 @@ class PriceInquiryResult(BaseModel):
                                                     + settings.max_discount_for_final_step
                                                     + settings.interest_percentage)))),
                     self.extra_data.rmb_final_price_custom_office.items()))
-            self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
+            self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * self.sku.extra_cost_percentage + 0.01 *
                                                                         (self.sku.express_extra_cost_percentage if x[0] == "express" else
                                                                          self.sku.air_extra_cost_percentage if x[0] == "air" else
                                                                          self.sku.sea_extra_cost_percentage)))),
@@ -228,12 +228,16 @@ class PriceInquiryResult(BaseModel):
         if getattr(self.extra_data,'price_settings_', None):
             return self.extra_data.price_settings_
         if self.sku:
+            self.extra_data.price_reference = None
             if self.sku.price_settings:
+                self.extra_data.price_reference = self.sku
                 return self.sku.price_settings
             if self.sku.purchase_group:
                 if self.sku.purchase_group.price_settings:
+                    self.extra_data.price_reference = self.sku.purchase_group
                     return self.sku.purchase_group.price_settings
                 elif self.sku.purchase_group.hs and self.sku.purchase_group.hs.price_settings:
+                    self.extra_data.price_reference = self.sku.purchase_group.hs
                     return self.sku.purchase_group.hs.price_settings
         return PriceSettings.setting()
 

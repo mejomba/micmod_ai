@@ -5,26 +5,29 @@
 {% load humanize %}
 {% load accounts_tag %}
 {% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
-<div class="card-title">
-</div>
-<div class="card-body bg-gray-200">
-    <div class="d-flex">
-        <ul class="nav nav-tabs nav-pills flex-row border-0 flex-md-column me-5 mb-3 mb-md-0 fs-6 min-w-lg-200px w-100">
+{#<div class="card">#}
+    <div class="card-title">
+    </div>
+    <div class="card-body d-flex justify-content-center">
+        <ul class="nav nav-tabs min-w-lg-200px w-100 gap-2 mb-0">
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',1)">
-                <a class="nav-link w-100 btn btn-active-light-success {% if request.COOKIES.inquery_tabs_selected_li == '1' %}active{% endif %}" data-bs-toggle="tab"
+                <a class="nav-link w-100 btn btn-active-light-success {% if request.COOKIES.inquery_tabs_selected_li == '1' %}active{% endif %}"
+                   data-bs-toggle="tab"
                    href="#kt_tab_pane_1">
                     <div class="anchor fw-bold" data-key="goods_information"><i
                             class="bi bi-info-square-fill me-2"></i>
                         اطلاعات کلی کالا
                     </div>
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
-                        <div class="text-end me-2 min-h-30px"> {{ item.title }} </div>
-                        <div class="text-end me-2 min-h-30px fw-bold"> {{ sku.purchase_group }} </div>
+                        {% include 'core/partial/components/key_value_text.html' with rma_value=item.title rma_class='text-end me-2 min-h-30px px-3' %}
+                        {% include 'core/partial/components/key_value_text.html' with rma_value=sku.purchase_group rma_class='text-end me-2 min-h-30px fw-bold px-3' %}
+                        {% include "core/partial/components/key_value_text.html" with rma_key="weight_in_1000" rma_value=sku.price.weight rma_class="d-flex justify-content-center align-items-center" %}
                     </div>
                 </a>
             </li>
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',2)">
-                <a class="nav-link w-100 btn btn-active-light-info {% if request.COOKIES.inquery_tabs_selected_li == '2' %}active{% endif %}" data-bs-toggle="tab"
+                <a class="persian-digit nav-link w-100 btn btn-active-light-info {% if request.COOKIES.inquery_tabs_selected_li == '2' %}active{% endif %}"
+                   data-bs-toggle="tab"
                    href="#kt_tab_pane_2">
                     <div class="anchor fw-bold position-relative" data-key="goods_information"><i
                             class="bi bi-currency-dollar me-2"></i>اطلاعات
@@ -40,25 +43,26 @@
                             </tr>
                             <tr>
                                 <td class="text-primary">قیمت اکسپرس</td>
-                                <td class="text-danger">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger">{{ sku.price.rial_final_price.express|intcomma }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rial_final_price.express|intcomma }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">قیمت هوایی</td>
-                                <td class="text-danger">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger">{{ sku.price.rial_final_price.air|intcomma }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rial_final_price.air|intcomma }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">قیمت دریایی</td>
-                                <td class="text-danger">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger">{{ sku.price.rial_final_price.sea|intcomma }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
+                                <td class="text-danger persian-digit">{{ sku.price.rial_final_price.sea|intcomma }}</td>
                             </tr>
                         </table>
                     </div>
                 </a>
             </li>
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',3)">
-                <a class="nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '3' %}active{% endif %}" data-bs-toggle="tab"
+                <a class="persian-digit nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '3' %}active{% endif %}"
+                   data-bs-toggle="tab"
                    href="#kt_tab_pane_3">
                     <div class="anchor fw-bold" data-key="goods_information"><i
                             class="bi bi-box-seam-fill me-2"></i>اطلاعات
@@ -72,33 +76,34 @@
                             </tr>
                             <tr>
                                 <td class="text-primary">انبار مرکزی</td>
-                                <td class="text-danger">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
+                                <td class="text-danger persian-digit">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">انبار رزرو</td>
-                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">در راه (کسری)</td>
-                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">در راه (مشتری)</td>
-                                <td class="text-danger">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
                             </tr>
                         </table>
                     </div>
                 </a>
             </li>
             <li class="nav-item w-100" onclick="setCookie('inquery_tabs_selected_li',4)">
-                <a class="nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '4' %}active{% endif %}" data-bs-toggle="tab"
+                <a class="nav-link w-100 btn btn-active-light-danger {% if request.COOKIES.inquery_tabs_selected_li == '4' %}active{% endif %}"
+                   data-bs-toggle="tab"
                    href="#kt_tab_pane_4">
                     <div class="anchor fw-bold" data-key="goods_information"><i class="bi bi-person-lock me-2"></i>اطلاعات
                         قیمت (مدیریتی)
                     </div>
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
                         {% if request.user|has_group:"total_admin" %}
-                            <table class="table table-row-dashed table-row-gray-300 min-h-100px">
+                            <table class="table table-row-dashed table-row-gray-300 min-h-100px persian-digit">
                                 <tr class="fw-bold fs-6 text-gray-800">
                                     <td class="w-40 text-primary">{{ sku.price.currency_type }}</td>
                                     <td class="w-30 text-primary">{{ sku.price.price|intcomma|floatformat:4 }}</td>
@@ -143,16 +148,17 @@
                                     </td>
                                 </tr>
                             </table>
-
                         {% else %}
-                            <div class="text-center min-h-100px"> نیاز به دسترسی خاص دارد</div>
+                            <div class="min-h-100px fs-2x justify-content-center align-items-center"
+                                 data-key="access_denied"> نیاز به دسترسی خاص دارد
+                            </div>
                         {% endif %}
                     </div>
                 </a>
             </li>
         </ul>
     </div>
-</div>
-<div class="card-footer d-flex">
-    {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" %}
-</div>
+    <div class="card-footer d-flex persian-digit">
+        {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" %}
+    </div>
+{#</div>#}

@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 from django.utils.safestring import mark_safe
 from django import template
@@ -17,13 +18,76 @@ from tools.myjalali import JalalyDate
 
 @register.filter
 def c_add(m_str, value):
+    m_str = m_str or ''
+    value = value or ''
     if value and (isinstance(value,datetime.date) or isinstance(value,datetime.datetime)):
         value = JalalyDate(value).get_persian_date_time('{y}/{m}/{d}')
     return f'{m_str}{value}'
 
+
+@register.filter
+def v_add(value1, value2):
+    try:
+        return value1 + value2
+    except:
+        return ''
+
+@register.filter
+def v_subtract(value1, value2):
+    try:
+        return value1 - value2
+    except:
+        return ''
+
+
+@register.filter
+def v_multiply(value1, value2):
+    try:
+        return value1 * value2
+    except:
+        return ''
+
+
+@register.filter
+def v_divide(value1, value2):
+    try:
+        return value1 / value2
+    except:
+        return ''
+
+
+@register.filter
+def percentage_format(value,digits=None,use_l10n=True):
+    try:
+        value = round(100 * value, 2)
+        if not digits:
+            if round(value,0) == value:
+                digits = 0
+            elif round(value, 1) == value:
+                digits = 1
+            else:
+                digits = 2
+        return f'%{number_format(value=round(value,2),decimal_pos=digits,use_l10n=use_l10n,force_grouping=True)}'
+    except:
+        return ''
+
 @register.filter
 def default(value, m_default):
-    return value or m_default
+    try:
+        return value or m_default
+    except:
+        ...
+
+@register.simple_tag
+def check_is_digits(value):
+    if isinstance(value, str):
+        chars = re.findall('\w', value)
+        if chars:
+            return ''
+        else:
+            return 'persian-digit'
+    else:
+        return 'persian-digit'
 
 @register.filter
 def humanized_format(value, digits=None, use_l10n=True):
@@ -47,8 +111,10 @@ def humanized_format(value, digits=None, use_l10n=True):
             digits = 2
         else:
             digits = 0
-        if int(value) == value:
-            digits = 0
+        for k in range(digits):
+            if round(value, k) == value:
+                digits = k
+                break
     value = number_format(value=value,decimal_pos=digits,use_l10n=use_l10n,force_grouping=True)
     return value
 

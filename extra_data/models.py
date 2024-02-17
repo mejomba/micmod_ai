@@ -228,9 +228,9 @@ class PurchaseGroup(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
     price_settings = models.ForeignKey(PriceSettings,verbose_name=_("price_settings"), blank=True, null=True, on_delete=models.CASCADE)
     hs = models.ForeignKey(HS, verbose_name=_("hs"), on_delete=models.DO_NOTHING,null=True,blank=True)
-    sea_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
-    air_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
-    express_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
+    sea_transportation = models.FloatField(verbose_name=_('sea_transportation'), default=1)
+    air_transportation = models.FloatField(verbose_name=_('air_transportation'), default=1)
+    express_transportation = models.FloatField(verbose_name=_('express_transportation'), default=1)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True,null=True,blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True,null=True,blank=True)
     auto_complete = 'title'

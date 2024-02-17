@@ -1,6 +1,7 @@
 {% load core_tags %}
 {% load static %}
-<div class="{{ rma_class }}">
+<div class="{{ rma_class }} copy-button">
+<div class="copy-text">
     {% if rma_title %}
         <div class="bold py-1" data-key="{{ rma_title }}">
             {{ rma_title }}
@@ -21,14 +22,24 @@
                 {% for row in rma_data_frame.values %}
                     <tr>
                         {% for col in row %}
-                            <td>{{ col|humanized_format }}</td>
+                            {% check_is_digits col as persian_digit %}
+                            <td class=""><span
+                                    class="{{ rma_digit_format|default:persian_digit }}">{{ col|humanized_format }}</span>
+                            </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
             {% elif rma_has_header or rma_title %}
-                <tr><td colspan="10">{% include "core/partial/components/blank_data.html" %}</td></tr>
+                <tr>
+                    <td colspan="10">{% include "core/partial/components/blank_data.html" %}</td>
+                </tr>
             {% endif %}
         {% endif %}
     </table>
 </div>
-<script src="{% static 'lang/translate.js' %}"></script>
+    {% if rma_data_frame.values.size > 0 %}
+        <div class="w-100 d-flex justify-content-center ">
+            {% include 'core/partial/copy_to_clipboard_btn.html' with rma_selector='.copy-text' %}
+        </div>
+    {% endif %}
+</div>
