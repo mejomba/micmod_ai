@@ -116,6 +116,10 @@ class PriceInquiryFileCreateForm(CustomBaseModelForm):
         try:
             kwargs.pop('constraint')
         except:
+            try:
+                kwargs.pop('initial').pop('constraint')
+            except:
+                pass
             print('err cons')
         super(PriceInquiryFileCreateForm, self).__init__(*args, **kwargs)
         self.make_optional(['image_1'])
@@ -212,8 +216,16 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         # }
 
     def __init__(self, *args, **kwargs):
+        try:
+            kwargs.pop('constraint')
+        except:
+            try:
+                kwargs.pop('initial').pop('constraint')
+            except:
+                pass
+            print('err cons')
         super(PriceInquiryResult2CreateForm, self).__init__(*args, **kwargs)
-        self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+        self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
         self.make_hidden(['price_inquiry_file', 'sku'])
@@ -221,8 +233,16 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         try:
             user = kwargs.get('initial').get('user')
             if not user.is_superuser:
-                g = user.groups.values_list(flat=True)
-                qs = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
+                g = user.groups.values_list('name', flat=True)
+                if 'total_admin' in g or user.is_superuser:
+                    qs = InquiryResultVariant.objects.all()
+                elif 'trade_user' in g or 'trade_admin' in g:
+                    qs = InquiryResultVariant.objects.filter(base_group='trade')
+                elif 'bazar_user' in g or 'bazar_admin' in g:
+                    qs = InquiryResultVariant.objects.filter(base_group='bazar')
+                else:
+                    qs = InquiryResultVariant.objects.none()
+
             else:
                 qs = InquiryResultVariant.objects.all()
 

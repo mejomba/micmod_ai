@@ -36,5 +36,6 @@ urlpatterns = [
     # path('supplier/view/', views.SupplierView.as_view(), name='supplier.view'),
     path('supplier/view/<int:pk>/', views.SupplierView.as_view(), name='supplier.detail_update'),
     path('supplier/list/', views.SupplierListView.as_view(), name='supplier.list'),
-    path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable')
+    path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable'),
+    path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult')
 ]

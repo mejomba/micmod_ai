@@ -6,7 +6,7 @@
         {% if field.field.queryset.model.auto_complete %}
             <div>
                 <input class="{{ field.field.widget.attrs.class }}"
-                       name="__auto__{{ field.name }}" {% get_attrs_str field %} list="lst_{{ field.name }}"
+                       name="{{ field|get_base_model }}__auto__{{ field.html_name }}" {% get_attrs_str field %} list="lst_{{ field.name }}"
                        value="{{ items_list.selected_str }}" autocomplete="off">
                 <datalist id="lst_{{ field.name }}">
                     {% for item in items_list.list %}

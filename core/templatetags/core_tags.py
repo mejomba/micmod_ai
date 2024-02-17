@@ -12,6 +12,7 @@ register = template.Library()
 import ast
 from django.contrib.humanize.templatetags.humanize import intcomma,number_format
 from tools.myjalali import JalalyDate
+import re
 
 # Register tags as an adapter for the Theme class usage in the HTML template
 
@@ -74,6 +75,10 @@ def get_list(field):
             selected_str = obj.data['label'] if obj.data['label'] != '---------' else ''
     return {'list': m_list, 'selected_str': selected_str}
 
+@register.filter
+def get_base_model(field):
+    if getattr(field,'field',None) and getattr(field.field,'queryset',None):
+        return re.findall("'[\d\w\.]+'",str(field.field.queryset.model))[0][1:-1]
 @register.simple_tag
 def get_attrs_str(field):
     m_str = ""

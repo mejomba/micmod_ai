@@ -20,7 +20,8 @@ from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
 
 
 class Supplier(BaseModel):
-    name = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True)
+    name = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
+    auto_complete = 'name'
 
     def __str__(self):
         return f'{self.name}'
@@ -53,7 +54,7 @@ class PriceInquiryResult(BaseModel):
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
     active = models.BooleanField(verbose_name=_('active'), default=False)
-    inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), null=True, blank=True)
+    inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
 
     # price_settings_ = None
@@ -73,9 +74,17 @@ class PriceInquiryResult(BaseModel):
     @classmethod
     def inquiry_list_datatable(cls, user, param={}):
         qs = cls.objects.filter(**param)
-        g = user.groups.values_list(flat=True)
-        qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
-        return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
+        user_group_names = user.groups.values_list('name', flat=True)
+        if user.is_superuser or user.groups.filter(name='total_admin'):
+            return qs
+        elif user.groups.filter(name='bazar_user') or user.groups.filter(name='bazar_admin'):
+            return qs.filter(inquiry_type__base_group='bazar')
+        elif user.groups.filter(name='trade_user') or user.groups.filter(name='trade_admin'):
+            return qs.filter(inquiry_type__base_group='trade')
+        else:
+            return cls.objects.none()
+        # qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
+        # return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
 
     @queryable_property
     def purchase_group(self):
@@ -334,7 +343,7 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res:
+                if self.active and self != res and self.inquiry_type == res.inquiry_type:
                     res.active = False
                     res.save()
         else:
@@ -344,7 +353,7 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res:
+                if self.active and self != res and self.inquiry_type == res.inquiry_type:
                     res.active = False
                     res.save()
 
@@ -450,9 +459,10 @@ class InquiryResult(AbsBaseModel):
 
 
 class InquiryResultVariant(AbsBaseModel):
+    BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
     title = models.CharField(max_length=100, verbose_name=_('variant_title'))
     value = models.CharField(max_length=100, verbose_name=_('value'))
-    base_group = models.ForeignKey(Group, on_delete=models.DO_NOTHING, verbose_name=_('base_group'), null=True, blank=True)
+    base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
 
     def __str__(self):
-        return f'{self.title}: {self.value}'
+        return f'{self.value}'
