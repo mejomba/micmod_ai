@@ -22,6 +22,7 @@ from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
 from .forms import CustomBaseModelForm
 from comments.models import Comments
+from tools.form_tools import get_function
 
 import openpyxl
 
@@ -140,12 +141,12 @@ class BaseView(UserPassesTestMixin,
         self.request.POST._mutable = True
         for key, value in list(self.request.POST.items()):
             if key.__contains__("__auto__"):
-                key = key.replace("__auto__", "")
+                model_str, key = key.split("__auto__")
                 value = value.strip()
                 if value:
-                    model = self.form_class.base_fields[key].queryset.model
+                    model = get_function(model_str) #self.form_class.base_fields[key].queryset.model
                     obj, _ = model.objects.get_or_create(**{model.auto_complete: value})
-                    value = getattr(obj, self.form_class.base_fields[key].to_field_name, None)
+                    value = getattr(obj, 'pk', None)
                 self.request.POST[key] = value
         self.request.POST._mutable = False
 

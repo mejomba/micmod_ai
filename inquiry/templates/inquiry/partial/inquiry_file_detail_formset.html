@@ -21,7 +21,7 @@
                 <div class="col row-counter mb-1 d-flex align-items-center" style="max-width: fit-content;">
                     <span class="counter">{{ forloop.counter }}</span>
                 </div>
-                {% render_field_by_order form form.supplier form.price form.currency_type obj.price_irr form.local_price form.description crispy=False %}
+                {% render_field_by_order form form.supplier form.price form.currency_type form.inquiry_type obj.price_irr form.local_price form.description crispy=False %}
 {#                              todo only bazargani can see the price #}
 {#                {% render_field_by_order form obj.price_irr crispy=False %}#}
                 {% show_image_gallery obj=obj form=form detail=True upload=True editable=True %}

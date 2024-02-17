@@ -27,12 +27,12 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["force_inquiry"]
             },
             "formset_constraint": [
               {
                 "hide": [],
-                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry"]
+                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry", "bazar_price_code", "trade_price_code", "quantity", "goods_code", "goods_code_alt"]
               }
             ]
           },
@@ -47,7 +47,7 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry", "bazar_price_code", "trade_price_code", "quantity", "goods_code", "goods_code_alt"]
               }
             ]
           },
@@ -57,12 +57,12 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["force_inquiry"]
             },
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry", "bazar_price_code", "trade_price_code", "quantity", "goods_code", "goods_code_alt"]
               }
             ]
           },
@@ -72,12 +72,12 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["force_inquiry"]
             },
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["need_local_price_inquiry", "need_foreign_price_inquiry", "bazar_price_code", "trade_price_code", "quantity", "goods_code", "goods_code_alt"]
               }
             ]
           }
