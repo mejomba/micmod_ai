@@ -18,7 +18,7 @@ from ajax_datatable.views import AjaxDatatableView
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from files.models import Image
-from tools.google_sheet import price_wb
+# from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
@@ -47,7 +47,8 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
                 'form': inlineformset_factory(
                         PriceInquiryFile,
                         PriceInquiryResult,
-                        form=PriceInquiryResultCreateForm,
+                        # form=PriceInquiryResultCreateForm,
+                        form=PriceInquiryResult2CreateForm,
                         extra=1,
                         # fields=qi_fields,
                     ),
@@ -303,6 +304,8 @@ class InquiryResultListView(BaseView):
             pass
         print('no update price Deee :)')
         res = super().form_valid(form)
+        if self.object and self.object.item_weight:
+            ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
         return res
 
 
@@ -320,15 +323,15 @@ class InquiryResultUpdateView(BaseView):
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
-        if not self.object.item_weight:
-            sku = self.object.sku
-            # TODO: filter by user type
-            qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
-            # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
-            try:
-                context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
-            except Exception:
-                context['pre_item_weight'] = []
+        # if not self.object.item_weight:
+        sku = self.object.sku
+        # TODO: filter by user type
+        qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
+        # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
+        try:
+            context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
+        except Exception:
+            context['pre_item_weight'] = []
         return context
 
     def get_success_url(self):
@@ -368,7 +371,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'p-0 border sku-search'
+            col['className'] = 'py-3 border sku-search'
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -393,13 +396,13 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
             {'name': 'last_update_date', 'orderable': True, 'visible': False},
+            {'name': 'inquiry_type', 'orderable': True, 'searchable': False, 'visible': True},
             'active',
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
             cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
-        cols = self.get_columns(cols)
-        return cols
+        return self.get_columns(cols)
 
     def get_initial_queryset(self, request=None):
         sku: str = self.request.POST.get('sku')
@@ -784,3 +787,14 @@ class SupplierDataTableView(AjaxDatatableView):
                       reverse('inquiry:supplier.detail_update', args=(obj.id,)),
                       obj.name if obj.name else '_'
                     )
+
+
+class AjaxInquiryResultListData(View):
+    def get(self, request):
+        # x = dict()
+        # x.update(request.FILES)
+        # x.update(request.POST)
+        # form = PriceInquiryResult2CreateForm(initial=x).initial
+        # render_to_string('inquiry/partial/')
+        sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight})

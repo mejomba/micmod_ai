@@ -67,6 +67,7 @@
 {#                              todo only bazargani can see the price #}
                                 <div class="col" data-key="price">price</div>
                                 <div class="col" data-key="currency_type">واحد پول</div>
+                                <div class="col" data-key="type">نوع</div>
                                 <div class="col" data-key="currency_ir">ریال</div>
                                 <div class="col" data-key="local_price">local price</div>
                                 <div class="col" data-key="description">description</div>
@@ -95,6 +96,10 @@
 {#    </div>#}
     <!-- end main content-->
 {% endblock form_content %}
+
+    {% block form_footer_extra %}
+        {% include "core/partial/add_formset_button.html" %}
+    {% endblock form_footer_extra %}
 
 {% block extra_js %}
 

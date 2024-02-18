@@ -15,7 +15,7 @@ from .froms import DeviceForm
 from .models import Dl,Item,Device,APILogs
 from jalali_date.templatetags.jalali_tags import to_jalali
 from django.shortcuts import render, redirect
-from tools.google_sheet import price_wb
+# from tools.google_sheet import price_wb
 from micmod_base.base import QTYDis,PMDisY,PMDisR
 from accounts.templatetags.accounts_tag import has_group, has_groups
 from translator import get_text as _
@@ -55,208 +55,212 @@ def get_customers(request):
     return JsonResponse(obj,safe=False)
 
 def get_items(request):
-    q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
-    obj = {}
-    count = 0
-    if q:
-        for rep in reps:
-            q = q.replace(rep[1], rep[0])
-        items = Item.get_items(q,party_id)
-        obj['items'] = []
-        for item_ in items:
-            item = {}
-            try:
-                item['id'] = item_.code
-                item['itemid'] = item_.itemid
-                item['text'] = item_.title
-                item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
-                item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
-                item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
-                item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
-                item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
-                item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
-                item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
-                # item['stock_str'] = item_.stock_str
-                item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
-                item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
-                item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
-                item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
-                item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
-                sh_price = price_wb.get_sheet_price(item_.code)
-                item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
-                item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
-                item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
-                #print('price_loaded')
-                item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
-                item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
-                item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
-                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
-                item['QTYDis'] = QTYDis
-                item['PMDisY'] = PMDisY
-                item['PMDisR'] = PMDisR
-                obj['items'].append(item)
-                count += 1
-            except Exception as e:
-                print(str(e))
+    ...
+    # q = request.GET.get('q', None)
+    # party_id = request.GET.get('party_id', None)
+    # reps = [["ي", "ی"], ["ك", "ک"]]
+    # obj = {}
+    # count = 0
+    # if q:
+    #     for rep in reps:
+    #         q = q.replace(rep[1], rep[0])
+    #     items = Item.get_items(q,party_id)
+    #     obj['items'] = []
+    #     for item_ in items:
+    #         item = {}
+    #         try:
+    #             item['id'] = item_.code
+    #             item['itemid'] = item_.itemid
+    #             item['text'] = item_.title
+    #             item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+    #             item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
+    #             item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
+    #             item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+    #             item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
+    #             item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
+    #             item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
+    #             # item['stock_str'] = item_.stock_str
+    #             item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
+    #             item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
+    #             item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
+    #             item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
+    #             item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
+    #             # sh_price = price_wb.get_sheet_price(item_.code)
+    #             item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
+    #             item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
+    #             item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
+    #             #print('price_loaded')
+    #             item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+    #             item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
+    #             item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+    #             item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+    #             item['QTYDis'] = QTYDis
+    #             item['PMDisY'] = PMDisY
+    #             item['PMDisR'] = PMDisR
+    #             obj['items'].append(item)
+    #             count += 1
+    #         except Exception as e:
+    #             print(str(e))
 
 
-    obj['total_count'] = count
-    return JsonResponse(obj, safe=False)
+    # obj['total_count'] = count
+    # return JsonResponse(obj, safe=False)
 
 
 def get_items2(request):
-    q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
-    obj = {}
-    count = 0
-    if q:
-        for rep in reps:
-            q = q.replace(rep[1], rep[0])
-        items = Item.get_items(q,party_id)
-        obj['items'] = []
-        for item_ in items:
-            item = {}
-            try:
-                item['itemid'] = item_.itemid
-                item['goods_code'] = item_.code, False
-                item['goods_name'] = item_.title, False
-                item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d"), True
-                item['last_price'] = (item_.f_fee_cust), False
-                item['f_qty_cust'] = (item_.f_qty_cust), False
-                item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d"), True
-                item['q_last_price'] = (item_.quotation_fee), False
-                item['q_total_sales'] = (item_.quotation_qty), False
-                item['avg_count'] = (item_.f_qty_all), False
-                item['min_price'] = (item_.min_price), False
-                item['avg_price'] = (item_.avg_price), False
-                item['max_price'] = (item_.max_price), False
-                item['stock_amount'] = (item_.stock_qty), False
-                item['stock_amount_res'] = (item_.stock_res_qty), False
-                sh_price = price_wb.get_sheet_price(item_.code)
-                item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None, False
-                item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None, False
-                item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None, False
-                item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price[
-                    'p'] else None, True
-                item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None, False
-                item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price[
-                    'market'] else None, True
-                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0, False
-                item['QTYDis'] = QTYDis, False
-                item['PMDisY'] = PMDisY, False
-                item['PMDisR'] = PMDisR, False
-                obj['items'].append(item)
-                count += 1
-            except Exception as e:
-                print(str(e))
-
-
-    obj['total_count'] = count
-    return JsonResponse(obj, safe=False)
+    ...
+    # q = request.GET.get('q', None)
+    # party_id = request.GET.get('party_id', None)
+    # reps = [["ي", "ی"], ["ك", "ک"]]
+    # obj = {}
+    # count = 0
+    # if q:
+    #     for rep in reps:
+    #         q = q.replace(rep[1], rep[0])
+    #     items = Item.get_items(q,party_id)
+    #     obj['items'] = []
+    #     for item_ in items:
+    #         item = {}
+    #         try:
+    #             item['itemid'] = item_.itemid
+    #             item['goods_code'] = item_.code, False
+    #             item['goods_name'] = item_.title, False
+    #             item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d"), True
+    #             item['last_price'] = (item_.f_fee_cust), False
+    #             item['f_qty_cust'] = (item_.f_qty_cust), False
+    #             item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d"), True
+    #             item['q_last_price'] = (item_.quotation_fee), False
+    #             item['q_total_sales'] = (item_.quotation_qty), False
+    #             item['avg_count'] = (item_.f_qty_all), False
+    #             item['min_price'] = (item_.min_price), False
+    #             item['avg_price'] = (item_.avg_price), False
+    #             item['max_price'] = (item_.max_price), False
+    #             item['stock_amount'] = (item_.stock_qty), False
+    #             item['stock_amount_res'] = (item_.stock_res_qty), False
+    #             sh_price = price_wb.get_sheet_price(item_.code)
+    #             item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None, False
+    #             item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None, False
+    #             item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None, False
+    #             item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price[
+    #                 'p'] else None, True
+    #             item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None, False
+    #             item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price[
+    #                 'market'] else None, True
+    #             item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0, False
+    #             item['QTYDis'] = QTYDis, False
+    #             item['PMDisY'] = PMDisY, False
+    #             item['PMDisR'] = PMDisR, False
+    #             obj['items'].append(item)
+    #             count += 1
+    #         except Exception as e:
+    #             print(str(e))
+    #
+    #
+    # obj['total_count'] = count
+    # return JsonResponse(obj, safe=False)
 
 
 def get_item(request):
-    q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
-    obj = {}
-    count = 0
-    if q:
-        for rep in reps:
-            q = q.replace(rep[1], rep[0])
-        items = Item.get_item(q,party_id)
-        obj['items'] = []
-        for item_ in items:
-            item = {}
-            try:
-                item['id'] = item_.code
-                item['itemid'] = item_.itemid
-                item['text'] = item_.title
-                item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
-                item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
-                item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
-                item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
-                item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
-                item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
-                item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
-                # item['stock_str'] = item_.stock_str
-                item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
-                item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
-                item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
-                item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
-                item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
-                sh_price = price_wb.get_sheet_price(item_.code)
-                item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
-                item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
-                item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
-                #print('price_loaded')
-                item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
-                item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
-                item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
-                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
-                item['QTYDis'] = QTYDis
-                item['PMDisY'] = PMDisY
-                item['PMDisR'] = PMDisR
-                obj['items'].append(item)
-                count += 1
-            except Exception as e:
-                print(str(e))
-
-
-    obj['total_count'] = count
-    return JsonResponse(obj, safe=False)
+    ...
+    # q = request.GET.get('q', None)
+    # party_id = request.GET.get('party_id', None)
+    # reps = [["ي", "ی"], ["ك", "ک"]]
+    # obj = {}
+    # count = 0
+    # if q:
+    #     for rep in reps:
+    #         q = q.replace(rep[1], rep[0])
+    #     items = Item.get_item(q,party_id)
+    #     obj['items'] = []
+    #     for item_ in items:
+    #         item = {}
+    #         try:
+    #             item['id'] = item_.code
+    #             item['itemid'] = item_.itemid
+    #             item['text'] = item_.title
+    #             item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+    #             item['f_fee_cust'] = (item_.f_fee_cust) #if is_valid(item_.f_fee_cust) else ''
+    #             item['f_qty_cust'] = (item_.f_qty_cust) #if is_valid(item_.f_qty_cust) else ''
+    #             item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+    #             item['q_fee_cust'] = (item_.quotation_fee)  # if is_valid(item_.f_fee_cust) else ''
+    #             item['q_qty_cust'] = (item_.quotation_qty)  # if is_valid(item_.f_fee_cust) else ''
+    #             item['f_qty_all'] = (item_.f_qty_all) #if is_valid(item_.f_qty_all) else ''
+    #             # item['stock_str'] = item_.stock_str
+    #             item['min_price'] = (item_.min_price) #if is_valid(item_.avg_price) else ''
+    #             item['avg_price'] = (item_.avg_price) #if is_valid(item_.avg_price) else ''
+    #             item['max_price'] = (item_.max_price) #if is_valid(item_.avg_price) else ''
+    #             item['stock_qty'] = (item_.stock_qty) #if is_valid(item_.stock_qty) else ''
+    #             item['stock_qty_res'] = (item_.stock_res_qty) #if is_valid(item_.stock_qty) else ''
+    #             sh_price = price_wb.get_sheet_price(item_.code)
+    #             item['week1'] = sh_price['p']['week1'] if sh_price['p'] else None
+    #             item['week2'] = sh_price['p']['week2'] if sh_price['p'] else None
+    #             item['week3'] = sh_price['p']['week3'] if sh_price['p'] else None
+    #             #print('price_loaded')
+    #             item['date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+    #             item['m_price'] = sh_price['market']['price'] if sh_price['market'] else None
+    #             item['m_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+    #             item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+    #             item['QTYDis'] = QTYDis
+    #             item['PMDisY'] = PMDisY
+    #             item['PMDisR'] = PMDisR
+    #             obj['items'].append(item)
+    #             count += 1
+    #         except Exception as e:
+    #             print(str(e))
+    #
+    #
+    # obj['total_count'] = count
+    # return JsonResponse(obj, safe=False)
 
 
 def get_item2(request):
-    q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
-    obj = {}
-    count = 0
-    if q:
-        for rep in reps:
-            q = q.replace(rep[1], rep[0])
-        items = Item.get_items(q, party_id)
-        obj['items'] = []
-        for item_ in items:
-            item = {}
-            try:
-                item['goods_code'] = item_.code
-                item['goods_name'] = item_.title
-                item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
-                item['last_price'] = (item_.f_fee_cust)
-                item['f_qty_cust'] = (item_.f_qty_cust)
-                item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
-                item['q_last_price'] = (item_.quotation_fee)
-                item['q_total_sales'] = (item_.quotation_qty)
-                item['avg_count'] = (item_.f_qty_all)
-                item['min_price'] = (item_.min_price)
-                item['avg_price'] = (item_.avg_price)
-                item['max_price'] = (item_.max_price)
-                item['stock_amount'] = (item_.stock_qty)
-                item['stock_amount_res'] = (item_.stock_res_qty)
-                sh_price = price_wb.get_sheet_price(item_.code)
-                item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None
-                item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None
-                item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None
-                item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
-                item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None
-                item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
-                item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
-                item['QTYDis'] = QTYDis
-                item['PMDisY'] = PMDisY
-                item['PMDisR'] = PMDisR
-                obj['items'].append(item)
-                count += 1
-            except Exception as e:
-                print(str(e))
-
-
-    obj['total_count'] = count
-    return JsonResponse(obj, safe=False)
+    ...
+    # q = request.GET.get('q', None)
+    # party_id = request.GET.get('party_id', None)
+    # reps = [["ي", "ی"], ["ك", "ک"]]
+    # obj = {}
+    # count = 0
+    # if q:
+    #     for rep in reps:
+    #         q = q.replace(rep[1], rep[0])
+    #     items = Item.get_items(q, party_id)
+    #     obj['items'] = []
+    #     for item_ in items:
+    #         item = {}
+    #         try:
+    #             item['goods_code'] = item_.code
+    #             item['goods_name'] = item_.title
+    #             item['last_sale'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")
+    #             item['last_price'] = (item_.f_fee_cust)
+    #             item['f_qty_cust'] = (item_.f_qty_cust)
+    #             item['q_last_sale'] = to_jalali(item_.quotation_date, "%Y-%m-%d")
+    #             item['q_last_price'] = (item_.quotation_fee)
+    #             item['q_total_sales'] = (item_.quotation_qty)
+    #             item['avg_count'] = (item_.f_qty_all)
+    #             item['min_price'] = (item_.min_price)
+    #             item['avg_price'] = (item_.avg_price)
+    #             item['max_price'] = (item_.max_price)
+    #             item['stock_amount'] = (item_.stock_qty)
+    #             item['stock_amount_res'] = (item_.stock_res_qty)
+    #             sh_price = price_wb.get_sheet_price(item_.code)
+    #             item['goods_price_sheet1'] = sh_price['p']['week1'] if sh_price['p'] else None
+    #             item['goods_price_sheet2'] = sh_price['p']['week2'] if sh_price['p'] else None
+    #             item['goods_price_sheet3'] = sh_price['p']['week3'] if sh_price['p'] else None
+    #             item['goods_sheet_date'] = to_jalali(sh_price['p'].get('date', None), "%Y-%m-%d") if sh_price['p'] else None
+    #             item['goods_price_market'] = sh_price['market']['price'] if sh_price['market'] else None
+    #             item['goods_market_date'] = to_jalali(sh_price['market']['date'], "%Y-%m-%d") if sh_price['market'] else None
+    #             item['yuan_rate'] = sh_price['yuan_rate'] if sh_price else 0
+    #             item['QTYDis'] = QTYDis
+    #             item['PMDisY'] = PMDisY
+    #             item['PMDisR'] = PMDisR
+    #             obj['items'].append(item)
+    #             count += 1
+    #         except Exception as e:
+    #             print(str(e))
+    #
+    #
+    # obj['total_count'] = count
+    # return JsonResponse(obj, safe=False)
 
 
 class SuppliersAccountingList(LoginRequiredMixin,View):

@@ -1,57 +1,31 @@
 {% load core_tags %}
-<div class="w-100">
-    <div class="bg-gray-300 text-primary bold text-center w-100 rounded-top-5 py-3 fs-1" data-key="{{ rma_title|default:'images' }}"> {{ rma_title|default:'images' }} </div>
-<div class="w-100 bg-light rounded-bottom-5">
-    {% if rma_images %}
-
-        <div class="tns tns-default w-100 h-100" style="direction: ltr">
-            <!--begin::Slider-->
-            <div
-                    data-tns="true"
-                    data-tns-loop="true"
-                    data-tns-swipe-angle="false"
-                    data-tns-speed="2000"
-                    data-tns-autoplay="true"
-                    data-tns-autoplay-timeout="18000"
-                    data-tns-controls="true"
-                    data-tns-nav="false"
-                    data-tns-items="3"
-                    data-tns-center="false"
-                    data-tns-dots="false"
-                    data-tns-prev-button="#kt_team_slider_prev1"
-                    data-tns-next-button="#kt_team_slider_next1">
-
-                <!--begin::Item-->
-                {% for image in rma_images %}
-                    <div class="text-center px-5 py-5">
-                        <img src="{{ image.path.url }}" class="card-rounded mw-100" alt={{ image.alt }}/>
-                    </div>
-                {% endfor %}
-                <!--end::Item-->
-                ...
+<section id="gallery" dir="ltr" class="w-100">
+    <div class="container">
+        <div class="bg-gray-300 text-primary bold text-center w-100 rounded-top-5 py-3 fs-1"
+             data-key="{{ rma_title|default:'images' }}"> {{ rma_title|default:'images' }} </div>
+        {% if rma_images %}
+            <div id="image-gallery"
+                 class="w-100 bg-light rounded-bottom-5 {{ rma_body_class|default:'mh-800px scroll-y' }}">
+                <div class="row row-cols-{{ rma_cols|default:'5' }}">
+                    {% for image in rma_images %}
+                        <div class="text-center px-5 py-5 image">
+                            <div class="img-wrapper card-rounded mw-100 border-gray-300 border">
+                                <a href="{{ image.path.url }}"><img src="{{ image.path.url }}"
+                                                                    class="img-responsive" alt={{ image.alt }}></a>
+                                <div class="img-overlay">
+                                    <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div><!-- End row -->
+            </div><!-- End image gallery -->
+        {% else %}
+            <div class="py-10 fs-3x text-center w-100">
+                {% include "core/partial/components/blank_data.html" %}
             </div>
-            <!--end::Slider-->
+        {% endif %}
+    </div><!-- End container -->
+</section>
 
-            <!--begin::Slider button-->
-            <button class="btn btn-icon btn-active-color-primary" id="kt_team_slider_prev1">
-        <span class="svg-icon fs-3x">
-            <
-        </span>
-            </button>
-            <!--end::Slider button-->
 
-            <!--begin::Slider button-->
-            <button class="btn btn-icon btn-active-color-primary" id="kt_team_slider_next1">
-        <span class="svg-icon fs-3x">
-            >
-        </span>
-            </button>
-            <!--end::Slider button-->
-        </div>
-    {% else %}
-        <div class="py-10 fs-3x">
-        {% include "core/partial/components/blank_data.html" %}
-        </div>
-    {% endif %}
-</div>
-</div>

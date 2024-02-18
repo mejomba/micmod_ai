@@ -1,0 +1,26 @@
+{% load core_tags %}
+<div class="gap-2 bg-hover-light {{ rma_class }} copy-button d-flex">
+    {% if rma_key %}
+        <div class="bold border-2 border-info border-end pe-1">
+        <span class="{{ rma_digit_format|default:'persian-digit' }}"
+              data-key="{{ rma_key }}">{{ rma_key }} </span>
+            <div class="persian-digit py-1 text-center copy-text">{{ rma_value|humanized_format }}</div>
+        </div>
+    {% endif %}
+    {% with subtract_value=rma_value|v_subtract:rma_second_value %}
+        <div class="text-hover-primary d-flex justify-content-center align-items-center">
+            <div class="d-flex py-1 gap-2">
+                <div class="">
+                    {% if subtract_value < 0 %}
+                        <div class="persian-digit px-3 text-danger">{{ subtract_value|humanized_format }}</div>
+                        <div class="persian-digit text-center bg-gray-300 text-danger">{{ subtract_value|v_divide:rma_second_value|percentage_format }}</div>
+                    {% else %}
+                        <div class="persian-digit px-3 text-primary">{{ subtract_value|humanized_format }}</div>
+                        <div class="persian-digit text-center bg-gray-300 text-primary">{{ subtract_value|v_divide:rma_second_value|percentage_format }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% include 'core/partial/copy_to_clipboard_btn.html' with rma_selector='.copy-text'%}
+        </div>
+    {% endwith %}
+</div>

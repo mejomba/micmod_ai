@@ -89,10 +89,11 @@ class GSheet:
 
         return price
 
-price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
+# price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
 
 
 if __name__ == '__main__':
+    price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
     p = price_wb.get_sheet_price('255')
     p2 = price_wb.get_sheet_price('7925')
     print(p)

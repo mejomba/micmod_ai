@@ -213,12 +213,13 @@ class PriceSettings(AbsBaseModel):
 class HS(AbsBaseModel):
     code = models.CharField(verbose_name=_('code'),max_length=8,unique=True)
     title = models.CharField(verbose_name=_('title'),max_length=200,unique=True)
+    title_en = models.CharField(verbose_name=_('title_en'),max_length=200,blank=True, null=True)
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
     customs_rate = models.FloatField(verbose_name=_('customs_rate'), default=4)
 
     def __str__(self):
-        return f'{self.title} ({self.customs_rate}%)'
+        return f'{self.code}:[{self.title_en}] {self.title[:30]} ({self.customs_rate}%)'
 
     class Meta:
         ordering = ['title']
@@ -228,9 +229,9 @@ class PurchaseGroup(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
     price_settings = models.ForeignKey(PriceSettings,verbose_name=_("price_settings"), blank=True, null=True, on_delete=models.CASCADE)
     hs = models.ForeignKey(HS, verbose_name=_("hs"), on_delete=models.DO_NOTHING,null=True,blank=True)
-    sea_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
-    air_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
-    express_transportation = models.FloatField(verbose_name=_('customs_rate'), default=1)
+    sea_transportation = models.FloatField(verbose_name=_('sea_transportation'), default=1)
+    air_transportation = models.FloatField(verbose_name=_('air_transportation'), default=1)
+    express_transportation = models.FloatField(verbose_name=_('express_transportation'), default=1)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True,null=True,blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True,null=True,blank=True)
     auto_complete = 'title'
@@ -268,7 +269,7 @@ class CustomsGroup(AbsBaseModel):
 
 
 class Brand(AbsBaseModel):
-    title = models.CharField(verbose_name=_('title'), max_length=50, unique=True)
+    title = models.CharField(verbose_name=_('title'), max_length=100, unique=True)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
 

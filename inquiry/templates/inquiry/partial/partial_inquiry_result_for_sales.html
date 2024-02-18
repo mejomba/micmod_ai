@@ -12,7 +12,7 @@
             {% render_field_by_order form form.sku form.sku_c form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
             {% if request.user|has_group:"total_admin" %}
                 {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
-                {% if sku %}
+                {% if sku and sku.price %}
                     {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:sku.price.price_settings.pk|add:'/change/' rma_value=sku.price.price_settings.title rma_class="d-flex py-3" %}
                 {% endif %}
             {% endif %}
@@ -20,10 +20,10 @@
     </div>
     <div class="card-body col-9">
         <div class="row">
-            <div class="col-5">
+            <div class="col-4">
                 {% include "inquiry/partial/partial_result_inquiry_result_for_sales.html" %}
             </div>
-            <div class="col-7">
+            <div class="col-8">
                 {% include "inquiry/partial/for_sales_inquery/extra_data_tabs.html" %}
             </div>
         </div>
