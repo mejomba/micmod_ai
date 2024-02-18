@@ -97,8 +97,8 @@ class BaseView(UserPassesTestMixin,
         self.formset_form = self.get_formset_from_struct()
         self.state_index = self.get_flow_index(self.object)
 
-        if request.method == 'GET':
-            self.formset = self.get_formset_from_struct()
+        # if request.method == 'GET':
+        self.formset = self.get_formset_from_struct()
 
     def get(self, request, *args, **kwargs):
         if self.has_formset and not all([self.model, self.formset_model, self.formset_form]):
@@ -127,7 +127,6 @@ class BaseView(UserPassesTestMixin,
 
         if self.has_formset:
             self.formset_form.form_state = self.state_index
-
         return super().get(request, *args, **kwargs)
 
     def get_form_class(self):
@@ -210,12 +209,27 @@ class BaseView(UserPassesTestMixin,
                 return self.render_to_response(super().get_context_data(form=self.form))
             else:
                 return x
-        if not self.form.is_valid():
-            print(self.form.errors.as_data())
+        else:
+            self.formset = self.get_formset_from_struct()(self.request.POST, self.request.FILES, instance=self.form.instance,
+                                                          form_kwargs={
+                                                              "constraint": {
+                                                                  "wf_access": True,
+                                                                  'form_state': self.state_index,
+                                                                  'request': self.request,
+                                                                  'form_constraint': self.flow_config.get(
+                                                                      'flow_form_constraint'),
+                                                                  'formset_constraint': self.flow_config.get(
+                                                                      'flow_formset_constraint')
+                                                              }
+                                                          })
             return self.form_invalid(self.form)
-        if not wfform.is_valid():
-            print(wfform.errors.as_data())
-            return self.form_invalid(wfform)
+            # self.form_invalid(self.form)
+        # if not self.form.is_valid():
+        #     print(self.form.errors.as_data())
+        #     return self.form_invalid(self.form)
+        # if not wfform.is_valid():
+        #     print(wfform.errors.as_data())
+        #     return self.form_invalid(self.form)
 
     def test_func(self):
         if not self.model:
@@ -256,6 +270,7 @@ class BaseView(UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
         context['has_flow'] = self.has_flow
@@ -298,7 +313,7 @@ class BaseView(UserPassesTestMixin,
                                                       'form_constraint': self.flow_config.get('flow_form_constraint'),
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
-                                              }) if self.formset else None
+                                              }) if self.formset else self.formset
         context['allow_next'] = True
         print(__file__, 'super class context', context.get('current_user_groups'))
         return context

@@ -95,7 +95,7 @@ class QuotationItem(BaseModel):
     quantity = models.BigIntegerField(null=True, blank=True, verbose_name=_("quantity"))
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
-    goods_code = models.CharField(null=True, blank=True, verbose_name=_("goods_code"), max_length=20)
+    goods_code = models.CharField(verbose_name=_("goods_code"), max_length=20)
     itemid = models.BigIntegerField(null=True, blank=True, verbose_name=_("itemid"))
     goods_name = models.CharField(null=True, blank=True, verbose_name=_("goods_name"), max_length=200)
     stock_amount = models.BigIntegerField(null=True, blank=True, verbose_name=_("stock_amount"))

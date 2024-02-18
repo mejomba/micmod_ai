@@ -150,8 +150,13 @@ def get_comment_user_list(form, current_user, cancel=None):
 
     # creator_users = set()
     creator_users = dict()
-    obj = form.instance if form else None
-    comments = obj.comments.all().filter(~Q(comment_title="C")) if obj else None
+    # obj = form.instance if form else None
+    if form:
+        obj = form.instance
+        comments = obj.comments.all().filter(~Q(comment_title="C")) if obj else None
+    else:
+        obj = None
+        comments = None
     comment_seen = CommentSeen.objects.all()
     if comments is None:
         return {}

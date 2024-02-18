@@ -269,11 +269,11 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                            widget=forms.HiddenInput())
 
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100'}),
-                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}),
+                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                  initial=(self.instance.trade_price_code,
                                                                           self.instance.trade_price_code))
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
-                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}),
+                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                  initial=(self.instance.bazar_price_code,
                                                                           self.instance.bazar_price_code))
         if request and not request.user.is_superuser:
@@ -465,7 +465,6 @@ class BaseQIFormset(BaseInlineFormSet):
                     # Todo use and
                     nv = form.nested.is_valid()
                     result = result and nv
-                    result = True
 
         return result
 
