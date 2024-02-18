@@ -21,15 +21,15 @@ from sepidar.scripts.sepidar_classes import Urls
 
 
 def import_items_from_sepidar(extra_data):
-    max_importet_item = Item.objects.filter(sepidar_id__isnull=False).order_by('sepidar_id').last()
-    if max_importet_item:
-        max_importet_item = max_importet_item.sepidar_id
-    else:
-        max_importet_item = 0
-    # max_importet_item = 0
+    # max_importet_item = Item.objects.filter(sepidar_id__isnull=False).order_by('sepidar_id').last()
+    # if max_importet_item:
+    #     max_importet_item = max_importet_item.sepidar_id
+    # else:
+    #     max_importet_item = 0
+    max_importet_item = 0
     items = SepItem.get_all_items(max_importet_item) #APILogs.new_call(Urls.items.url)[1]
     for item in items:
-        extra_data_item = Item.objects.filter(sku=item.Code)[0]
+        extra_data_item = Item.objects.filter(sku=item.Code).first()
         if extra_data_item:
             if not extra_data_item.sepidar_id:
                 extra_data_item.sepidar_id = item.ItemID
@@ -48,12 +48,15 @@ def import_items_from_sepidar(extra_data):
                 data['sepidar_id'] = item.ItemID
                 data['sepidar_id'] = item.ItemID
                 data['sku'] = item.Code
-                data['id'] = item.Code
+                # data['id'] = item.Code
                 data['part_number'] = item.Title
                 data['technical_confirm'] = True
                 data['sale_group_id'] = sales_group.id if sales_group else None
                 data['purchase_group_id'] = purchase_group.id if purchase_group else None
-                Item.objects.create(**data)
+                try:
+                    Item.objects.create(**data)
+                except Exception as e:
+                    print(str(e))
             else:
                 print(f'id:{item.ItemID}--code:{item.Code} has no purchase group')
 
@@ -97,7 +100,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
         cursor = connection.cursor()
         if truncate:
             try:
-                cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY'.format(model._meta.db_table))
+                cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY CASCADE'.format(model._meta.db_table))
             except:
                 try:
                     model.objects.all().delete()
@@ -123,7 +126,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
         cursor.execute(f'select max(id) from {model._meta.db_table}')
         max_id = cursor.fetchall()
         max_id = max_id[0][0] if max_id else 0
-        cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id}')
+        cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id+1}')
     except Exception as e:
         print(str(e))
 
@@ -163,37 +166,36 @@ if __name__ == '__main__':
              ]
     update_model_based_excel(datas, Currency,update=True)
 
-    # datas = read_excel_data("sheet data/hs.xlsx",header_row=0)
     datas = wb.read_sheet("hs")
-    # update_model_based_excel(datas, HS, extra_data=extra_data,truncate=True)
+    update_model_based_excel(datas, HS, extra_data=extra_data,truncate=True)
+    print('HS')
     #
-    # datas = read_excel_data("sheet data/sales_groups.xlsx",header_row=0)
-    datas = wb.read_sheet("hs")
-    update_model_based_excel(datas, SaleGroup, extra_data=extra_data,update=False)
-    #
-    # datas = read_excel_data("sheet data/brands.xlsx", header_row=0)
     datas = wb.read_sheet("sales_group")
-    update_model_based_excel(datas, Brand, extra_data=extra_data)
+    update_model_based_excel(datas, SaleGroup, extra_data=extra_data,update=False, truncate=True)
+    print('SaleGroup')
     #
-    # datas = read_excel_data("sheet data/purchase_groups.xlsx",header_row=0)
+    datas = wb.read_sheet("brand")
+    update_model_based_excel(datas, Brand, extra_data=extra_data, truncate=True)
+    print('Brand')
+    #
     datas = wb.read_sheet("purchase_group")
     datas = set_foreign_key(datas,HS,"hs","code",[int,str])
-    update_model_based_excel(datas,PurchaseGroup,extra_data=extra_data,update=True)
+    update_model_based_excel(datas,PurchaseGroup,extra_data=extra_data,update=False, truncate=True)
+    print('PurchaseGroup')
     #
-    # datas = read_excel_data("sheet data/items.xlsx", header_row=0)
     datas = wb.read_sheet("item")
     datas = convert_data(datas, ['sku'],[int,str])
     datas = set_foreign_key(datas, SaleGroup, "sale_group", "title", )
     datas = set_foreign_key(datas, Brand, "brand", "title", )
     datas = set_foreign_key(datas, PurchaseGroup, "purchase_group", "title", )
-    update_model_based_excel(datas, Item, extra_data=extra_data, update=True)
+    update_model_based_excel(datas, Item, extra_data=extra_data, update=False, truncate=True)
+    print('Item')
     #
-    # datas = read_excel_data("sheet data/item_weight.xlsx",header_row=0)
     datas = wb.read_sheet("weight")
     datas = set_foreign_key(datas,Item,"sku","sku",[int,str])
-    update_model_based_excel(datas,ItemWeight,extra_data=extra_data,update=True)
-    #
-    # datas = read_excel_data("sheet data/price_inquery_results.xlsx",header_row=0)
+    update_model_based_excel(datas,ItemWeight,extra_data=extra_data,update=False, truncate=True)
+    print('ItemWeight')
+
     cursor = connection.cursor()
     cursor.execute(f'select max(id) from {PriceInquiryResult._meta.db_table}')
     datas = wb.read_sheet("price")
@@ -201,8 +203,12 @@ if __name__ == '__main__':
     for data in datas:
         data['active'] = True
     datas = set_foreign_key(datas, Currency, "currency_type", "title_en", )
-    update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=True,pk=0,truncate=True)
+    update_model_based_excel(datas, PriceInquiryResult, extra_data=extra_data, update=False,pk=0,truncate=True)
+    print('PriceInquiryResult')
 
     import_purchase_groups_from_sepidar(extra_data)
+    print('import_purchase_groups_from_sepidar')
     import_sales_groups_from_sepidar(extra_data)
+    print('import_sales_groups_from_sepidar')
     import_items_from_sepidar(extra_data)
+    print('import_items_from_sepidar')

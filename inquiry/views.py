@@ -18,7 +18,7 @@ from ajax_datatable.views import AjaxDatatableView
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from files.models import Image
-from tools.google_sheet import price_wb
+# from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
