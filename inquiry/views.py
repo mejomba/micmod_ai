@@ -47,7 +47,8 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
                 'form': inlineformset_factory(
                         PriceInquiryFile,
                         PriceInquiryResult,
-                        form=PriceInquiryResultCreateForm,
+                        # form=PriceInquiryResultCreateForm,
+                        form=PriceInquiryResult2CreateForm,
                         extra=1,
                         # fields=qi_fields,
                     ),
@@ -303,6 +304,8 @@ class InquiryResultListView(BaseView):
             pass
         print('no update price Deee :)')
         res = super().form_valid(form)
+        if self.object and self.object.item_weight:
+            ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
         return res
 
 
@@ -368,7 +371,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'p-0 border sku-search'
+            col['className'] = 'py-3 border sku-search'
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -393,13 +396,13 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
             {'name': 'last_update_date', 'orderable': True, 'visible': False},
+            {'name': 'inquiry_type', 'orderable': True, 'searchable': False, 'visible': True},
             'active',
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
             cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
-        cols = self.get_columns(cols)
-        return cols
+        return self.get_columns(cols)
 
     def get_initial_queryset(self, request=None):
         sku: str = self.request.POST.get('sku')
@@ -784,3 +787,14 @@ class SupplierDataTableView(AjaxDatatableView):
                       reverse('inquiry:supplier.detail_update', args=(obj.id,)),
                       obj.name if obj.name else '_'
                     )
+
+
+class AjaxInquiryResultListData(View):
+    def get(self, request):
+        # x = dict()
+        # x.update(request.FILES)
+        # x.update(request.POST)
+        # form = PriceInquiryResult2CreateForm(initial=x).initial
+        # render_to_string('inquiry/partial/')
+        sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight})

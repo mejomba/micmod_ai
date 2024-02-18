@@ -1,7 +1,7 @@
 import pandas as pd
 from django import forms
 from django.db import connections
-
+import importlib
 
 def select_cquery(query, using_db='default'):
     with connections[using_db].cursor() as cursor:
@@ -35,3 +35,9 @@ def get_dif_percentage(dict1, dict2):
         if key in dict2.keys():
             dict_[key] = 100 * dict1[key]/dict2[key] -  100
     return dict_
+
+def get_function(function_string):
+    mod_name, func_name = function_string.rsplit('.', 1)
+    mod = importlib.import_module(mod_name)
+    func = getattr(mod, func_name)
+    return func

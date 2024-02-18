@@ -108,18 +108,21 @@ function removeCommaSeperator() {
         item.value = item.value.replaceAll(',', '')
     })
 }
-const main_container = new KTBlockUI(document.body, {
+
+const main_container = new KTBlockUI(document.querySelector('#main-content'), {
     overlayClass: "bg-danger bg-opacity-25",
 });
 
-function block_main_container(){
+function block_main_container() {
     main_container.block(
 
     );
 }
-function release_main_container(){
+
+function release_main_container() {
     main_container.release();
 }
+
 function custom_ajax_post(form, url, element) {
     let formData = new FormData(form);
     $.ajax({
@@ -133,25 +136,27 @@ function custom_ajax_post(form, url, element) {
         cache: false,
         processData: false,
         contentType: false,
-        beforeSend: block_main_container(),
+        beforeSend: block_main_container,
         success: function (data) {
             html = data['res'];
             element.html(html);
             run_scripts(html);
         },
-        complete: release_main_container()
+        complete: release_main_container
     }); // end ajax
 }
 
-function run_scripts(elem){
-    debugger
+function run_scripts(elem) {
     const scripts = elem.match(/<script (.*?)<\/script>/g)
-    const u_scripts = new Set(scripts)
+    const u_scripts = Array.from(new Set(scripts))
     u_scripts.map((script) => {
         script = script.replace('"><\/script>', '').replace('<script src="/', '');
         loadJS(script);
     })
+    loadJS('/assets/lang/translate.js')
+    loadJS('/assets/js/refresh_after_ajax.js')
 }
+
 function loadJS(file) {
     const content = document.querySelector('body');
     const jsElm = document.createElement("script");
@@ -161,7 +166,7 @@ function loadJS(file) {
 
 function custom_ajax_get(form, url, element) {
     let new_url = url
-    if (form){
+    if (form) {
         const formSerialize = form.serialize();
         new_url = `${url}?${formSerialize}`
     }
@@ -172,49 +177,58 @@ function custom_ajax_get(form, url, element) {
         cache: false,
         processData: false,
         contentType: false,
-        beforeSend: block_main_container(),
+        beforeSend: block_main_container,
         success: function (data) {
             html = data['res'];
             element.html(html);
             run_scripts(html);
         },
-        complete: release_main_container()
+        complete: release_main_container
     });
 }
 
 
-function setCookie(cname, cvalue, exdays=null) {
-  const d = new Date();
-  if(exdays==null){exdays=365}
-  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-  let expires = "expires="+d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+function setCookie(cname, cvalue, exdays = null) {
+    const d = new Date();
+    if (exdays == null) {
+        exdays = 365
+    }
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    let expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
 function getCookie(cname) {
-  let name = cname + "=";
-  let ca = document.cookie.split(';');
-  for(let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) == ' ') {
-      c = c.substring(1);
+    let name = cname + "=";
+    let ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
     }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return "";
+    return "";
 }
 
 function checkCookie() {
-  let user = getCookie("username");
-  if (user != "") {
-    alert("Welcome again " + user);
-  } else {
-    user = prompt("Please enter your name:", "");
-    if (user != "" && user != null) {
-      setCookie("username", user, 365);
+    let user = getCookie("username");
+    if (user != "") {
+        alert("Welcome again " + user);
+    } else {
+        user = prompt("Please enter your name:", "");
+        if (user != "" && user != null) {
+            setCookie("username", user, 365);
+        }
     }
-  }
+}
+
+function copyToClipboard(elem) {
+    if (navigator.clipboard) {
+        const text = elem.innerText.trim();
+        navigator.clipboard.writeText(text).catch(function (){});
+    }
 }
 

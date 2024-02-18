@@ -1,0 +1,7 @@
+<span class="text-primary end-0 top-25 copy-button-btn gap-1"
+     onclick="copyToClipboard({% if rma_selector %}this.closest('.copy-button').querySelector('{{ rma_selector}}')
+                                {% else %}this.closest('.copy-button')
+                                {% endif %} )">
+    <i class="fa fa-copy fs-3 text-primary pe-1"></i>
+    <span data-key="copy"></span>
+</span>

@@ -1,11 +1,31 @@
 {% load core_tags %}
-<div class="gap-2 bg-hover-light {{ rma_class }}">
-    <div class="bold">
-        <span data-key="{{ rma_key }}">{{ rma_key }} </span><span>:</span>
-    </div>
-    {% if rma_href %}
-        <a class="text-hover-primary" href="{{ rma_href }}" target="{% if rma_target %}{{ rma_target }}{% else %}_blank{% endif %}">{% if rma_value %}{{ rma_value|humanized_format }}{% else %}<span data-key="unknown"></span>{% endif %}</a>
-    {% else %}
-        <div class="text-hover-primary">{% if rma_value %}{{ rma_value|humanized_format }}{% else %}<span data-key="unknown"></span>{% endif %}</div>
+<div class="gap-2 bg-hover-light {{ rma_class }} ">
+    {% check_is_digits rma_value as persian_digit %}
+    {% if rma_key %}
+        <div class="bold justify-content-center align-items-center d-flex">
+        <span class="{{ rma_digit_format|default:'persian-digit' }}"
+              data-key="{{ rma_key }}">{{ rma_key }} </span><span>:</span>
+        </div>
     {% endif %}
+    <div class="text-hover-primary d-flex gap-2 justify-content-center align-items-center copy-button">
+        <div class="copy-text {{ rma_digit_format|default:persian_digit }}">
+            {% if rma_href %}
+                <a href="{{ rma_href }}"
+                   target="{% if rma_target %}{{ rma_target }}{% else %}_blank{% endif %}">
+                    {% if rma_value %}{{ rma_value|humanized_format }}{% else %}
+                        <span data-key="unknown"></span>{% endif %}
+                </a>
+            {% else %}
+                <div onclick="copyToClipboard(this)">
+                    {% if rma_value != None %}
+                        {{ rma_value|humanized_format }}{% else %}
+                        <span data-key="unknown"></span>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% if rma_value %}
+            {% include 'core/partial/copy_to_clipboard_btn.html' with rma_selector='.copy-text' %}
+        {% endif %}
+    </div>
+
 </div>
