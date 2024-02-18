@@ -323,15 +323,15 @@ class InquiryResultUpdateView(BaseView):
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
-        if not self.object.item_weight:
-            sku = self.object.sku
-            # TODO: filter by user type
-            qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
-            # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
-            try:
-                context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
-            except Exception:
-                context['pre_item_weight'] = []
+        # if not self.object.item_weight:
+        sku = self.object.sku
+        # TODO: filter by user type
+        qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
+        # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
+        try:
+            context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
+        except Exception:
+            context['pre_item_weight'] = []
         return context
 
     def get_success_url(self):
