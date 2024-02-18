@@ -46,7 +46,7 @@ def import_items_from_sepidar(extra_data):
             if purchase_group:
                 data = extra_data
                 data['sepidar_id'] = item.ItemID
-                data['sepidar_id'] = item.ItemID
+                # data['sepidar_code'] = item.Code
                 data['sku'] = item.Code
                 # data['id'] = item.Code
                 data['part_number'] = item.Title
