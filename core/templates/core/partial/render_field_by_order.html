@@ -9,9 +9,7 @@
             {% if crispy %}
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-{#                {{ field|as_crispy_field }}#}
                 {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
-{#                {{ field|as_crispy_field }}#}
                 {{ field.errors }}
 
             {% elif field.field.select2 %}
@@ -29,7 +27,6 @@
                 <div class="col
                         {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}
                         mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-{#                {{ field }}#}
                 {% include 'core/partial/auto_complete_field.html' with field=field %}
                 <label data-key="{{ field|get_field_name }}" for="{{ field.auto_id }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
@@ -40,7 +37,6 @@
             {% else %}
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
-{#                {{ field }}#}
                 {% include 'core/partial/auto_complete_field.html' with field=field %}
                 {% if no_input %}
                     {% if css == 'no_label' %}
@@ -49,10 +45,6 @@
                         <label class="text-center w-100  card-title-desc h-25 {{ css }}"
                                id={{ id }} name="{{ field|get_field_name }}"></label>
                     {% endif %}
-                    {#            {% elif no_input_hidden %}#}
-                    {#                <label class="text-center w-100  card-title-desc h-25" name="{{ field|get_field_name }}"></label>#}
-                    {#                {{ field }}#}
-                    {#            {% else %}#}
                     {{ field.help_text }}
                     {{ field.errors }}
                 {% endif %}
@@ -61,14 +53,12 @@
         </div>
         {% else %}
             <div class="position-absolute">
-{#                {{ field|as_crispy_field }}#}
             {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
             </div>
             {% if no_input %}
                 <label class="text-center w-100  card-title-desc h-25 {{ css }}"
                        id={{ id }} name="{{ field|get_field_name }}">
                     {% if field.value %}{{ field.value }}{% else %} - {% endif %} </label>
-                {#            {{ field }}#}
             {% endif %}
         {% endif %}
     {% endfor %}
