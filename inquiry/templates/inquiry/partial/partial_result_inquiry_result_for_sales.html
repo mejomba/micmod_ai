@@ -159,6 +159,6 @@
         </ul>
     </div>
     <div class="card-footer d-flex persian-digit">
-        {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" %}
+        {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price|c_add:" ("|c_add:sku.price.price_update_date|humanized_format|c_add:")" rma_class="d-flex" %}
     </div>
 {#</div>#}
