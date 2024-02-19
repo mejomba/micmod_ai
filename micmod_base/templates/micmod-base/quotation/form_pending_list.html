@@ -5,8 +5,8 @@
 {% load humanize %}
 {% load more_tags %}
 {% block content_ %}
+    <div id="main-content">
 {% block content %}
-
 {% include 'partials/formset_header_buttons.html' %}
 {% for form_s in forms %}
     <form method="post">
@@ -319,6 +319,7 @@
     </form>
 {% endfor %}
 {% endblock %}
+    </div>
 {% endblock %}
 
 {% block extra_js %}
