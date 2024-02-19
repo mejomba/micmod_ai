@@ -114,6 +114,7 @@ const main_container = new KTBlockUI(document.querySelector('#main-content'), {
 });
 
 function block_main_container() {
+    debugger
     main_container.block(
 
     );
