@@ -9,6 +9,9 @@ from django.conf import settings
 from pprint import pprint
 from django.apps import apps
 from django.apps import apps
+
+from tools.utils import show_error
+
 register = template.Library()
 import ast
 from django.contrib.humanize.templatetags.humanize import intcomma,number_format
@@ -19,11 +22,23 @@ import re
 
 @register.filter
 def c_add(m_str, value):
-    m_str = m_str or ''
-    value = value or ''
-    if value and (isinstance(value,datetime.date) or isinstance(value,datetime.datetime)):
-        value = JalalyDate(value).get_persian_date_time('{y}/{m}/{d}')
-    return f'{m_str}{value}'
+    try:
+        m_str = m_str or ''
+        value = value or ''
+        if value and (isinstance(value,datetime.date) or isinstance(value,datetime.datetime)):
+            value = JalalyDate(value).get_persian_date_time('{y}/{m}/{d}')
+        return f'{m_str}{value}'
+    except:
+        return m_str
+
+
+@register.filter
+def c_get(obj, attr_name, default_value=None):
+    try:
+        return getattr(obj, attr_name, default_value)
+    except Exception as e:
+        show_error(e, __file__)
+        return default_value
 
 
 @register.filter
@@ -92,32 +107,35 @@ def check_is_digits(value):
 
 @register.filter
 def humanized_format(value, digits=None, use_l10n=True):
-    if value and isinstance(value, datetime.date):
-        if not digits:
-            digits = "{y}/{m}/{d} \n{H}:{M}"
-        return JalalyDate(value).get_persian_date_time(digits)
-    if value and isinstance(value, datetime.datetime):
-        if not digits:
-            digits = "{y}/{m}/{d} \n{H}:{M}"
-        return JalalyDate(value).get_persian_date_time(digits)
     try:
-        value = float(value)
-    except:
+        if value and isinstance(value, datetime.date):
+            if not digits:
+                digits = "{y}/{m}/{d} \n{H}:{M}"
+            return JalalyDate(value).get_persian_date_time(digits)
+        if value and isinstance(value, datetime.datetime):
+            if not digits:
+                digits = "{y}/{m}/{d} \n{H}:{M}"
+            return JalalyDate(value).get_persian_date_time(digits)
+        try:
+            value = float(value)
+        except:
+            return value
+        if not digits or isinstance(digits, str):
+            value_ = abs(value)
+            if value_ < 100:
+                digits = 4
+            elif value_ < 1000:
+                digits = 2
+            else:
+                digits = 0
+            for k in range(digits):
+                if round(value, k) == value:
+                    digits = k
+                    break
+        value = number_format(value=value,decimal_pos=digits,use_l10n=use_l10n,force_grouping=True)
         return value
-    if not digits or isinstance(digits, str):
-        value_ = abs(value)
-        if value_ < 100:
-            digits = 4
-        elif value_ < 1000:
-            digits = 2
-        else:
-            digits = 0
-        for k in range(digits):
-            if round(value, k) == value:
-                digits = k
-                break
-    value = number_format(value=value,decimal_pos=digits,use_l10n=use_l10n,force_grouping=True)
-    return value
+    except:
+        return None
 
 @register.simple_tag
 def get_object_count(user, count_str):
