@@ -48,7 +48,7 @@ def import_items_from_sepidar(extra_data):
                 data['sepidar_id'] = item.ItemID
                 # data['sepidar_code'] = item.Code
                 data['sku'] = item.Code
-                # data['id'] = item.Code
+                data['id'] = item.Code
                 data['part_number'] = item.Title
                 data['technical_confirm'] = True
                 data['sale_group_id'] = sales_group.id if sales_group else None
@@ -59,6 +59,7 @@ def import_items_from_sepidar(extra_data):
                     print(str(e))
             else:
                 print(f'id:{item.ItemID}--code:{item.Code} has no purchase group')
+    reset_seq(Item)
 
 
 def import_purchase_groups_from_sepidar(extra_data):
@@ -75,7 +76,14 @@ def import_purchase_groups_from_sepidar(extra_data):
             data['sepidar_code'] = item.Code
             data['title'] = item.Title
             PurchaseGroup.objects.create(**data)
+        reset_seq(PurchaseGroup)
 
+def reset_seq(model):
+    cursor = connection.cursor()
+    cursor.execute(f'select max(id) from {model._meta.db_table}')
+    max_id = cursor.fetchall()
+    max_id = max_id[0][0] if max_id else 0
+    cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id + 1}')
 
 def import_sales_groups_from_sepidar(extra_data):
     items = SepItem.get_all_sales_groups()
@@ -91,6 +99,7 @@ def import_sales_groups_from_sepidar(extra_data):
             data['sepidar_code'] = item.Code
             data['title'] = item.Title
             SaleGroup.objects.create(**data)
+    reset_seq(SaleGroup)
 
 
 
@@ -123,10 +132,7 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
                     obj = model.objects.create(**row)
             except Exception as e:
                 print(str(e))
-        cursor.execute(f'select max(id) from {model._meta.db_table}')
-        max_id = cursor.fetchall()
-        max_id = max_id[0][0] if max_id else 0
-        cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id+1}')
+        reset_seq(model)
     except Exception as e:
         print(str(e))
 
