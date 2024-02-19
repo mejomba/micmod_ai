@@ -154,8 +154,8 @@ function run_scripts(elem) {
         script = script.replace('"><\/script>', '').replace('<script src="/', '');
         loadJS(script);
     })
-    loadJS('/assets/lang/translate.js')
     loadJS('/assets/js/refresh_after_ajax.js')
+    loadJS('/assets/lang/translate.js')
 }
 
 function loadJS(file) {

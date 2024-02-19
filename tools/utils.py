@@ -12,7 +12,18 @@ from _keenthemes.settings import TIME_ZONE
 from . import myjalali
 import datetime
 # from workflow.models import FlowAdminGroup, WorkFlow
+from forbiddenfruit import curse
 
+
+def c_get(obj, attr_name, default_value=None):
+    try:
+        return getattr(obj, attr_name, default_value)
+    except Exception as e:
+        show_error(e, __file__)
+        return default_value
+
+
+curse(object, "c_get", c_get)
 
 def get_tuple_value_list(m_list:List[dict], key):
     return [(item.get(key), item.get(key)) for item in m_list]

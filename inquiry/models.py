@@ -123,10 +123,9 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def rmb_final_price(self):
-        if getattr(self.extra_data,'_rmb_final_price_',None):
-           return self.extra_data._rmb_final_price_
-        else:
-             return self.rmb_final_price_()
+        if not getattr(self.extra_data,'_rmb_final_price_',None):
+            return self.rmb_final_price_()
+        return self.extra_data._rmb_final_price_
 
     def rmb_final_price_(self):
         self.currency_ = (Currency.objects.filter(id=self.custom_properties.get('currency_')).first()
@@ -160,7 +159,7 @@ class PriceInquiryResult(BaseModel):
                 'payment_method_discount_percentage': payment_method_discount_percentage,
                 'office_cost_percentage': office_cost_percentage,
             }
-            self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage)) * (self.effective_rmb_price + self.customs_cost)
+            self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + self.sku.extra_cost_percentage)) * (self.effective_rmb_price + self.customs_cost)
             self.extra_data.after_price_discount_price = (self.extra_data.after_office_price *
                                                           (1 + 0.01 * (settings.get_discount_based_price(self.extra_data.after_office_price))))
             self.extra_data.rmb_final_price_custom_office = dict( map(lambda x: (x[0], x[1] + self.extra_data.after_price_discount_price),
@@ -179,7 +178,7 @@ class PriceInquiryResult(BaseModel):
                                                     + settings.max_discount_for_final_step
                                                     + settings.interest_percentage)))),
                     self.extra_data.rmb_final_price_custom_office.items()))
-            self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 * self.sku.extra_cost_percentage + 0.01 *
+            self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
                                                                         (self.sku.express_extra_cost_percentage if x[0] == "express" else
                                                                          self.sku.air_extra_cost_percentage if x[0] == "air" else
                                                                          self.sku.sea_extra_cost_percentage)))),

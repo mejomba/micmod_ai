@@ -351,7 +351,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
 
 
         dl_filter = f" and dl.Code={customer_code or -1}"
-        invoice_qry = """
+        qry = """
         select top 5
                 docs.Date
                 ,docs.NetPriceInBaseCurrency/docs.Quantity as fee
@@ -362,7 +362,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
         select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
                 ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.{doc_type}ItemID itemId
                 ,1 as coef,'{doc_type}' as doc_type
-        from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.InvoiceId
+        from [SLS].[{doc_type}] as I Join [SLS].[{doc_type}Item] as II on II.{doc_type}Ref = I.{doc_type}Id
         )as docs
         join [SLS].[SaleType] as st on st.SaleTypeId = docs.SaleTypeRef
         join [INV].[Item] as Item on Item.ItemID = docs.ItemRef
@@ -376,18 +376,18 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
         order by docs.Date desc
                     """
         self.extra_data.sepidar_data['customer_invoices'] = select_cquery(
-            invoice_qry.format(dl_filter=dl_filter,sku=self.sku),
+            qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='invoice'),
             "sepidar")
-        self.extra_data.sepidar_data['customer_qutations'] = select_cquery(
-            qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='qutation'),
+        self.extra_data.sepidar_data['customer_quotations'] = select_cquery(
+            qry.format(dl_filter=dl_filter,sku=self.sku,doc_type='quotation'),
             "sepidar")
 
         dl_filter = f" and dl.Code<>{customer_code or -1}"
         self.extra_data.sepidar_data['other_invoices'] = select_cquery(
             qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='invoice'),
             "sepidar")
-        self.extra_data.sepidar_data['other_qutations'] = select_cquery(
-            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='qutation'),
+        self.extra_data.sepidar_data['other_quotations'] = select_cquery(
+            qry.format(dl_filter=dl_filter, sku=self.sku, doc_type='quotation'),
             "sepidar")
 
 
