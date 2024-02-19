@@ -721,3 +721,6 @@ span .select2-selection{
     height: 40px !important;
     border: 1px solid #cecece !important;
 }
+.select2-selection__rendered {
+    padding-top: 8px !important;
+}
