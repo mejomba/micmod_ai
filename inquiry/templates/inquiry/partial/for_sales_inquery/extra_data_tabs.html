@@ -78,7 +78,7 @@
                             {% include "core/partial/components/key_value_text.html" with rma_key="air_extra_cost_percentage" rma_value=sku.air_extra_cost_percentage rma_class="d-flex py-1" %}
                             {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=sku.express_extra_cost_percentage rma_class="d-flex py-1" %}
                         </div>
-                        <a class="d-flex align-items-center justify-content-end" target="_blank"
+                        <a class="d-flex align-items-center justify-content-end pe-1" target="_blank"
                            href="/extra_data/item/update/{{ sku.id }}"><i class="fa fa-edit fs-5 pe-1"></i><span
                                 data-key="edit"></span></a>
                     </div>
@@ -89,17 +89,17 @@
                             {% include "core/partial/components/key_value_text.html" with rma_key="air_transportation" rma_value=sku.purchase_group.air_transportation rma_class="d-flex py-3" %}
                             {% include "core/partial/components/key_value_text.html" with rma_key="express_transportation" rma_value=sku.purchase_group.express_transportation rma_class="d-flex py-3" %}
                         </div>
-                        <a class="d-flex align-items-center justify-content-end" target="_blank"
+                        <a class="d-flex align-items-center justify-content-end pe-1" target="_blank"
                            href="/admin/extra_data/purchasegroup/{{ sku.purchase_group.id }}/change/"><i
                                 class="fa fa-edit fs-5 pe-1"></i><span
                                 data-key="edit"></span></a>
                     </div>
                     <div class="ps-2 bolder d-flex border-dotted border-gray-600 my-1 rounded-4 border-1 w-100">
-                        <div class="row row-cols-4 w-100">
+                        <div class="row row-cols-2 w-100">
                             {% include "core/partial/components/key_value_text.html" with rma_key="" rma_value=sku.purchase_group.hs.title rma_class="d-flex py-3" %}
                             {% include "core/partial/components/key_value_text.html" with rma_key="customs_rate" rma_value=sku.purchase_group.hs.customs_rate rma_class="d-flex py-3" %}
                         </div>
-                        <a class="d-flex align-items-center justify-content-end" target="_blank"
+                        <a class="d-flex align-items-center justify-content-end pe-1" target="_blank"
                            href="/admin/extra_data/hs/{{ sku.purchase_group.hs.id }}/change/"><i
                                 class="fa fa-edit fs-5 pe-1"></i><span
                                 data-key="edit"></span></a>

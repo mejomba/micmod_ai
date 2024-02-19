@@ -268,14 +268,32 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
 
+
+        # if self.instance.trade_price_code:
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100'}),
-                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
-                                                                 initial=(self.instance.trade_price_code,
-                                                                          self.instance.trade_price_code))
+                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     initial=(self.instance.trade_price_code,
+                                                                              self.instance.trade_price_code) if self.instance.trade_price_code else None
+                                                                     )
+        # else:
+        #     self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100'}),
+        #                                                              queryset=PriceInquiryResult.inquiry_list_datatable(
+        #                                                                  request.user, {
+        #                                                                      'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+        #                                                              )
+        # if self.instance.bazar_price_code:
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
-                                                                 queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
-                                                                 initial=(self.instance.bazar_price_code,
-                                                                          self.instance.bazar_price_code))
+                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     initial=(self.instance.bazar_price_code,
+                                                                              self.instance.bazar_price_code) if self.instance.bazar_price_code else None,
+                                                                     )
+        # else:
+        #     self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
+        #                                                              queryset=PriceInquiryResult.inquiry_list_datatable(
+        #                                                                  request.user, {
+        #                                                                      'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+        #                                                              initial=0
+        #                                                              )
         if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
