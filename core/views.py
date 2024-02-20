@@ -305,15 +305,19 @@ class BaseView(UserPassesTestMixin,
             )
 
         context['object_logs'] = ChangeLog.get_log(self.object)
-        context['formset'] = self.formset(instance=self.object, form_kwargs={
-                                                  "constraint": {
-                                                      "wf_access": self.wf_access,
-                                                      'form_state': self.state_index,
-                                                      'request': self.request,
-                                                      'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                      }
-                                              }) if self.formset else self.formset
+        try:
+            context['formset'] = self.formset(instance=self.object, form_kwargs={
+                                                      "constraint": {
+                                                          "wf_access": self.wf_access,
+                                                          'form_state': self.state_index,
+                                                          'request': self.request,
+                                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
+                                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                          }
+                                                  }) if self.formset else self.formset
+        except:
+            context['formset'] = self.formset
+
         context['allow_next'] = True
         print(__file__, 'super class context', context.get('current_user_groups'))
         return context
