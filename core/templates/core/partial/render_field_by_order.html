@@ -18,7 +18,7 @@
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {{ field.as_hidden }}
                 <div class="select2 {{ field|get_field_name }} form-control w-100" id="{{ field.html_name }}"
-                     name="{{ field|get_field_name }}"></div>
+                     name="{{ field|get_field_name }}">{{ field.value }}</div>
                 <label data-key="{{ field|get_field_name }}" class="{{ css }}" id="{{ id }}"></label>
                 {{ field.errors }}
 
