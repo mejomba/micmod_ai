@@ -411,6 +411,25 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
             self.extra_data.sepidar_data['customer'] = select_cquery(qry, "sepidar")
         return self.extra_data.sepidar_data
 
+    def save(self):
+        if self.id is None and self.sku:
+            self.id = self.sku
+            super(Item,self).save()
+            from tools.import_data import reset_seq
+            reset_seq(self._meta.model)
+        else:
+            super(Item, self).save()
+
+        # super(Item,self).save()
+        # if self.sku:
+        #     obj = self._meta.model.objects.get(sku=self.sku)
+        #     obj.update
+        #     obj.id = int(obj.sku)
+        #
+        #     super(Item,self).save()
+        #     from tools.import_data import reset_seq
+        #     reset_seq(self._meta.model)
+
     def __str__(self):
         #  only return sku, it's necessary for InquiryResult datatable search
         return f'{self.sku}'
