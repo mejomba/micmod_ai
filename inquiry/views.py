@@ -193,7 +193,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(AjaxDatatableView):
     model = Item
     title = 'sku_list'
-    initial_order = [["last_update_date", "des"], ]
+    initial_order = [["created_date", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -209,7 +209,7 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
-        {'name': 'last_update_date', 'visible': True, },
+        {'name': 'created_date', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -265,9 +265,17 @@ class InquiryResultListView(BaseView):
         context = super().get_context_data(**kwargs)
         self.request.GET._mutable = True
         self.request.GET.update({'user': self.request.user})
-        context.update({
-            'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-        })
+        object_id = self.request.GET.get('pk')
+        obj = PriceInquiryResult.objects.filter(pk=object_id).first()
+        if obj:
+            context.update({
+                'form': self.form_class(instance=obj)
+            })
+        else:
+            x = dict(map(lambda x: x, self.request.GET.items()))
+            context.update({
+                'form': self.form_class(initial=x)
+            })
         self.request.GET._mutable = False
         context['submit_copy'] = True
 
@@ -320,7 +328,7 @@ class InquiryResultUpdateView(BaseView):
         # self.request.GET._mutable = True
         # self.request.GET.update({'user': self.request.user})
         context.update({
-            'form': self.form_class(instance=self.object, initial={'user': self.request.user})
+            'form': self.form_class(instance=self.object, data={'sku': self.object.sku}, initial={'user': self.request.user})
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
@@ -801,4 +809,13 @@ class AjaxInquiryResultListData(View):
         # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
         # if not sku:
         sku = Item.objects.filter(sku=request.GET.get('sku')).first()
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight, 'item_id': sku.id})
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight, 'item_id': sku.id,})
+
+
+# Todo ino yadet nare shanbe
+# class InquiryResultUpdateFormView(View):
+#     def get(self, request):
+#         sku = request.GET.get('sku')
+#         obj = PriceInquiryResult.objects.filter(sku=sku).first()
+#         form = PriceInquiryResult2CreateForm(instance=obj)
+#         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
