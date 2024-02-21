@@ -8,7 +8,7 @@ import json
 
 # from comments.models import Comments
 from files.models import File, Image
-from tools.utils import elapsed_time
+from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q
 from accounts.models import User
 from tools.utils import c_get as c_get
@@ -172,6 +172,14 @@ class NoUserBaseModel(models.Model):
     @property
     def elapsed_time(self):
         return elapsed_time(self.created_date)
+
+    @property
+    def jalali_last_update_date(self):
+        return to_jalali_date(self.last_update_date)
+
+    @property
+    def formatted_last_update_date(self):
+        return self.last_update_date.__format__('D:%Y %b %d')
 
     @staticmethod
     def save_file(request, file_groups, file_model, obj, form_idx=0, *args, **kwargs):
