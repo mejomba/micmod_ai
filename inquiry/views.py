@@ -193,7 +193,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(AjaxDatatableView):
     model = Item
     title = 'sku_list'
-    initial_order = [["sku", "des"], ]
+    initial_order = [["last_update_date", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -209,6 +209,7 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
+        {'name': 'last_update_date', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -371,7 +372,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'py-3 border sku-search'
+            col['className'] = 'py-3 border'
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -386,8 +387,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = [
-            {'name': 'sku', 'lookup_field': '__sku__iexact'},
-            {'name': 'item_sku', 'searchable': False},
+            {'name': 'formatted_last_update_date', 'orderable': True, 'visible': True},
+            {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
+            {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
@@ -396,7 +398,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
-            {'name': 'last_update_date', 'orderable': True, 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': False, 'visible': True},
             'active',
         ]

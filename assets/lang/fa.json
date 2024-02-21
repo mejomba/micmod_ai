@@ -504,5 +504,6 @@
     "express_transportation": "ضریب حمل اکسپرس",
     "customs_rate": "تعرفه گمرکی",
     "access_denied":" نیاز به دسترسی خاص دارد",
-    "edit": "ویرایش"
+    "edit": "ویرایش",
+    "formatted_last_update_date": "تاریخ بروز رسانی"
 }
