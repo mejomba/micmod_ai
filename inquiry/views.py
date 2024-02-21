@@ -446,110 +446,110 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
 
 def inquiry_result_sale_ajax(request, *args, **kwargs):
-        dict_ = request.GET or request.POST
-        sku = dict_.get('sku_c')
-        party_code = dict_.get('party_code')
-        quantity = dict_.get('quantity') or 1
-        price_setting = dict_.get('price_setting')
-        currency = dict_.get('currency')
-        payment_method = dict_.get('payment_method')
-        grade = dict_.get('grade')
+    dict_ = request.GET or request.POST
+    sku = dict_.get('sku_c')
+    party_code = dict_.get('party_code')
+    quantity = dict_.get('quantity') or 1
+    price_setting = dict_.get('price_setting')
+    currency = dict_.get('currency')
+    payment_method = dict_.get('payment_method')
+    grade = dict_.get('grade')
 
-        dl_obj = Dl.get_dl(party_code)
-        party_id = dl_obj[0].PartyId if len(dl_obj) else None
-        # party_id = None
-        item_sku = Item.objects.filter(sku=sku).first()
-        currency_obj = Currency.objects.filter(pk=currency).first()
-        price = item_sku.price if item_sku else None
-        price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
-        final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
+    dl_obj = Dl.get_dl(party_code)
+    party_id = dl_obj[0].PartyId if len(dl_obj) else None
+    # party_id = None
+    item_sku = Item.objects.filter(sku=sku).first()
+    currency_obj = Currency.objects.filter(pk=currency).first()
+    price = item_sku.price if item_sku else None
+    price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
+    final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
 
-        form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
-                                                 'price_setting': price_setting_obj,
-                                                 'quantity': quantity or 1, 'party_code': party_code,
-                                                 'payment_method': payment_method, 'grade': grade
-                                                 })
+    form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
+                                             'price_setting': price_setting_obj,
+                                             'quantity': quantity or 1, 'party_code': party_code,
+                                             'payment_method': payment_method, 'grade': grade
+                                             })
 
-        payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
-        grades = get_tuple_value_list(final_price_settings.discount_based_customer, 'title')
-        form.fields['payment_method'] = get_choice_field(payment_methods, payment_method)
-        form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
-        form.fields['grade'] = get_choice_field(grades, grade)
-        form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
-        # item_sku.set_extra_data_sepidar(customer_code=party_code)
+    payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
+    grades = get_tuple_value_list(final_price_settings.discount_based_customer, 'title')
+    form.fields['payment_method'] = get_choice_field(payment_methods, payment_method)
+    form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
+    form.fields['grade'] = get_choice_field(grades, grade)
+    form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
+    # item_sku.set_extra_data_sepidar(customer_code=party_code)
 
-        if item_sku and item_sku.price is not None:
-            item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                               payment_method=payment_method, currency=currency,
-                                               price_setting=price_setting_obj)
-        sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
-        if sepidar_inquiry_result:
-            res = sepidar_inquiry_result[0]
-            item = res.__dict__
-            item['q_date_cust'] = res.quotation_date
-            item['q_qty_cust'] = res.quotation_qty
-            item['q_fee_cust'] = res.quotation_fee
-        else:
-            item = dict()
-        if request.GET:
-            html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
-                                                                                              "sku": item_sku,
-                                                                                              'item': item,
-                                                                                              }, request)
+    if item_sku and item_sku.price is not None:
+        item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                           payment_method=payment_method, currency=currency,
+                                           price_setting=price_setting_obj)
+    sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
+    if sepidar_inquiry_result:
+        res = sepidar_inquiry_result[0]
+        item = res.__dict__
+        item['q_date_cust'] = res.quotation_date
+        item['q_qty_cust'] = res.quotation_qty
+        item['q_fee_cust'] = res.quotation_fee
+    else:
+        item = dict()
+    if request.GET:
+        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
+                                                                                          "sku": item_sku,
+                                                                                          'item': item,
+                                                                                          }, request)
 
-            return JsonResponse({'res': html})
-        if request.POST:
-            inquiry_log_params = {
-                'sku': item_sku, 'quantity': quantity, 'grade': grade, 'payment_method': payment_method,
-                'currency': currency_obj, 'price_setting': price_setting_obj, 'party_code': party_code
-            }
-            inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
-            inquiry_log_obj.save_user(request)
+        return JsonResponse({'res': html})
+    if request.POST:
+        inquiry_log_params = {
+            'sku': item_sku, 'quantity': quantity, 'grade': grade, 'payment_method': payment_method,
+            'currency': currency_obj, 'price_setting': price_setting_obj, 'party_code': party_code
+        }
+        inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
+        inquiry_log_obj.save_user(request)
 
-            inquiry_result_params = {
-                #  استعلام از بازار
-                "goods_price_market": item.get('m_price') or None,
-                "goods_market_date": item.get('m_date') or None,
-                #  قیمت ۶۰ روز اخیر
-                "goods_avg_price": item.get('avg_price') or None,
-                "goods_min_price": item.get('min_price') or None,
-                "goods_max_price": item.get('max_price') or None,
-                #  آخرین فروش به مشتری (فاکتور)
-                "goods_last_sale": item.get('f_date_cust') or None,
-                "goods_total_sales": item.get('f_qty_cust') or None,
-                "goods_last_price": item.get('f_fee_cust') or None,
-                #  آخرین فروش به مشتری (پیش فاکتور)
-                "goods_q_last_sale": item.get('q_date_cust') or None,
-                "goods_q_total_sales": item.get('q_qty_cust') or None,
-                "goods_q_last_price": item.get('q_fee_cust') or None,
-                #  موجودی انبار
-                "stock_amount": item.get('stock_qty'),
-                "stock_amount_res": item.get('stock_qty_res'),
-                #  express - air - sea (1) => 7200
-                #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
-                "express_transportation_cost_1": price.rial_final_price.get('express'),
-                "air_transportation_cost_1": price.rial_final_price.get('air'),
-                "sea_transportation_cost_1": price.rial_final_price.get('sea'),
-                #  express - air - sea (2) => 7400
-                "express_transportation_cost_2": price.rial_final_price_new_order.get('express'),
-                "air_transportation_cost_2": price.rial_final_price_new_order.get('air'),
-                "sea_transportation_cost_2": price.rial_final_price_new_order.get('sea'),
-                #  express - air - sea (3) => transportations_cost
-                "express_transportation_cost_3": price.rmb_final_price.get('express'),
-                "air_transportation_cost_3": price.rmb_final_price.get('air'),
-                "sea_transportation_cost_3": price.rmb_final_price.get('sea'),
-                "quotation_item": None,
-                "price_settings": final_price_settings or None,
-                "sales_price_inquery_log_id": inquiry_log_obj.id or None
-            }
-            obj = InquiryResult.objects.create(**inquiry_result_params)
-            obj.save_user(request)
+        inquiry_result_params = {
+            #  استعلام از بازار
+            "goods_price_market": item.get('m_price') or None,
+            "goods_market_date": item.get('m_date') or None,
+            #  قیمت ۶۰ روز اخیر
+            "goods_avg_price": item.get('avg_price') or None,
+            "goods_min_price": item.get('min_price') or None,
+            "goods_max_price": item.get('max_price') or None,
+            #  آخرین فروش به مشتری (فاکتور)
+            "goods_last_sale": item.get('f_date_cust') or None,
+            "goods_total_sales": item.get('f_qty_cust') or None,
+            "goods_last_price": item.get('f_fee_cust') or None,
+            #  آخرین فروش به مشتری (پیش فاکتور)
+            "goods_q_last_sale": item.get('q_date_cust') or None,
+            "goods_q_total_sales": item.get('q_qty_cust') or None,
+            "goods_q_last_price": item.get('q_fee_cust') or None,
+            #  موجودی انبار
+            "stock_amount": item.get('stock_qty'),
+            "stock_amount_res": item.get('stock_qty_res'),
+            #  express - air - sea (1) => 7200
+            #  ۹ تا از این ها نگه دار ۳ تا برای ۷۲۰۰ و ۳ تا برای ۷۴۰۰ و سه تا برای rmb_final_price همونی که ۳ تا قیمت برمیگردونه
+            "express_transportation_cost_1": price.rial_final_price.get('express'),
+            "air_transportation_cost_1": price.rial_final_price.get('air'),
+            "sea_transportation_cost_1": price.rial_final_price.get('sea'),
+            #  express - air - sea (2) => 7400
+            "express_transportation_cost_2": price.rial_final_price_new_order.get('express'),
+            "air_transportation_cost_2": price.rial_final_price_new_order.get('air'),
+            "sea_transportation_cost_2": price.rial_final_price_new_order.get('sea'),
+            #  express - air - sea (3) => transportations_cost
+            "express_transportation_cost_3": price.rmb_final_price.get('express'),
+            "air_transportation_cost_3": price.rmb_final_price.get('air'),
+            "sea_transportation_cost_3": price.rmb_final_price.get('sea'),
+            "quotation_item": None,
+            "price_settings": final_price_settings or None,
+            "sales_price_inquery_log_id": inquiry_log_obj.id or None
+        }
+        obj = InquiryResult.objects.create(**inquiry_result_params)
+        obj.save_user(request)
 
-        html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': item, "sku": item_sku},request)
-        # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
+    html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': item, "sku": item_sku},request)
+    # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
 
-        return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})
-        # return render(request, 'inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price})
+    return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})
+    # return render(request, 'inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price})
 
 
 def get_item(request):
@@ -797,4 +797,6 @@ class AjaxInquiryResultListData(View):
         # form = PriceInquiryResult2CreateForm(initial=x).initial
         # render_to_string('inquiry/partial/')
         sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
+        if not sku:
+            sku = Item.objects.filter(sku=request.GET.get('sku')).first()
         return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight})
