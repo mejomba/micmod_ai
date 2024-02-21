@@ -265,9 +265,17 @@ class InquiryResultListView(BaseView):
         context = super().get_context_data(**kwargs)
         self.request.GET._mutable = True
         self.request.GET.update({'user': self.request.user})
-        context.update({
-            'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-        })
+        object_id = self.request.GET.get('pk')
+        obj = PriceInquiryResult.objects.filter(pk=object_id).first()
+        if obj:
+            context.update({
+                'form': self.form_class(instance=obj)
+            })
+        else:
+            x = dict(map(lambda x: x, self.request.GET.items()))
+            context.update({
+                'form': self.form_class(initial=x)
+            })
         self.request.GET._mutable = False
         context['submit_copy'] = True
 
@@ -320,7 +328,7 @@ class InquiryResultUpdateView(BaseView):
         # self.request.GET._mutable = True
         # self.request.GET.update({'user': self.request.user})
         context.update({
-            'form': self.form_class(instance=self.object, initial={'user': self.request.user})
+            'form': self.form_class(instance=self.object, data={'sku': self.object.sku}, initial={'user': self.request.user})
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
