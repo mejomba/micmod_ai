@@ -221,7 +221,7 @@ class BaseView(UserPassesTestMixin,
                                                                   'formset_constraint': self.flow_config.get(
                                                                       'flow_formset_constraint')
                                                               }
-                                                          })
+                                                          }) if self.has_formset else None
             return self.form_invalid(self.form)
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
