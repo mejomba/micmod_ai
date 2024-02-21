@@ -193,7 +193,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(AjaxDatatableView):
     model = Item
     title = 'sku_list'
-    initial_order = [["sku", "des"], ]
+    initial_order = [["last_update_date", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -209,6 +209,7 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
+        {'name': 'last_update_date', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
