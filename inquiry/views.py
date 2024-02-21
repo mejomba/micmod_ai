@@ -371,7 +371,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'py-3 border sku-search'
+            col['className'] = 'py-3 border'
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -388,7 +388,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         cols = [
             {'name': 'formatted_last_update_date', 'orderable': True, 'visible': True},
             {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
-            {'name': 'sku', 'lookup_field': '__sku__iexact'},
+            {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
