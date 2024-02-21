@@ -386,6 +386,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = [
+            {'name': 'formatted_last_update_date', 'orderable': True, 'visible': True},
+            {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
             {'name': 'sku', 'lookup_field': '__sku__iexact'},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
@@ -395,7 +397,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
-            {'name': 'last_update_date', 'orderable': True, 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': False, 'visible': True},
             'active',
         ]
