@@ -387,6 +387,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact'},
+            {'name': 'item_sku', 'searchable': False},
             {'name': 'part_number', 'searchable': False},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
@@ -796,7 +797,7 @@ class AjaxInquiryResultListData(View):
         # x.update(request.POST)
         # form = PriceInquiryResult2CreateForm(initial=x).initial
         # render_to_string('inquiry/partial/')
-        sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
-        if not sku:
-            sku = Item.objects.filter(sku=request.GET.get('sku')).first()
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight})
+        # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
+        # if not sku:
+        sku = Item.objects.filter(sku=request.GET.get('sku')).first()
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight, 'item_id': sku.id})
