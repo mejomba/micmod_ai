@@ -257,10 +257,15 @@ class InquiryResultListView(BaseView):
         path = reverse('inquiry:inquiry_result.list')
         if 'submit/copy' in self.request.POST:
             path += f"?sku={sku if sku else self.object.sku.pk}"
+        self.success_url = path
         # if cache.get(f'{self.request.user}__submit/copy'):
         #     pass
         return path
 
+    def setup(self, request, *args, **kwargs):
+        if request.POST.get('obj_pk'):
+            kwargs.update({'pk': request.POST.get('obj_pk')})
+        super().setup(request, *args, **kwargs)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.request.GET._mutable = True
@@ -439,8 +444,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('inquiry:inquiry_result.update', args=(obj.id,)),
-                      obj.sku if obj.sku else '_'
+                    f"/inquiry/inquiryresult/list/?pk={obj.id}", obj.sku if obj.sku else '_'
+                      # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
+                      # obj.sku if obj.sku else '_'
                     )
 
         row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
@@ -729,6 +735,7 @@ class SupplierView(BaseView):
         path = reverse_lazy('inquiry:supplier.list')
         if self.object:
             path += f'?name={self.object.name}'
+        self.success_url = path
         return path
 
     def get_context_data(self, **kwargs):
