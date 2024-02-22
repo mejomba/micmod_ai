@@ -267,17 +267,20 @@ class InquiryResultListView(BaseView):
         self.request.GET.update({'user': self.request.user})
         object_id = self.request.GET.get('pk')
         obj = PriceInquiryResult.objects.filter(pk=object_id).first()
+        if not obj:
+            obj = self.model(sku_id=self.request.GET.get('sku'))
+        obj.user = self.request.user
         if obj:
             context.update({
                 'form': self.form_class(instance=obj)
             })
         else:
-            x = dict(map(lambda x: x, self.request.GET.items()))
-            # x = self.model()
-            # x.sku = Item.objects.filter(sku=self.request.GET.get('sku')).first()
-            # x.user = self.request.user
+            # x = dict(map(lambda x: x, self.request.GET.items()))
+            x = self.model()
+            x.sku = Item.objects.filter(sku=self.request.GET.get('sku')).first()
+            x.user = self.request.user
             context.update({
-                'form': self.form_class(initial=x)
+                'form': self.form_class(instance=x)
             })
         self.request.GET._mutable = False
         context['submit_copy'] = True

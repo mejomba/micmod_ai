@@ -230,6 +230,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.make_optional(['image_1', 'file_1'])
         self.make_hidden(['price_inquiry_file', 'sku'])
         self.fields['active'].initial = True
+        self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         try:
             # user = self.instance.c_get('user')#kwargs.get('initial').get('user')
             user = kwargs.get('initial').get('user')
