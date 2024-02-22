@@ -227,9 +227,23 @@ function checkCookie() {
 }
 
 function copyToClipboard(elem) {
+    debugger
+    const text = elem.innerText.trim();
     if (navigator.clipboard) {
-        const text = elem.innerText.trim();
-        navigator.clipboard.writeText(text).catch(function (){});
+        navigator.clipboard.writeText(text).catch(function () {
+        });
+    }else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Unable to copy to clipboard', err);
+        }
+        document.body.removeChild(textArea);
     }
 }
 

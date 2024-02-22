@@ -6,7 +6,9 @@
 {% load accounts_tag %}
 {% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
 {#<div class="card">#}
-    <div class="card-title">
+    <div class="card-title d-flex gap-1">
+        {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" rma_copy_disabled=True %}
+        {% include 'core/partial/components/key_value_text.html' with rma_key="" rma_value=sku.price.price_update_date|humanized_format rma_class="d-flex justify-content-end align-items-end" rma_copy_disabled=True %}
     </div>
     <div class="card-body d-flex justify-content-center">
         <ul class="nav nav-tabs min-w-lg-200px w-100 gap-2 mb-0">
@@ -160,7 +162,7 @@
     </div>
     <div class="card-footer d-flex persian-digit">
 {#        {% if sku.price %}#}
-        {{ sku.price.price_update_date }}
+{#        {{ sku.price.price_update_date }}#}
 {#        {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price|c_add:" ("|c_add:sku.price.price_update_date|humanized_format|c_add:")" rma_class="d-flex" %}#}
 {#        {% endif %}#}
     </div>

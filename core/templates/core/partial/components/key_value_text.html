@@ -23,7 +23,7 @@
                 </div>
             {% endif %}
         </div>
-        {% if rma_value != None %}
+        {% if rma_value != None and not rma_copy_disabled %}
             {% include 'core/partial/copy_to_clipboard_btn.html' with rma_selector='.copy-text' %}
         {% endif %}
     </div>
