@@ -30,11 +30,11 @@
          id="kt_tab_pane_2" role="sales_admin">
         {% if sku %}
             {% if request.user|has_group:"total_admin" %}
-             <div class="bolder row row-cols-4 bg-light rounded-4 me-1">
+             <div class="bolder row row-cols-2 bg-light rounded-4 me-1">
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate" rma_value=sku.price.price_settings.free_rmb_rate rma_class="d-flex py-3" %}
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate_new_order" rma_value=sku.price.price_settings.free_rmb_rate_new_order rma_class="d-flex py-3" %}
-                    {% include "core/partial/components/key_value_text.html" with rma_key="talar_rmb_rate" rma_value=sku.price.price_settings.talar_rmb_rate rma_class="d-flex py-3" %}
-                    {% include "core/partial/components/key_value_text.html" with rma_key="customs_rmb_rate" rma_value=sku.price.price_settings.customs_rmb_rate rma_class="d-flex py-3" %}
+{#                    {% include "core/partial/components/key_value_text.html" with rma_key="talar_rmb_rate" rma_value=sku.price.price_settings.talar_rmb_rate rma_class="d-flex py-3" %}#}
+{#                    {% include "core/partial/components/key_value_text.html" with rma_key="customs_rmb_rate" rma_value=sku.price.price_settings.customs_rmb_rate rma_class="d-flex py-3" %}#}
 {#                    {% include "core/partial/components/key_value_text.html" with rma_key="dollar_rmb_rate" rma_value=sku.price.price_settings.dollar_rmb_rate rma_class="d-flex py-3 col-2" %}#}
              </div>
                 {% endif %}
@@ -77,7 +77,7 @@
                     {% include 'inquiry/partial/for_sales_inquery/transportation_method_prices.html' with rma_title="actual_cost" rma_price=sku.price.extra_data.rmb_final_price_custom_office rma_previous_price=sku.price.extra_data.after_price_discount_price %}
                     {% include 'inquiry/partial/for_sales_inquery/transportation_method_prices.html' with rma_title="base_sales_price" rma_price=sku.price.extra_data.rmb_final_price_before_ondemand rma_previous_price=sku.price.extra_data.rmb_final_price_custom_office %}
                     {% include 'inquiry/partial/for_sales_inquery/transportation_method_prices.html' with rma_title="sales_price" rma_price=sku.price.rmb_final_price rma_previous_price=sku.price.extra_data.rmb_final_price_before_ondemand %}
-                    {% include 'inquiry/partial/for_sales_inquery/transportation_method_prices.html' with rma_title="summery_change" rma_price=sku.price.rmb_final_price rma_previous_price=sku.price.rmb_price %}
+                    {% include 'inquiry/partial/for_sales_inquery/transportation_method_prices.html' with rma_title="summery_change" rma_price=sku.price.rmb_final_price rma_previous_price=sku.price.extra_data.rmb_final_price_custom_office %}
                 </div>
                 <div class="me-1 ">
                     <div class="ps-2 bolder d-flex border-dotted border-gray-600 my-1 rounded-4 border-1 w-100">
