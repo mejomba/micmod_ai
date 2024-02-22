@@ -3,7 +3,7 @@ from django.db.models import Q
 
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
-from tools.utils import show_error
+from tools.utils import show_error, c_get
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
     InquiryResultVariant
 from extra_data.models import Item
@@ -231,21 +231,23 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.make_hidden(['price_inquiry_file', 'sku'])
         self.fields['active'].initial = True
         try:
+            # user = self.instance.c_get('user')#kwargs.get('initial').get('user')
             user = kwargs.get('initial').get('user')
-            if not user.is_superuser:
-                g = user.groups.values_list('name', flat=True)
-                if 'total_admin' in g or user.is_superuser:
-                    qs = InquiryResultVariant.objects.all()
-                elif 'trade_user' in g or 'trade_admin' in g:
-                    qs = InquiryResultVariant.objects.filter(base_group='trade')
-                elif 'bazar_user' in g or 'bazar_admin' in g:
-                    qs = InquiryResultVariant.objects.filter(base_group='bazar')
+            if user:
+                if not user.c_get('is_superuser'):
+                    g = user.groups.values_list('name', flat=True)
+                    if 'total_admin' in g or user.is_superuser:
+                        qs = InquiryResultVariant.objects.all()
+                    elif 'trade_user' in g or 'trade_admin' in g:
+                        qs = InquiryResultVariant.objects.filter(base_group='trade')
+                    elif 'bazar_user' in g or 'bazar_admin' in g:
+                        qs = InquiryResultVariant.objects.filter(base_group='bazar')
+                    else:
+                        qs = InquiryResultVariant.objects.none()
                 else:
-                    qs = InquiryResultVariant.objects.none()
-
+                    qs = InquiryResultVariant.objects.all()
             else:
-                qs = InquiryResultVariant.objects.all()
-
+                qs = InquiryResultVariant.objects.none()
             self.fields['inquiry_type'] = forms.ModelChoiceField(
                 queryset=qs,
                 widget=forms.Select(attrs={'class': 'form-control'}),

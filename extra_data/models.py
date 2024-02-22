@@ -315,7 +315,8 @@ class Item(BaseModel):
 
     @property
     def weight(self):
-        return self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
+        obj = self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
+        return obj.weight if obj else None
 
     @property
     def price(self):

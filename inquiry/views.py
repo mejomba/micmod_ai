@@ -273,6 +273,9 @@ class InquiryResultListView(BaseView):
             })
         else:
             x = dict(map(lambda x: x, self.request.GET.items()))
+            # x = self.model()
+            # x.sku = Item.objects.filter(sku=self.request.GET.get('sku')).first()
+            # x.user = self.request.user
             context.update({
                 'form': self.form_class(initial=x)
             })
@@ -808,7 +811,7 @@ class AjaxInquiryResultListData(View):
         # render_to_string('inquiry/partial/')
         # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
         # if not sku:
-        sku = Item.objects.filter(sku=request.GET.get('sku')).first()
+        sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
         return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight, 'item_id': sku.id,})
 
 
