@@ -228,7 +228,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
-        self.make_hidden(['price_inquiry_file', 'sku'])
+        self.make_hidden(['price_inquiry_file', 'sku', 'id'])
         self.fields['active'].initial = True
         self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         try:

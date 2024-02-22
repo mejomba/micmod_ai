@@ -40,7 +40,14 @@
     {% csrf_token %}
     <div class="row m-0 mt-5 align-items-center bg-white">
         <div class="col-10">
+            <div class="gap-1 py-1 d-flex">
+                <div data-key="price"></div>
+                <span>:</span> {% if form.instance.pk %}
+                <span class="persian-digit">{{ form.instance.pk }}</span>
+            {% else %} <span data-key="new"></span>{% endif %}
+            </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
+                <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
                 {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
                 {% render_field_by_order form form.description form.active form.update_price form.item_weight label='on-border' %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
