@@ -55,6 +55,26 @@ services:
     networks:
       - live
 
+  web_https:
+    build:
+      context: .
+      #dockerfile: Dockerfile
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runsslserver 0.0.0.0:4000"
+    volumes:
+      - .:/app
+    #environment:
+    #  - REDIS_HOST=redis
+    ports:
+      - "2000:4000"
+      #- "5432:5432"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - _keenthemes/.env
+    networks:
+      - live
+
 
   nginx:
     image: nginx
