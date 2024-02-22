@@ -30,5 +30,6 @@ RUN ACCEPT_EULA=Y apt-get install msodbcsql17 --assume-yes
 RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
 RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
-RUN pip install -r requirements.txt
+# RUN pip install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 EXPOSE 4000
