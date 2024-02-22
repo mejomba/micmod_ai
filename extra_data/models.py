@@ -273,6 +273,8 @@ class Brand(AbsBaseModel):
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True, null=True, blank=True)
 
+    auto_complete = 'title'
+
     class Meta:
         ordering = ['title']
 
@@ -346,7 +348,7 @@ class Item(BaseModel):
         qry = f"""select s.Title, iss.Quantity
 from inv.ItemStockSummary iss
 join inv.Stock s on s.StockID = iss.StockRef
-where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id}"""
+where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id} order by s.code"""
         self.extra_data.sepidar_data['stocks'] = select_cquery(qry, "sepidar")
         self.extra_data.sepidar_data['stocks_sum'] = float(self.extra_data.sepidar_data['stocks'].sum()[1])
 
