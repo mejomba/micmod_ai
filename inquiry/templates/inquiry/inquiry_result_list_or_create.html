@@ -39,7 +39,7 @@
 {% block form_content %}
     {% csrf_token %}
     <div class="row m-0 mt-5 align-items-center bg-white">
-        <div class="col-10">
+        <div class="col-12">
             <div class="gap-1 py-1 d-flex">
                 <div data-key="price"></div>
                 <span>:</span> {% if form.instance.pk %}
@@ -56,7 +56,7 @@
         </div>
         <div class="col-2">
             <div class="row">
-                {% include 'inquiry/partial/item_price_irr.html' with obj=form.instance detail=False %}
+{#                {% include 'inquiry/partial/item_price_irr.html' with obj=form.instance detail=False %}#}
             </div>
         </div>
     </div>
