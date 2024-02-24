@@ -291,7 +291,7 @@ class Item(BaseModel):
 
     BATCH_TYPE = (('box', _('box')), ('rol', _('rol')))
     sku = models.CharField(max_length=10, verbose_name=_('sku'), null=True, blank=True, unique=True)
-    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
+    sepidar_id_0 = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     part_number = models.CharField(max_length=150, verbose_name=_('part number'), unique=True)
     brand = models.ForeignKey(Brand, related_name="items", verbose_name=_('brand'), null=True, blank=True
                               ,on_delete=models.DO_NOTHING)
@@ -314,6 +314,18 @@ class Item(BaseModel):
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
     objects = BaseManager(is_public=True)
+
+    @property
+    def sepidar_id(self):
+        if self.sepidar_id_0:
+            return self.sepidar_id_0
+        else:
+            try:
+                self.sepidar_id_0 = int(select_cquery(f"select itemid from inv.item where code ='{self.sku}'",'sepidar').values[0,0])
+                self.save()
+                return self.sepidar_id_0
+            except:
+                ...
 
     @property
     def weight(self):
