@@ -34,11 +34,12 @@ class ChangeLog(AbsBaseModel):
 
     @classmethod
     def get_log(cls, obj):
-        try:
-            content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
-            return cls.objects.filter(object_id=obj.id, content_type=content_type).order_by('pk')
-        except Exception as e:
-            print('error: ', __file__, e.__traceback__.tb_lineno, e)
+        if obj:
+            try:
+                content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
+                return cls.objects.filter(object_id=obj.id, content_type=content_type).order_by('pk')
+            except Exception as e:
+                print('error: ', __file__, e.__traceback__.tb_lineno, e)
         return None
         # qs = cls.objects.filter(object_id=obj.id).order_by('pk')
         # res = []

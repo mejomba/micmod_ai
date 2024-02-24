@@ -144,7 +144,10 @@ class BaseView(UserPassesTestMixin,
                 value = value.strip()
                 if value:
                     model = get_function(model_str) #self.form_class.base_fields[key].queryset.model
-                    obj, _ = model.objects.get_or_create(**{model.auto_complete: value})
+                    obj, _ = model.objects.get_or_create(**{f'{model.auto_complete}__iexact': value, 'defaults':{model.auto_complete: value}})
+                    if _:
+                        obj.extra_data.request = self.request
+                        obj.auto_complete_func()
                     value = getattr(obj, 'pk', None)
                 self.request.POST[key] = value
         self.request.POST._mutable = False
@@ -357,12 +360,13 @@ class BaseView(UserPassesTestMixin,
 
             try:
                 """work flow last step to_user should be to current user"""
-                if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
-                    to_user = self.request.user
-                elif self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
-                    to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
-                elif self.state_index is not None:
-                    to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
+                if flow_user_groups:
+                    if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
+                        to_user = self.request.user
+                    elif self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
+                        to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
+                    elif self.state_index is not None:
+                        to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
 
             except Exception as e:
                 print('error: ', __file__, e.__traceback__.tb_lineno, e)

@@ -3,6 +3,7 @@ from django.db.models import Q
 
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
+from micmod_base.base import Currency
 from tools.utils import show_error, c_get
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
     InquiryResultVariant
@@ -228,34 +229,53 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
-        self.make_hidden(['price_inquiry_file', 'sku', 'id'])
+        self.make_hidden(['price_inquiry_file', 'sku',])
         self.fields['active'].initial = True
         self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         try:
-            ...
             # user = self.instance.c_get('user')#kwargs.get('initial').get('user')
             # user = kwargs.get('initial').get('user')
-            # user = self.instance.c_get('user')
-            # if user:
-            #     if not user.c_get('is_superuser'):
-            #         g = user.groups.values_list('name', flat=True)
-            #         if 'total_admin' in g or user.is_superuser:
-            #             qs = InquiryResultVariant.objects.all()
-            #         elif 'trade_user' in g or 'trade_admin' in g:
-            #             qs = InquiryResultVariant.objects.filter(base_group='trade')
-            #         elif 'bazar_user' in g or 'bazar_admin' in g:
-            #             qs = InquiryResultVariant.objects.filter(base_group='bazar')
-            #         else:
-            #             qs = InquiryResultVariant.objects.none()
-            #     else:
-            #         qs = InquiryResultVariant.objects.all()
-            # else:
-            #     qs = InquiryResultVariant.objects.none()
-            # self.fields['inquiry_type'] = forms.ModelChoiceField(
-            #     queryset=qs,
-            #     widget=forms.Select(attrs={'class': 'form-control'}),
-            #     initial=self.instance.inquiry_type or qs.first()
-            # )
+            user = self.instance.c_get('user')
+            if user:
+                if not user.c_get('is_superuser'):
+                    g = user.groups.values_list('name', flat=True)
+                    if 'total_admin' in g or user.is_superuser:
+                        base_group = 'all'
+                        # qs = InquiryResultVariant.objects.all()
+                    elif 'trade_user' in g or 'trade_admin' in g:
+                        # qs = InquiryResultVariant.objects.filter(base_group='trade')
+                        base_group = 'trade'
+                    elif 'bazar_user' in g or 'bazar_admin' in g:
+                        # qs = InquiryResultVariant.objects.filter(base_group='bazar')
+                        base_group = 'bazar'
+                    else:
+                        qs = InquiryResultVariant.objects.none()
+                        base_group = 'None'
+                else:
+                    base_group = 'all'
+                qs = InquiryResultVariant.objects.all() if base_group == 'all' else InquiryResultVariant.objects.filter(
+                        base_group=base_group)
+                self.fields['inquiry_type'] = forms.ModelChoiceField(
+                    queryset=qs,
+                    widget=forms.Select(attrs={'class': 'form-control'}),
+                    initial=self.instance.inquiry_type or qs.first().pk if qs.first() else 0
+                )
+                qs = Supplier.objects.all() if base_group == 'all' else Supplier.objects.filter(
+                        base_group=base_group)
+                self.fields['supplier'] = forms.ModelChoiceField(
+                    queryset=qs,
+                    widget=forms.Select(attrs={'class': 'form-control'}),
+                    initial=self.instance.supplier or qs.first().pk if qs.first() else 0
+                )
+                if base_group == 'bazar' and self.instance.c_get('is_new'):
+                    qs = Currency.objects.all()
+                    self.instance.currency_type = qs.first()
+                    self.fields['currency_type'] = forms.ModelChoiceField(
+                        queryset=qs,
+                        widget=forms.Select(attrs={'class': 'form-control'}),
+                        initial=self.instance.currency_type if qs.first() else 0
+                    )
+                    ...
         except Exception as e:
             show_error(e, __file__)
         #
@@ -328,7 +348,7 @@ class SupplierModelForm(CustomBaseModelForm):
 
     class Meta:
         model = Supplier
-        fields = ['name']
+        fields = ['title']
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)

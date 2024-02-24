@@ -204,7 +204,7 @@ class SkuListDataTableView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
-        {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
+        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 border'},
@@ -274,26 +274,16 @@ class InquiryResultListView(BaseView):
         super().setup(request, *args, **kwargs)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.request.GET._mutable = True
-        self.request.GET.update({'user': self.request.user})
         object_id = self.request.GET.get('pk')
         obj = PriceInquiryResult.objects.filter(pk=object_id).first()
         if not obj:
-            obj = self.model(sku_id=self.request.GET.get('sku'))
+            obj = self.model(sku_id=self.request.GET.get('sku'), active=True)
+            obj.is_new = True
         obj.user = self.request.user
         if obj:
             context.update({
                 'form': self.form_class(instance=obj)
             })
-        else:
-            # x = dict(map(lambda x: x, self.request.GET.items()))
-            x = self.model()
-            x.sku = Item.objects.filter(sku=self.request.GET.get('sku')).first()
-            x.user = self.request.user
-            context.update({
-                'form': self.form_class(instance=x)
-            })
-        self.request.GET._mutable = False
         context['submit_copy'] = True
 
         # if cache.get(f'{self.request.user}__submit/copy'):
@@ -407,6 +397,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             if isinstance(field,dict):
                 for key in field.keys():
                     col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('name'))
             res.append(col)
         return res
 
@@ -742,7 +734,7 @@ class SupplierView(BaseView):
     def get_success_url(self):
         path = reverse_lazy('inquiry:supplier.list')
         if self.object:
-            path += f'?name={self.object.name}'
+            path += f'?title={self.object.title}'
         self.success_url = path
         return path
 
@@ -764,7 +756,7 @@ class SupplierListView(BaseView):
         if cache.get(f'{self.request.user}__submit/copy'):
             object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
             context.update({
-                'form': self.form_class(initial=dict(map(lambda x: x, [('name', object_for_copy.name), ])))
+                'form': self.form_class(initial=dict(map(lambda x: x, [('title', object_for_copy.name), ])))
             })
         else:
             context.update({
@@ -777,10 +769,10 @@ class SupplierListView(BaseView):
 class SupplierDataTableView(AjaxDatatableView):
     model = Supplier
     title = 'supplier_list'
-    initial_order = [["name", "des"], ]
+    initial_order = [["title", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
+    render_row_details_template_name = 'inquiry/supplier_list_or_create.html'
 
     def get_columns(self, fields):
         res = [AjaxDatatableView.render_row_tools_column_def()]
@@ -801,22 +793,22 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'name',
+            'title',
         ])
         return cols
 
     def get_initial_queryset(self, request=None):
-        param: str = self.request.POST.get('name')
+        param: str = self.request.POST.get('title')
         if param:
-            qs = self.model.objects.filter(name=param)
+            qs = self.model.objects.filter(title=param)
         else:
             qs = self.model.objects.all()
         return qs
 
     def customize_row(self, row, obj):
-        row['name'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
                       reverse('inquiry:supplier.detail_update', args=(obj.id,)),
-                      obj.name if obj.name else '_'
+                      obj.title if obj.title else '_'
                     )
 
 

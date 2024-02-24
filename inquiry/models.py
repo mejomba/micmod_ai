@@ -5,6 +5,8 @@ from django.db.models import Count, Q
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from itertools import chain
+
+from accounts.models import User
 from tools.utils import c_get
 
 from django.template.loader import render_to_string
@@ -21,11 +23,21 @@ from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
 
 
 class Supplier(BaseModel):
-    name = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
-    auto_complete = 'name'
+    BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
+    title = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
+    base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
+    auto_complete = 'title'
+
+    def auto_complete_func(self):
+        if request := self.extra_data.c_get('request'):
+            user:User = request.user
+            if 'bazar_user' in [gn[0] for gn in user.groups.values_list('name')]:
+                self.base_group = 'bazar'
+                self.save()
+        super().auto_complete_func()
 
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.title}'
 
 
 class PriceInquiryFile(BaseModel):
