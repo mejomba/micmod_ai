@@ -56,11 +56,12 @@ class QuotationForm(CustomBaseModelForm):
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
 
-
-            form_constraint_read = form_constraint[self.form_state].get('read')
-            form_constraint_hide = form_constraint[self.form_state].get('hide')
-            formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-            formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+            if form_constraint:
+                form_constraint_read = form_constraint[self.form_state].get('read')
+                form_constraint_hide = form_constraint[self.form_state].get('hide')
+            if formset_constraint:
+                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
+                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
 
         super(QuotationForm, self).__init__(*args, **kwargs)
         self.fields['request_date'] = JalaliDateField(label=_('request_date'),
@@ -77,7 +78,7 @@ class QuotationForm(CustomBaseModelForm):
         #     self.fields['addition_description'] = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control mb-3 ','placeholder': 'توضیحات خود را بنویسید :)'}))
         #     self.fields['addition_count'] = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'تعداد'}))
 
-        if not request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
@@ -249,11 +250,12 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                 request = kwargs.get('constraint').get('request')
                 access = kwargs.get('constraint').get('wf_access')
                 kwargs.pop('constraint')  # remove unnecessary kwargs
-
-            form_constraint_read = form_constraint[self.form_state].get('read')
-            form_constraint_hide = form_constraint[self.form_state].get('hide')
-            formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-            formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+            if form_constraint:
+                form_constraint_read = form_constraint[self.form_state].get('read')
+                form_constraint_hide = form_constraint[self.form_state].get('hide')
+            if formset_constraint:
+                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
+                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
 
         # if kwargs.get('request'):
         #     request = kwargs.pop('request')
