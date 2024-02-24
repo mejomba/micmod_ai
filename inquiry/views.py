@@ -204,7 +204,7 @@ class SkuListDataTableView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
-        {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
+        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 border'},
@@ -407,6 +407,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             if isinstance(field,dict):
                 for key in field.keys():
                     col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('name'))
             res.append(col)
         return res
 

@@ -144,7 +144,7 @@ class BaseView(UserPassesTestMixin,
                 value = value.strip()
                 if value:
                     model = get_function(model_str) #self.form_class.base_fields[key].queryset.model
-                    obj, _ = model.objects.get_or_create(**{model.auto_complete: value})
+                    obj, _ = model.objects.get_or_create(**{f'{model.auto_complete}__iexact': value})
                     value = getattr(obj, 'pk', None)
                 self.request.POST[key] = value
         self.request.POST._mutable = False

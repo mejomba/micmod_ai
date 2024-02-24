@@ -505,5 +505,10 @@
     "customs_rate": "تعرفه گمرکی",
     "access_denied":" نیاز به دسترسی خاص دارد",
     "edit": "ویرایش",
-    "formatted_last_update_date": "تاریخ بروز رسانی"
+    "formatted_last_update_date": "تاریخ بروز رسانی",
+    "rmb_final_price_rendered": "قیمت یوانی",
+    "rial_final_price_rendered": "قیمت ریالی",
+    "inquiry_type": "نوع استعلام",
+    "currency_type": "واحد پولی",
+    "weight": "وزن"
 }
