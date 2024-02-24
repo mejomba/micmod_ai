@@ -397,7 +397,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'py-3 border'
+            col['className'] = 'py-3'
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -412,20 +412,21 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = [
-            {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True},
-            {'name': 'editor_user', 'lookup_field': '__username__icontains'},
-            {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
-            {'name': 'm_part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains'},
+            {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
+            {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
+            {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains','className': 'w-20'},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
-            {"name": "purchase_group", "searchable": False},
-            'price',
-            {'name': 'currency_type', 'lookup_field': '__title__icontains'},
-            {'name': 'weight', 'searchable': False},
+            # {"name": "purchase_group", "searchable": False},
+            'purchase_group',
+            {'name': 'price', 'className': 'w-15px'},
+            {'name': 'currency_type', 'lookup_field': '__title__icontains', 'className': 'w-10px'},
             {'name': 'id', 'visible': False},
-            {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains'},
+            {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className':'w-10px'},
             'description',
-            'active',
+            {'name': 'active','className':'w-7px'},
+            {'name': 'weight', 'searchable': False, 'className': 'w-10px'},
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -446,7 +447,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
         # qs = qs.extra(select={'m_part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'}).filter()
-        qs = qs.annotate(m_part_number=F('sku__part_number'))
+        qs = qs.annotate(part_number=F('sku__part_number'), purchase_group=F('sku__purchase_group__title'))
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):

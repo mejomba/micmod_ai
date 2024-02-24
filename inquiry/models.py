@@ -91,22 +91,9 @@ class PriceInquiryResult(BaseModel):
         # qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
         # return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
 
-    @queryable_property
-    def purchase_group(self):
-        return self.sku.purchase_group.title
-
     @property
     def elapsed_from_last_price(self):
         return elapsed_time(self.price_update_date)
-
-    @purchase_group.filter
-    @classmethod
-    def purchase_group(cls, lookup, value):
-        return Q(sku__purchase_group__title__icontains=value)
-
-    @queryable_property
-    def part_number(self):
-        return self.sku.part_number
 
     @property
     def rial_final_price(self):
