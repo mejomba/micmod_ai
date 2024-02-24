@@ -200,7 +200,7 @@ class SkuListDataTableView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'sku_int', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
@@ -214,10 +214,11 @@ class SkuListDataTableView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
+        qs = qs.extra(select={'sku_int': 'cast(sku as integer'})
         return qs
 
     def customize_row(self, row, obj):
-        row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
                       reverse('extra_data:sku.update', args=(obj.id,)),
                       obj.sku if obj.sku else '_'
                     )
@@ -409,7 +410,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'formatted_last_update_date', 'orderable': True, 'visible': True},
             {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
-            {'name': 'part_number', 'searchable': False},
+            {'name': 'part_number', 'searchable': False, 'orderable': False},#, 'lookup_field': '__part_number__icontains'},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
             {"name": "purchase_group", "searchable": False},
@@ -417,7 +418,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
-            {'name': 'inquiry_type', 'orderable': True, 'searchable': False, 'visible': True},
+            {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains'},
             'active',
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
@@ -435,11 +436,10 @@ class InquiryResultDataTableView(AjaxDatatableView):
         except TypeError as e:
             show_error(e, __file__)
         if sku:
-            # qs = self.model.objects.filter(sku=param)
             qs = self.model.inquiry_list_datatable(user=self.request.user, param={"sku": sku})
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
-            # qs = self.model.objects.all()
+        # qs = qs.extra(select={'part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'})
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
