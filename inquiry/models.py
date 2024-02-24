@@ -232,18 +232,22 @@ class PriceInquiryResult(BaseModel):
         if getattr(self.extra_data,'price_settings_', None):
             return self.extra_data.price_settings_
         if self.sku:
-            self.extra_data.price_reference = None
+            self.extra_data.price_settings_ = None
             if self.sku.price_settings:
                 self.extra_data.price_reference = self.sku
-                return self.sku.price_settings
+                self.extra_data.price_settings_ = self.sku.price_settings
             if self.sku.purchase_group:
                 if self.sku.purchase_group.price_settings:
                     self.extra_data.price_reference = self.sku.purchase_group
-                    return self.sku.purchase_group.price_settings
+                    self.extra_data.price_settings_ = self.sku.purchase_group.price_settings
                 elif self.sku.purchase_group.hs and self.sku.purchase_group.hs.price_settings:
                     self.extra_data.price_reference = self.sku.purchase_group.hs
-                    return self.sku.purchase_group.hs.price_settings
-        return PriceSettings.setting()
+                    self.extra_data.price_settings_ = self.sku.purchase_group.hs.price_settings
+        if not self.extra_data.price_settings_:
+            self.extra_data.price_reference = None
+            self.extra_data.price_settings_ = PriceSettings.setting()
+
+        return self.extra_data.price_settings_
 
     @price_settings.setter
     def price_settings(self, value):

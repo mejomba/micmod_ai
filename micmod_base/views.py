@@ -408,71 +408,81 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         user_groups_name = self.request.user.groups.values_list('name', flat=True)
         quotations_record_lst = list()
         q = self.request.GET.get('q')
-        # if q == 'local':
-        #     quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
-        #                                                          Q(need_local_price_inquiry=False) |
-        #                                                          Q(local_price_inquiry_done=False) &
-        #                                                          Q(need_local_price_inquiry=True)
-        #                                                          )
-        # elif q == 'foreign':
-        #     quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
-        #                                                          Q(need_foreign_price_inquiry=False) |
-        #                                                          Q(foreign_price_inquiry_done=False) &
-        #                                                          Q(need_foreign_price_inquiry=True))
-        # else:
-        #     if self.request.user.is_superuser:
-        #         quotation_qry = QuotationItem.objects.filter(
-        #             Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #             Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-        #             Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #             Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        #         ).query
-        #         quotation_qry.order_by = ['quotation']
-        #         quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-        #     elif 'trade_user' in user_groups_name:
-        #         quotations_record_lst = QuotationItem.objects.filter(
-        #             Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #             Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-        #         )
-        #     elif 'bazar_user' in user_groups_name:
-        #         quotations_record_lst = QuotationItem.objects.filter(
-        #             Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #             Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        #         )
-        #     else:
-        #         quotations_record_lst = []
+        if q == 'local':
+            quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
+                                                                 Q(need_local_price_inquiry=False) |
+                                                                 Q(local_price_inquiry_done=False) &
+                                                                 Q(need_local_price_inquiry=True)
+                                                                 )
+        elif q == 'foreign':
+            quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
+                                                                 Q(need_foreign_price_inquiry=False) |
+                                                                 Q(foreign_price_inquiry_done=False) &
+                                                                 Q(need_foreign_price_inquiry=True))
+        else:
+            if self.request.user.is_superuser:
+                quotation_qry = QuotationItem.objects.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                ).query
+                quotation_qry.order_by = ['quotation']
+                quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
+            elif 'trade_user' in user_groups_name:
+                quotations_record_lst = QuotationItem.objects.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+                )
+            elif 'bazar_user' in user_groups_name:
+                quotations_record_lst = QuotationItem.objects.filter(
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                )
+            else:
+                quotations_record_lst = []
 
-        for q in Quotation.objects.all():
-            qi = q.quotation.filter(Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                                         Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-                                         Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                                         Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True))
-            if qi:
-                quotations_record_lst.append(qi)
+        # for q in Quotation.objects.all():
+        #     qi = q.quotation.filter(Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+        #                                  Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
+        #                                  Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+        #                                  Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True))
+        #     if qi:
+        #         quotations_record_lst.append(qi)
 
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
         forms = list()
         form_list = list()
-        for queryset in quotations_record_lst:
-            for qi in queryset:
-                # form = formset_factory(QuotationItemForm2)
-                form = QuotationItemForm2(instance=qi, initial={
-                                                      "constraint": {
-                                                          "wf_access": True,
-                                                          'form_state': 0,
-                                                          'request': self.request,
-                                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                          }
-                                                  })
-                form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
-                form.enable = False
-                form_list.append(form)
-            forms.append(form_list)
-            form_list = []
-        context['forms'] = forms
+        for qi in quotations_record_lst:
+            form = QuotationItemForm2(instance=qi, initial={
+                "constraint": {
+                    "wf_access": True,
+                    'form_state': 0,
+                    'request': self.request,
+                    'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                }
+            })
+            form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
+            form.enable = False
+            # for qi in queryset:
+            #     form = QuotationItemForm2(instance=qi, initial={
+            #                                           "constraint": {
+            #                                               "wf_access": True,
+            #                                               'form_state': 0,
+            #                                               'request': self.request,
+            #                                               'form_constraint': self.flow_config.get('flow_form_constraint'),
+            #                                               'formset_constraint': self.flow_config.get('flow_formset_constraint')
+            #                                               }
+            #                                       })
+            #     form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
+            #     form.enable = False
+            form_list.append(form)
+            # forms.append(form_list)
+            # form_list = []
+        context['forms'] = form_list
 
         return render(request, self.template_name, context)
 
