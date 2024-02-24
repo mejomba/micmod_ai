@@ -232,28 +232,30 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.fields['active'].initial = True
         self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         try:
+            ...
             # user = self.instance.c_get('user')#kwargs.get('initial').get('user')
-            user = kwargs.get('initial').get('user')
-            if user:
-                if not user.c_get('is_superuser'):
-                    g = user.groups.values_list('name', flat=True)
-                    if 'total_admin' in g or user.is_superuser:
-                        qs = InquiryResultVariant.objects.all()
-                    elif 'trade_user' in g or 'trade_admin' in g:
-                        qs = InquiryResultVariant.objects.filter(base_group='trade')
-                    elif 'bazar_user' in g or 'bazar_admin' in g:
-                        qs = InquiryResultVariant.objects.filter(base_group='bazar')
-                    else:
-                        qs = InquiryResultVariant.objects.none()
-                else:
-                    qs = InquiryResultVariant.objects.all()
-            else:
-                qs = InquiryResultVariant.objects.none()
-            self.fields['inquiry_type'] = forms.ModelChoiceField(
-                queryset=qs,
-                widget=forms.Select(attrs={'class': 'form-control'}),
-                initial=self.instance.inquiry_type or qs.first()
-            )
+            # user = kwargs.get('initial').get('user')
+            # user = self.instance.c_get('user')
+            # if user:
+            #     if not user.c_get('is_superuser'):
+            #         g = user.groups.values_list('name', flat=True)
+            #         if 'total_admin' in g or user.is_superuser:
+            #             qs = InquiryResultVariant.objects.all()
+            #         elif 'trade_user' in g or 'trade_admin' in g:
+            #             qs = InquiryResultVariant.objects.filter(base_group='trade')
+            #         elif 'bazar_user' in g or 'bazar_admin' in g:
+            #             qs = InquiryResultVariant.objects.filter(base_group='bazar')
+            #         else:
+            #             qs = InquiryResultVariant.objects.none()
+            #     else:
+            #         qs = InquiryResultVariant.objects.all()
+            # else:
+            #     qs = InquiryResultVariant.objects.none()
+            # self.fields['inquiry_type'] = forms.ModelChoiceField(
+            #     queryset=qs,
+            #     widget=forms.Select(attrs={'class': 'form-control'}),
+            #     initial=self.instance.inquiry_type or qs.first()
+            # )
         except Exception as e:
             show_error(e, __file__)
         #
