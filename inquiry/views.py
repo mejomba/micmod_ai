@@ -266,6 +266,8 @@ class InquiryResultListView(BaseView):
     def setup(self, request, *args, **kwargs):
         if request.POST.get('obj_pk') and request.POST.get('obj_pk') != 'None':
             kwargs.update({'pk': request.POST.get('obj_pk')})
+        if request.GET.get('pk'):
+            kwargs.update({'pk': request.GET.get('pk')})
         super().setup(request, *args, **kwargs)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -407,7 +409,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = [
-            {'name': 'formatted_last_update_date', 'orderable': True, 'visible': True},
+            {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True},
             {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
             {'name': 'part_number', 'searchable': False, 'orderable': False},#, 'lookup_field': '__part_number__icontains'},
