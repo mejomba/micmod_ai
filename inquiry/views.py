@@ -200,7 +200,7 @@ class SkuListDataTableView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'sku_int', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'data': 'sku_int', 'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
@@ -218,7 +218,7 @@ class SkuListDataTableView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
                       reverse('extra_data:sku.update', args=(obj.id,)),
                       obj.sku if obj.sku else '_'
                     )
