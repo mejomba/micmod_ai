@@ -16,6 +16,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
+from django.db.models import Min, IntegerField
+from django.db.models.functions import Cast
 
 from files.models import Image
 # from tools.google_sheet import price_wb
@@ -200,8 +202,8 @@ class SkuListDataTableView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
-        {'name': 'sku_int', 'searchable': False, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
@@ -215,11 +217,11 @@ class SkuListDataTableView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
-        qs = qs.extra(select={'sku_int': 'cast(sku as integer)'})
+        qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
         return qs
 
     def customize_row(self, row, obj):
-        row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
                       reverse('extra_data:sku.update', args=(obj.id,)),
                       obj.sku if obj.sku else '_'
                     )
@@ -386,7 +388,7 @@ class InquiryResultUpdateView(BaseView):
 class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
-    initial_order = [["active", "des"], ]
+    initial_order = [["last_update_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -411,9 +413,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True},
-            {'name': 'editor_user', 'lookup_field': '__editor_user__username__icontains'},
+            {'name': 'editor_user', 'lookup_field': '__username__icontains'},
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search'},
-            {'name': 'part_number', 'searchable': False, 'orderable': False},#, 'lookup_field': '__part_number__icontains'},
+            {'name': 'm_part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains'},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
             {"name": "purchase_group", "searchable": False},
@@ -422,6 +424,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'weight', 'searchable': False},
             {'name': 'id', 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains'},
+            'description',
             'active',
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
@@ -442,7 +445,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             qs = self.model.inquiry_list_datatable(user=self.request.user, param={"sku": sku})
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
-        # qs = qs.extra(select={'part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'})
+        # qs = qs.extra(select={'m_part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'}).filter()
+        qs = qs.annotate(m_part_number=Min('sku__part_number'))
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
