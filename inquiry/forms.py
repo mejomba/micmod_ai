@@ -233,7 +233,8 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
         self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         try:
             # user = self.instance.c_get('user')#kwargs.get('initial').get('user')
-            user = kwargs.get('initial').get('user')
+            # user = kwargs.get('initial').get('user')
+            user = self.instance.c_get('user')
             if user:
                 if not user.c_get('is_superuser'):
                     g = user.groups.values_list('name', flat=True)
