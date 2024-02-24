@@ -28,7 +28,7 @@
     <div class="row m-0 mt-5 align-items-center bg-white">
         <div class="col-12">
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
-                {% render_field_by_order form form.name label='on-border' %}
+                {% render_field_by_order form form.title label='on-border' %}
             </div>
         </div>
     </div>
@@ -45,7 +45,7 @@
     $(document).ready(function() {
         let q, url;
         url = new URL(window.location);
-        q = url.searchParams.get("name");
+        q = url.searchParams.get("title");
 
         const id_name = $('#id_name')
         id_name.on("input", function (e) {
