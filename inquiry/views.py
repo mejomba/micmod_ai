@@ -269,7 +269,7 @@ class InquiryResultListView(BaseView):
     def setup(self, request, *args, **kwargs):
         if request.POST.get('obj_pk') and request.POST.get('obj_pk') != 'None':
             kwargs.update({'pk': request.POST.get('obj_pk')})
-        if request.GET.get('pk'):
+        if request.GET.get('pk') and not request.POST:
             kwargs.update({'pk': request.GET.get('pk')})
         super().setup(request, *args, **kwargs)
     def get_context_data(self, **kwargs):
