@@ -200,7 +200,8 @@ class SkuListDataTableView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'data': 'sku_int', 'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'sku_int', 'searchable': False, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'part_number', 'visible': True, 'title': _('part number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
