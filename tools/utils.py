@@ -51,6 +51,8 @@ def read_excel_data(file,header_row=1) -> List[Dict]:
 
 
 def elapsed_time(m_datetime):
+    if not m_datetime:
+        return None
     delta = datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)) - m_datetime
     relative_delta = relativedelta(datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)), m_datetime)
     m_str = ""
