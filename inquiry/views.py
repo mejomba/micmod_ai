@@ -214,7 +214,7 @@ class SkuListDataTableView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
-        qs = qs.extra(select={'sku_int': 'cast(sku as integer'})
+        qs = qs.extra(select={'sku_int': 'cast(sku as integer)'})
         return qs
 
     def customize_row(self, row, obj):
