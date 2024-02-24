@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import Min, IntegerField
+from django.db.models import Min, IntegerField, F
 from django.db.models.functions import Cast
 
 from files.models import Image
@@ -446,7 +446,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
         # qs = qs.extra(select={'m_part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'}).filter()
-        qs = qs.annotate(m_part_number=Min('sku__part_number'))
+        qs = qs.annotate(m_part_number=F('sku__part_number'))
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
@@ -455,9 +455,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
                       # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
                       # obj.sku if obj.sku else '_'
                     )
-
-        row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
-        row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
+        if self.request.user.is_superuser or 'total_admin' in self.request.user.groups.values_list('name', flat=True):
+            row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
+            row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
 
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
