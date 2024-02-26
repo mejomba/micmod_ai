@@ -161,7 +161,7 @@ def get_list(field):
 
 @register.filter
 def get_base_model(field):
-    if getattr(field,'field',None) and getattr(field.field,'queryset',None):
+    if getattr(field,'field',None) and getattr(field.field,'queryset',None) is not None:
         return re.findall("'[\d\w\.]+'",str(field.field.queryset.model))[0][1:-1]
 @register.simple_tag
 def get_attrs_str(field):
