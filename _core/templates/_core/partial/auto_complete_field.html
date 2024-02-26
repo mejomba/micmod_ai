@@ -1,0 +1,31 @@
+{% load static %}
+{% load core_tags %}
+{% if field.widget_type == 'select' %}
+    <div class="form-group" id="div_{{ field.name }}">
+        {% get_list field as items_list %}
+        {% if field.field.queryset.model.auto_complete %}
+            <div>
+                <input class="{{ field.field.widget.attrs.class }}"
+                       name="__auto__{{ field.name }}" {% get_attrs_str field %} list="lst_{{ field.name }}"
+                       value="{{ items_list.selected_str }}" autocomplete="off">
+                <datalist id="lst_{{ field.name }}">
+                    {% for item in items_list.list %}
+                        {% if item.0 %}
+                        <option>{{ item.1 }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </datalist>
+            </div>
+        {% else %}
+            {{ field }}
+            {#            <select class="{{ field.field.widget.attrs.class }} border-warning selectize-select"#}
+            {#                    name="{{ field.name }}" {% get_attrs_str field %}>#}
+            {#                {% for item in items_list.list %}#}
+            {#                    <option value="{{ item.0 }}" {{ item.2 }}>{{ item.1 }}</option>#}
+            {#                {% endfor %}#}
+            {#            </select>#}
+        {% endif %}
+    </div>
+{% else %}
+    {{ field }}
+{% endif %}

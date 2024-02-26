@@ -1,0 +1,9 @@
+{% load crispy_forms_tags %}
+
+{% if not field.field.widget.input_type == 'hidden' %}
+    {% if crispy %}
+        {{ field|as_crispy_field }}
+    {% else %}
+        {{ field }}
+    {% endif %}
+{% endif %}
