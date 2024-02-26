@@ -1,0 +1,26 @@
+render field v2 <br>
+{{ form }}<br>
+{{ template_col_num }}<br>
+{{ crispy }}<br>
+<div class="cart">
+    <div class="row">
+        {% for foo in parent_template_col_num|make_list %}
+        <div class="col-md-{{ template_col_num.0 }}">
+            <div class="row row-cols-{{ inner_template_col_num.foo }}">
+
+            </div>
+        </div>
+        {% endfor %}
+
+{#        <div class="col-md-7">#}
+{#            <div class="row row-cols-3">#}
+{##}
+{#            </div>#}
+{#        </div>#}
+{#        <div class="col-md-5">#}
+{#            <div class="row row-cols-2">#}
+{##}
+{#            </div>#}
+{#        </div>#}
+    </div>
+</div>

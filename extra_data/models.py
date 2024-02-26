@@ -333,6 +333,10 @@ class Item(BaseModel):
         return obj.weight if obj else None
 
     @property
+    def weight_obj(self):
+        return self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
+
+    @property
     def price(self):
         if not self.extra_data.price:
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()

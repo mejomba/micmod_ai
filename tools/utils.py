@@ -160,3 +160,33 @@ def show_error(e, file):
     print("error: ", file, e.__traceback__.tb_lineno, e)
 
 
+python_model_type_map = [
+('binarry', 'binaryfield'),
+('boolean', 'booleanfield'),
+('boolean', 'nullbooleanfield'),
+('datetime', 'datefield'),
+('datetime', 'timefield'),
+('datetime', 'datetimefield'),
+('datetime', 'durationfield'),
+('int', 'autofield'),
+('int', 'bigintegerfield'),
+('float', 'decimalfield'),
+('float', 'floatfield'),
+('int', 'integerfield'),
+('int', 'positiveintegerfield'),
+('int', 'positivesmallintegerfield'),
+('int', 'options.smallintegerfield'),
+('str', 'charfield'),
+('str', 'textfield'),
+('str', 'commaseparatedintegerfield'),
+('str', 'emailfield'),
+('str', 'filefield'),
+('int', 'bigautofield'),
+]
+
+
+def map_model_to_python_type(field):
+    type_str = repr(field).lower()
+    for key, value in python_model_type_map:
+        if type_str.__contains__(value):
+            return key

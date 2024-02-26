@@ -822,7 +822,10 @@ class AjaxInquiryResultListData(View):
         # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
         # if not sku:
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': sku.weight, 'item_id': sku.id,})
+        if sku:
+            username = sku.weight_obj
+            username = username.editor_user.username if username else ''
+            return JsonResponse({'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,})
 
 
 # Todo ino yadet nare shanbe
