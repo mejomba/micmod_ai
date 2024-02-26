@@ -835,3 +835,18 @@ class AjaxInquiryResultListData(View):
 #         obj = PriceInquiryResult.objects.filter(sku=sku).first()
 #         form = PriceInquiryResult2CreateForm(instance=obj)
 #         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
+
+def get_price_list(request, *args, **kwargs):
+    prices = []
+    if request.user.is_superuser:
+        items = Item.objects.all()
+        # i=0
+        for item in items:
+            if item.price and item.price.rmb_final_price:
+                price = item.price.rmb_final_price
+                price['sku'] = item.sku
+                prices.append(price)
+                # i += 1
+                # if i>10:
+                #     break
+    return JsonResponse({'prices': prices})
