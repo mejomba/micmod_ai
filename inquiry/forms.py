@@ -276,6 +276,8 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
                         initial=self.instance.currency_type if qs.first() else 0
                     )
                     ...
+            if self.instance.id:
+                self.make_disable(['sku_c'])
         except Exception as e:
             show_error(e, __file__)
         #
