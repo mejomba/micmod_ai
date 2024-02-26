@@ -1,0 +1,13 @@
+<a href="" class="btn btn-success" target="_blank" id="download-excel">دانلود اکسل</a>
+
+<script>
+    const DownloadExcel = document.getElementById('download-excel');
+    let url = new URL('http://127.0.0.1:8000/core/excel/download/')
+    let params = [['model_name', "{{ model_name }}"], ['header', "{{ header }}"], ['app_label', "{{ app_label }}"]]
+
+    url.search = new URLSearchParams(params).toString();
+    DownloadExcel.href = url
+    DownloadExcel.addEventListener('click', function (e) {
+        console.log('set loader for download')
+    })
+</script>

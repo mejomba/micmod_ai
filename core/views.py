@@ -144,8 +144,9 @@ class BaseView(UserPassesTestMixin,
                 value = value.strip()
                 if value:
                     model = get_function(model_str) #self.form_class.base_fields[key].queryset.model
-                    obj, _ = model.objects.get_or_create(**{f'{model.auto_complete}__iexact': value, 'defaults':{model.auto_complete: value}})
-                    if _:
+                    obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
+                    if not obj:
+                        obj = model.objects.create(**{model.auto_complete: value})
                         obj.extra_data.request = self.request
                         obj.auto_complete_func()
                     value = getattr(obj, 'pk', None)

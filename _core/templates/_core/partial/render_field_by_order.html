@@ -1,0 +1,76 @@
+{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
+{% load comments_tag %}
+{% load l10n %}
+    {% for field in fields %}
+        {{ field.get_field_name_display }}
+        {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
+
+            {% if crispy %}
+                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+{#                {{ field|as_crispy_field }}#}
+                {% include '_core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
+{#                {{ field|as_crispy_field }}#}
+                {{ field.errors }}
+
+            {% elif field.field.select2 %}
+
+                <div class="col {{ label }} {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                {{ field.as_hidden }}
+                <div class="select2 {{ field|get_field_name }} form-control w-100" id="{{ field.html_name }}"
+                     name="{{ field|get_field_name }}"></div>
+                <label data-key="{{ field|get_field_name }}" class="{{ css }}" id="{{ id }}"></label>
+                {{ field.errors }}
+
+            {% elif label %}
+
+                <div class="col
+                        {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}
+                        mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+{#                {{ field }}#}
+                {% include '_core/partial/auto_complete_field.html' with field=field %}
+                <label data-key="{{ field|get_field_name }}" for="{{ field|get_field_name }}"
+                       id={{ id }} class="{{ css }}">{% if label_text %}
+                    {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
+                {{ field.errors }}
+
+
+            {% else %}
+                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+{#                {{ field }}#}
+                {% include '_core/partial/auto_complete_field.html' with field=field %}
+                {% if no_input %}
+                    {% if css == 'no_label' %}
+
+                    {% else %}
+                        <label class="text-center w-100  card-title-desc h-25 {{ css }}"
+                               id={{ id }} name="{{ field|get_field_name }}"></label>
+                    {% endif %}
+                    {#            {% elif no_input_hidden %}#}
+                    {#                <label class="text-center w-100  card-title-desc h-25" name="{{ field|get_field_name }}"></label>#}
+                    {#                {{ field }}#}
+                    {#            {% else %}#}
+                    {{ field.help_text }}
+                    {{ field.errors }}
+                {% endif %}
+
+            {% endif %}
+        </div>
+        {% else %}
+            <div class="position-absolute">
+{#                {{ field|as_crispy_field }}#}
+            {% include '_core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
+            </div>
+            {% if no_input %}
+                <label class="text-center w-100  card-title-desc h-25 {{ css }}"
+                       id={{ id }} name="{{ field|get_field_name }}">
+                    {% if field.value %}{{ field.value }}{% else %} - {% endif %} </label>
+                {#            {{ field }}#}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+
