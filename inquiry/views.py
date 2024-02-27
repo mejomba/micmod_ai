@@ -312,7 +312,7 @@ class InquiryResultListView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
-        if form.cleaned_data['update_price'] or form.cleaned_data['price'] != self.object.price:
+        if form.cleaned_data['update_price']:
             obj = form.save(commit=False)
             obj.price_update_date = timezone.now()
             obj.save()
