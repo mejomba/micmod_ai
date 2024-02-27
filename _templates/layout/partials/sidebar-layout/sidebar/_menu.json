@@ -285,7 +285,7 @@
           "path_key": "inquiryresult/forsale",
           "link": "inquiry:inquiry_result.sale",
           "permission": {
-            "groups": ["sales_user","sales_admin","total_admin"]
+            "groups": ["sales_user","sales_admin","total_admin", "store_admin"]
           }
         },
         {
