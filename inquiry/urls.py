@@ -17,6 +17,8 @@ urlpatterns = [
     path('inquiryresult/view/', views.InquiryResultListView.as_view(), name='inquiry_result.list_create'),
     path('inquiryresult/view/<int:pk>/', views.InquiryResultUpdateView.as_view(), name='inquiry_result.update'),
     path('inquiryresult_list_datatable/', views.InquiryResultDataTableView.as_view(), name='inquiry_result.list.datatable'),
+    path('price_list/', views.get_price_list, name='inquiry_result.price_list'),
+
 
     # path('inquiryresult/create/', views.InquiryResultCreateView.as_view(), name='inquiry_result.create'),
     path('inquiryresult/list/', views.InquiryResultListView.as_view(), name='inquiry_result.list'),
