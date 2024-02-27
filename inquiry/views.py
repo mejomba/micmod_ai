@@ -312,7 +312,7 @@ class InquiryResultListView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
-        if form.cleaned_data['update_price'] or form.cleaned_data['price'] != self.object.price:
+        if form.cleaned_data['update_price']:
             obj = form.save(commit=False)
             obj.price_update_date = timezone.now()
             obj.save()
@@ -321,7 +321,8 @@ class InquiryResultListView(BaseView):
         print('no update price Deee :)')
         res = super().form_valid(form)
         if self.object and self.object.item_weight:
-            ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
+            item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
+            item_weight.save_user(request=self.request)
         return res
 
 
@@ -823,9 +824,13 @@ class AjaxInquiryResultListData(View):
         # if not sku:
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
         if sku:
-            username = sku.weight_obj
-            username = username.editor_user.username if username else ''
-            return JsonResponse({'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,})
+            try:
+                username = sku.weight_obj
+                username = username.editor_user.username if username else ''
+                return JsonResponse({'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,})
+            except:
+                pass
+        return JsonResponse({'sku_name': None, 'item_weight': None, 'item_id': None})
 
 
 # Todo ino yadet nare shanbe
