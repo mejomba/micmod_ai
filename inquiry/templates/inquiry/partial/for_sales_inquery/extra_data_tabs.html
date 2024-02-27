@@ -29,7 +29,7 @@
     <div class="tab-pane fade {% if request.COOKIES.inquery_tabs_selected_li == '2' %}show active{% endif %}"
          id="kt_tab_pane_2" role="tabpanel">
         {% if sku %}
-            {% if request.user|has_group:"sales_admin" %}
+            {% if request.user|has_group:"sales_admin" or request.user|has_group:"store_admin" %}
              <div class="bolder row row-cols-2 bg-light rounded-4 me-1">
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate" rma_value=sku.price.price_settings.free_rmb_rate rma_class="d-flex py-3" %}
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate_new_order" rma_value=sku.price.price_settings.free_rmb_rate_new_order rma_class="d-flex py-3" %}
