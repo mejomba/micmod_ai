@@ -70,17 +70,20 @@ class PriceInquiryResult(BaseModel):
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
 
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_properties = {
+            'quantity_': None,
+            'customer_grade_': None,
+            'payment_method_': None,
+            'currency_': None,
+        }
+
     @property
     def item_sku(self):
         return self.sku.sku
 
     # price_settings_ = None
-    custom_properties = {
-        'quantity_': None,
-        'customer_grade_': None,
-        'payment_method_': None,
-        'currency_': None,
-    }
     submit_copy = True
     # rmb_final_price_before_ondemand = dict()
     # _rmb_final_price_ = dict()
@@ -368,7 +371,7 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type:
+                if self.active and self != res and self.inquiry_type == res.inquiry_type and res.active:
                     res.active = False
                     res.save()
 
