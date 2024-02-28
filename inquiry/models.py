@@ -371,7 +371,7 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type:
+                if self.active and self != res and self.inquiry_type == res.inquiry_type and res.active:
                     res.active = False
                     res.save()
 
