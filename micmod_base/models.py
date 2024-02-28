@@ -134,6 +134,8 @@ class QuotationItem(BaseModel):
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
+    lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
+    assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING)
 
     @property
     def local_pending(self):
