@@ -110,18 +110,26 @@ function removeCommaSeperator() {
 }
 
 const main_container = new KTBlockUI(document.querySelector('#main-content'), {
-    overlayClass: "bg-danger bg-opacity-25",
+    overlayClass: "bg-primary bg-opacity-25",
 });
 
+function get_main_container() {
+    let block_container = document.querySelector('#block_container')
+    if (!block_container) {
+        block_container = document.querySelector('#main-content')
+    }
+    main_container.element = block_container
+    return main_container
+}
+
 function block_main_container() {
-    debugger
-    main_container.block(
+    get_main_container().block(
 
     );
 }
 
 function release_main_container() {
-    main_container.release();
+    get_main_container().release();
 }
 
 function custom_ajax_post(form, url, element) {
@@ -142,6 +150,9 @@ function custom_ajax_post(form, url, element) {
             html = data['res'];
             element.html(html);
             run_scripts(html);
+        },
+        error: function () {
+
         },
         complete: release_main_container
     }); // end ajax
@@ -183,6 +194,9 @@ function custom_ajax_get(form, url, element) {
             html = data['res'];
             element.html(html);
             run_scripts(html);
+        },
+        error: function () {
+
         },
         complete: release_main_container
     });
