@@ -97,6 +97,12 @@
               "title": "pending_list",
               "path_key": "quotationitem/list/pending/",
               "direct_link": "/micmod_base/quotationitem/list/form/pending/"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "past_list",
+              "path_key": "quotationitem/past/quotationitems/",
+              "direct_link": "/micmod_base/quotationitem/past/quotationitems"
             }
           ]
         },
