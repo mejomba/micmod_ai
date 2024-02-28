@@ -510,5 +510,8 @@
     "rial_final_price_rendered": "قیمت ریالی",
     "inquiry_type": "نوع استعلام",
     "currency_type": "واحد پولی",
-    "weight": "وزن"
+    "weight": "وزن",
+    "past_list": "استعلام های گذشته",
+    "time": "ّفیلتر بر اساس زمان",
+    "quotation": "فیلتر بر اساس شماره پیش فاکتور"
 }
