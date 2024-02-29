@@ -30,14 +30,28 @@
          id="kt_tab_pane_2" role="tabpanel">
         {% if sku %}
             {% if request.user|has_group:"sales_admin" or request.user|has_group:"store_admin" %}
-             <div class="bolder row row-cols-2 bg-light rounded-4 me-1">
+                <div class="bolder row row-cols-2 bg-light rounded-4 me-1">
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate" rma_value=sku.price.price_settings.free_rmb_rate rma_class="d-flex py-3" %}
                     {% include "core/partial/components/key_value_text.html" with rma_key="free_rmb_rate_new_order" rma_value=sku.price.price_settings.free_rmb_rate_new_order rma_class="d-flex py-3" %}
-{#                    {% include "core/partial/components/key_value_text.html" with rma_key="talar_rmb_rate" rma_value=sku.price.price_settings.talar_rmb_rate rma_class="d-flex py-3" %}#}
-{#                    {% include "core/partial/components/key_value_text.html" with rma_key="customs_rmb_rate" rma_value=sku.price.price_settings.customs_rmb_rate rma_class="d-flex py-3" %}#}
-{#                    {% include "core/partial/components/key_value_text.html" with rma_key="dollar_rmb_rate" rma_value=sku.price.price_settings.dollar_rmb_rate rma_class="d-flex py-3 col-2" %}#}
-             </div>
-                {% endif %}
+                    {#                    {% include "core/partial/components/key_value_text.html" with rma_key="talar_rmb_rate" rma_value=sku.price.price_settings.talar_rmb_rate rma_class="d-flex py-3" %}#}
+                    {#                    {% include "core/partial/components/key_value_text.html" with rma_key="customs_rmb_rate" rma_value=sku.price.price_settings.customs_rmb_rate rma_class="d-flex py-3" %}#}
+                    {#                    {% include "core/partial/components/key_value_text.html" with rma_key="dollar_rmb_rate" rma_value=sku.price.price_settings.dollar_rmb_rate rma_class="d-flex py-3 col-2" %}#}
+                </div>
+            {% endif %}
+            <div class="border-gray-600 border-dotted row row-cols-2 w-100 py-5 me-1 border-2 rounded-4">
+                <div>
+                    <div class="bg-secondary w-100" data-key="free_rmb_rate"></div>
+                    {% include "core/partial/components/key_value_text.html" with rma_key="express" rma_value=sku.price.rial_final_price.express rma_none_ignore=True rma_class="d-flex py-3" %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="air" rma_value=sku.price.rial_final_price.air rma_none_ignore=True rma_class="d-flex py-3" %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="sea" rma_value=sku.price.rial_final_price.sea rma_none_ignore=True rma_class="d-flex py-3" %}
+                </div>
+                <div>
+                    <div class="bg-secondary w-100" data-key="free_rmb_rate_new_order"></div>
+                    {% include "core/partial/components/key_value_text.html" with rma_key="express" rma_value=sku.price.rial_final_price_new_order.express rma_none_ignore=True rma_class="d-flex py-3" %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="air" rma_value=sku.price.rial_final_price_new_order.air rma_none_ignore=True rma_class="d-flex py-3" %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="sea" rma_value=sku.price.rial_final_price_new_order.sea rma_none_ignore=True rma_class="d-flex py-3" %}
+                </div>
+            </div>
             <div class="border-gray-600 border-dotted row w-100 py-5 me-1 border-2 rounded-4">
                 {% include 'core/partial/components/key_value_text.html' with rma_key="customer" rma_value=sku.extra_data.sepidar_data.customer.Title.0 rma_class="d-flex col-12 py-2" %}
                 {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.customer_invoices rma_title="invoices" rma_has_header=True rma_class="col-6" %}
