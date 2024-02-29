@@ -25,6 +25,7 @@ from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
+from tools.google_sheet import GSheet
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
@@ -843,15 +844,21 @@ class AjaxInquiryResultListData(View):
 
 def get_price_list(request, *args, **kwargs):
     prices = []
-    if request.user.is_superuser:
-        items = Item.objects.all()
-        # i=0
-        for item in items:
-            if item.price and item.price.rmb_final_price:
-                price = item.price.rmb_final_price
-                price['sku'] = item.sku
-                prices.append(price)
-                # i += 1
-                # if i>10:
-                #     break
-    return JsonResponse({'prices': prices})
+    y_rate = None
+    items = Item.objects.all()
+    # i=0
+    for item in items:
+        if item.price and item.price.rmb_final_price:
+            price = item.price.rmb_final_price
+            price['sku'] = item.sku
+            prices.append(price)
+        if not y_rate:
+            y_rate = item.price.price_settings.free_rmb_rate
+    g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
+    g_sheet.clear_rows('portal_prices')
+    g_sheet.update_rows('portal_prices',prices,2)
+    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    g_sheet.wb.worksheet('portal_prices').update_cell(1, 6, update_time)
+    g_sheet.wb.worksheet('portal_prices').update_cell(1, 8, y_rate)
+
+    return JsonResponse({'result': f'price updated at: {update_time}', 'price_count': prices.__len__()})
