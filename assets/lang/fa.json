@@ -510,5 +510,7 @@
     "rial_final_price_rendered": "قیمت ریالی",
     "inquiry_type": "نوع استعلام",
     "currency_type": "واحد پولی",
-    "weight": "وزن"
+    "weight": "وزن",
+    "assigned_trade_user": "تخصیص به کاربر بازرگانی",
+    "lead time": "زمان تامین"
 }
