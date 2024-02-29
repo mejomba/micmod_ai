@@ -847,6 +847,7 @@ def get_price_list(request, *args, **kwargs):
     y_rate = None
     items = Item.objects.all()
     g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
+    print('gsheet created')
     # i=0
     for item in items:
         if item.price and item.price.rmb_final_price:
