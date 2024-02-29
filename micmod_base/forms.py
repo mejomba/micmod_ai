@@ -343,8 +343,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             if 'bazar_user' not in user_groups:
                 self.make_disable(['local_price_inquiry_done', 'bazar_price_code'])
         try:
-            self.fields['assigned_trade_user'].queryset = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
-        except:
+            x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
+            self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
+        except Exception as e:
             pass
 
     class Meta:
