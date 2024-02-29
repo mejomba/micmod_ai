@@ -82,9 +82,10 @@
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
                         {% else %}
+                            <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label><br>
-                            <input type="hidden" name="goods_code" value="{{ form_s.instance.goods_code }}">
-                            <span class="select2-selection__rendered">{{ form_s.instance.goods_code }}</span>
+{#                            <input type="hidden" name="goods_code" value="{{ form_s.instance.goods_code }}">#}
+{#                            <span class="select2-selection__rendered">{{ form_s.instance.goods_code }}</span>#}
                         {% endif %}
                     </div>
 
@@ -277,7 +278,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="d-flex mt-auto">
+                    <div class="d-flex justify-content-between mt-auto px-1">
                         <div class="d-flex justify-content-start">
                             <a class="btn btn-block btn-bordered btn-outline-warning mb-1" href="{% url 'sls:quotations.view' form_s.instance.quotation.pk %}" target="_blank">مشاهده پیش فاکتور</a>
                             {% if form_s.instance.goods_code %}
