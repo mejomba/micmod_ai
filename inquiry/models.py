@@ -62,7 +62,7 @@ class PriceInquiryResult(BaseModel):
     supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                  on_delete=models.DO_NOTHING, related_name='supplier_rel')
     price = models.FloatField(verbose_name=_('price'))
-    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
+    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True, auto_now_add=True)
     # local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
@@ -113,7 +113,24 @@ class PriceInquiryResult(BaseModel):
     @property
     def bazar_price(self):
         if self.inquiry_type.base_group == 'bazar':
-            ...
+            payment_method = self.custom_properties['payment_method_']
+            discount = 0.18
+            if payment_method == 'Cash':
+                discount = 0.07
+                if self.custom_properties['customer_grade_'] in ['A+', 'Special']:
+                    discount = 0.05
+            elif payment_method == '1 Month':
+                discount = 0.10
+            elif payment_method == '2 Month':
+                discount = 0.12
+            elif payment_method == '3 Month':
+                discount = 0.15
+            elif payment_method == '4 Month':
+                discount = 0.18
+            return self.price * (1+discount)
+        else:
+            return None
+
 
     @property
     def rial_final_price(self):
@@ -466,7 +483,7 @@ class InquiryResult(AbsBaseModel):
                                                 related_name='sales_price_inquery_log_rel', null=True, blank=True)
     price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
                                        blank=True, null=True)
-    price_update_date = models.DateField(null=True, blank=True)
+    price_update_date = models.DateField(null=True, blank=True, verbose_name=_('price update date'))
 
     # Todo `FK to -> bazar-price, price` -> priceInquiryResult
 

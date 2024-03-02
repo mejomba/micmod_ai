@@ -285,7 +285,9 @@ class InquiryResultListView(BaseView):
             context.update({
                 'form': self.form_class(instance=obj)
             })
-        context['submit_copy'] = True
+        if self.request.GET.get('pk'):
+            context['submit_copy'] = False
+            context['form'].instance.submit_copy = False
 
         # if cache.get(f'{self.request.user}__submit/copy'):
         #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
@@ -313,15 +315,18 @@ class InquiryResultListView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
-        if form.cleaned_data['update_price']:
-            obj = form.save(commit=False)
-            obj.price_update_date = timezone.now()
-            obj.save()
-        else:
-            pass
-        print('no update price Deee :)')
+        last_price = self.object.price if self.object else 0
         res = super().form_valid(form)
-        if self.object and self.object.item_weight:
+
+        if self.object and last_price and self.object.price != last_price:
+            self.object.price_update_date = timezone.now()
+            self.object.save()
+
+        if form.cleaned_data['update_price'] and self.object:
+            self.object.price_update_date = timezone.now()
+            self.object.save()
+
+        if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
             item_weight.save_user(request=self.request)
         return res
@@ -380,7 +385,7 @@ class InquiryResultUpdateView(BaseView):
 class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
-    initial_order = [["last_update_date", "des"], ]
+    initial_order = [["price_update_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -407,7 +412,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
-            {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            # {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            {'name': 'price_update_date', 'data': 'price_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
             {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains','className': 'w-20'},
             # 'part_number',
@@ -508,6 +514,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
                                            payment_method=payment_method, currency=currency,
                                            price_setting=price_setting_obj)
+    if item_sku and item_sku.bazar_price is not None:
+        item_sku.bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                           payment_method=payment_method, currency=currency,
+                                           price_setting=price_setting_obj)
+
     sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
     if sepidar_inquiry_result:
         res = sepidar_inquiry_result[0]
@@ -856,8 +867,8 @@ def get_price_list(request, *args, **kwargs):
             price = item.price.rmb_final_price
             price['sku'] = item.sku
             prices.append(price)
-        if not y_rate:
-            y_rate = item.price.price_settings.free_rmb_rate
+            if not y_rate:
+                y_rate = item.price.price_settings.free_rmb_rate
     g_sheet.clear_rows('portal_prices')
     g_sheet.update_rows('portal_prices',prices,2)
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')

@@ -512,5 +512,7 @@
     "currency_type": "واحد پولی",
     "weight": "وزن",
     "assigned_trade_user": "تخصیص به کاربر بازرگانی",
-    "lead time": "زمان تامین"
+    "lead time": "زمان تامین",
+    "bazar_price": "قیمت بازار",
+    "price update date": "تاریخ ویرایش قیمت"
 }
