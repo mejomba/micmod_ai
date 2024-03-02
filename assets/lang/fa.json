@@ -513,5 +513,6 @@
     "weight": "وزن",
     "assigned_trade_user": "تخصیص به کاربر بازرگانی",
     "lead time": "زمان تامین",
-    "bazar_price": "قیمت بازار"
+    "bazar_price": "قیمت بازار",
+    "price update date": "تاریخ ویرایش قیمت"
 }

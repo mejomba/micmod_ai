@@ -62,7 +62,7 @@ class PriceInquiryResult(BaseModel):
     supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                  on_delete=models.DO_NOTHING, related_name='supplier_rel')
     price = models.FloatField(verbose_name=_('price'))
-    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
+    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True, auto_now_add=True)
     # local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
@@ -483,7 +483,7 @@ class InquiryResult(AbsBaseModel):
                                                 related_name='sales_price_inquery_log_rel', null=True, blank=True)
     price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
                                        blank=True, null=True)
-    price_update_date = models.DateField(null=True, blank=True)
+    price_update_date = models.DateField(null=True, blank=True, verbose_name=_('price update date'))
 
     # Todo `FK to -> bazar-price, price` -> priceInquiryResult
 
