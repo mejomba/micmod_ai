@@ -72,7 +72,7 @@ class User(AbstractUser):
 
     def __str__(self):
         if self.profile and self.profile.first_name:
-            return f'{self.profile.first_name} {self.profile.last_name}'
+            return f'{self.profile.first_name or ""} {self.profile.last_name or ""}'
         else:
             return super().__str__()
 
