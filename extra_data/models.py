@@ -342,6 +342,10 @@ class Item(BaseModel):
             self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
         return self.extra_data.price
 
+    @property
+    def bazar_price(self):
+        ...
+
     def set_price(self, price_id):
         if not self.extra_data.price and not price_id:
             self.extra_data.price = self.items.filter(sku=self).filter(active=True, id=price_id)
