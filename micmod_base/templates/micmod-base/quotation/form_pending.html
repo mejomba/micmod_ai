@@ -82,10 +82,10 @@
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
                         {% else %}
-                            <div class="select2 goods_code " name="goods_code"></div>
+{#                            <div class="select2 goods_code " name="goods_code"></div>#}
                             <label>کد کالا</label><br>
-{#                            <input type="hidden" name="goods_code" value="{{ form_s.instance.goods_code }}">#}
-{#                            <span class="select2-selection__rendered">{{ form_s.instance.goods_code }}</span>#}
+                            <input type="hidden" name="goods_code" value="{{ form_s.instance.goods_code }}">
+                            <span class="select2-selection__rendered ps-3">{{ form_s.instance.goods_code }}</span>
                         {% endif %}
                     </div>
 
@@ -93,9 +93,14 @@
                         <div class="d-flex justify-content-end">
                             <div class="w-75 mt-3">{{ form_s.goods_name.label }}:<br> <span name="goods_name_lbl">{{ form_s.instance.goods_name }}</span></div>
 {#                            {% render_field_by_order form_s form_s.goods_name label='on-border' %}#}
+                            {% if form_s.instance.goods_code_alt %}
                             <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
-                                 data-key="show_alt">مشابه
+                                 data-key="show_alt">
+
+                                مشابه
+
                             </div>
+                            {% endif %}
                         </div>
                         <div class="col on-border">
 {#                            <label>نام کالا</label>#}
