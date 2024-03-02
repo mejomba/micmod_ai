@@ -70,6 +70,12 @@ class User(AbstractUser):
             )
         return wf
 
+    def __str__(self):
+        if self.profile and self.profile.first_name:
+            return f'{self.profile.first_name} {self.profile.last_name}'
+        else:
+            return super().__str__()
+
 # MyUser = User.get_user_model().objects.get()
 
 
