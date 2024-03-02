@@ -194,8 +194,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'CustomerDiscountRate': 0,
                         'Discount': 0,
                        # 'DiscountParentRef': 1,  # optional
-                        'Tax': 0,
-                        'Duty': 0,
+                        'Tax': qi.tax,
+                        'Duty': qi.duty,
                         'Addition': 0,
                     }
                     quotation_items.append(qi_dict)
@@ -203,7 +203,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 quotation_data = {
                     'GUID': str(self.object.guid),
                     'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 0,
+                    'Rate': 1,
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
                     'SaleTypeRef': 2,
@@ -211,8 +211,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
                     'Discount': 0,
-                    'Tax': 0,
-                    'Duty': 0,
+                    'Tax': self.object.tax_amount,
+                    'Duty': self.object.duty_amount,
                     'Addition': 0,
                     'items': quotation_items,
                 }

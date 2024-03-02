@@ -63,8 +63,8 @@
               "micmod_base.view_quotation"
             ]
           },
-          "icon": "book",
           "title": "sales_history",
+          "icon": "book",
           "link": "sepidar:sales_history",
           "path_key": "sales_history"
         },
@@ -91,24 +91,24 @@
               "path_key": "quotations/list",
               "direct_link": "/micmod_base/quotations/list?q=active",
               "count": "micmod_base.quotation:active"
-            },
-            {
-              "icon": "burger-menu",
-              "title": "pending_list",
-              "path_key": "quotationitem/list/pending/",
-              "direct_link": "/micmod_base/quotationitem/list/form/pending/",
-              "count": "micmod_base.quotationitem:active"
             }
           ]
         },
+        {
+              "title": "pending_list",
+              "icon": "burger-menu",
+              "path_key": "quotationitem/list/pending/",
+              "direct_link": "/micmod_base/quotationitem/list/form/pending/",
+              "count": "micmod_base.quotationitem:active"
+            },
         {
           "permission": {
             "permissions": [
               "micmod_base.view_currency_exchange"
             ]
           },
-          "icon": "dollar",
           "title": "currency-exchange",
+          "icon": "dollar",
           "link": "sls:currency_exchange",
           "path_key": "currency/exchange/"
         }

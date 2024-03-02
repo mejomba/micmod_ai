@@ -112,6 +112,22 @@ class Quotation(SLSDoc):
             show_error(e, __file__)
             return None
 
+    @property
+    def tax_amount(self):
+        try:
+            return sum(x.tax for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
+
+    @property
+    def duty_amount(self):
+        try:
+            return sum(x.duty for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
+
     def __str__(self):
         return str(self.id)
 
@@ -234,13 +250,36 @@ class QuotationItem(BaseModel):
     @property
     def price(self):
         try:
-            if self.quotation.is_official:
-                return self.fee * self.quantity * 1.09
-            else:
+            # if self.quotation.is_official:
+            #     return self.fee * self.quantity * 1.09
+            # else:
                 return self.fee * self.quantity
         except Exception as e:
             show_error(e, __file__)
+            return 0
+
+    @property
+    def duty(self):
+        try:
+            if self.quotation.is_official:
+                return self.fee * self.quantity * 1.03
+            else:
+                return 0
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
+
+    @property
+    def tax(self):
+        try:
+            if self.quotation.is_official:
+                return self.fee * self.quantity * 1.06
+            else:
+                return 0
+        except Exception as e:
+            show_error(e, __file__)
             return None
+
 
     class Meta:
         ordering = ['id']
