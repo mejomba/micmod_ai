@@ -3,6 +3,7 @@ from pprint import pprint
 from typing import Dict
 
 from django import forms
+from django.contrib.auth import get_user_model
 from jalali_date import datetime2jalali
 from jalali_date.fields import SplitJalaliDateTimeField, JalaliDateField
 from jalali_date.widgets import AdminSplitJalaliDateTime, AdminJalaliDateWidget
@@ -272,7 +273,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
 
         # if self.instance.trade_price_code:
-        self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100'}),
+        self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.trade_price_code,
                                                                               self.instance.trade_price_code) if self.instance.trade_price_code else None
@@ -284,7 +285,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         #                                                                      'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
         #                                                              )
         # if self.instance.bazar_price_code:
-        self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100'}),
+        self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.bazar_price_code,
                                                                               self.instance.bazar_price_code) if self.instance.bazar_price_code else None,
@@ -338,9 +339,13 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         user_groups = request.user.groups.values_list('name', flat=True)
         if not request.user.is_superuser:
             if 'trade_user' not in user_groups:
-                self.make_disable(['foreign_price_inquiry_done', 'trade_price_code'])
+                self.make_disable(['foreign_price_inquiry_done', 'trade_price_code', 'lead_time'])
             if 'bazar_user' not in user_groups:
                 self.make_disable(['local_price_inquiry_done', 'bazar_price_code'])
+        try:
+            self.fields['assigned_trade_user'].queryset = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
+        except:
+            pass
 
     class Meta:
         model = QuotationItem
@@ -353,7 +358,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
-                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description'
+                  'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
+                  'assigned_trade_user', 'lead_time'
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {

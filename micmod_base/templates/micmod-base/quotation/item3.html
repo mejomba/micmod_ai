@@ -63,6 +63,11 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
+                <div class="mb-3">
+                    <span class="mx-2">زمان تحویل: </span>
+                    {{ form_s.instance.lead_time }}
+                </div>
+
 {#                creator_users = set()#}
 {#                for comment in comments:#}
 {#                    creator_users.add(comment.creator_user)#}

@@ -122,6 +122,7 @@ class NoUserBaseModel(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data = ExtraData()
+
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 
