@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from tools.utils import c_get
 from translator import get_text as _
 
 
@@ -69,6 +69,12 @@ class User(AbstractUser):
                 Q(to_user=user)
             )
         return wf
+
+    def __str__(self):
+        if self.c_get('profile') and self.profile.first_name:
+            return f'{self.profile.first_name or ""} {self.profile.last_name or ""}'
+        else:
+            return super().__str__()
 
 # MyUser = User.get_user_model().objects.get()
 

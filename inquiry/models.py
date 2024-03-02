@@ -111,6 +111,11 @@ class PriceInquiryResult(BaseModel):
         return elapsed_time(self.price_update_date)
 
     @property
+    def bazar_price(self):
+        if self.inquiry_type.base_group == 'bazar':
+            ...
+
+    @property
     def rial_final_price(self):
         if self.sku and self.transportations_cost:
             # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
