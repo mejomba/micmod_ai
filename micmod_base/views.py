@@ -194,8 +194,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'CustomerDiscountRate': 0,
                         'Discount': 0,
                        # 'DiscountParentRef': 1,  # optional
-                        'Tax': 0,
-                        'Duty': 0,
+                        'Tax': qi.tax,
+                        'Duty': qi.duty,
                         'Addition': 0,
                     }
                     quotation_items.append(qi_dict)
@@ -203,7 +203,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 quotation_data = {
                     'GUID': str(self.object.guid),
                     'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 0,
+                    'Rate': 1,
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
                     'SaleTypeRef': 2,
@@ -211,8 +211,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
                     'Discount': 0,
-                    'Tax': 0,
-                    'Duty': 0,
+                    'Tax': self.object.tax_amount,
+                    'Duty': self.object.duty_amount,
                     'Addition': 0,
                     'items': quotation_items,
                 }
@@ -408,71 +408,8 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         context['pageview'] = _("micmod_base")
         forms = list()
         form_list = list()
-        user_groups_name = self.request.user.groups.values_list('name', flat=True)
-        quotations_record_lst = list()
-        q = self.request.GET.get('q')
-        # if q == 'local':
-        #     quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
-        #                                                          Q(need_local_price_inquiry=False) |
-        #                                                          Q(local_price_inquiry_done=False) &
-        #                                                          Q(need_local_price_inquiry=True)
-        #                                                          )
-        # elif q == 'foreign':
-        #     quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
-        #                                                          Q(need_foreign_price_inquiry=False) |
-        #                                                          Q(foreign_price_inquiry_done=False) &
-        #                                                          Q(need_foreign_price_inquiry=True))
-        # else:
-        #     if self.request.user.is_superuser:
-        #         quotation_qry = QuotationItem.objects.filter(
-        #             Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #             Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-        #             Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #             Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        #         ).query
-        #         quotation_qry.order_by = ['quotation']
-        #         quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-        #     elif 'trade_user' in user_groups_name:
-        #         quotations_record_lst = QuotationItem.objects.filter(
-        #             Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #             Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-        #         )
-        #     elif 'bazar_user' in user_groups_name:
-        #         quotations_record_lst = QuotationItem.objects.filter(
-        #             Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #             Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        #         )
-        #     else:
-        #         quotations_record_lst = []
 
-        for q in Quotation.objects.all():
-            if self.request.user.is_superuser:
-                qis = q.quotation.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
-
-            elif 'trade_user' in user_groups_name:
-                qis = q.quotation.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-                )
-            elif 'bazar_user' in user_groups_name:
-                qis = q.quotation.filter(
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
-            else:
-                qis = []
-            # qis = q.quotation.filter(Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-            #                              Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-            #                              Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-            #                              Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True))
-            if qis:
-                quotations_record_lst.append(qis)
-
+        quotations_record_lst = Quotation.quotation_pending(self.request.user)
         for qi_qs in quotations_record_lst:
             for qi in qi_qs:
                 form = QuotationItemForm2(instance=qi, initial={

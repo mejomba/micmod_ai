@@ -71,7 +71,7 @@ class Currency(models.Model):
         return f'{self.title} ({self.title_en})'
 
     def current_rate(self):
-        return self.exchange_rates.order_by("-date")[0]
+        return self.exchange_rates.order_by("-date").first()
 
 
 class SLSDoc(BaseModel):
