@@ -12,7 +12,7 @@ from django.urls import reverse_lazy, reverse
 from django.views import generic
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
@@ -470,6 +470,8 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
 
 def inquiry_result_sale_ajax(request, *args, **kwargs):
+    if not has_one_group("sales_user","sales_admin","total_admin", "store_admin","bazar_user","bazar_admin"):
+        return
     dict_ = request.GET or request.POST
     sku = dict_.get('sku_c')
     party_code = dict_.get('party_code')
