@@ -419,14 +419,14 @@ class InquiryResultDataTableView(AjaxDatatableView):
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
             # {"name": "purchase_group", "searchable": False},
-            'purchase_group',
+            {'name': 'purchase_group', 'searchable': True, 'orderable': True,'className': 'w-20px'},
+            {'name': 'active', 'className': 'w-7px'},
             {'name': 'price', 'className': 'w-15px'},
             {'name': 'currency_type', 'lookup_field': '__title__icontains', 'className': 'w-10px'},
+            {'name': 'weight', 'searchable': False, 'className': 'w-10px'},
             {'name': 'id', 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className':'w-10px'},
             'description',
-            {'name': 'active','className':'w-7px'},
-            {'name': 'weight', 'searchable': False, 'className': 'w-10px'},
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
