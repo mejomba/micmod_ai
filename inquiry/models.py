@@ -461,7 +461,7 @@ class InquiryResult(AbsBaseModel):
                                                 related_name='sales_price_inquery_log_rel', null=True, blank=True)
     price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
                                        blank=True, null=True)
-    price_update_date = models.DateField(null=True, blank=True)
+    price_update_date = models.DateField(null=True, blank=True, verbose_name=_('price update date'))
 
     # Todo `FK to -> bazar-price, price` -> priceInquiryResult
 
