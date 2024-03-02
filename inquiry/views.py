@@ -33,8 +33,8 @@ from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
 
-from tools.utils import show_error, get_tuple_value_list
-from tools.form_tools import get_choice_field,get_obj_from_dict
+from tools.utils import show_error, get_tuple_value_list, c_get
+from tools.form_tools import get_choice_field, get_obj_from_dict
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -48,13 +48,13 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
         'childes': [
             {
                 'form': inlineformset_factory(
-                        PriceInquiryFile,
-                        PriceInquiryResult,
-                        # form=PriceInquiryResultCreateForm,
-                        form=PriceInquiryResult2CreateForm,
-                        extra=1,
-                        # fields=qi_fields,
-                    ),
+                    PriceInquiryFile,
+                    PriceInquiryResult,
+                    # form=PriceInquiryResultCreateForm,
+                    form=PriceInquiryResult2CreateForm,
+                    extra=1,
+                    # fields=qi_fields,
+                ),
                 'childes': [{}]
             },
         ]
@@ -71,6 +71,7 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
     success_message = '%(item)s create'
     related_name_fk = 'inquery_result'
     formset_fk_field = 'price_inquiry_file'
+
     # has_simple_flow = True
     # has_flow = True
     # flow_config = {
@@ -123,7 +124,8 @@ class PriceInquiryFileRelatedView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         context['form'] = self.form_class
         if self.request.user.has_perms(('inquiry.view_inquiryresult',)):
-            context['related_price_inquiry_files'] = PriceInquiryResult.objects.filter(price_inquiry_file=self.kwargs['pk'])
+            context['related_price_inquiry_files'] = PriceInquiryResult.objects.filter(
+                price_inquiry_file=self.kwargs['pk'])
         return context
 
 
@@ -160,6 +162,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
     related_name_fk = 'inquery_result'
     formset_fk_field = 'price_inquiry_file'
     wf_to_user_permission = 'inquiry.change_priceinquiryfile'
+
     # has_flow = True
     # has_simple_flow = True
 
@@ -204,7 +207,8 @@ class SkuListDataTableView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
-        {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border',
+         'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
@@ -223,9 +227,9 @@ class SkuListDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('extra_data:sku.update', args=(obj.id,)),
-                      obj.sku if obj.sku else '_'
-                    )
+            reverse('extra_data:sku.update', args=(obj.id,)),
+            obj.sku if obj.sku else '_'
+        )
 
 
 def sku_list(request):
@@ -235,7 +239,7 @@ def sku_list(request):
     count = 0
     for item in items:
         item_json = dict()
-        item_json['id'] =item.pk
+        item_json['id'] = item.pk
         item_json['part_number'] = item.part_number
         item_json['brand'] = item.brand
         item_json['quality'] = item.quality
@@ -255,6 +259,7 @@ class InquiryResultListView(BaseView):
     model = PriceInquiryResult
     form_class = PriceInquiryResult2CreateForm
     template_name = 'inquiry/inquiry_result_list_or_create.html'
+
     # success_url = '.'
 
     def get_success_url(self):
@@ -273,6 +278,7 @@ class InquiryResultListView(BaseView):
         if request.GET.get('pk') and not request.POST:
             kwargs.update({'pk': request.GET.get('pk')})
         super().setup(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         object_id = self.request.GET.get('pk')
@@ -342,7 +348,8 @@ class InquiryResultUpdateView(BaseView):
         # self.request.GET._mutable = True
         # self.request.GET.update({'user': self.request.user})
         context.update({
-            'form': self.form_class(instance=self.object, data={'sku': self.object.sku}, initial={'user': self.request.user})
+            'form': self.form_class(instance=self.object, data={'sku': self.object.sku},
+                                    initial={'user': self.request.user})
         })
         # self.request.GET._mutable = False
         context['submit_copy'] = False
@@ -378,7 +385,6 @@ class InquiryResultUpdateView(BaseView):
         if item_weight:
             ItemWeight.objects.create(sku=sku, weight=item_weight)
 
-
         return res
 
 
@@ -399,9 +405,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
             col['defaultContent'] = ''
             col['orderable'] = True
             col['searchable'] = True
-            col['name'] = field if isinstance(field,str) else None
+            col['name'] = field if isinstance(field, str) else None
             col['visible'] = True
-            if isinstance(field,dict):
+            if isinstance(field, dict):
                 for key in field.keys():
                     col[key] = field[key]
             if not col.get('title'):
@@ -413,19 +419,22 @@ class InquiryResultDataTableView(AjaxDatatableView):
         cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
             # {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
-            {'name': 'price_update_date', 'data': 'price_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            {'name': 'price_update_date', 'data': 'price_update_date', 'orderable': True, 'visible': True,
+             'className': 'w-10px'},
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
-            {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains','className': 'w-20'},
+            {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains',
+             'className': 'w-20'},
             # 'part_number',
             # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
             # {"name": "purchase_group", "searchable": False},
-            {'name': 'purchase_group', 'searchable': True, 'orderable': True,'className': 'w-20px'},
+            {'name': 'purchase_group', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'active', 'className': 'w-7px'},
             {'name': 'price', 'className': 'w-15px'},
             {'name': 'currency_type', 'lookup_field': '__title__icontains', 'className': 'w-10px'},
             {'name': 'weight', 'searchable': False, 'className': 'w-10px'},
             {'name': 'id', 'visible': False},
-            {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className':'w-10px'},
+            {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
+             'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
@@ -452,10 +461,10 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                    f"/inquiry/inquiryresult/list/?pk={obj.id}", obj.sku if obj.sku else '_'
-                      # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
-                      # obj.sku if obj.sku else '_'
-                    )
+            f"/inquiry/inquiryresult/list/?pk={obj.id}", obj.sku if obj.sku else '_'
+            # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
+            # obj.sku if obj.sku else '_'
+        )
         if self.request.user.is_superuser or 'total_admin' in self.request.user.groups.values_list('name', flat=True):
             row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
             row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
@@ -476,7 +485,9 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
 
 def inquiry_result_sale_ajax(request, *args, **kwargs):
-    if not has_one_group(request.user,["sales_user","sales_admin","total_admin", "store_admin","bazar_user","bazar_admin", "store_user"]):
+    if not has_one_group(request.user,
+                         ["sales_user", "sales_admin", "total_admin", "store_admin", "bazar_user", "bazar_admin",
+                          "store_user"]):
         return
     dict_ = request.GET or request.POST
     sku = dict_.get('sku_c')
@@ -516,8 +527,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                            price_setting=price_setting_obj)
     if item_sku and item_sku.bazar_price is not None:
         item_sku.bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                           payment_method=payment_method, currency=currency,
-                                           price_setting=price_setting_obj)
+                                                 payment_method=payment_method, currency=currency,
+                                                 price_setting=price_setting_obj)
 
     sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
     if sepidar_inquiry_result:
@@ -582,10 +593,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         obj = InquiryResult.objects.create(**inquiry_result_params)
         obj.save_user(request)
 
-    html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', { 'form': form, 'item': item, "sku": item_sku},request)
+    html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html',
+                            {'form': form, 'item': item, "sku": item_sku}, request)
     # inquiry_result = render_to_string('inquiry/partial/partial_result_inquiry_result_for_sales.html', {'d': price, 'items': inquiry_result_params})
 
-    return JsonResponse({'res': html})#, 'inquiry_result': inquiry_result})
+    return JsonResponse({'res': html})  # , 'inquiry_result': inquiry_result})
     # return render(request, 'inquiry/partial/partial_inquiry_result_for_sales.html', {'d': price})
 
 
@@ -631,7 +643,10 @@ def get_item(request):
                     item_obj = Item.objects.filter(sku=q).first()
 
                     # if trade_price_code or bazar_price_code:
-                    price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(pk=trade_price_code or bazar_price_code).first() if (trade_price_code or bazar_price_code) else item_obj.price
+                    price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                        pk=trade_price_code).first() if (trade_price_code) else item_obj.price
+                    price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                        pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
                     # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
@@ -649,13 +664,21 @@ def get_item(request):
                         elif str(id_currency_ref) == str(2):  # rmb
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+
+                    if price_inquiry_result_bazar:
+                        item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                        item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                    else:
+                        item["goods_price_market"] = None
+                        item["goods_market_date"] = None
+
+
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
                 count += 1
             except Exception as e:
                 print(str(e))
-
 
     obj['total_count'] = count
     return JsonResponse(obj, safe=False)
@@ -700,7 +723,9 @@ def get_items(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(sku__sku=item_.code).first()
+                    sku_item: Item = Item.objects.filter(sku=item_.code).first()
+                    price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
+                    price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(
@@ -717,10 +742,16 @@ def get_items(request):
                         elif str(id_currency_ref) == str(2):  # rmb
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
-
                     else:
                         item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
+
+                    if price_inquiry_result_bazar:
+                        item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                        item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                    else:
+                        item["goods_price_market"] = None
+                        item["goods_market_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
 
@@ -728,7 +759,6 @@ def get_items(request):
                 count += 1
             except Exception as e:
                 print(str(e))
-
 
     obj['total_count'] = count
     return JsonResponse(obj, safe=False)
@@ -740,10 +770,11 @@ class SupplierView(BaseView):
         'form': SupplierModelForm,
         'childes': [
             {
-             'childes': [{}]
+                'childes': [{}]
             },
         ]
     }
+
     # template_name = 'inquiry/supplier_create_or_update.html'
 
     def get_success_url(self):
@@ -822,9 +853,9 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('inquiry:supplier.detail_update', args=(obj.id,)),
-                      obj.title if obj.title else '_'
-                    )
+            reverse('inquiry:supplier.detail_update', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )
 
 
 class AjaxInquiryResultListData(View):
@@ -841,7 +872,8 @@ class AjaxInquiryResultListData(View):
             try:
                 username = sku.weight_obj
                 username = username.editor_user.username if username else ''
-                return JsonResponse({'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,})
+                return JsonResponse(
+                    {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, })
             except:
                 pass
         return JsonResponse({'sku_name': None, 'item_weight': None, 'item_id': None})
@@ -870,7 +902,7 @@ def get_price_list(request, *args, **kwargs):
             if not y_rate:
                 y_rate = item.price.price_settings.free_rmb_rate
     g_sheet.clear_rows('portal_prices')
-    g_sheet.update_rows('portal_prices',prices,2)
+    g_sheet.update_rows('portal_prices', prices, 2)
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
     g_sheet.wb.worksheet('portal_prices').update_cell(1, 6, update_time)
     g_sheet.wb.worksheet('portal_prices').update_cell(1, 8, y_rate)

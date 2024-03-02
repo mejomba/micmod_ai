@@ -15,9 +15,14 @@ import datetime
 from forbiddenfruit import curse
 
 
-def c_get(obj, attr_name, default_value=None):
+def c_get(obj, attrs_str, default_value=None):
     try:
-        return getattr(obj, attr_name, default_value)
+        attrs = attrs_str.split('.')
+        for attr in attrs:
+            obj = getattr(obj, attr, None)
+            if not obj:
+                return default_value
+        return obj if obj else default_value
     except Exception as e:
         show_error(e, __file__)
         return default_value
