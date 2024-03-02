@@ -560,8 +560,8 @@ function set_price_data(data, elem, target) {
         set_values(elem.querySelectorAll('[name*="price_settings"]'), data.price_settings)
         set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
 
-        // set_values(elem.querySelectorAll('[name*="goods_price_market"]'), add_discounts(data.m_price, data.yuan_rate, 2, target, data.QTYDis))
-        // set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.m_date, true)
+        set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+        set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
         set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
         set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
@@ -739,9 +739,11 @@ function formatRepoSelection(repo) {
 }
 
 function formatRepoItem(repo) {
+    let goods_market_date;
     if (repo.loading) {
         return repo.text;
     }
+    if (repo.goods_market_date){goods_market_date=repo.goods_market_date} else {goods_market_date='-'}
     var $container = $(
         "<div class='w-100 replace-digits' dir='rtl' style='font-family: BYekan'>" +
         "<div class='d-flex border'>" +
@@ -783,8 +785,8 @@ function formatRepoItem(repo) {
         "</div>" +
         "</div>" +
         "<div class='d-flex'> " +
-        "<div class='w-40'>" + (add_discounts(repo.m_price, repo.yuan_rate, 2)) + "</div>" +
-        "<div class='w-60'>" + repo.m_date + "</div>" +
+        "<div class='w-40'>" + (add_discounts(repo.goods_price_market, repo.yuan_rate, 2)) + "</div>" +
+        "<div class='w-60'>" + goods_market_date + "</div>" +
         "</div> " +
         "</div> " +
         "</div></div>"
@@ -800,6 +802,8 @@ function newFormatRepoItem(repo) {
     let repo_express;
     let repo_air;
     let repo_sea;
+    let goods_market_date;
+    let goods_price_market;
 
     if (repo.rial_final_price){repo_express = repo.rial_final_price.express; repo_air = repo.rial_final_price.air; repo_sea = repo.rial_final_price.sea}
     if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express; repo_air = repo.rmb_final_price.air; repo_sea = repo.rmb_final_price.sea}
@@ -814,6 +818,8 @@ function newFormatRepoItem(repo) {
     if (repo_sea == undefined){
         repo_sea = '-'
     }
+    if (repo.goods_market_date){goods_market_date=repo.goods_market_date} else {goods_market_date='-'}
+    if (repo.goods_price_market){goods_price_market=repo.goods_price_market} else {goods_price_market='-'}
     // debugger
     var $container = $(
         "<div class='w-100 replace-digits' dir='rtl' style='font-family: BYekan'>" +
@@ -856,8 +862,8 @@ function newFormatRepoItem(repo) {
         "</div>" +
         "</div>" +
         "<div class='d-flex pe-1'> " +
-        "<div class='w-40'>" + 'm_price' + "</div>" +
-        "<div class='w-60'>" + 'm_date' + "</div>" +
+        "<div class='w-40'>" + goods_price_market + "</div>" +
+        "<div class='w-60'>" + goods_market_date + "</div>" +
         "</div> " +
         "</div> " +
         "</div></div>"
