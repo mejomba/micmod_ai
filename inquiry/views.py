@@ -508,6 +508,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
                                            payment_method=payment_method, currency=currency,
                                            price_setting=price_setting_obj)
+    if item_sku and item_sku.bazar_price is not None:
+        item_sku.bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                           payment_method=payment_method, currency=currency,
+                                           price_setting=price_setting_obj)
+
     sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
     if sepidar_inquiry_result:
         res = sepidar_inquiry_result[0]
@@ -856,8 +861,8 @@ def get_price_list(request, *args, **kwargs):
             price = item.price.rmb_final_price
             price['sku'] = item.sku
             prices.append(price)
-        if not y_rate:
-            y_rate = item.price.price_settings.free_rmb_rate
+            if not y_rate:
+                y_rate = item.price.price_settings.free_rmb_rate
     g_sheet.clear_rows('portal_prices')
     g_sheet.update_rows('portal_prices',prices,2)
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')

@@ -113,7 +113,24 @@ class PriceInquiryResult(BaseModel):
     @property
     def bazar_price(self):
         if self.inquiry_type.base_group == 'bazar':
-            ...
+            payment_method = self.custom_properties['payment_method_']
+            discount = 0.18
+            if payment_method == 'Cash':
+                discount = 0.07
+                if self.custom_properties['customer_grade_'] in ['A+', 'Special']:
+                    discount = 0.05
+            elif payment_method == '1 Month':
+                discount = 0.10
+            elif payment_method == '2 Month':
+                discount = 0.12
+            elif payment_method == '3 Month':
+                discount = 0.15
+            elif payment_method == '4 Month':
+                discount = 0.18
+            return self.price * (1+discount)
+        else:
+            return None
+
 
     @property
     def rial_final_price(self):
