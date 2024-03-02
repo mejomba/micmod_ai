@@ -470,7 +470,7 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
 
 def inquiry_result_sale_ajax(request, *args, **kwargs):
-    if not has_one_group("sales_user","sales_admin","total_admin", "store_admin","bazar_user","bazar_admin"):
+    if not has_one_group(request.user,["sales_user","sales_admin","total_admin", "store_admin","bazar_user","bazar_admin"]):
         return
     dict_ = request.GET or request.POST
     sku = dict_.get('sku_c')
