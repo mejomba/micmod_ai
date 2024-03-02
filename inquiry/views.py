@@ -284,7 +284,9 @@ class InquiryResultListView(BaseView):
             context.update({
                 'form': self.form_class(instance=obj)
             })
-        context['submit_copy'] = True
+        if self.request.GET.get('pk'):
+            context['submit_copy'] = False
+            context['form'].instance.submit_copy = False
 
         # if cache.get(f'{self.request.user}__submit/copy'):
         #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
@@ -312,15 +314,18 @@ class InquiryResultListView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
-        if form.cleaned_data['update_price']:
-            obj = form.save(commit=False)
-            obj.price_update_date = timezone.now()
-            obj.save()
-        else:
-            pass
-        print('no update price Deee :)')
+        last_price = self.object.price if self.object else 0
         res = super().form_valid(form)
-        if self.object and self.object.item_weight:
+
+        if self.object and last_price and self.object.price != last_price:
+            self.object.price_update_date = timezone.now()
+            self.object.save()
+
+        if form.cleaned_data['update_price'] and self.object:
+            self.object.price_update_date = timezone.now()
+            self.object.save()
+
+        if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
             item_weight.save_user(request=self.request)
         return res
@@ -379,7 +384,7 @@ class InquiryResultUpdateView(BaseView):
 class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
-    initial_order = [["last_update_date", "des"], ]
+    initial_order = [["price_update_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -406,7 +411,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
-            {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            # {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
+            {'name': 'price_update_date', 'data': 'price_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
             {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains','className': 'w-20'},
             # 'part_number',
