@@ -501,7 +501,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
             user_pk = request.POST.get('assigned_trade_user')
-            assigned_trade_user = get_user_model().objects.filter(pk=user_pk).first() user_pk else None
+            assigned_trade_user = get_user_model().objects.filter(pk=user_pk).first() if user_pk else None
             obj.lead_time = request.POST.get('lead_time')
             obj.assigned_trade_user = assigned_trade_user
             obj.save()
