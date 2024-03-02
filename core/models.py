@@ -415,6 +415,10 @@ class AbsBaseModel(NoUserBaseModel):
         except Exception as e:
             print('error: ',  e.__traceback__.tb_lineno, e)
 
+    @classmethod
+    def active(cls, user):
+        return len(cls.objects.get_access_object(user, q='active'))
+
     class Meta:
         abstract = True
 
