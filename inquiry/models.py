@@ -113,31 +113,57 @@ class PriceInquiryResult(BaseModel):
     @property
     def bazar_price(self):
         if self.inquiry_type.base_group == 'bazar':
-            ...
+            payment_method = self.custom_properties['payment_method_'] or ''
+            discount = 0.05
+            if payment_method == 'cash':
+                discount = 0.07
+                if (self.custom_properties['customer_grade_'] or '').lower() in ['a+', 'special']:
+                    discount = 0.05
+            elif payment_method == '1 month':
+                discount = 0.10
+            elif payment_method == '2 month':
+                discount = 0.12
+            elif payment_method == '3 month':
+                discount = 0.15
+            elif payment_method == '4 month':
+                discount = 0.18
+            return self.price * (1+discount)
+        else:
+            return ''
+
 
     @property
     def rial_final_price(self):
-        if self.sku and self.transportations_cost:
-            # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
-            free_rmb_rate = self.price_settings.free_rmb_rate
-            final_price = self.rmb_final_price
-            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
-                                   final_price.items()))
-            return final_price
+        if self.inquiry_type.base_group == 'bazar':
+            return self.bazar_price
+        else:
+            if self.sku and self.transportations_cost:
+                # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
+                free_rmb_rate = self.price_settings.free_rmb_rate
+                final_price = self.rmb_final_price
+                final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
+                                       final_price.items()))
+                return final_price
 
     @property
     def rial_final_price_new_order(self):
-        # self.custom_properties['currency_'] = self.currency_ or
-        free_rmb_rate_new_order = self.free_rmb_rate_new_order
-        final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
-                               self.rmb_final_price.items()))
-        return final_price
+        if self.inquiry_type.base_group == 'bazar':
+            return self.bazar_price
+        else:
+            # self.custom_properties['currency_'] = self.currency_ or
+            free_rmb_rate_new_order = self.free_rmb_rate_new_order
+            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
+                                   self.rmb_final_price.items()))
+            return final_price
 
     @property
     def rmb_final_price(self):
-        if not getattr(self.extra_data,'_rmb_final_price_',None):
-            return self.rmb_final_price_()
-        return self.extra_data._rmb_final_price_
+        if self.inquiry_type.base_group == 'bazar':
+            return None
+        else:
+            if not getattr(self.extra_data,'_rmb_final_price_',None):
+                return self.rmb_final_price_()
+            return self.extra_data._rmb_final_price_
 
     def rmb_final_price_(self):
         self.currency_ = (Currency.objects.filter(id=self.custom_properties.get('currency_')).first()

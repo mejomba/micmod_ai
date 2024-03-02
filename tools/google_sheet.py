@@ -63,14 +63,19 @@ class GSheet:
                 i = 0
                 for key in newHeader:
                     if key in keys:
-                        value[i] = str(record[key])
+                        if isinstance(record[key], datetime.datetime) or isinstance(record[key], datetime.date):
+                            record[key] = str(record[key])
+                        value[i] = record[key]
+                        # value[i] = str(record[key])
                     i += 1
                 # set extera column for new attributes
                 if expandColumns == 'yes':
                     for key in keys:
                         if (key in newHeader) == False:
                             newHeader.append(key)
-                            value.append(str(record[key]))
+                            if isinstance(record[key], datetime.datetime) or isinstance(record[key], datetime.date):
+                                record[key] = str(record[key])
+                            value.append(record[key])
                 values.append(value)
             # Write data to shet
             self.wb.worksheet(sheet).update(f'A{result.row_num}', values)

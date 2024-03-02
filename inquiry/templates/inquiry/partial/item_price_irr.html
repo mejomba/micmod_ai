@@ -4,6 +4,7 @@
 
 {% if data == 'rial_final_price' %}
 <div class="mt-3 mb-5">
+    <p class="my-0" >{{ obj.bazar_price|intcomma }}</p>
     <p class="my-0" >{{ obj.rial_final_price.express|intcomma }}</p>
     <p class="my-0" >{{ obj.rial_final_price.air|intcomma }}</p>
     <p class="my-0" >{{ obj.rial_final_price.sea|intcomma }}</p>
