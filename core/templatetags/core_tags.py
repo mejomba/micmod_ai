@@ -142,7 +142,10 @@ def get_object_count(user, count_str):
     app_model, q = count_str.split(':')
     app, model = app_model.split(".")
     model_ = apps.get_model(app, model)
-    return len(model_.objects.get_access_object(user, q=q))
+    function = getattr(model_, q, None)
+    if function:
+        return function(user)
+
 
 @register.simple_tag
 def get_list(field):

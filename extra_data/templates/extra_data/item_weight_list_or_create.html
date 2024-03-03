@@ -30,9 +30,9 @@
 {% block form_content %}
     {% csrf_token %}
     <div class="d-flex mt-5 gap-3 bg-white rounded shadow pt-4 pb-1 px-2">
-    {% for field in form %}
-        {% render_field_by_order form field label='on-border' %}
-    {% endfor %}
+{#    {% for field in form %}#}
+        {% render_field_by_order form form.sku form.weight label='on-border' %}
+{#    {% endfor %}#}
     </div>
     <input type="submit" class="btn btn-primary me-1" name="next" value="ذخیره"/>
 

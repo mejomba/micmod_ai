@@ -11,10 +11,9 @@
 {#{% include 'partials/formset_header_buttons.html' %}#}
 
     {% for form_list in forms %}
-        <div class="card-body p-0 my-3 mx-1 border">
-        <!--header-->
-            <div class="row-counter rounded d-flex align-items-center question-btn active-form h-30px">
-                <span class="counter">{{ forloop.counter }}</span>
+        <div class="{% if forloop.counter|divisibleby:"2" %}bg-light-danger{% else %}bg-light-primary{% endif %}">
+            <!--header-->
+            <div class="rounded p-2 d-flex align-items-center h-40px">
                 <div class="col ms-4">
                     <span class="me-2">کد مشتری:</span>
                     <span>{{ form_list.0.instance.quotation.customer_code }}</span>
@@ -31,8 +30,34 @@
                     <span class="me-2">تاریخ انقضا:</span>
                     <span>{{ form_list.0.instance.quotation.expiration_date }}</span>
                 </div>
+                <div>
+                    <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_list.0.instance.quotation.pk %}" target="_blank">مشاهده پیش فاکتور</a>
+                </div>
             </div>
         <!--end header-->
+        </div>
+        <div class="card-body p-0 mb-6 border">
+            <!--header-->
+                <div class="row-counter rounded d-flex align-items-center question-btn active-form h-30px" style="background-color: white">
+                    <span class="counter">{{ forloop.counter }}</span>
+                    <div class="col ms-4">
+{#                        <span class="me-2">کد مشتری:</span>#}
+{#                        <span>{{ form_list.0.instance.quotation.customer_code }}</span>#}
+                    </div>
+                    <div class="col">
+{#                        <span class="me-2">کد سپیدار:</span>#}
+{#                        <span>{{ form_list.0.instance.quotation.sepidar_number }}</span>#}
+                    </div>
+                    <div class="col">
+{#                        <span class="me-2">تاریخ درخواست:</span>#}
+{#                        <span>{{ form_list.0.instance.quotation.request_date}}</span>#}
+                    </div>
+                    <div class="col">
+{#                        <span class="me-2">تاریخ انقضا:</span>#}
+{#                        <span>{{ form_list.0.instance.quotation.expiration_date }}</span>#}
+                    </div>
+                </div>
+            <!--end header-->
             <div class="answer m-0">
             {% include 'micmod-base/quotation/form_pending.html' with forms=form_list %}
             </div>

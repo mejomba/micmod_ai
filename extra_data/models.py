@@ -288,11 +288,12 @@ class Item(BaseModel):
         self.extra_data.dl_code = None
         self.extra_data.price = None
         self.extra_data.prices = None
+        self.extra_data.bazar_price = None
 
     BATCH_TYPE = (('box', _('box')), ('rol', _('rol')))
     sku = models.CharField(max_length=10, verbose_name=_('sku'), null=True, blank=True, unique=True)
     sepidar_id_0 = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
-    part_number = models.CharField(max_length=150, verbose_name=_('part number'), unique=True)
+    part_number = models.CharField(max_length=350, verbose_name=_('part number'), unique=True)
     brand = models.ForeignKey(Brand, related_name="items", verbose_name=_('brand'), null=True, blank=True
                               ,on_delete=models.DO_NOTHING)
     quality = models.CharField(max_length=100, verbose_name=_('quality'), null=True, blank=True)
@@ -339,8 +340,14 @@ class Item(BaseModel):
     @property
     def price(self):
         if not self.extra_data.price:
-            self.extra_data.price = self.items.filter(sku=self).filter(active=True).first()
+            self.extra_data.price = self.items.filter(sku=self).filter(active=True,inquiry_type_id=1).first()
         return self.extra_data.price
+
+    @property
+    def bazar_price(self):
+        if not self.extra_data.bazar_price:
+            self.extra_data.bazar_price = self.items.filter(sku=self).filter(active=True, inquiry_type_id=4).first()
+        return self.extra_data.bazar_price
 
     def set_price(self, price_id):
         if not self.extra_data.price and not price_id:

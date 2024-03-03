@@ -62,7 +62,7 @@ class PriceInquiryResult(BaseModel):
     supplier = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                  on_delete=models.DO_NOTHING, related_name='supplier_rel')
     price = models.FloatField(verbose_name=_('price'))
-    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True)
+    price_update_date = models.DateTimeField(verbose_name=_('price_update_date'), null=True, blank=True, auto_now_add=True)
     # local_price = models.FloatField(verbose_name=_('local_price'), null=True, blank=True)
     description = models.CharField(max_length=255, verbose_name=_('description'), null=True, blank=True)
     currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, default=2, null=True, blank=True)
@@ -111,28 +111,59 @@ class PriceInquiryResult(BaseModel):
         return elapsed_time(self.price_update_date)
 
     @property
+    def bazar_price(self):
+        if self.inquiry_type.base_group == 'bazar':
+            payment_method = self.custom_properties['payment_method_'] or ''
+            discount = 0.05
+            if payment_method == 'cash':
+                discount = 0.07
+                if (self.custom_properties['customer_grade_'] or '').lower() in ['a+', 'special']:
+                    discount = 0.05
+            elif payment_method == '1 month':
+                discount = 0.10
+            elif payment_method == '2 month':
+                discount = 0.12
+            elif payment_method == '3 month':
+                discount = 0.15
+            elif payment_method == '4 month':
+                discount = 0.18
+            return self.price * (1+discount)
+        else:
+            return ''
+
+
+    @property
     def rial_final_price(self):
-        if self.sku and self.transportations_cost:
-            # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
-            free_rmb_rate = self.price_settings.free_rmb_rate
-            final_price = self.rmb_final_price
-            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
-                                   final_price.items()))
-            return final_price
+        if self.inquiry_type.base_group == 'bazar':
+            return self.bazar_price
+        else:
+            if self.sku and self.transportations_cost:
+                # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
+                free_rmb_rate = self.price_settings.free_rmb_rate
+                final_price = self.rmb_final_price
+                final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
+                                       final_price.items()))
+                return final_price
 
     @property
     def rial_final_price_new_order(self):
-        # self.custom_properties['currency_'] = self.currency_ or
-        free_rmb_rate_new_order = self.free_rmb_rate_new_order
-        final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
-                               self.rmb_final_price.items()))
-        return final_price
+        if self.inquiry_type.base_group == 'bazar':
+            return self.bazar_price
+        else:
+            # self.custom_properties['currency_'] = self.currency_ or
+            free_rmb_rate_new_order = self.free_rmb_rate_new_order
+            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
+                                   self.rmb_final_price.items()))
+            return final_price
 
     @property
     def rmb_final_price(self):
-        if not getattr(self.extra_data,'_rmb_final_price_',None):
-            return self.rmb_final_price_()
-        return self.extra_data._rmb_final_price_
+        if self.inquiry_type.base_group == 'bazar':
+            return None
+        else:
+            if not getattr(self.extra_data,'_rmb_final_price_',None):
+                return self.rmb_final_price_()
+            return self.extra_data._rmb_final_price_
 
     def rmb_final_price_(self):
         self.currency_ = (Currency.objects.filter(id=self.custom_properties.get('currency_')).first()
@@ -461,7 +492,7 @@ class InquiryResult(AbsBaseModel):
                                                 related_name='sales_price_inquery_log_rel', null=True, blank=True)
     price_settings = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='price_settings_rel',
                                        blank=True, null=True)
-    price_update_date = models.DateField(null=True, blank=True)
+    price_update_date = models.DateField(null=True, blank=True, verbose_name=_('price update date'))
 
     # Todo `FK to -> bazar-price, price` -> priceInquiryResult
 

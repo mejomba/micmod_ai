@@ -2,6 +2,8 @@ import uuid
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
+from django.db.models import Q
+
 # from django.contrib.auth.models import User
 from accounts.models import User
 from django.db import models
@@ -50,8 +52,57 @@ class Quotation(SLSDoc):
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
 
-
     custom_objects = QuotationManager()
+
+    @classmethod
+    def quotation_pending(cls, user, **kwargs):
+        user_groups_name = user.groups.values_list('name', flat=True)
+        quotations_record_lst = list()
+
+        for q in Quotation.objects.all():
+            if user.is_superuser:
+                qis = q.quotation.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                )
+
+            elif 'trade_user' in user_groups_name:
+                qis = q.quotation.filter(
+                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+                )
+            elif 'bazar_user' in user_groups_name:
+                qis = q.quotation.filter(
+                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
+                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+                )
+            else:
+                qis = []
+
+            if qis:
+                quotations_record_lst.append(qis)
+
+        return quotations_record_lst
+
+    @property
+    def is_inquiry_state(self):
+        wf_draft = 1
+        wf_back = 2
+        wf_next = 3
+
+        wf_state_1 = 'پیش فاکتور اولیه'
+        wf_state_2 = 'استعلام قیمت'
+        wf_state_3 = 'تایید پیش فاکتور'
+
+        last_wf = self.workflows.last()
+        if (last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or \
+           (last_wf.state == wf_state_3 and last_wf.wf_status == wf_back) or \
+           (last_wf.state == wf_state_2 and last_wf.wf_status == wf_draft):
+            return True
+        else:
+            return False
 
     @property
     def price(self):
@@ -60,6 +111,22 @@ class Quotation(SLSDoc):
         except Exception as e:
             show_error(e, __file__)
             return None
+
+    @property
+    def tax_amount(self):
+        try:
+            return sum(x.tax for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
+
+    @property
+    def duty_amount(self):
+        try:
+            return sum(x.duty for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
 
     def __str__(self):
         return str(self.id)
@@ -137,6 +204,13 @@ class QuotationItem(BaseModel):
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
     assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING)
 
+    @classmethod
+    def active(cls, user):
+        count = 0
+        for item in Quotation.quotation_pending(user):
+            count += len(item)
+        return count
+
     @property
     def local_pending(self):
         return self.need_local_price_inquiry != self.local_price_inquiry_done
@@ -176,13 +250,36 @@ class QuotationItem(BaseModel):
     @property
     def price(self):
         try:
-            if self.quotation.is_official:
-                return self.fee * self.quantity * 1.09
-            else:
+            # if self.quotation.is_official:
+            #     return self.fee * self.quantity * 1.09
+            # else:
                 return self.fee * self.quantity
         except Exception as e:
             show_error(e, __file__)
+            return 0
+
+    @property
+    def duty(self):
+        try:
+            if self.quotation.is_official:
+                return self.fee * self.quantity * 1.03
+            else:
+                return 0
+        except Exception as e:
+            show_error(e, __file__)
+            return 0
+
+    @property
+    def tax(self):
+        try:
+            if self.quotation.is_official:
+                return self.fee * self.quantity * 1.06
+            else:
+                return 0
+        except Exception as e:
+            show_error(e, __file__)
             return None
+
 
     class Meta:
         ordering = ['id']

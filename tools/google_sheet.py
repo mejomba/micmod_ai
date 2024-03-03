@@ -14,12 +14,6 @@ class GSheet:
             credentials_filename='tools/Files/credintials.json',
             authorized_user_filename=auth_file)
         self.wb = self.gc.open_by_key(spreadSheetID)
-        self.price_value = None
-        self.price_b_date = None
-        self.yuan_rate = None
-        self.market = None
-        self.last_update = None
-        self.is_loadin = False
         #self.get_data()
 
     def read_sheet(self,sheet_name,header_rows=[1]):
@@ -44,55 +38,63 @@ class GSheet:
             data.append(d)
         return data
 
-    def get_data(self):
-        if self.is_loadin:
-            print('currently loading')
-            # return
-        if not self.last_update or self.last_update < datetime.datetime.now() - datetime.timedelta(minutes=30):
-            print('loading')
-            self.is_loadin = True
-            self.price_value = None
-            self.price_b_date = None
-            self.yuan_rate = None
-            self.market = None
-            self.last_update = None
-            try:
-                self.price_value = self.read_sheet('b_price', [1, 2])
-                self.price_b_date = self.read_sheet('b_date')
-                self.yuan_rate = float(list(self.wb.values_get('price!R11').values())[2][0][0])
-                self.market = self.read_sheet('market', [1, 2])
-                self.last_update = datetime.datetime.now()
-            except Exception as e:
-                print(str(e))
-            finally:
-                self.is_loadin = False
-                print(f'load completed at {datetime.datetime.now()}')
+    def clear_rows(self, sheet, start_row=2, end_row=50000):
+        self.wb.worksheet(sheet).batch_clear([f"{start_row}:{end_row}"])
 
-    def get_sheet_price(self,sku):
-        self.get_data()
-        price = {'p': {}, 'market': {},'yuan_rate': self.yuan_rate}
-        for p in self.price_value:
-            if p['SKU'] == sku:
-                price['p']['week1'] = float(p['2-3 weekRMB']) if p['2-3 weekRMB'] != '' else ''
-                price['p']['week2'] = float(p['3-5 weekRMB']) if p['3-5 weekRMB'] != '' else ''
-                price['p']['week3'] = float(p['12-14 weekRMB']) if p['12-14 weekRMB'] != '' else ''
-                break
-        for p in self.price_b_date:
-            if p[''] == sku:
-                price['p']['date'] = datetime.datetime.strptime(p['date'], '%Y-%m-%d').date() if p['date'] else ('not_defined')
-                break
-        for p in self.market:
-            if p['4'] == sku:
-                price['market']['price'] = float(p['قیمت (ریال)'])
-                price['market']['date'] = datetime.datetime.strptime(p['زمان استعلام'], '%Y-%m-%d').date() if p['زمان استعلام'] else ('not_defined')
-                break
+    def update_rows(self, sheet, data, row='new', expandColumns='no', cols=None):
+        try:
+            class result(object):
+                pass
 
-        return price
+            if row == 'new':
+                sheetdata = self.wb.worksheet(sheet).get_all_values()
+                header = sheetdata[0]
+                result.row_num = len(sheetdata) + 1
+            else:
+                header = self.wb.worksheet(sheet).row_values(1)
+                result.row_num = int(row)
+
+            newHeader = header.copy()
+            values = []
+            for record in data:
+                keys = record.keys()
+                # set values according header of sheet
+                value = ['' for x in range(0, len(newHeader))]
+                i = 0
+                for key in newHeader:
+                    if key in keys:
+                        if isinstance(record[key], datetime.datetime) or isinstance(record[key], datetime.date):
+                            record[key] = str(record[key])
+                        value[i] = record[key]
+                        # value[i] = str(record[key])
+                    i += 1
+                # set extera column for new attributes
+                if expandColumns == 'yes':
+                    for key in keys:
+                        if (key in newHeader) == False:
+                            newHeader.append(key)
+                            if isinstance(record[key], datetime.datetime) or isinstance(record[key], datetime.date):
+                                record[key] = str(record[key])
+                            value.append(record[key])
+                values.append(value)
+            # Write data to shet
+            self.wb.worksheet(sheet).update(f'A{result.row_num}', values)
+            if newHeader != header:
+                self.wb.worksheet(sheet).update('A1', [newHeader])
+
+            result.header = newHeader
+            result.values = value
+            return result
+        except Exception as e:
+            print(e)
+            return None
+
 
 # price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
 
 
 if __name__ == '__main__':
+    g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
     price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
     p = price_wb.get_sheet_price('255')
     p2 = price_wb.get_sheet_price('7925')

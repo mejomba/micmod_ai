@@ -13,7 +13,7 @@
     {% csrf_token %}
         <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
 
-<div class="card item p-0" dir="rtl">
+<div class="card item p-0 mb-2" dir="rtl">
 
     <input type="hidden" name="self_discount">
     <span id="customer_pid" class="d-none">{{ form_s.instance.quotation.customer_party_id }}</span>
@@ -82,9 +82,10 @@
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
                         {% else %}
+{#                            <div class="select2 goods_code " name="goods_code"></div>#}
                             <label>کد کالا</label><br>
                             <input type="hidden" name="goods_code" value="{{ form_s.instance.goods_code }}">
-                            <span class="select2-selection__rendered">{{ form_s.instance.goods_code }}</span>
+                            <span class="select2-selection__rendered ps-3">{{ form_s.instance.goods_code }}</span>
                         {% endif %}
                     </div>
 
@@ -92,9 +93,14 @@
                         <div class="d-flex justify-content-end">
                             <div class="w-75 mt-3">{{ form_s.goods_name.label }}:<br> <span name="goods_name_lbl">{{ form_s.instance.goods_name }}</span></div>
 {#                            {% render_field_by_order form_s form_s.goods_name label='on-border' %}#}
+                            {% if form_s.instance.goods_code_alt %}
                             <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
-                                 data-key="show_alt">مشابه
+                                 data-key="show_alt">
+
+                                مشابه
+
                             </div>
+                            {% endif %}
                         </div>
                         <div class="col on-border">
 {#                            <label>نام کالا</label>#}
@@ -277,9 +283,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="d-flex mt-auto">
+                    <div class="d-flex justify-content-between mt-auto px-1">
                         <div class="d-flex justify-content-start">
-                            <a class="btn btn-block btn-bordered btn-outline-warning mb-1" href="{% url 'sls:quotations.view' form_s.instance.quotation.pk %}" target="_blank">مشاهده پیش فاکتور</a>
                             {% if form_s.instance.goods_code %}
                                 <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
                                    target="_blank" class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">مشاهده پرونده استعلام</a>
@@ -367,23 +372,6 @@
 {% endblock %}
 
 {% block extra_js %}
-{#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
-{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>#}
-
-{#    <script>#}
-{#    $('*[id*=_x]').on('hide.bs.modal', function (e) {#}
-{#            console.log('hide')#}
-{#          if (formFooterContainer) {#}
-{#              formFooterContainer.classList.add('position-fixed')#}
-{#          }#}
-{#      });#}
-{#    </script>#}
-
-{#    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>#}
-{#    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>#}
-{#    <script src="{% static 'js/extra/quotation.js' %}"></script>#}
-{#    <script src="{% static 'js/extra/quotation1.js' %}"></script>#}
-{#    <script src="{% static 'js/extra/formset.js' %}"></script>#}
 
     <script>
     debugger
@@ -426,54 +414,6 @@
 {#        }#}
 {#    }#}
 
-    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
-    debugger
-    submitCommentBtns.forEach(function (item){
-        item.addEventListener('click', function (e){
-            e.preventDefault()
-            debugger
-            let comment_url = item.dataset.form_url;
-            const pk = item.dataset.pk;
-            const comment_type = item.dataset.comment_type
-            const comment_input_id = comment_url.replace('/', '_')
-            const comment_form = document.getElementById(comment_input_id);
-            const comment_element = $('#id-empty-modal-body')
-            const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
-            const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
-            const title = commentFormGroup.querySelector('[id*="title"]')
-            const content = commentFormGroup.querySelector('[id*="content"]')
-            const father = findAncestor(item, "symbol-group")
-            const commentCounter = item.nextElementSibling
-            if (father){
-                const images = father.querySelectorAll('img')
-                images.forEach(function (img){
-                    img.classList.remove('border')
-                    commentCounter.innerHTML = '0'
-                })
-            }
-
-            debugger
-            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
-            custom_ajax_get(comment_form, comment_url, comment_element)
-        }) // end eventListener
-    }) // end forEach
-
-    function addCommentInput(){
-        debugger
-        const pkElement = document.querySelector('[id*="object_id__"]')
-        const pk = pkElement.dataset.pk
-        const ctt_id = pkElement.dataset.ctt_id
-
-        const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
-        const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
-        commentFormGroup.innerHTML = ''
-        commentFormGroup.appendChild(commentFormForCopy)
-    }
-
-    const emptyModal = document.getElementById('id_kt_empty_modal')
-    emptyModal.addEventListener('hidden.bs.modal', function (e) {
-        document.querySelector('#id-empty-modal-body').innerHTML = ''
-    })
 
 </script>
 

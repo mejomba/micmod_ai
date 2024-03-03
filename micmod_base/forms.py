@@ -274,7 +274,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         # if self.instance.trade_price_code:
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
-                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.trade_price_code,
                                                                               self.instance.trade_price_code) if self.instance.trade_price_code else None
                                                                      )
@@ -286,7 +286,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         #                                                              )
         # if self.instance.bazar_price_code:
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100 form-control'}),
-                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'bazar'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.bazar_price_code,
                                                                               self.instance.bazar_price_code) if self.instance.bazar_price_code else None,
                                                                      )
@@ -343,8 +343,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             if 'bazar_user' not in user_groups:
                 self.make_disable(['local_price_inquiry_done', 'bazar_price_code'])
         try:
-            self.fields['assigned_trade_user'].queryset = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
-        except:
+            x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
+            self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
+        except Exception as e:
             pass
 
     class Meta:
