@@ -39,6 +39,7 @@ from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
+from .forms import PendingFormFilter
 
 
 class QuotationsList(LoginRequiredMixin,View):
@@ -185,7 +186,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'SecondaryQuantity': 0,
                         'Fee': qi.fee or 1,
                         'Price': qi.price or 1,
-                        'Description': 'qi.description',
+                        'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
                         'PriceInfoDiscountRate': 0,
                         'AggregateAmountPercentDiscount': 0,
@@ -195,26 +196,27 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'CustomerDiscountRate': 0,
                         'Discount': 0,
                        # 'DiscountParentRef': 1,  # optional
-                        'Tax': 0,
-                        'Duty': 0,
+                        'Tax': qi.tax,
+                        'Duty': qi.duty,
                         'Addition': 0,
                     }
                     quotation_items.append(qi_dict)
                 #
+                q = Quotation()
                 quotation_data = {
                     'GUID': str(self.object.guid),
                     'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 0,
+                    'Rate': self.object.sale_type.currency.current_rate(),
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
-                    'SaleTypeRef': 2,
+                    'SaleTypeRef': self,
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': 0,
-                    'Tax': 0,
-                    'Duty': 0,
-                    'Addition': 0,
+                    'Discount': self.object.self_discount,
+                    'Tax': self.object.tax_amount,
+                    'Duty': self.object.duty_amount,
+                    'Addition': self.object.addition,
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
@@ -361,6 +363,7 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
 class QuotationItemPending(LoginRequiredMixin, View):
     def get(self, request):
         q = self.request.GET.get('q')
+
         if q == 'local':
             quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
                                          Q(need_local_price_inquiry=False) |
@@ -379,6 +382,7 @@ class QuotationItemPending(LoginRequiredMixin, View):
                 Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
                 Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
             )
+
 
         greeting = {}
         greeting['heading'] = _("quotation")
@@ -403,14 +407,31 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
     def get(self, request):
-
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
         forms = list()
         form_list = list()
 
-        quotations_record_lst = Quotation.quotation_pending(self.request.user)
+        quotation = request.GET.get('quotation')
+        # from_time = request.GET.get('from_time')
+        # to_time = request.GET.get('to_time')
+        customer_code = request.GET.get('customer_code')
+        my_quotations = request.GET.get('my_quotations')
+
+        if quotation:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
+        elif customer_code:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
+
+        elif self.request.GET.get('choice') == 'my_quotations':
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user})
+        # elif from_time and to_time:
+        #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
+        else:
+            quotations_record_lst = Quotation.quotation_pending(self.request)
+
+
         for qi_qs in quotations_record_lst:
             for qi in qi_qs:
                 form = QuotationItemForm2(instance=qi, initial={
@@ -427,7 +448,10 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 forms.append(form)
             form_list.append(forms)
             forms = []
+
         context['forms'] = form_list
+        form_filter = PendingFormFilter()
+        context['form_filter'] = form_filter
 
         return render(request, self.template_name, context)
 
@@ -473,5 +497,3 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj.save()
 
         return redirect(reverse('sls:quotationitem.form.pending'))
-
-

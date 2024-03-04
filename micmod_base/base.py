@@ -66,12 +66,15 @@ MarketGrade = (
 class Currency(models.Model):
     title = models.CharField(_('m-title'), max_length=20)
     title_en = models.CharField(_('m-title_en'), max_length=20)
+    sepidar_id = models.IntegerField(_('sepidar_id'),blank=True,null=True)
 
     def __str__(self):
         return f'{self.title} ({self.title_en})'
 
     def current_rate(self):
-        return self.exchange_rates.order_by("-date")[0]
+        if exchange_rate := self.exchange_rates.order_by("-date").first():
+            return exchange_rate.sell_exchange
+        return None
 
 
 class SLSDoc(BaseModel):

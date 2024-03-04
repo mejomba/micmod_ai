@@ -1,4 +1,6 @@
 import datetime
+
+from django.apps import apps
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -7,9 +9,11 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views import View
+from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
 from _keenthemes import KTLayout
@@ -17,6 +21,7 @@ from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
+from tools.utils import map_model_to_python_type
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -25,6 +30,8 @@ from comments.models import Comments
 from tools.form_tools import get_function
 
 import openpyxl
+
+from .models import ExtraData
 
 
 class BaseView(UserPassesTestMixin,
@@ -65,6 +72,10 @@ class BaseView(UserPassesTestMixin,
     formset_l2 = None
     form = None
     submit_copy = None
+
+    def __init__(self):
+        super().__init__()
+        self.extra_data = ExtraData()
 
     def get_object(self, queryset=None):
         try:
@@ -835,3 +846,86 @@ class CommentsFormView(View):
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
+
+
+############ new ##############hajinezhad###############
+
+class BaseCustomView():
+    def get_queryset_from_request(self):
+        """
+if request params is name__icontains=test&age=30 for example
+this function  generate qry for load data from model db
+qry = model.objects.filter(name__icontains=test, age=30 )
+        """
+        qry = dict()
+        request_data = dict()
+        for key, value in self.request_data.items():
+            split_ = key.split('__')
+            request_data[split_[0]] = (split_[1:], value)
+        for field in self.model._meta.fields:
+            value_ = request_data.get(field.name)
+            if value_:
+                value = value_[1]
+                datatype = map_model_to_python_type(field)
+                if datatype == 'int':
+                    value = int(value)
+                elif datatype == 'float':
+                    value = float(value)
+                qry[f'{"__".join([field.name]+ value_[0])}'] = value
+        return qry
+
+    def get_model(self, **kwargs):
+        app_label = kwargs.get('app_label')
+        model_name = kwargs.get('model_name')
+        if app_label and model_name:
+            del kwargs['app_label']
+            del kwargs['model_name']
+            self.model = apps.get_model(app_label=app_label.lower(), model_name=model_name.lower())
+        return kwargs
+
+
+class BaseCustomCreateView(BaseCustomView, ProcessFormView):
+    template_name = ''
+
+    def __init__(self):
+        super().__init__()
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        kwargs = self.get_model(**kwargs)
+        instance = self.model.objects.filter(pk=request.GET.get('pk')).first() or self.model()
+        self.form = instance.get_view_forms(request,*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        context = dict()
+        context['form'] = self.form
+        return render(request, 'core/create/base.html', context)
+
+    def post(self, request, *args, **kwargs):
+        if self.form.is_valid():
+            self.form.save()
+            if getattr(self.form,'forms', None) and self.form.forms[0].is_valid():
+                self.form.forms[0].save()
+        context = dict()
+        self.form.instance.pk = None
+        context['form'] = self.form
+        return render(request, 'core/create/base.html', context)
+
+
+class BaseCustomListView(BaseCustomView,ListView):
+
+    def __init__(self):
+        super().__init__()
+    def get_queryset(self):
+        return super().get_queryset().filter(self.get_queryset_from_request())
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.get_model(**kwargs)
+        self.request_data = self.request.GET or self.request.POST
+        if not self.template_name:
+            self.template_name = self.model.template_name_list or ''
+
+    def get(self, request, *args, **kwargs):
+        return super().get(self, request, *args, **kwargs)
+
