@@ -611,10 +611,10 @@ function set_price(target) {
     let cost3;
     let final_price_value;
 
-    let p_m = price_method.getAttribute('value')
+    let p_m = price_method ? price_method.getAttribute('value') : null
 
     if (!p_m) {
-        p_m = price_method.value
+        p_m = price_method ? price_method.value : null
     }
     switch (p_m) {
         case
