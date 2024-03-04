@@ -901,18 +901,6 @@ class AjaxInquiryResultListData(View):
 #         form = PriceInquiryResult2CreateForm(instance=obj)
 #         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
 
-@database_sync_to_async
-def get_price_list(request, *args, **kwargs):
-
-    count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
-    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
-    sub_thread = threading.Thread(target=update_price_list.apply_async)
-    sub_thread.start()
-    update_price_list.delay()
-    from tlg.task import add_new_order_receiver
-    add_new_order_receiver.delay()
-    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
-
 
 @shared_task
 def update_price_list():
@@ -955,3 +943,17 @@ def update_price_list():
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
+
+
+def get_price_list(request, *args, **kwargs):
+
+    count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
+    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    sub_thread = threading.Thread(target=update_price_list.apply_async)
+    sub_thread.start()
+    update_price_list.delay()
+    from tlg.task import add_new_order_receiver
+    add_new_order_receiver.delay()
+    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
+
+
