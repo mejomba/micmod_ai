@@ -192,7 +192,7 @@ class PriceSettings(AbsBaseModel):
         for line in self.discount_based_quantity:
             if float(quantity) <= line['value']:
                 return line['percentage']
-        return self.discount_based_price[-2]['percentage']
+        return self.discount_based_quantity[-1]['percentage']
 
     def get_discount_based_customer(self, grade):
         for line in self.discount_based_customer:

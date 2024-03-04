@@ -205,8 +205,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 q = Quotation()
                 quotation_data = {
                     'GUID': str(self.object.guid),
-                    'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': self.object.sale_type.currency.current_rate(),
+                    'CurrencyRef': self.object.sale_type.currency_ref.sepidar_id or 1,
+                    'Rate': self.object.sale_type.currency_ref.current_rate() or 1,
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
                     'SaleTypeRef': self,
