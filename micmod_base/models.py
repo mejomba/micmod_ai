@@ -55,29 +55,51 @@ class Quotation(SLSDoc):
     custom_objects = QuotationManager()
 
     @classmethod
-    def quotation_pending(cls, user, **kwargs):
-        user_groups_name = user.groups.values_list('name', flat=True)
+    def quotation_pending(cls, request, **kwargs):
+        user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
         quotations_record_lst = list()
+        qis = []
 
-        for q in Quotation.objects.all():
-            if user.is_superuser:
-                qis = q.quotation.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
+        if hasattr(request, 'path') and request.path == '/micmod_base/quotationitem/past/quotationitems':
+            superuser_filter = Q(need_foreign_price_inquiry=True) | Q(need_local_price_inquiry=True)
+            trade_user_filter = Q(need_foreign_price_inquiry=True)
+            bazar_user_filter = Q(need_local_price_inquiry=True)
 
-            elif 'trade_user' in user_groups_name:
-                qis = q.quotation.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-                )
-            elif 'bazar_user' in user_groups_name:
-                qis = q.quotation.filter(
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
+        else:
+            superuser_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                               Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) | \
+                               Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                               Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+            trade_user_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                                Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+
+            bazar_user_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                                Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+        f = kwargs.get('filter')
+        extra_filter = kwargs.get('extra_filter')
+        if f is not None:
+            qs = Quotation.objects.filter(**f)
+        else:
+            qs = Quotation.objects.all()
+        for q in qs:
+            if hasattr(request, 'user') and request.user.is_superuser and q.is_inquiry_state:
+                if extra_filter is not None:
+                    qis = q.quotation.filter(superuser_filter, **extra_filter)
+                else:
+                    qis = q.quotation.filter(superuser_filter)
+            elif 'trade_user' in user_groups_name and q.is_inquiry_state:
+                if extra_filter is not None:
+                    qis = q.quotation.filter(trade_user_filter, **extra_filter)
+                else:
+                    qis = q.quotation.filter(trade_user_filter)
+
+            elif 'bazar_user' in user_groups_name and q.is_inquiry_state:
+                if extra_filter is not None:
+                    qis = q.quotation.filter(bazar_user_filter, **extra_filter)
+                else:
+                    qis = q.quotation.filter(bazar_user_filter)
             else:
                 qis = []
 
@@ -97,6 +119,8 @@ class Quotation(SLSDoc):
         wf_state_3 = 'تایید پیش فاکتور'
 
         last_wf = self.workflows.last()
+        if last_wf is None:
+            return False
         if (last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or \
            (last_wf.state == wf_state_3 and last_wf.wf_status == wf_back) or \
            (last_wf.state == wf_state_2 and last_wf.wf_status == wf_draft):
