@@ -511,8 +511,13 @@
     "inquiry_type": "نوع استعلام",
     "currency_type": "واحد پولی",
     "weight": "وزن",
+    "past_list": "استعلام های گذشته",
+    "time": "زمان",
+    "quotation": "شماره پیش فاکتور",
     "assigned_trade_user": "تخصیص به کاربر بازرگانی",
     "lead time": "زمان تامین",
     "bazar_price": "قیمت بازار",
-    "price_update_date": "تاریخ ویرایش قیمت"
+    "price_update_date": "تاریخ ویرایش قیمت",
+    "my_quotations": "استعلام های من"
+
 }

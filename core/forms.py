@@ -18,6 +18,20 @@ class CustomBaseForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        for field in self.fields:
+            if not isinstance(self.fields[field].widget, CheckboxInput):
+                self.fields[field].widget.attrs['class'] = 'form-control'
+            if isinstance(self.fields[field].widget, DateTimeInput):
+                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
+
+    # def make_optional(self, fields: List):
+    #     for f in fields:
+    #         self.fields[f].required = False
+
+    # def make_disable(self, fields: List):
+    #     for field_name, field in self.fields.items():
+    #         if field_name in fields:
+    #             field.disabled = True
 
 class CustomBaseModelForm(forms.ModelForm):
     image_groups = None
