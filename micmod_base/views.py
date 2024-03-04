@@ -404,105 +404,32 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
-
     def get(self, request):
-        user_groups_name = self.request.user.groups.values_list('name', flat=True)
-        q = self.request.GET.get('q')
-        quotations_record_lst = QuotationItem.objects.none()
-        # if request.META['PATH_INFO'] == '/micmod_base/quotationitem/list/form/pending/':
-        #
-        # if self.request.META['PATH_INFO'] == '/micmod_base/quotationitem/past/quotationitems':
-        #     quotations_record_lst = QuotationItem.objects.filter(
-        #                     Q(need_local_price_inquiry=True) | Q(need_foreign_price_inquiry=True)
-        #                 )
-        #
-        #     if q == 'local':
-        #         quotations_record_lst = QuotationItem.objects.filter(Q(need_local_price_inquiry=True))
-        #     elif q == 'foreign':
-        #         quotations_record_lst = QuotationItem.objects.filter(Q(need_foreign_price_inquiry=True))
-        #     else:
-        #         if self.request.user.is_superuser:
-        #             quotation_qry = QuotationItem.objects.filter(
-        #                 Q(need_foreign_price_inquiry=True) | Q(need_local_price_inquiry=True)
-        #             ).query
-        #             quotation_qry.order_by = ['quotation']
-        #             quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-        #         elif 'trade_user' in user_groups_name:
-        #             quotations_record_lst = QuotationItem.objects.filter(Q(need_foreign_price_inquiry=True)
-        #             )
-        #         elif 'bazar_user' in user_groups_name:
-        #             quotations_record_lst = QuotationItem.objects.filter(Q(need_local_price_inquiry=True)
-        #             )
-        #         else:
-        #             quotations_record_lst = []
-
-        # else:
-        if q == 'local':
-            quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
-                                                                 Q(need_local_price_inquiry=False) |
-                                                                 Q(local_price_inquiry_done=False) &
-                                                                 Q(need_local_price_inquiry=True)
-                                                                 )
-        elif q == 'foreign':
-            quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
-                                                                 Q(need_foreign_price_inquiry=False) |
-                                                                 Q(foreign_price_inquiry_done=False) &
-                                                                 Q(need_foreign_price_inquiry=True))
-        else:
-            if self.request.user.is_superuser:
-                quotation_qry = QuotationItem.objects.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                ).query
-                quotation_qry.order_by = ['quotation']
-                quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-            elif 'trade_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-                )
-            elif 'bazar_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
-            else:
-                quotations_record_lst = []
-
-
-
-            quotation = request.GET.get('quotation')
-            from_time = request.GET.get('from_time')
-            to_time = request.GET.get('to_time')
-            customer_code = request.GET.get('customer_code')
-
-            if quotation:
-                quotations_record_lst = quotations_record_lst.filter(quotation__pk=quotation)
-            elif customer_code:
-                quotations_record_lst = quotations_record_lst.filter(quotation__customer_code=customer_code)
-            elif from_time and to_time:
-                    quotations_record_lst = quotations_record_lst.filter(created_date__gte=from_time, created_date__lte=to_time)
-
-
-
-
-        # for q in Quotation.objects.all():
-        #     qi = q.quotation.filter(Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-        #                                  Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-        #                                  Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-        #                                  Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True))
-        #     if qi:
-        #         quotations_record_lst.append(qi)
-
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
         forms = list()
         form_list = list()
 
-        quotations_record_lst = Quotation.quotation_pending(self.request.user)
+        quotation = request.GET.get('quotation')
+        # from_time = request.GET.get('from_time')
+        # to_time = request.GET.get('to_time')
+        customer_code = request.GET.get('customer_code')
+        my_quotations = request.GET.get('my_quotations')
+
+        if quotation:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
+        elif customer_code:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
+
+        elif self.request.GET.get('choice') == 'my_quotations':
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user})
+        # elif from_time and to_time:
+        #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
+        else:
+            quotations_record_lst = Quotation.quotation_pending(self.request)
+
+
         for qi_qs in quotations_record_lst:
             for qi in qi_qs:
                 form = QuotationItemForm2(instance=qi, initial={
@@ -519,10 +446,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 forms.append(form)
             form_list.append(forms)
             forms = []
-        # if self.request.META['PATH_INFO'] == '/micmod_base/quotationitem/past/quotationitems':
-        #     quotations_record_lst = QuotationItem.objects.filter(
-        #                     Q(need_local_price_inquiry=True) | Q(need_foreign_price_inquiry=True)
-        #                 )
 
         context['forms'] = form_list
         form_filter = PendingFormFilter()
@@ -551,135 +474,3 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj.save()
 
         return redirect(reverse('sls:quotationitem.form.pending'))
-
-
-class PastQuotationsItemView(LoginRequiredMixin, View):
-    form_struct = {
-        'form': QuotationItemForm2,
-        'childes': [
-            {
-                'form': InquiryResultForm,
-                'childes': [{}]
-            },
-        ]
-    }
-    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json',
-                                       'QuotationItemsFormPendingView')
-
-    def get(self, request):
-        quotations_record_lst = QuotationItem.objects.none()
-        user_groups_name = self.request.user.groups.values_list('name', flat=True)
-        q = self.request.GET.get('q')
-        # if q == 'local' or q == 'foreign':
-        quotations_record_lst = QuotationItem.objects.filter(
-            Q(need_local_price_inquiry=True) | Q(need_foreign_price_inquiry=True)
-        )
-        # else:
-        #     quotations_record_lst = QuotationItem.objects.none()
-
-        quotation = request.GET.get('quotation')
-        from_time = request.GET.get('from_time')
-        to_time = request.GET.get('to_time')
-        customer_code = request.GET.get('customer_code')
-
-        if quotation:
-            quotations_record_lst = quotations_record_lst.filter(quotation__pk=quotation)
-        elif customer_code:
-            quotations_record_lst = quotations_record_lst.filter(quotation__customer_code=customer_code)
-        elif from_time and to_time:
-            quotations_record_lst = quotations_record_lst.filter(created_date__gte=from_time, created_date__lte=to_time)
-
-        q = self.request.GET.get('q')
-        # quotations_record_lst = QuotationItem.objects.none()
-        # if request.META['PATH_INFO'] == '/micmod_base/quotationitem/list/form/pending/':
-        if q == 'local':
-            quotations_record_lst = QuotationItem.objects.filter(Q(local_price_inquiry_done=True) &
-                                                                 Q(need_local_price_inquiry=False) |
-                                                                 Q(local_price_inquiry_done=False) &
-                                                                 Q(need_local_price_inquiry=True)
-                                                                 )
-        elif q == 'foreign':
-            quotations_record_lst = QuotationItem.objects.filter(Q(foreign_price_inquiry_done=True) &
-                                                                 Q(need_foreign_price_inquiry=False) |
-                                                                 Q(foreign_price_inquiry_done=False) &
-                                                                 Q(need_foreign_price_inquiry=True))
-        else:
-            if self.request.user.is_superuser:
-                quotation_qry = QuotationItem.objects.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) |
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                ).query
-                quotation_qry.order_by = ['quotation']
-                quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-            elif 'trade_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(
-                    Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) |
-                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-                )
-            elif 'bazar_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(
-                    Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
-                    Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-                )
-            else:
-                quotations_record_lst = []
-
-        if q == 'local':
-            quotations_record_lst = QuotationItem.objects.filter(Q(need_local_price_inquiry=True))
-        elif q == 'foreign':
-            quotations_record_lst = QuotationItem.objects.filter(Q(need_foreign_price_inquiry=True))
-        else:
-            if self.request.user.is_superuser:
-                quotation_qry = QuotationItem.objects.filter(
-                    Q(need_foreign_price_inquiry=True) | Q(need_local_price_inquiry=True)
-                ).query
-                quotation_qry.order_by = ['quotation']
-                quotations_record_lst = QuerySet(query=quotation_qry, model=QuotationItem)
-            elif 'trade_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(Q(need_foreign_price_inquiry=True)
-                                                                     )
-            elif 'bazar_user' in user_groups_name:
-                quotations_record_lst = QuotationItem.objects.filter(Q(need_local_price_inquiry=True)
-                                                                     )
-            else:
-                quotations_record_lst = []
-
-        context = dict()
-        context['heading'] = _("quotation")
-        context['pageview'] = _("micmod_base")
-        forms = list()
-        form_list = list()
-        for qi in quotations_record_lst:
-            form = QuotationItemForm2(instance=qi, initial={
-                "constraint": {
-                    "wf_access": True,
-                    'form_state': 0,
-                    'request': self.request,
-                    'form_constraint': self.flow_config.get('flow_form_constraint'),
-                    'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                }
-            })
-            form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
-            form.enable = False
-            # for qi in queryset:
-            #     form = QuotationItemForm2(instance=qi, initial={
-            #                                           "constraint": {
-            #                                               "wf_access": True,
-            #                                               'form_state': 0,
-            #                                               'request': self.request,
-            #                                               'form_constraint': self.flow_config.get('flow_form_constraint'),
-            #                                               'formset_constraint': self.flow_config.get('flow_formset_constraint')
-            #                                               }
-            #                                       })
-            #     form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
-            #     form.enable = False
-            form_list.append(form)
-            # forms.append(form_list)
-            # form_list = []
-        context['forms'] = form_list
-        form_filter = PendingFormFilter()
-        context['form_filter'] = form_filter
-
-        return render(request, 'micmod-base/quotation/past_quotationitems.html', context)
