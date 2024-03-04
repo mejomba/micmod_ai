@@ -66,7 +66,7 @@ class Quotation(SLSDoc):
     official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
-    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='sale_type')
+    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
 
