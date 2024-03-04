@@ -113,7 +113,7 @@ class PriceInquiryResult(BaseModel):
     @property
     def bazar_price(self):
         if self.inquiry_type.base_group == 'bazar':
-            payment_method = self.custom_properties['payment_method_'] or ''
+            payment_method = (self.custom_properties['payment_method_'] or '').lower()
             discount = 0.05
             if payment_method == 'cash':
                 discount = 0.07

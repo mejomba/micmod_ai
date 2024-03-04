@@ -904,7 +904,7 @@ def get_price_list(request, *args, **kwargs):
         if item.price and item.price.rmb_final_price:
             price = item.price.rmb_final_price
             price['sku'] = int(item.sku)
-            price['is_sea_default'] = int(item.is_sea_default)
+            price['is_sea_default'] = item.is_sea_default
             prices.append(price)
             if not y_rate:
                 y_rate = item.price.price_settings.free_rmb_rate
