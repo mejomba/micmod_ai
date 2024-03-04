@@ -16,11 +16,6 @@ class Migration(migrations.Migration):
             name='sepidar_id',
             field=models.IntegerField(blank=True, null=True, verbose_name='sepidar_id'),
         ),
-        migrations.AddField(
-            model_name='quotation',
-            name='sale_type',
-            field=models.ForeignKey(default=2, on_delete=django.db.models.deletion.DO_NOTHING, related_name='sale_type', to='micmod_base.saletype'),
-        ),
         migrations.AlterField(
             model_name='saletype',
             name='currency',

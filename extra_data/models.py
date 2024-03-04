@@ -314,7 +314,7 @@ class Item(BaseModel):
     technical_confirm = models.BooleanField(verbose_name=_('technical_confirm'), default=False)
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
-    is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False ,blank=True, null=True)
+    is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     objects = BaseManager(is_public=True)
 
     @property

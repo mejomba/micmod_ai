@@ -1,12 +1,12 @@
 import datetime
+import threading
 
-from django.contrib.contenttypes.models import ContentType
+from celery import shared_task
+from channels.db import database_sync_to_async
 from django.core.cache import cache
 from django.conf import settings
 from django.forms import inlineformset_factory
-from django import forms
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic
@@ -19,8 +19,6 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 from django.db.models import Min, IntegerField, F
 from django.db.models.functions import Cast
 
-from files.models import Image
-# from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
@@ -903,7 +901,18 @@ class AjaxInquiryResultListData(View):
 #         form = PriceInquiryResult2CreateForm(instance=obj)
 #         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
 
+@database_sync_to_async
 def get_price_list(request, *args, **kwargs):
+
+    count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
+    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    sub_thread = threading.Thread(target=__update_price_list.apply_async)
+    sub_thread.start()
+    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
+
+
+@shared_task
+def __update_price_list():
     prices = []
     y_rate = None
     chash_rial = None
@@ -941,5 +950,3 @@ def get_price_list(request, *args, **kwargs):
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
-
-    return JsonResponse({'result': f'price updated at: {update_time}', 'price_count': prices.__len__()})
