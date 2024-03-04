@@ -37,6 +37,9 @@ class SaleType(AbsBaseModel):
     currency = models.ForeignKey(Currency,verbose_name=_('currency'),on_delete=models.DO_NOTHING, related_name='sale_types')
     extra_percentage = models.IntegerField(verbose_name=_('extra_percentage'), default=0)
 
+    def __str__(self):
+        return f'{self.title}'
+
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
     customer_party_id = models.IntegerField(verbose_name=_('party_id'), null=True, blank=True)
@@ -63,7 +66,7 @@ class Quotation(SLSDoc):
     official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
-    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='sale_type', default=2)
+    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='sale_type')
 
     custom_objects = QuotationManager()
 

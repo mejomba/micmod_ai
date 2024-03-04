@@ -29,7 +29,7 @@ class QuotationForm(CustomBaseModelForm):
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
-                  "is_official", "official_value", 'cancel', 'force_inquiry']
+                  "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -110,6 +110,9 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['payment_method'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['is_official'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['official_value'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_prices()'
         # self.fields['customer_code'].widget.attrs['onchange'] = 'refresh_prices()'
 
 

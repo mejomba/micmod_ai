@@ -897,6 +897,7 @@ function calculate_price(target) {
     const isOfficialValue = document.querySelector('#id_official_value')
     let isOfficialValue_number = 0
     let tax = 0;
+    let taxValue = 0
     let totalDiscount = 0
     if (isOfficial && isOfficial.checked){
         tax = 9
@@ -914,8 +915,17 @@ function calculate_price(target) {
     if (isNaN(price)) {
         price = final_price.value
     }
-    totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
-    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
+    debugger
+    // totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
+    // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
+    totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100)
+    if (tax){
+        taxValue = ((price * qty) - totalDiscount) * tax/100
+    } else {
+        taxValue = 0
+    }
+
+    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0
@@ -929,9 +939,14 @@ function calculate_price(target) {
         m_sum = 0
     }
     const t_prices = $(document).find('.quotation_total_price')
+    const additionElm = document.querySelector('#id_addition')
+    const taxElm = document.querySelector('#id_tax')
+    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
+    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
     for (let i = 0; i < t_prices.length; i++) {
-        t_prices[i].innerHTML = numberWithCommas(m_sum, 0).toString()
+        t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
     }
+
 }
 
 function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null, PMDisY = null, PMDisR = null) {
