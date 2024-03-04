@@ -13,7 +13,7 @@ from tools.utils import show_error
 
 from translator import get_text as _
 # Create your models here.
-from .base import SLSDoc, CustomerGrade, DeliveryTime, PaymentMethod, MarketGrade, BaseModel, PriceMethod
+from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 
 
 class QuotationManager(models.Manager):
@@ -24,6 +24,18 @@ class QuotationManager(models.Manager):
         else:
             return self.filter(creator_user=request.user)
 
+
+class Month(AbsBaseModel):
+    title = models.CharField(verbose_name=_('title'), max_length=20)
+    month = models.IntegerField(verbose_name=_('number'), default=0)
+
+
+class SaleType(AbsBaseModel):
+    number = models.IntegerField(verbose_name=_('number'))
+    title = models.CharField(verbose_name=_('title'), max_length=20)
+    month = models.ForeignKey(Month,verbose_name=_('month'), on_delete=models.DO_NOTHING, related_name='sale_types')
+    currency = models.ForeignKey(Currency,verbose_name=_('currency'),on_delete=models.DO_NOTHING, related_name='sale_types')
+    extra_percentage = models.IntegerField(verbose_name=_('extra_percentage'), default=0)
 
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
@@ -51,6 +63,7 @@ class Quotation(SLSDoc):
     official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
+    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='sale_type', default=2)
 
     custom_objects = QuotationManager()
 
@@ -283,3 +296,4 @@ class QuotationItem(BaseModel):
 
     class Meta:
         ordering = ['id']
+

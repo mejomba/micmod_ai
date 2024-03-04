@@ -184,7 +184,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'SecondaryQuantity': 0,
                         'Fee': qi.fee or 1,
                         'Price': qi.price or 1,
-                        'Description': 'qi.description',
+                        'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
                         'PriceInfoDiscountRate': 0,
                         'AggregateAmountPercentDiscount': 0,
@@ -200,20 +200,21 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     }
                     quotation_items.append(qi_dict)
                 #
+                q = Quotation()
                 quotation_data = {
                     'GUID': str(self.object.guid),
                     'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 1,
+                    'Rate': self.object.sale_type.currency.current_rate(),
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
-                    'SaleTypeRef': 2,
+                    'SaleTypeRef': self,
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': 0,
+                    'Discount': self.object.self_discount,
                     'Tax': self.object.tax_amount,
                     'Duty': self.object.duty_amount,
-                    'Addition': 0,
+                    'Addition': self.object.addition,
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
