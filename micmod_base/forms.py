@@ -577,18 +577,24 @@ QuotationItemFormset = inlineformset_factory(
 
 class PendingFormFilter(CustomBaseForm):
     from django.db.models.fields import BLANK_CHOICE_DASH
-    CHOOSE_CHOICES = [('time', _('time')), ('quotation', _('quotation')), ('customer_code', _('customer_code'))]
+    CHOOSE_CHOICES = [
+                      # ('time', _('time')),
+                      ('my_quotations', _('my_quotations')),
+                      ('quotation', _('quotation')),
+                      ('customer_code', _('customer_code'))]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
-    from_time = forms.DateTimeField(required=False, widget=AdminJalaliDateWidget)
-    to_time = forms.DateTimeField(required=False, widget=AdminJalaliDateWidget)
+    # from_time = forms.DateTimeField(required=False)
+    # to_time = forms.DateTimeField(required=False)
     quotation = forms.IntegerField(required=False)
     customer_code = forms.IntegerField(required=False)
+    my_quotations = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
         self.fields['choice'].widget.attrs.update()
-        self.fields['from_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('from_time')})
-        self.fields['to_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('to_time')})
-        self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation number')})
-        self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer code')})
+        # self.fields['from_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('from_time')})
+        # self.fields['to_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('to_time')})
+        self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation')})
+        self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
+        self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
 
