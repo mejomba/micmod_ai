@@ -33,8 +33,9 @@
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
             {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}
+            {% render_field_by_order form form.is_sea_default label='on-border' margin_b=6 %}
             {% if flow_state_index >= 1 %}
-                {% render_field_by_order form  form.technical_confirm %}
+                {% render_field_by_order form  form.technical_confirm margin_b=6 %}
             {% endif %}
         </div>
     {% endblock %}
