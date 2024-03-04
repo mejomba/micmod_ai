@@ -74,18 +74,9 @@
             let q, url;
             url = new URL(window.location);
             q = url.searchParams.get("sku");
-
-
-            {#$('#id_sku').on("select2:select", function (e) {#}
-            {#    const skuSearch = document.querySelector('.sku-search>input')#}
-            {#    const skuss = document.querySelector('input')#}
-            {#    debugger#}
-            {#    skuSearch.value = e.target.options[e.target.selectedIndex].text;#}
-            {##}
-            {#    var event = new Event('change');#}
-            {#    skuSearch.dispatchEvent(event);#}
-            {##}
-            {#    })#}
+            debugger
+            let x = document.createElement('small')
+            document.getElementById('id_sku_c').parentElement.appendChild(x.appendChild(document.createTextNode(` نام کالا: {{ form.instance.sku.part_number }}`)))
 
             const id_sku_c = $('#id_sku_c')
             id_sku_c.on("input", function (e) {

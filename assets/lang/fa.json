@@ -512,6 +512,9 @@
     "currency_type": "واحد پولی",
     "weight": "وزن",
     "assigned_trade_user": "تخصیص به کاربر بازرگانی",
+    "assigned_trade_user2": "تخصیص به کاربر بازرگانی ۲",
+    "task_start": "شروع کار",
+    "task_start2": "شروع کار۲",
     "lead time": "زمان تامین",
     "bazar_price": "قیمت بازار",
     "price_update_date": "تاریخ ویرایش قیمت"

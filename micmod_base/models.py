@@ -186,7 +186,12 @@ class QuotationItem(BaseModel):
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
-    assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING)
+    assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
+    assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
+    task_start = models.BooleanField(verbose_name=_('task_start'), default=False)
+    task_start2 = models.BooleanField(verbose_name=_('task_start2'), default=False)
+    task_start_date = models.DateTimeField(verbose_name=_('task_start_date'), null=True, blank=True)
+    task_start_date2 = models.DateTimeField(verbose_name=_('task_start_date2'), null=True, blank=True)
 
     @classmethod
     def active(cls, user):
