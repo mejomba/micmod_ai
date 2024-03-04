@@ -186,8 +186,7 @@ class BaseModelAuto:
                 app_label, form_name = item.get("form").split(".")
                 form_module = importlib.import_module(f'{app_label}.forms')
                 form = getattr(form_module, form_name, None)
-                if form and getattr(form, "._meta"):
-                    model = form._meta.model
+                model = getattr(form, "._meta", None)
             elif item.get('model'):
                 if instance and item.get("model") == "this":
                     model = instance._meta.model
@@ -195,7 +194,9 @@ class BaseModelAuto:
                     app_label, model_name = item.get("model").split(".")
                     model_module = importlib.import_module(f'{app_label}.models')
                     model = getattr(model_module, model_name, None)
-                form = model.get_form()
+                if not instance:
+                    instance = model()
+                form = instance.get_form()
             # update instance data of form
             if method == "GET" and getattr(form, "_meta", None):
                 if relation_field:
