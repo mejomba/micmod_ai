@@ -666,6 +666,14 @@ def get_item(request):
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
                     if price_inquiry_result_bazar:
+                        price_setting = price_inquiry_result_bazar.price_settings
+                        price_inquiry_result_bazar.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
@@ -747,6 +755,14 @@ def get_items(request):
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
                     if price_inquiry_result_bazar:
+                        price_setting = price_inquiry_result_bazar.price_settings
+                        price_inquiry_result_bazar.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
