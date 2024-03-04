@@ -907,9 +907,9 @@ def get_price_list(request, *args, **kwargs):
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
     sub_thread = threading.Thread(target=update_price_list.apply_async)
     sub_thread.start()
-    update_price_list.delay()
-    from tlg.task import add_new_order_receiver
-    add_new_order_receiver.delay()
+    # update_price_list.delay()
+    # from tlg.task import add_new_order_receiver
+    # add_new_order_receiver.delay()
     return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
 
 
