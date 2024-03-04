@@ -6,6 +6,7 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
+    {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
 {% block content %}
 {#{% include 'partials/formset_header_buttons.html' %}#}
 
