@@ -913,6 +913,7 @@ def get_price_list(request, *args, **kwargs):
 
 @shared_task
 def __update_price_list():
+    print('task_started')
     prices = []
     y_rate = None
     chash_rial = None
