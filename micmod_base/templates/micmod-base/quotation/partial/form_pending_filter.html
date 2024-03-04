@@ -2,55 +2,71 @@
 <form method="get">
     <div class="d-flex mx-2">
 {#    {% render_field_group form_filter.choice form_filter.time form_filter.quotation form_filter.customer_code %}#}
-    <div class="w-25">{{ form_filter.choice }}</div>
+    <div class="mx-3 p-3 bx-font-color">فیلتر </div>
+    <div class="w-25 mb-3">{{ form_filter.choice }}</div>
     <div class="w-25">
-    {{ form_filter.from_time }}{{ form_filter.to_time }}
+{#    {{ form_filter.from_time }}{{ form_filter.to_time }}#}
+    {{ form_filter.my_quotations }}
     {{ form_filter.quotation }}
     {{ form_filter.customer_code }}
     </div>
-        <button id="id_btn" type="submit" class="btn btn-danger d-none">تایید</button>
+        <button id="id_btn" type="submit" class="btn btn-danger d-none mb-3">تایید</button>
     </div>
 </form>
 
 
 <script>
     const choice = document.querySelector("#id_choice")
-    const from_time = document.querySelector("#id_from_time")
-    const to_time = document.querySelector("#id_to_time")
+    {#const from_time = document.querySelector("#id_from_time")#}
+    {#const to_time = document.querySelector("#id_to_time")#}
     const quotation = document.querySelector("#id_quotation")
     const customer_code = document.querySelector("#id_customer_code")
     const btn = document.querySelector("#id_btn")
+    const my_quotations = document.querySelector("#id_my_quotations")
+
 
     choice.addEventListener("change", function (event){
         debugger
-        if (event.currentTarget.value === "time") {
-            from_time.classList.remove('d-none')
-            to_time.classList.remove('d-none')
-            btn.classList.remove("d-none")
-            quotation.classList.add('d-none')
-            customer_code.classList.add('d-none')
-        }
-        else if (event.currentTarget.value === "quotation") {
+        {#if (event.currentTarget.value === "time") {#}
+        {#    from_time.classList.remove('d-none')#}
+        {#    to_time.classList.remove('d-none')#}
+        {#    btn.classList.remove("d-none")#}
+        {#    quotation.classList.add('d-none')#}
+        {#    customer_code.classList.add('d-none')#}
+        //}
+        if (event.currentTarget.value === "quotation") {
+            quotation.parentElement.classList.remove('d-none')
             quotation.classList.remove('d-none')
             btn.classList.remove('d-none')
-            from_time.classList.add('d-none')
-            to_time.classList.add('d-none')
+            {#from_time.classList.add('d-none')#}
+            {#to_time.classList.add('d-none')#}
             customer_code.classList.add('d-none')
+            my_quotations.classList.add('d-none')
         }
         else if (event.currentTarget.value === "customer_code") {
+            customer_code.parentElement.classList.remove('d-none')
             customer_code.classList.remove('d-none')
             btn.classList.remove('d-none')
             quotation.classList.add('d-none')
-            from_time.classList.add('d-none')
-            to_time.classList.add('d-none')
+            {#from_time.classList.add('d-none')#}
+            {#to_time.classList.add('d-none')#}
+            my_quotations.classList.add('d-none')
+
+        }
+        else if (event.currentTarget.value === "my_quotations"){
+            my_quotations.parentElement.classList.add('d-none')
+            btn.classList.remove('d-none')
+            customer_code.classList.add('d-none')
+            quotation.classList.add('d-none')
         }
         else {
             debugger
-            to_time.classList.add('d-none')
-            from_time.classList.add('d-none')
+            {#to_time.classList.add('d-none')#}
+            {#from_time.classList.add('d-none')#}
             quotation.classList.add('d-none')
             customer_code.classList.add('d-none')
             btn.classList.add('d-none')
+            my_quotations.classList.add('d-none')
         }
 
     })
