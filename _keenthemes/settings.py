@@ -99,7 +99,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'celery',
     'werkzeug_debugger_runserver',
-    # 'django_celery_beat',
+    'django_celery_beat',
     'el_pagination',
     'sekizai',
     'sslserver'

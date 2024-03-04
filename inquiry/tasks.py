@@ -1,13 +1,17 @@
 import datetime
 
 from celery import shared_task
+from django.core.cache import cache
 
 from extra_data.models import Item
 from tools.google_sheet import GSheet
 
-
 @shared_task
 def update_price_list():
+    if cache.get('task_is_running'):
+        print('task is running')
+        return
+    cache.set('task_is_running', True, 2000)
     print('task_started')
     prices = []
     y_rate = None
@@ -47,3 +51,4 @@ def update_price_list():
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
+    cache.set('task_is_running', False, 100)
