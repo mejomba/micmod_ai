@@ -943,6 +943,7 @@ def __update_price_list():
     g_sheet.clear_rows('portal_prices')
     g_sheet.update_rows('portal_prices', prices, 2)
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    print(f'task done at:{update_time}')
     g_sheet.wb.worksheet('portal_prices').update_cell(1, 7, update_time)
     g_sheet.wb.worksheet('portal_prices').update_cell(1, 9, y_rate)
     g_sheet.wb.worksheet('portal_prices').update_cell(2, 10, grade_a)
