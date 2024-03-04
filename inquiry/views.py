@@ -902,7 +902,9 @@ class AjaxInquiryResultListData(View):
 
 
 def get_price_list(request, *args, **kwargs):
-
+    if cache.get('task_is_running'):
+        print('task is running')
+        return JsonResponse({'result': f'task_is running'})
     count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
     sub_thread = threading.Thread(target=update_price_list.apply_async)
