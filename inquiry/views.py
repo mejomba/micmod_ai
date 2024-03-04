@@ -906,10 +906,10 @@ def get_price_list(request, *args, **kwargs):
 
     count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
     update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
-    # sub_thread = threading.Thread(target=__update_price_list.apply_async)
-    # sub_thread.start()
+    sub_thread = threading.Thread(target=__update_price_list.apply_async)
+    sub_thread.start()
     __update_price_list.delay()
-    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count})
+    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
 
 
 @shared_task
