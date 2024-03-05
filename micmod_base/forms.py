@@ -29,7 +29,7 @@ class QuotationForm(CustomBaseModelForm):
         fields = ["title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
-                  "is_official", "official_value", 'cancel', 'force_inquiry']
+                  "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -110,6 +110,9 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['payment_method'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['is_official'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['official_value'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_prices()'
         # self.fields['customer_code'].widget.attrs['onchange'] = 'refresh_prices()'
 
 
@@ -345,6 +348,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         try:
             x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
             self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
+            self.fields['assigned_trade_user2'].queryset = x.distinct() if x else None
         except Exception as e:
             pass
 
@@ -360,7 +364,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
-                  'assigned_trade_user', 'lead_time'
+                  'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
+                  'task_start_date', 'task_start_date2'
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {

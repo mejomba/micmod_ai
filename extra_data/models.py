@@ -192,7 +192,7 @@ class PriceSettings(AbsBaseModel):
         for line in self.discount_based_quantity:
             if float(quantity) <= line['value']:
                 return line['percentage']
-        return self.discount_based_price[-2]['percentage']
+        return self.discount_based_quantity[-1]['percentage']
 
     def get_discount_based_customer(self, grade):
         for line in self.discount_based_customer:
@@ -314,6 +314,7 @@ class Item(BaseModel):
     technical_confirm = models.BooleanField(verbose_name=_('technical_confirm'), default=False)
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
+    is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     objects = BaseManager(is_public=True)
 
     @property

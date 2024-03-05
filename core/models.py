@@ -1,3 +1,4 @@
+import importlib
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -5,6 +6,8 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import json
+
+from django.forms import fields_for_model
 
 # from comments.models import Comments
 from files.models import File, Image
@@ -117,8 +120,128 @@ class BaseManager(models.Manager):
         return quotations_record_lst
 
 
+class BaseModelAuto:
 
-class NoUserBaseModel(models.Model):
+    def __init__(self,*args,**kwargs):
+        self.base_fields = None
+        self.form_structure = None
+        self.form = None
+        self._fields = None
+        self.safe_delete = True
+        self.excluded_keys = list()
+        self.template_name_list = ''
+
+    def get_base_fields(self):
+        if self.base_fields:
+            return self.base_fields
+        else:
+            self.base_fields = [field.name for field in self._meta.fields if field.editable and not field.primary_key]
+            return self.base_fields
+
+    @classmethod
+    def get_fields(cls, fields=None):
+        if fields is None:
+            fields = []
+        if not cls._fields:
+            cls._fields = fields_for_model(cls, cls.get_base_fields())
+        result = dict()
+        for field in fields:
+            result[field] = cls._fields.get(field)
+        return result
+
+    def get_form(self, *args, **kwargs):
+        if self.form:
+            return self.form
+        else:
+            self.form = importlib.import_module(f'core.forms').CustomBaseModelFormAuto  # (model=cls, *args, **kwargs)
+            return self.form
+
+    def get_view_forms(self, request, *args, **kwargs):
+        form_structure = self.get_form_structure()
+        if request.META['REQUEST_METHOD'] == 'POST':
+            kwargs['data'] = request.POST
+        else:
+            data = request.GET
+            for key, value in data.items():
+                if getattr(self, key, 'NUN') != 'NUN':
+                    setattr(self, key, value)
+        kwargs['instance'] = self
+        form = self.__get_view_forms(form_structure, request, *args, **kwargs)
+        if form:
+            return form[0]
+
+    def __get_view_forms(self,form_structure, request, *args, **kwargs):
+        forms = list()
+        method = request.META['REQUEST_METHOD']
+        instance = kwargs.get("instance")
+        prefix = kwargs.get("prefix")
+        # get child forms based form_structure
+        for item in form_structure:
+            form = None
+            extra_prefix = (item.get("form") or item.get("model") or '').replace('.', "_")
+            relation_field = item.get("rel")
+            kwargs['prefix'] = f"{prefix + '_' if prefix else ''}{extra_prefix}"
+            # get form based form_structure
+            if item.get("form"):
+                app_label, form_name = item.get("form").split(".")
+                form_module = importlib.import_module(f'{app_label}.forms')
+                form = getattr(form_module, form_name, None)
+                model = getattr(form, "._meta", None)
+            elif item.get('model'):
+                if instance and item.get("model") == "this":
+                    model = instance._meta.model
+                else:
+                    app_label, model_name = item.get("model").split(".")
+                    model_module = importlib.import_module(f'{app_label}.models')
+                    model = getattr(model_module, model_name, None)
+                if not instance:
+                    instance = model()
+                form = instance.get_form()
+            # update instance data of form
+            if method == "GET" and getattr(form, "_meta", None):
+                if relation_field:
+                    form_instance = model.objects.filter(**{relation_field: instance}).first() or model()
+                else:
+                    form_instance = instance or model() if model else None
+                if form_instance and item.get("clone"):
+                    for key in item.get("clone"):
+                        value = getattr(instance, key, None)
+                        if value and getattr(form_instance, key, None):
+                            setattr(form_instance, key, value)
+                kwargs['instance'] = form_instance
+                form = form(model=model, fields=item.get("fields"), *args, **kwargs)
+            elif method == "POST":
+                if relation_field:
+                    kwargs['data']._mutable = True
+                    kwargs['data'][f"{kwargs['prefix']}-{relation_field}"] = str(instance.pk)
+                    kwargs['data']._mutable = False
+                    kwargs['instance'] = model.objects.filter(**{relation_field: instance}).first()
+                form = form(model=model, fields=item.get("fields"), *args, **kwargs)
+            form.instance.extra_data.request = request
+            if relation_field:
+                form.change_hidden([relation_field])
+            if item.get("forms"):
+                form.forms = self.__get_view_forms(item.get("forms"), request, *args, **kwargs)
+            forms.append(form)
+
+        return forms
+
+    def pre_process_on_get_method(self, data=None):
+        ...
+
+    def pre_process_on_post_method(self, data=None):
+        ...
+
+    def get_form_structure(self):
+        if self.form_structure:
+            return self.form_structure
+        else:
+            return [
+                {"model": "this", }
+            ]
+
+
+class NoUserBaseModel(models.Model, BaseModelAuto):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data = ExtraData()

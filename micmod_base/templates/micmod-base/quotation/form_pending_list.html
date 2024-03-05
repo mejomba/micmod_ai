@@ -30,8 +30,17 @@
                     <span class="me-2">تاریخ انقضا:</span>
                     <span>{{ form_list.0.instance.quotation.expiration_date }}</span>
                 </div>
+                <div class="col">
+                    <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_list.0.instance.quotation.pk %}" target="_blank">
+                        مشاهده پیش فاکتور
+                        {{ form_list.0.instance.quotation.pk }}
+                    </a>
+                </div>
                 <div>
-                    <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_list.0.instance.quotation.pk %}" target="_blank">مشاهده پیش فاکتور</a>
+
+                    {% if form_list.0.instance.quotation.force_inquiry %}
+                        <span class="p-3 bg-danger"></span>
+                    {% endif %}
                 </div>
             </div>
         <!--end header-->

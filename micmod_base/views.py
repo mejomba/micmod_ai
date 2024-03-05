@@ -3,6 +3,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, QuerySet
+from django.utils import timezone
 
 from comments.forms import CommentsForm
 from inquiry.models import InquiryResult
@@ -185,7 +186,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'SecondaryQuantity': 0,
                         'Fee': qi.fee or 1,
                         'Price': qi.price or 1,
-                        'Description': 'qi.description',
+                        'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
                         'PriceInfoDiscountRate': 0,
                         'AggregateAmountPercentDiscount': 0,
@@ -201,20 +202,21 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     }
                     quotation_items.append(qi_dict)
                 #
+                q = Quotation()
                 quotation_data = {
                     'GUID': str(self.object.guid),
-                    'CurrencyRef': self.object.currency_ref.pk,
-                    'Rate': 1,
+                    'CurrencyRef': self.object.sale_type.currency_ref.sepidar_id or 1,
+                    'Rate': self.object.sale_type.currency_ref.current_rate() or 1,
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id,  # 11
-                    'SaleTypeRef': 2,
+                    'SaleTypeRef': self,
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': 0,
+                    'Discount': self.object.self_discount,
                     'Tax': self.object.tax_amount,
                     'Duty': self.object.duty_amount,
-                    'Addition': 0,
+                    'Addition': self.object.addition,
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
@@ -455,16 +457,37 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
 
     def post(self, request):
         if obj_pk := self.request.POST.get('obj_pk'):
+            obj_qs = QuotationItem.objects.filter(pk=obj_pk)
             obj = QuotationItem.objects.filter(pk=obj_pk).first()
+            user_pk = request.POST.get('assigned_trade_user')
+            user_pk2 = request.POST.get('assigned_trade_user2')
+            task_start = self.request.POST.get('task_start')
+            task_start2 = self.request.POST.get('task_start2')
+
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
-            user_pk = request.POST.get('assigned_trade_user')
-            assigned_trade_user = get_user_model().objects.filter(pk=user_pk).first() if user_pk else None
-            obj.lead_time = request.POST.get('lead_time')
-            obj.assigned_trade_user = assigned_trade_user
-            obj.save()
+
+            data = {
+                'assigned_trade_user': get_user_model().objects.filter(pk=user_pk).first() if user_pk else None,
+                'assigned_trade_user2': get_user_model().objects.filter(pk=user_pk2).first() if user_pk2 else None,
+                'lead_time': request.POST.get('lead_time'),
+                'task_start': True if task_start else False,
+                'task_start2': True if task_start2 else False,
+                'task_start_date': timezone.now() if not obj.task_start_date else obj.task_start_date,
+                'task_start_date2': timezone.now() if not obj.task_start_date2 else obj.task_start_date2,
+            }
+            obj_qs.update(**data)
+
+            # user_pk = request.POST.get('assigned_trade_user')
+            # user_pk2 = request.POST.get('assigned_trade_user2')
+            # assigned_trade_user = get_user_model().objects.filter(pk=user_pk).first() if user_pk else None
+            # assigned_trade_user2 = get_user_model().objects.filter(pk=user_pk).first() if user_pk2 else None
+            # obj.lead_time = request.POST.get('lead_time')
+            # obj.assigned_trade_user = assigned_trade_user
+            # obj.assigned_trade_user2 = assigned_trade_user2
+            # obj.save()
             obj.save_comment(self.request)
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)

@@ -13,7 +13,7 @@ from tools.utils import show_error
 
 from translator import get_text as _
 # Create your models here.
-from .base import SLSDoc, CustomerGrade, DeliveryTime, PaymentMethod, MarketGrade, BaseModel, PriceMethod
+from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 
 
 class QuotationManager(models.Manager):
@@ -24,6 +24,21 @@ class QuotationManager(models.Manager):
         else:
             return self.filter(creator_user=request.user)
 
+
+class Month(AbsBaseModel):
+    title = models.CharField(verbose_name=_('title'), max_length=20)
+    month = models.IntegerField(verbose_name=_('number'), default=0)
+
+
+class SaleType(AbsBaseModel):
+    number = models.IntegerField(verbose_name=_('number'))
+    title = models.CharField(verbose_name=_('title'), max_length=20)
+    month = models.ForeignKey(Month,verbose_name=_('month'), on_delete=models.DO_NOTHING, related_name='sale_types')
+    currency = models.ForeignKey(Currency,verbose_name=_('currency'),on_delete=models.DO_NOTHING, related_name='sale_types')
+    extra_percentage = models.IntegerField(verbose_name=_('extra_percentage'), default=0)
+
+    def __str__(self):
+        return f'{self.title}'
 
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
@@ -51,6 +66,7 @@ class Quotation(SLSDoc):
     official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
+    sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
 
@@ -235,7 +251,12 @@ class QuotationItem(BaseModel):
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
-    assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING)
+    assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
+    assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
+    task_start = models.BooleanField(verbose_name=_('task_start'), default=False)
+    task_start2 = models.BooleanField(verbose_name=_('task_start2'), default=False)
+    task_start_date = models.DateTimeField(verbose_name=_('task_start_date'), null=True, blank=True)
+    task_start_date2 = models.DateTimeField(verbose_name=_('task_start_date2'), null=True, blank=True)
 
     @classmethod
     def active(cls, user):
@@ -316,3 +337,4 @@ class QuotationItem(BaseModel):
 
     class Meta:
         ordering = ['id']
+

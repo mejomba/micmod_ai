@@ -3,6 +3,7 @@ from datetime import datetime
 import math
 
 from django.db import models
+from tools.form_tools import select_cquery
 # Create your tests here.
 import os
 
@@ -80,10 +81,11 @@ def import_purchase_groups_from_sepidar(extra_data):
 
 def reset_seq(model):
     cursor = connection.cursor()
-    cursor.execute(f'select max(id) from {model._meta.db_table}')
+    cursor.execute(f'select max(id) from "{model._meta.db_table}"')
+    # max_id = select_cquery(f'select max(id) from "{model._meta.db_table}"','default')
     max_id = cursor.fetchall()
     max_id = max_id[0][0] if max_id else 0
-    cursor.execute(f'ALTER SEQUENCE {model._meta.db_table}_id_seq RESTART WITH {max_id + 1}')
+    cursor.execute(f'ALTER SEQUENCE "{model._meta.db_table}_id_seq" RESTART WITH {max_id + 1}')
 
 def import_sales_groups_from_sepidar(extra_data):
     items = SepItem.get_all_sales_groups()
@@ -159,8 +161,44 @@ def set_foreign_key(datas:list[dict],model:models.Model,key,search_field,convert
             data[key] = None
     return datas
 
+
+def update_sale_type_from_sheet():
+    from micmod_base.models import SaleType,Month,Currency
+    wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
+    datas = wb.read_sheet("sale_type")
+    datas = convert_data(datas, ['id','month','currency','extra_percentage'], [int])
+    datas = set_foreign_key(datas, Month, "month", "id", [int])
+    datas = set_foreign_key(datas, Currency, "currency", "id", [int])
+    update_model_based_excel(datas, SaleType, extra_data={}, update=False, truncate=True)
+    print('IMEI_imeilistreg')
+
+
+def update_imei_from_sheet():
+    from IMEI.models import IMEIListReg,IMEIListRegDetail,IMEINTSWReg,IMEINTSWRegDetail
+    wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
+    datas = wb.read_sheet("IMEI_imeilistreg")
+    update_model_based_excel(datas, IMEIListReg, extra_data={}, update=False, truncate=True)
+    print('IMEI_imeilistreg')
+    datas = wb.read_sheet("IMEI_imeilistregdetail")
+    datas = convert_data(datas, ['id','row','imei_list_reg'], [int])
+    datas = set_foreign_key(datas, IMEIListReg, "imei_list_reg", "id", [int])
+    update_model_based_excel(datas, IMEIListRegDetail, extra_data={}, update=False, truncate=True)
+    print('IMEI_imeilistregdetail')
+
+    datas = wb.read_sheet("IMEI_imeintswreg")
+    update_model_based_excel(datas, IMEINTSWReg, extra_data={}, update=False, truncate=True)
+    print('IMEI_imeintswreg')
+    datas = wb.read_sheet("IMEI_imeintswregdetail")
+    datas = convert_data(datas, ['id','row','imei_ntsw_reg'], [int])
+    datas = set_foreign_key(datas, IMEINTSWReg, "imei_ntsw_reg", "id", [int])
+    update_model_based_excel(datas, IMEINTSWRegDetail, extra_data={}, update=False, truncate=True)
+    print('IMEI_imeintswregdetail')
+
+
 # your imports, e.g. Django models
 if __name__ == '__main__':
+    update_sale_type_from_sheet()
+    update_imei_from_sheet()
     extra_data = {"creator_user_id": 1, "editor_user_id": 1}
     wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
     # print(extra_data)

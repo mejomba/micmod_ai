@@ -1,12 +1,10 @@
 import datetime
+import threading
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.conf import settings
 from django.forms import inlineformset_factory
-from django import forms
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic
@@ -19,13 +17,10 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 from django.db.models import Min, IntegerField, F
 from django.db.models.functions import Cast
 
-from files.models import Image
-# from tools.google_sheet import price_wb
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
-from tools.google_sheet import GSheet
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
@@ -35,6 +30,7 @@ from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list, c_get
 from tools.form_tools import get_choice_field, get_obj_from_dict
+from .tasks import update_price_list
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -666,6 +662,14 @@ def get_item(request):
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
                     if price_inquiry_result_bazar:
+                        price_setting = price_inquiry_result_bazar.price_settings
+                        price_inquiry_result_bazar.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
@@ -747,6 +751,14 @@ def get_items(request):
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
                     if price_inquiry_result_bazar:
+                        price_setting = price_inquiry_result_bazar.price_settings
+                        price_inquiry_result_bazar.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
@@ -887,24 +899,19 @@ class AjaxInquiryResultListData(View):
 #         form = PriceInquiryResult2CreateForm(instance=obj)
 #         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
 
-def get_price_list(request, *args, **kwargs):
-    prices = []
-    y_rate = None
-    items = Item.objects.all()
-    g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
-    print('gsheet created')
-    # i=0
-    for item in items:
-        if item.price and item.price.rmb_final_price:
-            price = item.price.rmb_final_price
-            price['sku'] = item.sku
-            prices.append(price)
-            if not y_rate:
-                y_rate = item.price.price_settings.free_rmb_rate
-    g_sheet.clear_rows('portal_prices')
-    g_sheet.update_rows('portal_prices', prices, 2)
-    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
-    g_sheet.wb.worksheet('portal_prices').update_cell(1, 6, update_time)
-    g_sheet.wb.worksheet('portal_prices').update_cell(1, 8, y_rate)
 
-    return JsonResponse({'result': f'price updated at: {update_time}', 'price_count': prices.__len__()})
+
+def get_price_list(request, *args, **kwargs):
+    if cache.get('task_is_running'):
+        print('task is running')
+        return JsonResponse({'result': f'task_is running'})
+    count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from inquiry_priceinquiryresult')[0].num
+    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    sub_thread = threading.Thread(target=update_price_list.apply_async)
+    sub_thread.start()
+    # update_price_list.delay()
+    # from tlg.task import add_new_order_receiver
+    # add_new_order_receiver.delay()
+    return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
+
+
