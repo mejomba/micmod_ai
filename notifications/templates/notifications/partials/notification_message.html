@@ -1,3 +1,4 @@
+{% load quotation_tag %}
 <div class="align-items-center border border-dashed border-gray-300 rounded px-7 py-3 mb-5 position-relative card-rounded bg-hover-light-primary"
      onclick="read_message({{ notification.id }})" id="notification_{{ notification.id }}">
     {% if notification.read_status == '0' %}
@@ -11,7 +12,7 @@
             {% getIcon notification.icon_url 'fs-4x' %}
             <div class="flex-grow-1">
                 {% if with_title %}
-                    <h6 class="mb-1">{{ notification.title }} ({{ notification.content_object.pk }}) {{ customer_name }}</h6>
+                    <h6 class="mb-1">{{ notification.title }} ({{ notification.content_object.pk }}) {% get_customer notification.content_object.customer_code as customer %} {{ customer.name }} </h6>
                 {% endif %}
                 <div class="font-size-13">
                     <p class="mb-1">{{ notification.body }}</p>
