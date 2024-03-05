@@ -11,7 +11,7 @@
             {% getIcon notification.icon_url 'fs-4x' %}
             <div class="flex-grow-1">
                 {% if with_title %}
-                    <h6 class="mb-1">{{ notification.title }}</h6>
+                    <h6 class="mb-1">{{ notification.title }} ({{ notification.content_object.pk }}) {{ customer_name }}</h6>
                 {% endif %}
                 <div class="font-size-13">
                     <p class="mb-1">{{ notification.body }}</p>
