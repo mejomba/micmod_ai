@@ -581,7 +581,9 @@ class PendingFormFilter(CustomBaseForm):
                       # ('time', _('time')),
                       ('my_quotations', _('my_quotations')),
                       ('quotation', _('quotation')),
-                      ('customer_code', _('customer_code'))]
+                      ('customer_code', _('customer_code')),
+                      ('all', _('all'))
+                        ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
     # from_time = forms.DateTimeField(required=False)
     # to_time = forms.DateTimeField(required=False)
