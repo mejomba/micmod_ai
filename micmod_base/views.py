@@ -463,11 +463,14 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             user_pk2 = request.POST.get('assigned_trade_user2')
             task_start = self.request.POST.get('task_start')
             task_start2 = self.request.POST.get('task_start2')
+            obj.save_comment(self.request)
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
+                obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
+                obj.save()
 
             data = {
                 'assigned_trade_user': get_user_model().objects.filter(pk=user_pk).first() if user_pk else None,
@@ -488,7 +491,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             # obj.assigned_trade_user = assigned_trade_user
             # obj.assigned_trade_user2 = assigned_trade_user2
             # obj.save()
-            obj.save_comment(self.request)
+            
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
             if iqr_form.is_valid():
