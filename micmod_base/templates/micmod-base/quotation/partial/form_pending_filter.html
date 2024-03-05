@@ -53,11 +53,19 @@
             my_quotations.classList.add('d-none')
 
         }
-        else if (event.currentTarget.value === "my_quotations"){
+        else if (event.currentTarget.value === "my_quotations") {
             my_quotations.parentElement.classList.add('d-none')
             btn.classList.remove('d-none')
             customer_code.classList.add('d-none')
             quotation.classList.add('d-none')
+        }
+        else if (event.currentTarget.value === "all") {
+            btn.classList.remove('d-none')
+            //btn.parentElement.classList.remove('d-none')
+            customer_code.classList.add('d-none')
+            customer_code.parentElement.classList.add('d-none')
+            quotation.classList.add('d-none')
+            quotation.parentElement.classList.add('d-none')
         }
         else {
             debugger
@@ -67,6 +75,7 @@
             customer_code.classList.add('d-none')
             btn.classList.add('d-none')
             my_quotations.classList.add('d-none')
+            //btn.parentElement.classList.add('d-none')
         }
 
     })
