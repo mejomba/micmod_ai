@@ -189,7 +189,8 @@ def get_comment_user_list(form, current_user, cancel=None):
     context = {'comments_info': comments_info,
                'obj': obj,
                'unseen_comment_count': unseen_comment_count,
-               'cancel': cancel}
+               'cancel': cancel,
+               'user': current_user}
     return context
 @register.filter
 def get_comment_link(comment_str):
