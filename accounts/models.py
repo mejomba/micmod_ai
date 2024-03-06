@@ -33,7 +33,24 @@ class User(AbstractUser):
     class Meta:
         db_table = 'auth_user'
 
+    @property
+    def base_group(self):
+        user_groups = self.groups.values_list('name', flat=True)
+        group = None
+        if 'trade_user' in user_groups or 'trade_admin' in user_groups:
+            group = 'trade'
+        elif 'bazar_user' in user_groups or 'bazar_admin' in user_groups:
+            group = 'bazar'
+        elif 'sales_user' in user_groups or 'sales_admin' in user_groups:
+            group = 'sales'
+        elif 'wh_user' in user_groups or 'wh_admin' in user_groups:
+            group = 'wh'
+        elif 'store_user' in user_groups or 'store_admin' in user_groups:
+            group = 'store'
+        elif 'accounting_user' in user_groups or 'accounting_admin' in user_groups:
+            group = 'accounting'
 
+        return group
 
     def get_target_user_from_group(self, group, level=1):
         from workflow.models import FlowAdminGroup
