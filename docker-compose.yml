@@ -10,7 +10,6 @@ services:
       - live
 
   db:
-
     image: postgres:latest
     restart: always
     ports:
@@ -32,17 +31,16 @@ services:
     depends_on:
       - db
       - redis
-      - web
     env_file:
       - _keenthemes/.env
     networks:
       - live
 
   web:
-    build: 
+    build:
       context: .
       #dockerfile: Dockerfile
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     #environment:
@@ -62,7 +60,7 @@ services:
     build:
       context: .
       #dockerfile: Dockerfile
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runsslserver 0.0.0.0:4000"
+    command: bash -c "manage.py runsslserver 0.0.0.0:4000"
     volumes:
       - .:/app
     #environment:
@@ -96,23 +94,31 @@ services:
       #dockerfile: Dockerfile
     command: "celery -A _keenthemes worker --loglevel=info -P eventlet"
     depends_on:
-      - web
       - redis
       - db
     restart: on-failure
+    env_file:
+      - _keenthemes/.env
+    environment:
+      - SECRET_KEY=django-insecure-blehs+vjho@s4qug%9ferf0-tucvbr9#_1k2!#ebs4u68@)ss+
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
     networks:
       - live
 
   celerybeat:
     build:
       context: .
-    command: "celery -A _keenthemes worker --loglevel=info -P eventlet"
+    command: "celery -A _keenthemes beat --loglevel=info"
     depends_on:
       - celery
-      - web
       - redis
       - db
     restart: on-failure
+    env_file:
+      - _keenthemes/.env
+    environment:
+      - SECRET_KEY=django-insecure-blehs+vjho@s4qug%9ferf0-tucvbr9#_1k2!#ebs4u68@)ss+
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
     networks:
       - live 
 
