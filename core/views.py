@@ -893,9 +893,13 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
         super().setup(request, *args, **kwargs)
         kwargs = self.get_model(**kwargs)
         instance = self.model.objects.filter(pk=request.GET.get('pk')).first() or self.model()
-        form_structure = request.POST.get('form_structure')
-        if not form_structure:
-            instance.active_form_structure_index = request.GET.get('form_structure_index')
+        form_structures = request.POST.get('form_structures')
+        if not form_structures:
+            form_structure_index = request.GET.get('form_structure_index')
+            if form_structure_index:
+                instance.active_form_structure_index = form_structure_index
+        else:
+            instance.form_structures = form_structures
         self.form = instance.get_view_forms(request,*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
