@@ -9,7 +9,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views import View
@@ -875,11 +875,9 @@ qry = model.objects.filter(name__icontains=test, age=30 )
         return qry
 
     def get_model(self, **kwargs):
-        app_label = kwargs.get('app_label')
-        model_name = kwargs.get('model_name')
+        app_label = kwargs.pop('app_label', None)
+        model_name = kwargs.pop('model_name', None)
         if app_label and model_name:
-            del kwargs['app_label']
-            del kwargs['model_name']
             self.model = apps.get_model(app_label=app_label.lower(), model_name=model_name.lower())
         return kwargs
 
@@ -894,6 +892,9 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
         super().setup(request, *args, **kwargs)
         kwargs = self.get_model(**kwargs)
         instance = self.model.objects.filter(pk=request.GET.get('pk')).first() or self.model()
+        form_structure = request.POST.get('form_structure')
+        if not form_structure:
+            instance.active_form_structure_index = request.GET.get('form_structure_index')
         self.form = instance.get_view_forms(request,*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -904,10 +905,8 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
     def post(self, request, *args, **kwargs):
         if self.form.is_valid():
             self.form.save()
-            if getattr(self.form,'forms', None) and self.form.forms[0].is_valid():
-                self.form.forms[0].save()
+            return redirect(f'{self.request.path_info}?pk={self.form.instance.pk}', )
         context = dict()
-        self.form.instance.pk = None
         context['form'] = self.form
         return render(request, 'core/create/base.html', context)
 
