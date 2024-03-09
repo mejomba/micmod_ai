@@ -896,7 +896,7 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
         form_structure = request.POST.get('form_structure')
         if not form_structure:
             instance.active_form_structure_index = request.GET.get('form_structure_index')
-        self.form = instance.get_view_forms(request,*args, **kwargs)
+        self.form = instance.get_view_forms(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         context = dict()
