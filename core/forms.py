@@ -185,15 +185,18 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         ...
 
     def __init__(self, model=None, fields=None, request=None, *args, **kwargs):
+        self.forms = list()
         instance = kwargs.get("instance")
         if not model:
             if not instance:
                 return
             else:
                 model = instance._meta.model
+        if not instance:
+            instance = model()
         self._meta.model = model
         self.request = request
-        total_fields = model.get_base_fields()
+        total_fields = instance.get_base_fields()
         enabled_fields = list()
         disabled_fields = list()
         hidden_fields = list()
@@ -208,12 +211,13 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             if hidden_fields and enabled_fields[0] == '__all__':
                 hidden_fields = total_fields
             fields = enabled_fields + disabled_fields + hidden_fields
+            fields.sort()
         if not fields:
             fields = total_fields
         else:
             fields = [field for field in fields if field in total_fields]
         self._meta.fields = fields
-        self.base_fields = model.get_fields(fields)
+        self.base_fields = instance.get_fields(fields)
         # set auto_complete
         # data = kwargs.get('data')
         # if data:
@@ -235,10 +239,15 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             if isinstance(self.fields[field].widget, DateTimeInput):
                 self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=self.fields[field].required)
 
-        disabled_fields += ['creator_user', 'editor_user']
-        hidden_fields += ['creator_user', 'editor_user']
+        # disabled_fields += ['creator_user', 'editor_user']
+        # hidden_fields += ['creator_user', 'editor_user']
         self.change_disabled(disabled_fields, True)
         self.change_hidden(hidden_fields, True)
+
+    def save(self, commit=True):
+        super().save(commit)
+        for form in self.forms:
+            form.save(commit)
 
     def change_optional(self, fields: List, required=False):
         for field in fields:
@@ -274,6 +283,10 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             del self.fields[f]
 
     def is_valid(self):
+        is_valid = super().is_valid()
+        for form in self.forms:
+            is_valid = is_valid and form.is_valid()
+        return is_valid
         # cleaned_data = self.cleaned_data if getattr(self,'cleaned_data',None) else None
         # self.data._mutable = True
         # if not self.change_data_for_validation:
@@ -296,7 +309,8 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         #             if obj:
         #                 self.data[field_str] = obj.str
         # self.data._mutable = False
-        return super().is_valid()
+        # return super().is_valid()
+
 
 
     def save(self, commit=True):

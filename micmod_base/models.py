@@ -75,11 +75,19 @@ class Quotation(SLSDoc):
         user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
         quotations_record_lst = list()
         qis = []
+        request_path = None
+        past_path = '/micmod_base/quotationitem/past/quotationitems'
+        if hasattr(request, 'path'):
+            request_path = request.path
 
-        if hasattr(request, 'path') and request.path == '/micmod_base/quotationitem/past/quotationitems':
-            superuser_filter = Q(need_foreign_price_inquiry=True) | Q(need_local_price_inquiry=True)
-            trade_user_filter = Q(need_foreign_price_inquiry=True)
-            bazar_user_filter = Q(need_local_price_inquiry=True)
+        if hasattr(request, 'path') and request.path == past_path:
+            superuser_filter = Q(need_foreign_price_inquiry=True) & \
+                               Q(foreign_price_inquiry_done=True) | \
+                               Q(need_local_price_inquiry=True) & \
+                               Q(local_price_inquiry_done=True)
+
+            trade_user_filter = Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=True)
+            bazar_user_filter = Q(need_local_price_inquiry=True) & Q(local_price_inquiry_done=True)
 
         else:
             superuser_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
@@ -95,23 +103,24 @@ class Quotation(SLSDoc):
 
         f = kwargs.get('filter')
         extra_filter = kwargs.get('extra_filter')
+
         if f is not None:
             qs = Quotation.objects.filter(**f)
         else:
             qs = Quotation.objects.all()
         for q in qs:
-            if hasattr(request, 'user') and request.user.is_superuser and q.is_inquiry_state:
+            if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
                     qis = q.quotation.filter(superuser_filter, **extra_filter)
                 else:
                     qis = q.quotation.filter(superuser_filter)
-            elif 'trade_user' in user_groups_name and q.is_inquiry_state:
+            elif 'trade_user' in user_groups_name and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
                     qis = q.quotation.filter(trade_user_filter, **extra_filter)
                 else:
                     qis = q.quotation.filter(trade_user_filter)
 
-            elif 'bazar_user' in user_groups_name and q.is_inquiry_state:
+            elif 'bazar_user' in user_groups_name and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
                     qis = q.quotation.filter(bazar_user_filter, **extra_filter)
                 else:

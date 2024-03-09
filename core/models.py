@@ -16,14 +16,15 @@ from django.db.models import Q
 from accounts.models import User
 from tools.utils import c_get as c_get
 
-
 # from accounts.models import User
 
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
 
+
 class ExtraData(object):
     ...
+
 
 class BaseManager(models.Manager):
     # is_public = False
@@ -84,12 +85,13 @@ class BaseManager(models.Manager):
     #         )
     #     return wf
 
-    def get_access_object(self, user,q="all"):
+    def get_access_object(self, user, q="all"):
         import time
         from workflow.models import WorkFlow
         if user.is_superuser or self.is_public:
             return self.model.objects.all()
-        content_type = ContentType.objects.filter(model=self.model._meta.model_name, app_label=self.model._meta.app_label).first()
+        content_type = ContentType.objects.filter(model=self.model._meta.model_name,
+                                                  app_label=self.model._meta.app_label).first()
 
         # wfs = BaseManager.get_target_wf(user)
         wfs = user.get_target_wf()
@@ -121,32 +123,38 @@ class BaseManager(models.Manager):
 
 
 class BaseModelAuto:
+    __fields = None
+    base_fields = []
+    excluded_fields = []
+    form_structures = []
+    form = None
+    safe_delete = True
+    excluded_keys = list()
+    template_name_list = ''
 
-    def __init__(self,*args,**kwargs):
-        self.base_fields = None
-        self.form_structure = None
-        self.form = None
-        self._fields = None
-        self.safe_delete = True
-        self.excluded_keys = list()
-        self.template_name_list = ''
+    def __init__(self, *args, **kwargs):
+        self.active_form_structure_index = 0
 
     def get_base_fields(self):
         if self.base_fields:
             return self.base_fields
         else:
             self.base_fields = [field.name for field in self._meta.fields if field.editable and not field.primary_key]
+            self.base_fields = list(set(self.base_fields)
+                                    - set(self.excluded_fields)
+                                    - {'creator_user', 'editor_user', 'group', 'is_deleted'}
+                                    )
+            self.base_fields.sort()
             return self.base_fields
 
-    @classmethod
-    def get_fields(cls, fields=None):
+    def get_fields(self, fields=None):
         if fields is None:
             fields = []
-        if not cls._fields:
-            cls._fields = fields_for_model(cls, cls.get_base_fields())
+        if not self.__fields:
+            self.__fields = fields_for_model(self.__class__, self.get_base_fields())
         result = dict()
         for field in fields:
-            result[field] = cls._fields.get(field)
+            result[field] = self.__fields.get(field)
         return result
 
     def get_form(self, *args, **kwargs):
@@ -157,7 +165,7 @@ class BaseModelAuto:
             return self.form
 
     def get_view_forms(self, request, *args, **kwargs):
-        form_structure = self.get_form_structure()
+        form_structure = self.get_form_structure(self.active_form_structure_index)
         if request.META['REQUEST_METHOD'] == 'POST':
             kwargs['data'] = request.POST
         else:
@@ -166,11 +174,11 @@ class BaseModelAuto:
                 if getattr(self, key, 'NUN') != 'NUN':
                     setattr(self, key, value)
         kwargs['instance'] = self
-        form = self.__get_view_forms(form_structure, request, *args, **kwargs)
-        if form:
-            return form[0]
+        forms = self.__get_view_forms(form_structure, request, *args, **kwargs)
+        if forms:
+            return forms[0]
 
-    def __get_view_forms(self,form_structure, request, *args, **kwargs):
+    def __get_view_forms(self, form_structure, request, *args, **kwargs):
         forms = list()
         method = request.META['REQUEST_METHOD']
         instance = kwargs.get("instance")
@@ -232,12 +240,12 @@ class BaseModelAuto:
     def pre_process_on_post_method(self, data=None):
         ...
 
-    def get_form_structure(self):
-        if self.form_structure:
-            return self.form_structure
+    def get_form_structure(self, index=0):
+        if self.form_structures:
+            return self.form_structures[index]
         else:
             return [
-                {"model": "this", }
+                {"model": "this", "form": None, "fields": {"enabled": ["__all__"], "disabled": [], "hidden": []}, "forms": []}
             ]
 
 
@@ -269,8 +277,6 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
     submit_copy = False
     objects = BaseManager()
-
-
 
     def __str__(self):
         if self.auto_complete:
@@ -329,7 +335,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
         for i in range(file_groups):
             if input_prefix:
-                file_input_name = f'{input_prefix}_{i+1}'
+                file_input_name = f'{input_prefix}_{i + 1}'
             else:
                 # try:
                 #     if fk:
@@ -340,11 +346,11 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                 #     related_name = f'{obj._meta.model_name}_set'
                 #     print('error: ',  e.__traceback__.tb_lineno, e)
                 related_name = fk
-                file_input_name = f'{related_name}-{form_idx}-file_{i+1}'
+                file_input_name = f'{related_name}-{form_idx}-file_{i + 1}'
             files = request.FILES.getlist(file_input_name)
 
             for file in files:
-                file_model.objects.create(path=file, content_object=obj, group=i+1)
+                file_model.objects.create(path=file, content_object=obj, group=i + 1)
 
     @staticmethod
     def save_image(request, image_groups, image_model, obj, form_idx=0, *args, **kwargs):
@@ -366,7 +372,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
         for i in range(image_groups):
             if input_prefix:
-                image_input_name = f'{input_prefix}_{i+1}'
+                image_input_name = f'{input_prefix}_{i + 1}'
             else:
                 # try:
                 #     if fk:
@@ -377,7 +383,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                 #     related_name = f'{obj._meta.model_name}_set'
                 #     print(e)
                 related_name = fk
-                image_input_name = f'{related_name}-{form_idx}-image_{i+1}'
+                image_input_name = f'{related_name}-{form_idx}-image_{i + 1}'
             alt_input_name = f''
             images = request.FILES.getlist(image_input_name)
             alt = request.POST.get(alt_input_name)
@@ -388,13 +394,13 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                     if len(alt) < len(images):
                         alt.extend([''] * (len(images) - len(alt)))
                 except Exception as e:
-                    print('error: ',  e.__traceback__.tb_lineno, e)
+                    print('error: ', e.__traceback__.tb_lineno, e)
                     alt = [''] * len(images)
             else:
                 alt = [''] * len(images)
 
             for idx, image in enumerate(images):
-                image_model.objects.create(path=image, content_object=obj, group=i+1, alt=alt[idx])
+                image_model.objects.create(path=image, content_object=obj, group=i + 1, alt=alt[idx])
 
     """***NEW***"""
 
@@ -413,17 +419,18 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
         if content:
             comment = Comments.objects.create(
-                                            comment_title=title,
-                                            comment_content=content,
-                                            content_type=content_type,
-                                            object_id=self.pk,
-                                    )
+                comment_title=title,
+                comment_content=content,
+                content_type=content_type,
+                object_id=self.pk,
+            )
 
             comment.save_user(request)
 
     """***NEW***"""
 
     """***NEW***"""
+
     def save_additions(self, request):
         from additions.models import Additions
         from micmod_base.base import Currency
@@ -446,6 +453,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
         addition.save_user(request=request)
 
     """***NEW***"""
+
     def compare(self, obj=None, excluded_keys=None):
         if excluded_keys is None:
             excluded_keys = list()
@@ -465,7 +473,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                 except KeyError as e:
                     print(f'key error: {k} ', e.__traceback__.tb_lineno, e)
                 except TypeError as e:
-                    print('TypeError: ',  e.__traceback__.tb_lineno, e)
+                    print('TypeError: ', e.__traceback__.tb_lineno, e)
         else:
             new = self.__dict__
             old = new.copy()
@@ -500,7 +508,6 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                                           )
             ch.save_user(request)
 
-
     @staticmethod
     def attach_image_file(obj, form=None):
         """attach image and file field to obj if exist"""
@@ -522,9 +529,11 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
 
 class AbsBaseModel(NoUserBaseModel):
-    creator_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='%(app_label)s_creator_%(model_name)s',
+    creator_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                     related_name='%(app_label)s_creator_%(model_name)s',
                                      verbose_name=_('creator_user'), )
-    editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='%(app_label)s_updator_%(model_name)s',
+    editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                    related_name='%(app_label)s_updator_%(model_name)s',
                                     verbose_name=_('updator_user'))
 
     def save_user(self, request):
@@ -536,7 +545,7 @@ class AbsBaseModel(NoUserBaseModel):
                 self.editor_user = request.user
             self.save()
         except Exception as e:
-            print('error: ',  e.__traceback__.tb_lineno, e)
+            print('error: ', e.__traceback__.tb_lineno, e)
 
     @classmethod
     def active(cls, user):
@@ -565,4 +574,3 @@ class BaseContentType(AbsBaseModel):
 
     class Meta:
         abstract = True
-

@@ -1,6 +1,7 @@
 {% load more_tags %}
+{% csrf_token %}
 {% for comment in comments %}
-        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border-right-1 pt-2 ps-3" style="border-right: 4px solid var(--bs-gray-200)">
+        <div data-kt-inbox-message="message_wrapper"  class="comment_body mb-10 border-right-1 pt-2 ps-3" style="border-right: 4px solid var(--bs-gray-200)">
             <!--begin::Message header-->
             <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
                  data-kt-inbox-message="header">
@@ -29,7 +30,7 @@
                     <!--begin::Date-->
                     <p class="badge ms-auto {% if comment.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
                         {{ comment.get_comment_title_display }}
-                    </p>
+                    </p>{% if comment.creator_user == request.user %} <p class="btn btn-light-danger comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete</p> {% endif %}
                     <!--end::Date-->
                     <div class="d-flex">
                     </div>
@@ -44,3 +45,40 @@
             </div>
         </div>
     {% endfor %}
+
+<script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const btns = document.querySelectorAll(".comment_delete")
+    btns.forEach(function (btn){
+        btn.addEventListener("click", function (){
+            debugger
+            const url_var = window.location.origin
+            const pk = btn.dataset.comment_pk
+            $.ajax({
+                url: `${url_var}/comments/ajax/comment_delete/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                dataType: "json",
+                type: "POST",
+                async: false,
+                data: {pk: pk},
+                cache: true,
+                success: function (data) {
+                    debugger
+                    dnone_comment = findAncestor(btn, "comment_body")
+                    dnone_comment.classList.add('d-none')
+                    result = data;
+                    },
+                error: function (res){
+                    alert("خطا")
+                }
+                }); // end ajax
+        })// end eventListener
+    })
+
+
+
+
+
+
+</script>
