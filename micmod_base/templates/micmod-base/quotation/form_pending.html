@@ -157,11 +157,15 @@
                     {% render_field_by_order form_s form_s.task_start form_s.task_start2 label='on-border' margin_b=0 %}
                 </div>
                 <div class="d-flex gap-1">
-                    <div class="progress w-50" style="height: 8px; font-size: 7px">
-                        <div class="progress-bar" role="progressbar" style="width: 100%;" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">25%</div>
+                    <div class="w-50">
+                        {% with progress_value=form_s.instance.progress_from_task_start %}
+                        {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
+                        {% endwith %}
                     </div>
-                    <div class="progress w-50" style="height:  8px; font-size: 7px">
-                        <div class="progress-bar" role="progressbar" style="width: 69%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">69%</div>
+                    <div class="w-50">
+                        {% with progress_value=form_s.instance.progress_from_task_start2 %}
+                        {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
+                        {% endwith %}
                     </div>
                 </div>
                 <div class="mt-3">

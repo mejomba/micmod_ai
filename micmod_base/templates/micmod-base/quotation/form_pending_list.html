@@ -46,6 +46,9 @@
                 </div>
             </div>
         <!--end header-->
+        {% with progress_value=form_list.0.instance.quotation.progress_from_create_date %}
+        {% include 'core/partial/progress.html' with height=12 progress_value=progress_value %}
+        {% endwith %}
         </div>
         <div class="card-body p-0 mb-6 border">
             <!--header-->

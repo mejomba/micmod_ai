@@ -3,12 +3,14 @@ import uuid
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
 from django.db.models import Q
+from django.utils import timezone
 
 # from django.contrib.auth.models import User
 from accounts.models import User
 from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
+from tools import utils
 from tools.utils import show_error
 
 from translator import get_text as _
@@ -253,10 +255,18 @@ class QuotationItem(BaseModel):
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
     assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
     assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
+    assigned_trade_user_date = models.DateTimeField(verbose_name=_('assigned_trade_user_date'), null=True, blank=True)
+    assigned_trade_user_date2 = models.DateTimeField(verbose_name=_('assigned_trade_user_date2'), null=True, blank=True)
     task_start = models.BooleanField(verbose_name=_('task_start'), default=False)
     task_start2 = models.BooleanField(verbose_name=_('task_start2'), default=False)
     task_start_date = models.DateTimeField(verbose_name=_('task_start_date'), null=True, blank=True)
     task_start_date2 = models.DateTimeField(verbose_name=_('task_start_date2'), null=True, blank=True)
+
+    def progress_from_task_start(self, total_hour=72):
+        return utils.progress_value(self.task_start_date, timezone.now(), total_hour)
+
+    def progress_from_task_start2(self, total_hour=72):
+        return utils.progress_value(self.task_start_date2, timezone.now(), total_hour)
 
     @classmethod
     def active(cls, user):
