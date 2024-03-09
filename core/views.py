@@ -842,7 +842,8 @@ class CommentsFormView(View):
                    'ctt_id': ctt_id,
                    'comments': comments,
                    'comment_type': comment_type,
-                   'cancel_btn_text': 'uncanceled' if getattr(obj, 'cancel', None) else 'canceled'}
+                   'cancel_btn_text': 'uncanceled' if getattr(obj, 'cancel', None) else 'canceled',
+                   'request': request}
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
