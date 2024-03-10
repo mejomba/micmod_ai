@@ -12,7 +12,7 @@ def update_price_list():
         print('task is running')
         return
     try:
-        cache.set('task_is_running', True, 2000)
+        cache.set('task_is_running', True, 300)
         print('task_started')
         prices = []
         y_rate = None

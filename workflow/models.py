@@ -30,6 +30,8 @@ class WorkFlow(BaseContentType):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
 
+    extra_prefix = 'workflows'
+
     def submit_flow(self):
         pass
 

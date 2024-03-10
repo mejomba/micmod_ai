@@ -220,6 +220,8 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             else:
                 fields = [field for field in fields if field in total_fields]
             self._meta.fields = fields
+        else:
+            fields = self._meta.fields
         self.base_fields = instance.get_fields(fields)
         # set auto_complete
         # data = kwargs.get('data')

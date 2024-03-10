@@ -241,7 +241,7 @@ function checkCookie() {
 }
 
 function copyToClipboard(elem) {
-    debugger
+    // debugger
     // if (navigator.clipboard) {
     //     navigator.clipboard.writeText(text).catch(function () {
     //     });

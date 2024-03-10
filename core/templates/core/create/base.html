@@ -9,6 +9,7 @@
 <form method="post">
     {% csrf_token %}
     {{ form.instance.purchase_group.title }}
+    {{ form.errors|as_crispy_errors }}
     {{ form|crispy }}
     {#    {{ form.forms.0|crispy }}#}
     <button type="submit" value="submit"> submit</button>

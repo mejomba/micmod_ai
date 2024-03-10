@@ -139,6 +139,7 @@ class BaseModelAuto:
     excluded_keys = list()
     template_name_list = ''
     WorkFlowForms = None
+    extra_prefix = ''
 
     def get_workflow_forms(self):
         if not self.WorkFlowForms:
@@ -178,6 +179,9 @@ class BaseModelAuto:
             result[field] = self.__fields.get(field)
         return result
 
+    def get_form(self, *args, **kwargs):
+        return self.get_form_class()(model=self.__class__, fields=None, *args, **kwargs)
+
     def get_form_class(self, *args, **kwargs):
         if self.form_class:
             return self.form_class
@@ -195,6 +199,8 @@ class BaseModelAuto:
                 if getattr(self, key, 'NUN') != 'NUN':
                     setattr(self, key, value)
         kwargs['instance'] = self
+        self.kwargs = kwargs
+        self.args = args
         forms = self.__get_view_forms(form_structure, request, *args, **kwargs)
         if forms:
             return forms[0]
@@ -294,6 +300,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     is_public = False
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="parent_object_wf")
+    has_workflow = False
     notifications = GenericRelation('notifications.Messages', related_query_name="parent_object_no")
     change_logs = GenericRelation('changelog.ChangeLog', related_query_name="parent_object_no")
     comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
@@ -301,6 +308,11 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     files = GenericRelation('files.File', related_query_name="parent_object_no")
     submit_copy = False
     objects = BaseManager()
+
+    def get_content_type_forms(self):
+        self.content_type_forms = list()
+        if self.has_workflow:
+            self.content_type_forms.append(self.workflows.model.form_class)
 
     def __str__(self):
         if self.auto_complete:
@@ -596,6 +608,8 @@ class BaseContentType(AbsBaseModel, BaseModelAuto):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
+    def get_form(self,):
+        return self.form_class
 
     as_table = 'templates/core/partial/table.html'
     as_list = 'templates/core/partial/list.html'
