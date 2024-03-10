@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from django.apps import apps
 from django.core.cache import cache
@@ -888,28 +889,93 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
 
     def __init__(self):
         super().__init__()
+        self.form = None
+        self.context = None
+        self.status = None
+        self.instance = None
+
+    def setup(self, request, *args, **kwargs):
+        self.instance = None
+        try:
+            super().setup(request, *args, **kwargs)
+            kwargs = self.get_model(**kwargs)
+            if pk := request.GET.get('pk'):
+                self.instance = self.model.objects.filter(pk=pk).first()
+                if not self.instance:
+                    self.status = 400
+                    self.context = {'status': self.status}
+                    return self.context
+            else:
+                self.instance = self.model()
+            form_structures = request.POST.get('form_structures')
+            if not form_structures:
+                form_structure_index = request.GET.get('form_structure_index')
+                if form_structure_index:
+                    self.instance.active_form_structure_index = form_structure_index
+            else:
+                self.instance.form_structures = form_structures
+            self.form = self.instance.get_view_forms(request, *args, **kwargs)
+            self.status = 200
+            self.context = {'form': self.form, 'status': self.status}
+            return self.context
+        except Exception as e:
+            self.status = 500
+            self.context = {'status': self.status, 'error': str(e)}
+            return self.context
+        finally:
+            ...
+
+    def get(self, request, *args, **kwargs):
+        # return render(request, 'core/create/base.html', context)
+        return self.context
+
+    def post(self, request, *args, **kwargs):
+        return self.context
+        # return render(request, 'core/create/base.html', context)
+
+
+class CustomCreateView(BaseCustomCreateView):
+
+    def get(self, request, *args, **kwargs):
+        super().get(request,*args,**kwargs)
+        return render(request, 'core/create/base.html', self.context)
+
+    def post(self, request, *args, **kwargs):
+        super().post(request,*args,**kwargs)
+        if self.form and self.form.is_valid():
+            self.form.save()
+            return redirect(f'{self.request.path_info}?pk={self.form.instance.pk}', )
+        return render(request, 'core/create/base.html', self.context)
+
+
+class CustomCreateViewAjax(BaseCustomCreateView):
+
+    def __init__(self):
+        super().__init__()
+        self.data = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        kwargs = self.get_model(**kwargs)
-        instance = self.model.objects.filter(pk=request.GET.get('pk')).first() or self.model()
-        form_structure = request.POST.get('form_structure')
-        if not form_structure:
-            instance.active_form_structure_index = request.GET.get('form_structure_index')
-        self.form = instance.get_view_forms(request,*args, **kwargs)
+        self.form.instance.get_workflow_forms()
+        from django.forms import formset_factory
+        from django.forms import inlineformset_factory
+        from django.contrib.contenttypes.forms import BaseGenericInlineFormSet, generic_inlineformset_factory
+        workflow_fs = self.instance.WorkFlowForms()
+        ArticleFormSet = formset_factory(self.form.__class__, extra=2, max_num=1)
+        wfs = generic_inlineformset_factory(self.form._meta.model,form=self.form,)
+        d = ArticleFormSet()
+        if self.form:
+            self.data = self.form.serialized()
 
     def get(self, request, *args, **kwargs):
-        context = dict()
-        context['form'] = self.form
-        return render(request, 'core/create/base.html', context)
+        super().get(request, *args, **kwargs)
+        return JsonResponse({'data': self.data, 'status': self.status})
 
     def post(self, request, *args, **kwargs):
-        if self.form.is_valid():
+        super().post(request, *args, **kwargs)
+        if self.form and self.form.is_valid():
             self.form.save()
-            return redirect(f'{self.request.path_info}?pk={self.form.instance.pk}', )
-        context = dict()
-        context['form'] = self.form
-        return render(request, 'core/create/base.html', context)
+        return JsonResponse({'data': self.data, 'status': self.status})
 
 
 class BaseCustomListView(BaseCustomView,ListView):

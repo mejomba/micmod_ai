@@ -2,15 +2,18 @@ import importlib
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.forms import generic_inlineformset_factory
+from django.core import serializers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
 from django.forms import fields_for_model
+from django.utils import timezone
 
 # from comments.models import Comments
-from files.models import File, Image
+# from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q
 from accounts.models import User
@@ -20,6 +23,10 @@ from tools.utils import c_get as c_get
 
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.apps import apps
+
+
+from tools import utils
 
 
 class ExtraData(object):
@@ -127,13 +134,27 @@ class BaseModelAuto:
     base_fields = []
     excluded_fields = []
     form_structures = []
-    form = None
+    form_class = None
     safe_delete = True
     excluded_keys = list()
     template_name_list = ''
+    WorkFlowForms = None
+
+    def get_workflow_forms(self):
+        if not self.WorkFlowForms:
+            from workflow.models import WorkFlow
+            self.__class__.WorkFlowForms = generic_inlineformset_factory(WorkFlow, extra=1, can_delete=False)
+        self.workflows_forms = self.WorkFlowForms(instance=self)
+        return self.workflows_forms
 
     def __init__(self, *args, **kwargs):
         self.active_form_structure_index = 0
+        self.serialized_ = None
+        self.workflows_forms = None
+
+    @property
+    def serialized(self):
+        return json.loads(serializers.serialize('json', [self]))
 
     def get_base_fields(self):
         if self.base_fields:
@@ -157,12 +178,12 @@ class BaseModelAuto:
             result[field] = self.__fields.get(field)
         return result
 
-    def get_form(self, *args, **kwargs):
-        if self.form:
-            return self.form
+    def get_form_class(self, *args, **kwargs):
+        if self.form_class:
+            return self.form_class
         else:
-            self.form = importlib.import_module(f'core.forms').CustomBaseModelFormAuto  # (model=cls, *args, **kwargs)
-            return self.form
+            self.form_class = importlib.import_module(f'core.forms').CustomBaseModelFormAuto  # (model=cls, *args, **kwargs)
+            return self.form_class
 
     def get_view_forms(self, request, *args, **kwargs):
         form_structure = self.get_form_structure(self.active_form_structure_index)
@@ -204,7 +225,8 @@ class BaseModelAuto:
                     model = getattr(model_module, model_name, None)
                 if not instance:
                     instance = model()
-                form = instance.get_form()
+                form = instance.get_form_class()
+            form.form_structure = form_structure
             # update instance data of form
             if method == "GET" and getattr(form, "_meta", None):
                 if relation_field:
@@ -245,7 +267,10 @@ class BaseModelAuto:
             return self.form_structures[index]
         else:
             return [
-                {"model": "this", "form": None, "fields": {"enabled": ["__all__"], "disabled": [], "hidden": []}, "forms": []}
+                {"model": "this", "form": None,
+                 "fields": {"enabled": ["__all__"], "disabled": [], "hidden": []},
+                 "field_groups": [],
+                 "forms": []}
             ]
 
 
@@ -274,7 +299,6 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
     images = GenericRelation('files.Image', related_query_name="parent_object_no")
     files = GenericRelation('files.File', related_query_name="parent_object_no")
-
     submit_copy = False
     objects = BaseManager()
 
@@ -282,6 +306,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
         if self.auto_complete:
             return getattr(self, self.auto_complete)
         return super().__str__()
+
+    def progress_from_create_date(self, total_hour=72):
+        return utils.progress_value(self.created_date, timezone.now(), total_hour)
 
     @classmethod
     def content_type(cls):
@@ -511,19 +538,19 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     @staticmethod
     def attach_image_file(obj, form=None):
         """attach image and file field to obj if exist"""
-        content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
-                                                  model=obj._meta.model_name,
-                                                  ).first()
+        # content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
+        #                                           model=obj._meta.model_name,
+        #                                           ).first()
         if form is None or (form.image_groups and form.file_groups):
-            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
-            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            images = obj.images#list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            files = obj.files#list(File.objects.filter(content_type=content_type, object_id=obj.id))
             obj.images_ = images
             obj.files_ = files
         elif form.image_groups:
-            images = list(Image.objects.filter(content_type=content_type, object_id=obj.id))
+            images = obj.images#list(Image.objects.filter(content_type=content_type, object_id=obj.id))
             obj.images_ = images
         elif form.file_groups:
-            files = list(File.objects.filter(content_type=content_type, object_id=obj.id))
+            files = obj.files#list(File.objects.filter(content_type=content_type, object_id=obj.id))
             obj.files_ = files
         return obj
 
@@ -564,10 +591,24 @@ class BaseModel(AbsBaseModel):
         abstract = True
 
 
-class BaseContentType(AbsBaseModel):
+class BaseContentType(AbsBaseModel, BaseModelAuto):
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+
+
+    as_table = 'templates/core/partial/table.html'
+    as_list = 'templates/core/partial/list.html'
+
+    class Meta:
+        abstract = True
+
+
+class BaseAbsContentType(models.Model, BaseModelAuto):
+    content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
 
     as_table = 'templates/core/partial/table.html'
     as_list = 'templates/core/partial/list.html'

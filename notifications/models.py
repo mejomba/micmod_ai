@@ -5,7 +5,7 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
-from core.models import AbsBaseModel,Q
+from core.models import AbsBaseModel, Q, BaseContentType
 from accounts.models import User
 from translator import get_text as _
 from django.template.loader import render_to_string
@@ -29,7 +29,7 @@ class MessageType(models.TextChoices):
     Error = "3", "error"
 
 
-class Messages(AbsBaseModel):
+class Messages(BaseContentType):
     user = models.ForeignKey(User, related_name="assigned_messages",verbose_name=_("user"), on_delete=models.DO_NOTHING)
     ws_group = models.ForeignKey(Groups, related_name="assigned_messages",verbose_name=_("group"), on_delete=models.DO_NOTHING,null=True,blank=True)
     title = models.CharField(max_length=50, verbose_name=_("title"))
