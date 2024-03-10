@@ -90,8 +90,13 @@
                                 {% endif %}
                             </td>
                             <td>{{ inquiry_result.price_inquiry_file.demanded_quantity }}</td>
-                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+                            {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}
                             <td>{{ inquiry_result.price }}</td>
+                            {% else %}
+                            <td>
+{#                                <div>{{ inquiry_result.rmb_final_price }}</div>#}
+                                <div> {{ inquiry_result.rial_final_price }}</div>
+                            </td>
                             {% endif %}
                             <td class="{% if inquiry_result.active %}text-success fw-bold{% endif %}">{{ inquiry_result.active|yesno:"بله,خیر" }}</td>
                             <td>{{ price_inquiry_file.brand }}</td>
