@@ -84,9 +84,17 @@
                         <tr>
                             <td>
                                 {% if inquiry_result.price_inquiry_file.pk %}
+                                    {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}
                                     <a href="{% url 'inquiry:price_inquiry_file.update' inquiry_result.price_inquiry_file.pk %}">{{ inquiry_result.supplier }}</a>
+                                        {% else %}
+                                        <a href="{% url 'inquiry:price_inquiry_file.update' inquiry_result.price_inquiry_file.pk %}">{{ inquiry_result.supplier.id }}</a>
+                                        {% endif %}
                                 {% else %}
+                                    {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}
                                     <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ inquiry_result.sku.pk }}">{{ inquiry_result.supplier }}</a>
+                                        {% else %}
+                                        <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ inquiry_result.sku.pk }}">{{ inquiry_result.supplier.id }}</a>
+                                        {% endif %}
                                 {% endif %}
                             </td>
                             <td>{{ inquiry_result.price_inquiry_file.demanded_quantity }}</td>
