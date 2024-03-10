@@ -223,7 +223,7 @@ class ItemWeightUpdateView(BaseView):
     def get_success_url(self):
         item = self.request.GET.get('sku')
         path = reverse('extra_data:item_weight.list')
-        path += f"?item={item if item else self.object.sku.pk}"
+        path += f"?sku={item if item else self.object.sku.pk}"
         return path
 
 
@@ -233,14 +233,14 @@ class ItemWeightDataTableView(AjaxDatatableView):
     initial_order = [["created_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
-    # render_row_details_template_name = 'sku_list_detail.html'
+    render_row_details_template_name = 'sku_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border sku-search',
-         'defaultContent': '<a href"#">test</a>', 'lookup_field': '__item__icontains'},
-        {'name': 'weight', 'visible': True, 'title': _('price_inquiry_file'), 'className': 'py-1 border', 'searchable': False},
-        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border sku-search', },
+         'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__icontains'},
+        {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border', 'searchable': False},
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
 
@@ -261,6 +261,6 @@ class ItemWeightDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('inquiry:inquiry_result.update', args=(obj.id,)),
-                      obj.item if obj.item else '_'
+                      reverse('extra_data:item_weight.update', args=(obj.id,)),
+                      obj.sku if obj.sku else '_'
                     )

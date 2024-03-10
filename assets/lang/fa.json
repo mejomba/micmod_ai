@@ -522,6 +522,7 @@
     "bazar_price": "قیمت بازار",
     "price_update_date": "تاریخ ویرایش قیمت",
     "my_quotations": "استعلام های من",
-    "all": "همه"
+    "all": "همه",
+    "submit_for_qi": "ثبت خودکار برای پیش فاکتور"
 
 }
