@@ -5,6 +5,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+from core.models import BaseContentType, BaseAbsContentType
 from translator import get_text as _
 
 
@@ -28,7 +29,7 @@ def uploaded_file_path(instance, filename: str):
     return os.path.join('uploads/file/', name)
 
 
-class Image(models.Model):
+class Image(BaseAbsContentType):
     path = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path)
     alt = models.CharField(verbose_name=_('alt'), max_length=64, null=True, blank=True)
     group = models.SmallIntegerField(verbose_name=_('image group'), null=True, blank=True)
@@ -55,7 +56,7 @@ class Image(models.Model):
         return f'{self.__class__.__name__}'
 
 
-class File(models.Model):
+class File(BaseAbsContentType):
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path)
     group = models.SmallIntegerField(verbose_name=_('file group'), null=True, blank=True)
 

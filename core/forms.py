@@ -1,3 +1,4 @@
+
 from django import forms
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
 from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
@@ -186,6 +187,7 @@ class CustomBaseModelFormAuto(forms.ModelForm):
 
     def __init__(self, model=None, fields=None, request=None, *args, **kwargs):
         self.forms = list()
+        self.serialized_ = None
         instance = kwargs.get("instance")
         if not model:
             if not instance:
@@ -200,23 +202,24 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         enabled_fields = list()
         disabled_fields = list()
         hidden_fields = list()
-        if isinstance(fields, dict):
-            enabled_fields = fields.get('enabled', list())
-            disabled_fields = fields.get('disabled', list())
-            hidden_fields = fields.get('hidden', list())
-            if enabled_fields and enabled_fields[0] == '__all__':
-                enabled_fields = list(set(total_fields) - set(disabled_fields) - set(hidden_fields))
-            if disabled_fields and disabled_fields[0] == '__all__':
-                disabled_fields = list(set(total_fields) - set(enabled_fields) - set(hidden_fields))
-            if hidden_fields and enabled_fields[0] == '__all__':
-                hidden_fields = total_fields
-            fields = enabled_fields + disabled_fields + hidden_fields
-            fields.sort()
-        if not fields:
-            fields = total_fields
-        else:
-            fields = [field for field in fields if field in total_fields]
-        self._meta.fields = fields
+        if not self._meta.fields:
+            if isinstance(fields, dict):
+                enabled_fields = fields.get('enabled', list())
+                disabled_fields = fields.get('disabled', list())
+                hidden_fields = fields.get('hidden', list())
+                if enabled_fields and enabled_fields[0] == '__all__':
+                    enabled_fields = list(set(total_fields) - set(disabled_fields) - set(hidden_fields))
+                if disabled_fields and disabled_fields[0] == '__all__':
+                    disabled_fields = list(set(total_fields) - set(enabled_fields) - set(hidden_fields))
+                if hidden_fields and enabled_fields[0] == '__all__':
+                    hidden_fields = total_fields
+                fields = enabled_fields + disabled_fields + hidden_fields
+                fields.sort()
+            if not fields:
+                fields = total_fields
+            else:
+                fields = [field for field in fields if field in total_fields]
+            self._meta.fields = fields
         self.base_fields = instance.get_fields(fields)
         # set auto_complete
         # data = kwargs.get('data')
@@ -248,6 +251,11 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         super().save(commit)
         for form in self.forms:
             form.save(commit)
+
+    def serialized(self):
+        if self.instance:
+            self.serialized_ = self.instance.serialized
+            return self.serialized_
 
     def change_optional(self, fields: List, required=False):
         for field in fields:
@@ -284,8 +292,10 @@ class CustomBaseModelFormAuto(forms.ModelForm):
 
     def is_valid(self):
         is_valid = super().is_valid()
+        error = list()
         for form in self.forms:
             is_valid = is_valid and form.is_valid()
+            error += form.errors
         return is_valid
         # cleaned_data = self.cleaned_data if getattr(self,'cleaned_data',None) else None
         # self.data._mutable = True
@@ -313,9 +323,9 @@ class CustomBaseModelFormAuto(forms.ModelForm):
 
 
 
-    def save(self, commit=True):
-        # return super().save()
-        """if formset empty not save"""
-        if any(item for item in self.cleaned_data):
-            return super().save()
-        return None
+    # def save(self, commit=True):
+    #     # return super().save()
+    #     """if formset empty not save"""
+    #     if any(item for item in self.cleaned_data):
+    #         return super().save()
+    #     return None

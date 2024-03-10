@@ -2,14 +2,14 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from core.models import BaseModel
+from core.models import BaseModel, BaseContentType
 from accounts.models import User
 from notifications.models import Messages
 from django.apps import apps
 from translator import get_text as _
 
 
-class WorkFlow(BaseModel):
+class WorkFlow(BaseContentType):
     STATUS = ((1, _('draft')), (2, _('back')), (3, _('next')), (4, _('change_user')), (5, _('first_draft')))
 
     wf_status = models.PositiveSmallIntegerField(verbose_name=_("status"), choices=STATUS, null=True, blank=True)
