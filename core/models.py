@@ -10,6 +10,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
 from django.forms import fields_for_model
+from django.utils import timezone
 
 # from comments.models import Comments
 # from files.models import File, Image
@@ -24,6 +25,8 @@ from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
 from django.apps import apps
 
+
+from tools import utils
 
 
 class ExtraData(object):
@@ -303,6 +306,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
         if self.auto_complete:
             return getattr(self, self.auto_complete)
         return super().__str__()
+
+    def progress_from_create_date(self, total_hour=72):
+        return utils.progress_value(self.created_date, timezone.now(), total_hour)
 
     @classmethod
     def content_type(cls):

@@ -195,3 +195,15 @@ def map_model_to_python_type(field):
     for key, value in python_model_type_map:
         if type_str.__contains__(value):
             return key
+
+
+def progress_value(start_date, end_date, total_hour=72):
+    try:
+        time_delta = end_date - start_date
+        hours, _ = divmod(time_delta.seconds, 3600)
+        result = ((time_delta.days * 24 + hours) / total_hour) * 100
+        if result > 100:
+            result = 100
+        return int(result)
+    except Exception as e:
+        return 0

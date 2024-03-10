@@ -431,7 +431,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         else:
             quotations_record_lst = Quotation.quotation_pending(self.request)
 
-
         for qi_qs in quotations_record_lst:
             for qi in qi_qs:
                 form = QuotationItemForm2(instance=qi, initial={
@@ -475,8 +474,10 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 'lead_time': request.POST.get('lead_time'),
                 'task_start': True if task_start else False,
                 'task_start2': True if task_start2 else False,
-                'task_start_date': timezone.now() if not obj.task_start_date else obj.task_start_date,
-                'task_start_date2': timezone.now() if not obj.task_start_date2 else obj.task_start_date2,
+                'task_start_date': timezone.now() if not obj.task_start_date and task_start else obj.task_start_date,
+                'task_start_date2': timezone.now() if not obj.task_start_date2 and task_start2 else obj.task_start_date2,
+                'assigned_trade_user_date': timezone.now() if not obj.assigned_trade_user_date and user_pk else obj.assigned_trade_user_date,
+                'assigned_trade_user_date2': timezone.now() if not obj.assigned_trade_user_date2 and user_pk2 else obj.assigned_trade_user_date2
             }
             obj_qs.update(**data)
 
