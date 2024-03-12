@@ -326,7 +326,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 1.03
+                return self.fee * self.quantity * 0.03
             else:
                 return 0
         except Exception as e:
@@ -337,7 +337,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 1.06
+                return self.fee * self.quantity * 0.06
             else:
                 return 0
         except Exception as e:
