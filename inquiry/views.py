@@ -17,6 +17,7 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 from django.db.models import Min, IntegerField, F
 from django.db.models.functions import Cast
 
+from micmod_base.models import QuotationItem
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
@@ -317,6 +318,8 @@ class InquiryResultListView(BaseView):
 
     def form_valid(self, form):
         from django.utils import timezone
+        qi_id = self.request.GET.get('qi_id')
+        submit_for_qi = self.request.POST.get('submit_for_qi')
         last_price = self.object.price if self.object else 0
         res = super().form_valid(form)
 
@@ -331,6 +334,24 @@ class InquiryResultListView(BaseView):
         if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
             item_weight.save_user(request=self.request)
+
+        """save quotation_item inquiry result"""
+        if submit_for_qi and qi_id:
+            qi_obj = QuotationItem.objects.filter(pk=qi_id).first()
+            if self.request.user.base_group == 'bazar':
+                qi_obj.local_price_inquiry_done = True
+                qi_obj.save()
+            elif self.request.user.base_group == 'trade':
+                qi_obj.foreign_price_inquiry_done = True
+                qi_obj.save()
+
+            iqr_obj = qi_obj.quotation_item_rel.first()
+            iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
+            if iqr_form.is_valid():
+                iqr_obj = iqr_form.save()
+                iqr_obj.quotation_item = qi_obj
+                iqr_obj.save()
+
         return res
 
 

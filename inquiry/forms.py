@@ -207,6 +207,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
     image_model = Image
     file_model = File
     update_price = forms.BooleanField(widget=forms.CheckboxInput(), label=_('update_price'), required=False)
+    submit_for_qi = forms.BooleanField(widget=forms.CheckboxInput(), label=_('submit_for_qi'), required=False)
 
     class Meta:
         model = PriceInquiryResult

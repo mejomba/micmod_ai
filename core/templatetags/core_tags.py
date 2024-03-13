@@ -204,3 +204,11 @@ def call_function(obj, function_name, *args, kwargs=None):
             return function(*args, **kwargs)
         else:
             return function(*args)
+
+
+@register.filter
+def reminder(number, x):
+    try:
+        return number / int(x)
+    except Exception as e:
+        return 0

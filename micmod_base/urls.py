@@ -36,4 +36,5 @@ urlpatterns = [
     path('quotationitem/list/pending/', QuotationItemPending.as_view(), name='quotationitem.pending'),
     path('quotationitem/list/form/pending/', QuotationItemFormPending.as_view(), name='quotationitem.form.pending'),
     path('quotationitem/past/quotationitems', QuotationItemFormPending.as_view(), name='quotationitem.form.past'),
+    path('get_sku/', get_sku, name='get_sku')
 ]
