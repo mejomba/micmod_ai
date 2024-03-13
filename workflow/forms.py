@@ -14,7 +14,7 @@ from translator import get_text as _
 from notifications.models import Messages
 
 class WorkFlowModelForm(CustomBaseModelForm):
-    belong_to_group_ = forms.CharField(max_length=255)
+    belong_to_group_ = forms.CharField(max_length=255, required=False)
     # to_current_group_user = forms.ModelChoiceField(
     #                     queryset=[],
     #                     to_field_name='pk',  # set as select option value
