@@ -28,6 +28,9 @@ urlpatterns = [
     path('inquiryresult/forsale/', views.InquiryResultSaleView.as_view(), name='inquiry_result.sale'),
     path('ajax/inquiryresult/forsale/', views.inquiry_result_sale_ajax, name='inquiry_result.sale.ajax'),
 
+    path('inquiryresult/forsale/list/', views.InquiryResultSaleListView.as_view(), name='inquiry_result_sale_list'),
+    path('ajax/inquiryresult/forsale/list/', views.SalesPriceInqueryLogDataTableView.as_view(), name='ajax_inquiry_result_sale_list'),
+
     path('sku_list_datatable/', views.SkuListDataTableView.as_view(), name="sku.list.datatable"),
 
     path('item_list/', views.get_item, name='item_list'),
