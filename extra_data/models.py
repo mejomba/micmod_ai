@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 import dw.models
 import inquiry.models
@@ -316,6 +317,8 @@ class Item(BaseModel):
                                        on_delete=models.CASCADE)
     is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     objects = BaseManager(is_public=True)
+
+    # base_fields = ['sku','part_number']
 
     @property
     def sepidar_id(self):

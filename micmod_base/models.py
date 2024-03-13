@@ -110,6 +110,7 @@ class Quotation(SLSDoc):
             qs = Quotation.objects.filter(**f)
         else:
             qs = Quotation.objects.all()
+        # qs = qs.order_by('force_inquiry', 'workflows__created_date')
         for q in qs:
             if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
@@ -262,6 +263,16 @@ class QuotationItem(BaseModel):
     task_start_date = models.DateTimeField(verbose_name=_('task_start_date'), null=True, blank=True)
     task_start_date2 = models.DateTimeField(verbose_name=_('task_start_date2'), null=True, blank=True)
 
+    excluded_fields = ['trade_price_code','bazar_price_code',]
+    # form_structures = [[{"model":"this","fields":{"enabled":["assigned_trade_user2"]}}]]
+
+    def pre_process_on_post_method(self, data=None):
+        obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
+        self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
+        self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
+        self.assigned_trade_user_date2 = timezone.now() if (not obj or not obj.assigned_trade_user_date2) and obj.assigned_trade_user2 else self.assigned_trade_user_date2 if obj else None
+
     def progress_from_task_start(self, total_hour=72):
         return utils.progress_value(self.task_start_date, timezone.now(), total_hour)
 
@@ -326,7 +337,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 1.03
+                return self.fee * self.quantity * 0.03
             else:
                 return 0
         except Exception as e:
@@ -337,7 +348,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 1.06
+                return self.fee * self.quantity * 0.06
             else:
                 return 0
         except Exception as e:

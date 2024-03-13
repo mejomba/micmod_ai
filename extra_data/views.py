@@ -238,7 +238,7 @@ class ItemWeightDataTableView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border sku-search',
-         'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__icontains'},
+         'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__iexact'},
         {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border', 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },

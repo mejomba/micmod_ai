@@ -246,6 +246,7 @@ class BaseModelAuto:
                             setattr(form_instance, key, value)
                 kwargs['instance'] = form_instance
                 form = form(model=model, fields=item.get("fields"), *args, **kwargs)
+                form.instance.pre_process_on_get_method()
             elif method == "POST":
                 if relation_field:
                     kwargs['data']._mutable = True
@@ -253,6 +254,8 @@ class BaseModelAuto:
                     kwargs['data']._mutable = False
                     kwargs['instance'] = model.objects.filter(**{relation_field: instance}).first()
                 form = form(model=model, fields=item.get("fields"), *args, **kwargs)
+                form.is_valid()
+                form.instance.pre_process_on_post_method()
             form.instance.extra_data.request = request
             if relation_field:
                 form.change_hidden([relation_field])

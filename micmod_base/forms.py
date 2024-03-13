@@ -349,6 +349,21 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
             self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
             self.fields['assigned_trade_user2'].queryset = x.distinct() if x else None
+
+            self.fields['assigned_trade_user'].widget.attrs['onchange'] = "post_ajax_data(event)"
+            self.fields['assigned_trade_user'].widget.attrs[
+                'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+            self.fields['assigned_trade_user2'].widget.attrs['onchange'] = "post_ajax_data(event)"
+            self.fields['assigned_trade_user2'].widget.attrs[
+                'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+
+            self.fields['task_start'].widget.attrs['onchange'] = "post_ajax_data(event)"
+            self.fields['task_start'].widget.attrs[
+                'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+            self.fields['task_start2'].widget.attrs['onchange'] = "post_ajax_data(event)"
+            self.fields['task_start2'].widget.attrs[
+                'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+
         except Exception as e:
             pass
 
