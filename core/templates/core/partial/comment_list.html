@@ -30,7 +30,7 @@
                     <!--begin::Date-->
                     <p class="badge ms-auto {% if comment.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
                         {{ comment.get_comment_title_display }}
-                    </p>{% if comment.creator_user == request.user %} <p class="btn btn-light-danger comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete</p> {% endif %}
+                    </p>{% if comment.creator_user == request.user %} <p class="btn btn-light-danger ms-auto comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete</p> {% endif %}
                     <!--end::Date-->
                     <div class="d-flex">
                     </div>
