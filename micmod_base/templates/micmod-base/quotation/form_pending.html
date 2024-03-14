@@ -107,36 +107,39 @@
                                                 <div class="col on-border">
                                 <textarea class="w-100 rounded form-control bg-white" rows="1"
                                           name="-goods_name_alt_lbl" disabled></textarea>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                    <div class="mt-3">
-                                        <div class="d-flex gap-1">
-                                            {% render_field_by_order form_s form_s.assigned_trade_user form_s.assigned_trade_user2 label='on-border' %}
-                                        </div>
-                                        <div class="d-flex gap-1">
-                                            {% render_field_by_order form_s form_s.task_start form_s.task_start2 label='on-border' margin_b=0 %}
-                                        </div>
-                                        <div class="d-flex gap-1">
-                                            <div class="w-50">
-                                                {% with progress_value=form_s.instance.progress_from_task_start %}
-                                                    {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
-                                                {% endwith %}
-                                            </div>
-                                            <div class="w-50">
-                                                {% with progress_value=form_s.instance.progress_from_task_start2 %}
-                                                    {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
-                                                {% endwith %}
-                                            </div>
-                                        </div>
-                                        <div class="mt-3">
-                                            {% render_field_by_order form_s form_s.lead_time label='on-border' %}
-                                        </div>
+            <div class="mt-3">
+                <div class="d-flex gap-1">
+                    {% render_field_by_order form_s form_s.assigned_trade_user form_s.assigned_trade_user2 label='on-border' %}
+                </div>
+            {% if request.user|has_group:"trade_user" %}
 
-                                    </div>
-                                </div>
+
+                <div class="d-flex gap-1">
+                    {% render_field_by_order form_s form_s.task_start form_s.task_start2 label='on-border' margin_b=0 %}
+                </div>
+                <div class="d-flex gap-1">
+                    <div class="w-50">
+                        {% with progress_value=form_s.instance.progress_from_task_start %}
+                        {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
+                        {% endwith %}
+                    </div>
+                    <div class="w-50">
+                        {% with progress_value=form_s.instance.progress_from_task_start2 %}
+                        {% include 'core/partial/progress.html' with progress_value=progress_value height=8 %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="mt-3">
+                {% render_field_by_order form_s form_s.lead_time label='on-border' %}
+                </div>
+            {% endif %}
+            </div>
+            </div>
 
                                 <div class="col-lg-6 border-top">
                                     <div class="row h-100">

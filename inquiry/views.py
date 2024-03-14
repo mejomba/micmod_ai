@@ -936,3 +936,49 @@ def get_price_list(request, *args, **kwargs):
     return JsonResponse({'result': f'start updated at: {update_time}', 'price_count': count,'celery task id': sub_thread.native_id})
 
 
+class InquiryResultSaleListView(LoginRequiredMixin, generic.ListView):
+    model = SalesPriceInqueryLog
+    template_name = 'inquiry/partial/inquiry_result_sales_list.html'
+
+
+class SalesPriceInqueryLogDataTableView(AjaxDatatableView):
+
+    model = SalesPriceInqueryLog
+    title = 'inquiry_result_sale_data'
+    initial_order = [["sku", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'inquiry_result_sales_list.html'
+
+    def get_columns(self, fields):
+        res = [AjaxDatatableView.render_row_tools_column_def()]
+        for field in fields:
+            col = dict()
+            col['className'] = 'py-3'
+            col['lookup_field'] = '__icontains'
+            col['defaultContent'] = ''
+            col['orderable'] = True
+            col['searchable'] = True
+            col['name'] = field if isinstance(field, str) else None
+            col['visible'] = True
+            if isinstance(field, dict):
+                for key in field.keys():
+                    col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('name'))
+            res.append(col)
+        return res
+
+    def get_column_defs(self, request):
+        cols = [
+            {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
+            'party_code',
+            'currency',
+            'quantity',
+            'grade',
+            'payment_method',
+        ]
+        return self.get_columns(cols)
+
+    # def get_initial_queryset(self, request=None):
+    #     return self.model.objects.all()

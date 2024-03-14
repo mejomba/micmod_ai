@@ -61,6 +61,13 @@
                                                         <div class="w-50 bold">روش پرداخت</div>
                                                         <div class="w-50 text-center">{% get_payment_method form.payment_method.value %}</div>
                                                     </div>
+                                                    <div class="d-flex w-100 border bg-soft-primary">
+                                                        <div class="w-50 bold">نظرات</div>
+                                                        <div class="w-50 text-center">{% for comment in form.instance.comments.all|default_if_none:"-" %}
+                                                                                          {{ comment.comment_content }}<br>
+                                                                                      {% endfor %}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="border w-50">
 
@@ -117,7 +124,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="d-flex">
+                                <div class="d-flex mb-2 mt-2">
                                     {% include "micmod-base/base/create_info_bar.html" %}
                                 </div>
                             </div>
@@ -136,6 +143,7 @@
                                 <td class="w-20">سابقه فروش</td>
                                 <td class="w-20">استعلام قیمت</td>
                                 <td class="w-10">قیمت نهایی</td>
+                                <td class="w-10">نظرات</td>
                             </tr>
                             </thead>
                             <tbody>

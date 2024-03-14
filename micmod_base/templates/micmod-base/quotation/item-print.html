@@ -61,4 +61,10 @@
         <div class="final_price w-100 text-center" name="-final_price">{{ form.instance.final_price|default_if_none:"-"|floatformat:digit|intcomma}}</div>
         <div class="w-100 text-center bold bg-soft-primary text-darkblue font-size-7 " name="-total_price">-</div>
     </td>
+    <td class=" font-size-7 replace-digits">
+        {% for comment in form.instance.comments.all %}
+            {{ comment.comment_content }}
+        {% endfor %}
+    </td>
+
 </tr>

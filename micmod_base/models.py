@@ -157,6 +157,50 @@ class Quotation(SLSDoc):
             return False
 
     @property
+    def get_inquiry_state(self):
+        wf_back = 2
+        wf_next = 3
+
+        wf_state_0 = 'اولین پیشنویس'
+        wf_state_1 = 'پیش فاکتور اولیه'
+        wf_state_2 = 'استعلام قیمت'
+        wf_state_3 = 'تایید پیش فاکتور'
+        wf_state_4 = 'تایید مشتری'
+        wf_state_5 = 'تایید کارشناس'
+        wf_state_6 = 'مرحله ی نهایی'
+
+        last_wf = self.workflows.last()
+
+        if last_wf:
+
+            if last_wf.state == wf_state_0:
+                return wf_state_1
+
+            elif ((last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_3 and last_wf.wf_status == wf_back)):
+                return wf_state_2
+
+            elif ((last_wf.state == wf_state_2 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_4 and last_wf.wf_status == wf_back)):
+                return wf_state_3
+
+            elif ((last_wf.state == wf_state_3 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_5 and last_wf.wf_status == wf_back)):
+                return wf_state_4
+
+            elif ((last_wf.state == wf_state_4 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_6 and last_wf.wf_status == wf_back)):
+                return wf_state_5
+            elif last_wf.state == wf_state_5 and last_wf.wf_status == wf_next:
+                return wf_state_6
+            else:
+                return last_wf.state
+
+
+
+
+
+    @property
     def price(self):
         try:
             return sum(x.price for x in self.quotation.all())
