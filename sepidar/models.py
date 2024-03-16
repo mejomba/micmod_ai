@@ -296,7 +296,7 @@ class Item(models.Model):
     @staticmethod
     def get_items(text, party_id=''):
         qry =f"""
-SELECT        TOP (10) item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
+SELECT        TOP (50) item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
     						 invoice_2.avg_fee AS avg_price, invoice_2.min_fee AS min_price,invoice_2.max_fee AS max_price,
                              invoice_2.qty AS f_qty_all, sum_stock.total_quantity AS stock_qty, sum_stock_res.total_quantity as stock_res_qty,
 							 quotation_1.Date as quotation_date, quotation_1.Fee as quotation_fee, quotation_1.Quantity as quotation_qty

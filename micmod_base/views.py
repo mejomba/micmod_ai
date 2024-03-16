@@ -501,7 +501,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             # obj.assigned_trade_user = assigned_trade_user
             # obj.assigned_trade_user2 = assigned_trade_user2
             # obj.save()
-
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
             if iqr_form.is_valid():
