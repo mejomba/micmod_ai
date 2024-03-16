@@ -166,7 +166,6 @@
                 const allRow = document.querySelectorAll('tbody > tr')
                 allRow.forEach(function (item){
                     item.addEventListener('click', function (e){
-                        e.preventDefault()
                         item.classList.toggle('bg-light-success')
                     })
                 })
