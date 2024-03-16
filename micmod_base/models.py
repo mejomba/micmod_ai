@@ -72,6 +72,13 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
 
+    def progress_from_inquiry_state(self, total_hour=72):
+        if self.is_inquiry_state:
+            wf = self.workflows.last()
+            return utils.progress_value(wf.created_date, timezone.now(), total_hour)
+        else:
+            return 0
+
     @classmethod
     def quotation_pending(cls, request, **kwargs):
         user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
