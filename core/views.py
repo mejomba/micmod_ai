@@ -907,7 +907,7 @@ class BaseCustomCreateView(BaseCustomView, ProcessFormView):
                     return self.context
             else:
                 self.instance = self.model()
-            form_structures = request.POST.get('form_structures')
+            form_structures = json.loads(request.POST.get('form_structures','{}'))
             if not form_structures:
                 form_structure_index = request.GET.get('form_structure_index')
                 if form_structure_index:
@@ -956,14 +956,14 @@ class CustomCreateViewAjax(BaseCustomCreateView):
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        self.form.instance.get_workflow_forms()
+        # self.form.instance.get_workflow_forms()
         from django.forms import formset_factory
         from django.forms import inlineformset_factory
         from django.contrib.contenttypes.forms import BaseGenericInlineFormSet, generic_inlineformset_factory
-        workflow_fs = self.instance.WorkFlowForms()
-        ArticleFormSet = formset_factory(self.form.__class__, extra=2, max_num=1)
-        wfs = generic_inlineformset_factory(self.form._meta.model,form=self.form,)
-        d = ArticleFormSet()
+        # workflow_fs = self.instance.WorkFlowForms()
+        # ArticleFormSet = formset_factory(self.form.__class__, extra=2, max_num=1)
+        # wfs = generic_inlineformset_factory(self.form._meta.model,form=self.form,)
+        # d = ArticleFormSet()
         if self.form:
             self.data = self.form.serialized()
 

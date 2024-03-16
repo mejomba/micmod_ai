@@ -181,6 +181,8 @@ class CustomBaseModelFormAuto(forms.ModelForm):
     enable = True
     form_state = None
     change_data_for_validation = False
+    auto_form = True
+    is_used = False
 
     class Meta:
         ...
@@ -188,6 +190,8 @@ class CustomBaseModelFormAuto(forms.ModelForm):
     def __init__(self, model=None, fields=None, request=None, *args, **kwargs):
         self.forms = list()
         self.serialized_ = None
+        self.s_errors = None
+        self.is_valid_ = None
         instance = kwargs.get("instance")
         if not model:
             if not instance:
@@ -196,13 +200,12 @@ class CustomBaseModelFormAuto(forms.ModelForm):
                 model = instance._meta.model
         if not instance:
             instance = model()
-        self._meta.model = model
         self.request = request
         total_fields = instance.get_base_fields()
         enabled_fields = list()
         disabled_fields = list()
         hidden_fields = list()
-        if not self._meta.fields:
+        if not self._meta.fields or self.auto_form:
             if isinstance(fields, dict):
                 enabled_fields = fields.get('enabled', list())
                 disabled_fields = fields.get('disabled', list())
@@ -220,7 +223,13 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             else:
                 fields = [field for field in fields if field in total_fields]
             self._meta.fields = fields
+        else:
+            fields = self._meta.fields
+        if self.is_used:
+            return
+        self.__class__.is_used = True
         self.base_fields = instance.get_fields(fields)
+        self._meta.model = model
         # set auto_complete
         # data = kwargs.get('data')
         # if data:
@@ -236,6 +245,7 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         #     kwargs['data'] = data
 
         super().__init__(*args, **kwargs)
+        self.__class__.is_used = False
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):
                 self.fields[field].widget.attrs['class'] = 'form-control'
@@ -248,7 +258,9 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         self.change_hidden(hidden_fields, True)
 
     def save(self, commit=True):
-        super().save(commit)
+        if self.is_valid_:
+            self.instance.save()
+        # super().save(commit)
         for form in self.forms:
             form.save(commit)
 
@@ -291,12 +303,16 @@ class CustomBaseModelFormAuto(forms.ModelForm):
             del self.fields[f]
 
     def is_valid(self):
-        is_valid = super().is_valid()
-        error = list()
-        for form in self.forms:
-            is_valid = is_valid and form.is_valid()
-            error += form.errors
-        return is_valid
+        if self.is_valid_ is None:
+            self.s_errors = list()
+            self.is_valid_ = super().is_valid()
+            self.s_errors = self._errors
+            for form in self.forms:
+                self.is_valid_ = self.is_valid_ and form.is_valid()
+                self.s_errors += form._errors
+            return self.is_valid_
+        else:
+            return self.is_valid_
         # cleaned_data = self.cleaned_data if getattr(self,'cleaned_data',None) else None
         # self.data._mutable = True
         # if not self.change_data_for_validation:

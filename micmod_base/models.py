@@ -72,6 +72,13 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
 
+    def progress_from_inquiry_state(self, total_hour=72):
+        if self.is_inquiry_state:
+            wf = self.workflows.last()
+            return utils.progress_value(wf.created_date, timezone.now(), total_hour)
+        else:
+            return 0
+
     @classmethod
     def quotation_pending(cls, request, **kwargs):
         user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
@@ -110,6 +117,7 @@ class Quotation(SLSDoc):
             qs = Quotation.objects.filter(**f)
         else:
             qs = Quotation.objects.all()
+        # qs = qs.order_by('force_inquiry', 'workflows__created_date')
         for q in qs:
             if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
@@ -154,6 +162,50 @@ class Quotation(SLSDoc):
             return True
         else:
             return False
+
+    @property
+    def get_inquiry_state(self):
+        wf_back = 2
+        wf_next = 3
+
+        wf_state_0 = 'اولین پیشنویس'
+        wf_state_1 = 'پیش فاکتور اولیه'
+        wf_state_2 = 'استعلام قیمت'
+        wf_state_3 = 'تایید پیش فاکتور'
+        wf_state_4 = 'تایید مشتری'
+        wf_state_5 = 'تایید کارشناس'
+        wf_state_6 = 'مرحله ی نهایی'
+
+        last_wf = self.workflows.last()
+
+        if last_wf:
+
+            if last_wf.state == wf_state_0:
+                return wf_state_1
+
+            elif ((last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_3 and last_wf.wf_status == wf_back)):
+                return wf_state_2
+
+            elif ((last_wf.state == wf_state_2 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_4 and last_wf.wf_status == wf_back)):
+                return wf_state_3
+
+            elif ((last_wf.state == wf_state_3 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_5 and last_wf.wf_status == wf_back)):
+                return wf_state_4
+
+            elif ((last_wf.state == wf_state_4 and last_wf.wf_status == wf_next) or
+                    (last_wf.state == wf_state_6 and last_wf.wf_status == wf_back)):
+                return wf_state_5
+            elif last_wf.state == wf_state_5 and last_wf.wf_status == wf_next:
+                return wf_state_6
+            else:
+                return last_wf.state
+
+
+
+
 
     @property
     def price(self):
@@ -261,6 +313,16 @@ class QuotationItem(BaseModel):
     task_start2 = models.BooleanField(verbose_name=_('task_start2'), default=False)
     task_start_date = models.DateTimeField(verbose_name=_('task_start_date'), null=True, blank=True)
     task_start_date2 = models.DateTimeField(verbose_name=_('task_start_date2'), null=True, blank=True)
+
+    excluded_fields = ['trade_price_code','bazar_price_code',]
+    # form_structures = [[{"model":"this","fields":{"enabled":["assigned_trade_user2"]}}]]
+
+    def pre_process_on_post_method(self, data=None):
+        obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
+        self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
+        self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
+        self.assigned_trade_user_date2 = timezone.now() if (not obj or not obj.assigned_trade_user_date2) and obj.assigned_trade_user2 else self.assigned_trade_user_date2 if obj else None
 
     def progress_from_task_start(self, total_hour=72):
         return utils.progress_value(self.task_start_date, timezone.now(), total_hour)

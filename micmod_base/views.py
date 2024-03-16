@@ -6,6 +6,7 @@ from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from comments.forms import CommentsForm
+from extra_data.models import Item
 from inquiry.models import InquiryResult
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
@@ -16,7 +17,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.models import User
 from django.core.paginator import Paginator
 from django.forms import inlineformset_factory
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -91,6 +92,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
         new_quotation = None
         try:
+
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
@@ -407,6 +409,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
     def get(self, request):
+        from django.core.paginator import Paginator
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
@@ -448,6 +451,10 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             form_list.append(forms)
             forms = []
 
+        paginator = Paginator(form_list, 20)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        context['page_obj'] = page_obj
         context['forms'] = form_list
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
@@ -472,15 +479,17 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 obj.save()
 
             data = {
-                'assigned_trade_user': get_user_model().objects.filter(pk=user_pk).first() if user_pk else None,
-                'assigned_trade_user2': get_user_model().objects.filter(pk=user_pk2).first() if user_pk2 else None,
+                # 'assigned_trade_user': get_user_model().objects.filter(pk=user_pk).first() if user_pk else None,
+                # 'assigned_trade_user2': get_user_model().objects.filter(pk=user_pk2).first() if user_pk2 else None,
                 'lead_time': request.POST.get('lead_time'),
-                'task_start': True if task_start else False,
-                'task_start2': True if task_start2 else False,
-                'task_start_date': timezone.now() if not obj.task_start_date and task_start else obj.task_start_date,
-                'task_start_date2': timezone.now() if not obj.task_start_date2 and task_start2 else obj.task_start_date2,
-                'assigned_trade_user_date': timezone.now() if not obj.assigned_trade_user_date and user_pk else obj.assigned_trade_user_date,
-                'assigned_trade_user_date2': timezone.now() if not obj.assigned_trade_user_date2 and user_pk2 else obj.assigned_trade_user_date2
+                'goods_code': request.POST.get('goods_code'),
+                'goods_name': request.POST.get('goods_name'),
+                # 'task_start': True if task_start else False,
+                # 'task_start2': True if task_start2 else False,
+                # 'task_start_date': timezone.now() if not obj.task_start_date and task_start else obj.task_start_date,
+                # 'task_start_date2': timezone.now() if not obj.task_start_date2 and task_start2 else obj.task_start_date2,
+                # 'assigned_trade_user_date': timezone.now() if not obj.assigned_trade_user_date and user_pk else obj.assigned_trade_user_date,
+                # 'assigned_trade_user_date2': timezone.now() if not obj.assigned_trade_user_date2 and user_pk2 else obj.assigned_trade_user_date2
             }
             obj_qs.update(**data)
 
@@ -492,7 +501,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             # obj.assigned_trade_user = assigned_trade_user
             # obj.assigned_trade_user2 = assigned_trade_user2
             # obj.save()
-            
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
             if iqr_form.is_valid():
@@ -501,3 +509,12 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj.save()
 
         return redirect(reverse('sls:quotationitem.form.pending'))
+
+
+def get_sku(request):
+    sku = request.GET.get('sku')
+    sku_qs = Item.objects.filter(sku=sku).first()
+    if sku_qs:
+        return JsonResponse({'res': sku_qs.sku, 'id': sku_qs.pk, 'part_number': sku_qs.part_number})
+    else:
+        return JsonResponse({})

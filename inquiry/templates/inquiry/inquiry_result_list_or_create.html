@@ -52,11 +52,12 @@
                 {% render_field_by_order form form.description form.active form.update_price form.item_weight label='on-border' %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
+                {% render_field_by_order form form.submit_for_qi label='on-border' margin_b=5 %}
             </div>
         </div>
         <div class="col-2">
             <div class="row">
-{#                {% include 'inquiry/partial/item_price_irr.html' with obj=form.instance detail=False %}#}
+                {#                {% include 'inquiry/partial/item_price_irr.html' with obj=form.instance detail=False %}#}
             </div>
         </div>
     </div>
@@ -174,8 +175,8 @@
             if (dataTable){
                 dataTable.addEventListener('DOMSubtreeModified', handleSelectRow)
             }
-            setTimeout(handleSelectRow, 2000)
-             
+            setTimeout(handleSelectRow, 3000)
+
             AjaxDatatableViewUtils.initialize_table(
                 $('#inquiry_list'),
                 "{% url 'inquiry:inquiry_result.list.datatable' %}",

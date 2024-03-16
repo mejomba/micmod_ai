@@ -158,6 +158,34 @@ function custom_ajax_post(form, url, element) {
     }); // end ajax
 }
 
+function custom_ajax_post_data(post_data, url, element=null) {
+    debugger
+    $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        data: post_data,
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        cache: false,
+        processData: false,
+        contentType: false,
+        beforeSend: block_main_container,
+        success: function (data) {
+            if(element) {
+                html = data['res'];
+                element.html(html);
+                run_scripts(html);
+            }
+        },
+        error: function () {
+
+        },
+        complete: release_main_container
+    }); // end ajax
+}
+
 function run_scripts(elem) {
     const scripts = elem.match(/<script (.*?)<\/script>/g)
     const u_scripts = Array.from(new Set(scripts))
@@ -241,7 +269,7 @@ function checkCookie() {
 }
 
 function copyToClipboard(elem) {
-    debugger
+    // debugger
     // if (navigator.clipboard) {
     //     navigator.clipboard.writeText(text).catch(function () {
     //     });

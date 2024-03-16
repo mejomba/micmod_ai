@@ -245,7 +245,10 @@ function set_item_classes(item) {
                 type: "GET",
                 data: function (data) {
                     console.log('inside data')
-                    var p_id = document.getElementById('customer_pid').textContent || -1;
+                    let p_id = document.getElementById('customer_pid').textContent || -1;
+                    if (!p_id){
+                        p_id = item.getElementById('customer_pid')
+                    }
                     return {
                         q: data.term, party_id: p_id, page: data.page,
                         id_currency_ref: document.getElementById('id_currency_ref').value,
