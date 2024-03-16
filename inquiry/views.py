@@ -486,6 +486,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
             row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
             row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
 
+        if obj.active:
+            row['active'] = """<b class="text-success">Yes</b>"""
+
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
     model = SalesPriceInqueryLog
