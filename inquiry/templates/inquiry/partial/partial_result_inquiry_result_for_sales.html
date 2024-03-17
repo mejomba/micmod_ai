@@ -77,12 +77,8 @@
                                 <td class="w-30 text-primary">موجودی</td>
                             </tr>
                             <tr>
-                                <td class="text-primary">انبار مرکزی</td>
-                                <td class="text-danger persian-digit">{{ item.stock_qty|intcomma|floatformat:0 }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-primary">انبار رزرو</td>
-                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+                                <td class="text-primary">مجموع انبارها</td>
+                                <td class="text-danger persian-digit">{{ sku.extra_data.sepidar_data.stocks_sum|humanized_format}}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">در راه (کسری)</td>

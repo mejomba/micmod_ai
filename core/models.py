@@ -140,6 +140,10 @@ class BaseModelAuto:
     template_name_list = ''
     WorkFlowForms = None
     extra_prefix = ''
+    form_crispy = False
+    form_label = 'on-border'
+    css_class = 'row row-cols5'
+    field_groups = []
 
     def get_workflow_forms(self):
         if not self.WorkFlowForms:
@@ -152,6 +156,7 @@ class BaseModelAuto:
         self.active_form_structure_index = 0
         self.serialized_ = None
         self.workflows_forms = None
+        self.excluded_fields += ['created_date','last_update_date','is_deleted','creator_user','editor_user']
 
     @property
     def serialized(self):

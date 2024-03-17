@@ -257,6 +257,22 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         self.change_disabled(disabled_fields, True)
         self.change_hidden(hidden_fields, True)
 
+    @property
+    def get_field_groups(self):
+        if self.instance.field_groups:
+            field_groups = []
+            for item in self.instance.field_groups:
+                fields = set()
+                for field in item.get('fields',[]):
+                    fields.add([f for f in self if f.name == field][0])
+                # fields = {f for f in self if f.name in item.get('fields',[])}
+                # for field in item.get('fields',[]):
+                #     fields[field] = (self.fields[field])
+                field_groups.append({'title': item.get('title', ''), 'css_class': item.get('css_class', 'row row-cols5'), 'fields': fields})
+            return field_groups
+        else:
+            return [{'title': '', 'css_class': 'row row-cols5', 'fields': self.fields}]
+
     def save(self, commit=True):
         if self.is_valid_:
             self.instance.save()

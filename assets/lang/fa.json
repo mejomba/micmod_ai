@@ -523,6 +523,14 @@
     "price_update_date": "تاریخ ویرایش قیمت",
     "my_quotations": "استعلام های من",
     "all": "همه",
-    "submit_for_qi": "ثبت خودکار برای پیش فاکتور"
-
+    "submit_for_qi": "ثبت خودکار برای پیش فاکتور",
+    "pl_number": "شماره پکینگ",
+    "orders_accept_until": "تاریخ پذیرش سفارش",
+    "deliver_to_mac_until": "تاریخ تحویل به مک",
+    "deliver_to_transportation_company_at": "تاریخ تحویل به شرکت حمل",
+    "transportation_at": "تاریخ حمل",
+    "deliver_to_customs_at": "تاریخ دریافت در گمرک",
+    "clearance_until": "تاریخ ترخیص",
+    "descriptions": "توضیحات",
+    "payments_until": "تاریخ پرداخت وجه"
 }
