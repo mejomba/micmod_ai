@@ -1,18 +1,79 @@
+{% extends 'partials/base_level2.html' %}
 {% load crispy_forms_filters %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<form method="post">
-    {% csrf_token %}
-    {{ form.instance.purchase_group.title }}
-    {{ form.errors|as_crispy_errors }}
-    {{ form|crispy }}
-    {#    {{ form.forms.0|crispy }}#}
-    <button type="submit" value="submit"> submit</button>
-</form>
-</body>
-</html>
+{% load crispy_forms_tags %}
+{% load more_tags %}
+{% load core_tags %}
+{% load l10n %}
+{% block form_content %}
+    <div class="{{ form.instance.css_class|default:'row row-cols5' }}">
+        {% for field_group in form.get_field_groups %}
+            <div class="{{ field_group.css_class }}">
+                {% for field in field_group.fields %}
+                    <div class="col">
+                        {{ field.get_field_name_display }}
+                        {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
+                            {% if form.instance.form_crispy %}
+                                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                                    {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
+                                    {{ field.errors }}
+                                </div>
+                            {% elif field.field.select2 %}
+
+                                <div class="col {{ form.instance.form_cols }} {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                                    {{ field.as_hidden }}
+                                    <div class="select2 {{ field|get_field_name }} form-control w-100"
+                                         id="{{ field.html_name }}"
+                                         name="{{ field|get_field_name }}">{{ field.value }}</div>
+                                    <label data-key="{{ field|get_field_name }}" class="{{ css }}"
+                                           id="{{ id }}"></label>
+                                    {{ field.errors }}
+                                </div>
+                            {% elif form.instance.form_label %}
+
+                                <div class="col
+                                        {% if not field.field.widget.input_type == 'checkbox' %}{{ form.instance.form_label }}{% endif %} {% if margin_b is not None %}
+                        mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                                    {% include 'core/partial/auto_complete_field.html' with field=field %}
+                                    <label data-key="{{ field|get_field_name }}"
+                                           id={{ id }} class="{{ css }}">{% if label_text %}
+                                        {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
+                                    {{ field.errors }}
+                                </div>
+
+                            {% else %}
+                                <div class="col {% if margin_b is not None %}
+                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                                    {% include 'core/partial/auto_complete_field.html' with field=field %}
+                                    {% if no_input %}
+                                        {% if css == 'no_label' %}
+
+                                        {% else %}
+                                            <label class="text-center w-100  card-title-desc h-25 {{ css }}"
+                                                   id={{ id }} name="{{ field|get_field_name }}"></label>
+                                        {% endif %}
+                                        {{ field.help_text }}
+                                        {{ field.errors }}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                        {% else %}
+                            <div class="position-absolute">
+                                {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
+                            </div>
+                            {% if no_input %}
+                                <label class="text-center w-100  card-title-desc h-25 {{ css }}"
+                                       id={{ id }} name="{{ field|get_field_name }}">
+                                    {% if field.value %}{{ field.value }}{% else %} - {% endif %} </label>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+

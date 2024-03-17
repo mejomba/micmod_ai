@@ -76,7 +76,7 @@ LOCAL_APPS = [
     'auth.apps.AuthConfig',
     'comments',
     'additions',
-
+    'transportation'
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",

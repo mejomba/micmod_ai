@@ -38,6 +38,9 @@
                         {{ form_list.0.instance.quotation.pk }}
                     </a>
                 </div>
+            <div class="col">
+                ({{ form_list.0.instance.quotation.creator_user }})
+            </div>
                 <div>
 
                     {% if form_list.0.instance.quotation.force_inquiry %}
