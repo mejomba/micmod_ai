@@ -1,5 +1,6 @@
 
 from django import forms
+from django.forms import DateInput
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
 from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
@@ -249,13 +250,32 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):
                 self.fields[field].widget.attrs['class'] = 'form-control'
-            if isinstance(self.fields[field].widget, DateTimeInput):
-                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=self.fields[field].required)
+            m_field = self.fields[field]
+            if isinstance(m_field.widget, DateInput) or isinstance(m_field.widget, DateTimeInput):
+                self.fields[field] = JalaliDateField(label=m_field.label
+                            , widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'})
+                            , required=m_field.required)
 
         # disabled_fields += ['creator_user', 'editor_user']
         # hidden_fields += ['creator_user', 'editor_user']
         self.change_disabled(disabled_fields, True)
         self.change_hidden(hidden_fields, True)
+
+    @property
+    def get_field_groups(self):
+        if self.instance.field_groups:
+            field_groups = []
+            for item in self.instance.field_groups:
+                fields = []
+                for field in item.get('fields',[]):
+                    fields.append([f for f in self if f.name == field][0])
+                # fields = {f for f in self if f.name in item.get('fields',[])}
+                # for field in item.get('fields',[]):
+                #     fields[field] = (self.fields[field])
+                field_groups.append({'title': item.get('title', ''), 'css_class': item.get('css_class', 'row row-cols5'), 'fields': fields})
+            return field_groups
+        else:
+            return [{'title': '', 'css_class': 'row row-cols5', 'fields': self.fields}]
 
     def save(self, commit=True):
         if self.is_valid_:

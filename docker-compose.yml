@@ -108,7 +108,7 @@ services:
   celerybeat:
     build:
       context: .
-    command: "celery -A _keenthemes beat --loglevel=info"
+    command: "celery -A _keenthemes worker --beat --scheduler django --loglevel=info"
     depends_on:
       - celery
       - redis

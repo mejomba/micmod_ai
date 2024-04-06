@@ -485,6 +485,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
         if self.request.user.is_superuser or 'total_admin' in self.request.user.groups.values_list('name', flat=True):
             row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
             row['rial_final_price_rendered'] = obj.rial_final_price_rendered()
+        if obj.active:
+            row['active'] = """<b class="text-success">Yes</b>"""
+
+        if obj.active:
+            row['active'] = """<b class="text-success">Yes</b>"""
 
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):

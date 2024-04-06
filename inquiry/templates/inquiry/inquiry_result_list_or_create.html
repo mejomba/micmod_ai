@@ -63,7 +63,7 @@
     </div>
 
     <div class="table-responsive p-2 mb-15">
-        <table id="inquiry_list" width="100%" class="m-table table-striped table-bordered w-100">
+        <table id="inquiry_list" width="100%" class="m-table table-bordered w-100">
 
         </table>
     </div>
@@ -77,7 +77,7 @@
             q = url.searchParams.get("sku");
             debugger
             let x = document.createElement('small')
-            document.getElementById('id_sku_c').parentElement.appendChild(x.appendChild(document.createTextNode(` نام کالا: {{ form.instance.sku.part_number }}`)))
+            //document.getElementById('id_sku_c').parentElement.appendChild(x.appendChild(document.createTextNode(` نام کالا: {{ form.instance.sku.part_number }}`)))
 
             const id_sku_c = $('#id_sku_c')
             id_sku_c.on("input", function (e) {
@@ -162,6 +162,20 @@
                     }
                 }
             }
+
+             function handleSelectRow(){
+                const allRow = document.querySelectorAll('tbody > tr')
+                allRow.forEach(function (item){
+                    item.addEventListener('click', function (e){
+                        item.classList.toggle('bg-light-success')
+                    })
+                })
+            }
+            const dataTable = document.querySelector('#inquiry_list')
+            if (dataTable){
+                dataTable.addEventListener('DOMSubtreeModified', handleSelectRow)
+            }
+            setTimeout(handleSelectRow, 3000)
 
             AjaxDatatableViewUtils.initialize_table(
                 $('#inquiry_list'),

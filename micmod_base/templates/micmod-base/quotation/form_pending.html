@@ -8,6 +8,9 @@
     <div id="main-content">
         {% block content %}
             {% for form_s in forms %}
+                {% with progress_value=form_list.0.instance.quotation.progress_from_inquiry_state %}
+                {% include 'core/partial/progress.html' with height=10 progress_value=progress_value %}
+                {% endwith %}
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
@@ -70,15 +73,13 @@
                                             <div class="d-flex justify-content-end">
                                                 <div class="w-75 mt-3 ms-2">{{ form_s.goods_name.label }}:<br><br>
                                                     <span name="goods_name_lbl" class="goods_name">{{ form_s.instance.goods_name }}</span>
-                                                    <input type="hidden" class="goods_name_input" name="goods_name">
+                                                    <input type="hidden" class="goods_name_input" name="goods_name" value="{{ form_s.instance.goods_name }}">
                                                 </div>
                                                 {% if form_s.instance.goods_code_alt %}
                                                     <div class="w-25 bg-light-danger text-center"
                                                          onclick="hide_show_goods_alt(this)"
                                                          data-key="show_alt">
-
                                                         مشابه
-
                                                     </div>
                                                 {% endif %}
                                             </div>
@@ -111,15 +112,32 @@
                     </div>
                 </div>
 
-            <div class="mt-3">
-                <div class="d-flex gap-1">
-                    {% render_field_by_order form_s form_s.assigned_trade_user form_s.assigned_trade_user2 label='on-border' %}
-                </div>
             {% if request.user|has_group:"trade_user" %}
+            <div class="mt-3">
+                <div class="d-flex mb-1 border-bottom">
+                    <div class="text-end w-50">
+                        {% render_field_by_order form_s form_s.assigned_trade_user label='on-border' margin_b=1 %}
+                        {{ form_s.instance.assigned_trade_user_date|date:'Y-m-d' }}
+                    </div>
+                    <div class="text-end w-50">
+                        {% render_field_by_order form_s form_s.assigned_trade_user2 label='on-border' margin_b=1 %}
+                        {{ form_s.instance.assigned_trade_user_date2|date:'Y-m-d' }}
+                    </div>
+                </div>
+
 
 
                 <div class="d-flex gap-1">
-                    {% render_field_by_order form_s form_s.task_start form_s.task_start2 label='on-border' margin_b=0 %}
+                <div class="d-flex w-50">
+                    {% render_field_by_order form_s form_s.task_start label='on-border' margin_b=0 %}
+                    {{ form_s.instance.task_start_date|date:'Y-m-d' }}
+                </div>
+                    <div class="d-flex w-50">
+                    {% render_field_by_order form_s form_s.task_start2 label='on-border' margin_b=0 %}
+                    {{ form_s.instance.task_start_date2|date:'Y-m-d' }}
+                </div>
+
+
                 </div>
                 <div class="d-flex gap-1">
                     <div class="w-50">
@@ -136,8 +154,9 @@
                 <div class="mt-3">
                 {% render_field_by_order form_s form_s.lead_time label='on-border' %}
                 </div>
-            {% endif %}
+
             </div>
+            {% endif %}
             </div>
 
                                 <div class="col-lg-6 border-top">
@@ -197,6 +216,7 @@
                                                            class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">مشاهده
                                                             پرونده استعلام</a>
                                                     {% endif %}
+                                                {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
                                                 </div>
                                                 {#                    <div class="btn btn-bordered w-100 btn-outline-success my-1 py-1" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">#}
                                                 {#                        استعلام قیمت#}

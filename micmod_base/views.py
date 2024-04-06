@@ -419,6 +419,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
     def get(self, request):
+        from django.core.paginator import Paginator
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
@@ -460,6 +461,10 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             form_list.append(forms)
             forms = []
 
+        paginator = Paginator(form_list, 20)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        context['page_obj'] = page_obj
         context['forms'] = form_list
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
@@ -506,7 +511,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             # obj.assigned_trade_user = assigned_trade_user
             # obj.assigned_trade_user2 = assigned_trade_user2
             # obj.save()
-
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
             if iqr_form.is_valid():

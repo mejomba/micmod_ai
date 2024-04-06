@@ -11,7 +11,7 @@
 {% block content %}
 {#{% include 'partials/formset_header_buttons.html' %}#}
 
-    {% for form_list in forms %}
+    {% for form_list in page_obj %}
         <div class="{% if forloop.counter|divisibleby:"2" %}bg-light-danger{% else %}bg-light-primary{% endif %}">
             <!--header-->
             <div class="rounded p-2 d-flex align-items-center h-40px">
@@ -38,6 +38,9 @@
                         {{ form_list.0.instance.quotation.pk }}
                     </a>
                 </div>
+            <div class="col">
+                ({{ form_list.0.instance.quotation.creator_user }})
+            </div>
                 <div>
 
                     {% if form_list.0.instance.quotation.force_inquiry %}
@@ -46,9 +49,9 @@
                 </div>
             </div>
         <!--end header-->
-        {% with progress_value=form_list.0.instance.quotation.progress_from_create_date %}
-        {% include 'core/partial/progress.html' with height=12 progress_value=progress_value %}
-        {% endwith %}
+{#        {% with progress_value=form_list.0.instance.quotation.progress_from_create_date %}#}
+{#        {% include 'core/partial/progress.html' with height=12 progress_value=progress_value %}#}
+{#        {% endwith %}#}
         </div>
         <div class="card-body p-0 mb-6 border">
             <!--header-->
@@ -77,6 +80,23 @@
             </div>
         </div>
     {% endfor %}
+
+    <ul class="pagination LTR-RTL">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a href="?page=1" class="page-link">&laquo; first</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}" class="page-link">previous</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>
+        {% endif %}
+        <li class="page-item border border-primary rounded"><a href="#" class="page-link border border-active">{{ page_obj.number  }}</a></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}" class="page-link">{{ page_obj.next_page_number }}</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}" class="page-link">next</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">last &raquo;</a></li>
+        {% endif %}
+    </ul>
+
+
+
 {% endblock %}
     </div>
 {% endblock %}
