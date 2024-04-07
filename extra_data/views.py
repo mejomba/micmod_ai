@@ -70,9 +70,6 @@ class SkuCreateView(LoginRequiredMixin,
 
     def form_valid(self, form):
         res = super().form_valid(form)
-        if not self.object.sku:
-            self.object.sku = self.object.pk
-            self.object.save()
         return res
 
 

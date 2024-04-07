@@ -442,11 +442,13 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
         return self.extra_data.sepidar_data
 
     def save(self):
-        if self.id is None and self.sku:
+        if self.id is None:
             self.id = self.sku
             super(Item,self).save()
             from tools.import_data import reset_seq
             reset_seq(self._meta.model)
+            self.sku = self.id
+            super().save()
         else:
             super(Item, self).save()
 
