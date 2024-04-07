@@ -49,7 +49,7 @@ class SkuCreateView(LoginRequiredMixin,
     model = Item
     template_name = 'extra_data/sku_create.html'
     success_url = reverse_lazy('extra_data:sku.list')
-    success_message = '%(sku)s create'
+    success_message = '%(part_number)s create'
 
     def get(self, request, *args, **kwargs):
         return super().get(self, request, *args, **kwargs)
@@ -69,7 +69,11 @@ class SkuCreateView(LoginRequiredMixin,
         return kwargs
 
     def form_valid(self, form):
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        if not self.object.sku:
+            self.object.sku = self.object.pk
+            self.object.save()
+        return res
 
 
 class SkuListView(LoginRequiredMixin, generic.ListView):
