@@ -238,7 +238,8 @@ class BaseView(UserPassesTestMixin,
                                                                       'flow_formset_constraint')
                                                               }
                                                           }) if self.has_formset else None
-            return self.form_invalid(self.form)
+            # return self.form_invalid(self.form)
+            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform))
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
         #     print(self.form.errors.as_data())
@@ -286,12 +287,12 @@ class BaseView(UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        workflow_form = kwargs.get('workflow_form')
         self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
         context['has_flow'] = self.has_flow
         if self.has_flow:
-            context['workflow_form'] = self.workflow_form(
+            context['workflow_form'] = workflow_form or self.workflow_form(
                                                           content_type_model=self.model,
                                                           initial=self.wf_initial,
                                                           current_user=self.request.user,

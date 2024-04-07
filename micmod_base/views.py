@@ -237,6 +237,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                                                                  content_type=content_type).last()
                     if flow_object:
                         flow_object.delete()
+            if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
+                ...
         except Exception as e:
             pass
             print('rol back ....')
