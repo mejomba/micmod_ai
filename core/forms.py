@@ -1,5 +1,6 @@
 
 from django import forms
+from django.forms import DateInput
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
 from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
@@ -249,8 +250,11 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):
                 self.fields[field].widget.attrs['class'] = 'form-control'
-            if isinstance(self.fields[field].widget, DateTimeInput):
-                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=self.fields[field].required)
+            m_field = self.fields[field]
+            if isinstance(m_field.widget, DateInput) or isinstance(m_field.widget, DateTimeInput):
+                self.fields[field] = JalaliDateField(label=m_field.label
+                            , widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'})
+                            , required=m_field.required)
 
         # disabled_fields += ['creator_user', 'editor_user']
         # hidden_fields += ['creator_user', 'editor_user']
@@ -262,9 +266,9 @@ class CustomBaseModelFormAuto(forms.ModelForm):
         if self.instance.field_groups:
             field_groups = []
             for item in self.instance.field_groups:
-                fields = set()
+                fields = []
                 for field in item.get('fields',[]):
-                    fields.add([f for f in self if f.name == field][0])
+                    fields.append([f for f in self if f.name == field][0])
                 # fields = {f for f in self if f.name in item.get('fields',[])}
                 # for field in item.get('fields',[]):
                 #     fields[field] = (self.fields[field])

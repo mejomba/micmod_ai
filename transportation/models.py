@@ -12,9 +12,16 @@ from django.template.loader import render_to_string
 from django.contrib.contenttypes.models import ContentType
 # Create your models here.
 
+TransportationMethod = (
+    ("express", _("express")),
+    ("air", _("air")),
+    ("sea", _("sea")),
+)
+
 
 class Packing(AbsBaseModel):
     pl_number = models.CharField(_('pl_number'), max_length=30, unique=True)
+    transportation_method = models.CharField(_('transportation_method'), choices=TransportationMethod, default='air', max_length=20,)
     orders_accept_until = models.DateField(_('orders_accept_until'))
     payments_until = models.DateField(_('payments_until'))
     deliver_to_mac_until = models.DateField(_('deliver_to_mac_until'))
@@ -25,7 +32,7 @@ class Packing(AbsBaseModel):
     descriptions = models.TextField(_('descriptions'), max_length=2000, null=True, blank=True)
 
     field_groups = [
-        {'fields': ['pl_number'], 'css_class':'row row-cols-4'},
+        {'fields': ['pl_number', 'transportation_method'], 'css_class':'row row-cols-4'},
         {'fields': ['orders_accept_until','payments_until','deliver_to_mac_until','deliver_to_transportation_company_at',
                     'transportation_at','deliver_to_customs_at','clearance_until'], 'css_class':'row row-cols-4'},
         {'fields': ['descriptions'], 'css_class': 'row row-cols-1'},

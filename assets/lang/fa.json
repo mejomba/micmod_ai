@@ -532,5 +532,6 @@
     "deliver_to_customs_at": "تاریخ دریافت در گمرک",
     "clearance_until": "تاریخ ترخیص",
     "descriptions": "توضیحات",
-    "payments_until": "تاریخ پرداخت وجه"
+    "payments_until": "تاریخ پرداخت وجه",
+    "transportation_method": "روش حمل"
 }
