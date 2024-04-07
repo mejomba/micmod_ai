@@ -301,6 +301,10 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
     auto_complete = False
+    absolute_url_create = None
+    absolute_url_update = None
+    absolute_url_delete = None
+    absolute_url_view = None
 
     def auto_complete_func(self):
         ...
