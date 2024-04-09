@@ -114,9 +114,9 @@ class Quotation(SLSDoc):
         extra_filter = kwargs.get('extra_filter')
 
         if f is not None:
-            qs = Quotation.objects.filter(**f)
+            qs = Quotation.objects.filter(**f).order_by('-created_date')
         else:
-            qs = Quotation.objects.all()
+            qs = Quotation.objects.all().order_by('-created_date')
         # qs = qs.order_by('force_inquiry', 'workflows__created_date')
         for q in qs:
             if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
