@@ -185,7 +185,10 @@ window.addEventListener('load', (event) => {
         // note we could simply do initialForms + extraFormIndices.length
         // to get the total form count, but that does not work if we have
         // validation errors on forms that were added dynamically
-        const firstElement = templateForm.content.querySelector('input, select');
+        let firstElement;
+        if (templateForm){
+            firstElement = templateForm.content.querySelector('input, select');
+        }
         // select the first input or select element, then count how many ids
         // with the same suffix occur in the formset container
         if (firstElement) {
