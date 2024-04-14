@@ -67,12 +67,13 @@ class CustomBaseModelForm(forms.ModelForm):
                 self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
 
         try:
-            self.fields['creator_user'].widget = self.fields['creator_user'].hidden_widget()
-            self.fields['editor_user'].widget = self.fields['editor_user'].hidden_widget()
-            self.fields['creator_user'].disabled = True
-            self.fields['editor_user'].disabled = True
+            if self.fields.get('creator_user') or self.fields.get('editor_user'):
+                self.fields['creator_user'].widget = self.fields['creator_user'].hidden_widget()
+                self.fields['editor_user'].widget = self.fields['editor_user'].hidden_widget()
+                self.fields['creator_user'].disabled = True
+                self.fields['editor_user'].disabled = True
         except Exception as e:
-            print(e)
+            show_error(e, __file__)
 
         # add source attribute for foreign keys
         for field in self.fields:

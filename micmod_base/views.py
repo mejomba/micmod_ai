@@ -41,6 +41,9 @@ from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 from .forms import PendingFormFilter
+# from core.mixins import DuplicateMixin
+# from workflow.forms import WorkFlowModelForm
+# import datetime
 
 
 class QuotationsList(LoginRequiredMixin,View):
@@ -84,7 +87,12 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('sls:quotations.view', kwargs={'pk': self.object.pk})
 
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
+        # if 'submit_duplicate' in self.request.POST:
+        #     return self.duplicate(self.object, [], ['quotation'])
         res = super().form_valid(form)
         if not self.object.is_official:
             self.object.official_value = 0
@@ -250,6 +258,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
+        user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
@@ -276,6 +285,34 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
+
+        # if 'sales_admin' in user_groups or self.request.user.is_superuser:
+        #     if self.request.GET.get('duplicate'):
+        #         context['duplicate'] = False
+        #         context['submit_duplicate'] = True
+        #         context['workflow_form'] = WorkFlowModelForm(
+        #             content_type_model=self.model,
+        #             initial={
+        #                     'wf_access': True,
+        #                     'from_user': self.request.user,
+        #                     'to_user': self.request.user,
+        #                     'state': self.flow_config.get('flow_state_list')[0],
+        #                     'state_index': 0,
+        #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
+        #                     'action': self.flow_config.get('flow_action'),
+        #                     'deadline': datetime.datetime.now() + datetime.timedelta(
+        #                         days=self.flow_config.get('flow_deadline')[0]),
+        #                     'flow_config': self.flow_config,
+        #                     'create': True
+        #                 },
+        #             current_user=self.request.user,
+        #         )
+        #         context['flow'] = None
+        #         context['flow_state_index'] = 0
+        #
+        #     else:
+        #         context['duplicate'] = True
+        #         context['submit_duplicate'] = False
         return context
 
 
@@ -417,8 +454,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         form_list = list()
 
         quotation = request.GET.get('quotation')
-        # from_time = request.GET.get('from_time')
-        # to_time = request.GET.get('to_time')
         customer_code = request.GET.get('customer_code')
         my_quotations = request.GET.get('my_quotations')
 
@@ -464,12 +499,16 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     def post(self, request):
         if obj_pk := self.request.POST.get('obj_pk'):
             obj_qs = QuotationItem.objects.filter(pk=obj_pk)
-            obj = QuotationItem.objects.filter(pk=obj_pk).first()
-            user_pk = request.POST.get('assigned_trade_user')
-            user_pk2 = request.POST.get('assigned_trade_user2')
-            task_start = self.request.POST.get('task_start')
-            task_start2 = self.request.POST.get('task_start2')
+            obj = obj_qs.first()
             obj.save_comment(self.request)
+
+            new_goods_code = self.request.POST.get('goods_code')
+            if new_goods_code and new_goods_code != obj.goods_code:
+                obj.old_goods_code = obj.goods_code
+                obj.goods_code = new_goods_code
+                obj.old_goods_name = obj.goods_name
+                obj.item_editor_user = self.request.user
+                obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
@@ -479,28 +518,12 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 obj.save()
 
             data = {
-                # 'assigned_trade_user': get_user_model().objects.filter(pk=user_pk).first() if user_pk else None,
-                # 'assigned_trade_user2': get_user_model().objects.filter(pk=user_pk2).first() if user_pk2 else None,
                 'lead_time': request.POST.get('lead_time'),
                 'goods_code': request.POST.get('goods_code'),
                 'goods_name': request.POST.get('goods_name'),
-                # 'task_start': True if task_start else False,
-                # 'task_start2': True if task_start2 else False,
-                # 'task_start_date': timezone.now() if not obj.task_start_date and task_start else obj.task_start_date,
-                # 'task_start_date2': timezone.now() if not obj.task_start_date2 and task_start2 else obj.task_start_date2,
-                # 'assigned_trade_user_date': timezone.now() if not obj.assigned_trade_user_date and user_pk else obj.assigned_trade_user_date,
-                # 'assigned_trade_user_date2': timezone.now() if not obj.assigned_trade_user_date2 and user_pk2 else obj.assigned_trade_user_date2
             }
             obj_qs.update(**data)
 
-            # user_pk = request.POST.get('assigned_trade_user')
-            # user_pk2 = request.POST.get('assigned_trade_user2')
-            # assigned_trade_user = get_user_model().objects.filter(pk=user_pk).first() if user_pk else None
-            # assigned_trade_user2 = get_user_model().objects.filter(pk=user_pk).first() if user_pk2 else None
-            # obj.lead_time = request.POST.get('lead_time')
-            # obj.assigned_trade_user = assigned_trade_user
-            # obj.assigned_trade_user2 = assigned_trade_user2
-            # obj.save()
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
             if iqr_form.is_valid():

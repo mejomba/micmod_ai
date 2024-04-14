@@ -11,7 +11,7 @@
                 {% with progress_value=form_list.0.instance.quotation.progress_from_inquiry_state %}
                 {% include 'core/partial/progress.html' with height=10 progress_value=progress_value %}
                 {% endwith %}
-                <form method="post">
+                <form method="post" id="main_form">
                     {% csrf_token %}
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
 
@@ -53,6 +53,18 @@
                                         </div>
                                     </div>
                                     {% get_comment_user_list form_s request.user %}
+                                    <div class="mt-5">
+                                        {% if form_s.instance.assigned_trade_user %}
+                                            <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="تخصیص یافته" style="bottom: 0; right: 0">
+                                            <i class="ki-outline ki-user-tick fs-2x"></i>
+                                            </span>
+                                        {% endif %}
+                                        {% if form_s.instance.assigned_trade_user %}
+                                            <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="شروع شده" style="bottom: 0; right: 30px;">
+                                            <i class="ki-outline ki-watch fs-2x"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 <div class="col-lg-4 p-0 border-top border-bottom border-end">
                                     <div class="d-flex border-bottom px-1 align-items-start">
@@ -61,10 +73,20 @@
 {#                                                <div class="select2 goods_code " name="goods_code"></div>#}
                                                 <input type="text" name="goods_code" class="form-control me-3" value="{{ form_s.instance.goods_code }}">
                                                 <label>کد کالا</label>
+                                                {% if form_s.instance.old_goods_code %}
+                                                    <small>{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                                    <br>
+                                                    <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                                                {% endif %}
                                             {% else %}
 {#                                                 <div class="select2 goods_code " name="goods_code"></div>#}
                                                 <label>کد کالا</label><br>
                                                 <input type="text" name="goods_code" class="form-control me-3" value="{{ form_s.instance.goods_code }}">
+                                                {% if form_s.instance.old_goods_code %}
+                                                    <small>{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                                    <br>
+                                                    <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                                                {% endif %}
 {#                                                <span class="select2-selection__rendered ps-3">{{ form_s.instance.goods_code }}</span>#}
                                             {% endif %}
                                         </div>
@@ -223,7 +245,7 @@
                                                 {#                    </div>#}
                                                 <div>
                                                     <input type="submit" value="ذخیره" data-key="save"
-                                                           class="btn btn-block btn-primary w-100">
+                                                           class="btn btn-block btn-primary w-100" id="submit">
                                                 </div>
                                             </div>
                                         </div>
@@ -288,5 +310,15 @@
         })
 
     </script>
+
+{#    <script>#}
+{#    // submit form as ajax request#}
+{#    const form = document.querySelector('#main_form')#}
+{#    const submitBtn = document.querySelector('#submit')#}
+{#    submitBtn.addEventListener('click', function (e){#}
+{#        e.preventDefault()#}
+{#        custom_ajax_post(form, 'http://127.0.0.1:8001/micmod_base/quotationitem/past/quotationitems', form)#}
+{#    })#}
+{#    </script>#}
 
 {% endblock extra_js %}
