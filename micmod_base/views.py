@@ -261,7 +261,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context['detail_logs'] = []
         if related_obj:
             for item in related_obj.all():
-                context['detail_logs'].append(ChangeLog.get_log(item))
+                context['detail_logs'].append(item.change_logs.all())
         # context['detail_logs'].reverse()
         if self.object:
             qis = self.object.quotation.all()
