@@ -71,6 +71,7 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
+    absolute_url_update = 'sls:quotations.view'
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -316,6 +317,9 @@ class QuotationItem(BaseModel):
 
     excluded_fields = ['trade_price_code','bazar_price_code',]
     # form_structures = [[{"model":"this","fields":{"enabled":["assigned_trade_user2"]}}]]
+    old_goods_code = models.CharField(verbose_name=_("old_goods_code"), max_length=20, null=True, blank=True)
+    old_goods_name = models.CharField(verbose_name=_("old_goods_name"), max_length=200, null=True, blank=True)
+    item_editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None

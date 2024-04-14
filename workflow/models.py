@@ -55,17 +55,18 @@ class WorkFlow(BaseContentType):
         # object_id
         self.save()
         model_ = apps.get_model(app_label=self.content_type.app_label, model_name=self.content_type.model)
-        Messages.send_message(
-            **{
-                'creator_user_id': self.creator_user_id,
-                'user': self.to_user,
-                'title': f'{_(self.content_type.name)}| {_(self.state)}',
-                'body': f' کاربر {self.creator_user.username} فرایند این موضوع را به شما واگذار کرده است.',
-                'icon_url': getattr(model_, 'icon_url', None) or "cube-2",
-                'link': f'/{self.content_type.app_label}/{self.content_type.model}/view/{self.object_id}',
-                'content_type': self.content_type,
-                'object_id': self.object_id
-            }
+        if self.creator_user != self.to_user:
+            Messages.send_message(
+                **{
+                    'creator_user_id': self.creator_user_id,
+                    'user': self.to_user,
+                    'title': f'{_(self.content_type.name)}| {_(self.state)}',
+                    'body': f' کاربر {self.creator_user.username} فرایند این موضوع را به شما واگذار کرده است.',
+                    'icon_url': getattr(model_, 'icon_url', None) or "cube-2",
+                    'link': f'/{self.content_type.app_label}/{self.content_type.model}/view/{self.object_id}',
+                    'content_type': self.content_type,
+                    'object_id': self.object_id
+                }
         )
 
 

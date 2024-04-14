@@ -67,6 +67,11 @@
                     <span class="mx-2">زمان تحویل: </span>
                     {{ form_s.instance.lead_time }}
                 </div>
+                {% if form_s.instance.assigned_trade_user %}
+                    <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
+                    <i class="ki-outline ki-message-notif fs-2x"></i>
+                    </span>
+                {% endif %}
 
 {#                creator_users = set()#}
 {#                for comment in comments:#}
@@ -311,10 +316,12 @@
 {#                                    {% render_field_by_order form_s form_s.cancel label='in-line' %}#}
 {#                                    <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>#}
 {#                                </div>#}
+
                                 {% if object_logs or detail_logs%}
                                     <div class="text-center">
                                     {% with counter=forloop.counter0 %}
-                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}
+{#                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}#}
+                                        {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
                                     {% endwith %}
                                     </div>
                                 {% endif %}

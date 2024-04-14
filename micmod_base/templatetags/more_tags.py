@@ -327,7 +327,7 @@ def is_select2(field):
 @register.filter
 def mul(a, b):
     try:
-        return a * b
+        return (a or 0) * (b or 0)
     except Exception as e:
         print('error ', __file__, e.__traceback__.tb_lineno, e)
 
@@ -338,7 +338,8 @@ def get_field_name(field):
     Returns name for a field.
     """
     try:
-        return field.__dict__.get('name')
+        if getattr(field, '__dict__', None):
+            return field.__dict__.get('name')
     except Exception as e:
         print(show_error(e, __file__))
         return None
@@ -354,3 +355,10 @@ def get_fk_model(model, fieldname):
     if not m2m and direct and isinstance(field_object, ForeignKey):
         return field_object.rel.to
     return None
+
+
+@register.simple_tag
+def get_inquiry_result_description(quotation_item):
+    from inquiry.models import PriceInquiryResult
+    inquiry_result = PriceInquiryResult.objects.filter(sku=quotation_item.goods_code, active=True)
+    return ''.join([f'({iqr.inquiry_type}: {iqr.description})' for iqr in inquiry_result])

@@ -7,6 +7,9 @@
 {% if wfform %}
     {#    <div class="d-flex align-items-center justify-content-between w-100 bg-white p-1 shadow" style="gap: 5px">#}
     <div class="row row-cols-sm-1 row-cols-1 row-cols-md-4 row-cols-lg-8  bg-white p-1 w-100 shadow mx-auto">
+{#    {{ wfform.as_div }}#}
+{#    {% crispy wfform %}#}
+
         {% render_field_by_order wfform wfform.from_user wfform.to_current_group_user wfform.to_user wfform.deadline wfform.action wfform.wf_description wfform.state wfform.belong_to_group wfform.belong_to_group_ crispy=True %}
         <div class="col mt-3">
             {% if flow %}
