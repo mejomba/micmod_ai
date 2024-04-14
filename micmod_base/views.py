@@ -245,6 +245,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                                                                  content_type=content_type).last()
                     if flow_object:
                         flow_object.delete()
+            if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
+                ...
         except Exception as e:
             pass
             print('rol back ....')
@@ -268,7 +270,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context['detail_logs'] = []
         if related_obj:
             for item in related_obj.all():
-                context['detail_logs'].append(ChangeLog.get_log(item))
+                context['detail_logs'].append(item.change_logs.all())
         # context['detail_logs'].reverse()
         if self.object:
             qis = self.object.quotation.all()

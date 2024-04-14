@@ -327,7 +327,7 @@ def is_select2(field):
 @register.filter
 def mul(a, b):
     try:
-        return a * b
+        return (a or 0) * (b or 0)
     except Exception as e:
         print('error ', __file__, e.__traceback__.tb_lineno, e)
 

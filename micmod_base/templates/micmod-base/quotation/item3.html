@@ -316,10 +316,12 @@
 {#                                    {% render_field_by_order form_s form_s.cancel label='in-line' %}#}
 {#                                    <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>#}
 {#                                </div>#}
+
                                 {% if object_logs or detail_logs%}
                                     <div class="text-center">
                                     {% with counter=forloop.counter0 %}
-                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}
+{#                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}#}
+                                        {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
                                     {% endwith %}
                                     </div>
                                 {% endif %}
