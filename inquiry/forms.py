@@ -12,6 +12,7 @@ from extra_data.models import Item
 from translator import get_text as _
 
 from django_select2 import forms as s2forms
+from jalali_date.fields import JalaliDateField
 
 
 class SkuCreateForm(CustomBaseModelForm):
@@ -333,7 +334,6 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
                 field.widget.attrs['onchange'] = "refresh_data(event)"
 
 
-
 class InquiryResultForm(CustomBaseModelForm):
 
     class Meta:
@@ -343,6 +343,8 @@ class InquiryResultForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)
         super(InquiryResultForm, self).__init__(*args, **kwargs)
+        self.fields['price_update_date'] = JalaliDateField(label=_('price_update_date'), required=False,
+                                                           widget=forms.HiddenInput())
 
         self.make_hidden(self.fields)
 
