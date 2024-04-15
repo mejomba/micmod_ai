@@ -7,6 +7,40 @@ from extra_data.models import Item
 from tools.google_sheet import GSheet
 
 @shared_task
+def update_components():
+    if cache.get('update_components'):
+        print('task is running')
+        return
+    try:
+        cache.set('update_components', True, 300)
+        print('update_components start')
+        components = Item.objects.all().order_by('id')
+        components_lst = list()
+        for component in components:
+            component_ = dict()
+            component_['sku'] = int(component.sku)
+            component_['part_number'] = component.part_number
+            component_['purchase_group'] = component.purchase_group.title if component.purchase_group else None
+            component_['sale_group'] = component.sale_group.title if component.sale_group else None
+            component_['brand'] = component.brand.title if component.brand else None
+            component_['is_sea_default'] = component.is_sea_default
+            component_['package'] = component.package
+            # print(component_)
+            components_lst.append(component_)
+        print('update_components validate')
+        update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+        g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
+        g_sheet.clear_rows('Portal_list')
+        g_sheet.update_rows('Portal_list', components_lst, 2)
+        print(f'task update_components done at:{update_time}')
+        print('update_components done')
+    except Exception as e:
+        print(str(e))
+    finally:
+        cache.set('update_components', False, 100)
+
+
+@shared_task
 def update_price_list():
     if cache.get('task_is_running'):
         print('task is running')
