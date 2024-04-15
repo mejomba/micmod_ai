@@ -32,7 +32,6 @@
 
         $(document).ready(function() {
           $(window).keydown(function(event){
-              debugger
             if(event.keyCode == 13) {
               event.preventDefault();
               return false;
@@ -41,7 +40,6 @@
         });
 
         $('#main-form').submit(function (e) {
-            debugger
             e.preventDefault();
             if (e.keyCode != '13'){
                 custom_ajax_post(e.target, baseUrl + `/inquiry/ajax/inquiryresult/forsale/`, $("#id_ajax"))
