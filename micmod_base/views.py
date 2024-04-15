@@ -448,6 +448,9 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
     def get(self, request):
+        # import time
+        # t1 = time.time()
+        # print('xxxxxxxxxxxxx')
         from django.core.paginator import Paginator
         context = dict()
         context['heading'] = _("quotation")
@@ -458,6 +461,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         quotation = request.GET.get('quotation')
         customer_code = request.GET.get('customer_code')
         my_quotations = request.GET.get('my_quotations')
+        search_sku = request.GET.get('search_sku')
 
         if quotation:
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
@@ -466,6 +470,9 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
 
         elif self.request.GET.get('choice') == 'my_quotations':
             quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user})
+        elif search_sku:
+            quotations_record_lst = Quotation.quotation_pending(self.request,
+                                                                extra_filter={'goods_code': search_sku})
         # elif from_time and to_time:
         #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
         else:
@@ -495,7 +502,9 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         context['forms'] = form_list
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
-
+        # t2 = time.time()
+        # print(t2 - t1)
+        # print('yyyyyyyyyyyyyyy')
         return render(request, self.template_name, context)
 
     def post(self, request):

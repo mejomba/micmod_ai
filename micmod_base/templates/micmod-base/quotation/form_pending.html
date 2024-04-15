@@ -64,6 +64,21 @@
                                             <i class="ki-outline ki-watch fs-2x"></i>
                                             </span>
                                         {% endif %}
+
+                                        <!-- Progress bar 1 -->
+                                        <div class="progress-circle mx-auto" data-value='60'>
+                                          <span class="progress-left">
+                                              <span class="progress-bar border-primary"></span>
+                                          </span>
+                                          <span class="progress-right">
+                                              <span class="progress-bar border-primary"></span>
+                                          </span>
+                                          <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                            <div class="font-weight-bold">{{ form_list.0.instance.quotation.progress_from_inquiry_state }}%</div>
+                                          </div>
+                                        </div>
+                                        <!-- END -->
+
                                     </div>
                                 </div>
                                 <div class="col-lg-4 p-0 border-top border-bottom border-end">
@@ -272,7 +287,6 @@
     <script>
         function post_ajax_data(event) {
             const elem = event.target
-            debugger
             let jsondata = new FormData();
             jsondata.append(
                 "form_structures", JSON.stringify([[{
@@ -293,7 +307,6 @@
     </script>
 
     <script>
-        debugger
         document.addEventListener('DOMContentLoaded', function (e) {
 
             items.forEach(function (item, idx) {
@@ -308,6 +321,33 @@
                 })
             }) // forEach
         })
+
+        $(function() {
+        //
+      $(".progress-circle").each(function() {
+
+        var value = $(this).attr('data-value');
+        var left = $(this).find('.progress-left .progress-bar');
+        var right = $(this).find('.progress-right .progress-bar');
+
+        if (value > 0) {
+          if (value <= 50) {
+            right.css('transform', 'rotate(' + percentageToDegrees(value) + 'deg)')
+          } else {
+            right.css('transform', 'rotate(180deg)')
+            left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')
+          }
+        }
+
+      })
+
+      function percentageToDegrees(percentage) {
+
+        return percentage / 100 * 360
+
+      }
+
+    });
 
     </script>
 
