@@ -684,8 +684,8 @@ class BaseView(UserPassesTestMixin,
                         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
                         comment_form = CommentsForm(self.request.POST, prefix=prefix)
                         if comment_form.is_valid():
+                            comment_form.instance.extra_data.request = self.request
                             cmnt = comment_form.save()
-                            cmnt.save_user(self.request)
 
                         # if d not in old_details:
                         #     d.attach_image_file(d)
