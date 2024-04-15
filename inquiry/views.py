@@ -453,6 +453,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
+            'supplier'
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
