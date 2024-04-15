@@ -3,6 +3,7 @@ from django.contrib.auth.models import Permission
 from django.utils.safestring import mark_safe
 
 from accounts.extra_models import Profile
+from tools.utils import show_error
 
 register = template.Library()
 
@@ -69,7 +70,7 @@ def has_permission(user, permission):
         if user.has_perm(permission):
             return True
     except Exception as e:
-        print(e)
+        show_error(e, __file__)
         return
 
 
@@ -83,7 +84,7 @@ def has_one_permission(user, permissions):
             has_perm = has_perm or user.has_perm(permission)
         return has_perm
     except Exception as e:
-        print(e)
+        show_error(e, __file__)
         return
 
 
@@ -96,7 +97,7 @@ def has_permission_s(user, permissions):
         if user.has_perms(perm_list):
             return True
     except Exception as e:
-        print(e)
+        show_error(e, __file__)
         return
 
 

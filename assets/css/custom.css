@@ -452,7 +452,7 @@ a .next {
   text-align: right;
   /*height: fit-content;*/
     overflow: hidden;
-    max-height: 3000px;
+    max-height: 20000px;
   /*height: 100%;*/
   transition: all 0.3s ease-out;
   -moz-transition: all .3s ease-out;
@@ -723,4 +723,74 @@ span .select2-selection{
 }
 .select2-selection__rendered {
     padding-top: 8px !important;
+}
+
+/*circle progress bar*/
+.progress-circle {
+  width: 35px;
+  height: 35px;
+  background: none;
+  position: relative;
+}
+
+.progress-circle::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #eee;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.progress-circle>span {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+
+.progress-circle .progress-left {
+  left: 0;
+}
+
+.progress-circle .progress-bar {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border-width: 4px;
+  border-style: solid;
+  position: absolute;
+  top: 0;
+}
+
+.progress-circle .progress-left .progress-bar {
+  left: 100%;
+  border-top-right-radius: 80px;
+  border-bottom-right-radius: 80px;
+  border-left: 0;
+  -webkit-transform-origin: center left;
+  transform-origin: center left;
+}
+
+.progress-circle .progress-right {
+  right: 0;
+}
+
+.progress-circle .progress-right .progress-bar {
+  left: -100%;
+  border-top-left-radius: 80px;
+  border-bottom-left-radius: 80px;
+  border-right: 0;
+  -webkit-transform-origin: center right;
+  transform-origin: center right;
+}
+
+.progress-circle .progress-value {
+  position: absolute;
+  top: 0;
+  left: 0;
 }

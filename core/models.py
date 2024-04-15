@@ -156,7 +156,7 @@ class BaseModelAuto:
         self.active_form_structure_index = 0
         self.serialized_ = None
         self.workflows_forms = None
-        self.excluded_fields += ['created_date','last_update_date','is_deleted','creator_user','editor_user']
+        self.excluded_fields += ['created_date', 'last_update_date', 'is_deleted', 'creator_user', 'editor_user']
 
     @property
     def serialized(self):
@@ -301,6 +301,10 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
     auto_complete = False
+    absolute_url_create = None
+    absolute_url_update = None
+    absolute_url_delete = None
+    absolute_url_view = None
 
     def auto_complete_func(self):
         ...
@@ -501,10 +505,12 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
     """***NEW***"""
 
-    def compare(self, obj=None, excluded_keys=None):
+    def compare(self, excluded_keys=None):
+        obj = self._meta.model.objects.get(pk=self.pk) if self.pk else None
         if excluded_keys is None:
             excluded_keys = list()
-        excluded_keys.extend(['created_date', 'last_update_date', 'editor_user', '_state', 'extra_data'])
+        excluded_keys.extend(['created_date', 'last_update_date', 'editor_user',
+                              '_state', 'extra_data', 'excluded_fields', 'files_', 'images_'])
         return self._compare(obj, excluded_keys)
 
     def _compare(self, old_obj=None, excluded_keys=None):
@@ -533,27 +539,27 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                     print('error: ', e.__traceback__.tb_lineno, e)
         return diff
 
-    def save_log(self, request, obj, old=None, action=None):
-        content_type = ContentType.objects.filter(app_label=obj._meta.app_label,
-                                                  model=obj._meta.model_name
-                                                  ).first()
+    def save_log(self):
+        old = self._meta.model.objects.get(pk=self.pk) if self.pk else None
+        return self.compare()
 
-        if old:
-            diff = self.compare(old)
-        else:
-            diff = self.compare()
-
-        obj_s = json.dumps(diff, default=str)
-        obj_struct = json.loads(obj_s)
-
-        from changelog.models import ChangeLog
-        if obj_struct['fields']:
-            ch = ChangeLog.objects.create(content_type=content_type,
-                                          object_id=obj.id,
-                                          diff_json=obj_struct,
-                                          action=action
-                                          )
-            ch.save_user(request)
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        action = 2 if self.pk else 1
+        diff = ''
+        if self._meta.app_label != 'changelog':
+            diff = self.save_log()
+        super().save(force_insert, force_update, using, update_fields)
+        if self._meta.app_label != 'changelog':
+            obj_s = json.dumps(diff, default=str)
+            obj_struct = json.loads(obj_s)
+            if obj_struct['fields']:
+                obj = self.change_logs.create(
+                                      diff_json=obj_struct,
+                                      action=action)
+                obj.extra_data.request = getattr(self.extra_data,'request', None)
+                obj.save()
 
     @staticmethod
     def attach_image_file(obj, form=None):
@@ -583,16 +589,22 @@ class AbsBaseModel(NoUserBaseModel):
                                     related_name='%(app_label)s_updator_%(model_name)s',
                                     verbose_name=_('updator_user'))
 
-    def save_user(self, request):
+    def save_user(self, request=None):
         try:
+            request = request or self.extra_data.request
             if self.creator_user:
                 self.editor_user = request.user
             else:
                 self.creator_user = request.user
                 self.editor_user = request.user
-            self.save()
         except Exception as e:
             print('error: ', e.__traceback__.tb_lineno, e)
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        self.save_user()
+        super().save(force_insert, force_update, using, update_fields)
 
     @classmethod
     def active(cls, user):

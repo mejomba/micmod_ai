@@ -5,10 +5,10 @@
     <div class="mx-3 p-3 bx-font-color">فیلتر </div>
     <div class="w-25 mb-3">{{ form_filter.choice }}</div>
     <div class="w-25">
-{#    {{ form_filter.from_time }}{{ form_filter.to_time }}#}
     {{ form_filter.my_quotations }}
     {{ form_filter.quotation }}
     {{ form_filter.customer_code }}
+    {{ form_filter.search_sku }}
     </div>
         <button id="id_btn" type="submit" class="btn btn-danger d-none mb-3">تایید</button>
     </div>
@@ -23,34 +23,26 @@
     const customer_code = document.querySelector("#id_customer_code")
     const btn = document.querySelector("#id_btn")
     const my_quotations = document.querySelector("#id_my_quotations")
+    const search_sku = document.querySelector("#id_search_sku")
 
 
     choice.addEventListener("change", function (event){
         debugger
-        {#if (event.currentTarget.value === "time") {#}
-        {#    from_time.classList.remove('d-none')#}
-        {#    to_time.classList.remove('d-none')#}
-        {#    btn.classList.remove("d-none")#}
-        {#    quotation.classList.add('d-none')#}
-        {#    customer_code.classList.add('d-none')#}
-        //}
         if (event.currentTarget.value === "quotation") {
             quotation.parentElement.classList.remove('d-none')
             quotation.classList.remove('d-none')
             btn.classList.remove('d-none')
-            {#from_time.classList.add('d-none')#}
-            {#to_time.classList.add('d-none')#}
             customer_code.classList.add('d-none')
             my_quotations.classList.add('d-none')
+            search_sku.classList.add('d-none')
         }
         else if (event.currentTarget.value === "customer_code") {
             customer_code.parentElement.classList.remove('d-none')
             customer_code.classList.remove('d-none')
             btn.classList.remove('d-none')
             quotation.classList.add('d-none')
-            {#from_time.classList.add('d-none')#}
-            {#to_time.classList.add('d-none')#}
             my_quotations.classList.add('d-none')
+            search_sku.classList.add('d-none')
 
         }
         else if (event.currentTarget.value === "my_quotations") {
@@ -58,24 +50,30 @@
             btn.classList.remove('d-none')
             customer_code.classList.add('d-none')
             quotation.classList.add('d-none')
+            search_sku.classList.add('d-none')
+        }
+        else if (event.currentTarget.value === "search_sku") {
+            search_sku.parentElement.classList.remove('d-none')
+            search_sku.classList.remove('d-none')
+            btn.classList.remove('d-none')
+            quotation.classList.add('d-none')
+            customer_code.classList.add('d-none')
+            my_quotations.classList.add('d-none')
+
         }
         else if (event.currentTarget.value === "all") {
             btn.classList.remove('d-none')
-            //btn.parentElement.classList.remove('d-none')
             customer_code.classList.add('d-none')
             customer_code.parentElement.classList.add('d-none')
             quotation.classList.add('d-none')
             quotation.parentElement.classList.add('d-none')
         }
         else {
-            debugger
-            {#to_time.classList.add('d-none')#}
-            {#from_time.classList.add('d-none')#}
             quotation.classList.add('d-none')
             customer_code.classList.add('d-none')
             btn.classList.add('d-none')
             my_quotations.classList.add('d-none')
-            //btn.parentElement.classList.add('d-none')
+            search_sku.classList.add('d-none')
         }
 
     })

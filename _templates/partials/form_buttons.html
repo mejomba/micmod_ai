@@ -7,9 +7,10 @@
 {#        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 2rem">&#x2b;</button>#}
 {#    {% endif %}#}
     {% if form.enable %}
-        {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
+        {% if not submit_duplicate %}
+        {% if flow_state_index|add:1 == flow_state_list|length  and not finish and not submit_duplicate %}
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>
-        {% elif not finish and has_flow %}
+        {% elif not finish and has_flow and not submit_duplicate%}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس"/>
             {% if not allow_next %}
                 <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="برخی از رکوردها قابل تایید نیستن!">
@@ -24,7 +25,7 @@
             {% elif submit_copy_q %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="ثبت / کپی"/>
             {% endif %}
-        {% elif not has_flow and form %}
+        {% elif not has_flow and form and not submit_duplicate %}
             <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
             {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="ثبت / کپی"/>
@@ -38,6 +39,12 @@
             <input type="submit" class="btn btn-outline-danger btn-bordered me-1" name="back" value="عودت کار"/>
         {% elif flow_state_index and finish and not wf_last_step_is_open %}
             <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>
+        {% endif %}
+        {% if duplicate %}
+            <a href="?duplicate=1" class="btn btn-bordered btn-outline-warning me-1 px-4">کپی</a>
+        {% endif %}
+        {% else %}
+            <input type="submit" class="btn btn-bordered btn-outline-success me-1 px-4" name="submit_duplicate" value="ذخیره"/>
         {% endif %}
     {% else %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}

@@ -71,6 +71,7 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
+    absolute_url_update = 'sls:quotations.view'
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -114,9 +115,9 @@ class Quotation(SLSDoc):
         extra_filter = kwargs.get('extra_filter')
 
         if f is not None:
-            qs = Quotation.objects.filter(**f)
+            qs = Quotation.objects.filter(**f).order_by('-last_update_date')
         else:
-            qs = Quotation.objects.all()
+            qs = Quotation.objects.all().order_by('-last_update_date')
         # qs = qs.order_by('force_inquiry', 'workflows__created_date')
         for q in qs:
             if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
@@ -316,6 +317,9 @@ class QuotationItem(BaseModel):
 
     excluded_fields = ['trade_price_code','bazar_price_code',]
     # form_structures = [[{"model":"this","fields":{"enabled":["assigned_trade_user2"]}}]]
+    old_goods_code = models.CharField(verbose_name=_("old_goods_code"), max_length=20, null=True, blank=True)
+    old_goods_name = models.CharField(verbose_name=_("old_goods_name"), max_length=200, null=True, blank=True)
+    item_editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None

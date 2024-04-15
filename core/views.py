@@ -213,7 +213,8 @@ class BaseView(UserPassesTestMixin,
                 return self.form_invalid(self.form)
 
         self.form.wfform = wfform
-        if self.form.is_valid() and wfform.is_valid():
+        wf_form_valid = wfform.is_valid()
+        if self.form.is_valid() and wf_form_valid:
             # if 'submit/copy' in self.request.POST:
                 # cache.set(f'{self.request.user}__submit/copy', True)
             # else:
@@ -238,7 +239,8 @@ class BaseView(UserPassesTestMixin,
                                                                       'flow_formset_constraint')
                                                               }
                                                           }) if self.has_formset else None
-            return self.form_invalid(self.form)
+            # return self.form_invalid(self.form)
+            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform))
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
         #     print(self.form.errors.as_data())
@@ -286,12 +288,12 @@ class BaseView(UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        workflow_form = kwargs.get('workflow_form')
         self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
         context['has_flow'] = self.has_flow
         if self.has_flow:
-            context['workflow_form'] = self.workflow_form(
+            context['workflow_form'] = workflow_form or self.workflow_form(
                                                           content_type_model=self.model,
                                                           initial=self.wf_initial,
                                                           current_user=self.request.user,
@@ -516,12 +518,13 @@ class BaseView(UserPassesTestMixin,
                 return HttpResponseRedirect(self.get_success_url())
                 # return super().form_valid(form)
             else:
+                form.instance.extra_data.request = self.request
                 new_obj = form.save(commit=True)
 
             # new_obj = form.save(commit=True) if 'back' in self.request.POST else None
 
             if new_obj:
-                new_obj.save_user(self.request)
+                # new_obj.save_user(self.request)
                 last_flow_obj = self.get_last_flow(new_obj)
                 """save wf if user change"""
                 if self.has_flow and 'change_user' in self.request.POST:
@@ -684,28 +687,28 @@ class BaseView(UserPassesTestMixin,
                             cmnt = comment_form.save()
                             cmnt.save_user(self.request)
 
-                        if d not in old_details:
-                            d.attach_image_file(d)
-                            # d = self.attach_image_file(d)
-                            # d.extra_data.request = self.request
-                            d.save_log(self.request, obj=d, action=1)
-                        else:
-                            for old_detail in old_details:
-                                if old_detail.id == d.id:
-                                    d.attach_image_file(d)
-                                    # d = self.attach_image_file(d)
-                                    # d.extra_data.request = self.request
-                                    d.save_log(self.request, obj=d, old=old_detail, action=2)
-                                    break
+                        # if d not in old_details:
+                        #     d.attach_image_file(d)
+                        #     # d = self.attach_image_file(d)
+                        #     # d.extra_data.request = self.request
+                        #     d.save_log(self.request, obj=d, action=1)
+                        # else:
+                        #     for old_detail in old_details:
+                        #         if old_detail.id == d.id:
+                        #             d.attach_image_file(d)
+                        #             # d = self.attach_image_file(d)
+                        #             # d.extra_data.request = self.request
+                        #             d.save_log(self.request, obj=d, old=old_detail, action=2)
+                        #             break
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
                 # new_obj = self.attach_image_file(new_obj, form)
-                if not old_obj:
-                    # new_obj.extra_data.request = self.request
-                    new_obj.save_log(self.request, obj=new_obj, action=1)
-                else:
-                    # new_obj.extra_data.request = self.request
-                    new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
+                # if not old_obj:
+                #     # new_obj.extra_data.request = self.request
+                #     new_obj.save_log(self.request, obj=new_obj, action=1)
+                # else:
+                #     # new_obj.extra_data.request = self.request
+                #     new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
 
                 print('form valid base view')
 

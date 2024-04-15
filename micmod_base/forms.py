@@ -17,6 +17,7 @@ from translator import get_text as _
 from micmod_base.models import Quotation, QuotationItem
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm, CustomBaseForm
+import json
 
 
 class QuotationForm(CustomBaseModelForm):
@@ -516,25 +517,22 @@ class BaseQIFormset(BaseInlineFormSet):
         return result
 
     def save(self, commit=True, request=None, related_name_fk=None):
-
-        result = super(BaseQIFormset, self).save(commit=commit)
+        # result = super(BaseQIFormset, self).save(commit=commit)
+        result = []
 
         idx = 0
         for form in self.forms:
+            form.instance.extra_data.request = request
+            obj = form.save(commit=commit)
+            if not obj:
+                continue
+            result.append(obj)
             qi_instance = form.instance
             # if form.changed_data and hasattr(form, 'nested') and not self._should_delete_form(form):
             if any([f.changed_data for f in form.nested.forms]) and hasattr(form, 'nested') and not self._should_delete_form(form):
-
-                old_details_ = getattr(qi_instance, 'quotation_item_rel', None)
-                old_details = []
-                if old_details_:
-                    old_details = list(old_details_.all())
-                    old_details = [qi_instance.attach_image_file(old_detail) for old_detail in old_details]
-
-                obj = form.nested.save(commit=commit)
-                import json
-                if obj:
-                    obj[0].result_parameter = json.dumps({
+                for form_n in form.nested.forms:
+                    form_n.instance.extra_data.request = request
+                    form_n.instance.result_parameter = json.dumps({
                         # 'currency_ref': result[idx].quotation.currency_ref.pk,
                         # 'payment_method': result[idx].quotation.payment_method,
                         # 'quantity': result[idx].quantity,
@@ -546,29 +544,8 @@ class BaseQIFormset(BaseInlineFormSet):
                         'customer_grade': qi_instance.quotation.customer_grade,
                         'customer_code': qi_instance.quotation.customer_code
                     })
-                    obj[0].save()
-                    obj[0].save_user(request)
+                    form_n.save(commit=commit)
 
-                    new_details = getattr(qi_instance, 'quotation_item_rel', None)
-                    if new_details:
-                        new_details = list(new_details.all())
-                    idx += 1
-
-                    for d in new_details:
-                        if d not in old_details:
-                            d.attach_image_file(d)
-                            d.save_log(request, obj=d, action=1)
-                        else:
-                            for old_detail in old_details:
-                                if old_detail.id == d.id:
-                                    d.attach_image_file(d)
-                                    d.save_log(request, obj=d, old=old_detail, action=2)
-                                    break
-                elif hasattr(form, 'nested') and not self._should_delete_form(form):
-                    obj = form.nested.save(commit=commit)
-                    if obj:
-                        obj[0].save()
-                        obj[0].save_user(request)
         return result
 
 
@@ -602,6 +579,7 @@ class PendingFormFilter(CustomBaseForm):
                       ('my_quotations', _('my_quotations')),
                       ('quotation', _('quotation')),
                       ('customer_code', _('customer_code')),
+                      ('search_sku', _('goods_code')),
                       ('all', _('all'))
                         ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
@@ -610,6 +588,7 @@ class PendingFormFilter(CustomBaseForm):
     quotation = forms.IntegerField(required=False)
     customer_code = forms.IntegerField(required=False)
     my_quotations = forms.CharField(required=False)
+    search_sku = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
@@ -619,4 +598,5 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation')})
         self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
+        self.fields['search_sku'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
 
