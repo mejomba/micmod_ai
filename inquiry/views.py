@@ -31,7 +31,7 @@ from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list, c_get
 from tools.form_tools import get_choice_field, get_obj_from_dict
-from .tasks import update_price_list
+from .tasks import update_price_list, update_components
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -925,6 +925,16 @@ class AjaxInquiryResultListData(View):
 #         form = PriceInquiryResult2CreateForm(instance=obj)
 #         form_html = render_to_string('inquiry/partial/inquiry_result_update_form.html', context={'form': form})
 
+
+def update_components_view(request, *args, **kwargs):
+    if cache.get('update_components'):
+        print('task is running')
+        return JsonResponse({'result': f'task_is running'})
+    count = PriceInquiryResult.objects.raw('select 1 as id,count(*) as num from extra_data_item')[0].num
+    update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+    sub_thread = threading.Thread(target=update_components.apply_async)
+    sub_thread.start()
+    return JsonResponse({'result': f'start updated at: {update_time}', 'Item\'s count': count,'celery task id': sub_thread.native_id})
 
 
 def get_price_list(request, *args, **kwargs):
