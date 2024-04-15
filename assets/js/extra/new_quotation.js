@@ -85,7 +85,6 @@ function get_price_data(code, party_id) {
 
 // ===================================
 function refresh_prices() {
-    debugger;
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
