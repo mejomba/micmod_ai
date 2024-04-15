@@ -851,7 +851,7 @@ function newFormatRepoItem(repo) {
         "<div class=''>" +
         "<div class=''>" + numberWithCommas(repo.max_price, 1) + "</div>" +
         "<div class=''>" + numberWithCommas(repo.avg_price, 1) + "</div>" +
-        "<div class=''>" + numberWithCommas(repo.min_price, 1) + "</div>" +
+        // "<div class=''>" + numberWithCommas(repo.min_price, 1) + "</div>" +
         "</div></div>" +
         "<div class='w-40 border-end'>" +
         "<div class='d-flex c-3-color pe-1'>" +
