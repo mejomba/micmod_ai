@@ -541,8 +541,8 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
                 iqr_obj.save()
-
-        return redirect(reverse('sls:quotationitem.form.pending'))
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        return redirect(redirect_path)
 
 
 def get_sku(request):
