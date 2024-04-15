@@ -8,9 +8,9 @@
     <div id="main-content">
         {% block content %}
             {% for form_s in forms %}
-                {% with progress_value=form_list.0.instance.quotation.progress_from_inquiry_state %}
-                {% include 'core/partial/progress.html' with height=10 progress_value=progress_value %}
-                {% endwith %}
+{#                {% with progress_value=form_list.0.instance.quotation.progress_from_inquiry_state %}#}
+{#                {% include 'core/partial/progress.html' with height=10 progress_value=progress_value %}#}
+{#                {% endwith %}#}
                 <form method="post" id="main_form">
                     {% csrf_token %}
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
@@ -66,7 +66,7 @@
                                         {% endif %}
 
                                         <!-- Progress bar 1 -->
-                                        <div class="progress-circle mx-auto" data-value='60'>
+                                        <div class="progress-circle mx-auto position-absolute" data-value='{{ form_list.0.instance.quotation.progress_from_inquiry_state }}' style="bottom: 0; right: 60px;">
                                           <span class="progress-left">
                                               <span class="progress-bar border-primary"></span>
                                           </span>
@@ -74,7 +74,7 @@
                                               <span class="progress-bar border-primary"></span>
                                           </span>
                                           <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
-                                            <div class="font-weight-bold">{{ form_list.0.instance.quotation.progress_from_inquiry_state }}%</div>
+                                            <div class="small">{{ form_list.0.instance.quotation.progress_from_inquiry_state }}%</div>
                                           </div>
                                         </div>
                                         <!-- END -->
@@ -322,32 +322,52 @@
             }) // forEach
         })
 
-        $(function() {
-        //
-      $(".progress-circle").each(function() {
-
-        var value = $(this).attr('data-value');
-        var left = $(this).find('.progress-left .progress-bar');
-        var right = $(this).find('.progress-right .progress-bar');
-
-        if (value > 0) {
-          if (value <= 50) {
-            right.css('transform', 'rotate(' + percentageToDegrees(value) + 'deg)')
-          } else {
-            right.css('transform', 'rotate(180deg)')
-            left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')
+        function percentageToDegrees(percentage) {
+            return percentage / 100 * 360
           }
+        function progressPercentage (){
+            const elements = document.querySelectorAll(".progress-circle")
+            elements.forEach(function (item){
+                let value = item.getAttribute('data-value');
+                let left = item.querySelector('.progress-left .progress-bar')
+                let right = item.querySelector('.progress-right .progress-bar')
+
+                if (value > 0) {
+                  if (value <= 50) {
+                    right.style.transform = 'rotate(' + percentageToDegrees(value) + 'deg)'
+                  } else {
+                    right.style.transform = 'rotate(180deg)'
+                    {#right.css('transform', 'rotate(180deg)')#}
+                    left.style.transform = 'rotate(' + percentageToDegrees(value - 50) + 'deg)'
+                    {#left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')#}
+                  }
+                }
+            })
         }
-
-      })
-
-      function percentageToDegrees(percentage) {
-
-        return percentage / 100 * 360
-
-      }
-
-    });
+        progressPercentage()
+    {#    $(function() {#}
+    {#      $(".progress-circle").each(function() {#}
+    {##}
+    {#        var value = $(this).attr('data-value');#}
+    {#        var left = $(this).find('.progress-left .progress-bar');#}
+    {#        var right = $(this).find('.progress-right .progress-bar');#}
+    {##}
+    {#        if (value > 0) {#}
+    {#          if (value <= 50) {#}
+    {#            right.css('transform', 'rotate(' + percentageToDegrees(value) + 'deg)')#}
+    {#          } else {#}
+    {#            right.css('transform', 'rotate(180deg)')#}
+    {#            left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')#}
+    {#          }#}
+    {#        }#}
+    {##}
+    {#      })#}
+    {##}
+    {#      function percentageToDegrees(percentage) {#}
+    {#        return percentage / 100 * 360#}
+    {#  }#}
+    {##}
+    //);
 
     </script>
 
