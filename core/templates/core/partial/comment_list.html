@@ -51,7 +51,6 @@
     const btns = document.querySelectorAll(".comment_delete")
     btns.forEach(function (btn){
         btn.addEventListener("click", function (){
-            debugger
             const url_var = window.location.origin
             const pk = btn.dataset.comment_pk
             $.ajax({
@@ -64,7 +63,6 @@
                 data: {pk: pk},
                 cache: true,
                 success: function (data) {
-                    debugger
                     dnone_comment = findAncestor(btn, "comment_body")
                     dnone_comment.classList.add('d-none')
                     result = data;

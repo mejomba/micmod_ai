@@ -56,7 +56,6 @@
             let q, url;
             url = new URL(window.location);
             q = url.searchParams.get("sku");
-            debugger
             let x = document.createElement('small')
             document.getElementById('id_sku_c').parentElement.appendChild(x.appendChild(document.createTextNode(` نام کالا: {{ form.instance.sku.part_number }}`)))
 
@@ -68,7 +67,6 @@
                 const weightInput = document.querySelector('#id_weight')
                 {#const ajaxAria = document.querySelector('#ajax_aria')#}
                 {#const m_form = document.querySelector('#main_form')#}
-                debugger
                 $.ajax({
                     type: 'GET',
                     url: `${window.location.origin}/inquiry/ajax/inquiryresult/list/data/?sku=${id_sku_c.val()}`,
@@ -77,7 +75,6 @@
                     processData: false,
                     contentType: false,
                     success: function (data) {
-                        debugger
                         const id_sku_c_container = document.createElement('small')
                         const weight_input_container = document.createElement('small')
                         const id_sku_c_j = document.getElementById('id_sku_c')
@@ -108,7 +105,6 @@
                 realSkuField.dispatchEvent(event);
 
             })
-            debugger
             {#document.addEventListener("load", function (e) {#}
             {#    const id_sku_c_value = id_sku_c.val();#}
             {#    const skuSearch = document.querySelector('.sku-search>input')#}
@@ -212,7 +208,6 @@
         $('#id_item').on("select2:select", function (e) {
             const skuSearch = document.querySelector('.sku-search>input')
             const skuss = document.querySelector('input')
-            debugger
             skuSearch.value = e.target.options[e.target.selectedIndex].text;
 
             var event = new Event('change');

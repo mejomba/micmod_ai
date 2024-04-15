@@ -21,7 +21,6 @@ $(document).ready(function () {
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
     function setPriceWithAjax(e, elem, price_code=''){
-        debugger
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
             party_id = -1
@@ -890,7 +889,6 @@ function numberWithCommas(x, digits = 2) {
 }
 
 function calculate_price(target) {
-    debugger
     const elem = findAncestor(target, "item")
     const final_price = elem.querySelector('[name*="-final_price"]')
     const total_price = elem.querySelector('[name*="-total_price"]')
@@ -918,7 +916,6 @@ function calculate_price(target) {
     if (isNaN(price)) {
         price = final_price.value
     }
-    debugger
     // totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
     // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
     totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100)
