@@ -21,7 +21,6 @@ $(document).ready(function () {
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
     function setPriceWithAjax(e, elem, price_code=''){
-        debugger
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
             party_id = -1
@@ -147,8 +146,6 @@ $(document).ready(function () {
     String.prototype.reverse_string=function() {return this.split("").reverse().join("");}
 
     addCommaSeperator()
-
-    debugger
     const elem = document.querySelectorAll('[name*="goods_code"]')
     elem.forEach(function (item){
         item.addEventListener('keyup', function (e) {
@@ -164,7 +161,6 @@ $(document).ready(function () {
                 contentType: false,
                 // beforeSend: block_main_container,
                 success: function (data) {
-                    debugger
                     if (data['res']){
                         item.classList.remove('border-danger')
                         item.classList.add('border-success')

@@ -122,7 +122,6 @@
     <script src="{% static 'js/extra/formset.js' %}"></script>
 
     <script>
-    debugger
     document.addEventListener('DOMContentLoaded', function (e) {
         {#closeAllFormset({#}
         {#    'code_h': ['class', 'select2-selection__rendered', 'lbl'],#}
@@ -172,11 +171,9 @@
     }
 
     const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
-    debugger
     submitCommentBtns.forEach(function (item){
         item.addEventListener('click', function (e){
             e.preventDefault()
-            debugger
             let comment_url = item.dataset.form_url;
             const pk = item.dataset.pk;
             const comment_type = item.dataset.comment_type
@@ -196,15 +193,12 @@
                     commentCounter.innerHTML = '0'
                 })
             }
-
-            debugger
             if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
             custom_ajax_get(comment_form, comment_url, comment_element)
         }) // end eventListener
     }) // end forEach
 
     function addCommentInput(){
-        debugger
         const pkElement = document.querySelector('[id*="object_id__"]')
         const pk = pkElement.dataset.pk
         const ctt_id = pkElement.dataset.ctt_id

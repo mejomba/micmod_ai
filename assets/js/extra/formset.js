@@ -27,7 +27,6 @@ window.addEventListener('load', (event) => {
     // because django's formset will create empty forms for any missing
     // indices, and will discard forms with indices >= TOTAL_FORMS, which can
     // lead to funny behavior in some edge cases)
-    debugger
     let nextFormIndex
     if (inputTotalForms) {
         nextFormIndex = Number(inputTotalForms.value)
@@ -37,13 +36,11 @@ window.addEventListener('load', (event) => {
     let extraFormIndices = [];
 
     function addForm(headerData) {
-        debugger
         // create DocumentFragment from template
         const formFragment = templateForm.content.cloneNode(true);
         // a django form is rendered as_table (default), as_ul, or as_p, so
         // the fragment will contain one or more <tr>, <li>, or <p> elements,
         // respectively.
-        debugger
         let elementInnerHtml
         for (let element of formFragment.children) {
             // replace the __prefix__ placeholders from the empty form by the
@@ -164,7 +161,6 @@ window.addEventListener('load', (event) => {
         // make sure the name indices are consecutive and smaller than
         // TOTAL_FORMS (the name attributes end up as dict keys on the server)
         // note we do not need to update the indices in the id attributes etc.
-        debugger
         // for (let [consecutiveIndex, formIndex] of extraFormIndices.entries()) {
         //     for (let formElement of getFormElements(formIndex)) {
         //         for (let element of formElement.querySelectorAll('input, select')) {
@@ -181,7 +177,6 @@ window.addEventListener('load', (event) => {
     }
 
     function updateTotalFormCount(event) {
-        debugger
         // note we could simply do initialForms + extraFormIndices.length
         // to get the total form count, but that does not work if we have
         // validation errors on forms that were added dynamically
@@ -257,7 +252,6 @@ function closeAllFormset(headerData){
     }
 }
 function setFormsetHeader(header, body, headerData, idx){
-        debugger
     for(const [x, y] of Object.entries(headerData)){
         if (y[0] === 'class' && y[2] === 'lbl') {
             header.querySelector(`[class*=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).innerHTML;

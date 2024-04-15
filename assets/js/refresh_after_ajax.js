@@ -52,7 +52,6 @@ $overlay.click(function () {
 
 // When next button is clicked
 $nextButton.click(function (event) {
-    debugger
     // Hide the current image
     $("#overlay img").hide();
     // Overlay image location
@@ -77,7 +76,6 @@ $nextButton.click(function (event) {
 
 // When previous button is clicked
 $prevButton.click(function (event) {
-    debugger
     // Hide the current image
     $("#overlay img").hide();
     // Overlay image location

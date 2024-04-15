@@ -579,6 +579,7 @@ class PendingFormFilter(CustomBaseForm):
                       ('my_quotations', _('my_quotations')),
                       ('quotation', _('quotation')),
                       ('customer_code', _('customer_code')),
+                      ('search_sku', _('goods_code')),
                       ('all', _('all'))
                         ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
@@ -587,6 +588,7 @@ class PendingFormFilter(CustomBaseForm):
     quotation = forms.IntegerField(required=False)
     customer_code = forms.IntegerField(required=False)
     my_quotations = forms.CharField(required=False)
+    search_sku = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
@@ -596,4 +598,5 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation')})
         self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
+        self.fields['search_sku'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
 
