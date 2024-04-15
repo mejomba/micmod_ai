@@ -75,7 +75,7 @@ class SkuCreateForm(CustomBaseModelForm):
                             'customs_group',
                             'package', 'batch_type', 'batch_count',
                             'image_1', 'image_2', 'file_1'])
-        self.make_disable(['sku'])
+        self.make_disable(['sku', 'sepidar_id_0'])
         # try:
         #     initial = kwargs.get('initial')
         #     if initial:
