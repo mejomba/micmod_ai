@@ -67,9 +67,9 @@ class SkuCreateForm(CustomBaseModelForm):
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
 
-        # if not access:
-        #     self.make_disable(self.fields)
-        #     self.enable = False
+        if not access:
+            self.make_disable(self.fields)
+            self.enable = False
 
         self.make_optional(['brand', 'quality', 'sale_group',
                             'customs_group',
