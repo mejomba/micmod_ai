@@ -76,11 +76,11 @@
                                                         <td>
                                                             <div class="d-flex flex-column align-items-baseline">
                                                             <span>کل: {{ quotation.get_inquiry_result_count.0 }}</span>
-<span>
+                                                        <span class="{% if quotation.get_inquiry_result_count.1 == quotation.get_inquiry_result_count.2 and quotation.get_inquiry_result_count.1 != 0 %}bg-success px-1 mb-1 rounded{% endif %}">
                                                             داخلی
                                                             <span class="font-size-10">{{ quotation.get_inquiry_result_count.1 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.2 }}</strong>
-      </span>
-                                                                <span>
+                                                        </span>
+                                                                <span class="{% if quotation.get_inquiry_result_count.3 == quotation.get_inquiry_result_count.4 and quotation.get_inquiry_result_count.3 != 0 %}bg-success px-1 rounded{% endif %}">
                                                             خارجی:
                                                             <span class="font-size-10">{{ quotation.get_inquiry_result_count.3 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.4 }}</strong>
                                                                     </span>
