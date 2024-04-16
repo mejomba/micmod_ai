@@ -479,7 +479,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
 
         elif self.request.GET.get('choice') == 'my_quotations':
-            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user})
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user,'assigned_trade_user2': self.request.user})
         elif search_sku:
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'goods_code': search_sku})
