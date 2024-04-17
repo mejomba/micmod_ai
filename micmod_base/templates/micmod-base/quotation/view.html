@@ -302,7 +302,15 @@
     }
 
     // disable submit buttons if click
-    
+    const inputs = document.querySelectorAll('input[type="submit"]')
+    const qForm = document.querySelector('#main-form')
+    qForm.addEventListener('submit', function (e){
+        setTimeout(() => {
+            inputs.forEach(function (item){
+            item.setAttribute('disabled', 'disabled')
+            })
+        }, 600);
+    })
 
 </script>
 
