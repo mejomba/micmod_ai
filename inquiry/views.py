@@ -215,11 +215,19 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
+        {'name': 'technical_confirm', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
+        q = self.request.POST.get('q')
+
+        if q == 'sales_user':
+            qs = qs.filter(creator_user__groups__name=q)
+        elif q == 'not_confirm':
+            qs = qs.filter(technical_confirm=False)
+
         return qs
 
     def customize_row(self, row, obj):
@@ -227,6 +235,7 @@ class SkuListDataTableView(AjaxDatatableView):
             reverse('extra_data:sku.update', args=(obj.id,)),
             obj.sku if obj.sku else '_'
         )
+        row['technical_confirm'] = f'<b class="text-success" >Yes</b>' if obj.technical_confirm else '<p>No</b>'
 
 
 def sku_list(request):
