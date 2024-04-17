@@ -901,7 +901,7 @@ function calculate_price(target) {
     let taxValue = 0
     let totalDiscount = 0
     if (isOfficial && isOfficial.checked){
-        tax = 9
+        tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
         }
