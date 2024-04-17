@@ -215,7 +215,8 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
-        {'name': 'technical_confirm', 'visible': True, },
+        {'name': 'technical_confirm', 'visible': True, }
+        ,{'name': 'sepidar_id_0', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
