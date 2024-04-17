@@ -2,6 +2,7 @@
 {% load static %}
 {% load quotation_tag %}
 {% load jalali_tags %}
+{% load accounts_tag %}
 
 {% block title %}Orders{% endblock title %}
 {% block extra_css %}
@@ -23,11 +24,17 @@
 {% endblock %}
 
 {% block content %}
+{% if request.user|has_group:'technical_admin' %}
+    <div class="border rounded p-3">
+        <span>استفاده از فیلتر</span>
+        <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>
+        <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>
+    </div>
+    {% endif %}
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
         <div class="main-content">
-
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
@@ -54,7 +61,8 @@
 
     <script language="javascript">
     $(document).ready(function() {
-
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
             $('#sku_list'),
             "{% url 'inquiry:sku.list.datatable' %}",
@@ -74,6 +82,7 @@
             }, {
                 // extra_data
                 // ...
+                q:q
             },
         );
     });
