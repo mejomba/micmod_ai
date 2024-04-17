@@ -320,11 +320,21 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
 def print_view(request,id=-1):
     template_name = 'micmod-base/quotation/view-print.html'
+    comments_url_params = '0'
+    with_comments = '1'
+    if request.GET.get('comments_url_params') == '1':
+        with_comments = '1'
+        comments_url_params = '0'
+    elif request.GET.get('comments_url_params') == '0':
+        with_comments = '0'
+        comments_url_params = '1'
     # formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm, extra=0, )
     formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm2, extra=0, )
     greeting = {}
     greeting['heading'] = _("create")
     greeting['pageview'] = _("quotation")
+    greeting['with_comments'] = with_comments
+    greeting['comments_url_params'] = comments_url_params
     quotation = Quotation.objects.filter(id=id).first()
     greeting['form'] = QuotationForm(instance=quotation)
     greeting['formset'] = formset(instance=quotation,
@@ -469,7 +479,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
 
         elif self.request.GET.get('choice') == 'my_quotations':
-            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user})
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user,'assigned_trade_user2': self.request.user})
         elif search_sku:
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'goods_code': search_sku})

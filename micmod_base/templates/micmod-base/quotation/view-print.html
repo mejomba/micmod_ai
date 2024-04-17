@@ -61,6 +61,9 @@
                                                         <div class="w-50 bold">روش پرداخت</div>
                                                         <div class="w-50 text-center">{% get_payment_method form.payment_method.value %}</div>
                                                     </div>
+                                                {% if with_comments == '1'  %}
+
+
                                                     <div class="d-flex w-100 border bg-soft-primary">
                                                         <div class="w-50 bold">نظرات</div>
                                                         <div class="w-50 text-center">{% for comment in form.instance.comments.all|default_if_none:"-" %}
@@ -68,6 +71,8 @@
                                                                                       {% endfor %}
                                                         </div>
                                                     </div>
+
+                                            {% endif %}
                                                 </div>
                                                 <div class="border w-50">
 
@@ -143,16 +148,18 @@
                                 <td class="w-20">سابقه فروش</td>
                                 <td class="w-20">استعلام قیمت</td>
                                 <td class="w-10">قیمت نهایی</td>
+                                {% if with_comments == '1' %}
                                 <td class="w-10">نظرات</td>
+                                {% endif %}
                             </tr>
                             </thead>
                             <tbody>
                             {% for form_ in formset %}
                                 <tr>
                                     {% if form.currency_ref.value == 1 %}
-                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 %}
+                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 with_comments=with_comments %}
                                     {% else %}
-                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 %}
+                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 with_comments=with_comments %}
                                     {% endif %}
                                 </tr>
                             {% endfor %}
@@ -174,6 +181,13 @@
                 </div>
                 <!-- End Form Layout -->
             </div>
+        <a href="{% url "sls:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}">
+            {% if comments_url_params == '0' %}
+                بدون نظرات
+            {% elif comments_url_params == '1' %}
+                با نظرات
+
+        {% endif %}</a>
         </div> <!-- container-fluid -->
         <!-- End Page-content -->
     </div>

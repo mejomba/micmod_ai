@@ -285,7 +285,21 @@
     emptyModal.addEventListener('hidden.bs.modal', function (e) {
         document.querySelector('#id-empty-modal-body').innerHTML = ''
     })
+    {#const customerName = document.querySelector('#select2-customer_code-container')#}
+    {#customerName.addEventListener('change', createTitle)#}
+    const saleType = document.querySelector('#id_sale_type')
+    saleType.addEventListener('change', createTitle)
+    const requestDate = document.querySelector('#id_request_date')
+    requestDate.addEventListener('change', createTitle)
 
+    function createTitle (){
+        debugger
+        const title = document.querySelector('#id_title')
+        const saleTypeText = saleType.options[saleType.selectedIndex].text
+        if (title) {
+            title.value =  requestDate.value + '--' + saleTypeText + '--'
+        }
+    }
 </script>
 
 {% endblock extra_js %}
