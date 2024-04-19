@@ -941,7 +941,7 @@ class AjaxInquiryResultListData(View):
                     {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, })
             except:
                 pass
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': None})
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id})
 
 
 # Todo ino yadet nare shanbe

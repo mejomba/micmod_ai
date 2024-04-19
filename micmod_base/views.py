@@ -174,7 +174,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                             back = WorkFlow.objects.create(**data)
 
                             new_quotation.quotation_self = self.object
-                            new_quotation.save_user(self.request)
+                            new_quotation.extra_data.request = self.request
+                            new_quotation.save()
+                            # new_quotation.save_user(self.request)
 
                         qi.quotation = new_quotation
                         qi.save()
