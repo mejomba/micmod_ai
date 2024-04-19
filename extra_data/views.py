@@ -273,6 +273,7 @@ class PurchaseGroupView(BaseView):
     model = PurchaseGroup
     template_name = 'extra_data/purchase_group.html'
     success_url = reverse_lazy('extra_data:purchase_group.list')
+    success_message = '%(title)s update'
     form_struct = {
         'form': PurchaseGroupForm,
         'childes': [
