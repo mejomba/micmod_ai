@@ -500,8 +500,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                                             contenttype=contenttype,
                                             object_id=self.pk,
                                             )
-
-        addition.save_user(request=request)
+        addition.extra_data.request = request
+        addition.save()
+        # addition.save_user(request=request)
 
     """***NEW***"""
 
