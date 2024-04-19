@@ -1,5 +1,5 @@
 from core.forms import CustomBaseModelForm
-from .models import ItemWeight
+from .models import ItemWeight, PurchaseGroup
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -24,3 +24,9 @@ class ItemWeightForm(CustomBaseModelForm):
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['sku_c'].initial = self.instance.sku.c_get('sku')
         self.make_hidden(['sku'])
+
+
+class PurchaseGroupForm(CustomBaseModelForm):
+    class Meta:
+        model = PurchaseGroup
+        fields = '__all__'

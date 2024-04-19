@@ -14,5 +14,9 @@ urlpatterns = [
     path('item_weight/view/<int:pk>/', views.ItemWeightUpdateView.as_view(), name='item_weight.update'),
     path('item_weight_list_datatable/', views.ItemWeightDataTableView.as_view(), name='item_weight.list.datatable'),
 
-    path('item/list/json/', views.item_list_json, name='item_list.json')
+    path('item/list/json/', views.item_list_json, name='item_list.json'),
+
+    path('purchasegroup/update/<int:pk>/', views.PurchaseGroupView.as_view(), name='purchase_group.update'),
+    path('purchasegroup/list/', views.PurchaseGroupListView.as_view(), name='purchase_group.list'),
+    path('purchasegroup/datatable/', views.PurchaseGroupDataTableView.as_view(), name='purchase_group.datatable'),
 ]
