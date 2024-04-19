@@ -38,6 +38,14 @@
                 {% render_field_by_order form  form.technical_confirm margin_b=6 %}
             {% endif %}
         </div>
+        {% if request.user|has_group:'total_admin' %}
+        <div class="my-4 row row-cols-4 rounded" style="background-color: antiquewhite">
+            {% include "core/partial/components/key_value_text.html" with rma_key="extra_cost_percentage" rma_value=item.extra_cost_percentage rma_class="d-flex py-3" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="sea_extra_cost_percentage" rma_value=item.sea_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="air_extra_cost_percentage" rma_value=item.air_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=item.express_extra_cost_percentage rma_class="d-flex py-1" %}
+        </div>
+        {% endif %}
     {% endblock %}
 
 {% block content %}
@@ -50,9 +58,10 @@
                         <tr>
                             <th scope="col" data-key="supplier">supplier</th>
                             <th scope="col" data-key="demanded quantity">demanded_quantity</th>
-                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+{#                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}#}
+{#                            {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}#}
                             <th scope="col" data-key="price">price</th>
-                            {% endif %}
+{#                            {% endif %}#}
                             <th scope="col" data-key="active">active</th>
                             <th scope="col" data-key="brand">brand</th>
                             <th scope="col" data-key="quality">quality</th>
@@ -102,7 +111,6 @@
                             <td>{{ inquiry_result.price }}</td>
                             {% else %}
                             <td>
-{#                                <div>{{ inquiry_result.rmb_final_price }}</div>#}
                                 <div> {{ inquiry_result.rial_final_price }}</div>
                             </td>
                             {% endif %}
