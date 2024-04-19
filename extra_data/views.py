@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
+from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 
@@ -70,6 +71,9 @@ class SkuCreateView(LoginRequiredMixin,
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+            url = reverse('extra_data:sku.update', kwargs={'pk': self.object.pk})
+            return redirect(url)
         return res
 
 
@@ -146,22 +150,20 @@ class SkuUpdateView(LoginRequiredMixin,
 
     def form_valid(self, form):
         if self.request.POST.get('draft') or self.request.POST.get('back'):
-            return super().form_valid(form)
+            x = super().form_valid(form)
+            if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+                url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
+                return redirect(url)
         if self.state_index == 1 and not form.cleaned_data.get('technical_confirm'):
             self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
-            # return HttpResponseRedirect('.')
             return super(SuccessMessageMixin, self).form_valid(form)
 
-        return super().form_valid(form)
-        # if self.request.POST.get('draft'):
-        #     return super().form_valid(form)
-        # if form.cleaned_data.get('technical_confirm') and not self.request.POST.get('back'):
-        #     return super().form_valid(form)
-        # if self.request.POST.get('back'):
-        #     return super().form_valid(form)
-        # else:
-        #     self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
-        #     return HttpResponseRedirect('.')
+        if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+            super().form_valid(form)
+            url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
+            return redirect(url)
+        super().form_valid(form)
+        return super(SuccessMessageMixin, self).form_valid(form)
 
 
 class SkuRelatedView(LoginRequiredMixin, generic.DetailView):
