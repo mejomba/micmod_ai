@@ -37,6 +37,13 @@
             {% if flow_state_index >= 1 %}
                 {% render_field_by_order form  form.technical_confirm margin_b=6 %}
             {% endif %}
+        {% if request.user|has_group:'technical_admin' %}
+        <div class="col mb-4">
+            <a href="{% url 'extra_data:sku.create' %}">
+                <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
+            </a>
+        </div>
+        {% endif %}
         </div>
         {% if request.user|has_group:'total_admin' %}
         <div class="my-4 row row-cols-4 rounded" style="background-color: antiquewhite">
@@ -140,7 +147,7 @@
                 <hr>
 <!-- =============================== جزیات رسید =============================== -->
             <div class="table-rep-plugin">
-            <div class="my-5">
+            <div class="mt-5 mb-20 pb-10">
             <div class="bg-info p-2 rounded my-1 text-center">جزیات رسید</div>
                     <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
                       <thead>
