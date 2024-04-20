@@ -126,8 +126,18 @@ class Quotation(SLSDoc):
                 else:
                     qis = q.quotation.filter(superuser_filter)
             elif 'trade_user' in user_groups_name and (q.is_inquiry_state or request_path == past_path):
-                if extra_filter is not None:
-                    trade_extra_filter = Q(assigned_trade_user=extra_filter.get('assigned_trade_user')) | Q(assigned_trade_user2=extra_filter.get('assigned_trade_user2'))
+                if extra_filter is not None and extra_filter.get('my_quotations'):
+                    trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
+                    qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                elif extra_filter is not None and extra_filter.get('goods_code'):
+                    qis = q.quotation.filter(trade_user_filter, **extra_filter)
+                # elif extra_filter is not None and extra_filter.get('goods_code') and extra_filter.get('my_quotations'):
+                #     trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
+                #     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                #     qis = qis.filter(goods_code=extra_filter.get('goods_code'))
+                elif extra_filter is not None and extra_filter.get('my_inquiry_not_started'):
+                    trade_extra_filter = (Q(assigned_trade_user=request.user) & Q(task_start=False)) | \
+                                         (Q(assigned_trade_user2=request.user) & Q(task_start2=False))
                     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
                 else:
                     qis = q.quotation.filter(trade_user_filter)

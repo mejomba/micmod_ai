@@ -580,6 +580,10 @@ class PendingFormFilter(CustomBaseForm):
                       ('quotation', _('quotation')),
                       ('customer_code', _('customer_code')),
                       ('search_sku', _('goods_code')),
+                      ('my_inquiry_not_started', _('my_inquiry_not_started')),
+                      # ('search_part_number', _('part_number')),
+                      # ('search_customer_name', _('customer_name')),
+                      # ('search_create_date', _('create_date')),
                       ('all', _('all'))
                         ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
@@ -589,6 +593,10 @@ class PendingFormFilter(CustomBaseForm):
     customer_code = forms.IntegerField(required=False)
     my_quotations = forms.CharField(required=False)
     search_sku = forms.CharField(required=False)
+    my_inquiry_not_started = forms.CharField(required=False)
+    # search_part_number = forms.CharField(required=False)
+    # search_customer_name = forms.CharField(required=False)
+    # search_create_date = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
@@ -599,4 +607,8 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
         self.fields['search_sku'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
+        self.fields['my_inquiry_not_started'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_inquiry_not_started')})
+        # self.fields['search_part_number'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_part_number')})
+        # self.fields['search_customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
+        # self.fields['search_create_date'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
 
