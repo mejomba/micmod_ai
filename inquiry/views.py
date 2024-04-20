@@ -215,18 +215,38 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
+        {'name': 'technical_confirm', 'visible': True, },
+        {'name': 'sepidar_id_0', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
+        q = self.request.POST.get('q')
+
+        if q == 'sales_user':
+            qs = qs.filter(creator_user__groups__name=q)
+        elif q == 'not_confirm':
+            qs = qs.filter(technical_confirm=False)
+
         return qs
+
+    def get_column_defs(self, request):
+        column = super().get_column_defs(request)
+        print('get_column')
+        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and 'express_extra_cost_percentage' != column[-1].get('name'):
+            column.append({'name': 'extra_cost_percentage', 'visible': True})
+            column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
+            column.append({'name': 'air_extra_cost_percentage', 'visible': True})
+            column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        return column
 
     def customize_row(self, row, obj):
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('extra_data:sku.update', args=(obj.id,)),
             obj.sku if obj.sku else '_'
         )
+        row['technical_confirm'] = f'<b class="text-success" >Yes</b>' if obj.technical_confirm else '<p>No</b>'
 
 
 def sku_list(request):
@@ -333,7 +353,9 @@ class InquiryResultListView(BaseView):
 
         if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
-            item_weight.save_user(request=self.request)
+            item_weight.extra_data.request = self.request
+            item_weight.save()
+            # item_weight.save_user(request=self.request)
 
         """save quotation_item inquiry result"""
         if submit_for_qi and qi_id:
@@ -453,6 +475,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
+            {'name': 'supplier', 'lookup_field': '__title__icontains'}
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -574,7 +597,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             'currency': currency_obj, 'price_setting': price_setting_obj, 'party_code': party_code
         }
         inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
-        inquiry_log_obj.save_user(request)
+        inquiry_log_obj.extra_data.request = request
+        inquiry_log_obj.save()
+        # inquiry_log_obj.save_user(request)
 
         inquiry_result_params = {
             #  استعلام از بازار
@@ -613,7 +638,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             "sales_price_inquery_log_id": inquiry_log_obj.id or None
         }
         obj = InquiryResult.objects.create(**inquiry_result_params)
-        obj.save_user(request)
+        obj.extra_data.request = request
+        obj.save()
+        # obj.save_user(request)
 
     html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html',
                             {'form': form, 'item': item, "sku": item_sku}, request)
@@ -914,7 +941,7 @@ class AjaxInquiryResultListData(View):
                     {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, })
             except:
                 pass
-        return JsonResponse({'sku_name': None, 'item_weight': None, 'item_id': None})
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id})
 
 
 # Todo ino yadet nare shanbe

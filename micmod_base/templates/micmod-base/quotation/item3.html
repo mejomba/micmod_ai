@@ -3,7 +3,7 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load more_tags %}
-
+{% load accounts_tag %}
 
 <div class="card item p-0 my-2" dir="rtl">
 
@@ -107,11 +107,22 @@
                         {#                        {% render_field_by_order form_s form_s.goods_name_alt label='on-border' %}#}
                         <div class="col on-border">
                             <label>نام کالا</label>
-                            <textarea class="goods_name w-100 form-control bg-white" rows="1" name="-goods_name_lbl"
+                            <textarea class="goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl"
                                       disabled></textarea>
+                            {% if request.user|has_groups:"sales_user" %}
+
+
+                            <div class="" style="padding-right: 19rem !important;">
+                                <a href="/extra_data/item/create/" target="_blank">
+                                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
+
                 </div>
+
                 <div class="d-none border-bottom px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
@@ -183,11 +194,11 @@
                         {% render_field_by_order nested nested.goods_avg_price no_input=True %}
 <!--                        <div class="w-60 card-title-desc text-center" name="avg_price"></div>-->
                     </div>
-                    <div class="d-flex h-20">
-                        <div class="w-40 card-title-desc">کمترین</div>
-                        {% render_field_by_order nested nested.goods_min_price no_input=True %}
-<!--                        <div class="w-55 card-title-desc text-center" name="min_price"></div>-->
-                    </div>
+{#                    <div class="d-flex h-20">#}
+{#                        <div class="w-40 card-title-desc">کمترین</div>#}
+{#                        {% render_field_by_order nested nested.goods_min_price no_input=True %}#}
+{#<!--                        <div class="w-55 card-title-desc text-center" name="min_price"></div>-->#}
+{#                    </div>#}
                 </div>
             </div>
             <div class="col-lg-3 border p-0 replace-digits">

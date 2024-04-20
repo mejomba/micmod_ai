@@ -850,7 +850,7 @@ function newFormatRepoItem(repo) {
         "<div class=''>" +
         "<div class=''>" + numberWithCommas(repo.max_price, 1) + "</div>" +
         "<div class=''>" + numberWithCommas(repo.avg_price, 1) + "</div>" +
-        "<div class=''>" + numberWithCommas(repo.min_price, 1) + "</div>" +
+        // "<div class=''>" + numberWithCommas(repo.min_price, 1) + "</div>" +
         "</div></div>" +
         "<div class='w-40 border-end'>" +
         "<div class='d-flex c-3-color pe-1'>" +
@@ -901,7 +901,7 @@ function calculate_price(target) {
     let taxValue = 0
     let totalDiscount = 0
     if (isOfficial && isOfficial.checked){
-        tax = 9
+        tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
         }

@@ -3,17 +3,18 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
+from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.utils import show_error
-from .forms import ItemWeightForm
+from .forms import ItemWeightForm, PurchaseGroupForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight
+from extra_data.models import Item, ItemWeight, PurchaseGroup
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -70,6 +71,9 @@ class SkuCreateView(LoginRequiredMixin,
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+            url = reverse('extra_data:sku.update', kwargs={'pk': self.object.pk})
+            return redirect(url)
         return res
 
 
@@ -146,22 +150,20 @@ class SkuUpdateView(LoginRequiredMixin,
 
     def form_valid(self, form):
         if self.request.POST.get('draft') or self.request.POST.get('back'):
-            return super().form_valid(form)
+            x = super().form_valid(form)
+            if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+                url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
+                return redirect(url)
         if self.state_index == 1 and not form.cleaned_data.get('technical_confirm'):
             self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
-            # return HttpResponseRedirect('.')
             return super(SuccessMessageMixin, self).form_valid(form)
 
-        return super().form_valid(form)
-        # if self.request.POST.get('draft'):
-        #     return super().form_valid(form)
-        # if form.cleaned_data.get('technical_confirm') and not self.request.POST.get('back'):
-        #     return super().form_valid(form)
-        # if self.request.POST.get('back'):
-        #     return super().form_valid(form)
-        # else:
-        #     self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
-        #     return HttpResponseRedirect('.')
+        if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
+            super().form_valid(form)
+            url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
+            return redirect(url)
+        super().form_valid(form)
+        return super(SuccessMessageMixin, self).form_valid(form)
 
 
 class SkuRelatedView(LoginRequiredMixin, generic.DetailView):
@@ -265,3 +267,65 @@ class ItemWeightDataTableView(AjaxDatatableView):
                       reverse('extra_data:item_weight.update', args=(obj.id,)),
                       obj.sku if obj.sku else '_'
                     )
+
+
+class PurchaseGroupView(BaseView):
+    model = PurchaseGroup
+    template_name = 'extra_data/purchase_group.html'
+    success_url = reverse_lazy('extra_data:purchase_group.list')
+    success_message = '%(title)s update'
+    form_struct = {
+        'form': PurchaseGroupForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+
+class PurchaseGroupListView(generic.ListView):
+    """
+    class PurchaseGroupListView list view
+    """
+    model = PurchaseGroup
+    template_name = 'extra_data/purchase_group_list.html'
+    context_object_name = 'items'
+
+
+class PurchaseGroupDataTableView(AjaxDatatableView):
+    model = PurchaseGroup
+    title = 'purchase_group'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border sku-search',
+        #  'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__iexact'},
+        # {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border', 'searchable': False},
+        {'name': 'title', 'orderable': True, 'visible': True, },
+        {'name': 'price_settings', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'hs', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
+        {'name': 'sea_transportation', 'orderable': True, 'visible': True, },
+        {'name': 'air_transportation', 'orderable': True, 'visible': True, },
+        {'name': 'express_transportation', 'orderable': True, 'visible': True, },
+        {'name': 'sepidar_id', 'orderable': True, 'visible': True, },
+        {'name': 'sepidar_code', 'orderable': True, 'visible': True, },
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', 'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+    ]
+
+    # def get_initial_queryset(self, request=None):
+    #     pass
+
+    def customize_row(self, row, obj):
+        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
+                      reverse('extra_data:purchase_group.update', args=(obj.id,)),
+                      obj.title if obj.title else '_'
+                    )
+
+

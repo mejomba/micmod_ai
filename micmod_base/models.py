@@ -127,7 +127,8 @@ class Quotation(SLSDoc):
                     qis = q.quotation.filter(superuser_filter)
             elif 'trade_user' in user_groups_name and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
-                    qis = q.quotation.filter(trade_user_filter, **extra_filter)
+                    trade_extra_filter = Q(assigned_trade_user=extra_filter.get('assigned_trade_user')) | Q(assigned_trade_user2=extra_filter.get('assigned_trade_user2'))
+                    qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
                 else:
                     qis = q.quotation.filter(trade_user_filter)
 

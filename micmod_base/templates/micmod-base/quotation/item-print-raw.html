@@ -1,0 +1,32 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load quotation_tag %}
+<tr class=" item">
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    <td class=" font-size-12 text-center align-middle replace-digits">
+        <h6>{{ forloop.counter }}</h6>
+    </td>
+    <td class="">
+        <div class="font-size-10 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
+    </td>
+    <td class="">
+        <div class="font-size-10">{{ form.instance.goods_name|default_if_none:"" }}</div>
+    </td>
+    <td class="font-size-10 replace-digits">
+        <div class="bold text-center font-size-10" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+    </td>
+    <td class="font-size-10 replace-digits">
+        <div class="bold text-center font-size-10" name="unit" >{{ form.instance.index|default_if_none:0|intcomma }}</div>
+    </td>
+    <td class="font-size-10 replace-digits">
+        <div class="bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|intcomma }}</div>
+    </td>
+    <td class="font-size-10 replace-digits">
+        <div class="bold text-center font-size-10" name="final_price" >{{ form.instance.final_price|default_if_none:0|intcomma }}</div>
+    </td>
+
+</tr>

@@ -474,9 +474,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                 comment_content=content,
                 content_type=content_type,
                 object_id=self.pk,
+                creator_user=request.user,
+                editor_user=request.user
             )
-
-            comment.save_user(request)
 
     """***NEW***"""
 
@@ -500,8 +500,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                                             contenttype=contenttype,
                                             object_id=self.pk,
                                             )
-
-        addition.save_user(request=request)
+        addition.extra_data.request = request
+        addition.save()
+        # addition.save_user(request=request)
 
     """***NEW***"""
 

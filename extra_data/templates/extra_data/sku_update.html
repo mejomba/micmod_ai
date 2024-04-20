@@ -37,7 +37,22 @@
             {% if flow_state_index >= 1 %}
                 {% render_field_by_order form  form.technical_confirm margin_b=6 %}
             {% endif %}
+        {% if request.user|has_group:'technical_admin' %}
+        <div class="col mb-4">
+            <a href="{% url 'extra_data:sku.create' %}">
+                <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
+            </a>
         </div>
+        {% endif %}
+        </div>
+        {% if request.user|has_group:'total_admin' %}
+        <div class="my-4 row row-cols-4 rounded" style="background-color: antiquewhite">
+            {% include "core/partial/components/key_value_text.html" with rma_key="extra_cost_percentage" rma_value=item.extra_cost_percentage rma_class="d-flex py-3" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="sea_extra_cost_percentage" rma_value=item.sea_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="air_extra_cost_percentage" rma_value=item.air_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=item.express_extra_cost_percentage rma_class="d-flex py-1" %}
+        </div>
+        {% endif %}
     {% endblock %}
 
 {% block content %}
@@ -50,9 +65,10 @@
                         <tr>
                             <th scope="col" data-key="supplier">supplier</th>
                             <th scope="col" data-key="demanded quantity">demanded_quantity</th>
-                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+{#                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}#}
+{#                            {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}#}
                             <th scope="col" data-key="price">price</th>
-                            {% endif %}
+{#                            {% endif %}#}
                             <th scope="col" data-key="active">active</th>
                             <th scope="col" data-key="brand">brand</th>
                             <th scope="col" data-key="quality">quality</th>
@@ -102,7 +118,6 @@
                             <td>{{ inquiry_result.price }}</td>
                             {% else %}
                             <td>
-{#                                <div>{{ inquiry_result.rmb_final_price }}</div>#}
                                 <div> {{ inquiry_result.rial_final_price }}</div>
                             </td>
                             {% endif %}
@@ -132,7 +147,7 @@
                 <hr>
 <!-- =============================== جزیات رسید =============================== -->
             <div class="table-rep-plugin">
-            <div class="my-5">
+            <div class="mt-5 mb-20 pb-10">
             <div class="bg-info p-2 rounded my-1 text-center">جزیات رسید</div>
                     <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
                       <thead>
