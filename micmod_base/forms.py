@@ -209,6 +209,7 @@ class QuotationItemForm(CustomBaseModelForm):
             'goods_price_sheet2': forms.HiddenInput(),
             'goods_price_sheet3': forms.HiddenInput(),
             'goods_price_market': forms.HiddenInput(),
+            # 'final_price': forms.HiddenInput(),
             # 'goods_sheet_date': forms.DateInput(attrs={'class': 'goods_sheet_date','disabled': True}),
             'goods_name_alt': forms.HiddenInput(),
             # 'goods_last_sale': forms.DateInput(attrs={'class': 'goods_last_sale','disabled': True}),
@@ -394,6 +395,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'price_method': forms.Select(attrs={'class': 'price_method w-100 '}),
             'final_price': forms.TextInput(attrs={'disabled': True, 'class': 'final_price w-100 text-center'}),
             # 'delivery_time': forms.TextInput(attrs={'hidden': False}),
+            # 'final_price': forms.HiddenInput(),
             # 'goods_name': forms.TextInput(attrs={'hidden': False}),
             # 'stock_amount': forms.TextInput(attrs={'hidden': False}),
             # 'goods_avg_price': forms.TextInput(attrs={'hidden': False}),
@@ -523,7 +525,15 @@ class BaseQIFormset(BaseInlineFormSet):
         idx = 0
         for form in self.forms:
             form.instance.extra_data.request = request
-            obj = form.save(commit=commit)
+            if 'DELETE' in form.changed_data and form.cleaned_data['DELETE']:
+                if form.instance.pk:
+                    form.instance.delete()
+                    obj = None
+                else:
+                    # Don't save form
+                    obj = None
+            else:
+                obj = form.save(commit=commit)
             if not obj:
                 continue
             result.append(obj)
