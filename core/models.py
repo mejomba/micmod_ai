@@ -40,15 +40,17 @@ class BaseManager(models.Manager):
         self.is_public = is_public
 
     def get_queryset(self):
+        qs = super().get_queryset().filter(is_deleted=False)
+        # qs = qs.extra(select={"work_flow_status": f"select max(id) from workflow_workflow where object_id=id and content_type_id={self.model.content_type().id} group by object_id,content_type_id"})
         if self.is_public:
             # print('================ public', self.model.objects)
-            return super().get_queryset().filter(is_deleted=False).order_by('-last_update_date')
+            return qs.order_by('-last_update_date')
         else:
             user = get_user_model().objects.filter(pk=1)
             # return self.get_access_object(user)
 
             # print('================ private', self.model.objects)
-        return super().get_queryset().filter(is_deleted=False)
+        return qs.order_by('-last_update_date')
 
     # def get_target_user_from_group(group, level=1):
     #     from workflow.models import FlowAdminGroup
@@ -293,8 +295,16 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
         super().__init__(*args, **kwargs)
         self.extra_data = ExtraData()
 
+    def content_type(self):
+        return ContentType.objects.get_for_model(self)
+
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
+    last_work_flow_id = models.BigIntegerField(null=True, blank=True, verbose_name=_('las_work_flow'), )
+
+    def last_work_flow(self):
+        from workflow.models import WorkFlow
+        return self.workflows.filter(id=self.last_work_flow_id)
 
     is_deleted = models.BooleanField(default=False, verbose_name=_('is_deleted'))
 
