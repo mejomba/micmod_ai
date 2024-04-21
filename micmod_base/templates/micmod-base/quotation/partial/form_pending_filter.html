@@ -9,6 +9,7 @@
     {{ form_filter.quotation }}
     {{ form_filter.customer_code }}
     {{ form_filter.search_sku }}
+    {{ form_filter.my_inquiry_not_started }}
     </div>
         <button id="id_btn" type="submit" class="btn btn-danger d-none mb-3">تایید</button>
     </div>
@@ -19,11 +20,19 @@
     const choice = document.querySelector("#id_choice")
     {#const from_time = document.querySelector("#id_from_time")#}
     {#const to_time = document.querySelector("#id_to_time")#}
+
+
+    const btn = document.querySelector("#id_btn")
+
+    const my_quotations = document.querySelector("#id_my_quotations")
+    const my_inquiry_not_started = document.querySelector("#id_my_inquiry_not_started")
     const quotation = document.querySelector("#id_quotation")
     const customer_code = document.querySelector("#id_customer_code")
-    const btn = document.querySelector("#id_btn")
-    const my_quotations = document.querySelector("#id_my_quotations")
     const search_sku = document.querySelector("#id_search_sku")
+    // all
+    {#const search_part_number = document.querySelector("#id_search_part_number")#}
+    {#const search_customer_name = document.querySelector("#id_search_customer_name")#}
+    {#const search_create_date = document.querySelector("#id_search_create_date")#}
 
 
     choice.addEventListener("change", function (event){
@@ -32,35 +41,51 @@
             quotation.parentElement.classList.remove('d-none')
             quotation.classList.remove('d-none')
             btn.classList.remove('d-none')
+
             customer_code.classList.add('d-none')
             my_quotations.classList.add('d-none')
             search_sku.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
         }
         else if (event.currentTarget.value === "customer_code") {
             customer_code.parentElement.classList.remove('d-none')
             customer_code.classList.remove('d-none')
             btn.classList.remove('d-none')
+
             quotation.classList.add('d-none')
             my_quotations.classList.add('d-none')
             search_sku.classList.add('d-none')
-
+            my_inquiry_not_started.classList.add('d-none')
         }
         else if (event.currentTarget.value === "my_quotations") {
             my_quotations.parentElement.classList.add('d-none')
             btn.classList.remove('d-none')
+
             customer_code.classList.add('d-none')
             quotation.classList.add('d-none')
             search_sku.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
         }
         else if (event.currentTarget.value === "search_sku") {
             search_sku.parentElement.classList.remove('d-none')
             search_sku.classList.remove('d-none')
             btn.classList.remove('d-none')
+
             quotation.classList.add('d-none')
             customer_code.classList.add('d-none')
             my_quotations.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
 
         }
+        {#else if (event.currentTarget.value === "search_part_number") {#}
+        {#    search_part_number.parentElement.classList.remove('d-none')#}
+        {#    search_part_number.classList.remove('d-none')#}
+        {#    btn.classList.remove('d-none')#}
+        {#    quotation.classList.add('d-none')#}
+        {#    customer_code.classList.add('d-none')#}
+        {#    my_quotations.classList.add('d-none')#}
+        {##}
+        //}
         else if (event.currentTarget.value === "all") {
             btn.classList.remove('d-none')
             customer_code.classList.add('d-none')
@@ -68,12 +93,27 @@
             quotation.classList.add('d-none')
             quotation.parentElement.classList.add('d-none')
         }
+        else if (event.currentTarget.value === 'my_inquiry_not_started'){
+            {#my_inquiry_not_started.parentElement.classList.remove('d-none')#}
+            {#my_inquiry_not_started.classList.remove('d-none')#}
+            btn.classList.remove('d-none')
+
+            customer_code.classList.add('d-none')
+            customer_code.parentElement.classList.add('d-none')
+            quotation.classList.add('d-none')
+            quotation.parentElement.classList.add('d-none')
+            my_quotations.classList.add('d-none')
+            my_quotations.parentElement.classList.add('d-none')
+            search_sku.classList.add('d-none')
+            search_sku.parentElement.classList.add('d-none')
+        }
         else {
             quotation.classList.add('d-none')
             customer_code.classList.add('d-none')
             btn.classList.add('d-none')
             my_quotations.classList.add('d-none')
             search_sku.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
         }
 
     })

@@ -481,10 +481,16 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
 
         elif self.request.GET.get('choice') == 'my_quotations':
-            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'assigned_trade_user': self.request.user,'assigned_trade_user2': self.request.user})
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'my_quotations': True})
         elif search_sku:
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'goods_code': search_sku})
+        elif self.request.GET.get('choice') == 'my_inquiry_not_started':
+            quotations_record_lst = Quotation.quotation_pending(self.request,
+                                                                extra_filter={'my_inquiry_not_started': True})
+        # elif 'goods_code and my_quotations':
+        #     quotations_record_lst = Quotation.quotation_pending(self.request,
+        #                                                         extra_filter={'goods_code': search_sku, "my_quotations": True})
         # elif from_time and to_time:
         #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
         else:
