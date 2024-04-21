@@ -523,7 +523,15 @@ class BaseQIFormset(BaseInlineFormSet):
         idx = 0
         for form in self.forms:
             form.instance.extra_data.request = request
-            obj = form.save(commit=commit)
+            if 'DELETE' in form.changed_data and form.cleaned_data['DELETE']:
+                if form.instance.pk:
+                    form.instance.delete()
+                    obj = None
+                else:
+                    # Don't save form
+                    obj = None
+            else:
+                obj = form.save(commit=commit)
             if not obj:
                 continue
             result.append(obj)
