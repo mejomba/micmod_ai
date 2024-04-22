@@ -345,6 +345,10 @@ class InquiryResultForm(CustomBaseModelForm):
         super(InquiryResultForm, self).__init__(*args, **kwargs)
         self.fields['price_update_date'] = JalaliDateField(label=_('price_update_date'), required=False,
                                                            widget=forms.HiddenInput())
+        self.fields['goods_last_sale'] = JalaliDateField(label=_('goods_last_sale'), required=False,
+                                                         widget=forms.HiddenInput())
+        self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_q_last_sale'), required=False,
+                                                           widget=forms.HiddenInput())
 
         self.make_hidden(self.fields)
 
