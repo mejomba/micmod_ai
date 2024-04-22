@@ -403,7 +403,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity
+                return self.fee * self.quantity * 0
             else:
                 return 0
         except Exception as e:
