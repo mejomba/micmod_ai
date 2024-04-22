@@ -18,6 +18,7 @@ from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q
 from accounts.models import User
 from tools.utils import c_get as c_get
+from workflow.models import WorkFlow
 
 # from accounts.models import User
 
@@ -300,11 +301,6 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
 
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
-    last_work_flow_id = models.BigIntegerField(null=True, blank=True, verbose_name=_('las_work_flow'), )
-
-    def last_work_flow(self):
-        from workflow.models import WorkFlow
-        return self.workflows.filter(id=self.last_work_flow_id)
 
     is_deleted = models.BooleanField(default=False, verbose_name=_('is_deleted'))
 
@@ -629,6 +625,15 @@ class BaseModel(AbsBaseModel):
     code = models.CharField(_('code'), max_length=30, null=True, blank=True)
     title = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('m-title'))
     group = models.IntegerField(_('group'), default=1)
+
+    class Meta:
+        abstract = True
+
+
+class BaseModeWF(BaseModel):
+    ...
+    last_work_flow = models.ForeignKey(WorkFlow, null=True, blank=True, verbose_name=_('las_work_flow'),
+                                       on_delete=models.DO_NOTHING, related_name='%(app_label)s_wf_%(model_name)s')
 
     class Meta:
         abstract = True

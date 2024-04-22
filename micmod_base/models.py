@@ -14,6 +14,7 @@ from tools import utils
 from tools.utils import show_error
 
 from translator import get_text as _
+from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 
@@ -79,6 +80,19 @@ class Quotation(SLSDoc):
             return utils.progress_value(wf.created_date, timezone.now(), total_hour)
         else:
             return 0
+
+    @classmethod
+    def today_quotation_pending(cls, request, **kwargs):
+        user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request,
+                                                                                         'user') else request.groups.values_list(
+            'name', flat=True)
+        quotations_record_lst = list()
+
+        trade_user_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                            Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+
+        bazar_user_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
 
     @classmethod
     def quotation_pending(cls, request, **kwargs):
@@ -403,7 +417,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.03
+                return self.fee * self.quantity * 0
             else:
                 return 0
         except Exception as e:
@@ -414,7 +428,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.06
+                return self.fee * self.quantity * 0.1
             else:
                 return 0
         except Exception as e:
