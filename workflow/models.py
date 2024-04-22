@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from core.models import BaseContentType
+from core.models_contenttype import BaseContentType
 from accounts.models import User
 from notifications.models import Messages
 from django.apps import apps
