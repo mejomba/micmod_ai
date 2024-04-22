@@ -5,7 +5,7 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
-from core.models import AbsBaseModel, Q, BaseContentType
+from core.models_contenttype import AbsBaseModel, Q, BaseContentType
 from accounts.models import User
 from translator import get_text as _
 from django.template.loader import render_to_string
