@@ -10,6 +10,7 @@ from accounts.models import User
 from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
+from core.models import BaseManager
 from tools import utils
 from tools.utils import show_error
 
@@ -26,6 +27,12 @@ class QuotationManager(models.Manager):
             return self.all()
         else:
             return self.filter(creator_user=request.user)
+
+
+class QuotationItemManager(BaseManager):
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.order_by('id')
 
 
 class Month(AbsBaseModel):
@@ -202,7 +209,7 @@ class Quotation(SLSDoc):
         wf_state_5 = 'تایید کارشناس'
         wf_state_6 = 'مرحله ی نهایی'
 
-        last_wf = self.workflows.last()
+        last_wf = self.workflows.all().order_by('id').last()
 
         if last_wf:
 
@@ -345,6 +352,8 @@ class QuotationItem(BaseModel):
     old_goods_code = models.CharField(verbose_name=_("old_goods_code"), max_length=20, null=True, blank=True)
     old_goods_name = models.CharField(verbose_name=_("old_goods_name"), max_length=200, null=True, blank=True)
     item_editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True)
+
+    objects = QuotationItemManager()
 
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
