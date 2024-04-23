@@ -170,7 +170,7 @@
 {#        <label class="ms-1 mb-0 p-1" for="id_force-inquiry">{% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}</label>#}
 {#    </div>#}
 
-    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto" {% if not form.enable %}disabled="disabled"{% endif %}
+    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
          m-href="{% url 'sls:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
         پرینت پیش فاکتور
