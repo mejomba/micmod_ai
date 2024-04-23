@@ -209,7 +209,7 @@ class Quotation(SLSDoc):
         wf_state_5 = 'تایید کارشناس'
         wf_state_6 = 'مرحله ی نهایی'
 
-        last_wf = self.workflows.order_by('id').last()
+        last_wf = self.workflows.all().order_by('id').last()
 
         if last_wf:
 
