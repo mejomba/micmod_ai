@@ -179,7 +179,7 @@ class Quotation(SLSDoc):
         wf_state_2 = 'استعلام قیمت'
         wf_state_3 = 'تایید پیش فاکتور'
 
-        last_wf = self.workflows.last()
+        last_wf = self.workflows.all().order_by('id').last()
         if last_wf is None:
             return False
         if (last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or \
