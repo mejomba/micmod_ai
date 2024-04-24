@@ -63,8 +63,10 @@ class CustomBaseModelForm(forms.ModelForm):
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):
                 self.fields[field].widget.attrs['class'] = 'form-control'
+            # if isinstance(self.fields[field].widget, (DateTimeInput, DateInput)):
             if isinstance(self.fields[field].widget, DateTimeInput):
-                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
+                # self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
+                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=False)
 
         try:
             if self.fields.get('creator_user') or self.fields.get('editor_user'):

@@ -25,12 +25,13 @@ class AdminUser(UserAdmin):
                     "is_customer",
                     "groups",
                     "user_permissions",
+                    "head",
                 ),
             },
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
-    list_display = ("username", "email", "first_name", "last_name", "is_staff", "is_superuser", 'groups_list')
+    list_display = ("username", "email", "first_name", "last_name", "is_staff", "is_superuser", 'head', 'groups_list')
 
     @staticmethod
     def groups_list(obj):

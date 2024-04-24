@@ -9,12 +9,12 @@ from django.views import generic
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.utils import show_error
-from .forms import ItemWeightForm, PurchaseGroupForm
+from .forms import ItemWeightForm, PurchaseGroupForm, HsForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -329,3 +329,56 @@ class PurchaseGroupDataTableView(AjaxDatatableView):
                     )
 
 
+class HsView(LoginRequiredMixin, BaseView):
+    model = HS
+    template_name = 'extra_data/hs.html'
+    success_url = reverse_lazy('extra_data:hs.list')
+    success_message = '%(title)s update'
+    form_struct = {
+        'form': HsForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+
+class HsListView(LoginRequiredMixin, generic.ListView):
+    model = Item
+    template_name = 'extra_data/hs_list.html'
+    context_object_name = 'items'
+
+
+class HsDataTableView(AjaxDatatableView):
+    model = HS
+    title = 'hs'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border sku-search',
+        #  'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__iexact'},
+        # {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border', 'searchable': False},
+        {'name': 'code', 'orderable': True, 'visible': True, },
+        {'name': 'title', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'title_en', 'orderable': True, 'visible': True},
+        {'name': 'price_settings', 'orderable': True, 'visible': True, },
+        {'name': 'customs_rate', 'orderable': True, 'visible': True, },
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+    ]
+
+    # def get_initial_queryset(self, request=None):
+    #     pass
+
+    def customize_row(self, row, obj):
+        row['title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('extra_data:hs.update', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )

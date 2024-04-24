@@ -1,5 +1,5 @@
 from core.forms import CustomBaseModelForm
-from .models import ItemWeight, PurchaseGroup
+from .models import ItemWeight, PurchaseGroup, HS
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -29,4 +29,10 @@ class ItemWeightForm(CustomBaseModelForm):
 class PurchaseGroupForm(CustomBaseModelForm):
     class Meta:
         model = PurchaseGroup
+        fields = '__all__'
+
+
+class HsForm(CustomBaseModelForm):
+    class Meta:
+        model = HS
         fields = '__all__'
