@@ -488,6 +488,9 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         elif self.request.GET.get('choice') == 'my_inquiry_not_started':
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'my_inquiry_not_started': True})
+        elif self.request.GET.get('choice') == 'inquiry_not_assigned':
+            quotations_record_lst = Quotation.quotation_pending(self.request,
+                                                                extra_filter={'inquiry_not_assigned': True})
         # elif 'goods_code and my_quotations':
         #     quotations_record_lst = Quotation.quotation_pending(self.request,
         #                                                         extra_filter={'goods_code': search_sku, "my_quotations": True})

@@ -523,7 +523,15 @@ class BaseQIFormset(BaseInlineFormSet):
         idx = 0
         for form in self.forms:
             form.instance.extra_data.request = request
-            obj = form.save(commit=commit)
+            if 'DELETE' in form.changed_data and form.cleaned_data['DELETE']:
+                if form.instance.pk:
+                    form.instance.delete()
+                    obj = None
+                else:
+                    # Don't save form
+                    obj = None
+            else:
+                obj = form.save(commit=commit)
             if not obj:
                 continue
             result.append(obj)
@@ -581,6 +589,7 @@ class PendingFormFilter(CustomBaseForm):
                       ('customer_code', _('customer_code')),
                       ('search_sku', _('goods_code')),
                       ('my_inquiry_not_started', _('my_inquiry_not_started')),
+                      ('inquiry_not_assigned', _('inquiry_not_assigned')),
                       # ('search_part_number', _('part_number')),
                       # ('search_customer_name', _('customer_name')),
                       # ('search_create_date', _('create_date')),
@@ -594,6 +603,7 @@ class PendingFormFilter(CustomBaseForm):
     my_quotations = forms.CharField(required=False)
     search_sku = forms.CharField(required=False)
     my_inquiry_not_started = forms.CharField(required=False)
+    inquiry_not_assigned = forms.CharField(required=False)
     # search_part_number = forms.CharField(required=False)
     # search_customer_name = forms.CharField(required=False)
     # search_create_date = forms.CharField(required=False)
@@ -608,6 +618,7 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
         self.fields['search_sku'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
         self.fields['my_inquiry_not_started'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_inquiry_not_started')})
+        self.fields['inquiry_not_assigned'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('inquiry_not_assigned')})
         # self.fields['search_part_number'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_part_number')})
         # self.fields['search_customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
         # self.fields['search_create_date'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
