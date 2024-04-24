@@ -29,6 +29,7 @@ class WorkFlow(BaseContentType):
                                      null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
+    current_state_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("current_state_name"))
 
     extra_prefix = 'workflows'
 

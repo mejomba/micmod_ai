@@ -29,6 +29,8 @@
         <span>استفاده از فیلتر</span>
         <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>
         <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>
+        <a href="{% url 'extra_data:sku.list' %}?q=update_from_sepidar" class="btn btn-secondary mx-1">بروز رسانی از سپیدار</a>
+{#        <button id="upddate_item_from_sepidar" class="btn btn-secondary mx-1">بروز رسانی از سپیدار</button>#}
     </div>
     {% endif %}
         <!-- ============================================================== -->
