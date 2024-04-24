@@ -56,7 +56,7 @@
                                                         <th data-key="expiration_date">Expiration date</th>
                                                         <th data-key="creator_user">Creator user</th>
                                                         <th data-key="description">Description</th>
-                                                        <th data-key="">وضعیت استعلام</th>
+{#                                                        <th data-key="">وضعیت استعلام</th>#}
                                                         <th data-key="">مرحله پیش فاکتور</th>
                                                         <th data-key="">کد سپیدار</th>
                                                     </tr>
@@ -73,19 +73,19 @@
                                                         <td>{{ quotation.expiration_date|to_jalali:'%Y/%m/%d' }}</td>
                                                         <td>{{ quotation.creator_user}}</td>
                                                         <td>{{ quotation.description }}</td>
-                                                        <td>
-                                                            <div class="d-flex flex-column align-items-baseline">
-                                                            <span>کل: {{ quotation.get_inquiry_result_count.0 }}</span>
-                                                        <span class="{% if quotation.get_inquiry_result_count.1 == quotation.get_inquiry_result_count.2 and quotation.get_inquiry_result_count.1 != 0 %}bg-success px-1 mb-1 rounded{% endif %}">
-                                                            داخلی
-                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.1 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.2 }}</strong>
-                                                        </span>
-                                                                <span class="{% if quotation.get_inquiry_result_count.3 == quotation.get_inquiry_result_count.4 and quotation.get_inquiry_result_count.3 != 0 %}bg-success px-1 rounded{% endif %}">
-                                                            خارجی:
-                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.3 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.4 }}</strong>
-                                                                    </span>
-                                                            </div>
-                                                        </td>
+{#                                                        <td>#}
+{#                                                            <div class="d-flex flex-column align-items-baseline">#}
+{#                                                            <span>کل: {{ quotation.get_inquiry_result_count.0 }}</span>#}
+{#                                                        <span class="{% if quotation.get_inquiry_result_count.1 == quotation.get_inquiry_result_count.2 and quotation.get_inquiry_result_count.1 != 0 %}bg-success px-1 mb-1 rounded{% endif %}">#}
+{#                                                            داخلی#}
+{#                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.1 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.2 }}</strong>#}
+{#                                                        </span>#}
+{#                                                                <span class="{% if quotation.get_inquiry_result_count.3 == quotation.get_inquiry_result_count.4 and quotation.get_inquiry_result_count.3 != 0 %}bg-success px-1 rounded{% endif %}">#}
+{#                                                            خارجی:#}
+{#                                                            <span class="font-size-10">{{ quotation.get_inquiry_result_count.3 }}/ </span> <strong>{{ quotation.get_inquiry_result_count.4 }}</strong>#}
+{#                                                                    </span>#}
+{#                                                            </div>#}
+{#                                                        </td>#}
                                                     <td>{{ quotation.get_inquiry_state }}</td>
                                                     <td>{{ quotation.sepidar_number }}</td>
                                                     </tr>
