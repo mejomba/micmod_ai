@@ -256,3 +256,37 @@ if __name__ == '__main__':
     print('import_sales_groups_from_sepidar')
     import_items_from_sepidar(extra_data)
     print('import_items_from_sepidar')
+
+
+def set_items_sepidar_id_from_sepidar():
+    max_importet_item = 0
+    items = SepItem.get_all_items(max_importet_item)
+    items_code = []
+    items_id = []
+    for item in items:
+        print(item)
+
+        items_code.append(item.Code)
+        items_id.append(item.ItemID)
+    extra_data_items = Item.objects.filter(sku__in=items_code)
+
+    for extra_data_item in extra_data_items:
+        if not extra_data_item.sepidar_id_0:
+            x = extra_data_item.sepidar_id
+
+    # for extra_data_item, item_id in zip(extra_data_items, items_id):
+    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
+    #         print(extra_data_item)
+    #     if not extra_data_item.sepidar_id:
+    #         extra_data_item.sepidar_id = item_id
+    #         extra_data_item.save()
+    # reset_seq(Item)
+
+    # for extra_data_item, item_id in zip(extra_data_items, items_id):
+    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
+    #         print(extra_data_item)
+    #     if not extra_data_item.sepidar_id:
+    #         extra_data_item.sepidar_id = item_id
+    #         extra_data_item.save()
+    # reset_seq(Item)
+
