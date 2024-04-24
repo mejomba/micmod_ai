@@ -361,4 +361,7 @@ def get_fk_model(model, fieldname):
 def get_inquiry_result_description(quotation_item):
     from inquiry.models import PriceInquiryResult
     inquiry_result = PriceInquiryResult.objects.filter(sku=quotation_item.goods_code, active=True)
-    return ''.join([f'({iqr.inquiry_type}: {iqr.description})' for iqr in inquiry_result])
+    try:
+        return ''.join([f'({iqr.inquiry_type}: {iqr.description})' for iqr in inquiry_result if 'خارج' not in iqr.inquiry_type.title])
+    except Exception as e:
+        return ''
