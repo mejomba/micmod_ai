@@ -150,6 +150,9 @@ class Quotation(SLSDoc):
                 if extra_filter is not None and extra_filter.get('my_quotations'):
                     trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
                     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                elif extra_filter is not None and extra_filter.get('inquiry_not_assigned'):
+                    trade_extra_filter = Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True)
+                    qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
                 elif extra_filter is not None and extra_filter.get('goods_code'):
                     qis = q.quotation.filter(trade_user_filter, **extra_filter)
                 # elif extra_filter is not None and extra_filter.get('goods_code') and extra_filter.get('my_quotations'):
