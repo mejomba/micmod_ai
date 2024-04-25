@@ -471,7 +471,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         customer_code = request.GET.get('customer_code')
         my_quotations = request.GET.get('my_quotations')
         search_sku = request.GET.get('search_sku')
-        qis_pending = QuotationItem.quotation_item_pending()
+        # qis_pending = QuotationItem.quotation_item_pending()
 
         if quotation:
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
