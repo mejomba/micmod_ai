@@ -30,7 +30,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
     QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
-from tools.utils import show_error
+from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
 from django.contrib.auth import get_user_model
 # Create your views here.
@@ -57,7 +57,7 @@ class QuotationsList(LoginRequiredMixin,View):
         # greeting['quotations'] = quotations_record
         greeting['quotations'] = quotations_record_lst
 
-        return render(request,'micmod-base/quotation/list.html',greeting)
+        return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
 
 class QuotationsView(LoginRequiredMixin, BaseView):
@@ -460,9 +460,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
 
     def get(self, request):
-        # import time
-        # t1 = time.time()
-        # print('xxxxxxxxxxxxx')
         from django.core.paginator import Paginator
         context = dict()
         context['heading'] = _("quotation")
@@ -474,6 +471,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         customer_code = request.GET.get('customer_code')
         my_quotations = request.GET.get('my_quotations')
         search_sku = request.GET.get('search_sku')
+        qis_pending = QuotationItem.quotation_item_pending()
 
         if quotation:
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
@@ -566,6 +564,120 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         return redirect(redirect_path)
 
 
+class MyQuotationItemFormPendingToday(LoginRequiredMixin, View):
+    template_name = 'micmod-base/quotation/form_pending_list.html'
+    form_struct = {
+        'form': QuotationItemForm2,
+        'childes': [
+            {
+                'form': InquiryResultForm,
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json',
+                                       'QuotationItemsFormPendingView')
+
+    def get(self, request):
+        from django.core.paginator import Paginator
+        context = dict()
+        context['heading'] = _("quotation")
+        context['pageview'] = _("micmod_base")
+        forms = list()
+        form_list = list()
+
+        quotation = request.GET.get('quotation')
+        customer_code = request.GET.get('customer_code')
+        my_quotations = request.GET.get('my_quotations')
+        search_sku = request.GET.get('search_sku')
+
+        if quotation:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
+        elif customer_code:
+            quotations_record_lst = Quotation.quotation_pending(self.request, filter={'customer_code': customer_code})
+
+        elif self.request.GET.get('choice') == 'my_quotations':
+            quotations_record_lst = Quotation.quotation_pending(self.request, extra_filter={'my_quotations': True})
+        elif search_sku:
+            quotations_record_lst = Quotation.quotation_pending(self.request,
+                                                                extra_filter={'goods_code': search_sku})
+        elif self.request.GET.get('choice') == 'my_inquiry_not_started':
+            quotations_record_lst = Quotation.quotation_pending(self.request,
+                                                                extra_filter={'my_inquiry_not_started': True})
+        # elif 'goods_code and my_quotations':
+        #     quotations_record_lst = Quotation.quotation_pending(self.request,
+        #                                                         extra_filter={'goods_code': search_sku, "my_quotations": True})
+        # elif from_time and to_time:
+        #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
+        else:
+            quotations_record_lst = Quotation.quotation_pending(self.request)
+
+        for qi_qs in quotations_record_lst:
+            for qi in qi_qs:
+                form = QuotationItemForm2(instance=qi, initial={
+                    "constraint": {
+                        "wf_access": True,
+                        'form_state': 0,
+                        'request': self.request,
+                        'form_constraint': self.flow_config.get('flow_form_constraint'),
+                        'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                    }
+                })
+                form.nested = InquiryResultForm(instance=qi.quotation_item_rel.first())
+                form.enable = False
+                forms.append(form)
+            form_list.append(forms)
+            forms = []
+
+        paginator = Paginator(form_list, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        context['page_obj'] = page_obj
+        context['forms'] = form_list
+        form_filter = PendingFormFilter()
+        context['form_filter'] = form_filter
+        # t2 = time.time()
+        # print(t2 - t1)
+        # print('yyyyyyyyyyyyyyy')
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        if obj_pk := self.request.POST.get('obj_pk'):
+            obj_qs = QuotationItem.objects.filter(pk=obj_pk)
+            obj = obj_qs.first()
+            obj.save_comment(self.request)
+
+            new_goods_code = self.request.POST.get('goods_code')
+            if new_goods_code and new_goods_code != obj.goods_code:
+                obj.old_goods_code = obj.goods_code
+                obj.goods_code = new_goods_code
+                obj.old_goods_name = obj.goods_name
+                obj.item_editor_user = self.request.user
+                obj.save()
+
+            if self.request.POST.get('foreign_price_inquiry_done'):
+                obj.foreign_price_inquiry_done = True
+                obj.save()
+            if self.request.POST.get('local_price_inquiry_done'):
+                obj.local_price_inquiry_done = True
+                obj.save()
+
+            data = {
+                'lead_time': request.POST.get('lead_time'),
+                'goods_code': request.POST.get('goods_code'),
+                'goods_name': request.POST.get('goods_name'),
+            }
+            obj_qs.update(**data)
+
+            iqr_obj = obj.quotation_item_rel.first()
+            iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
+            if iqr_form.is_valid():
+                iqr_obj = iqr_form.save()
+                iqr_obj.quotation_item = obj
+                iqr_obj.save()
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        return redirect(redirect_path)
+
 def get_sku(request):
     sku = request.GET.get('sku')
     sku_qs = Item.objects.filter(sku=sku).first()
@@ -573,3 +685,79 @@ def get_sku(request):
         return JsonResponse({'res': sku_qs.sku, 'id': sku_qs.pk, 'part_number': sku_qs.part_number})
     else:
         return JsonResponse({})
+
+
+class QuotationListDatatable(AjaxDatatableView):
+    model = Quotation
+    title = 'currency_list'
+    initial_order = [["pk", "asc"], ]
+    length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, },
+        {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
+        {'name': 'customer', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'searchable': False},
+        {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+    ]
+
+    # def get_initial_queryset(self, request=None):
+    #     return qs.order_by('last_update_date')
+
+    def customize_row(self, row, obj):
+        from micmod_base.templatetags.quotation_tag import get_customer
+        customer = get_customer(obj.customer_code)
+        # row['customer'] = '%s' % customer.name if customer else '-'
+        row['customer'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('sls:quotations.view', args=(obj.id,)),
+            customer.name if customer else '-'
+        )
+
+        # total_inquiry_count = f'''< span > کل: {obj.get_inquiry_result_count[0]} < / span >'''
+        # local_inquiry_color = ''
+        # if obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0:
+        #     local_inquiry_color = f'''<span class="bg-success px-1 mb-1 rounded" >'''
+        # local_inquiry_count = f'''داخلی < span class ="font-size-10" > {obj.get_inquiry_result_count[1]} / < /span > < strong > {obj.get_inquiry_result_count[2]} < /strong >< / span >'''
+        # local_inquiry_count = f'''داخلی {obj.get_inquiry_result_count[1]} /  {obj.get_inquiry_result_count[2]} '''
+
+        # foreign_inquiry_color = '< span '
+        # if obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0:
+        #     foreign_inquiry_color += f'''< span class ="bg-success px-1 rounded" >'''
+
+        # foreign_inquiry_count = f'''خارجی: < span class ="font-size-10" > {obj.get_inquiry_result_count[3]} / < /span > < strong > {obj.get_inquiry_result_count[4]} < /strong >< / span >'''
+        # foreign_inquiry_count = f'''خارجی: {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} '''
+        # out = total_inquiry_count + local_inquiry_color + local_inquiry_count + foreign_inquiry_color + foreign_inquiry_count
+        # out = total_inquiry_count + local_inquiry_count + foreign_inquiry_count
+
+        local_color_condition = obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0
+        foreign_color_condition = obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0
+        out = f'''<span> کل: {obj.get_inquiry_result_count[0]} </span > <br>''' \
+              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}> 
+              داخلی
+              {obj.get_inquiry_result_count[1]} /  {obj.get_inquiry_result_count[2]} </p>''' \
+              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}> 
+              خارجی
+              {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} </p> '''
+        row['inquiry_status'] = out
+
+
+        # row['pk'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        #     reverse('sls:quotations.view', args=(obj.id,)),
+        #     obj.id if obj.id else '_'
+        # )
+        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('sls:quotations.view', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )
+        row['quotation_state'] = '%s' % obj.get_inquiry_state
+        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
+        row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
