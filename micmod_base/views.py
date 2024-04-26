@@ -94,6 +94,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         # if 'submit_duplicate' in self.request.POST:
         #     return self.duplicate(self.object, [], ['quotation'])
         res = super().form_valid(form)
+        if 'back' in self.request.POST or 'change_user' in self.request.POST:
+            return res
         if not self.object.is_official:
             self.object.official_value = 0
             self.object.save()
@@ -471,7 +473,6 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         customer_code = request.GET.get('customer_code')
         my_quotations = request.GET.get('my_quotations')
         search_sku = request.GET.get('search_sku')
-        # qis_pending = QuotationItem.quotation_item_pending()
 
         if quotation:
             quotations_record_lst = Quotation.quotation_pending(self.request, filter={'pk': quotation})
@@ -489,11 +490,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         elif self.request.GET.get('choice') == 'inquiry_not_assigned':
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'inquiry_not_assigned': True})
-        # elif 'goods_code and my_quotations':
-        #     quotations_record_lst = Quotation.quotation_pending(self.request,
-        #                                                         extra_filter={'goods_code': search_sku, "my_quotations": True})
-        # elif from_time and to_time:
-        #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
+
         else:
             quotations_record_lst = Quotation.quotation_pending(self.request)
 
@@ -521,9 +518,132 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
         context['forms'] = form_list
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
-        # t2 = time.time()
-        # print(t2 - t1)
-        # print('yyyyyyyyyyyyyyy')
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        if obj_pk := self.request.POST.get('obj_pk'):
+            obj_qs = QuotationItem.objects.filter(pk=obj_pk)
+            obj = obj_qs.first()
+            obj.save_comment(self.request)
+
+            new_goods_code = self.request.POST.get('goods_code')
+            if new_goods_code and new_goods_code != obj.goods_code:
+                obj.old_goods_code = obj.goods_code
+                obj.goods_code = new_goods_code
+                obj.old_goods_name = obj.goods_name
+                obj.item_editor_user = self.request.user
+                obj.save()
+
+            if self.request.POST.get('foreign_price_inquiry_done'):
+                obj.foreign_price_inquiry_done = True
+                obj.save()
+            if self.request.POST.get('local_price_inquiry_done'):
+                obj.local_price_inquiry_done = True
+                obj.save()
+
+            data = {
+                'lead_time': request.POST.get('lead_time'),
+                'goods_code': request.POST.get('goods_code'),
+                'goods_name': request.POST.get('goods_name'),
+            }
+            obj_qs.update(**data)
+
+            iqr_obj = obj.quotation_item_rel.first()
+            iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
+            if iqr_form.is_valid():
+                iqr_obj = iqr_form.save()
+                iqr_obj.quotation_item = obj
+                iqr_obj.save()
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        return redirect(redirect_path)
+
+
+class QuotationItemFormPending2(LoginRequiredMixin, View):
+    template_name = 'micmod-base/quotation/form_pending_list2.html'
+    form_struct = {
+        'form': QuotationItemForm2,
+        'childes': [
+            {
+                'form': InquiryResultForm,
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
+
+    def get(self, request):
+        from django.core.paginator import Paginator
+        context = dict()
+        context['heading'] = _("quotation")
+        context['pageview'] = _("micmod_base")
+        forms = list()
+
+        quotation = request.GET.get('quotation')
+        customer_code = request.GET.get('customer_code')
+        my_quotations = request.GET.get('my_quotations')
+        my_inquiry_not_started = request.GET.get('my_inquiry_not_started')
+        inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
+        search_sku = request.GET.get('search_sku')
+
+        quotations_record_lst = QuotationItem.objects.none()
+
+        if self.request.user.is_superuser:
+            quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type=None, path=self.request.path)
+        if 'trade' in self.request.user.base_group:
+            quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type='trade', path=self.request.path)
+        if 'bazar' in self.request.user.base_group:
+            quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type='bazar', path=self.request.path)
+        if quotation:
+            quotations_record_lst = quotations_record_lst.filter(quotation=quotation)
+        elif customer_code:
+            quotations_record_lst = quotations_record_lst.filter(quotation__customer_code=customer_code)
+        elif self.request.GET.get('choice') == 'my_quotations' or my_quotations:
+            f = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
+            quotations_record_lst = quotations_record_lst.filter(f)
+        elif search_sku:
+            quotations_record_lst = quotations_record_lst.filter(goods_code=search_sku)
+        elif self.request.GET.get('choice') == 'my_inquiry_not_started' or my_inquiry_not_started:
+            f = (Q(assigned_trade_user=request.user) & Q(task_start=False)) | \
+                (Q(assigned_trade_user2=request.user) & Q(task_start2=False))
+            quotations_record_lst = quotations_record_lst.filter(f)
+        elif self.request.GET.get('choice') == 'inquiry_not_assigned' or inquiry_not_assigned:
+            f = Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True)
+            quotations_record_lst = quotations_record_lst.filter(f)
+        else:
+            quotations_record_lst = quotations_record_lst
+
+        for qi in quotations_record_lst:
+            form = QuotationItemForm2(instance=qi, initial={
+                "constraint": {
+                    "wf_access": True,
+                    'form_state': 0,
+                    'request': self.request,
+                    'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                }
+            })
+            form.nested = InquiryResultForm(instance=qi.quotation_item_rel.order_by('id').first())
+            form.enable = False
+            forms.append(form)
+
+        paginator = Paginator(forms, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        d = dict()
+        for item in page_obj:
+            if not d.get(item.instance.quotation.pk):
+                d[item.instance.quotation.pk] = []
+            d[item.instance.quotation.pk].append(item)
+
+        per_page = page_obj.paginator.per_page
+        context['page_obj'] = page_obj
+        context['item_count'] = page_obj.number * per_page - (per_page - len(page_obj.object_list))
+        context['forms'] = forms
+        context['d'] = d
+        context['zip_data'] = zip(page_obj, d)
+        form_filter = PendingFormFilter()
+        context['form_filter'] = form_filter
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -717,7 +837,7 @@ class QuotationListDatatable(AjaxDatatableView):
         from micmod_base.templatetags.quotation_tag import get_customer
         customer = get_customer(obj.customer_code)
         # row['customer'] = '%s' % customer.name if customer else '-'
-        row['customer'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['customer'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
             customer.name if customer else '-'
         )
@@ -754,7 +874,7 @@ class QuotationListDatatable(AjaxDatatableView):
         #     reverse('sls:quotations.view', args=(obj.id,)),
         #     obj.id if obj.id else '_'
         # )
-        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
+        row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )

@@ -289,6 +289,20 @@ def get_item(dictionary, key):
     return dictionary.get(key)
 
 
+@register.filter
+def remove_n_index(iterable_obj, idx):
+    if len(iterable_obj) > 1:
+        return iterable_obj[idx:]
+    return ''
+
+
+@register.filter
+def remove_question_mark(string: str):
+    x = remove_n_index(string, 1)
+    idx = x.find('&')
+    return x[idx+1:]
+
+
 @register.inclusion_tag('changelog/partial/compare_log.html')
 def compare_log(log):
     context = {'log': log,}
@@ -365,3 +379,9 @@ def get_inquiry_result_description(quotation_item):
         return ''.join([f'({iqr.inquiry_type}: {iqr.description})' for iqr in inquiry_result if 'خارج' not in iqr.inquiry_type.title])
     except Exception as e:
         return ''
+
+
+@register.simple_tag
+def item_count(page_obj):
+    per_page = page_obj.paginator.per_page
+    return page_obj.number * per_page - (per_page - len(page_obj.object_list))

@@ -239,10 +239,6 @@ class Quotation(SLSDoc):
             else:
                 return last_wf.state
 
-
-
-
-
     @property
     def price(self):
         try:
@@ -358,6 +354,30 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
+    @classmethod
+    def quotation_item_all_pending(cls, inquiry_type=None, path=None):
+        past_path = '/micmod_base/quotationitem/past/quotationitems'
+        inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                           Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) | \
+                           Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                           Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+        if inquiry_type == 'trade':
+            if path == past_path:
+                inquiry_type_filter = Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=True)
+            else:
+                inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                                      Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+
+        elif inquiry_type == 'bazar':
+            if path == past_path:
+                inquiry_type_filter = Q(need_local_price_inquiry=True) & Q(local_price_inquiry_done=True)
+            else:
+                inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                                      Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('quotation_id')
+        return x
+
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
         self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
@@ -374,9 +394,12 @@ class QuotationItem(BaseModel):
     @classmethod
     def active(cls, user):
         count = 0
-        for item in Quotation.quotation_pending(user):
-            count += len(item)
-        return count
+        qs = cls.objects.none()
+        if 'trade' in user.base_group:
+            qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
+        elif 'bazar' in user.base_group:
+            qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
+        return qs.count()
 
     @property
     def local_pending(self):
