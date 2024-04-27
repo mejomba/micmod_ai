@@ -6,6 +6,7 @@ from django.core.cache import cache
 from extra_data.models import Item
 from tools.google_sheet import GSheet
 
+
 @shared_task
 def update_components():
     if cache.get('update_components'):
@@ -32,6 +33,7 @@ def update_components():
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
         g_sheet.clear_rows('Portal_list')
         g_sheet.update_rows('Portal_list', components_lst, 2)
+        g_sheet.wb.worksheet('Portal_list').update_cell(2, 8, update_time)
         print(f'task update_components done at:{update_time}')
         print('update_components done')
     except Exception as e:

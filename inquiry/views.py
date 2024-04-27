@@ -14,7 +14,7 @@ from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import Min, IntegerField, F
+from django.db.models import Min, IntegerField, F, Q
 from django.db.models.functions import Cast
 
 from micmod_base.models import QuotationItem
@@ -22,6 +22,7 @@ from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
+from tools.import_data import set_items_sepidar_id_from_sepidar
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
@@ -209,20 +210,22 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 border'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
         {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
-        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 border'},
-        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 border'},
-        {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border'},
+        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
+        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
+        {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
-        {'name': 'technical_confirm', 'visible': True, }
-        ,{'name': 'sepidar_id_0', 'visible': True, },
+        {'name': 'technical_confirm', 'visible': True, },
+        {'name': 'sepidar_id_0', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
         q = self.request.POST.get('q')
+        if q == 'update_from_sepidar':
+            set_items_sepidar_id_from_sepidar()
 
         if q == 'sales_user':
             qs = qs.filter(creator_user__groups__name=q)
@@ -230,6 +233,16 @@ class SkuListDataTableView(AjaxDatatableView):
             qs = qs.filter(technical_confirm=False)
 
         return qs
+
+    def get_column_defs(self, request):
+        column = super().get_column_defs(request)
+        print('get_column')
+        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and 'express_extra_cost_percentage' != column[-1].get('name'):
+            column.append({'name': 'extra_cost_percentage', 'visible': True})
+            column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
+            column.append({'name': 'air_extra_cost_percentage', 'visible': True})
+            column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        return column
 
     def customize_row(self, row, obj):
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
@@ -343,7 +356,9 @@ class InquiryResultListView(BaseView):
 
         if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
-            item_weight.save_user(request=self.request)
+            item_weight.extra_data.request = self.request
+            item_weight.save()
+            # item_weight.save_user(request=self.request)
 
         """save quotation_item inquiry result"""
         if submit_for_qi and qi_id:
@@ -585,7 +600,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             'currency': currency_obj, 'price_setting': price_setting_obj, 'party_code': party_code
         }
         inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
-        inquiry_log_obj.save_user(request)
+        inquiry_log_obj.extra_data.request = request
+        inquiry_log_obj.save()
+        # inquiry_log_obj.save_user(request)
 
         inquiry_result_params = {
             #  استعلام از بازار
@@ -624,7 +641,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
             "sales_price_inquery_log_id": inquiry_log_obj.id or None
         }
         obj = InquiryResult.objects.create(**inquiry_result_params)
-        obj.save_user(request)
+        obj.extra_data.request = request
+        obj.save()
+        # obj.save_user(request)
 
     html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html',
                             {'form': form, 'item': item, "sku": item_sku}, request)
@@ -810,6 +829,81 @@ def get_items(request):
                 print(str(e))
 
     obj['total_count'] = count
+
+
+
+
+
+
+    # sepidar_item_id = [item.get('itemid') for item in obj['items']]
+    # my_items = Item.objects.filter(sku__icontains=q).filter(~Q(sku__in=sepidar_item_id))
+    # obj['my_items'] = []
+    # for my_item_ in my_items:
+    #     my_item = {}
+    #     try:
+    #         my_item['id'] = my_item_.pk
+    #         my_item['itemid'] = my_item_.sku
+    #         my_item['text'] = my_item_.title
+    #         my_item['f_date_cust'] = None  # to_jalali(my_item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
+    #         my_item['f_fee_cust'] = None  # my_item_.f_fee_cust  # goods_last_price
+    #         my_item['f_qty_cust'] = None  # my_item_.f_qty_cust  # goods_total_sales
+    #         my_item['q_date_cust'] = None  # to_jalali(my_item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
+    #         my_item['q_fee_cust'] = None  # my_item_.quotation_fee  # goods_q_last_price
+    #         my_item['q_qty_cust'] = None  # my_item_.quotation_qty  # goods_q_total_sales
+    #         my_item['f_qty_all'] = None  # my_item_.f_qty_all
+    #         my_item['min_price'] = None  # my_item_.min_price
+    #         my_item['avg_price'] = None  # my_item_.avg_price
+    #         my_item['max_price'] = None  # my_item_.max_price
+    #         my_item['stock_qty'] = None  # my_item_.stock_qty
+    #         my_item['stock_qty_res'] = None  # my_item_.stock_res_qty
+    #         try:
+    #             # sku_item: Item = Item.objects.filter(sku=my_item_.code).first()
+    #             sku_item: my_item_
+    #             price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
+    #             price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
+    #             if price_inquiry_result:
+    #                 price_setting = price_inquiry_result.price_settings
+    #                 price_inquiry_result.set_discount_params(
+    #                     quantity=quantity,
+    #                     customer_grade=id_customer_grade,
+    #                     payment_method=id_payment_method,
+    #                     currency=id_currency_ref,
+    #                     price_setting=price_setting
+    #                 )
+    #                 my_item["price_settings"] = price_setting.pk
+    #                 if str(id_currency_ref) == str(1):  # rial
+    #                     my_item["rial_final_price"] = price_inquiry_result.rial_final_price
+    #                     my_item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+    #                 elif str(id_currency_ref) == str(2):  # rmb
+    #                     my_item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+    #                 my_item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+    #             else:
+    #                 my_item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
+    #                 my_item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
+    #
+    #             if price_inquiry_result_bazar:
+    #                 price_setting = price_inquiry_result_bazar.price_settings
+    #                 price_inquiry_result_bazar.set_discount_params(
+    #                     quantity=quantity,
+    #                     customer_grade=id_customer_grade,
+    #                     payment_method=id_payment_method,
+    #                     currency=id_currency_ref,
+    #                     price_setting=price_setting
+    #                 )
+    #                 my_item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+    #                 my_item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+    #             else:
+    #                 my_item["goods_price_market"] = None
+    #                 my_item["goods_market_date"] = None
+    #         except Exception as e:
+    #             show_error(e, __file__)
+    #
+    #         obj['my_items'].append(my_item)
+    #         count += 1
+    #     except Exception as e:
+    #         print(str(e))
+
+    # obj['my_items'] = [my_item for my_item in []]
     return JsonResponse(obj, safe=False)
 
 
@@ -925,7 +1019,7 @@ class AjaxInquiryResultListData(View):
                     {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, })
             except:
                 pass
-        return JsonResponse({'sku_name': None, 'item_weight': None, 'item_id': None})
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id})
 
 
 # Todo ino yadet nare shanbe

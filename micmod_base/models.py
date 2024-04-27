@@ -10,10 +10,12 @@ from accounts.models import User
 from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
+from core.models import BaseManager
 from tools import utils
 from tools.utils import show_error
 
 from translator import get_text as _
+from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 
@@ -25,6 +27,12 @@ class QuotationManager(models.Manager):
             return self.all()
         else:
             return self.filter(creator_user=request.user)
+
+
+class QuotationItemManager(BaseManager):
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.order_by('id')
 
 
 class Month(AbsBaseModel):
@@ -81,6 +89,19 @@ class Quotation(SLSDoc):
             return 0
 
     @classmethod
+    def today_quotation_pending(cls, request, **kwargs):
+        user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request,
+                                                                                         'user') else request.groups.values_list(
+            'name', flat=True)
+        quotations_record_lst = list()
+
+        trade_user_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                            Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+
+        bazar_user_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+    @classmethod
     def quotation_pending(cls, request, **kwargs):
         user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
         quotations_record_lst = list()
@@ -126,8 +147,21 @@ class Quotation(SLSDoc):
                 else:
                     qis = q.quotation.filter(superuser_filter)
             elif 'trade_user' in user_groups_name and (q.is_inquiry_state or request_path == past_path):
-                if extra_filter is not None:
-                    trade_extra_filter = Q(assigned_trade_user=extra_filter.get('assigned_trade_user')) | Q(assigned_trade_user2=extra_filter.get('assigned_trade_user2'))
+                if extra_filter is not None and extra_filter.get('my_quotations'):
+                    trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
+                    qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                elif extra_filter is not None and extra_filter.get('inquiry_not_assigned'):
+                    trade_extra_filter = Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True)
+                    qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                elif extra_filter is not None and extra_filter.get('goods_code'):
+                    qis = q.quotation.filter(trade_user_filter, **extra_filter)
+                # elif extra_filter is not None and extra_filter.get('goods_code') and extra_filter.get('my_quotations'):
+                #     trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
+                #     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
+                #     qis = qis.filter(goods_code=extra_filter.get('goods_code'))
+                elif extra_filter is not None and extra_filter.get('my_inquiry_not_started'):
+                    trade_extra_filter = (Q(assigned_trade_user=request.user) & Q(task_start=False)) | \
+                                         (Q(assigned_trade_user2=request.user) & Q(task_start2=False))
                     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
                 else:
                     qis = q.quotation.filter(trade_user_filter)
@@ -155,7 +189,7 @@ class Quotation(SLSDoc):
         wf_state_2 = 'استعلام قیمت'
         wf_state_3 = 'تایید پیش فاکتور'
 
-        last_wf = self.workflows.last()
+        last_wf = self.workflows.all().order_by('id').last()
         if last_wf is None:
             return False
         if (last_wf.state == wf_state_1 and last_wf.wf_status == wf_next) or \
@@ -178,7 +212,7 @@ class Quotation(SLSDoc):
         wf_state_5 = 'تایید کارشناس'
         wf_state_6 = 'مرحله ی نهایی'
 
-        last_wf = self.workflows.last()
+        last_wf = self.workflows.all().order_by('id').last()
 
         if last_wf:
 
@@ -204,10 +238,6 @@ class Quotation(SLSDoc):
                 return wf_state_6
             else:
                 return last_wf.state
-
-
-
-
 
     @property
     def price(self):
@@ -322,6 +352,32 @@ class QuotationItem(BaseModel):
     old_goods_name = models.CharField(verbose_name=_("old_goods_name"), max_length=200, null=True, blank=True)
     item_editor_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=True, blank=True)
 
+    objects = QuotationItemManager()
+
+    @classmethod
+    def quotation_item_all_pending(cls, inquiry_type=None, path=None):
+        past_path = '/micmod_base/quotationitem/past/quotationitems'
+        inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                           Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) | \
+                           Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                           Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+        if inquiry_type == 'trade':
+            if path == past_path:
+                inquiry_type_filter = Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=True)
+            else:
+                inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                                      Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+
+        elif inquiry_type == 'bazar':
+            if path == past_path:
+                inquiry_type_filter = Q(need_local_price_inquiry=True) & Q(local_price_inquiry_done=True)
+            else:
+                inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
+                                      Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
+        return x
+
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
         self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
@@ -338,9 +394,13 @@ class QuotationItem(BaseModel):
     @classmethod
     def active(cls, user):
         count = 0
-        for item in Quotation.quotation_pending(user):
-            count += len(item)
-        return count
+        qs = cls.objects.none()
+        if getattr(user, 'base_group', None):
+            if 'trade' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
+            elif 'bazar' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
+        return qs.count()
 
     @property
     def local_pending(self):
@@ -393,7 +453,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.03
+                return self.fee * self.quantity * 0
             else:
                 return 0
         except Exception as e:
@@ -404,7 +464,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.06
+                return self.fee * self.quantity * 0.1
             else:
                 return 0
         except Exception as e:

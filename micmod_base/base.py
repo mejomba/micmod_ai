@@ -2,7 +2,7 @@ from django.db import models
 
 from translator import get_text as _
 
-from core.models import BaseModel, AbsBaseModel
+from core.models import BaseModel, AbsBaseModel, BaseModeWF
 
 
 def is_valid(value):
@@ -77,7 +77,7 @@ class Currency(models.Model):
         return None
 
 
-class SLSDoc(BaseModel):
+class SLSDoc(BaseModeWF):
     # translations = TranslatedFields(
     currency_ref = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                      verbose_name=_('currency_ref'), default="1")

@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from core.models import BaseModel, BaseContentType
+from core.models_contenttype import BaseContentType
 from accounts.models import User
 from notifications.models import Messages
 from django.apps import apps
@@ -29,6 +29,7 @@ class WorkFlow(BaseContentType):
                                      null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
+    current_state_name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("current_state_name"))
 
     extra_prefix = 'workflows'
 

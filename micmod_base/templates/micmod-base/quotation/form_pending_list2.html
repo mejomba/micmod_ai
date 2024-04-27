@@ -1,0 +1,199 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load quotation_tag %}
+{% load more_tags %}
+{% block content_ %}
+    <div id="main-content">
+    {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
+{% block content %}
+    {% for pk, form_lists in d.items %}
+        <div>
+            <div class="{% if forloop.counter|divisibleby:2 %}bg-light-danger{% else %}bg-light-primary{% endif %} position-sticky z-index-3" style="top: 74px;">
+                <!--header-->
+                <div class="rounded p-2 d-flex align-items-center h-40px">
+                    <div class="col ms-4">
+                        <span class="me-2">کد مشتری:</span>
+                        <span>{{ form_lists.0.instance.quotation.customer_code }}</span>
+                    </div>
+                    <div class="col">
+                        <span class="me-2">کد سپیدار:</span>
+                        <span>{{ form_lists.0.instance.quotation.sepidar_number }}</span>
+                    </div>
+                    <div class="col">
+                        <span class="me-2">تاریخ درخواست:</span>
+                        <span>{{ form_lists.0.instance.quotation.request_date}}</span>
+                    </div>
+                    <div class="col">
+                        <span class="me-2">تاریخ انقضا:</span>
+                        <span>{{ form_lists.0.instance.quotation.expiration_date }}</span>
+                    </div>
+                    <div class="col">
+                        <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_lists.0.instance.quotation.pk %}" target="_blank">
+                            مشاهده پیش فاکتور
+                            {{ form_lists.0.instance.quotation.pk }}
+                        </a>
+                    </div>
+                <div class="col">
+                    ({{ form_lists.0.instance.quotation.creator_user }})
+                </div>
+{#                <div class="col text-center">#}
+{#                    {% item_count page_obj %}#}
+{#                    ({{ item_count }} از {{ page_obj.paginator.count }}) --- {{ form_lists|length }}#}
+{#                </div>#}
+                    <div>
+                        {% if form_lists.0.instance.quotation.force_inquiry %}
+                            <span class="p-3 mx-1 bg-danger"></span>
+                        {% endif %}
+                    </div>
+                </div>
+            <!--end header-->
+            </div>
+
+            <div class="card-body p-0 mb-6 border">
+                <!--header-->
+                    <div class="row-counter rounded d-flex align-items-center question-btn active-form h-30px" style="background-color: white">
+                        <span class="counter">{{ forloop.counter }}</span>
+                        <div class="col ms-4">
+                        </div>
+                        <div class="col">
+                        </div>
+                        <div class="col">
+                        </div>
+                        <div class="col">
+                        </div>
+                    </div>
+                <!--end header-->
+                <div class="answer m-0">
+                {% include 'micmod-base/quotation/form_pending2.html' with forms=form_lists %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <ul class="pagination LTR-RTL mb-16">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a href="?page=1&{{ request.get_full_path|remove_question_mark }}" class="page-link">&laquo; first</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">previous</a></li>
+{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number|add:-1 }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number|add:-1 }}</a></li>#}
+            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>
+        {% endif %}
+        <li class="page-item border border-primary rounded"><a href="#" class="page-link border border-active">{{ page_obj.number  }}</a></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number }}</a></li>
+            {% if not page_obj.number|add:1 == page_obj.paginator.num_pages %}
+                <li class="page-item mt-1">. . .</li>
+                <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.paginator.num_pages }}</a></li>
+            {% endif %}
+
+{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number|add:1 }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number|add:1 }}</a></li>#}
+            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">next</a></li>
+            <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">last &raquo;</a></li>
+        {% endif %}
+    </ul>
+
+
+
+{% endblock %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    document.querySelectorAll('.question-btn .col').forEach(function (item){
+        item.classList.remove('d-none')
+        item.classList.add('d-block')
+    })
+    </script>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/quotation_inquiry.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function (e) {
+        items.forEach(function(item, idx) {
+          item.addEventListener('click', function(e) {
+          const answer = e.currentTarget.nextElementSibling;
+          if (answer.offsetHeight > 0) {
+              answer.previousElementSibling.classList.remove('active-form')
+          } else {
+              answer.previousElementSibling.classList.add('active-form')
+          }
+         })
+        }) // forEach
+    })
+
+    const isOfficial = document.getElementById('id_is_official');
+    const officialValue = document.getElementById('id_official_value');
+
+    if (isOfficial) {
+        isOfficialCheck()
+        isOfficial.addEventListener('change', isOfficialCheck)
+
+        function isOfficialCheck() {
+            if (isOfficial && isOfficial.checked) {
+                officialValue.disabled = false
+            } else if (isOfficial && !isOfficial.checked) {
+                officialValue.disabled = true
+            }
+        }
+    }
+
+    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
+    submitCommentBtns.forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            let comment_url = item.dataset.form_url;
+            const pk = item.dataset.pk;
+            const comment_type = item.dataset.comment_type
+            const comment_input_id = comment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const comment_element = $('#id-empty-modal-body')
+            const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+            const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+            const title = commentFormGroup.querySelector('[id*="title"]')
+            const content = commentFormGroup.querySelector('[id*="content"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            if (father){
+                const images = father.querySelectorAll('img')
+                images.forEach(function (img){
+                    img.classList.remove('border')
+                    commentCounter.innerHTML = '0'
+                })
+            }
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
+            custom_ajax_get(comment_form, comment_url, comment_element)
+        }) // end eventListener
+    }) // end forEach
+
+    function addCommentInput(){
+        const pkElement = document.querySelector('[id*="object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+        commentFormGroup.innerHTML = ''
+        commentFormGroup.appendChild(commentFormForCopy)
+    }
+
+    const emptyModal = document.getElementById('id_kt_empty_modal')
+    emptyModal.addEventListener('hidden.bs.modal', function (e) {
+        document.querySelector('#id-empty-modal-body').innerHTML = ''
+    })
+
+</script>
+
+{% endblock extra_js %}

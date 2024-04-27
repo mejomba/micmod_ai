@@ -27,17 +27,44 @@
         <div class="mt-5 mb-2">
             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
         </div>
-        <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-6 pb-4 align-items-end">
-
-            {% render_field_by_order form form.sepidar_id_0 form.sku form.part_number form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
-            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
-            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
-            {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}
-            {% render_field_by_order form form.is_sea_default label='on-border' margin_b=6 %}
-            {% if flow_state_index >= 1 %}
-                {% render_field_by_order form  form.technical_confirm margin_b=6 %}
+        <div class="shadow">
+            <div class="row bg-white pt-6 pb-4 align-items-end">
+                <div class="col-2">
+                    {% render_field_by_order form form.sku crispy=False label='on-border' margin_b=4 %}
+                </div>
+                <div class="col-2">
+                    {% render_field_by_order form form.sepidar_id_0 crispy=False label='on-border' margin_b=4 %}
+                </div>
+                <div class="col-8">
+                    {% render_field_by_order form form.part_number crispy=False label='on-border' margin_b=4 %}
+                </div>
+            </div>
+            <div class="row row-cols-md-6 row-cols-1 bg-white rounded pt-6 pb-4 align-items-end">
+                {% render_field_by_order form form.purchase_group form.sale_group form.customs_group form.package form.brand form.quality form.batch_type form.batch_count form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
+                {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
+                {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
+                {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}
+                {% render_field_by_order form form.is_sea_default label='on-border' margin_b=6 %}
+                {% if flow_state_index >= 1 %}
+                    {% render_field_by_order form  form.technical_confirm margin_b=6 %}
+                {% endif %}
+            {% if request.user|has_group:'technical_admin' %}
+            <div class="col mb-4">
+                <a href="{% url 'extra_data:sku.create' %}">
+                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
+                </a>
+            </div>
             {% endif %}
+            </div>
         </div>
+        {% if request.user|has_group:'total_admin' %}
+        <div class="my-4 row row-cols-4 rounded" style="background-color: antiquewhite">
+            {% include "core/partial/components/key_value_text.html" with rma_key="extra_cost_percentage" rma_value=item.extra_cost_percentage rma_class="d-flex py-3" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="sea_extra_cost_percentage" rma_value=item.sea_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="air_extra_cost_percentage" rma_value=item.air_extra_cost_percentage rma_class="d-flex py-1" %}
+            {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=item.express_extra_cost_percentage rma_class="d-flex py-1" %}
+        </div>
+        {% endif %}
     {% endblock %}
 
 {% block content %}
@@ -50,9 +77,10 @@
                         <tr>
                             <th scope="col" data-key="supplier">supplier</th>
                             <th scope="col" data-key="demanded quantity">demanded_quantity</th>
-                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}
+{#                            {% if request.user|has_permission:'inquiry.view_inquiryresult' %}#}
+{#                            {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}#}
                             <th scope="col" data-key="price">price</th>
-                            {% endif %}
+{#                            {% endif %}#}
                             <th scope="col" data-key="active">active</th>
                             <th scope="col" data-key="brand">brand</th>
                             <th scope="col" data-key="quality">quality</th>
@@ -62,23 +90,6 @@
                         </tr>
                       </thead>
                     <tbody>
-
-{#                        {% for price_inquiry_file in related_price_inquiry_files %}#}
-{#                            {% for inquiry_result in price_inquiry_file.inquery_result.all %}#}
-{#                                <tr>#}
-{#                                    <td><a href="{% url 'inquiry:price_inquiry_file.update' price_inquiry_file.pk %}">{{ inquiry_result.supplier }}</a></td>#}
-{#                                    <td>{{ price_inquiry_file.demanded_quantity }}</td>#}
-{#                                    {% if request.user|has_permission:'inquiry.view_inquiryresult' %}#}
-{#                                    <td>{{ inquiry_result.price }}</td>#}
-{#                                    {% endif %}#}
-{#                                    <td class="{% if inquiry_result.active %}text-success fw-bold{% endif %}">{{ inquiry_result.active|yesno:"بله,خیر" }}</td>#}
-{#                                    <td>{{ price_inquiry_file.brand }}</td>#}
-{#                                    <td>{{ price_inquiry_file.desired_quality }}</td>#}
-{#                                    <td>{{ price_inquiry_file.target }}</td>#}
-{#                                    <td>{{ inquiry_result.created_date|to_jalali:"%Y/%m/%d" }}</td>#}
-{#                                </tr>#}
-{#                            {% endfor %}#}
-{#                        {% endfor %}#}
 
                     {% for inquiry_result in related_price_inquiry_files %}
                         <tr>
@@ -102,7 +113,6 @@
                             <td>{{ inquiry_result.price }}</td>
                             {% else %}
                             <td>
-{#                                <div>{{ inquiry_result.rmb_final_price }}</div>#}
                                 <div> {{ inquiry_result.rial_final_price }}</div>
                             </td>
                             {% endif %}
@@ -132,7 +142,7 @@
                 <hr>
 <!-- =============================== جزیات رسید =============================== -->
             <div class="table-rep-plugin">
-            <div class="my-5">
+            <div class="mt-5 mb-20 pb-10">
             <div class="bg-info p-2 rounded my-1 text-center">جزیات رسید</div>
                     <table id="datatable-buttons" class="m-table table-striped table-bordered w-100">
                       <thead>

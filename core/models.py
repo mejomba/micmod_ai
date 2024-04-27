@@ -18,6 +18,7 @@ from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q
 from accounts.models import User
 from tools.utils import c_get as c_get
+from workflow.models import WorkFlow
 
 # from accounts.models import User
 
@@ -40,15 +41,17 @@ class BaseManager(models.Manager):
         self.is_public = is_public
 
     def get_queryset(self):
+        qs = super().get_queryset().filter(is_deleted=False)
+        # qs = qs.extra(select={"work_flow_status": f"select max(id) from workflow_workflow where object_id=id and content_type_id={self.model.content_type().id} group by object_id,content_type_id"})
         if self.is_public:
             # print('================ public', self.model.objects)
-            return super().get_queryset().filter(is_deleted=False).order_by('-last_update_date')
+            return qs.order_by('-last_update_date')
         else:
             user = get_user_model().objects.filter(pk=1)
             # return self.get_access_object(user)
 
             # print('================ private', self.model.objects)
-        return super().get_queryset().filter(is_deleted=False)
+        return qs.order_by('-last_update_date')
 
     # def get_target_user_from_group(group, level=1):
     #     from workflow.models import FlowAdminGroup
@@ -293,6 +296,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
         super().__init__(*args, **kwargs)
         self.extra_data = ExtraData()
 
+    def content_type(self):
+        return ContentType.objects.get_for_model(self)
+
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
     last_update_date = models.DateTimeField(_('last_update_date'), auto_now=True)
 
@@ -500,8 +506,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto):
                                             contenttype=contenttype,
                                             object_id=self.pk,
                                             )
-
-        addition.save_user(request=request)
+        addition.extra_data.request = request
+        addition.save()
+        # addition.save_user(request=request)
 
     """***NEW***"""
 
@@ -618,6 +625,15 @@ class BaseModel(AbsBaseModel):
     code = models.CharField(_('code'), max_length=30, null=True, blank=True)
     title = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('m-title'))
     group = models.IntegerField(_('group'), default=1)
+
+    class Meta:
+        abstract = True
+
+
+class BaseModeWF(BaseModel):
+    ...
+    last_work_flow = models.ForeignKey(WorkFlow, null=True, blank=True, verbose_name=_('las_work_flow'),
+                                       on_delete=models.DO_NOTHING, related_name='%(app_label)s_wf_%(model_name)s')
 
     class Meta:
         abstract = True

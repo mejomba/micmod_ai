@@ -533,5 +533,7 @@
     "clearance_until": "تاریخ ترخیص",
     "descriptions": "توضیحات",
     "payments_until": "تاریخ پرداخت وجه",
-    "transportation_method": "روش حمل"
+    "transportation_method": "روش حمل",
+    "my_inquiry_not_started": "استعلام های شروع نشده من",
+    "inquiry_not_assigned": "استعلام های تخصیص نیافته"
 }

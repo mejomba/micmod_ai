@@ -22,7 +22,7 @@ from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
-from tools.utils import map_model_to_python_type
+from tools.utils import map_model_to_python_type, show_error
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -495,8 +495,13 @@ class BaseView(UserPassesTestMixin,
                             wf_obj.wf_status = 2  # back
                             print(__file__, '========= save as back')
                             break
-                    wf_obj.save_user(self.request)
+                    # wf_obj.save_user(self.request)
+                    wf_obj.extra_data.request = self.request
+                    wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index - 1]
                     wf_obj.save()
+                    old_obj.last_work_flow = wf_obj
+                    old_obj.save()
+                    return HttpResponseRedirect(self.get_success_url())
                     # return super().form_valid(form)
 
             if 'back' in self.request.POST:
@@ -524,7 +529,6 @@ class BaseView(UserPassesTestMixin,
             # new_obj = form.save(commit=True) if 'back' in self.request.POST else None
 
             if new_obj:
-                # new_obj.save_user(self.request)
                 last_flow_obj = self.get_last_flow(new_obj)
                 """save wf if user change"""
                 if self.has_flow and 'change_user' in self.request.POST:
@@ -535,8 +539,12 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
                                                                      model=new_obj._meta.model_name).first()
                     wf_obj.wf_status = 4  # change user
-                    wf_obj.save_user(self.request)
+                    wf_obj.extra_data.request = self.request
+                    wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index]
+                    # wf_obj.save_user(self.request)
                     wf_obj.save()
+                    new_obj.last_work_flow = wf_obj
+                    new_obj.save()
 
                     print(__file__, '========= wf save as change user')
                     return HttpResponseRedirect(self.get_success_url())
@@ -558,7 +566,10 @@ class BaseView(UserPassesTestMixin,
                         #     """to_user submit as default to next user"""
                         #     wf_obj.wf_status = 3  # next
 
-                        wf_obj.save_user(self.request)
+                        # wf_obj.save_user(self.request)
+                        wf_obj.extra_data.request = self.request
+                        wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index + 1]  # Todo test for last step [index error]
+                        wf_obj.save()
                         wf_obj.final_save()
                     else:
                         print(form.wfform.errors.as_data())
@@ -572,8 +583,10 @@ class BaseView(UserPassesTestMixin,
                                                                          model=new_obj._meta.model_name).first()
                         wf_obj.wf_status = 4  # change user
                         print('========= workflow save as next')
-                        wf_obj.save_user(self.request)
+                        wf_obj.extra_data.request = self.request
+                        wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index]
                         wf_obj.save()
+                        # wf_obj.save_user(self.request)
                     elif not form.wfform.cleaned_data.get('from_user'):
                         """ if state 0 and from_user is None `save as first_draft` """
                         wf_obj = form.wfform.save(commit=False)
@@ -584,8 +597,10 @@ class BaseView(UserPassesTestMixin,
                                                                          model=new_obj._meta.model_name).first()
                         wf_obj.wf_status = 5  # first draft
                         print('========= workflow save as next')
-                        wf_obj.save_user(self.request)
+                        wf_obj.extra_data.request = self.request
+                        wf_obj.current_state_name = self.flow_config.get('flow_state_list')[0]
                         wf_obj.save()
+                        # wf_obj.save_user(self.request)
                 try:
                     """save main form image and file"""
                     if form.image_model and form.image_groups:
@@ -646,7 +661,9 @@ class BaseView(UserPassesTestMixin,
 
                     if fo:
                         for idx, fs_obj in enumerate(fo):
-                            fs_obj.save_user(self.request)
+                            fs_obj.extra_data.request = self.request
+                            fs_obj.save()
+                            # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
                             if self.formset.form.image_model and self.formset.form.image_groups:
                                 """save formset image and file"""
@@ -703,11 +720,18 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.object_id = new_obj.id
                     wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
                                                                      model=new_obj._meta.model_name).first()
-                    wf_obj.wf_status = 3  # change user
+                    wf_obj.wf_status = 3  # next
                     print('========= workflow save as next')
-                    wf_obj.save_user(self.request)
+                    wf_obj.extra_data.request = self.request
+                    wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index + 1]
                     wf_obj.save()
+                    # wf_obj.save_user(self.request)
                 # form.instance.pk = None
+                try:
+                    new_obj.last_work_flow = wf_obj
+                    new_obj.save()
+                except Exception as e:
+                    show_error(e, __file__)
                 return super().form_valid(form)
             return super().form_valid(form)
         return HttpResponseRedirect('.')
@@ -822,7 +846,9 @@ class CommentsFormView(View):
                 comment_seen, _ = CommentSeen.objects.get_or_create(comment=comment,
                                                                     creator_user=request.user,
                                                                     editor_user=request.user)
-                comment_seen.save_user(self.request)
+                # comment_seen.save_user(self.request)
+                comment_seen.extra_data.request = self.request
+                comment_seen.save()
             except Exception:
                 continue
 

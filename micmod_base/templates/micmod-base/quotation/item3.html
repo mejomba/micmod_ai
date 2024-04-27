@@ -67,7 +67,7 @@
                     <span class="mx-2">زمان تحویل: </span>
                     {{ form_s.instance.lead_time }}
                 </div>
-                {% if form_s.instance.assigned_trade_user %}
+                {% if form_s.instance.need_local_price_inquiry %}
                     <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
                     <i class="ki-outline ki-message-notif fs-2x"></i>
                     </span>
