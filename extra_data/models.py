@@ -349,8 +349,9 @@ class Item(BaseModel):
 
     @property
     def bazar_price(self):
+        bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
-            self.extra_data.bazar_price = self.items.filter(sku=self).filter(active=True, inquiry_type_id=4).first()
+            self.extra_data.bazar_price = self.items.filter(sku=self).filter(bazar_filter, active=True).first()
         return self.extra_data.bazar_price
 
     def set_price(self, price_id):
