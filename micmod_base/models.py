@@ -375,7 +375,7 @@ class QuotationItem(BaseModel):
             else:
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('quotation_id')
+        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
         return x
 
     def pre_process_on_post_method(self, data=None):
