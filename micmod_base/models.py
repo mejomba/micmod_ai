@@ -375,7 +375,7 @@ class QuotationItem(BaseModel):
             else:
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('quotation_id')
+        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
         return x
 
     def pre_process_on_post_method(self, data=None):
@@ -395,10 +395,11 @@ class QuotationItem(BaseModel):
     def active(cls, user):
         count = 0
         qs = cls.objects.none()
-        if 'trade' in user.base_group:
-            qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
-        elif 'bazar' in user.base_group:
-            qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
+        if getattr(user, 'base_group', None):
+            if 'trade' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
+            elif 'bazar' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
         return qs.count()
 
     @property
