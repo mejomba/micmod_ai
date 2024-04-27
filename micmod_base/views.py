@@ -823,15 +823,12 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'customer', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'searchable': False},
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
+        {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
     ]
-
-    # def get_initial_queryset(self, request=None):
-    #     return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
         from micmod_base.templatetags.quotation_tag import get_customer
@@ -841,22 +838,6 @@ class QuotationListDatatable(AjaxDatatableView):
             reverse('sls:quotations.view', args=(obj.id,)),
             customer.name if customer else '-'
         )
-
-        # total_inquiry_count = f'''< span > کل: {obj.get_inquiry_result_count[0]} < / span >'''
-        # local_inquiry_color = ''
-        # if obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0:
-        #     local_inquiry_color = f'''<span class="bg-success px-1 mb-1 rounded" >'''
-        # local_inquiry_count = f'''داخلی < span class ="font-size-10" > {obj.get_inquiry_result_count[1]} / < /span > < strong > {obj.get_inquiry_result_count[2]} < /strong >< / span >'''
-        # local_inquiry_count = f'''داخلی {obj.get_inquiry_result_count[1]} /  {obj.get_inquiry_result_count[2]} '''
-
-        # foreign_inquiry_color = '< span '
-        # if obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0:
-        #     foreign_inquiry_color += f'''< span class ="bg-success px-1 rounded" >'''
-
-        # foreign_inquiry_count = f'''خارجی: < span class ="font-size-10" > {obj.get_inquiry_result_count[3]} / < /span > < strong > {obj.get_inquiry_result_count[4]} < /strong >< / span >'''
-        # foreign_inquiry_count = f'''خارجی: {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} '''
-        # out = total_inquiry_count + local_inquiry_color + local_inquiry_count + foreign_inquiry_color + foreign_inquiry_count
-        # out = total_inquiry_count + local_inquiry_count + foreign_inquiry_count
 
         local_color_condition = obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0
         foreign_color_condition = obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0
@@ -869,11 +850,6 @@ class QuotationListDatatable(AjaxDatatableView):
               {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} </p> '''
         row['inquiry_status'] = out
 
-
-        # row['pk'] = '<a class="fw-bold" href="%s">%s</a>' % (
-        #     reverse('sls:quotations.view', args=(obj.id,)),
-        #     obj.id if obj.id else '_'
-        # )
         row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
