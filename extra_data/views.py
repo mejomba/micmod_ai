@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 
@@ -163,6 +164,22 @@ class SkuUpdateView(LoginRequiredMixin,
         #     self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
         #     return HttpResponseRedirect('.')
 
+
+# class ItemNotConfirmedListView(LoginRequiredMixin, generic.View):
+#     model = Item
+#     # template_name = 'extra_data/sku_not_confirmed.html'
+#
+#     def get(self, request, *args, **kwargs):
+#         li = []
+#         not_confirmed = Item.objects.filter(technical_confirm=False)
+#         for item in not_confirmed:
+#             form = SkuCreateForm(instance=item)
+#             li.append(form)
+#
+#         context = {'not_confirmed': li}
+#
+#         return render(request, 'extra_data/sku_not_confirmed.html', context)
+#
 
 class SkuRelatedView(LoginRequiredMixin, generic.DetailView):
     """
