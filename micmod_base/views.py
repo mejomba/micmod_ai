@@ -612,6 +612,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         else:
             quotations_record_lst = quotations_record_lst
 
+        quotations_record_lst = quotations_record_lst.order_by('-id')
+
         for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
                 "constraint": {
@@ -829,6 +831,11 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
     ]
+
+    def get_initial_queryset(self, request=None):
+        q = self.request.GET.get('q')
+        qs = Quotation.objects.get_access_object(request.user, q=q)
+        return self.model.objects.filter(pk__in=[i.pk for i in qs])
 
     def customize_row(self, row, obj):
         from micmod_base.templatetags.quotation_tag import get_customer
