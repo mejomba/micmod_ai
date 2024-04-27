@@ -606,6 +606,7 @@ function set_price(target) {
     const elem = findAncestor(target, "item")
     const price_method = elem.querySelector('[name*="price_method"]')
     const final_price = elem.querySelector('[name*="-final_price"]')
+    const final_price_div = elem.querySelector('[name*="-final_price_div"]')
     // const final_price_label = elem.querySelector('label[name*="final_price"]')
     // final_price.disabled = true;
     let cost1;
@@ -621,22 +622,26 @@ function set_price(target) {
     switch (p_m) {
         case
             'last_sale':
-            final_price.disabled = true;
+            debugger
+            // final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_last_price"]').value);
+            final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_last_price"]').value);
             break;
         case
             'last_sale_q':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_q_last_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
+            final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
             break;
         case
             'price_avg':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_avg_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
+            final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
             break;
         case
             'sales_admin':
@@ -644,7 +649,7 @@ function set_price(target) {
             break;
         case
             'price_sheet1':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             cost1 = elem.querySelector('[name*="express_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="express_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="express_transportation_cost_3"]')
@@ -652,18 +657,21 @@ function set_price(target) {
             if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
+                final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
+                final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
+                final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
 
             break;
         case
             'price_sheet2':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             cost1 = elem.querySelector('[name*="air_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="air_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="air_transportation_cost_3"]')
@@ -671,18 +679,21 @@ function set_price(target) {
             if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
+                final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
+                final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
+                final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
 
             break;
         case
             'price_sheet3':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             cost1 = elem.querySelector('[name*="sea_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="sea_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="sea_transportation_cost_3"]')
@@ -690,19 +701,23 @@ function set_price(target) {
             if (cost1 && !cost1.classList.contains('d-none')) {
                 final_price.value = cost1.value;
                 final_price.innerHTML = numberWithCommas(cost1.value);
+                final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
                 final_price.value = cost2.value;
                 final_price.innerHTML = numberWithCommas(cost2.value);
+                final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
                 final_price.value = cost3.value;
                 final_price.innerHTML = numberWithCommas(cost3.value);
+                final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
             break;
         case
             'price_market':
-            final_price.disabled = true;
+            // final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_price_market"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
+            final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             break;
     }
     calculate_price(target)
