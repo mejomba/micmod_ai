@@ -395,10 +395,11 @@ class QuotationItem(BaseModel):
     def active(cls, user):
         count = 0
         qs = cls.objects.none()
-        if 'trade' in user.base_group:
-            qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
-        elif 'bazar' in user.base_group:
-            qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
+        if getattr(user, 'base_group', None):
+            if 'trade' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
+            elif 'bazar' in user.base_group:
+                qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
         return qs.count()
 
     @property
