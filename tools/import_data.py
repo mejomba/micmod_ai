@@ -14,11 +14,137 @@ import django
 django.setup()
 from tools.utils import read_excel_data
 from django.db import connection
-from extra_data.models import PurchaseGroup,SaleGroup,HS,Item,CustomsGroup,Brand,ItemWeight
+from extra_data.models import * #PurchaseGroup,SaleGroup,HS,Item,CustomsGroup,Brand,ItemWeight
 from inquiry.models import PriceInquiryResult
 from micmod_base.base import Currency
 from sepidar.models import APILogs, Item as SepItem
 from sepidar.scripts.sepidar_classes import Urls
+
+def import_provience_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_provience()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.title
+            data['sepidar_location_id'] = item.location_id
+            Province.objects.update_or_create(sepidar_location_id=item.location_id,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_customer_group_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_customer_groups()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.Title
+            data['sepidar_group_id'] = item.GroupingID
+            CustomerGroup.objects.update_or_create(sepidar_group_id=item.GroupingID,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_senf_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_senf()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.code
+            Senf.objects.update_or_create(title=item.code,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_sub_senf_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_sub_senf()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.code
+            SubSenf.objects.update_or_create(title=item.code,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_introduction_method_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_introduction_method()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.code
+            IntroductionMethod.objects.update_or_create(title=item.code,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_introducer_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_introducer()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.code
+            Introducer.objects.update_or_create(title=item.code,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_marketer_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    items = SepItem.get_all_marketer()
+    for item in items:
+        try:
+            data = extra_data
+            data['title'] = item.code
+            Marketer.objects.update_or_create(title=item.code,defaults=data)
+        except Exception as e:
+            print(str(e))
+
+
+def import_customers_from_sepidar(extra_data):
+    extra_data = extra_data.copy()
+    # import_provience_from_sepidar(extra_data)
+    import_customer_group_from_sepidar(extra_data)
+    import_senf_from_sepidar(extra_data)
+    import_sub_senf_from_sepidar(extra_data)
+    import_introduction_method_from_sepidar(extra_data)
+    import_introducer_from_sepidar(extra_data)
+    import_marketer_from_sepidar(extra_data)
+
+    items = SepItem.get_all_customers()
+    for item in items:
+        try:
+            data = extra_data
+            data['sepidar_dl_id'] = item.sepidar_dl_id
+            data['sepidar_dl_code'] = item.sepidar_dl_code
+            data['sepidar_party_id'] = item.sepidar_party_id
+            data['title'] = item.title
+            data['name'] = item.name
+            data['last_name'] = item.last_name
+            data['national_code'] = item.national_code
+            data['email'] = item.email
+            data['phone'] = item.phone
+            data['customer_group'] = CustomerGroup.objects.filter(sepidar_group_id=item.customer_group).first()
+            data['province'] = Province.objects.filter(sepidar_location_id=item.province).first()
+            data['location'] = Province.objects.filter(sepidar_location_id=item.location).first()
+            data['address'] = item.address
+            data['senf'] = Senf.objects.filter(title=item.senf).first()
+            data['sub_senf'] = SubSenf.objects.filter(title=item.sub_senf).first()
+            data['introduction_method'] = IntroductionMethod.objects.filter(title=item.introduction_method).first()
+            data['introducer'] = Introducer.objects.filter(title=item.introducer).first()
+            data['marketer'] = Marketer.objects.filter(title=item.marketer).first()
+            data['revival_date'] = item.revival_date
+            data['max_credit'] = item.max_credit
+            data['credit_with_doc'] = item.credit_with_doc
+            Customer.objects.create(sepidar_dl_id=item.sepidar_dl_id,defaults=data)
+        except Exception as e:
+            print(str(e))
+
 
 
 def import_items_from_sepidar(extra_data):
@@ -45,7 +171,7 @@ def import_items_from_sepidar(extra_data):
             sales_group = SaleGroup.objects.filter(sepidar_id=item.SaleGroupRef).first()
             purchase_group = PurchaseGroup.objects.filter(sepidar_id=item.PurchaseGroupRef).first()
             if purchase_group:
-                data = extra_data
+                data = extra_data.copy()
                 data['sepidar_id'] = item.ItemID
                 # data['sepidar_code'] = item.Code
                 data['sku'] = item.Code
@@ -195,11 +321,45 @@ def update_imei_from_sheet():
     print('IMEI_imeintswregdetail')
 
 
+def set_items_sepidar_id_from_sepidar():
+    max_importet_item = 0
+    items = SepItem.get_all_items(max_importet_item)
+    items_code = []
+    items_id = []
+    for item in items:
+        print(item)
+
+        items_code.append(item.Code)
+        items_id.append(item.ItemID)
+    extra_data_items = Item.objects.filter(sku__in=items_code)
+
+    for extra_data_item in extra_data_items:
+        if not extra_data_item.sepidar_id_0:
+            x = extra_data_item.sepidar_id
+
+    # for extra_data_item, item_id in zip(extra_data_items, items_id):
+    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
+    #         print(extra_data_item)
+    #     if not extra_data_item.sepidar_id:
+    #         extra_data_item.sepidar_id = item_id
+    #         extra_data_item.save()
+    # reset_seq(Item)
+
+    # for extra_data_item, item_id in zip(extra_data_items, items_id):
+    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
+    #         print(extra_data_item)
+    #     if not extra_data_item.sepidar_id:
+    #         extra_data_item.sepidar_id = item_id
+    #         extra_data_item.save()
+    # reset_seq(Item)
+
+
 # your imports, e.g. Django models
 if __name__ == '__main__':
+    extra_data = {"creator_user_id": 1, "editor_user_id": 1}
+    import_customers_from_sepidar(extra_data)
     update_sale_type_from_sheet()
     update_imei_from_sheet()
-    extra_data = {"creator_user_id": 1, "editor_user_id": 1}
     wb = GSheet("13TgipUaeLAElR10RXgg8zF8roXEefL4nfbNJWip7lsA")
     # print(extra_data)
     datas = [
@@ -258,35 +418,4 @@ if __name__ == '__main__':
     print('import_items_from_sepidar')
 
 
-def set_items_sepidar_id_from_sepidar():
-    max_importet_item = 0
-    items = SepItem.get_all_items(max_importet_item)
-    items_code = []
-    items_id = []
-    for item in items:
-        print(item)
-
-        items_code.append(item.Code)
-        items_id.append(item.ItemID)
-    extra_data_items = Item.objects.filter(sku__in=items_code)
-
-    for extra_data_item in extra_data_items:
-        if not extra_data_item.sepidar_id_0:
-            x = extra_data_item.sepidar_id
-
-    # for extra_data_item, item_id in zip(extra_data_items, items_id):
-    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
-    #         print(extra_data_item)
-    #     if not extra_data_item.sepidar_id:
-    #         extra_data_item.sepidar_id = item_id
-    #         extra_data_item.save()
-    # reset_seq(Item)
-
-    # for extra_data_item, item_id in zip(extra_data_items, items_id):
-    #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:
-    #         print(extra_data_item)
-    #     if not extra_data_item.sepidar_id:
-    #         extra_data_item.sepidar_id = item_id
-    #         extra_data_item.save()
-    # reset_seq(Item)
 
