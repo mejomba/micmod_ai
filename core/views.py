@@ -492,15 +492,17 @@ class BaseView(UserPassesTestMixin,
                             # wf_obj.to_user = item.from_user
                             wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
                             wf_obj.deadline = item.deadline
-                            wf_obj.wf_status = 2  # back
+                            # wf_obj.wf_status = 2  # back
                             print(__file__, '========= save as back')
                             break
                     # wf_obj.save_user(self.request)
+                    wf_obj.wf_status = 2  # back
                     wf_obj.extra_data.request = self.request
                     wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index - 1]
                     wf_obj.save()
-                    old_obj.last_work_flow = wf_obj
-                    old_obj.save()
+                    self.object.last_work_flow = wf_obj
+                    self.object.extra_data.request = self.request
+                    self.object.save()
                     return HttpResponseRedirect(self.get_success_url())
                     # return super().form_valid(form)
 
