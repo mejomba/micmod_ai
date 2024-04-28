@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 import dw.models
@@ -16,6 +17,15 @@ from tools.form_tools import select_cquery
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
     SKU = "1", _("calculate_in_sku")
+
+class Customer(models.Model):
+    # title = models.CharField(max_length=100)
+    pass
+    @staticmethod
+    def get_list(text):
+        res = Customer.objects.using('default').raw(f"""
+    Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
+        return res
 
 
 class CalculationMethod(models.TextChoices):
@@ -349,8 +359,9 @@ class Item(BaseModel):
 
     @property
     def bazar_price(self):
+        bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
-            self.extra_data.bazar_price = self.items.filter(sku=self).filter(active=True, inquiry_type_id=4).first()
+            self.extra_data.bazar_price = self.items.filter(sku=self).filter(bazar_filter, active=True).first()
         return self.extra_data.bazar_price
 
     def set_price(self, price_id):

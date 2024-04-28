@@ -17,6 +17,7 @@
                     <div class="col ms-4">
                         <span class="me-2">کد مشتری:</span>
                         <span>{{ form_lists.0.instance.quotation.customer_code }}</span>
+                        ({% get_customer_from_pg form_lists.0.instance.quotation.customer_code as customer %} {{ customer.title }})
                     </div>
                     <div class="col">
                         <span class="me-2">کد سپیدار:</span>
