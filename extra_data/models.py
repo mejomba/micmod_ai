@@ -18,6 +18,15 @@ class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
     SKU = "1", _("calculate_in_sku")
 
+class Customer(models.Model):
+    # title = models.CharField(max_length=100)
+    pass
+    @staticmethod
+    def get_list(text):
+        res = Customer.objects.using('default').raw(f"""
+    Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
+        return res
+
 
 class CalculationMethod(models.TextChoices):
     Old = "0", _("old_calculation_method")
