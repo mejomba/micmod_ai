@@ -20,13 +20,27 @@ from micmod_base.base import Currency
 from sepidar.models import APILogs, Item as SepItem
 from sepidar.scripts.sepidar_classes import Urls
 
+
+
+
+reps = ["ي", "ی", "ك", "ک"]
+
+
+def valid_title(title_string):
+    try:
+        return title_string.replace(reps[0], reps[1]).replace(reps[2], reps[3])
+    except Exception as e:
+        print(e, title_string)
+        return title_string
+
+
 def import_provience_from_sepidar(extra_data):
     extra_data = extra_data.copy()
     items = SepItem.get_all_provience()
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.title
+            data['title'] = valid_title(item.title)
             data['sepidar_location_id'] = item.location_id
             Province.objects.update_or_create(sepidar_location_id=item.location_id,defaults=data)
         except Exception as e:
@@ -39,7 +53,7 @@ def import_customer_group_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.Title
+            data['title'] = valid_title(item.Title)
             data['sepidar_group_id'] = item.GroupingID
             CustomerGroup.objects.update_or_create(sepidar_group_id=item.GroupingID,defaults=data)
         except Exception as e:
@@ -52,7 +66,7 @@ def import_senf_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.code
+            data['title'] = valid_title(item.code)
             Senf.objects.update_or_create(title=item.code,defaults=data)
         except Exception as e:
             print(str(e))
@@ -64,7 +78,7 @@ def import_sub_senf_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.code
+            data['title'] = valid_title(item.code)
             SubSenf.objects.update_or_create(title=item.code,defaults=data)
         except Exception as e:
             print(str(e))
@@ -76,7 +90,7 @@ def import_introduction_method_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.code
+            data['title'] = valid_title(item.code)
             IntroductionMethod.objects.update_or_create(title=item.code,defaults=data)
         except Exception as e:
             print(str(e))
@@ -88,7 +102,7 @@ def import_introducer_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.code
+            data['title'] = valid_title(item.code)
             Introducer.objects.update_or_create(title=item.code,defaults=data)
         except Exception as e:
             print(str(e))
@@ -100,7 +114,7 @@ def import_marketer_from_sepidar(extra_data):
     for item in items:
         try:
             data = extra_data
-            data['title'] = item.code
+            data['title'] = valid_title(item.code)
             Marketer.objects.update_or_create(title=item.code,defaults=data)
         except Exception as e:
             print(str(e))
@@ -109,6 +123,14 @@ def import_marketer_from_sepidar(extra_data):
 def import_customers_from_sepidar(extra_data):
     extra_data = extra_data.copy()
     # import_provience_from_sepidar(extra_data)
+    truncate_table(Customer, cascade=False)
+    truncate_table(Province, cascade=False)
+    truncate_table(CustomerGroup, cascade=False)
+    truncate_table(Senf, cascade=False)
+    truncate_table(SubSenf, cascade=False)
+    truncate_table(IntroductionMethod, cascade=False)
+    truncate_table(Introducer, cascade=False)
+    truncate_table(Marketer, cascade=False)
     import_customer_group_from_sepidar(extra_data)
     import_senf_from_sepidar(extra_data)
     import_sub_senf_from_sepidar(extra_data)
@@ -123,25 +145,26 @@ def import_customers_from_sepidar(extra_data):
             data['sepidar_dl_id'] = item.sepidar_dl_id
             data['sepidar_dl_code'] = item.sepidar_dl_code
             data['sepidar_party_id'] = item.sepidar_party_id
-            data['title'] = item.title
-            data['name'] = item.name
-            data['last_name'] = item.last_name
+            data['title'] = valid_title(item.title)
+            data['name'] = valid_title(item.name)
+            data['last_name'] = valid_title(item.last_name)
             data['national_code'] = item.national_code
             data['email'] = item.email
             data['phone'] = item.phone
             data['customer_group'] = CustomerGroup.objects.filter(sepidar_group_id=item.customer_group).first()
             data['province'] = Province.objects.filter(sepidar_location_id=item.province).first()
             data['location'] = Province.objects.filter(sepidar_location_id=item.location).first()
-            data['address'] = item.address
-            data['senf'] = Senf.objects.filter(title=item.senf).first()
-            data['sub_senf'] = SubSenf.objects.filter(title=item.sub_senf).first()
-            data['introduction_method'] = IntroductionMethod.objects.filter(title=item.introduction_method).first()
-            data['introducer'] = Introducer.objects.filter(title=item.introducer).first()
-            data['marketer'] = Marketer.objects.filter(title=item.marketer).first()
+            data['address'] = valid_title(item.address)
+            data['senf'] = Senf.objects.filter(title=valid_title(item.senf)).first()
+            data['sub_senf'] = SubSenf.objects.filter(title=valid_title(item.sub_senf)).first()
+            data['introduction_method'] = IntroductionMethod.objects.filter(title=valid_title(item.introduction_method)).first()
+            data['introducer'] = Introducer.objects.filter(title=valid_title(item.introducer)).first()
+            data['marketer'] = Marketer.objects.filter(title=valid_title(item.marketer)).first()
             data['revival_date'] = item.revival_date
             data['max_credit'] = item.max_credit
             data['credit_with_doc'] = item.credit_with_doc
-            Customer.objects.create(sepidar_dl_id=item.sepidar_dl_id,defaults=data)
+            Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
+            # Customer.objects.create(**data)
         except Exception as e:
             print(str(e))
 
@@ -229,6 +252,22 @@ def import_sales_groups_from_sepidar(extra_data):
             SaleGroup.objects.create(**data)
     reset_seq(SaleGroup)
 
+
+def truncate_table(model, cascade=False):
+    try:
+        cursor = connection.cursor()
+        try:
+            if cascade:
+                cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY CASCADE'.format(model._meta.db_table))
+            else:
+                cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY'.format(model._meta.db_table))
+        except:
+            try:
+                model.objects.all().delete()
+            except Exception as e:
+                print(str(e))
+    except Exception as e:
+        print(str(e))
 
 
 def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk=0,truncate=False,

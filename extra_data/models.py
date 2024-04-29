@@ -3,7 +3,6 @@ from django.db.models import Q
 from django.utils import timezone
 
 import dw.models
-import inquiry.models
 from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
@@ -17,15 +16,6 @@ from tools.form_tools import select_cquery
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
     SKU = "1", _("calculate_in_sku")
-
-class Customer(models.Model):
-    # title = models.CharField(max_length=100)
-    pass
-    @staticmethod
-    def get_list(text):
-        res = Customer.objects.using('default').raw(f"""
-    Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
-        return res
 
 
 class CustomerType(models.TextChoices):
@@ -581,5 +571,12 @@ class Customer(AbsBaseModel):
     introducer = models.ForeignKey(Introducer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("introducer"), null=True, blank=True)
     marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("marketer"), null=True, blank=True)
     revival_date = models.DateField(verbose_name=_("revival_date"), null=True, blank=True)
+
+    @staticmethod
+    def get_list(text):
+        res = Customer.objects.filter(sepidar_dl_code=text)
+            # ('default').raw(f"""
+        # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
+        return res
 
 
