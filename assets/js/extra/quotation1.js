@@ -505,6 +505,7 @@ function get_price_data(code, party_id, item) {
 
 function set_price_data(data, elem, target) {
     if (data){
+        debugger
         set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
         set_values(elem.querySelectorAll('[name*="stock_amount_res"]'), data.stock_qty_res)
@@ -985,7 +986,7 @@ function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null,
 
 function set_values(items, value, is_date = false) {
     let value_str = value
-    if (!isNaN(parseInt(value)) && !is_date) {
+    if (!isNaN(value) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
         value_str = numberWithCommas(value)
     }
@@ -1012,7 +1013,7 @@ function copy_values(elem, name, is_date = false) {
         return
     }
     var value_str = e.value.toString()
-    if (!isNaN(parseInt(e.value)) && !is_date) {
+    if (!isNaN(e.value) && !is_date) {
         value_str = numberWithCommas(e.value)
     }
     if (!value_str) {
