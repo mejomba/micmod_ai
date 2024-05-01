@@ -8,6 +8,7 @@ from django.urls import reverse_lazy, reverse
 from django.views import generic
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
+from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm
 
@@ -382,3 +383,8 @@ class HsDataTableView(AjaxDatatableView):
             reverse('extra_data:hs.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
+
+def ajax_update_from_sepidar(request):
+    set_items_sepidar_id_from_sepidar()
+    return JsonResponse({'res': 'ok'})

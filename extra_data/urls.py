@@ -20,6 +20,7 @@ urlpatterns = [
     path('purchasegroup/list/', views.PurchaseGroupListView.as_view(), name='purchase_group.list'),
     path('purchasegroup/datatable/', views.PurchaseGroupDataTableView.as_view(), name='purchase_group.datatable'),
 
+    path('ajax/update_from_sepidar/', views.ajax_update_from_sepidar, name='update_from_sepidar'),
     path('hs/update/<int:pk>/', views.HsView.as_view(), name='hs.update'),
     path('hs/list/', views.HsListView.as_view(), name='hs.list'),
     path('hs/datatable/', views.HsDataTableView.as_view(), name='hs.datatable'),
