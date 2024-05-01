@@ -288,8 +288,8 @@ p.IdentificationCode as national_code,
 p.Email as email,
 pf.Phone as phone,
 p.CustomerGroupingRef as customer_group,
-l.Parent as province,
-isnull(pa.LocationRef,l.LocationId) as location,
+pr.Title as province,
+isnull(l2.Title,l.Title) as location,
 isnull(pa.address,l.Title) as address,
 RTRIM(LTRIM(isnull(e.StringColumn2,p.Website))) as senf,
 RTRIM(LTRIM(isnull(e.StringColumn3,null))) as sub_senf,
@@ -306,13 +306,15 @@ left join [FMK].[ExtraData] as e on e.EntityRef = p.PartyId
 left join (select pf.PartyRef, max(pf.Phone) as phone from  gnr.PartyPhone as pf group by pf.PartyRef) as pf on pf.PartyRef = p.PartyId
 left join (select pa.PartyRef, min(pa.PartyAddressId) as party_address_id from gnr.PartyAddress as pa group by pa.PartyRef) as paa on paa.PartyRef = p.PartyId
 left join gnr.PartyAddress as pa on paa.party_address_id = pa.PartyAddressId
-left join GNR.Location as l on l.Title = isnull(pa.Title,isnull(e.StringColumn1,p.EconomicCode))
+left join gnr.Location as l2 on l2.LocationId = pa.LocationRef
+left join GNR.Location as l on l.Title = isnull(pa.Title,isnull(e.StringColumn1,p.EconomicCode)) and l.Code is not null
+left join gnr.Location as pr on pr.LocationId = l.Parent
 where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCustomer=1
     """
 
     @staticmethod
     def get_all_provience():
-        return Item.objects.raw("select title, locationid as code, locationid as location_id from gnr.Location", using="sepidar")
+        return Item.objects.raw("select title, locationid as code, locationid as location_id from gnr.Location where code is not null", using="sepidar")
 
 
     @staticmethod
@@ -320,34 +322,34 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
         return Item.objects.raw("select GroupingID as code, * from gnr.Grouping as g  where g.EntityType = 'SG.General.PartyManagement.Common.PartyCustomerGroup'", using="sepidar")
 
     @staticmethod
-    def get_all_senf():
+    def get_all_senf(max_sepidar_party_id=0):
         return Item.objects.raw(
-            f"select distinct p.senf as code from({Item.customer_qry}) as p where p.senf is not null and p.senf!=''", using="sepidar")
+            f"select distinct p.senf as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.senf is not null and p.senf!=''", using="sepidar")
 
     @staticmethod
-    def get_all_sub_senf():
+    def get_all_sub_senf(max_sepidar_party_id):
         return Item.objects.raw(
-            f"select distinct p.sub_senf as code from({Item.customer_qry}) as p where p.sub_senf is not null and p.sub_senf!=''", using="sepidar")
+            f"select distinct p.sub_senf as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.sub_senf is not null and p.sub_senf!=''", using="sepidar")
 
     @staticmethod
-    def get_all_introduction_method():
+    def get_all_introduction_method(max_sepidar_party_id):
         return Item.objects.raw(
-            f"select distinct p.introduction_method as code from({Item.customer_qry}) as p where p.introduction_method is not null and p.introduction_method!=''", using="sepidar")
+            f"select distinct p.introduction_method as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.introduction_method is not null and p.introduction_method!=''", using="sepidar")
 
     @staticmethod
-    def get_all_introducer():
+    def get_all_introducer(max_sepidar_party_id):
         return Item.objects.raw(
-            f"select distinct p.introducer code from({Item.customer_qry}) as p where p.introducer is not null and p.introducer!=''", using="sepidar")
+            f"select distinct p.introducer code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.introducer is not null and p.introducer!=''", using="sepidar")
 
     @staticmethod
-    def get_all_marketer():
+    def get_all_marketer(max_sepidar_party_id):
         return Item.objects.raw(
-            f"select distinct p.marketer as code from({Item.customer_qry}) as p where p.marketer is not null and p.marketer!=''", using="sepidar")
+            f"select distinct p.marketer as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.marketer is not null and p.marketer!=''", using="sepidar")
 
     @staticmethod
-    def get_all_customers():
+    def get_all_customers(max_sepidar_party_id):
         return Item.objects.raw(
-            f"{Item.customer_qry}",using="sepidar")
+            f"{Item.customer_qry} and p.PartyId > {max_sepidar_party_id}",using="sepidar")
 
     @staticmethod
     def get_all_items(from_id):
