@@ -30,8 +30,8 @@ def valid_title(title_string):
     try:
         return title_string.replace(reps[0], reps[1]).replace(reps[2], reps[3])
     except Exception as e:
-        print(e, title_string)
         return title_string
+        print(e, title_string)
 
 
 def import_provience_from_sepidar(extra_data):
@@ -123,14 +123,6 @@ def import_marketer_from_sepidar(extra_data):
 def import_customers_from_sepidar(extra_data):
     extra_data = extra_data.copy()
     # import_provience_from_sepidar(extra_data)
-    truncate_table(Customer, cascade=False)
-    truncate_table(Province, cascade=False)
-    truncate_table(CustomerGroup, cascade=False)
-    truncate_table(Senf, cascade=False)
-    truncate_table(SubSenf, cascade=False)
-    truncate_table(IntroductionMethod, cascade=False)
-    truncate_table(Introducer, cascade=False)
-    truncate_table(Marketer, cascade=False)
     import_customer_group_from_sepidar(extra_data)
     import_senf_from_sepidar(extra_data)
     import_sub_senf_from_sepidar(extra_data)
