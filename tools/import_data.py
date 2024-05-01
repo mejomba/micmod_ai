@@ -41,7 +41,7 @@ def import_provience_from_sepidar(extra_data):
         try:
             data = extra_data
             data['title'] = valid_title(item.title)
-            data['sepidar_location_id'] = item.location_id
+            # data['sepidar_location_id'] = item.location_id
             Province.objects.update_or_create(sepidar_location_id=item.location_id,defaults=data)
         except Exception as e:
             print(str(e))
@@ -54,87 +54,91 @@ def import_customer_group_from_sepidar(extra_data):
         try:
             data = extra_data
             data['title'] = valid_title(item.Title)
-            data['sepidar_group_id'] = item.GroupingID
+            # data['sepidar_group_id'] = item.GroupingID
             CustomerGroup.objects.update_or_create(sepidar_group_id=item.GroupingID,defaults=data)
         except Exception as e:
             print(str(e))
 
 
-def import_senf_from_sepidar(extra_data):
+def import_senf_from_sepidar(extra_data, max_sepidar_party_id=0):
     extra_data = extra_data.copy()
-    items = SepItem.get_all_senf()
+    items = SepItem.get_all_senf(max_sepidar_party_id)
     for item in items:
         try:
             data = extra_data
-            data['title'] = valid_title(item.code)
-            Senf.objects.update_or_create(title=item.code,defaults=data)
+            # data['title'] = valid_title(item.code)
+            Senf.objects.update_or_create(title=valid_title(item.code),defaults=data)
         except Exception as e:
             print(str(e))
 
 
-def import_sub_senf_from_sepidar(extra_data):
+def import_sub_senf_from_sepidar(extra_data, max_sepidar_party_id=0):
     extra_data = extra_data.copy()
-    items = SepItem.get_all_sub_senf()
+    items = SepItem.get_all_sub_senf(max_sepidar_party_id)
     for item in items:
         try:
             data = extra_data
-            data['title'] = valid_title(item.code)
-            SubSenf.objects.update_or_create(title=item.code,defaults=data)
+            # data['title'] = valid_title(item.code)
+            SubSenf.objects.update_or_create(title=valid_title(item.code),defaults=data)
         except Exception as e:
             print(str(e))
 
 
-def import_introduction_method_from_sepidar(extra_data):
+def import_introduction_method_from_sepidar(extra_data, max_sepidar_party_id=0):
     extra_data = extra_data.copy()
-    items = SepItem.get_all_introduction_method()
+    items = SepItem.get_all_introduction_method(max_sepidar_party_id)
     for item in items:
         try:
             data = extra_data
-            data['title'] = valid_title(item.code)
-            IntroductionMethod.objects.update_or_create(title=item.code,defaults=data)
+            # data['title'] = valid_title(item.code)
+            IntroductionMethod.objects.update_or_create(title=valid_title(item.code),defaults=data)
         except Exception as e:
             print(str(e))
 
 
-def import_introducer_from_sepidar(extra_data):
+def import_introducer_from_sepidar(extra_data, max_sepidar_party_id=0):
     extra_data = extra_data.copy()
-    items = SepItem.get_all_introducer()
+    items = SepItem.get_all_introducer(max_sepidar_party_id)
     for item in items:
         try:
             data = extra_data
-            data['title'] = valid_title(item.code)
-            Introducer.objects.update_or_create(title=item.code,defaults=data)
+            # data['title'] = valid_title(item.code)
+            Introducer.objects.update_or_create(title=valid_title(item.code),defaults=data)
         except Exception as e:
             print(str(e))
 
 
-def import_marketer_from_sepidar(extra_data):
+def import_marketer_from_sepidar(extra_data, max_sepidar_party_id=0):
     extra_data = extra_data.copy()
-    items = SepItem.get_all_marketer()
+    items = SepItem.get_all_marketer(max_sepidar_party_id)
     for item in items:
         try:
             data = extra_data
-            data['title'] = valid_title(item.code)
-            Marketer.objects.update_or_create(title=item.code,defaults=data)
+            # data['title'] = valid_title(item.code)
+            Marketer.objects.update_or_create(title=valid_title(item.code),defaults=data)
         except Exception as e:
             print(str(e))
 
 
 def import_customers_from_sepidar(extra_data):
+    max_sepidar_party_id = int(select_cquery("select max(PartyId) as max_id from GNR.Party","sepidar")['max_id'][0])
+    max_local_party = Customer.objects.all().order_by("-sepidar_party_id").first()
+    max_local_party_id = max_local_party.sepidar_party_id if max_local_party else 0
+    if max_local_party_id >= max_sepidar_party_id:
+        return
     extra_data = extra_data.copy()
     # import_provience_from_sepidar(extra_data)
     import_customer_group_from_sepidar(extra_data)
-    import_senf_from_sepidar(extra_data)
-    import_sub_senf_from_sepidar(extra_data)
-    import_introduction_method_from_sepidar(extra_data)
-    import_introducer_from_sepidar(extra_data)
-    import_marketer_from_sepidar(extra_data)
+    import_senf_from_sepidar(extra_data, max_local_party_id)
+    import_sub_senf_from_sepidar(extra_data, max_local_party_id)
+    import_introduction_method_from_sepidar(extra_data, max_local_party_id)
+    import_introducer_from_sepidar(extra_data, max_local_party_id)
+    import_marketer_from_sepidar(extra_data, max_local_party_id)
 
-    items = SepItem.get_all_customers()
+    items = SepItem.get_all_customers(max_local_party_id)
     for item in items:
         try:
             data = extra_data
-            data['sepidar_dl_id'] = item.sepidar_dl_id
             data['sepidar_dl_code'] = item.sepidar_dl_code
             data['sepidar_party_id'] = item.sepidar_party_id
             data['title'] = valid_title(item.title)
@@ -144,8 +148,8 @@ def import_customers_from_sepidar(extra_data):
             data['email'] = item.email
             data['phone'] = item.phone
             data['customer_group'] = CustomerGroup.objects.filter(sepidar_group_id=item.customer_group).first()
-            data['province'] = Province.objects.filter(sepidar_location_id=item.province).first()
-            data['location'] = Province.objects.filter(sepidar_location_id=item.location).first()
+            data['province'] = Province.objects.filter(title=item.province).first()
+            data['location'] = Province.objects.filter(title=item.location).first()
             data['address'] = valid_title(item.address)
             data['senf'] = Senf.objects.filter(title=valid_title(item.senf)).first()
             data['sub_senf'] = SubSenf.objects.filter(title=valid_title(item.sub_senf)).first()
@@ -156,6 +160,7 @@ def import_customers_from_sepidar(extra_data):
             data['max_credit'] = item.max_credit
             data['credit_with_doc'] = item.credit_with_doc
             Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
+            # data['sepidar_dl_id'] = item.sepidar_dl_id
             # Customer.objects.create(**data)
         except Exception as e:
             print(str(e))
@@ -278,12 +283,12 @@ def update_model_based_excel(datas:list[dict], model:models.Model,update=True,pk
         for data in datas:
             row = extra_data.copy()
             for field in model._meta.get_fields():
-                if field.name in data.keys() and data[field.name]:
+                if field.name in data.keys() and field.name != pk_field: #and data[field.name]
                     row[field.name] = data[field.name]
             try:
                 if update:
                     obj, created = model.objects.update_or_create(
-                        **{pk_field: row[pk_field]},
+                        **{pk_field: data[pk_field]},
                         defaults=row,
                     )
                 else:
