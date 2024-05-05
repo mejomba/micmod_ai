@@ -118,11 +118,12 @@ class BaseManager(models.Manager):
         qry = objects_from_user | objects_from_flow
         quotations_record_lst = []
         obj = qry.first()
+        # user_team = user.team.all()
         if obj and q == 'active':
             content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
             for item in qry:
-                wf = WorkFlow.objects.filter(object_id=obj.id, content_type=content_type).order_by('id').last()
-                if wf and wf.to_user == user:
+                wf = WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
+                if wf and (wf.to_user == user):
                     quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry

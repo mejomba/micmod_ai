@@ -24,12 +24,13 @@
 {% endblock %}
 
 {% block content %}
-{#{% if request.user|has_group:'technical_admin' %}#}
-{#    <div class="border rounded p-3">#}
-{#        <span>استفاده از فیلتر</span>#}
-{#        <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>#}
-{#    </div>#}
-{#    {% endif %}#}
+
+    <div class="border rounded mb-5 p-3">
+        <span>استفاده از فیلتر</span>
+        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+        <a href="{% url 'sls:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+    </div>
+
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->

@@ -65,6 +65,17 @@
             {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=item.express_extra_cost_percentage rma_class="d-flex py-1" %}
         </div>
         {% endif %}
+
+
+{#        {% block form_footer_extra %}#}
+            <a href="{% url 'extra_data:sku.update' item.pk|add:'-1' %}" class="">
+            <i class="ki-outline ki-left-square fs-3x text-warning"></i>
+            </a>
+            <a href="{% url 'extra_data:sku.update' item.pk|add:'1' %}" class=" mr-3 mx-1">
+            <i class="ki-outline ki-right-square fs-3x text-primary"></i>
+            </a>
+
+{#        {% endblock form_footer_extra %}#}
     {% endblock %}
 
 {% block content %}

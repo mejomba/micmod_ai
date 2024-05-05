@@ -54,6 +54,7 @@ class User(AbstractUser):
         return group
 
     def get_target_user_from_group(self, group, level=1):
+        return self.team.all()
         from workflow.models import FlowAdminGroup
         from django.contrib.auth import get_user_model
         print('group: ', group)
@@ -70,6 +71,7 @@ class User(AbstractUser):
     def get_target_users(self):
         from django.contrib.auth import get_user_model
         user_qs = get_user_model().objects.filter(id=self.id)
+        return self.team.all() | user_qs
         for main_user_group in self.groups.all():
             user_qs |= self.get_target_user_from_group(main_user_group)
         print('user_list  > ', user_qs)
