@@ -822,7 +822,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
-        {'name': 'customer', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'searchable': False},
+        {'name': 'customer_party_id', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
@@ -833,28 +833,30 @@ class QuotationListDatatable(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        q = self.request.GET.get('q')
-        qs = Quotation.objects.get_access_object(request.user, q=q)
+        qs = Quotation.get_qs(request)
         return self.model.objects.filter(pk__in=[i.pk for i in qs])
 
+    # @timer
     def customize_row(self, row, obj):
         from micmod_base.templatetags.quotation_tag import get_customer
-        customer = get_customer(obj.customer_code)
-        # row['customer'] = '%s' % customer.name if customer else '-'
-        row['customer'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+        # customer = get_customer(obj.customer_code)
+
+        row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
-            customer.name if customer else '-'
+            obj.customer_party_id.title if obj.customer_party_id else '-'
         )
 
-        local_color_condition = obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0
-        foreign_color_condition = obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0
-        out = f'''<span> کل: {obj.get_inquiry_result_count[0]} </span > <br>''' \
-              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}> 
+        counter = obj.get_inquiry_result_count
+
+        local_color_condition = counter[1] == counter[2] and counter[1] != 0
+        foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
+        out = f'''<span> کل: {counter[0]} </span > <br>''' \
+              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}>
               داخلی
-              {obj.get_inquiry_result_count[1]} /  {obj.get_inquiry_result_count[2]} </p>''' \
-              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}> 
+              {counter[1]} /  {counter[2]} </p>''' \
+              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}>
               خارجی
-              {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} </p> '''
+              {counter[3]} / {counter[4]} </p> '''
         row['inquiry_status'] = out
 
         row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
