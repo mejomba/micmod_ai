@@ -986,7 +986,7 @@ function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null,
 
 function set_values(items, value, is_date = false) {
     let value_str = value
-    if (!isNaN(value) && !is_date) {
+    if (!isNaN(parseInt(value)) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
         value_str = numberWithCommas(value)
     }
