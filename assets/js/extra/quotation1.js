@@ -882,6 +882,23 @@ function findAncestor(el, cls) {
     return el;
 }
 
+function round_rial(x){
+    debugger
+    if (x / 100000 > 1){
+        // round 3 digit
+        x = x / 1000
+        x = (parseInt(x) + 1) * 1000
+    } else if (x / 10000 > 1){
+        // round 2 digit
+        x = x / 100
+        x = (parseInt(x) + 1) * 100
+    } else if (x / 1000 > 1){
+        // round 1 digit
+        x = x / 10
+        x = (parseInt(x) + 1) * 10
+    }
+    return x
+}
 function numberWithCommas(x, digits = 2) {
     if (x == '' || x == null || isNaN(x)) return ''
     x = parseFloat(x)
@@ -926,7 +943,12 @@ function calculate_price(target) {
         taxValue = 0
     }
 
-    total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency_ref == 1){
+        total_price.innerHTML = numberWithCommas(round_rial((price * qty) - totalDiscount + taxValue)) || numberWithCommas(round_rial(price * qty))
+    } else {
+        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+    }
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0
@@ -985,6 +1007,7 @@ function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null,
 }
 
 function set_values(items, value, is_date = false) {
+    debugger
     let value_str = value
     if (!isNaN(parseInt(value)) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
