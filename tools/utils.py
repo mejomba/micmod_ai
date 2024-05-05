@@ -3,10 +3,7 @@ from typing import List, Dict
 import pandas
 import pytz
 from dateutil.relativedelta import relativedelta
-# from django.contrib.auth import get_user_model
-# from django.contrib.contenttypes.models import ContentType
-# from django.db.models import Q,Model
-# from django.db import connection
+import time
 
 from _keenthemes.settings import TIME_ZONE
 from . import myjalali
@@ -108,58 +105,6 @@ def to_jalali_date(time):
         print('error ', __file__, e.__traceback__.tb_lineno, e)
         return '1000/01/01'
 
-#
-# def get_target_user_from_group(group, level=1):
-#     print('group: ', group)
-#     qs = get_user_model().objects.filter(pk=-1)
-#     if level > 1:
-#         qs |= group.user_set.all()
-#         print(qs)
-#     for g in FlowAdminGroup.objects.filter(group_rel=group):
-#         for gc in g.group_child.all():
-#             qs |= get_target_user_from_group(gc, level+1)
-#     print('qs before return ', qs)
-#     return qs
-# # from tools.utils import get_target_users
-# # from accounts.models import User
-# # x = User.objects.get(username='u2')
-# # get_target_users(x)
-#
-# def get_target_users(user):
-#     user_qs = get_user_model().objects.filter(id=user.id)
-#     for main_user_group in user.groups.all():
-#         user_qs |= get_target_user_from_group(main_user_group)
-#     print('user_list  > ', user_qs)
-#     return user_qs
-#
-#
-# def get_target_wf(user):
-#     user_list = get_target_users(user)
-#     wf = WorkFlow.objects.filter(id=-1)
-#     for user in user_list:
-#         wf |= WorkFlow.objects.filter(
-#             Q(creator_user=user) |
-#             Q(editor_user=user) |
-#             Q(from_user=user) |
-#             Q(to_user=user)
-#         )
-#     return wf
-#
-#
-# def get_access_object(user, model):
-#     content_type = ContentType.objects.filter(model=model._meta.model_name, app_label=model._meta.app_label).first()
-#
-#     wfs = get_target_wf(user)
-#     object_id_from_flow = wfs.filter(content_type=content_type).values_list('object_id', flat=True)
-#
-#     user_list = get_target_users(user)
-#     objects_from_user = model.objects.filter(
-#         Q(creator_user__in=user_list) |
-#         Q(editor_user__in=user_list)
-#     )
-#     objects_from_flow = model.objects.filter(pk__in=object_id_from_flow)
-#     return objects_from_user | objects_from_flow
-
 
 def show_error(e, file):
     print("error: ", file, e.__traceback__.tb_lineno, e)
@@ -207,3 +152,14 @@ def progress_value(start_date, end_date, total_hour=72):
         return int(result)
     except Exception as e:
         return 0
+
+
+def timer(f):
+    def inner(*args, **kwargs):
+        print(f.__name__, '___start')
+        t1 = time.time()
+        r = f(*args, **kwargs)
+        t2 = time.time()
+        print(f.__name__, t2 - t1)
+        return r
+    return inner

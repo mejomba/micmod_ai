@@ -111,7 +111,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method)
 
-            if self.state_index == 2 and 'submit/copy_q' in self.request.POST:
+            if (self.state_index == 1 or self.state_index == 1) and 'submit/copy_q' in self.request.POST:
                 flow_copy = False
 
                 """copy quotation"""
@@ -120,8 +120,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                             bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
                         """مجاز نیستن برن مرحله بعد"""
                         """create new quotation"""
-
-                        """quotation"""
                         quotation_data = dict()
                         pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user',
                                               'editor_user']
@@ -152,28 +150,34 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                                     flow.object_id = new_quotation.pk
                                     flow.save()
                                     flow_copy = True
+                                    new_quotation.last_work_flow = flow
 
-                            """این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند"""
-                            flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                            pad = 2 if self.state_index >= 2 else 1
-                            for item in flow_items:
-                                to_user = item.to_user if pad >= 2 else item.from_usre
-                                deadline = item.deadline
-                            data = {
-                                "wf_status": 2,  # back
-                                "action": self.flow_config.get('flow_action'),
-                                "flow_name": None,
-                                "from_user": self.request.user,
-                                "to_user": to_user,
-                                "state": self.flow_config.get('flow_state_list')[self.state_index],
-                                "duty": None,
-                                "deadline": deadline,
-                                "wf_description": "back in copy",
-                                "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
-                                "content_type": ContentType.objects.get_for_model(Quotation),
-                                "object_id": new_quotation.id
-                            }
-                            back = WorkFlow.objects.create(**data)
+                            """ این آیتم در مرحله استعلام می ماند و wf ثبت نمیکند """
+                            # """ این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند """
+                            # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
+                            # pad = 2 if self.state_index >= 2 else 1
+                            # for item in flow_items:
+                            #     if pad >= 2:
+                            #         to_user = item.to_user
+                            #     else:
+                            #         to_user = item.from_user
+                            #     # to_user = item.to_user if pad >= 2 else item.from_usre
+                            #     deadline = item.deadline
+                            # data = {
+                            #     "wf_status": 2,  # back
+                            #     "action": self.flow_config.get('flow_action'),
+                            #     "flow_name": None,
+                            #     "from_user": self.request.user,
+                            #     "to_user": to_user,
+                            #     "state": self.flow_config.get('flow_state_list')[self.state_index],
+                            #     "duty": None,
+                            #     "deadline": deadline,
+                            #     "wf_description": "back in copy",
+                            #     "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
+                            #     "content_type": ContentType.objects.get_for_model(Quotation),
+                            #     "object_id": new_quotation.id
+                            # }
+                            # back = WorkFlow.objects.create(**data)
 
                             new_quotation.quotation_self = self.object
                             new_quotation.extra_data.request = self.request
@@ -280,7 +284,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             qis = self.object.quotation.all()
             counter = 0
             for qi in qis:
-                if self.state_index == 2 and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
+                if (self.state_index == 1 or self.state_index == 1) and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)):
                     counter += 1
                     context['allow_next'] = False
