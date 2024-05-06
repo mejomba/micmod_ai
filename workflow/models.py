@@ -33,6 +33,9 @@ class WorkFlow(BaseContentType):
 
     extra_prefix = 'workflows'
 
+    def __str__(self):
+        return f'{self.current_state_name}'
+
     def submit_flow(self):
         pass
 

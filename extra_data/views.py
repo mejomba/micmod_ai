@@ -155,6 +155,8 @@ class SkuUpdateView(LoginRequiredMixin,
             if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
                 url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
                 return redirect(url)
+            else:
+                return super(SuccessMessageMixin, self).form_valid(form)
         if self.state_index == 1 and not form.cleaned_data.get('technical_confirm'):
             self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
             return super(SuccessMessageMixin, self).form_valid(form)

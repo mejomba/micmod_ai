@@ -182,6 +182,7 @@ class PriceSettings(AbsBaseModel):
     calculation_method = models.CharField(max_length=5, verbose_name=_('calculation_method'),choices=CalculationMethod.choices
                                           ,default=CalculationMethod.Old)
     max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
+    delivery_in_china = models.BooleanField(default=False, verbose_name=_('delivery_in_china'))
 
     # auto_complete = 'title'
     @staticmethod

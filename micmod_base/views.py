@@ -2,7 +2,8 @@ from pprint import pprint
 import json
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, CharField
+from django.db.models.functions import Cast
 from django.utils import timezone
 
 from comments.forms import CommentsForm
@@ -833,17 +834,17 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
         qs = Quotation.get_qs(request)
+        qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
         return self.model.objects.filter(pk__in=[i.pk for i in qs])
 
     # @timer
     def customize_row(self, row, obj):
-        from micmod_base.templatetags.quotation_tag import get_customer
-        # customer = get_customer(obj.customer_code)
 
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
