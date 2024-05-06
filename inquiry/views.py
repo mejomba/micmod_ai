@@ -224,8 +224,8 @@ class SkuListDataTableView(AjaxDatatableView):
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
         q = self.request.POST.get('q')
-        if q == 'update_from_sepidar':
-            set_items_sepidar_id_from_sepidar()
+        # if q == 'update_from_sepidar':
+        #     set_items_sepidar_id_from_sepidar()
 
         if q == 'sales_user':
             qs = qs.filter(creator_user__groups__name=q)

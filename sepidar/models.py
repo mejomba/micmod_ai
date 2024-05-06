@@ -274,6 +274,82 @@ join [FMK].[FiscalYear] as fy on fy.FiscalYearId = docs.FiscalYearRef
 
 class Item(models.Model):
     code = models.CharField(primary_key=True,max_length=250)
+    customer_qry = """
+select 
+d.DLId as code,
+d.DLId as sepidar_dl_id,
+d.Code as sepidar_dl_code,
+p.PartyId as sepidar_party_id,
+d.Title as title,
+p.Name as name,
+p.LastName as last_name,
+p.Type as type,
+p.IdentificationCode as national_code,
+p.Email as email,
+pf.Phone as phone,
+p.CustomerGroupingRef as customer_group,
+pr.Title as province,
+isnull(l2.Title,l.Title) as location,
+isnull(pa.address,l.Title) as address,
+RTRIM(LTRIM(isnull(e.StringColumn2,p.Website))) as senf,
+RTRIM(LTRIM(isnull(e.StringColumn3,null))) as sub_senf,
+RTRIM(LTRIM(isnull(e.StringColumn4,null))) as introduction_method,
+RTRIM(LTRIM(isnull(e.StringColumn5,null))) as marketer,
+RTRIM(LTRIM(isnull(e.StringColumn6,null))) as introducer,
+isnull(e.DateColumn1,null) as revival_date,
+isnull(e.IntegerColumn1,p.MaximumCredit) as max_credit,
+isnull(e.IntegerColumn2,null) as credit_with_doc
+
+from acc.dl as d
+join gnr.Party as p on p.DLRef = d.DLId
+left join [FMK].[ExtraData] as e on e.EntityRef = p.PartyId
+left join (select pf.PartyRef, max(pf.Phone) as phone from  gnr.PartyPhone as pf group by pf.PartyRef) as pf on pf.PartyRef = p.PartyId
+left join (select pa.PartyRef, min(pa.PartyAddressId) as party_address_id from gnr.PartyAddress as pa group by pa.PartyRef) as paa on paa.PartyRef = p.PartyId
+left join gnr.PartyAddress as pa on paa.party_address_id = pa.PartyAddressId
+left join gnr.Location as l2 on l2.LocationId = pa.LocationRef
+left join GNR.Location as l on l.Title = isnull(pa.Title,isnull(e.StringColumn1,p.EconomicCode)) and l.Code is not null
+left join gnr.Location as pr on pr.LocationId = l.Parent
+where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCustomer=1
+    """
+
+    @staticmethod
+    def get_all_provience():
+        return Item.objects.raw("select title, locationid as code, locationid as location_id from gnr.Location where code is not null", using="sepidar")
+
+
+    @staticmethod
+    def get_all_customer_groups():
+        return Item.objects.raw("select GroupingID as code, * from gnr.Grouping as g  where g.EntityType = 'SG.General.PartyManagement.Common.PartyCustomerGroup'", using="sepidar")
+
+    @staticmethod
+    def get_all_senf(max_sepidar_party_id=0):
+        return Item.objects.raw(
+            f"select distinct p.senf as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.senf is not null and p.senf!=''", using="sepidar")
+
+    @staticmethod
+    def get_all_sub_senf(max_sepidar_party_id):
+        return Item.objects.raw(
+            f"select distinct p.sub_senf as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.sub_senf is not null and p.sub_senf!=''", using="sepidar")
+
+    @staticmethod
+    def get_all_introduction_method(max_sepidar_party_id):
+        return Item.objects.raw(
+            f"select distinct p.introduction_method as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.introduction_method is not null and p.introduction_method!=''", using="sepidar")
+
+    @staticmethod
+    def get_all_introducer(max_sepidar_party_id):
+        return Item.objects.raw(
+            f"select distinct p.introducer code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.introducer is not null and p.introducer!=''", using="sepidar")
+
+    @staticmethod
+    def get_all_marketer(max_sepidar_party_id):
+        return Item.objects.raw(
+            f"select distinct p.marketer as code from({Item.customer_qry} and p.PartyId > {max_sepidar_party_id}) as p where p.marketer is not null and p.marketer!=''", using="sepidar")
+
+    @staticmethod
+    def get_all_customers(max_sepidar_party_id):
+        return Item.objects.raw(
+            f"{Item.customer_qry} and p.PartyId > {max_sepidar_party_id}",using="sepidar")
 
     @staticmethod
     def get_all_items(from_id):
