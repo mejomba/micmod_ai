@@ -184,12 +184,19 @@ if os.environ.get('IS_DOCKER'):
     sql_db_options = {
                 'driver': 'FreeTDS',
                 'unicode_results': True,
+                # 'Trace': True,
                 'host_is_server': True,
                 'driver_supports_utf8': True,
                 'extra_params': 'tds_version=7.4',
             }
 else:
     sql_db_options = {'driver': 'ODBC Driver 17 for SQL Server',}
+# sql_db_options = {'driver': 'ODBC Driver 17 for SQL Server',}
+# sql_db_options = {
+#             'driver': 'ODBC Driver 17 for SQL Server',
+#             'unicode_results': True,
+#             'TrustServerCertificate': True
+#         }
 
 DATABASES = {
     # 'default': {
@@ -222,7 +229,7 @@ DATABASES = {
         'USER': os.environ.get('SE_USER'),
         'PASSWORD': os.environ.get('SE_PASSWORD'),
         'HOST': os.environ.get('SE_HOST'),
-        # 'PORT': DB_PIRINEOS_PORT,
+        # 'PORT': '3306',
         'OPTIONS': sql_db_options,
     },
     #     {
@@ -266,7 +273,7 @@ DATABASES = {
         'HOST': os.environ.get('DW_HOST'),
         # 'PORT': DB_PIRINEOS_PORT,
         # 'OPTIONS': sql_db_options,
-        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
+        'OPTIONS': sql_db_options,
     },
 }
 
