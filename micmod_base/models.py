@@ -2,6 +2,7 @@ import uuid
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
 
+from django.db.models import F
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
 from django.db.models import Q
@@ -13,6 +14,7 @@ from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
+from extra_data.models import Customer
 from tools import utils
 from tools.utils import show_error
 
@@ -54,7 +56,8 @@ class SaleType(AbsBaseModel):
 
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
-    customer_party_id = models.IntegerField(verbose_name=_('party_id'), null=True, blank=True)
+    customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True, to_field='sepidar_party_id', on_delete=models.DO_NOTHING, db_column='customer_party_id')
+    # customer_party_id = models.BigIntegerField(verbose_name=_('party_id'), null=True, blank=True)
     request_date = models.DateField(null=False, blank=False, verbose_name=_('request_date'))
     expiration_date = models.DateField(null=True, blank=True, verbose_name=_('expiration_date'))
     customer_code = models.CharField(max_length=20, null=True, blank=True, verbose_name=_('customer_code'))
@@ -82,6 +85,12 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
     absolute_url_update = 'sls:quotations.view'
+
+    @classmethod
+    def get_qs(cls, request):
+        q = request.POST.get('q')
+        qs = cls.objects.get_access_object(request.user, q=q)
+        return qs
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -377,7 +386,10 @@ class QuotationItem(BaseModel):
             else:
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
-        x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
+        if path == past_path:
+            x = cls.objects.filter(inquiry_type_filter).order_by('-quotation_id')
+        else:
+            x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
         return x
 
     @classmethod

@@ -452,7 +452,7 @@ a .next {
   text-align: right;
   /*height: fit-content;*/
     overflow: hidden;
-    max-height: 20000px;
+    max-height: 30000px;
   /*height: 100%;*/
   transition: all 0.3s ease-out;
   -moz-transition: all .3s ease-out;
@@ -793,4 +793,27 @@ span .select2-selection{
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.dataTables_processing {
+    width: 59px !important;
+    height: 59px !important;
+    border-radius: 50% !important;
+    position: relative;
+    animation: rotate 1s linear infinite;
+    background-color: transparent;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 3px dashed seagreen;
+      }
+
+@keyframes rotate {
+0%   {transform: rotate(0deg)}
+100%   {transform: rotate(360deg)}
+}
+
+@keyframes prixClipFix {
+  0%   {clip-path:polygon(50% 50%,0 0,0 0,0 0,0 0,0 0)}
+  50%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 0,100% 0,100% 0)}
+  75%, 100%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,100% 100%,100% 100%)}
 }

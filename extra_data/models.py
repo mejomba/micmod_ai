@@ -1,8 +1,8 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 import dw.models
-import inquiry.models
 from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
@@ -16,6 +16,11 @@ from tools.form_tools import select_cquery
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
     SKU = "1", _("calculate_in_sku")
+
+
+class CustomerType(models.TextChoices):
+    Company = "1", _("company")
+    Person = "2", _("person")
 
 
 class CalculationMethod(models.TextChoices):
@@ -177,6 +182,7 @@ class PriceSettings(AbsBaseModel):
     calculation_method = models.CharField(max_length=5, verbose_name=_('calculation_method'),choices=CalculationMethod.choices
                                           ,default=CalculationMethod.Old)
     max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
+    delivery_in_china = models.BooleanField(default=False, verbose_name=_('delivery_in_china'))
 
     # auto_complete = 'title'
     @staticmethod
@@ -349,8 +355,9 @@ class Item(BaseModel):
 
     @property
     def bazar_price(self):
+        bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
-            self.extra_data.bazar_price = self.items.filter(sku=self).filter(active=True, inquiry_type_id=4).first()
+            self.extra_data.bazar_price = self.items.filter(sku=self).filter(bazar_filter, active=True).first()
         return self.extra_data.bazar_price
 
     def set_price(self, price_id):
@@ -492,4 +499,85 @@ class ItemWeight(AbsBaseModel):
 
     def __str__(self):
         return f'{self.sku}'
+
+class CustomerGroup(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+    sepidar_id = models.AutoField(verbose_name=_('sepidar_id'), unique=True, primary_key=True, editable=False)
+    sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), blank=True, null=True, unique=True)
+
+    auto_complete = 'title'
+
+
+class Senf(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+
+class SubSenf(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+
+class IntroductionMethod(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+
+class Introducer(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+
+class Marketer(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+
+class Province(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+    location_id = models.AutoField(verbose_name=_('location_id'), primary_key=True, editable=False)
+    sepidar_location_id = models.BigIntegerField(verbose_name=_('sepidar_location_id'), blank=True, null=True, unique=True)
+
+    auto_complete = 'title'
+
+
+class Customer(AbsBaseModel):
+    sepidar_dl_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
+    sepidar_dl_code = models.BigIntegerField(verbose_name=_('sepidar_code'), null=True, blank=True, unique=True)
+    sepidar_party_id = models.BigIntegerField(verbose_name=_('sepidar_party_id'), null=True, blank=True, unique=True)
+    sepidar_sl_ref = models.BigIntegerField(verbose_name=_('sepidar_sl_ref'), null=True, blank=True, unique=True)
+    title = models.CharField(max_length=350, verbose_name=_('title'), unique=True)
+    type = models.CharField(choices=CustomerType.choices,verbose_name=_("type"), max_length=10, default=CustomerType.Company)
+    national_code = models.CharField(max_length=12, verbose_name=_("national_code"), null=True, blank=True)
+    name = models.CharField(max_length=150, verbose_name=_("name"), null=True, blank=True)
+    last_name = models.CharField(max_length=150, verbose_name=_("last_name"), null=True, blank=True)
+    email = models.EmailField(max_length=150, verbose_name=_("email"), null=True, blank=True)
+    website = models.URLField(max_length=150, verbose_name=_("website"), null=True, blank=True)
+    phone = models.CharField(max_length=50, verbose_name=_("phone"), null=True, blank=True)
+    mobile = models.CharField(max_length=50, verbose_name=_("mobile"), null=True, blank=True)
+    max_credit = models.BigIntegerField(verbose_name=_("max_credit"), null=True, blank=True)
+    credit_with_doc = models.BigIntegerField(verbose_name=_("credit_with_doc"), null=True, blank=True)
+    customer_group = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("customer_group"), null=True, blank=True)
+    province = models.ForeignKey(Province, on_delete=models.DO_NOTHING, related_name='customers_p',verbose_name=_("province"), null=True, blank=True)
+    location = models.ForeignKey(Province, on_delete=models.DO_NOTHING, related_name='customers_l',verbose_name=_("location"), null=True, blank=True)
+    address = models.CharField(max_length=400, verbose_name=_("address"), null=True, blank=True)
+    senf = models.ForeignKey(Senf, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("senf"), null=True, blank=True)
+    sub_senf = models.ForeignKey(SubSenf, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("sub_senf"), null=True, blank=True)
+    introduction_method = models.ForeignKey(IntroductionMethod, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("introduction_method"), null=True, blank=True)
+    introducer = models.ForeignKey(Introducer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("introducer"), null=True, blank=True)
+    marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("marketer"), null=True, blank=True)
+    revival_date = models.DateField(verbose_name=_("revival_date"), null=True, blank=True)
+
+    @staticmethod
+    def get_list(text):
+        res = Customer.objects.filter(sepidar_dl_code=text)
+            # ('default').raw(f"""
+        # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
+        return res
+
 

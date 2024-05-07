@@ -22,6 +22,7 @@ from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
+from tools.import_data import import_customers_from_sepidar
 from tools.utils import map_model_to_python_type, show_error
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
@@ -176,6 +177,10 @@ class BaseView(UserPassesTestMixin,
                                               })
 
         self.object = self.get_object()
+        """ run import customer from sepidar before object create"""
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
         if self.has_flow:
             self.state_index = self.get_flow_index(self.object)
 
@@ -492,15 +497,17 @@ class BaseView(UserPassesTestMixin,
                             # wf_obj.to_user = item.from_user
                             wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
                             wf_obj.deadline = item.deadline
-                            wf_obj.wf_status = 2  # back
+                            # wf_obj.wf_status = 2  # back
                             print(__file__, '========= save as back')
                             break
                     # wf_obj.save_user(self.request)
+                    wf_obj.wf_status = 2  # back
                     wf_obj.extra_data.request = self.request
                     wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index - 1]
                     wf_obj.save()
-                    old_obj.last_work_flow = wf_obj
-                    old_obj.save()
+                    self.object.last_work_flow = wf_obj
+                    self.object.extra_data.request = self.request
+                    self.object.save()
                     return HttpResponseRedirect(self.get_success_url())
                     # return super().form_valid(form)
 

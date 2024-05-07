@@ -265,9 +265,8 @@ DATABASES = {
         'PASSWORD': os.environ.get('DW_PASSWORD'),
         'HOST': os.environ.get('DW_HOST'),
         # 'PORT': DB_PIRINEOS_PORT,
-        # 'OPTIONS': sql_db_options,
-        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
-    },
+        'OPTIONS': sql_db_options,
+     },
 }
 
 # DATABASES = {

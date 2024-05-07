@@ -9,6 +9,7 @@ from django.urls import reverse_lazy, reverse
 from django.views import generic
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
+from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm
 
@@ -155,6 +156,8 @@ class SkuUpdateView(LoginRequiredMixin,
             if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
                 url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
                 return redirect(url)
+            else:
+                return super(SuccessMessageMixin, self).form_valid(form)
         if self.state_index == 1 and not form.cleaned_data.get('technical_confirm'):
             self.success_message = 'امکان ارسال فرم به مرحله نهایی بدون تایید فنی وجود ندارد'
             return super(SuccessMessageMixin, self).form_valid(form)
@@ -399,3 +402,8 @@ class HsDataTableView(AjaxDatatableView):
             reverse('extra_data:hs.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
+
+def ajax_update_from_sepidar(request):
+    set_items_sepidar_id_from_sepidar()
+    return JsonResponse({'res': 'ok'})

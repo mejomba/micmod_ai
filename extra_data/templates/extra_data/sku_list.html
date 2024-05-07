@@ -30,14 +30,19 @@
         <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>
         <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>
 {#        <a href="{% url 'extra_data:sku.list' %}" class="btn btn-success mx-1">همه</a>#}
-        <a href="{% url 'extra_data:sku.list' %}?q=update_from_sepidar" class="btn btn-secondary mx-1">بروز رسانی از سپیدار</a>
+
+        <div class="btn btn-secondary mx-1" id="update_from_sepidar">بروز رسانی از سپیدار</div>
+
+        <a href="{% url 'extra_data:sku.create' %}" target="_blank" class="btn p-0 cursor-pointer">
+            {% getIcon 'message-add' 'fs-4x text-primary' %}
+        </a>
 {#        <button id="upddate_item_from_sepidar" class="btn btn-secondary mx-1">بروز رسانی از سپیدار</button>#}
     </div>
     {% endif %}
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-        <div class="main-content">
+        <div class="main-content" id="block_container">
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
@@ -61,6 +66,33 @@
 {% endblock content %}
 
 {% block extra_js %}
+    <script>
+    const update_from_sepidar = document.querySelector('#update_from_sepidar')
+    debugger
+    update_from_sepidar.addEventListener('click', function (e){
+        $.ajax({
+            type: 'GET',
+            url: '{% url 'extra_data:update_from_sepidar' %}',
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: function (){
+                update_from_sepidar.innerHTML = 'در حال بروز رسانی ...'
+                update_from_sepidar.classList.add('disabled')
+            },
+            success: function (data) {
+                debugger
+                update_from_sepidar.classList.add('bg-success')
+                update_from_sepidar.innerHTML = 'بروز رسانی شد'
+                window.location = '.'
+            },
+            error: function () {
+                alert('error')
+            },
+        }) // end ajax
+    })
+    </script>
 
     <script language="javascript">
     $(document).ready(function() {

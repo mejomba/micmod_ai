@@ -14,6 +14,15 @@ def get_customer(customer_id):
             return customer
 
 @register.simple_tag
+def get_customer_from_pg(customer_id):
+    from extra_data.models import Customer
+    if customer_id:
+        customer = Customer.get_list(customer_id)
+        if len(customer) > 0:
+            customer = customer[0]
+            return customer
+
+@register.simple_tag
 def get_price_method(value):
     if not value:
         return ""
