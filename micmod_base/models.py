@@ -1,4 +1,6 @@
 import uuid
+# from datetime import datetime, timedelta
+from django.utils.timezone import timedelta
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
@@ -377,6 +379,30 @@ class QuotationItem(BaseModel):
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
         x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
         return x
+
+    @classmethod
+    def get_inquiry_report(cls):
+        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()
+        today = timezone.now() - timedelta(days=1)
+        d =dict()
+        quotation_items = cls.objects.filter(Q(assigned_trade_user__in=trade_user) |
+                                             Q(assigned_trade_user2__in=trade_user))
+        for user in trade_user:
+
+            time_filter = (Q(assigned_trade_user=user, assigned_trade_user_date__gte=today) |
+                           Q(assigned_trade_user2=user, assigned_trade_user_date2__gte=today))
+            task_start_filter = (Q(assigned_trade_user=user, task_start=True) |
+                                 Q(assigned_trade_user2=user, task_start2=True))
+            price_inquiry_filter = (Q(assigned_trade_user=user, foreign_price_inquiry_done=True) |
+                                    Q(assigned_trade_user2=user, foreign_price_inquiry_done=True))
+            all_tasks_filter = (Q(assigned_trade_user=user) | Q(assigned_trade_user2=user))
+            today_qi = quotation_items.filter(time_filter).count()
+            task_start_qi = quotation_items.filter(task_start_filter).count()
+            price_inquiry_qi = quotation_items.filter(price_inquiry_filter).count()
+            all_tasks = quotation_items.filter(all_tasks_filter).count()
+
+            d[user.username] = today_qi, task_start_qi, price_inquiry_qi, all_tasks
+        return d
 
     def pre_process_on_post_method(self, data=None):
         obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
