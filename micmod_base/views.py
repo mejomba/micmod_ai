@@ -840,7 +840,7 @@ class QuotationListDatatable(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = Quotation.get_qs(request)
-        qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
+        # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
         return self.model.objects.filter(pk__in=[i.pk for i in qs])
 
     # @timer
