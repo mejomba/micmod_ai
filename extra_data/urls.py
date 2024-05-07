@@ -16,6 +16,9 @@ urlpatterns = [
 
     path('item/list/json/', views.item_list_json, name='item_list.json'),
 
+#     path('item/not/confirm/list', views.ItemNotConfirmedListView.as_view(), name='item.not-confirm.list')
+
+
     path('purchasegroup/update/<int:pk>/', views.PurchaseGroupView.as_view(), name='purchase_group.update'),
     path('purchasegroup/list/', views.PurchaseGroupListView.as_view(), name='purchase_group.list'),
     path('purchasegroup/datatable/', views.PurchaseGroupDataTableView.as_view(), name='purchase_group.datatable'),
@@ -24,4 +27,5 @@ urlpatterns = [
     path('hs/update/<int:pk>/', views.HsView.as_view(), name='hs.update'),
     path('hs/list/', views.HsListView.as_view(), name='hs.list'),
     path('hs/datatable/', views.HsDataTableView.as_view(), name='hs.datatable'),
+
 ]
