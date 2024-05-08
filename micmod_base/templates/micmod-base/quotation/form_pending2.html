@@ -13,7 +13,7 @@
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
                     <div class="card item p-0 mb-2" dir="rtl">
                         <input type="hidden" name="self_discount">
-                        <span id="customer_pid" class="d-none">{{ form_s.instance.quotation.customer_party_id }}</span>
+                        <span id="customer_pid" class="d-none">{{ form_s.instance.quotation.customer_party_id.sepidar_party_id }}</span>
                         <input type="hidden" id="id_currency_ref"
                                value="{{ form_s.instance.quotation.currency_ref.pk }}">
                         <input type="hidden" id="id_payment_method"
