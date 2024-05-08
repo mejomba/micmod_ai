@@ -537,6 +537,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                          ["sales_user", "sales_admin", "total_admin", "store_admin", "bazar_user", "bazar_admin",
                           "store_user"]):
         return
+    load_sepidar = request.GET.get('load_sepidar')
     dict_ = request.GET or request.POST
     sku = dict_.get('sku_c')
     party_code = dict_.get('party_code')
@@ -546,8 +547,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
 
-    dl_obj = Dl.get_dl(party_code)
-    party_id = dl_obj[0].PartyId if len(dl_obj) else None
+    if load_sepidar:
+        dl_obj = Dl.get_dl(party_code)
+        party_id = dl_obj[0].PartyId if len(dl_obj) else None
     # party_id = None
     item_sku = Item.objects.filter(sku=sku).first()
     currency_obj = Currency.objects.filter(pk=currency).first()
@@ -578,7 +580,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                                  payment_method=payment_method, currency=currency,
                                                  price_setting=price_setting_obj)
 
-    sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
+    sepidar_inquiry_result = []
+    if load_sepidar:
+        sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
     if sepidar_inquiry_result:
         res = sepidar_inquiry_result[0]
         item = res.__dict__
