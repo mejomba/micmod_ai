@@ -40,5 +40,6 @@ urlpatterns = [
     path('quotationitem/past/quotationitems', QuotationItemFormPending2.as_view(), name='quotationitem.form.past'),
     path('quotation/list/datatable', QuotationListDatatable.as_view(), name='quotation.list.datatable'),
     path('get_sku/', get_sku, name='get_sku'),
-    path('quotation/print/<int:id>/', print_view, name='print')
+    path('quotation/print/<int:id>/', print_view, name='print'),
+    path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report')
 ]

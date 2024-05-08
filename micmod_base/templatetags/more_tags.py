@@ -227,6 +227,13 @@ def get_additions(obj):
 """***NEW***"""
 
 
+@register.inclusion_tag('micmod-base/quotation/partial/inquiry_report_filter.html')
+def get_inquiry_report():
+    from micmod_base.models import QuotationItem
+    qi_filter = QuotationItem.get_inquiry_report()
+
+    return {'quotationitem_filters': qi_filter}
+
 
 @register.inclusion_tag('core/partial/render_field.html')
 def render_field(field, crispy=None):
