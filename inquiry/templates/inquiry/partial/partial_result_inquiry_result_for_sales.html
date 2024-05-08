@@ -4,7 +4,9 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load accounts_tag %}
-{% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
+{% if request.GET.load_sepidar %}
+    {% call_function sku "set_extra_data_sepidar" request.GET.party_code as sepidar_data %}
+{% endif %}
 {#<div class="card">#}
     <div class="card-title d-flex gap-1">
         {% include 'core/partial/components/key_value_text.html' with rma_key="last_update" rma_value=sku.price.elapsed_from_last_price rma_class="d-flex" rma_copy_disabled=True %}
