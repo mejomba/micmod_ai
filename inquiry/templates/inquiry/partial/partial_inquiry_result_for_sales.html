@@ -16,6 +16,8 @@
                     {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:sku.price.price_settings.pk|add:'/change/' rma_value=sku.price.price_settings.title rma_class="d-flex py-3" %}
                 {% endif %}
             {% endif %}
+            <input type="checkbox" name="load_sepidar" id="load_sepidar" onchange="refresh_data(event)">
+            <label for="load_sepidar">دریافت اطلاعات سپیدار</label>
         </div>
     </div>
     <div class="card-body col-9" id="block_container">

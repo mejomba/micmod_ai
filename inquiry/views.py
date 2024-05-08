@@ -537,6 +537,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                          ["sales_user", "sales_admin", "total_admin", "store_admin", "bazar_user", "bazar_admin",
                           "store_user"]):
         return
+    load_sepidar = request.GET.get('load_sepidar')
     dict_ = request.GET or request.POST
     sku = dict_.get('sku_c')
     party_code = dict_.get('party_code')
@@ -546,8 +547,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
 
-    dl_obj = Dl.get_dl(party_code)
-    party_id = dl_obj[0].PartyId if len(dl_obj) else None
+    if load_sepidar:
+        dl_obj = Dl.get_dl(party_code)
+        party_id = dl_obj[0].PartyId if len(dl_obj) else None
     # party_id = None
     item_sku = Item.objects.filter(sku=sku).first()
     currency_obj = Currency.objects.filter(pk=currency).first()
@@ -578,7 +580,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                                  payment_method=payment_method, currency=currency,
                                                  price_setting=price_setting_obj)
 
-    sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
+    sepidar_inquiry_result = []
+    if load_sepidar:
+        sepidar_inquiry_result = SepidarItem.get_item(code=sku, party_id=party_id)
     if sepidar_inquiry_result:
         res = sepidar_inquiry_result[0]
         item = res.__dict__
@@ -830,80 +834,6 @@ def get_items(request):
 
     obj['total_count'] = count
 
-
-
-
-
-
-    # sepidar_item_id = [item.get('itemid') for item in obj['items']]
-    # my_items = Item.objects.filter(sku__icontains=q).filter(~Q(sku__in=sepidar_item_id))
-    # obj['my_items'] = []
-    # for my_item_ in my_items:
-    #     my_item = {}
-    #     try:
-    #         my_item['id'] = my_item_.pk
-    #         my_item['itemid'] = my_item_.sku
-    #         my_item['text'] = my_item_.title
-    #         my_item['f_date_cust'] = None  # to_jalali(my_item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-    #         my_item['f_fee_cust'] = None  # my_item_.f_fee_cust  # goods_last_price
-    #         my_item['f_qty_cust'] = None  # my_item_.f_qty_cust  # goods_total_sales
-    #         my_item['q_date_cust'] = None  # to_jalali(my_item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-    #         my_item['q_fee_cust'] = None  # my_item_.quotation_fee  # goods_q_last_price
-    #         my_item['q_qty_cust'] = None  # my_item_.quotation_qty  # goods_q_total_sales
-    #         my_item['f_qty_all'] = None  # my_item_.f_qty_all
-    #         my_item['min_price'] = None  # my_item_.min_price
-    #         my_item['avg_price'] = None  # my_item_.avg_price
-    #         my_item['max_price'] = None  # my_item_.max_price
-    #         my_item['stock_qty'] = None  # my_item_.stock_qty
-    #         my_item['stock_qty_res'] = None  # my_item_.stock_res_qty
-    #         try:
-    #             # sku_item: Item = Item.objects.filter(sku=my_item_.code).first()
-    #             sku_item: my_item_
-    #             price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
-    #             price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
-    #             if price_inquiry_result:
-    #                 price_setting = price_inquiry_result.price_settings
-    #                 price_inquiry_result.set_discount_params(
-    #                     quantity=quantity,
-    #                     customer_grade=id_customer_grade,
-    #                     payment_method=id_payment_method,
-    #                     currency=id_currency_ref,
-    #                     price_setting=price_setting
-    #                 )
-    #                 my_item["price_settings"] = price_setting.pk
-    #                 if str(id_currency_ref) == str(1):  # rial
-    #                     my_item["rial_final_price"] = price_inquiry_result.rial_final_price
-    #                     my_item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
-    #                 elif str(id_currency_ref) == str(2):  # rmb
-    #                     my_item['rmb_final_price'] = price_inquiry_result.rmb_final_price
-    #                 my_item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
-    #             else:
-    #                 my_item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
-    #                 my_item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
-    #
-    #             if price_inquiry_result_bazar:
-    #                 price_setting = price_inquiry_result_bazar.price_settings
-    #                 price_inquiry_result_bazar.set_discount_params(
-    #                     quantity=quantity,
-    #                     customer_grade=id_customer_grade,
-    #                     payment_method=id_payment_method,
-    #                     currency=id_currency_ref,
-    #                     price_setting=price_setting
-    #                 )
-    #                 my_item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
-    #                 my_item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
-    #             else:
-    #                 my_item["goods_price_market"] = None
-    #                 my_item["goods_market_date"] = None
-    #         except Exception as e:
-    #             show_error(e, __file__)
-    #
-    #         obj['my_items'].append(my_item)
-    #         count += 1
-    #     except Exception as e:
-    #         print(str(e))
-
-    # obj['my_items'] = [my_item for my_item in []]
     return JsonResponse(obj, safe=False)
 
 
