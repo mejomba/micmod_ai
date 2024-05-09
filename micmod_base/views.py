@@ -2,8 +2,10 @@ from pprint import pprint
 import json
 
 from django.contrib.contenttypes.models import ContentType
+from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField
 from django.db.models.functions import Cast
+
 from django.utils import timezone
 
 from comments.forms import CommentsForm
@@ -871,3 +873,10 @@ class QuotationListDatatable(AjaxDatatableView):
         row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+
+
+def inquiry_report(request):
+    from .models import QuotationItem
+    inquiry_report_call = QuotationItem.get_inquiry_report()
+    res = render_to_string('micmod-base/quotation/partial/inquiry_report_filter.html', context={'quotationitem_filters':inquiry_report_call})
+    return JsonResponse({'res': res}, safe=False)
