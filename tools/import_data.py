@@ -30,8 +30,8 @@ def valid_title(title_string):
     try:
         return title_string.replace(reps[0], reps[1]).replace(reps[2], reps[3])
     except Exception as e:
-        print(e, title_string)
         return title_string
+        print(e, title_string)
 
 
 def import_provience_from_sepidar(extra_data):

@@ -158,13 +158,19 @@
                     <div class="w-100">
                         <div class="card-text bold">آخرین فروش به مشتری</div>
                         <div class="d-flex" id="customer-last-sales">
+                            <div class="w-30 mt-5">
+                                <div class="">فاکتور</div>
+                                <div class="mt-5 ">پیش فاکتور</div>
+                            </div>
                             <div class="w-50">
                                 <div class="card-title-desc text-center" data-key="date">تاریخ</div>
-                                {% render_field_by_order nested nested.goods_last_sale nested.goods_q_last_sale no_input=True %}
+                                <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>
+                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>
                             </div>
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="count">تعداد</div>
-                                {% render_field_by_order nested nested.goods_total_sales nested.goods_q_total_sales no_input=True %}
+                                <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>
+                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>
 {#                                <div class="card-title-desc text-center" name="total_sales">-</div>#}
 {#                                <div class="card-title-desc text-center" name="q_total_sales">-</div>#}
 
@@ -172,7 +178,8 @@
 
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="price">قیمت</div>
-                                {% render_field_by_order nested nested.goods_last_price nested.goods_q_last_price no_input=True %}
+                                <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>
+                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>
 {#                                <div class="card-title-desc text-center" name="last_price">-</div>#}
 {#                                <div class="card-title-desc text-center" name="q_last_price">-</div>#}
                             </div>
@@ -265,7 +272,10 @@
                             </div>
                             <div class="d-flex">
 {#                                                        <div class="w-25 card-title-desc ps-2">فی</div>#}
-                                <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
+                                <div class="w-100 card-text text-center">
+                                    <div name="{{ form_s.final_price.html_name }}_div" class="border border-secondary mb-3"></div>
+{#                                    {% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}#}
+                                </div>
 {#                                <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' label_text='فی' margin_b="0" %}</div>#}
                             </div>
                         </div>

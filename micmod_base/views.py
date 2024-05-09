@@ -2,7 +2,10 @@ from pprint import pprint
 import json
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, QuerySet
+from django.template.loader import render_to_string
+from django.db.models import Q, QuerySet, CharField
+from django.db.models.functions import Cast
+
 from django.utils import timezone
 
 from comments.forms import CommentsForm
@@ -111,7 +114,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method)
 
-            if self.state_index == 2 and 'submit/copy_q' in self.request.POST:
+            if (self.state_index == 1 or self.state_index == 1) and 'submit/copy_q' in self.request.POST:
                 flow_copy = False
 
                 """copy quotation"""
@@ -120,8 +123,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                             bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
                         """مجاز نیستن برن مرحله بعد"""
                         """create new quotation"""
-
-                        """quotation"""
                         quotation_data = dict()
                         pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user',
                                               'editor_user']
@@ -152,28 +153,34 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                                     flow.object_id = new_quotation.pk
                                     flow.save()
                                     flow_copy = True
+                                    new_quotation.last_work_flow = flow
 
-                            """این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند"""
-                            flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                            pad = 2 if self.state_index >= 2 else 1
-                            for item in flow_items:
-                                to_user = item.to_user if pad >= 2 else item.from_usre
-                                deadline = item.deadline
-                            data = {
-                                "wf_status": 2,  # back
-                                "action": self.flow_config.get('flow_action'),
-                                "flow_name": None,
-                                "from_user": self.request.user,
-                                "to_user": to_user,
-                                "state": self.flow_config.get('flow_state_list')[self.state_index],
-                                "duty": None,
-                                "deadline": deadline,
-                                "wf_description": "back in copy",
-                                "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
-                                "content_type": ContentType.objects.get_for_model(Quotation),
-                                "object_id": new_quotation.id
-                            }
-                            back = WorkFlow.objects.create(**data)
+                            """ این آیتم در مرحله استعلام می ماند و wf ثبت نمیکند """
+                            # """ این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند """
+                            # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
+                            # pad = 2 if self.state_index >= 2 else 1
+                            # for item in flow_items:
+                            #     if pad >= 2:
+                            #         to_user = item.to_user
+                            #     else:
+                            #         to_user = item.from_user
+                            #     # to_user = item.to_user if pad >= 2 else item.from_usre
+                            #     deadline = item.deadline
+                            # data = {
+                            #     "wf_status": 2,  # back
+                            #     "action": self.flow_config.get('flow_action'),
+                            #     "flow_name": None,
+                            #     "from_user": self.request.user,
+                            #     "to_user": to_user,
+                            #     "state": self.flow_config.get('flow_state_list')[self.state_index],
+                            #     "duty": None,
+                            #     "deadline": deadline,
+                            #     "wf_description": "back in copy",
+                            #     "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
+                            #     "content_type": ContentType.objects.get_for_model(Quotation),
+                            #     "object_id": new_quotation.id
+                            # }
+                            # back = WorkFlow.objects.create(**data)
 
                             new_quotation.quotation_self = self.object
                             new_quotation.extra_data.request = self.request
@@ -280,7 +287,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             qis = self.object.quotation.all()
             counter = 0
             for qi in qis:
-                if self.state_index == 2 and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
+                if (self.state_index == 1 or self.state_index == 1) and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                         bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)):
                     counter += 1
                     context['allow_next'] = False
@@ -822,39 +829,41 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
-        {'name': 'customer', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'searchable': False},
+        {'name': 'customer_party_id', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
-        q = self.request.GET.get('q')
-        qs = Quotation.objects.get_access_object(request.user, q=q)
+        qs = Quotation.get_qs(request)
+        # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
         return self.model.objects.filter(pk__in=[i.pk for i in qs])
 
+    # @timer
     def customize_row(self, row, obj):
-        from micmod_base.templatetags.quotation_tag import get_customer
-        customer = get_customer(obj.customer_code)
-        # row['customer'] = '%s' % customer.name if customer else '-'
-        row['customer'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+
+        row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('sls:quotations.view', args=(obj.id,)),
-            customer.name if customer else '-'
+            obj.customer_party_id.title if obj.customer_party_id else '-'
         )
 
-        local_color_condition = obj.get_inquiry_result_count[1] == obj.get_inquiry_result_count[2] and obj.get_inquiry_result_count[1] != 0
-        foreign_color_condition = obj.get_inquiry_result_count[3] == obj.get_inquiry_result_count[4] and obj.get_inquiry_result_count[3] != 0
-        out = f'''<span> کل: {obj.get_inquiry_result_count[0]} </span > <br>''' \
-              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}> 
+        counter = obj.get_inquiry_result_count
+
+        local_color_condition = counter[1] == counter[2] and counter[1] != 0
+        foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
+        out = f'''<span> کل: {counter[0]} </span > <br>''' \
+              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}>
               داخلی
-              {obj.get_inquiry_result_count[1]} /  {obj.get_inquiry_result_count[2]} </p>''' \
-              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}> 
+              {counter[1]} /  {counter[2]} </p>''' \
+              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}>
               خارجی
-              {obj.get_inquiry_result_count[3]} / {obj.get_inquiry_result_count[4]} </p> '''
+              {counter[3]} / {counter[4]} </p> '''
         row['inquiry_status'] = out
 
         row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
@@ -864,3 +873,10 @@ class QuotationListDatatable(AjaxDatatableView):
         row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+
+
+def inquiry_report(request):
+    from .models import QuotationItem
+    inquiry_report_call = QuotationItem.get_inquiry_report()
+    res = render_to_string('micmod-base/quotation/partial/inquiry_report_filter.html', context={'quotationitem_filters':inquiry_report_call})
+    return JsonResponse({'res': res}, safe=False)
