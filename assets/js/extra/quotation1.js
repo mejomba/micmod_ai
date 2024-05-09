@@ -208,8 +208,8 @@ $(document).ready(function () {
         // $(document).find("#customer_card").attr("class", "alert-warning h-100 p-2");
         document.getElementById("customer_card").classList.remove('d-none');
         $(document).find("#customer_name").text(data.text);
-        $(document).find("#customer_pid").text(data.pid);
-        $(document).find("#id_customer_party_id").val(data.pid);
+        $(document).find("#customer_pid").text(data.sepidar_party_id);
+        $(document).find("#id_customer_party_id").val(data.sepidar_party_id);
     })
     document.getElementsByClassName('goods_name').ondblclick = function () {
         const item = findAncestor(this)

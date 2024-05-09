@@ -49,6 +49,7 @@ def get_customers(request):
           item['id'] = dl.code
           item['text'] = dl.name
           item['pid'] = dl.PartyId
+          item['sepidar_party_id'] = dl.PartyId
           obj['items'].append(item)
           count += 1
     obj['total_count'] = count
