@@ -57,14 +57,9 @@
             {% endif %}
             </div>
         </div>
-        {% if request.user|has_group:'total_admin' %}
-        <div class="my-4 row row-cols-4 rounded" style="background-color: antiquewhite">
-            {% include "core/partial/components/key_value_text.html" with rma_key="extra_cost_percentage" rma_value=item.extra_cost_percentage rma_class="d-flex py-3" %}
-            {% include "core/partial/components/key_value_text.html" with rma_key="sea_extra_cost_percentage" rma_value=item.sea_extra_cost_percentage rma_class="d-flex py-1" %}
-            {% include "core/partial/components/key_value_text.html" with rma_key="air_extra_cost_percentage" rma_value=item.air_extra_cost_percentage rma_class="d-flex py-1" %}
-            {% include "core/partial/components/key_value_text.html" with rma_key="express_extra_cost_percentage" rma_value=item.express_extra_cost_percentage rma_class="d-flex py-1" %}
+        <div class="row row-cols-4 mt-2 pt-3 bg-white {% if request.user|has_group:'total_admin' %}{% else%}d-none{%endif %}">
+            {% render_field_by_order form form.extra_cost_percentage form.express_extra_cost_percentage form.air_extra_cost_percentage form.sea_extra_cost_percentage crispy=False label='on-border' margin_b=4 %}
         </div>
-        {% endif %}
     {% endblock %}
 
 {% block content %}
