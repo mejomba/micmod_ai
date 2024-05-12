@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from itertools import chain
 
 from accounts.models import User
-from tools.utils import c_get
+from tools.utils import c_get, round_price
 
 from django.template.loader import render_to_string
 
@@ -141,7 +141,7 @@ class PriceInquiryResult(BaseModel):
                 # self.custom_properties['currency_'] = Currency.objects.filter(title_en="Rial").first() or self.currency_
                 free_rmb_rate = self.price_settings.free_rmb_rate
                 final_price = self.rmb_final_price
-                final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate)),
+                final_price = dict(map(lambda x: (x[0], round_price(int(x[1] * free_rmb_rate))),
                                        final_price.items()))
                 return final_price
 
@@ -152,7 +152,7 @@ class PriceInquiryResult(BaseModel):
         else:
             # self.custom_properties['currency_'] = self.currency_ or
             free_rmb_rate_new_order = self.free_rmb_rate_new_order
-            final_price = dict(map(lambda x: (x[0], int(x[1] * free_rmb_rate_new_order)),
+            final_price = dict(map(lambda x: (x[0], round_price(int(x[1] * free_rmb_rate_new_order))),
                                    self.rmb_final_price.items()))
             return final_price
 

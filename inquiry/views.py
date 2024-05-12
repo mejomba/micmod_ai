@@ -34,6 +34,8 @@ from tools.utils import show_error, get_tuple_value_list, c_get
 from tools.form_tools import get_choice_field, get_obj_from_dict
 from .tasks import update_price_list, update_components
 
+from tools.utils import round_price
+
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
                                  BaseView,
@@ -684,15 +686,15 @@ def get_item(request):
                 item['itemid'] = item_.itemid
                 item['text'] = item_.title
                 item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-                item['f_fee_cust'] = item_.f_fee_cust  # goods_last_price
-                item['f_qty_cust'] = item_.f_qty_cust  # goods_total_sales
+                item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
+                item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
                 item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-                item['q_fee_cust'] = item_.quotation_fee  # goods_q_last_price
+                item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
                 item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
                 item['f_qty_all'] = item_.f_qty_all
-                item['min_price'] = item_.min_price
-                item['avg_price'] = item_.avg_price
-                item['max_price'] = item_.max_price
+                item['min_price'] = round_price(item_.min_price)
+                item['avg_price'] = round_price(item_.avg_price)
+                item['max_price'] = round_price(item_.max_price)
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
@@ -775,15 +777,15 @@ def get_items(request):
                 item['itemid'] = item_.itemid
                 item['text'] = item_.title
                 item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-                item['f_fee_cust'] = item_.f_fee_cust  # goods_last_price
-                item['f_qty_cust'] = item_.f_qty_cust  # goods_total_sales
+                item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
+                item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
                 item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-                item['q_fee_cust'] = item_.quotation_fee  # goods_q_last_price
+                item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
                 item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
                 item['f_qty_all'] = item_.f_qty_all
-                item['min_price'] = item_.min_price
-                item['avg_price'] = item_.avg_price
-                item['max_price'] = item_.max_price
+                item['min_price'] = round_price(item_.min_price)
+                item['avg_price'] = round_price(item_.avg_price)
+                item['max_price'] = round_price(item_.max_price)
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
