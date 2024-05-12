@@ -13,6 +13,11 @@ def get_customer(customer_id):
         if len(customer) > 0:
             customer = customer[0]
             return customer
+    # if customer_id:
+        # customer = Dl.get_list(customer_id)
+        # if len(customer) > 0:
+            # customer = customer[0]
+            # return customer
 
     # if customer_id:
     #     customer = Dl.get_list(customer_id)
