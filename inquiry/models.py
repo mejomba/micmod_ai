@@ -309,7 +309,8 @@ class PriceInquiryResult(BaseModel):
 
     @queryable_property
     def weight(self):
-        if item := self.sku.item_weights.order_by('-creator_user__groups__name', '-created_date').first():
+        # if item := self.sku.item_weights.order_by('-creator_user__groups__name', '-created_date').first():
+        if item := self.sku.item_weights.filter(creator_user__isnull=False).order_by('-creator_user__groups__name', '-created_date').first():
             return item.weight
 
     @weight.filter

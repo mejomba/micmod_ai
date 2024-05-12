@@ -3,6 +3,7 @@ import string
 import django.views.defaults
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.db.models import Q
 from django.http import JsonResponse
 from django.views import View
 from django.views.generic.list import ListView
@@ -49,6 +50,31 @@ def get_customers(request):
           item['id'] = dl.code
           item['text'] = dl.name
           item['pid'] = dl.PartyId
+          item['sepidar_party_id'] = dl.PartyId
+          obj['items'].append(item)
+          count += 1
+    obj['total_count'] = count
+    return JsonResponse(obj,safe=False)
+
+def get_customers_from_pg(request):
+    from extra_data.models import Customer
+    q = request.GET.get('q', None)
+    f = Q(sepidar_party_id=q) | Q(name=q) | Q
+    Customer.objects.filter()
+    reps = [["ي", "ی"], ["ك", "ک"]]
+    obj = {}
+    count = 0
+    if q:
+      for rep in reps:
+        q = q.replace(rep[1],rep[0])
+      Dls = Dl.get_list(q)
+      obj['items']=[]
+      for dl in Dls:
+          item = {}
+          item['id'] = dl.code
+          item['text'] = dl.name
+          item['pid'] = dl.PartyId
+          item['sepidar_party_id'] = dl.PartyId
           obj['items'].append(item)
           count += 1
     obj['total_count'] = count
