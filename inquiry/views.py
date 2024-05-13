@@ -832,7 +832,7 @@ def get_items(request):
                 obj['items'].append(item)
                 count += 1
             except Exception as e:
-                print(str(e))
+                print(show_error(e, __file__))
 
     obj['total_count'] = count
 
