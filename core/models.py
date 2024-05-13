@@ -629,7 +629,7 @@ class AbsBaseModel(NoUserBaseModel):
 
 class BaseModel(AbsBaseModel):
     code = models.CharField(_('code'), max_length=30, null=True, blank=True)
-    title = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('m-title'))
+    title = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('m-title'))
     group = models.IntegerField(_('group'), default=1)
 
     class Meta:

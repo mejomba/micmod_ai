@@ -672,14 +672,24 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
                 obj.save()
+            else:
+                obj.foreign_price_inquiry_done = False
+                obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
                 obj.save()
+            else:
+                obj.local_price_inquiry_done = False
+                obj.save()
+
 
             data = {
                 'lead_time': request.POST.get('lead_time'),
                 'goods_code': request.POST.get('goods_code'),
                 'goods_name': request.POST.get('goods_name'),
+                'has_delay': True if request.POST.get('has_delay') else False,
+                'delay_reason': request.POST.get('delay_reason'),
+                'delay_time': request.POST.get('delay_time') or None,
             }
             obj_qs.update(**data)
 
