@@ -19,6 +19,12 @@ def get_customer(customer_id):
             # customer = customer[0]
             # return customer
 
+    # if customer_id:
+    #     customer = Dl.get_list(customer_id)
+    #     if len(customer) > 0:
+    #         customer = customer[0]
+            # return customer
+
 @register.simple_tag
 def get_customer_from_pg(customer_id):
     from extra_data.models import Customer

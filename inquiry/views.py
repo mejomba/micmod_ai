@@ -34,6 +34,8 @@ from tools.utils import show_error, get_tuple_value_list, c_get
 from tools.form_tools import get_choice_field, get_obj_from_dict
 from .tasks import update_price_list, update_components
 
+from tools.utils import round_price
+
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
                                  BaseView,
@@ -684,15 +686,15 @@ def get_item(request):
                 item['itemid'] = item_.itemid
                 item['text'] = item_.title
                 item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-                item['f_fee_cust'] = item_.f_fee_cust  # goods_last_price
-                item['f_qty_cust'] = item_.f_qty_cust  # goods_total_sales
+                item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
+                item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
                 item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-                item['q_fee_cust'] = item_.quotation_fee  # goods_q_last_price
+                item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
                 item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
                 item['f_qty_all'] = item_.f_qty_all
-                item['min_price'] = item_.min_price
-                item['avg_price'] = item_.avg_price
-                item['max_price'] = item_.max_price
+                item['min_price'] = round_price(item_.min_price)
+                item['avg_price'] = round_price(item_.avg_price)
+                item['max_price'] = round_price(item_.max_price)
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
@@ -775,15 +777,15 @@ def get_items(request):
                 item['itemid'] = item_.itemid
                 item['text'] = item_.title
                 item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-                item['f_fee_cust'] = item_.f_fee_cust  # goods_last_price
-                item['f_qty_cust'] = item_.f_qty_cust  # goods_total_sales
+                item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
+                item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
                 item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-                item['q_fee_cust'] = item_.quotation_fee  # goods_q_last_price
+                item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
                 item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
                 item['f_qty_all'] = item_.f_qty_all
-                item['min_price'] = item_.min_price
-                item['avg_price'] = item_.avg_price
-                item['max_price'] = item_.max_price
+                item['min_price'] = round_price(item_.min_price)
+                item['avg_price'] = round_price(item_.avg_price)
+                item['max_price'] = round_price(item_.max_price)
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
@@ -834,80 +836,6 @@ def get_items(request):
 
     obj['total_count'] = count
 
-
-
-
-
-
-    # sepidar_item_id = [item.get('itemid') for item in obj['items']]
-    # my_items = Item.objects.filter(sku__icontains=q).filter(~Q(sku__in=sepidar_item_id))
-    # obj['my_items'] = []
-    # for my_item_ in my_items:
-    #     my_item = {}
-    #     try:
-    #         my_item['id'] = my_item_.pk
-    #         my_item['itemid'] = my_item_.sku
-    #         my_item['text'] = my_item_.title
-    #         my_item['f_date_cust'] = None  # to_jalali(my_item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-    #         my_item['f_fee_cust'] = None  # my_item_.f_fee_cust  # goods_last_price
-    #         my_item['f_qty_cust'] = None  # my_item_.f_qty_cust  # goods_total_sales
-    #         my_item['q_date_cust'] = None  # to_jalali(my_item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-    #         my_item['q_fee_cust'] = None  # my_item_.quotation_fee  # goods_q_last_price
-    #         my_item['q_qty_cust'] = None  # my_item_.quotation_qty  # goods_q_total_sales
-    #         my_item['f_qty_all'] = None  # my_item_.f_qty_all
-    #         my_item['min_price'] = None  # my_item_.min_price
-    #         my_item['avg_price'] = None  # my_item_.avg_price
-    #         my_item['max_price'] = None  # my_item_.max_price
-    #         my_item['stock_qty'] = None  # my_item_.stock_qty
-    #         my_item['stock_qty_res'] = None  # my_item_.stock_res_qty
-    #         try:
-    #             # sku_item: Item = Item.objects.filter(sku=my_item_.code).first()
-    #             sku_item: my_item_
-    #             price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
-    #             price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
-    #             if price_inquiry_result:
-    #                 price_setting = price_inquiry_result.price_settings
-    #                 price_inquiry_result.set_discount_params(
-    #                     quantity=quantity,
-    #                     customer_grade=id_customer_grade,
-    #                     payment_method=id_payment_method,
-    #                     currency=id_currency_ref,
-    #                     price_setting=price_setting
-    #                 )
-    #                 my_item["price_settings"] = price_setting.pk
-    #                 if str(id_currency_ref) == str(1):  # rial
-    #                     my_item["rial_final_price"] = price_inquiry_result.rial_final_price
-    #                     my_item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
-    #                 elif str(id_currency_ref) == str(2):  # rmb
-    #                     my_item['rmb_final_price'] = price_inquiry_result.rmb_final_price
-    #                 my_item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
-    #             else:
-    #                 my_item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
-    #                 my_item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
-    #
-    #             if price_inquiry_result_bazar:
-    #                 price_setting = price_inquiry_result_bazar.price_settings
-    #                 price_inquiry_result_bazar.set_discount_params(
-    #                     quantity=quantity,
-    #                     customer_grade=id_customer_grade,
-    #                     payment_method=id_payment_method,
-    #                     currency=id_currency_ref,
-    #                     price_setting=price_setting
-    #                 )
-    #                 my_item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
-    #                 my_item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
-    #             else:
-    #                 my_item["goods_price_market"] = None
-    #                 my_item["goods_market_date"] = None
-    #         except Exception as e:
-    #             show_error(e, __file__)
-    #
-    #         obj['my_items'].append(my_item)
-    #         count += 1
-    #     except Exception as e:
-    #         print(str(e))
-
-    # obj['my_items'] = [my_item for my_item in []]
     return JsonResponse(obj, safe=False)
 
 
