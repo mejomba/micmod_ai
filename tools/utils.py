@@ -166,6 +166,7 @@ def timer(f):
 
 
 def round_price(x):
+    return x
     if x and x / 100_000 > 1:
         # round 3 digit
         x = x / 1000
