@@ -2,6 +2,9 @@
 <form method="get">
     <div class="d-flex mx-2">
 {#    {% render_field_group form_filter.choice form_filter.time form_filter.quotation form_filter.customer_code %}#}
+    <div class="text-center d-none">
+            <div class="btn btn-sm btn-dark fw-bold" data-bs-toggle="modal" id="id_inquiry_report" data-bs-target="#id_kt_empty_modal">گزارش کار</div>
+    </div>
     <div class="mx-3 p-3 bx-font-color">فیلتر </div>
     <div class="w-25 mb-3">{{ form_filter.choice }}</div>
     <div class="w-25">
@@ -11,6 +14,7 @@
     {{ form_filter.search_sku }}
     {{ form_filter.my_inquiry_not_started }}
     {{ form_filter.inquiry_not_assigned }}
+    {{ form_filter.force_inquiry }}
     </div>
         <button id="id_btn" type="submit" class="btn btn-danger d-none mb-3">تایید</button>
     </div>
@@ -31,6 +35,7 @@
     const customer_code = document.querySelector("#id_customer_code")
     const search_sku = document.querySelector("#id_search_sku")
     const inquiry_not_assigned = document.querySelector("#id_inquiry_not_assigned")
+    const force_inquiry = document.querySelector('#id_force_inquiry')
     // all
     {#const search_part_number = document.querySelector("#id_search_part_number")#}
     {#const search_customer_name = document.querySelector("#id_search_customer_name")#}
@@ -48,6 +53,7 @@
             my_quotations.classList.add('d-none')
             search_sku.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
         }
         else if (event.currentTarget.value === "customer_code") {
@@ -59,6 +65,7 @@
             my_quotations.classList.add('d-none')
             search_sku.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
         }
         else if (event.currentTarget.value === "my_quotations") {
@@ -70,6 +77,7 @@
             quotation.classList.add('d-none')
             search_sku.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
         }
         else if (event.currentTarget.value === "search_sku") {
@@ -81,6 +89,7 @@
             customer_code.classList.add('d-none')
             my_quotations.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
 
         }
@@ -100,7 +109,9 @@
             quotation.classList.add('d-none')
             quotation.parentElement.classList.add('d-none')
             my_quotations.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             my_quotations.parentElement.classList.add('d-none')
+            force_inquiry.parentElement.classList.add('d-none')
             search_sku.classList.add('d-none')
             search_sku.parentElement.classList.add('d-none')
         }
@@ -111,11 +122,32 @@
             customer_code.classList.add('d-none')
             customer_code.parentElement.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             {#my_inquiry_not_started.parentElement.classList.add('d-none')#}
             quotation.classList.add('d-none')
             quotation.parentElement.classList.add('d-none')
             my_quotations.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
             my_quotations.parentElement.classList.add('d-none')
+            force_inquiry.parentElement.classList.add('d-none')
+            search_sku.classList.add('d-none')
+            search_sku.parentElement.classList.add('d-none')
+        }
+        else if (event.currentTarget.value === 'force_inquiry'){
+            inquiry_not_assigned.value = 4
+            btn.classList.remove('d-none')
+
+            customer_code.classList.add('d-none')
+            customer_code.parentElement.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
+            {#my_inquiry_not_started.parentElement.classList.add('d-none')#}
+            quotation.classList.add('d-none')
+            quotation.parentElement.classList.add('d-none')
+            my_quotations.classList.add('d-none')
+            inquiry_not_assigned.classList.add('d-none')
+            my_quotations.parentElement.classList.add('d-none')
+            inquiry_not_assigned.parentElement.classList.add('d-none')
             search_sku.classList.add('d-none')
             search_sku.parentElement.classList.add('d-none')
         }
@@ -127,6 +159,7 @@
             search_sku.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
+            force_inquiry.classList.add('d-none')
         }
 
     })
