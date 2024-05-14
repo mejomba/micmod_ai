@@ -134,13 +134,13 @@
             search_sku.parentElement.classList.add('d-none')
         }
         else if (event.currentTarget.value === 'force_inquiry'){
-            inquiry_not_assigned.value = 4
+            force_inquiry.value = 4
             btn.classList.remove('d-none')
 
             customer_code.classList.add('d-none')
             customer_code.parentElement.classList.add('d-none')
             my_inquiry_not_started.classList.add('d-none')
-            force_inquiry.classList.add('d-none')
+            {#force_inquiry.classList.add('d-none')#}
             {#my_inquiry_not_started.parentElement.classList.add('d-none')#}
             quotation.classList.add('d-none')
             quotation.parentElement.classList.add('d-none')
