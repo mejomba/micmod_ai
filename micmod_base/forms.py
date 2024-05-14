@@ -337,7 +337,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.fields['goods_code'].name = 'goods_code'
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
-        self.fields['final_price'].widget.attrs['class'] += ' replace-digits'
+        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black'
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
