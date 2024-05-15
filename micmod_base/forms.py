@@ -337,7 +337,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.fields['goods_code'].name = 'goods_code'
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
-        self.fields['final_price'].widget.attrs['class'] += ' replace-digits'
+        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black'
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
@@ -382,7 +382,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
-                  'task_start_date', 'task_start_date2'
+                  'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time',
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {
@@ -592,6 +592,7 @@ class PendingFormFilter(CustomBaseForm):
                       ('search_sku', _('goods_code')),
                       ('my_inquiry_not_started', _('my_inquiry_not_started')),
                       ('inquiry_not_assigned', _('inquiry_not_assigned')),
+                      ('force_inquiry', _('force_inquiry')),
                       # ('search_part_number', _('part_number')),
                       # ('search_customer_name', _('customer_name')),
                       # ('search_create_date', _('create_date')),
@@ -606,6 +607,7 @@ class PendingFormFilter(CustomBaseForm):
     search_sku = forms.CharField(required=False)
     my_inquiry_not_started = forms.CharField(required=False)
     inquiry_not_assigned = forms.CharField(required=False)
+    force_inquiry = forms.CharField(required=False)
     # search_part_number = forms.CharField(required=False)
     # search_customer_name = forms.CharField(required=False)
     # search_create_date = forms.CharField(required=False)
@@ -621,6 +623,7 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['search_sku'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
         self.fields['my_inquiry_not_started'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_inquiry_not_started')})
         self.fields['inquiry_not_assigned'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('inquiry_not_assigned')})
+        self.fields['force_inquiry'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('force_inquiry')})
         # self.fields['search_part_number'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_part_number')})
         # self.fields['search_customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
         # self.fields['search_create_date'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})

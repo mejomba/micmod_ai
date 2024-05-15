@@ -17,7 +17,7 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": ["local_price_inquiry_done", "foreign_price_inquiry_done"]
+                "read": ["local_price_inquiry_done", "foreign_price_inquiry_done", "force_inquiry"]
               }
             ]
           },
@@ -27,7 +27,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["force_inquiry"]
+              "read": []
             },
             "formset_constraint": [
               {
