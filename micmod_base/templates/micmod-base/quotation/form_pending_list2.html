@@ -85,7 +85,7 @@
 
             {% for page_number in page_obj.paginator.page_range %}
 {#                {% if page_number <= 10 %}#}
-                <li class="page-item"><a href="?page={{ page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_number }}</a></li>
+                <li class="page-item {% if page_number == page_obj.number %} active {% endif %}"><a href="?page={{ page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_number }}</a></li>
 {#                {% endif %}#}
             {% endfor %}
 
