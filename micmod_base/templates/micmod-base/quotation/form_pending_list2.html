@@ -74,24 +74,29 @@
         </div>
     {% endfor %}
     <ul class="pagination LTR-RTL mb-16">
-        {% if page_obj.has_previous %}
+{#        {% if page_obj.has_previous %}#}
             <li class="page-item"><a href="?page=1&{{ request.get_full_path|remove_question_mark }}" class="page-link">&laquo; first</a></li>
-            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">previous</a></li>
+{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">previous</a></li>#}
 {#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number|add:-1 }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number|add:-1 }}</a></li>#}
-            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>
-        {% endif %}
-        <li class="page-item border border-primary rounded"><a href="#" class="page-link border border-active">{{ page_obj.number  }}</a></li>
-        {% if page_obj.has_next %}
-            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number }}</a></li>
-            {% if not page_obj.number|add:1 == page_obj.paginator.num_pages %}
-                <li class="page-item mt-1">. . .</li>
-                <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.paginator.num_pages }}</a></li>
-            {% endif %}
+{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>#}
+{#        {% endif %}#}
+{#        <li class="page-item border border-primary rounded"><a href="#" class="page-link border border-active">{{ page_obj.number  }}</a></li>#}
+{#        {% if page_obj.has_next %}#}
 
-{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number|add:1 }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number|add:1 }}</a></li>#}
-            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">next</a></li>
+            {% for page_number in page_obj.paginator.page_range %}
+{#                {% if page_number <= 10 %}#}
+                <li class="page-item"><a href="?page={{ page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_number }}</a></li>
+{#                {% endif %}#}
+            {% endfor %}
+
+{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number }}</a></li>#}
+{#            {% if not page_obj.number|add:1 == page_obj.paginator.num_pages %}#}
+{#                <li class="page-item mt-1">. . .</li>#}
+{#                <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.paginator.num_pages }}</a></li>#}
+{#            {% endif %}#}
+{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">next</a></li>#}
             <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">last &raquo;</a></li>
-        {% endif %}
+{#        {% endif %}#}
     </ul>
 
 
