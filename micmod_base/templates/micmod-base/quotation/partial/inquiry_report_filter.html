@@ -1,0 +1,28 @@
+{% load more_tags %}
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th scope="col" class="text-center">کاربران</th>
+      <th scope="col" class="text-center">استعلام های امروز</th>
+      <th scope="col" class="text-center">استعلام های شروع شده</th>
+      <th scope="col" class="text-center">استعلام شده</th>
+    </tr>
+  </thead>
+
+  <tbody>
+
+
+    {% for users, quotations in quotationitem_filters.items %}
+      <tr>
+      <th scope="row">{{ users }}</th>
+      <td>{{ quotations.0 }}</td>
+      <td>{{ quotations.1 }} از <b>{{ quotations.3 }}</b></td>
+      <td>{{ quotations.2 }}</td>
+
+
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+

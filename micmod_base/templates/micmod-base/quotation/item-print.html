@@ -7,73 +7,86 @@
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
-    <td class=" font-size-12 text-center align-middle replace-digits">
+<!-- ROWS -->
+    <td class=" font-size-12 text-center align-middle replace-digits persian-digit">
         {{ forloop.counter }}
     </td>
+<!-- DEFINING CUSTOMER -->
     <td class="">
-        <div class="font-size-11">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>
-        <div class="font-size-11">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>
+        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>
+        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>
     </td>
+<!-- GOODS NAME AND CODE -->
     <td class="">
-        <div class="bold font-size-11 replace-digits px-10 mx-10">{{ form.instance.goods_code|default_if_none:"" }}</div>
-        <div class="w-100 font-size-11 text-center">{{ form.instance.goods_name|default_if_none:"" }}</div>
+        <div class="bold font-size-12 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
+        <div class="w-100 font-size-12 text-center ">{{ form.instance.goods_name|default_if_none:"" }}</div>
     </td>
+<!-- QUANTITY -->
     <td class="replace-digits">
-        <div class="bold text-center font-size-11" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+        <div class="bold text-center font-size-12 persian-digit" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+        <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
 {#        <br class="border-dark w-100"/>#}
-        <div class="bg-soft-primary w-100 text-center border-top font-size-11">{{ form.instance.stock_amount|default_if_none:0|intcomma }}
-            <span class="bg-soft-pink font-size-11">+ {{ form.instance.stock_amount_res|default_if_none:0|intcomma }}</span>
+        <div class="bg-soft-primary w-100 text-center border-top font-size-11 persian-digit">{{ form.instance.stock_amount|default_if_none:0|intcomma }}
+            <span class="bg-soft-pink font-size-12 persian-digit">+ {{ form.instance.stock_amount_res|default_if_none:0|intcomma }}</span>
         </div>
     </td>
-    <td class="font-size-11 replace-digits">
+<!-- SALE HISTORY -->
+    <td class="font-size-12 replace-digits">
         <div class="d-flex ms-5 me-5">
-            <div class="mx-1">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class=" mx-2  text-center ">{{ form.instance.goods_total_sales|default_if_none:"-"|intcomma }}</div>
-            <div class="  mx-2   ">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="mx-1 persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="mx-2  text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|intcomma }}</div>
+            <div class="mx-2 persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
         <div class="d-flex border-top ">
-            <div class=" mx-2 ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class=" mx-2 text-center ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|intcomma }}</div>
-            <div class=" mx-2 ">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class=" mx-2 persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class=" mx-2 text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|intcomma }}</div>
+            <div class=" mx-2 persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
 {#        <br class="border-dark w-100"/>#}
         <div class="d-flex ">
-            <div class=" px-1 text-center">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class=" px-1 text-center">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class=" px-1 text-center">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
     </td>
-    <td class=" font-size-11 replace-digits">
+<!-- PRICE INQUIRY -->
+    <td class=" font-size-12 replace-digits">
         <div class="d-flex ">
-            <div class="mx-1 px-1 ">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 ">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 ">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
 
         <div class="d-flex border-top">
-            <div class="px-3 mx-3">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="px-3 mx-3">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-3">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
     </td>
-{% if with_comments == '1' %}
 
-
-    <td class=" font-size-11 replace-digits">
-        {% for comment in form.instance.comments.all %}
-            {{ comment.comment_content }}
-        {% endfor %}
-    </td>
-{% endif %}
-
+<!-- LEAD TIME -->
  <td class="">
         <div class="">
             <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
         </div>
  </td>
-<td class=" font-size-11 replace-digits">
-        <div class="price_method text-center px-10 mx-10" disabled="disabled" value="{{ form.price_method.value }}" name="price_method">{% get_price_method form.price_method.value %}</div>
-        <div class="final_price text-center px-10 mx-10" name="-final_price">{{ form.instance.final_price|default_if_none:"-"|floatformat:digit|intcomma}}</div>
-        <div class="text-center bold bg-soft-primary text-darkblue font-size-11 " name="-total_price">-</div>
+<!-- FINAL PRICE -->
+<td class=" font-size-12 replace-digits">
+        <div class="price_method text-center persian-digit" disabled="disabled" value="{{ form.price_method.value }}" name="price_method">{% get_price_method form.price_method.value %}</div>
+{#        <div class="final_price text-center px-10 mx-10 persian-digit" name="-final_price">{{ form.instance.final_price|default_if_none:"-"|floatformat:digit|intcomma}}</div>#}
+
+        <div class="fee text-center persian-digit" name="fee">{{ form.instance.fee|default_if_none:"-"|floatformat:digit|intcomma}}</div>
+        <div class="fee_en d-none" name="fee">{{ form.instance.fee}}</div>
+{#        <div class="final_price_en d-none" name="-final_price_div">{{ form.instance.final_price}}</div>#}
+{#        <div class="text-center bold bg-soft-primary text-darkblue font-size-11 persian-digit " name="-total_price">-</div>#}
 </td>
+
+{% if with_comments == '1' %}
+<!-- FINAL PRICE -->
+    <td class=" font-size-12 replace-digits">
+        {% for comment in form.instance.comments.all %}
+            {{ comment.comment_content }}
+        {% endfor %}
+    </td>
+{% endif %}
 </tr>

@@ -477,7 +477,12 @@ class QuotationItem(BaseModel):
             total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
-        return self.fee_() * total_
+
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price * total_
 
     @property
     def price(self):
