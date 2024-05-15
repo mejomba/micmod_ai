@@ -5,6 +5,7 @@
 {% load quotation_tag %}
 {% load humanize %}
 {% load more_tags %}
+{% load accounts_tag %}
 
 {% block title %}Quotation{% endblock title %} {"title": ""})
 {% block extra_css %}
@@ -154,18 +155,20 @@
             {% elif form.instance.quotation_self.id %}
             <a href="{% url 'sls:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
         {% endif %}
-    <div class="d-flex justify-content-between mt-1">
-    <div><label class="col-3 col-form-label">استعلام سریع</label></div>
-    <div>
-        <span class="switch switch-brand">
-								<label>
-									{{ form.force_inquiry }}
-									<span></span>
-								</label>
-							</span>
-    </div>
 
-    </div>
+        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
+            <div><label class="col-3 col-form-label">استعلام سریع</label></div>
+            <div>
+                <span class="switch switch-brand">
+                    <label>
+                        {{ form.force_inquiry }}
+                        <span></span>
+                    </label>
+                </span>
+
+            </div>
+        </div>
+
 {#    <div class="d-flex justify-content-around align-items-center btn-sm bg-danger text-white rounded me-1">#}
 {#        <label class="ms-1 mb-0 p-1" for="id_force-inquiry">{% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}</label>#}
 {#    </div>#}
