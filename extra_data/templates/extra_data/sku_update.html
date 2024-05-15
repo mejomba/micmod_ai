@@ -48,13 +48,6 @@
                 {% if flow_state_index >= 1 %}
                     {% render_field_by_order form  form.technical_confirm margin_b=6 %}
                 {% endif %}
-            {% if request.user|has_group:'technical_admin' %}
-            <div class="col mb-4">
-                <a href="{% url 'extra_data:sku.create' %}">
-                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
-                </a>
-            </div>
-            {% endif %}
             </div>
         </div>
 {#        {% if request.user|has_group:'total_admin' %}#}
@@ -72,12 +65,19 @@
 
 
 {#        {% block form_footer_extra %}#}
+        <div>
             <a href="{% url 'extra_data:sku.update' item.pk|add:'-1' %}" class="">
             <i class="ki-outline ki-left-square fs-3x text-warning"></i>
             </a>
             <a href="{% url 'extra_data:sku.update' item.pk|add:'1' %}" class=" mr-3 mx-1">
             <i class="ki-outline ki-right-square fs-3x text-primary"></i>
             </a>
+            {% if request.user|has_group:'technical_admin' %}
+                <a href="{% url 'extra_data:sku.create' %}" class="mr-3 mx-1">
+                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
+                </a>
+            {% endif %}
+        </div>
 
 {#        {% endblock form_footer_extra %}#}
     {% endblock %}
