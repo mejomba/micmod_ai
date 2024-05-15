@@ -33,6 +33,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
     QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
+from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
 from django.contrib.auth import get_user_model
@@ -96,6 +97,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     def form_valid(self, form):
         # if 'submit_duplicate' in self.request.POST:
         #     return self.duplicate(self.object, [], ['quotation'])
+        """ run import customer from sepidar before object create"""
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
         res = super().form_valid(form)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res

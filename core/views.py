@@ -177,10 +177,6 @@ class BaseView(UserPassesTestMixin,
                                               })
 
         self.object = self.get_object()
-        """ run import customer from sepidar before object create"""
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-
         if self.has_flow:
             self.state_index = self.get_flow_index(self.object)
 
