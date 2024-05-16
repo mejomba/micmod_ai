@@ -87,6 +87,13 @@ function commaSeperator(n) {
     return nwc
 }
 
+function numberWithCommas(x, digits = 2) {
+    if (x == '' || x == null || isNaN(x)) return ''
+    x = parseFloat(x)
+    let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
+    return res
+}
+
 function addCommaSeperator() {
     let inputNumberValue;
     let numberWithComma;
