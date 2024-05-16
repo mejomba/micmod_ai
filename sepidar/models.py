@@ -415,14 +415,14 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                                                    GROUP BY quI.ItemRef) AS mx ON i_quotation.ItemRef = mx.ItemRef AND quotation.QuotationId = mx.max_id) AS quotation_1 ON item.ItemID = quotation_1.ItemRef
 
         """
-        final_qry = f"""select * from ( (select top 1 {qry} WHERE (item.Code = '{text}')) union """ if text.isnumeric() else ""
+        final_qry = f"""select * from ( (select top 1 {qry} WHERE (item.Code = '{text}')) union (""" if text.isnumeric() else ""
         final_qry += f"""
-        (select top 10 {qry}
+        select top 10 {qry}
         WHERE ((item.Title LIKE '%%{text}%%') OR (item.Code LIKE '%%{text}%%'))  
-        ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC)    
+        ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC    
         """
         if text.isnumeric():
-            final_qry += ") as qry"
+            final_qry += ")) as qry"
         res = Item.objects.raw(final_qry, using='sepidar')
         return res
 
