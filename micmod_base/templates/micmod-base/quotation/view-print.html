@@ -1,4 +1,3 @@
-
 {% load static %}
 {% load crispy_forms_tags %}
 {% load jalali_tags %}
@@ -8,8 +7,8 @@
 {% block extra_css %}
 {% endblock extra_css %}
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/custom/datatables/print.style.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
@@ -24,224 +23,216 @@
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
-    <!-- ============================================================== -->
-    <!-- Start right Content here -->
-    <!-- ============================================================== -->
-    <div class="main-content  mt-10" id="main-content" dir="rtl">
-        <div class="page-content">
-            <div class="container-fluid">
-                <div class="replace-digits">
-                    <div class="">
-                        <div class="font-size-12 mx-5 px-5">
-                            <div class="d-flex">
-                                <div class="w-70 ">
-                                    <div class="">
-                                        <div class="d-flex">
-                                            <h5 data-key="quotation-information">اطلاعات پیش فاکتور
-                                            </h5>
-                                            <span class="text-darkblue bold px-4"> {{ data.id }}</span>
-                                        </div>
-                                        <div class=" px-2">
-                                            <div class="d-flex border">
-                                                <div class="d-flex w-25 border">
-                                                    <div class="w-50 bold">کد</div>
-                                                    <div class="w-50">{{ data.code|default_if_none:"-" }}</div>
-                                                </div>
-                                                <div class="d-flex w-25 border">
-                                                    <div class="w-25 bold">عنوان</div>
-                                                    <div class="w-75">{{ data.title|default_if_none:"-" }}</div>
-                                                </div>
-                                                <div class="d-flex w-25 border">
-                                                    <div class="w-50 bold">تاریخ درخواست</div>
-                                                    <div class="w-50">{{ data.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-                                                </div>
-                                                <div class="d-flex w-25 border">
-                                                    <div class="w-50 bold">تاریخ انقضا</div>
-                                                    <div class="w-50">{{ form.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-                                                </div>
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<div class="main-content  mt-10 px-1" id="main-content" dir="rtl">
+    <div class="page-content">
+        <a href=""></a>
+        <div class="container-fluid">
+            <div class="replace-digits">
+                <a href="javascript:window.print()" class="button print">پرینت</a>
+                <div class="">
+                    <div class="font-size-12 mx-5 px-5">
+                        <div class="d-flex">
+                            <div class="w-70 ">
+                                <div class="">
+                                    <div class="d-flex">
+                                        <h5 data-key="quotation-information">اطلاعات پیش فاکتور
+                                        </h5>
+                                        <span class="text-darkblue bold px-4"> {{ data.id }}</span>
+                                    </div>
+                                    <div class=" px-2">
+                                        <div class="d-flex border">
+                                            <div class="d-flex w-25 border">
+                                                <div class="w-50 bold">کد</div>
+                                                <div class="w-50">{{ data.code|default_if_none:"-" }}</div>
                                             </div>
-                                            <div class="d-flex w-100">
-                                                <div class="border w-50">
-                                                    <div class="d-flex w-100 border bg-soft-primary">
-                                                        <div class="w-50 bold">مهلت تحویل</div>
-                                                        <div class="w-50 text-center">{% get_delivery_time form.delivery_time.value %}</div>
-                                                    </div>
-                                                    <div class="d-flex w-100 border">
-                                                        <div class="w-50 bold">واحد پولی</div>
-                                                        <div class="w-50 text-center">{{ form.instance.currency_ref }}</div>
-                                                    </div>
-                                                    <div class="d-flex w-100 border bg-soft-primary">
-                                                        <div class="w-50 bold">روش پرداخت</div>
-                                                        <div class="w-50 text-center">{% get_payment_method form.payment_method.value %}</div>
-                                                    </div>
-                                                {% if with_comments == '1'  %}
+                                            <div class="d-flex w-25 border">
+                                                <div class="w-25 bold">عنوان</div>
+                                                <div class="w-75">{{ data.title|default_if_none:"-" }}</div>
+                                            </div>
+                                            <div class="d-flex w-25 border">
+                                                <div class="w-50 bold">تاریخ درخواست</div>
+                                                <div class="w-50">{{ data.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+                                            </div>
+                                            <div class="d-flex w-25 border">
+                                                <div class="w-50 bold">تاریخ انقضا</div>
+                                                <div class="w-50">{{ form.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex w-100">
+                                            <div class="border w-50">
+                                                <div class="d-flex w-100 border bg-soft-primary">
+                                                    <div class="w-50 bold">مهلت تحویل</div>
+                                                    <div class="w-50 text-center">{% get_delivery_time form.delivery_time.value %}</div>
+                                                </div>
+                                                <div class="d-flex w-100 border">
+                                                    <div class="w-50 bold">واحد پولی</div>
+                                                    <div class="w-50 text-center">{{ form.instance.currency_ref }}</div>
+                                                </div>
+                                                <div class="d-flex w-100 border bg-soft-primary">
+                                                    <div class="w-50 bold">روش پرداخت</div>
+                                                    <div class="w-50 text-center">{% get_payment_method form.payment_method.value %}</div>
+                                                </div>
+                                                {% if with_comments == '1' %}
 
 
                                                     <div class="d-flex w-100 border bg-soft-primary">
                                                         <div class="w-50 bold">نظرات</div>
-                                                        <div class="w-50 text-center">{% for comment in form.instance.comments.all|default_if_none:"-" %}
-                                                                                          {{ comment.comment_content }}<br>
-                                                                                      {% endfor %}
+                                                        <div class="w-50 text-center">
+                                                            {% for comment in form.instance.comments.all|default_if_none:"-" %}
+                                                                {{ comment.comment_content }}<br>
+                                                            {% endfor %}
                                                         </div>
                                                     </div>
 
-                                            {% endif %}
-                                                </div>
-                                                <div class="border w-50">
+                                                {% endif %}
+                                            </div>
+                                            <div class="border w-50">
 
-                                                    <div class="d-flex w-100 border bg-soft-primary">
-                                                        <div class="w-50 bold">گرید بازار</div>
-                                                        <div class="w-50 text-center">{% get_market_grade form.market_grade.value %}</div>
-                                                    </div>
-                                                    <div class="d-flex w-100 border ">
-                                                        <div class="w-50 bold">وضعیت</div>
-                                                        <div class="w-50 text-center"
-                                                        >{% get_status form.status.value %}</div>
-                                                    </div>
+                                                <div class="d-flex w-100 border bg-soft-primary">
+                                                    <div class="w-50 bold">گرید بازار</div>
+                                                    <div class="w-50 text-center">{% get_market_grade form.market_grade.value %}</div>
+                                                </div>
+                                                <div class="d-flex w-100 border ">
+                                                    <div class="w-50 bold">وضعیت</div>
+                                                    <div class="w-50 text-center"
+                                                    >{% get_status form.status.value %}</div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="w-30">
-                                    <div class=" ">
-                                        <h5 class="" data-key="customer-information">اطلاعات مشتری
-                                        </h5>
-                                        <div class=" px-2">
-                                            <div class="d-flex">
-                                                <div class="w-50">
-                                                    <div class="d-flex ">
-                                                        <div class="w-50 bold">کد مشتری</div>
-                                                        <div class="w-50 text-center">{{ data.customer_code|default_if_none:"-" }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="w-50">
-                                                    {% get_customer form.instance.customer_code as customer %}
-                                                    {% if  customer %}
-                                                        <div class="alert-warning p-0" id="customer_card">
-                                                    {% else %}
-                                                        <div class="d-none alert-warning p-2"
-                                                             id="customer_card">
-                                                    {% endif %}
-                                                    <div data-key="customer_title"></div>
-                                                    <div class="px-2 bg-info p-0 text-black"
-                                                         id="customer_name">{{ customer.name }}</div>
-                                                    </div>
-
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex border w-100 bg-soft-primary">
-                                                    <div class="w-50 bold">رتبه مشتری</div>
-                                                    <div class="w-50 text-center">{% get_customer_grade form.customer_grade.value %}</div>
-                                                </div>
+                            </div>
+                            <div class="w-30">
+                                <div class=" ">
+                                    <h5 class="" data-key="customer-information">اطلاعات مشتری
+                                    </h5>
+                                    <div class=" px-2">
+                                        <div class="d-flex">
+                                            <div class="w-50">
                                                 <div class="d-flex ">
-                                                    <div class="w-25 bold">توضیحات</div>
-                                                    <div class="w-75 ">{{ data.description|default_if_none:"-" }}</div>
+                                                    <div class="w-50 bold">کد مشتری</div>
+                                                    <div class="w-50 text-center">{{ data.customer_code|default_if_none:"-" }}</div>
                                                 </div>
+                                            </div>
+                                            <div class="w-50">
+                                                {% get_customer form.instance.customer_code as customer %}
+                                                {% if  customer %}
+                                                    <div class="alert-warning p-0" id="customer_card">
+                                                {% else %}
+                                                    <div class="d-none alert-warning p-2"
+                                                         id="customer_card">
+                                                {% endif %}
+                                                <div data-key="customer_title"></div>
+                                                <div class="px-2 bg-info p-0 text-black"
+                                                     id="customer_name">{{ customer.name }}</div>
+                                                </div>
+
+                                                </div>
+                                            </div>
+                                            <div class="d-flex border w-100 bg-soft-primary">
+                                                <div class="w-50 bold">رتبه مشتری</div>
+                                                <div class="w-50 text-center">{% get_customer_grade form.customer_grade.value %}</div>
+                                            </div>
+                                            <div class="d-flex ">
+                                                <div class="w-25 bold">توضیحات</div>
+                                                <div class="w-75 ">{{ data.description|default_if_none:"-" }}</div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="d-flex mb-2 mt-2">
-{#                                    {% include "micmod-base/base/create_info_bar.html" %}#}
-                                    <div class=""><p>ایجاد کننده:  {{ data.creator_user }}</p></div>
-                                    <div class="mx-3"><p> ویرایش کننده:   {{ data.editor_user }}</p></div>
-                                </div>
+                            </div>
+                            <div class="d-flex mb-2 mt-2">
+                                {#                                    {% include "micmod-base/base/create_info_bar.html" %}#}
+                                <div class=""><p>ایجاد کننده: {{ data.creator_user }}</p></div>
+                                <div class="mx-3"><p> ویرایش کننده: {{ data.editor_user }}</p></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="mx-5 px-5">
-                    <div class="">
-                        <table class="table table-bordered border-dark table-striped p0">
-                            <thead>
-                            <tr class="bg-secondary text-white bold text-center replace-digits">
-                                <td class="">ردیف</td>
-                                <td class="">شرح مشتری</td>
-                                <td class="">کالا</td>
-                                <td class="">تعداد/ موجودی</td>
-                                <td class="">سابقه فروش</td>
-                                <td class="">استعلام قیمت</td>
-                                {% if with_comments == '1' %}
-                                <td class="col-5" >نظرات</td>
-                                {% endif %}
-                                <td class="">زمان تحویل</td>
-                                <td class="">قیمت نهایی</td>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for form_ in formset %}
-                                <tr>
-                                    {% if form.currency_ref.value == 1 %}
-                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 with_comments=with_comments %}
-                                    {% else %}
-                                        {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 with_comments=with_comments %}
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                            <tfoot class="bg-secondary replace-digits">
-                            <tr>
-                                <td class="border-primary"></td>
-                                <td class="border-primary"></td>
-                                <td class="border-primary"></td>
-                                <td class="border-primary"></td>
-                                <td class="border-primary"></td>
-                                <td class="border-primary"></td>
-                                <td class="w-70 text-center bold text-white quotation_total_price font-size-11"
-                                    name="quotation_total_price"></td>
-                                <td class="w-70 text-end bold text-white">جمع کل</td>
-                                <td class="border-primary"></td>
-                            </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                <!-- End Form Layout -->
             </div>
-        <a href="{% url "sls:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}" class="px-5 mx-5">
+            <div class="mx-5 px-5">
+                <div class="">
+                    <table class="table table-bordered border-dark table-striped p0" cellpadding="0" cellspacing="0">
+                        <thead>
+                        <tr class="bg-secondary text-white bold text-center replace-digits">
+                            <th scope="col">ردیف</th>
+                            <th scope="col">شرح مشتری</th>
+                            <th scope="col">کالا</th>
+                            <th scope="col">تعداد/ موجودی</th>
+                            <th scope="col">سابقه فروش</th>
+                            <th scope="col">استعلام قیمت</th>
+                            <th scope="col">زمان تحویل</th>
+                            <th scope="col">قیمت نهایی</th>
+                            {% if with_comments == '1' %}
+                                <th scope="col">نظرات</th>
+                            {% endif %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for form_ in formset %}
+                            {% if form.currency_ref.value == 1 %}
+                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 with_comments=with_comments %}
+                            {% else %}
+                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 with_comments=with_comments %}
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-secondary replace-digits">
+                        <tr>
+                            <td class="w-70 text-end bold " {% if with_comments == '1' %} colspan="9" {% else %}
+                                colspan="8" {% endif %}>جمع کل: <span class="ms-19 " id="id_sum_total_price"></span>
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <!-- End Form Layout -->
+        </div>
+        <a href="{% url "sls:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
+           class="px-5 mx-5">
             {% if comments_url_params == '0' %}
                 بدون نظرات
             {% elif comments_url_params == '1' %}
                 با نظرات
 
-        {% endif %}</a>
-        </div> <!-- container-fluid -->
-        <!-- End Page-content -->
-    </div>
-    <!-- end main content-->
+            {% endif %}</a>
+    </div> <!-- container-fluid -->
+    <!-- End Page-content -->
+</div>
+<!-- end main content-->
 
 
 {% block extra_js %}
-    <script src="{% static 'js/extra/quotation.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="/assets/lang/translate.js"></script>
+    <script src="/assets/js/refresh_after_ajax.js"></script>
 
-{#    <script>#}
-{##}
-{#        const comments = document.querySelectorAll('#comment_id')#}
-{#        debugger#}
-{#        let start = 1#}
-{#        let end = 30#}
-{#        comments.forEach(function (comment) {#}
-{#            const c = comment.innerText#}
-{#            if (c.length > 30) {#}
-{#                #}
-{#                #}
-{#                const p = document.createElement("p")#}
-{#                p.innerText = c.slice(start,end)#}
-{#                start += 30#}
-{#                end += 30#}
-                {#comment.innerText = ""#}
-{#                comment.appendChild(p)#}
-{#                }#}
-{#        })#}
-        {#for (let comment in comments) {#}
-        {#    const c = comment.innerText#}
-        {#    debugger#}
-        {#    if (c.length > 30) {#}
-        {#        document.write("<br>")#}
-        {#    }#}
-{##}
-{##}
-{#    </script>#}
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" type="text/javascript"></script>
+    <script src="{% static 'js/base.js' %}"></script>
+    <script>
+        let sum = 0
+        const allRows = document.querySelectorAll('.item')
+        allRows.forEach(function (item) {
+            debugger
+
+            {#const finalPrice = item.querySelector('.final_price_en')#}
+            const feePrice = item.querySelector('.fee_en')
+            const quantityEn = item.querySelector('.quantity_en')
+            {#const f = finalPrice.textContent#}
+            const q = quantityEn.textContent
+            const f = feePrice.textContent
+            if (!isNaN(f) && !isNaN(q)) {
+                const res = f * q
+                sum += res
+            }
+
+            const sumPrices = document.getElementById("id_sum_total_price")
+            sumPrices.innerText = numberWithCommas(parseFloat(sum))
+        })
+    </script>
 
 {% endblock extra_js %}
