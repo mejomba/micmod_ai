@@ -422,7 +422,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
         ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC    
         """
         if text.isnumeric():
-            final_qry += ")) as qry"
+            final_qry += ")) as qry ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC "
         res = Item.objects.raw(final_qry, using='sepidar')
         return res
 
