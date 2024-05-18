@@ -453,6 +453,8 @@ class QuotationItem(BaseModel):
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
+        if iqr is None:
+            return 0
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price
