@@ -212,6 +212,7 @@ function loadJS(file) {
 }
 
 function custom_ajax_get(form, url, element) {
+    removeCommaSeperator()
     let new_url = url
     if (form) {
         const formSerialize = form.serialize();

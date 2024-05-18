@@ -177,10 +177,6 @@ class BaseView(UserPassesTestMixin,
                                               })
 
         self.object = self.get_object()
-        """ run import customer from sepidar before object create"""
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-
         if self.has_flow:
             self.state_index = self.get_flow_index(self.object)
 
@@ -218,13 +214,32 @@ class BaseView(UserPassesTestMixin,
                 return self.form_invalid(self.form)
 
         self.form.wfform = wfform
+        self.formset = self.get_formset_from_struct()(self.request.POST, self.request.FILES,
+                                                      instance=self.form.instance,
+                                                      form_kwargs={
+                                                          "constraint": {
+                                                              "wf_access": True,
+                                                              'form_state': self.state_index,
+                                                              'request': self.request,
+                                                              'form_constraint': self.flow_config.get(
+                                                                  'flow_form_constraint'),
+                                                              'formset_constraint': self.flow_config.get(
+                                                                  'flow_formset_constraint')
+                                                          }
+                                                      }) if self.has_formset else None
         wf_form_valid = wfform.is_valid()
-        if self.form.is_valid() and wf_form_valid:
-            # if 'submit/copy' in self.request.POST:
-                # cache.set(f'{self.request.user}__submit/copy', True)
-            # else:
-            #     cache.delete(f'{self.request.user}__submit/copy')
-
+        if self.formset:
+            if self.form.is_valid() and wf_form_valid and self.formset.is_valid():
+                x = self.form_valid(self.form)
+                if 'submit/copy' in self.request.POST:
+                    self.form.instance.pk = None
+                    return self.render_to_response(super().get_context_data(form=self.form))
+                else:
+                    return x
+            else:
+                return self.render_to_response(
+                    self.get_context_data(form=self.form, workflow_form=wfform, formset=self.formset))
+        elif self.form.is_valid() and wf_form_valid:
             x = self.form_valid(self.form)
             if 'submit/copy' in self.request.POST:
                 self.form.instance.pk = None
@@ -245,7 +260,8 @@ class BaseView(UserPassesTestMixin,
                                                               }
                                                           }) if self.has_formset else None
             # return self.form_invalid(self.form)
-            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform))
+            self.formset.is_valid()
+            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform, formset=self.formset))
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
         #     print(self.form.errors.as_data())
