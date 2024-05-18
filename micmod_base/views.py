@@ -92,6 +92,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('sls:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
