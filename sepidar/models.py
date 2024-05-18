@@ -372,7 +372,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
     @staticmethod
     def get_items(text, party_id=''):
         qry =f"""
-SELECT        TOP (50) item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
+ item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
     						 invoice_2.avg_fee AS avg_price, invoice_2.min_fee AS min_price,invoice_2.max_fee AS max_price,
                              invoice_2.qty AS f_qty_all, sum_stock.total_quantity AS stock_qty, sum_stock_res.total_quantity as stock_res_qty,
 							 quotation_1.Date as quotation_date, quotation_1.Fee as quotation_fee, quotation_1.Quantity as quotation_qty
@@ -414,11 +414,16 @@ SELECT        TOP (50) item.Code AS code,item.ItemID as itemid, item.Title AS ti
                                                                                              SLS.QuotationItem AS quI ON qu.QuotationId = quI.QuotationRef AND qu.CustomerPartyRef = {party_id}
                                                                    GROUP BY quI.ItemRef) AS mx ON i_quotation.ItemRef = mx.ItemRef AND quotation.QuotationId = mx.max_id) AS quotation_1 ON item.ItemID = quotation_1.ItemRef
 
-WHERE        (item.Title LIKE '%%{text}%%') OR
-                         (item.Code LIKE '%%{text}%%')
-ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC        
         """
-        res = Item.objects.raw(qry, using='sepidar')
+        final_qry = f"""select * from ( (select top 1 {qry} WHERE (item.Code = '{text}')) union (""" if text.isnumeric() else ""
+        final_qry += f"""
+        select top 10 {qry}
+        WHERE ((item.Title LIKE '%%{text}%%') OR (item.Code LIKE '%%{text}%%'))  
+        ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC    
+        """
+        if text.isnumeric():
+            final_qry += ")) as qry ORDER BY f_date_cust desc,quotation_date desc,stock_qty DESC, f_qty_cust DESC, f_qty_all DESC "
+        res = Item.objects.raw(final_qry, using='sepidar')
         return res
 
     @staticmethod

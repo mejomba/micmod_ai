@@ -90,6 +90,14 @@ div[disabled=disabled] {
     font-size: .75rem !important;
     vertical-align: middle !important;
 }
+.font-size-11 {
+    font-size: .85rem !important;
+    vertical-align: middle !important;
+}
+.font-size-12 {
+    font-size: .95rem !important;
+    vertical-align: middle !important;
+}
 .p0{
     padding: 5px !important;
 }
