@@ -151,7 +151,7 @@ class SkuUpdateView(LoginRequiredMixin,
         return context
 
     def form_valid(self, form):
-        if self.request.POST.get('draft') or self.request.POST.get('back'):
+        if self.request.POST.get('draft') or self.request.POST.get('back') or 'change_user' in self.request.POST:
             x = super().form_valid(form)
             if 'technical_admin' in self.request.user.groups.values_list('name', flat=True):
                 url = reverse('extra_data:sku.update', kwargs={'pk':self.object.pk})
