@@ -630,7 +630,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         else:
             quotations_record_lst = quotations_record_lst
 
-        quotations_record_lst = quotations_record_lst.order_by('-id')
+        quotations_record_lst = quotations_record_lst.order_by('-quotation_id', 'id')
 
         for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
