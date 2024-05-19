@@ -20,7 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.models import User
 from django.core.paginator import Paginator
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -859,6 +859,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
