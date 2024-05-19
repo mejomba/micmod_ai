@@ -25,7 +25,7 @@
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2">
                         {% include 'core/partial/components/key_value_text.html' with rma_value=sku.part_number rma_class='text-end me-2 min-h-30px px-3' %}
                         {% include 'core/partial/components/key_value_text.html' with rma_value=sku.purchase_group rma_class='text-end me-2 min-h-30px fw-bold px-3' %}
-                        {% include "core/partial/components/key_value_text.html" with rma_key="weight_in_1000" rma_value=sku.price.weight rma_class="d-flex justify-content-center align-items-center" %}
+                        {% include "core/partial/components/key_value_text.html" with rma_key="item_in_batch" rma_value=sku.batch_count rma_class="d-flex justify-content-center align-items-center" %}
                     </div>
                 </a>
             </li>
