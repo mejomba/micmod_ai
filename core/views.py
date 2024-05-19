@@ -260,7 +260,8 @@ class BaseView(UserPassesTestMixin,
                                                               }
                                                           }) if self.has_formset else None
             # return self.form_invalid(self.form)
-            self.formset.is_valid()
+            if self.formset:
+                self.formset.is_valid()
             return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform, formset=self.formset))
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
