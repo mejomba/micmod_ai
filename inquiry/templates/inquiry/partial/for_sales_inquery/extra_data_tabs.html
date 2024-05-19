@@ -21,7 +21,7 @@
                     {% include "core/partial/components/key_value_text.html" with rma_key="supplier" rma_value=sku.price.supplier.name rma_class="d-flex py-3" %}
                 {% endif %}
                 {% include "core/partial/components/key_value_text.html" with rma_key="batch_type" rma_value=sku.batch_type rma_class="d-flex py-3" %}
-                {% include "core/partial/components/key_value_text.html" with rma_key="item_in_batch" rma_value=sku.batch_count rma_class="d-flex py-3" %}
+                {% include "core/partial/components/key_value_text.html" with rma_key="weight_in_1000" rma_value=sku.price.weight rma_class="d-flex py-3" %}
                 {% include "core/partial/components/image_components/slideshow_gallery.html" with rma_images=sku.images.all rma_body_class="mh-450px scroll" rma_cols=4 %}
             </div>
         {% endif %}
