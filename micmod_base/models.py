@@ -89,8 +89,12 @@ class Quotation(SLSDoc):
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True)
         return qs
+
+    @classmethod
+    def get_qs_count(cls, user):
+        return len(cls.objects.get_access_object(user, q='active', quotation=True))
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:

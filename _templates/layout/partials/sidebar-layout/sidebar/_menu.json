@@ -89,8 +89,8 @@
               "icon": "burger-menu",
               "title": "list",
               "path_key": "quotations/list",
-              "direct_link": "/micmod_base/quotations/list?q=active",
-              "count": "micmod_base.quotation:active"
+              "direct_link": "/micmod_base/quotations/list?q=active&quotation=1",
+              "count": "micmod_base.quotation:get_qs_count"
             },
             {
               "icon": "burger-menu",
