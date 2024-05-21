@@ -53,13 +53,13 @@ from .forms import PendingFormFilter
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
         q = self.request.GET.get('q')
-        quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
+        # quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
 
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
         # greeting['quotations'] = quotations_record
-        greeting['quotations'] = quotations_record_lst
+        # greeting['quotations'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
@@ -305,6 +305,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
+        # context['full_copy'] = True
 
         # if 'sales_admin' in user_groups or self.request.user.is_superuser:
         #     if self.request.GET.get('duplicate'):
@@ -840,7 +841,7 @@ def get_sku(request):
 class QuotationListDatatable(AjaxDatatableView):
     model = Quotation
     title = 'currency_list'
-    initial_order = [["pk", "asc"], ]
+    initial_order = [["pk", "desc"], ]
     length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -865,7 +866,8 @@ class QuotationListDatatable(AjaxDatatableView):
     def get_initial_queryset(self, request=None):
         qs = Quotation.get_qs(request)
         # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
-        return self.model.objects.filter(pk__in=[i.pk for i in qs])
+        qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
+        return qs
 
     # @timer
     def customize_row(self, row, obj):
@@ -895,6 +897,11 @@ class QuotationListDatatable(AjaxDatatableView):
         row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
+        if obj.cancel:
+            row['cancel'] = f'''<span class="text-danger">{'کنسلی -'} </span><span>{cancel_obj.get_comment_title_display() if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
+        else:
+            row['cancel'] = '-'
 
 
 def inquiry_report(request):
