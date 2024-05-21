@@ -44,6 +44,7 @@
                                         <div class="w-75">{{ form_s.customer_goods_name.label }}:<br> {{ form_s.instance.customer_goods_name }}
                                         </div>
                                     </div>
+
                                     {% get_comment_user_list form_s request.user %}
                                     <div class="mt-14">
                                         <!-- Progress bar 1 -->
@@ -69,6 +70,11 @@
                                             <i class="ki-outline ki-watch fs-2x"></i>
                                             </span>
                                         {% endif %}
+                                    {% if form_s.instance.item_in_china %}
+                                        <div class="my-2 badge badge-light-info position-absolute" style="bottom: 0; right: 100px;">
+                                        آیتم در چین
+                                        </div>
+                                    {% endif %}
                                     </div>
                                 </div>
                                 <div class="col-lg-4 p-0 border-top border-bottom border-end">

@@ -95,7 +95,7 @@ class BaseManager(models.Manager):
     #         )
     #     return wf
 
-    def get_access_object(self, user, q="all"):
+    def get_access_object(self, user, q="all", *args, **kwargs):
         import time
         from workflow.models import WorkFlow
         if user.is_superuser or self.is_public:
@@ -128,7 +128,10 @@ class BaseManager(models.Manager):
         else:
             quotations_record_lst = qry
 
-        return [x for x in quotations_record_lst if x]
+        if kwargs.get('quotation'):
+            return [x for x in quotations_record_lst if not x.sepidar_number]
+        else:
+            return [x for x in quotations_record_lst if x]
 
         return quotations_record_lst
 
@@ -621,7 +624,7 @@ class AbsBaseModel(NoUserBaseModel):
 
     @classmethod
     def active(cls, user):
-        return len(cls.objects.get_access_object(user, q='active'))
+        return len(cls.objects.get_access_object(user, q='active')) + 1000
 
     class Meta:
         abstract = True

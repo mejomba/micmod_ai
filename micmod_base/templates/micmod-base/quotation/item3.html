@@ -6,8 +6,13 @@
 {% load accounts_tag %}
 
 <div class="card item p-0 my-2" dir="rtl">
-<div class="bg-warning">{{ form_s.errors }}</div>
-<div class="bg-secondary">{{ nested.errors }}</div>
+{% if form_s.errors %}
+<div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
+{% endif %}
+{% if nested.errors %}
+<div class="bg-secondary"><span>row ({{ forloop.counter }})</span> {{ nested.errors }}</div>
+{% endif %}
+
     {% for hidden in form_s.hidden_fields %}
         {{ hidden }}
     {% endfor %}
@@ -67,6 +72,9 @@
                 <div class="mb-3">
                     <span class="mx-2">زمان تحویل: </span>
                     {{ form_s.instance.lead_time }}
+                </div>
+                <div>
+                    {% render_field_by_order form_s form_s.item_in_china label='on-border' %}
                 </div>
                 {% if form_s.instance.need_local_price_inquiry %}
                     <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">

@@ -89,8 +89,12 @@ class Quotation(SLSDoc):
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True)
         return qs
+
+    @classmethod
+    def get_qs_count(cls, user):
+        return len(cls.objects.get_access_object(user, q='active', quotation=True))
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -365,6 +369,7 @@ class QuotationItem(BaseModel):
     has_delay = models.BooleanField(default=False, verbose_name=_('has_delay'))
     delay_reason = models.CharField(max_length=250, verbose_name=_('delay_reason'), null=True, blank=True)
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
+    item_in_china = models.BooleanField(_('item_in_china'), default=False)
 
     objects = QuotationItemManager()
 
