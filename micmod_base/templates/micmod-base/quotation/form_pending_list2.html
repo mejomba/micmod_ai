@@ -24,13 +24,17 @@
                         <span>{{ form_lists.0.instance.quotation.sepidar_number }}</span>
                     </div>
                     <div class="col">
-                        <span class="me-2">تاریخ درخواست:</span>
-                        <span>{{ form_lists.0.instance.quotation.request_date}}</span>
+                        <span class="me-2">تاریخ درخواست استعلام:</span>
+                        <span>{{ form_lists.0.instance.quotation.workflows.last.created_date.date }}</span>
                     </div>
-                    <div class="col">
-                        <span class="me-2">تاریخ انقضا:</span>
-                        <span>{{ form_lists.0.instance.quotation.expiration_date }}</span>
-                    </div>
+{#                    <div class="col">#}
+{#                        <span class="me-2">تاریخ درخواست:</span>#}
+{#                        <span>{{ form_lists.0.instance.quotation.request_date}}</span>#}
+{#                    </div>#}
+{#                    <div class="col">#}
+{#                        <span class="me-2">تاریخ انقضا:</span>#}
+{#                        <span>{{ form_lists.0.instance.quotation.expiration_date }}</span>#}
+{#                    </div>#}
                     <div class="col">
                         <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_lists.0.instance.quotation.pk %}" target="_blank">
                             مشاهده پیش فاکتور
