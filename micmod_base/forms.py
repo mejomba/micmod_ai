@@ -341,8 +341,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
-        user_groups = request.user.groups.values_list('name', flat=True)
-        if not request.user.is_superuser:
+        user_groups = request.user.groups.values_list('name', flat=True) if request else None
+        if request and not request.user.is_superuser:
             if 'trade_user' not in user_groups:
                 self.make_disable(['foreign_price_inquiry_done', 'trade_price_code', 'lead_time'])
             if 'bazar_user' not in user_groups:
