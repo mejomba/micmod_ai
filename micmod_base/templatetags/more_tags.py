@@ -140,7 +140,7 @@ def get_comments(obj, comment_form=None, button_text=None, button_style=None, co
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
-def get_comment_user_list(form, current_user, cancel=None):
+def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
     # seen_comment = list()
     unseen_comment = list()
 
@@ -190,7 +190,8 @@ def get_comment_user_list(form, current_user, cancel=None):
                'obj': obj,
                'unseen_comment_count': unseen_comment_count,
                'cancel': cancel,
-               'user': current_user}
+               'user': current_user,
+               'comment_type': comment_type if comment_type else 'comment'}
     return context
 @register.filter
 def get_comment_link(comment_str):

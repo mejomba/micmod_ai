@@ -495,7 +495,9 @@ class BaseView(UserPassesTestMixin,
         if form.is_valid():
             """save main form"""
             old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
-
+            if getattr(old_obj, 'cancel', None):
+                if old_obj.cancel:
+                    return HttpResponseRedirect(reverse_lazy('sls:quotations.view', kwargs={'pk': old_obj.pk}))
             if old_obj:
                 old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
@@ -760,6 +762,56 @@ class BaseView(UserPassesTestMixin,
             return super().form_valid(form)
         return HttpResponseRedirect('.')
 
+    # def copy_view(self, related_name, nested_name):
+    #     wfform = None
+    #     formset = None
+    #     form = None
+    #
+    #
+    #     if self.has_flow:
+    #         wfform = self.workflow_form(
+    #             content_type_model=self.model,
+    #             initial={
+    #                     'wf_access': True,
+    #                     'from_user': None,
+    #                     'to_user': self.request.user,
+    #                     'state': 0,
+    #                     'state_index': 0,
+    #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
+    #                     'action': self.flow_config.get('flow_action'),
+    #                     'deadline': datetime.datetime.now() + datetime.timedelta(
+    #                         days=self.flow_config.get('flow_deadline')[0]) if self.has_flow else None,
+    #                     'flow_config': self.flow_config,
+    #                     'create': False if self.object else True
+    #                 },
+    #             current_user=self.request.user,
+    #         )
+    #
+    #     if self.has_formset:
+    #         formset = self.formset_form(
+    #             instance=self.object, form_kwargs={
+    #                 "constraint": {
+    #                     "wf_access": self.wf_access,
+    #                     'form_state': self.state_index,
+    #                     'request': self.request,
+    #                     'form_constraint': self.flow_config.get('flow_form_constraint'),
+    #                     'formset_constraint': self.flow_config.get('flow_formset_constraint')
+    #                 }
+    #             }
+    #         )
+    #         formset_prefix = formset.prefix
+    #         self.request.POST._mutable = True
+    #         for idx in range(getattr(self.object, related_name), 0):
+    #             formset_pattern = f'{formset_prefix}_{idx}_{related_name}'
+    #             self.request.POST[formset_pattern] = ''
+    #
+    #             nesterd_pattern = f'{prefix}_{idx}_{nested_name}'
+    #             self.request.POST[nesterd_pattern] = ''
+    #         self.request.POST._mutable = False
+    #
+    #     form = self.get_form_class()(data=self.request.POST)
+    #     self.request.full_copy = True
+    #     return self.render_to_response(context={'data': None, 'form': form, 'formset': formset, 'workflow_form': wfform},)
 
 class Base:
     @classmethod
@@ -858,6 +910,9 @@ class CommentsFormView(View):
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
             # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'trade_inquiry':
+            kwargs['submit_type'] = 'trade_inquiry'
             comments = obj.comments.all().order_by('-created_date')
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')

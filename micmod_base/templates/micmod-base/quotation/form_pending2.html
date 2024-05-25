@@ -45,7 +45,7 @@
                                         </div>
                                     </div>
 
-                                    {% get_comment_user_list form_s request.user %}
+                                    {% get_comment_user_list form_s request.user comment_type='trade_inquiry' %}
                                     <div class="mt-14">
                                         <!-- Progress bar 1 -->
                                         <div class="progress-circle mx-auto position-absolute" data-value='{{ form_list.0.instance.quotation.progress_from_inquiry_state }}' style="bottom: 3px; right: 3px;">
