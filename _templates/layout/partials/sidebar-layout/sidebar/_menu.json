@@ -77,7 +77,7 @@
               "micmod_base.view_quotation"
             ]
           },
-          "count": "micmod_base.quotation:active",
+          "count": "micmod_base.quotation:get_qs_count",
           "menus": [
             {
               "icon": "message-add",
