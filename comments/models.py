@@ -15,6 +15,9 @@ class Comments(BaseContentType):
         ('I', 'زمان تحویل استعلام خارج'),
         ('J', 'پیدا نشدن کالای مد نظر مشتری'),
         ('K', 'عدم پاسخگویی مشتری نسبت به سوالات مطرح شده'),
+        ('L', 'قیمت کمتر'),
+        ('M', 'آیتم جایگذین'),
+        ('N', 'کیفیت بهتر'),
         ('O','موارد دیگر')
     )
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))

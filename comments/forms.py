@@ -22,8 +22,15 @@ class CommentsForm(CustomBaseModelForm):
             self.initial['comment_title'] = 'O'
             self.fields['comment_title'].choices = (
                 ('O', 'موارد دیگر'),
+            )  # initial as other <simple comment>
+        if self.submit_type == 'trade_inquiry':
+            self.initial['comment_title'] = 'O'
+            self.fields['comment_title'].choices = (
+                ('L', 'قیمت کمتر'),
+                ('M', 'آیتم جایگذین'),
+                ('N', 'کیفیت بهتر'),
+                ('O', 'موارد دیگر'),
             )
-            # initial as other <simple comment>
         if self.submit_type == 'cancel':
             self.fields['comment_title'].choices = (
                 ('C', 'کنسلی'),
