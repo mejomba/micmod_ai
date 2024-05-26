@@ -9,6 +9,8 @@
 
 <button type="button" class="btn btn-outline-primary btn-bordered changelog-btn" data-toggle="modal" data-target="#id_x{{ forloop.counter }}">
   تاریخچه تغییرات
+{#    {{ form_s.instance.files.content_type.model }}#}
+{#    {{ form_s.instance.pk }}#}
 </button>
 
 <!-- Modal -->
@@ -46,3 +48,41 @@
     </div>
   </div>
 </div>
+
+{##}
+{#<script>#}
+{##}
+{#    const changeLogBtn = document.querySelectorAll("#id_change_log")#}
+{#    inquiryReportBtn.forEach(function (item) {#}
+{#        item.addEventListener('click',function (e){#}
+{#        let new_url = "{% url 'core:changelog?model_name=quotationitem?object_id=' %}"#}
+{#        $.ajax({#}
+{#            type: 'GET',#}
+{#            url: new_url,#}
+{#            dataType: 'json',#}
+{#            cache: false,#}
+{#            processData: false,#}
+{#            contentType: false,#}
+{#            beforeSend: block_main_container,#}
+{#            success: function (data) {#}
+{#                debugger#}
+{#                html = data['res'];#}
+{#                document.querySelector('#id-empty-modal-body').innerHTML = html#}
+{#            },#}
+{#            error: function () {#}
+{##}
+{#            },#}
+{#            complete: release_main_container#}
+{##}
+{#        });#}
+{#     })#}
+{#    })#}
+{##}
+{##}
+{#    const emptyModal = document.getElementById('id_kt_empty_modal')#}
+{#    emptyModal.addEventListener('hidden.bs.modal', function (e) {#}
+{#        document.querySelector('#id-empty-modal-body').innerHTML = ''#}
+{#    })#}
+{##}
+{##}
+{#</script>#}
