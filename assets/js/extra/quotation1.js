@@ -915,6 +915,10 @@ function round_rial(x){
     return x
 }
 function numberWithCommas(x, digits = 2) {
+    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency_ref != 1) {
+        digits = 4
+    }
     if (x == '' || x == null || isNaN(x)) return ''
     x = parseFloat(x)
     let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
