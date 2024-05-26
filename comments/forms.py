@@ -27,7 +27,7 @@ class CommentsForm(CustomBaseModelForm):
             self.initial['comment_title'] = 'O'
             self.fields['comment_title'].choices = (
                 ('L', 'قیمت کمتر'),
-                ('M', 'آیتم جایگذین'),
+                ('M', 'آیتم جایگزین'),
                 ('N', 'کیفیت بهتر'),
                 ('O', 'موارد دیگر'),
             )
