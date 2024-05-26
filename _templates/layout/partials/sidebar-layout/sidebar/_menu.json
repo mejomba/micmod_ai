@@ -109,6 +109,11 @@
               "count": "micmod_base.quotationitem:active"
             },
         {
+          "permission": {
+            "permissions": [
+              "inquiry.add_inquiryresult"
+            ]
+          },
               "title": "item_in_china",
               "icon": "burger-menu",
               "path_key": "quotationitem/list/item_in_china/",
