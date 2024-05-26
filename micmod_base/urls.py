@@ -35,6 +35,7 @@ urlpatterns = [
     path('currency_exchange_list_datatable/', CurrencyExchangeDataTableView.as_view(), name="currency_exchange.list.datatable"),
     path('quotationitem/list/pending/', QuotationItemPending.as_view(), name='quotationitem.pending'),
     # path('quotationitem/list/form/pending/', QuotationItemFormPending.as_view(), name='quotationitem.form.pending'),
+    path('quotationitem/list/form/item_in_china/', QuotationItemFormPending2.as_view(), name='quotationitem.item_in_china'),
     path('quotationitem/list/form/pending/', QuotationItemFormPending2.as_view(), name='quotationitem.form.pending'),
     # path('quotationitem/list/form/pending2/', QuotationItemFormPending2.as_view(), name='quotationitem.form.pending2'),
     path('quotationitem/past/quotationitems', QuotationItemFormPending2.as_view(), name='quotationitem.form.past'),
