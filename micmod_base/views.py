@@ -628,6 +628,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         elif force_inquiry:
             f = {'quotation__force_inquiry': True}
             quotations_record_lst = quotations_record_lst.filter(**f)
+        elif self.request.GET.get('item_in_china'):
+            quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
         else:
             quotations_record_lst = quotations_record_lst
 

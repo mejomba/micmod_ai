@@ -109,6 +109,13 @@
               "count": "micmod_base.quotationitem:active"
             },
         {
+              "title": "item_in_china",
+              "icon": "burger-menu",
+              "path_key": "quotationitem/list/item_in_china/",
+              "direct_link": "/micmod_base/quotationitem/list/form/pending/?item_in_china=1",
+              "count": "micmod_base.quotationitem:item_in_china_"
+            },
+        {
           "permission": {
             "permissions": [
               "micmod_base.view_currency_exchange"
