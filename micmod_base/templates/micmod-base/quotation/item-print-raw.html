@@ -7,7 +7,7 @@
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
-    <td class=" font-size-12 text-center align-middle replace-digits">
+    <td class=" font-size-12 text-center align-middle replace-digits ">
         <h6>{{ forloop.counter }}</h6>
     </td>
     <td class="">
@@ -18,15 +18,18 @@
     </td>
     <td class="font-size-10 replace-digits">
         <div class="bold text-center font-size-10" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+        <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
+    </td>
+{#    <td class="font-size-10 replace-digits">#}
+{#        <div class="bold text-center font-size-10" name="unit" >عدد</div>#}
+{#    </td>#}
+    <td class="font-size-10 replace-digits">
+        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>
+        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.total_price|default_if_none:0|floatformat:digit|intcomma }}</div>
     </td>
     <td class="font-size-10 replace-digits">
-        <div class="bold text-center font-size-10" name="unit" >{{ form.instance.index|default_if_none:0|intcomma }}</div>
-    </td>
-    <td class="font-size-10 replace-digits">
-        <div class="bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|intcomma }}</div>
-    </td>
-    <td class="font-size-10 replace-digits">
-        <div class="bold text-center font-size-10" name="final_price" >{{ form.instance.final_price|default_if_none:0|intcomma }}</div>
+        <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
+        <div class="fee_en d-none" name="fee">{{ form.instance.fee}}</div>
     </td>
 
 </tr>
