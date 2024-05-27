@@ -44,6 +44,8 @@ from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 from .forms import PendingFormFilter
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 # from core.mixins import DuplicateMixin
 # from workflow.forms import WorkFlowModelForm
 # import datetime
@@ -330,7 +332,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
 
 def print_view(request,id=-1):
-    template_name = 'micmod-base/quotation/view-print.html'
+    customer_print = reverse("sls:print_customer", args=[id])
+    if request.META.get('PATH_INFO') == customer_print:
+        template_name = 'micmod-base/quotation/view-print-raw.html'
+    else:
+        template_name = 'micmod-base/quotation/view-print.html'
     comments_url_params = '0'
     with_comments = '1'
     if request.GET.get('comments_url_params') == '1':
