@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views import ajax_change_logs
 
 app_name = 'core'
 urlpatterns = [
@@ -20,4 +21,5 @@ urlpatterns = [
     # path("ajax/<str:app_label>/<str:model_name>/view/<int:pk>",views.download_excel, name='ajax_object_delete'),
     # path("<str:app_label>/<str:model_name>/view/<int:pk>",views.download_excel, name='object_delete'),
     # path('excel/download/', views.download_excel, name='export_excel'),
+    path("ajax/changelog/<str:model_name>/<int:object_id>/", ajax_change_logs, name="changelog")
 ]
