@@ -921,6 +921,7 @@ function numberWithCommas(x, digits = 2) {
     }
     if (x == '' || x == null || isNaN(x)) return ''
     x = parseFloat(x)
+    if (x >= 100){digits=2}
     let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
     return res
 }
