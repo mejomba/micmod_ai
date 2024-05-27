@@ -293,6 +293,21 @@ class Quotation(SLSDoc):
         else:
             return
 
+    @property
+    def sum_prices(self):
+        qis = self.quotation.all()
+        sum_price = 0
+        for qi in qis:
+            quantity = qi.quantity
+            fee = qi.fee
+            price = quantity * fee
+            sum_price += price
+
+
+            if sum_price is None:
+                return 0
+        return int(sum_price)
+
 
 class QuotationItem(BaseModel):
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
@@ -365,6 +380,7 @@ class QuotationItem(BaseModel):
     has_delay = models.BooleanField(default=False, verbose_name=_('has_delay'))
     delay_reason = models.CharField(max_length=250, verbose_name=_('delay_reason'), null=True, blank=True)
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
+    item_in_china = models.BooleanField(_('item_in_china'), default=False)
 
     objects = QuotationItemManager()
 
@@ -453,6 +469,8 @@ class QuotationItem(BaseModel):
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
+        if iqr is None:
+            return 0
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price
