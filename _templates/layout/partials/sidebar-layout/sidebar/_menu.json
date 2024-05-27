@@ -406,16 +406,26 @@
       ]
     },
     {
-              "title": "hs",
-              "icon": "burger-menu",
-              "path_key": "tlg/message/list",
-              "link": "extra_data:hs.list"
-            },
-            {
-              "title": "purchasegroup",
-              "icon": "burger-menu",
-              "path_key": "tlg/message/list",
-              "link": "extra_data:purchase_group.list"
-            }
+      "title": "hs",
+      "icon": "burger-menu",
+      "path_key": "tlg/message/list",
+      "link": "extra_data:hs.list",
+      "permission": {
+        "groups": [
+          "trade_admin"
+        ]
+      }
+    },
+    {
+      "title": "purchasegroup",
+      "icon": "burger-menu",
+      "path_key": "tlg/message/list",
+      "link": "extra_data:purchase_group.list",
+      "permission": {
+        "groups": [
+          "trade_admin"
+        ]
+      }
+    }
   ]
 }
