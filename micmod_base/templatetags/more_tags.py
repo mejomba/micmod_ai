@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from comments.models import Comments, CommentSeen
 from files.models import File, Image
 from tools.utils import show_error
+from num2fawords import words
 
 register = template.Library()
 
@@ -392,3 +393,7 @@ def get_inquiry_result_description(quotation_item):
 def item_count(page_obj):
     per_page = page_obj.paginator.per_page
     return page_obj.number * per_page - (per_page - len(page_obj.object_list))
+
+@register.simple_tag
+def num_to_fa_words(num):
+    return words(num)
