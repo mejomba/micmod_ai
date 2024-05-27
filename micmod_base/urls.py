@@ -41,5 +41,7 @@ urlpatterns = [
     path('quotation/list/datatable', QuotationListDatatable.as_view(), name='quotation.list.datatable'),
     path('get_sku/', get_sku, name='get_sku'),
     path('quotation/print/<int:id>/', print_view, name='print'),
-    path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report')
+    path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
+    path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
+
 ]
