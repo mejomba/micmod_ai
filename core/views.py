@@ -1016,3 +1016,9 @@ class BaseCustomListView(BaseCustomView,ListView):
     def get(self, request, *args, **kwargs):
         return super().get(self, request, *args, **kwargs)
 
+
+def ajax_change_logs(request, ctt_id, obj_id, *args, **kwargs):
+    change_log = ChangeLog.objects.filter(object_id=obj_id, content_type_id=ctt_id)
+    context = {'logs': change_log}
+    res = render_to_string(template_name='changelog/changelog_popup.html', context=context)
+    return JsonResponse({'res': res})
