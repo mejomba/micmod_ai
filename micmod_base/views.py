@@ -20,7 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.models import User
 from django.core.paginator import Paginator
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -33,6 +33,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
     QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
+from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
 from django.contrib.auth import get_user_model
@@ -54,13 +55,13 @@ from django.urls import reverse
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
         q = self.request.GET.get('q')
-        quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
+        # quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
 
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
         # greeting['quotations'] = quotations_record
-        greeting['quotations'] = quotations_record_lst
+        # greeting['quotations'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
@@ -93,11 +94,17 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('sls:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         # if 'submit_duplicate' in self.request.POST:
         #     return self.duplicate(self.object, [], ['quotation'])
+        """ run import customer from sepidar before object create"""
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
         res = super().form_valid(form)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
@@ -300,6 +307,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
+        # context['full_copy'] = True
 
         # if 'sales_admin' in user_groups or self.request.user.is_superuser:
         #     if self.request.GET.get('duplicate'):
@@ -626,10 +634,12 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         elif force_inquiry:
             f = {'quotation__force_inquiry': True}
             quotations_record_lst = quotations_record_lst.filter(**f)
+        elif self.request.GET.get('item_in_china'):
+            quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
         else:
             quotations_record_lst = quotations_record_lst
 
-        quotations_record_lst = quotations_record_lst.order_by('-id')
+        quotations_record_lst = quotations_record_lst.order_by('-quotation_id', 'id')
 
         for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
@@ -839,7 +849,7 @@ def get_sku(request):
 class QuotationListDatatable(AjaxDatatableView):
     model = Quotation
     title = 'currency_list'
-    initial_order = [["pk", "asc"], ]
+    initial_order = [["pk", "desc"], ]
     length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -858,12 +868,14 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
         qs = Quotation.get_qs(request)
         # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
-        return self.model.objects.filter(pk__in=[i.pk for i in qs])
+        qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
+        return qs
 
     # @timer
     def customize_row(self, row, obj):
@@ -893,6 +905,11 @@ class QuotationListDatatable(AjaxDatatableView):
         row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
+        if obj.cancel:
+            row['cancel'] = f'''<span class="text-danger">{'کنسلی -'} </span><span>{cancel_obj.get_comment_title_display() if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
+        else:
+            row['cancel'] = '-'
 
 
 def inquiry_report(request):

@@ -89,8 +89,12 @@ class Quotation(SLSDoc):
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True)
         return qs
+
+    @classmethod
+    def get_qs_count(cls, user):
+        return len(cls.objects.get_access_object(user, q='active', quotation=True))
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -457,6 +461,17 @@ class QuotationItem(BaseModel):
                 qs = cls.quotation_item_all_pending(inquiry_type='trade', path=None)
             elif 'bazar' in user.base_group:
                 qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
+        return qs.count()
+
+    @classmethod
+    def item_in_china_(cls, user):
+        count = 0
+        qs = cls.objects.none()
+        inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                              Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+        if getattr(user, 'base_group', None):
+            if 'trade' in user.base_group:
+                qs = cls.objects.filter(inquiry_type_filter, item_in_china=True, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
         return qs.count()
 
     @property

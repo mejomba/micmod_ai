@@ -77,7 +77,7 @@
               "micmod_base.view_quotation"
             ]
           },
-          "count": "micmod_base.quotation:active",
+          "count": "micmod_base.quotation:get_qs_count",
           "menus": [
             {
               "icon": "message-add",
@@ -89,8 +89,8 @@
               "icon": "burger-menu",
               "title": "list",
               "path_key": "quotations/list",
-              "direct_link": "/micmod_base/quotations/list?q=active",
-              "count": "micmod_base.quotation:active"
+              "direct_link": "/micmod_base/quotations/list?q=active&quotation=1",
+              "count": "micmod_base.quotation:get_qs_count"
             },
             {
               "icon": "burger-menu",
@@ -107,6 +107,18 @@
               "path_key": "quotationitem/list/pending/",
               "direct_link": "/micmod_base/quotationitem/list/form/pending/",
               "count": "micmod_base.quotationitem:active"
+            },
+        {
+          "permission": {
+            "permissions": [
+              "inquiry.add_inquiryresult"
+            ]
+          },
+              "title": "item_in_china",
+              "icon": "burger-menu",
+              "path_key": "quotationitem/list/item_in_china/",
+              "direct_link": "/micmod_base/quotationitem/list/form/pending/?item_in_china=1",
+              "count": "micmod_base.quotationitem:item_in_china_"
             },
         {
           "permission": {
@@ -392,6 +404,28 @@
           ]
         }
       ]
+    },
+    {
+      "title": "hs",
+      "icon": "burger-menu",
+      "path_key": "tlg/message/list",
+      "link": "extra_data:hs.list",
+      "permission": {
+        "groups": [
+          "trade_admin"
+        ]
+      }
+    },
+    {
+      "title": "purchasegroup",
+      "icon": "burger-menu",
+      "path_key": "tlg/message/list",
+      "link": "extra_data:purchase_group.list",
+      "permission": {
+        "groups": [
+          "trade_admin"
+        ]
+      }
     }
   ]
 }

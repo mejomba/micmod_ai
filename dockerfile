@@ -32,4 +32,7 @@ RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
 # RUN pip install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+
+COPY ssl/openssl.cnf /etc/ssl/openssl.cnf
+
 EXPOSE 4000

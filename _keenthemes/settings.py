@@ -222,8 +222,13 @@ DATABASES = {
         'USER': os.environ.get('SE_USER'),
         'PASSWORD': os.environ.get('SE_PASSWORD'),
         'HOST': os.environ.get('SE_HOST'),
-        # 'PORT': DB_PIRINEOS_PORT,
-        'OPTIONS': sql_db_options,
+        # "Encrypt": False,
+        # "TrustServerCertificate": True,
+        # "AUTOCOMMIT": False,
+        # # 'PORT': DB_PIRINEOS_PORT,
+        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server',
+                    # 'extra_params': "Encrypt=No;",#;TrustServerCertificate=Yes"
+                    },
     },
     #     {
     #     'ENGINE': os.environ.get('SE_ENGIN'),
@@ -265,7 +270,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('DW_PASSWORD'),
         'HOST': os.environ.get('DW_HOST'),
         # 'PORT': DB_PIRINEOS_PORT,
-        'OPTIONS': sql_db_options,
+        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
      },
 }
 
