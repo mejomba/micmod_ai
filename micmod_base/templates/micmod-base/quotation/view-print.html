@@ -28,7 +28,6 @@
 <!-- ============================================================== -->
 <div class="main-content  mt-10 px-1" id="main-content" dir="rtl">
     <div class="page-content">
-        <a href=""></a>
         <div class="container-fluid">
             <div class="replace-digits">
                 <a href="javascript:window.print()" class="button print">پرینت</a>
@@ -193,13 +192,14 @@
             <!-- End Form Layout -->
         </div>
         <a href="{% url "sls:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
-           class="px-5 mx-5">
+           class="px-5 mx-5 btn btn-primary">
             {% if comments_url_params == '0' %}
                 بدون نظرات
             {% elif comments_url_params == '1' %}
                 با نظرات
 
             {% endif %}</a>
+    <a href="{% url 'sls:print_customer' id=data.id %}" class="btn btn-light-primary" target="_blank">پرینت پیش فاکتور مشتری</a>
     </div> <!-- container-fluid -->
     <!-- End Page-content -->
 </div>
