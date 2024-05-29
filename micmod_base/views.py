@@ -32,7 +32,7 @@ from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset, InquiryResultFormset, QuotationItemFormsetFormset
+    QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
@@ -695,29 +695,33 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.goods_code = new_goods_code
                 obj.old_goods_name = obj.goods_name
                 obj.item_editor_user = self.request.user
+                obj.extra_data.request = self.request
                 obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
+                obj.extra_data.request = self.request
                 obj.save()
-            else:
+            elif self.request.POST.get('need_foreign_price_inquiry') and not self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = False
                 obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
+                obj.extra_data.request = self.request
                 obj.save()
-            else:
+            elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = False
+                obj.extra_data.request = self.request
                 obj.save()
 
 
             data = {
-                'lead_time': request.POST.get('lead_time'),
+                'lead_time': request.POST.get('lead_time') or obj.lead_time,
                 'goods_code': request.POST.get('goods_code'),
                 'goods_name': request.POST.get('goods_name'),
-                'has_delay': True if request.POST.get('has_delay') else False,
-                'delay_reason': request.POST.get('delay_reason'),
-                'delay_time': request.POST.get('delay_time') or None,
+                'has_delay': True if request.POST.get('has_delay') else False or obj.has_delay,
+                'delay_reason': request.POST.get('delay_reason') or obj.delay_reason,
+                'delay_time': request.POST.get('delay_time') or obj.delay_time,
             }
             obj_qs.update(**data)
 
@@ -726,6 +730,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             if iqr_form.is_valid():
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
+                iqr_obj.extra_data.request = self.request
                 iqr_obj.save()
         redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
         return redirect(redirect_path)
