@@ -32,7 +32,7 @@ from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset, InquiryResultFormset, QuotationItemFormsetFormset
+    QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
