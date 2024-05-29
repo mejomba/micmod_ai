@@ -11,6 +11,7 @@ from django.utils import timezone
 from comments.forms import CommentsForm
 from extra_data.models import Item
 from inquiry.models import InquiryResult
+from notifications.models import Messages
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -31,7 +32,7 @@ from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset, InquiryResultFormset
+    QuotationItemFormset, InquiryResultFormset, QuotationItemFormsetFormset
 from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
@@ -104,6 +105,19 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
+        # if self.object and self.object.last_work_flow.current_state_name == 'استعلام قیمت':
+        #     Messages.send_message(
+        #         **{
+        #             'creator_user_id': self.object.creator_user_id,
+        #             'user': self.object.last_work_flow.to_user,
+        #             'title': f'{_(self.object.last_work_flow.content_type.name)}| {_(self.object.last_work_flow.state)}',
+        #             'body': f' کاربر {self.object.creator_user.username} فرایند این موضوع را به شما واگذار کرده است.',
+        #             'icon_url': getattr(self.model, 'icon_url', None) or "cube-2",
+        #             'link': f'/{self.object.last_work_flow.content_type.app_label}/{self.object.last_work_flow.content_type.model}/view/{self.object.pk}',
+        #             'content_type': self.object.last_work_flow.content_type,
+        #             'object_id': self.object.pk
+        #         }
+        #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
         if not self.object.is_official:
@@ -866,7 +880,10 @@ class QuotationListDatatable(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = Quotation.get_qs(request)
+        if request.user.base_group == 'trade':
+            qs = Quotation.objects.filter(cancel=True, is_deleted=False)
+        else:
+            qs = Quotation.get_qs(request)
         # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
         qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
         return qs
@@ -901,7 +918,7 @@ class QuotationListDatatable(AjaxDatatableView):
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:
-            row['cancel'] = f'''<span class="text-danger">{'کنسلی -'} </span><span>{cancel_obj.get_comment_title_display() if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
+            row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
         else:
             row['cancel'] = '-'
 
