@@ -30,10 +30,10 @@ $(document).ready(function () {
         const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
         let bazarPriceCodeValue;
-        if (tradePriceCode){
+        if (tradePriceCode && tradePriceCode.options[tradePriceCode.selectedIndex]){
             tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
         }
-        if (bazarPriceCode){
+        if (bazarPriceCode && bazarPriceCode.options[bazarPriceCode.selectedIndex]){
             bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
         }
 
