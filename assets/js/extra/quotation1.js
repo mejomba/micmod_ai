@@ -26,14 +26,14 @@ $(document).ready(function () {
             party_id = -1
         }
 
-        const tradePriceCode = elem.querySelector('#id_trade_price_code')
-        const bazarPriceCode = elem.querySelector('#id_bazar_price_code')
+        const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
+        const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
         let bazarPriceCodeValue;
-        if (tradePriceCode && tradePriceCode == e.target){
+        if (tradePriceCode){
             tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
         }
-        if (bazarPriceCode && bazarPriceCode == e.target){
+        if (bazarPriceCode){
             bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
         }
 
