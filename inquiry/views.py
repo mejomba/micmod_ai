@@ -367,10 +367,12 @@ class InquiryResultListView(BaseView):
         if submit_for_qi and qi_id:
             qi_obj = QuotationItem.objects.filter(pk=qi_id).first()
             if self.request.user.base_group == 'bazar':
-                qi_obj.local_price_inquiry_done = True
+                qi_obj.bazar_price_inquiry_done = True
+                qi_obj.trade_price_code = self.object
                 qi_obj.save()
             elif self.request.user.base_group == 'trade':
                 qi_obj.foreign_price_inquiry_done = True
+                qi_obj.trade_price_code = self.object
                 qi_obj.save()
 
             iqr_obj = qi_obj.quotation_item_rel.first()
