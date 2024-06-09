@@ -481,6 +481,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         comment_input_name = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_content'
         content = request.POST.get(comment_input_name)
         content_type = ContentType.objects.get_for_model(self._meta.model)
+        if title in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'] and not content:
+            content = 'بدون توضیحات'
+
 
         if content:
             comment = Comments.objects.create(
