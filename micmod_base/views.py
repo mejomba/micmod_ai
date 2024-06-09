@@ -878,8 +878,8 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
-        # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
+        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
     ]
@@ -918,7 +918,7 @@ class QuotationListDatatable(AjaxDatatableView):
             reverse('sls:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        row['quotation_state'] = '%s' % obj.get_inquiry_state
+        # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
