@@ -35,7 +35,10 @@
     </style>
 
 <div class="container" dir="rtl">
-    <a href="javascript:window.print()" class="noprint button btn btn-primary mb-5 mt-5" id="id_print_btn">پرینت</a>
+    <div>
+    <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
+        </div>
     <div class="row">
         <div class="col">
         </div>
@@ -178,11 +181,11 @@
         <div class="col border border-dark">
             <div class="row row-cols-2 border-bottom border-dark">
                 <div class="col p-0 border-right border-dark text-right" style="border-left: 1px solid black;">
-                    <p class="border-bottom border-dark my-1">جمع کل</p>
-                    <p class="border-bottom border-dark my-1">اضافات</p>
-                    <p class="border-bottom border-dark my-1">تخفیف</p>
-                    <p class="border-bottom border-dark my-1">مالیات و عوارض</p>
-                    <p class=" my-1">مبلغ پرداختی</p>
+                    <p class="border-bottom border-dark my-1 ps-1">جمع کل</p>
+                    <p class="border-bottom border-dark my-1 ps-1">اضافات</p>
+                    <p class="border-bottom border-dark my-1 ps-1">تخفیف</p>
+                    <p class="border-bottom border-dark my-1 ps-1">مالیات و عوارض</p>
+                    <p class=" my-1 ps-1">مبلغ پرداختی</p>
 
                 </div>
                 <div class="col m-0 p-0 text-center">
@@ -263,7 +266,6 @@
             </p>
         </div>
     </div>
-    <a href="{% url "sls:quotations.print-view" id=data.id %}" class="btn btn-primary mt-4">پرینت پیش فاکتور</a>
 </div>
 <br>
 <br>
@@ -273,41 +275,21 @@
     <script src="{% static 'js/base.js' %}"></script>
 
     <script>
-            let sum = 0
-            let count = 0
-            const allRows = document.querySelectorAll('.item')
-            allRows.forEach(function (item) {
-
-
-                const feePrice = item.querySelector('.fee_en')
-                const quantityEn = item.querySelector('.quantity_en')
-
-                const q = quantityEn.textContent
-                const f = feePrice.textContent
-                if (!isNaN(f) && !isNaN(q)) {
-                    const res = f * q
-
-                    count += res
-
-                    {#sum += res#}
-                }
-                const rowTotalCount = item.querySelector("#id_total_count")
-                rowTotalCount.innerHTML = numberWithCommas(parseFloat(count))
-                {#const sumPrices = document.getElementById("id_sum_total_price")#}
-                {#const sumPrices2 = document.getElementById("id_sum_total_price2")#}
-                {#sumPrices.innerText = numberWithCommas(parseFloat(sum))#}
-                {#sumPrices2.innerText = numberWithCommas(parseFloat(sum))#}
-            })
-
-            {#const printBtnCustomer = document.querySelector('#id_print_btn')#}
-            {#debugger#}
-            {#printBtnCustomer.addEventListener('click', function (e) {#}
-            {#    printBtnCustomer.classList.add("d-none")#}
-            // })
-
-
-
-
-
+            {#let sum = 0#}
+            {#let count = 0#}
+            {#const allRows = document.querySelectorAll('.item')#}
+            {#allRows.forEach(function (item) {#}
+            {#    const feePrice = item.querySelector('.fee_en')#}
+            {#    const quantityEn = item.querySelector('.quantity_en')#}
+            {##}
+            {#    const q = quantityEn.textContent#}
+            {#    const f = feePrice.textContent#}
+            {#    if (!isNaN(f) && !isNaN(q)) {#}
+            {#        const res = f * q#}
+            {#        count += res#}
+            {#    }#}
+            {#    const rowTotalCount = item.querySelector("#id_total_count")#}
+            {#    rowTotalCount.innerHTML = numberWithCommas(parseFloat(count))#}
+            //})
     </script>
 {% endblock extra_js %}
