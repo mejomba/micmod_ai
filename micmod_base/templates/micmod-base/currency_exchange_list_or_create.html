@@ -45,7 +45,7 @@
 
 
 {% block form_footer_extra %}
-    <a href="{% url 'sls:currency_exchange' %}" class="btn btn-outline-dark ms-1">بازگشت به لیست</a>
+    <a href="{% url 'micmod_base:currency_exchange' %}" class="btn btn-outline-dark ms-1">بازگشت به لیست</a>
 {% endblock form_footer_extra %}
 
 {% block extra_js %}
@@ -73,7 +73,7 @@
 
         AjaxDatatableViewUtils.initialize_table(
             $('#currency_exchange_list'),
-            "{% url 'sls:currency_exchange.list.datatable' %}",
+            "{% url 'micmod_base:currency_exchange.list.datatable' %}",
             {
                 processing: true,
                 autoWidth: false,
