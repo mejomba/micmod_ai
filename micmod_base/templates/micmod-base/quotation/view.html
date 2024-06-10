@@ -151,9 +151,9 @@
 {#        {% include "micmod-base/base/create_info_bar.html" %}#}
     </div>
         {% if form.instance.quotation_rel.all.last.id %}
-            <a href="{% url 'sls:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
             {% elif form.instance.quotation_self.id %}
-            <a href="{% url 'sls:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
         {% endif %}
 
         <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
@@ -174,7 +174,7 @@
 {#    </div>#}
 
     <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
-         m-href="{% url 'sls:quotations.print-view' form.instance.id %}"
+         m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
         پرینت پیش فاکتور
     </div>
@@ -208,6 +208,21 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
+    $('._x').on('hidden.bs.modal', function (e) {
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    const modalLG = document.querySelector('#id_kt_empty_modal_lg');
+    if (modalLG){
+        modalLG.addEventListener('click', function (e){
+            if (formFooterContainer) {
+                console.log('hide')
+                  formFooterContainer.classList.add('position-fixed')
+              }
+        })
+    }
+
     $('*[id*=_x]').on('hide.bs.modal', function (e) {
             console.log('hide')
           if (formFooterContainer) {
