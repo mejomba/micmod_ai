@@ -825,3 +825,8 @@ span .select2-selection{
   50%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 0,100% 0,100% 0)}
   75%, 100%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,100% 100%,100% 100%)}
 }
+
+
+.modal-xl {
+    min-width: 1200px !important;
+}
