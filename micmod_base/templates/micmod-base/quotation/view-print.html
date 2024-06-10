@@ -30,7 +30,17 @@
     <div class="page-content">
         <div class="container-fluid">
             <div class="replace-digits">
-                <a href="javascript:window.print()" class="button print">پرینت</a>
+                <a href="javascript:window.print()" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
+                <a href="{% url 'micmod_base:print_customer' id=data.id %}" class="button print btn btn-primary btn-bordered mb-10"
+                   target="_blank">پرینت پیش فاکتور مشتری</a>
+            <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
+                   class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
+                    {% if comments_url_params == '0' %}
+                        بدون نظرات
+                    {% elif comments_url_params == '1' %}
+                        با نظرات
+
+                    {% endif %}</a>
                 <div class="">
                     <div class="font-size-12 mx-5 px-5">
                         <div class="d-flex">
@@ -125,7 +135,7 @@
                                                          id="customer_card">
                                                 {% endif %}
                                                 <div data-key="customer_title"></div>
-                                                <div class="px-2 bg-info p-0 text-black"
+                                                <div class="px-2 bg-light-info p-0 text-black"
                                                      id="customer_name">{{ customer.name }}</div>
                                                 </div>
 
@@ -158,7 +168,7 @@
                         <thead>
                         <tr class="bg-secondary text-white bold text-center replace-digits">
                             <th scope="col">ردیف</th>
-                            <th scope="col">شرح مشتری</th>
+{#                            <th scope="col">شرح مشتری</th>#}
                             <th scope="col">کالا</th>
                             <th scope="col">تعداد/ موجودی</th>
                             <th scope="col">سابقه فروش</th>
@@ -181,7 +191,7 @@
                         </tbody>
                         <tfoot class="bg-secondary replace-digits">
                         <tr>
-                            <td class="w-70 text-end bold " {% if with_comments == '1' %} colspan="9" {% else %}
+                            <td class="w-70 text-end bold " {% if with_comments == '1' %} colspan="8" {% else %}
                                 colspan="8" {% endif %}>جمع کل: <span class="ms-19 " id="id_sum_total_price"></span>
                             </td>
                         </tr>
@@ -191,15 +201,7 @@
             </div>
             <!-- End Form Layout -->
         </div>
-        <a href="{% url "sls:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
-           class="px-5 mx-5 btn btn-primary">
-            {% if comments_url_params == '0' %}
-                بدون نظرات
-            {% elif comments_url_params == '1' %}
-                با نظرات
 
-            {% endif %}</a>
-    <a href="{% url 'sls:print_customer' id=data.id %}" class="btn btn-light-primary" target="_blank">پرینت پیش فاکتور مشتری</a>
     </div> <!-- container-fluid -->
     <!-- End Page-content -->
 </div>
