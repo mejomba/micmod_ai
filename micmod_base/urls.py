@@ -2,7 +2,7 @@ from django.urls import path, re_path
 
 from .views import *
 
-app_name = "sls"
+app_name = "micmod_base"
 urlpatterns = [
     # Ecommerce
     path(

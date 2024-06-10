@@ -84,7 +84,7 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
-    absolute_url_update = 'sls:quotations.view'
+    absolute_url_update = 'micmod_base:quotations.view'
 
     @classmethod
     def get_qs(cls, request):

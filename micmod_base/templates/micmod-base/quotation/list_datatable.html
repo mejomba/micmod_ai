@@ -27,8 +27,8 @@
 
     <div class="border rounded mb-5 p-3">
         <span>استفاده از فیلتر</span>
-        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-        <a href="{% url 'sls:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+        <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
     </div>
 
         <!-- ============================================================== -->
@@ -65,7 +65,7 @@
         const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
             $('#quotation_list'),
-            "{% url 'sls:quotation.list.datatable' %}",
+            "{% url 'micmod_base:quotation.list.datatable' %}",
             {
                 processing: true,
                 autoWidth: false,
