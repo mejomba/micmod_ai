@@ -344,7 +344,8 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        context['object_logs'] = ChangeLog.get_log(self.object)
+        # context['object_logs'] = ChangeLog.get_log(self.object)
+        # context['object_logs'] = []
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                       "constraint": {
@@ -497,7 +498,7 @@ class BaseView(UserPassesTestMixin,
             old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
             if getattr(old_obj, 'cancel', None):
                 if old_obj.cancel:
-                    return HttpResponseRedirect(reverse_lazy('sls:quotations.view', kwargs={'pk': old_obj.pk}))
+                    return HttpResponseRedirect(reverse_lazy('micmod_base:quotations.view', kwargs={'pk': old_obj.pk}))
             if old_obj:
                 old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
@@ -1089,8 +1090,15 @@ class BaseCustomListView(BaseCustomView,ListView):
         return super().get(self, request, *args, **kwargs)
 
 
-def ajax_change_logs(request, ctt_id, obj_id, *args, **kwargs):
-    change_log = ChangeLog.objects.filter(object_id=obj_id, content_type_id=ctt_id)
+def ajax_change_logs(request, *args, **kwargs):
+    object_id = kwargs.get('object_id')
+    app_name =  kwargs.get('app_name')
+    model_name = kwargs.get('model_name')
+    from django.apps import apps
+    x = apps.get_model(app_name, model_name)
+    ctt =ContentType.objects.get_for_model(x).pk
+    # ctt = ContentType.objects.filter(app_label=app_name, model=model_name)
+    change_log = ChangeLog.objects.filter(object_id=object_id, content_type=ctt)
     context = {'logs': change_log}
-    res = render_to_string(template_name='changelog/changelog_popup.html', context=context)
+    res = render_to_string(template_name='changelog/changelog.html', context=context)
     return JsonResponse({'res': res})
