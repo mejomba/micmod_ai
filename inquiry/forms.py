@@ -7,7 +7,7 @@ from micmod_base.base import Currency
 from tools.utils import show_error, c_get
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
     InquiryResultVariant
-from extra_data.models import Item
+from extra_data.models import Item, PriceSettings
 
 from translator import get_text as _
 
@@ -326,6 +326,11 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SalesPriceInqueryLogForm, self).__init__(*args, **kwargs)
+        request = None
+        if c := self.initial.get('constraint'):
+            request = c.get('request')
+        elif c := self.initial.get('request'):
+            request = c
         self.fields['sku'].widget = forms.HiddenInput()
         self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.fields['grade'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
@@ -335,6 +340,15 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
             else:
                 field.widget.attrs['onchange'] = "refresh_data(event)"
 
+        if request and not request.user.is_superuser:
+            ps = PriceSettings.objects.none()
+            for user_group in request.user.groups.values_list('name', flat=True):
+                ps |= PriceSettings.objects.filter(Q(permission_json__group__icontains=user_group))
+            ps |= PriceSettings.objects.filter(Q(permission_json__user__icontains='all') | Q(permission_json__user__icontains=request.user.username))
+            self.fields['price_setting'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100 form-control'}),
+                                                                         queryset=ps,
+                                                                         )
+            self.fields['price_setting'].widget.attrs['onchange'] = "refresh_data(event)"
 
 class InquiryResultForm(CustomBaseModelForm):
 
