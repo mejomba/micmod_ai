@@ -533,7 +533,7 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = self.form_class(initial={'currency': 1})
+        context['form'] = self.form_class(initial={'currency': 1, 'request':self.request})
         return context
 
 
@@ -565,7 +565,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
-                                             'payment_method': payment_method, 'grade': grade
+                                             'payment_method': payment_method, 'grade': grade,
+                                             'request': request
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')

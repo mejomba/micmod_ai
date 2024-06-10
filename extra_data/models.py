@@ -183,6 +183,7 @@ class PriceSettings(AbsBaseModel):
                                           ,default=CalculationMethod.Old)
     max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
     delivery_in_china = models.BooleanField(default=False, verbose_name=_('delivery_in_china'))
+    permission_json = models.JSONField(null=True, blank=True, verbose_name=_('permission_json'))
 
     # auto_complete = 'title'
     @staticmethod
