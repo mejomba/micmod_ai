@@ -649,7 +649,12 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         quotations_record_lst = quotations_record_lst.order_by('-quotation_id', 'id')
 
-        for qi in quotations_record_lst:
+        paginator = Paginator(quotations_record_lst, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        for qi in page_obj.object_list:
+        #for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
                 "constraint": {
                     "wf_access": True,
@@ -663,12 +668,13 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             form.enable = False
             forms.append(form)
 
-        paginator = Paginator(forms, 10)
-        page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
+        #paginator = Paginator(forms, 10)
+        #page_number = request.GET.get("page")
+        #page_obj = paginator.get_page(page_number)
 
         d = dict()
-        for item in page_obj:
+        #for item in page_obj:
+        for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
             d[item.instance.quotation.pk].append(item)
