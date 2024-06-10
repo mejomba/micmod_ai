@@ -129,7 +129,7 @@ class BaseManager(models.Manager):
             quotations_record_lst = qry
 
         if kwargs.get('quotation') and q == 'active':
-            return [x for x in quotations_record_lst if not x.sepidar_number]
+            return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
         else:
             return [x for x in quotations_record_lst if x]
 
