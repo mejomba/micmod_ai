@@ -83,7 +83,7 @@
               "icon": "message-add",
               "title": "create",
               "path_key": "quotations/create",
-              "link": "sls:quotations.create"
+              "link": "micmod_base:quotations.create"
             },
             {
               "icon": "burger-menu",
@@ -128,7 +128,7 @@
           },
           "title": "currency-exchange",
           "icon": "dollar",
-          "link": "sls:currency_exchange",
+          "link": "micmod_base:currency_exchange",
           "path_key": "currency/exchange/"
         }
       ]
