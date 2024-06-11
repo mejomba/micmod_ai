@@ -84,7 +84,7 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
-    absolute_url_update = 'sls:quotations.view'
+    absolute_url_update = 'micmod_base:quotations.view'
 
     @classmethod
     def get_qs(cls, request):
@@ -297,6 +297,36 @@ class Quotation(SLSDoc):
         else:
             return
 
+    @property
+    def sum_prices(self):
+        qis = self.quotation.all()
+        sum_price = 0
+        for qi in qis:
+            quantity = qi.quantity
+            fee = qi.fee
+            price = quantity * fee
+            sum_price += price
+            if sum_price is None:
+                return 0
+        return sum_price
+
+    @property
+    def payment(self):
+        sum_price = self.sum_prices
+
+        tax = self.tax_amount
+        additions = self.addition or 0
+        if self.self_discount:
+            discount = sum_price - ((self.self_discount / 100) * sum_price)
+        else:
+            discount = 0
+
+        total = sum_price + additions - discount + tax
+
+        if self.currency_ref.title_en == 'Rial':
+            return int(sum_price), int(additions), int(discount), int(tax), int(total)
+        return sum_price, additions, discount, tax, total
+
 
 class QuotationItem(BaseModel):
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
@@ -470,7 +500,7 @@ class QuotationItem(BaseModel):
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
-            return 0
+            return self.final_price or 0
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price

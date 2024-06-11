@@ -36,7 +36,7 @@
 {#                        <span>{{ form_lists.0.instance.quotation.expiration_date }}</span>#}
 {#                    </div>#}
                     <div class="col">
-                        <a class="btn btn-link mb-1" href="{% url 'sls:quotations.view' form_lists.0.instance.quotation.pk %}" target="_blank">
+                        <a class="btn btn-link mb-1" href="{% url 'micmod_base:quotations.view' form_lists.0.instance.quotation.pk %}" target="_blank">
                             مشاهده پیش فاکتور
                             {{ form_lists.0.instance.quotation.pk }}
                         </a>
@@ -203,7 +203,7 @@
     const inquiryReportBtn = document.querySelectorAll("#id_inquiry_report")
     inquiryReportBtn.forEach(function (item) {
         item.addEventListener('click',function (e){
-        let new_url = "{% url 'sls:inquiry_report' %}"
+        let new_url = "{% url 'micmod_base:inquiry_report' %}"
         $.ajax({
             type: 'GET',
             url: new_url,
