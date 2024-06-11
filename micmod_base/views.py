@@ -240,7 +240,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': 0,
+                        'Addition': self.object.addition if idx == 1 else 0,
                     }
                     quotation_items.append(qi_dict)
                 #
@@ -258,7 +258,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Discount': self.object.self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
-                    'Addition': self.object.addition or 0,
+                    'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
