@@ -37,7 +37,7 @@
 <div class="container" dir="rtl">
     <div>
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
-    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
+    <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
         </div>
     <div class="row">
         <div class="col">
@@ -189,11 +189,23 @@
 
                 </div>
                 <div class="col m-0 p-0 text-center">
-                    <p class="border-bottom border-dark my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>
-                    <p class="border-bottom border-dark my-1">{{ data.addition|default_if_none:0 }}</p>
-                    <p class="border-bottom border-dark my-1">{{ data.self_discount|default_if_none:0 }}</p>
-                    <p class="border-bottom border-dark my-1" >{{ data.tax_amount|default_if_none:0|floatformat:0|intcomma }}</p>
-                    <p class=" my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>
+                {% with data.payment as payment %}
+{#                    <p class="border-bottom border-dark my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
+{#                    <p class="border-bottom border-dark my-1">{{ data.addition|default_if_none:0 }}</p>#}
+{#                    <p class="border-bottom border-dark my-1">{{ data.self_discount|default_if_none:0 }}</p>#}
+{#                    <p class="border-bottom border-dark my-1" >{{ data.tax_amount|default_if_none:0|floatformat:0|intcomma }}</p>#}
+{#                    {% if data.addition %}#}
+{#                    	<p class=" my-1" >{{ data.sum_prices|add:data.addition|intcomma }}</p>#}
+{#                        {% else %}#}
+{#                        <p class=" my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
+{#                    {% endif %}#}
+
+                    <p class="border-bottom border-dark my-1" >{{ payment.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
+                    <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>
+                    <p class="border-bottom border-dark my-1" >{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class=" my-1" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                {% endwith %}
                 </div>
             </div>
         </div>

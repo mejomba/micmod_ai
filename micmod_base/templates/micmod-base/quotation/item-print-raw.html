@@ -35,7 +35,7 @@
 <!-- FEE -->
     <td class="font-size-10 replace-digits">
         <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
-        <div class="fee_en " name="fee">{{ form.instance.price|default_if_none:0|floatformat:2|intcomma}}</div>
+        <div class="fee_en " name="fee">{{ form.instance.price|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
     </td>
 
 </tr>
