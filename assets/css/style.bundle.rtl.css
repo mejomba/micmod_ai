@@ -8334,6 +8334,12 @@ textarea.form-control-lg {
 .mw-1000px {
   max-width: 1000px !important;
 }
+.mw-1200px {
+  max-width: 1200px !important;
+}
+.mw-1400px {
+  max-width: 1400px !important;
+}
 
 .vw-100 {
   width: 100vw !important;

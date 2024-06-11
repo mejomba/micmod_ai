@@ -46,6 +46,8 @@ from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 from .forms import PendingFormFilter
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 # from core.mixins import DuplicateMixin
 # from workflow.forms import WorkFlowModelForm
 # import datetime
@@ -90,7 +92,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     related_name_fk = 'quotation'
 
     def get_success_url(self):
-        return reverse_lazy('sls:quotations.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         if self.object is None:
@@ -240,7 +242,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': 0,
+                        'Addition': self.object.addition if idx == 1 else 0,
                     }
                     quotation_items.append(qi_dict)
                 #
@@ -258,7 +260,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Discount': self.object.self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
-                    'Addition': self.object.addition or 0,
+                    'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
@@ -297,12 +299,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
+        context['app_name'] = self.request.resolver_match.app_name
 
         related_obj = getattr(self.object, f'{self.related_name_fk}', None)
-        context['detail_logs'] = []
-        if related_obj:
-            for item in related_obj.all():
-                context['detail_logs'].append(item.change_logs.all())
+        # context['detail_logs'] = []
+        # if related_obj:
+        #     for item in related_obj.all():
+        #         context['detail_logs'].append(item.change_logs.all())
         # context['detail_logs'].reverse()
         if self.object:
             qis = self.object.quotation.all()
@@ -352,7 +355,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
 
 def print_view(request,id=-1):
-    template_name = 'micmod-base/quotation/view-print.html'
+    customer_print = reverse("micmod_base:print_customer", args=[id])
+    if request.META.get('PATH_INFO') == customer_print:
+        template_name = 'micmod-base/quotation/view-print-raw.html'
+    else:
+        template_name = 'micmod-base/quotation/view-print.html'
     comments_url_params = '0'
     with_comments = '1'
     if request.GET.get('comments_url_params') == '1':
@@ -391,7 +398,7 @@ class CurrencyExchangeView(LoginRequiredMixin, BaseView):
     model = CurrencyExchange
     form_class = CurrencyExchangeForm
     template_name = 'micmod-base/currency_exchange_list_or_create.html'
-    success_url = reverse_lazy('sls:currency_exchange')
+    success_url = reverse_lazy('micmod_base:currency_exchange')
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
@@ -439,7 +446,7 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['currency'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('sls:currency_exchange', args=(obj.id,)),
+                      reverse('micmod_base:currency_exchange', args=(obj.id,)),
                       obj.currency if obj.currency else '_'
                     )
 
@@ -583,7 +590,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 
@@ -738,7 +745,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 iqr_obj.quotation_item = obj
                 iqr_obj.extra_data.request = self.request
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 
@@ -853,7 +860,7 @@ class MyQuotationItemFormPendingToday(LoginRequiredMixin, View):
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 def get_sku(request):
@@ -903,7 +910,7 @@ class QuotationListDatatable(AjaxDatatableView):
     def customize_row(self, row, obj):
 
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('sls:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
         )
 
@@ -921,7 +928,7 @@ class QuotationListDatatable(AjaxDatatableView):
         row['inquiry_status'] = out
 
         row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('sls:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
         # row['quotation_state'] = '%s' % obj.get_inquiry_state
