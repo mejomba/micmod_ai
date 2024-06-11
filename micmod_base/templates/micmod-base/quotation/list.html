@@ -29,8 +29,8 @@
                                     <div class="card-body">
                                     <div class="border rounded p-3">
                                         <span>استفاده از فیلتر</span>
-                                        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-                                        <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>
+                                        <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+                                        <a href="{% url 'micmod_base:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>
 {#                                        <div class="d-flex mt-2 align-items-center w-25">#}
 {#                                            <label for="cars" class="mx-2">برای:</label>#}
 {#                                            <select name="user_select" id="user_select" class="form-select">#}
@@ -65,8 +65,8 @@
                                                     {% for quotation in quotations %}
                                                         {% get_customer quotation.customer_code as customer %}
                                                     <tr>
-                                                        <th><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.id}}</a></th>
-                                                        <td><a href="{% url 'sls:quotations.view' quotation.id %} ">{{ quotation.title}}</a></td>
+                                                        <th><a href="{% url 'micmod_base:quotations.view' quotation.id %} ">{{ quotation.id}}</a></th>
+                                                        <td><a href="{% url 'micmod_base:quotations.view' quotation.id %} ">{{ quotation.title}}</a></td>
                                                         <td>{{ customer.name }}</td>
                                                         <td >{{ quotation.created_date|to_jalali:'%Y/%m/%d - %H:%M:%S'}}</td>
                                                         <td>{{ quotation.last_update_date|to_jalali:'%Y/%m/%d - %H:%M:%S' }}</td>

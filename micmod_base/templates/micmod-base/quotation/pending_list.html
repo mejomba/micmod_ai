@@ -32,12 +32,12 @@
 
                                     <div class="border rounded p-3">
                                         <strong>استفاده از فیلتر</strong>
-                                        <a href="{% url 'sls:quotationitem.pending' %}?q=all" type="button" class="btn btn-info ms-3">همه</a>
-                                        <a href="{% url 'sls:quotationitem.pending' %}?q=local" type="button" class="btn btn-success mx-3">داخلی</a>
-                                        <a href="{% url 'sls:quotationitem.pending' %}?q=foreign" type="button" class="btn btn-primary">خارجی</a>
+                                        <a href="{% url 'micmod_base:quotationitem.pending' %}?q=all" type="button" class="btn btn-info ms-3">همه</a>
+                                        <a href="{% url 'micmod_base:quotationitem.pending' %}?q=local" type="button" class="btn btn-success mx-3">داخلی</a>
+                                        <a href="{% url 'micmod_base:quotationitem.pending' %}?q=foreign" type="button" class="btn btn-primary">خارجی</a>
 
-{#                                        <a href="{% url 'sls:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>#}
-{#                                        <a href="{% url 'sls:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>#}
+{#                                        <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>#}
+{#                                        <a href="{% url 'micmod_base:quotations.list' %}?q=all" class="btn btn-secondary mx-1">همه</a>#}
                                     </div>
                                         <h4 class="card-title" data-key="t-quotation">QuotationItem</h4>
 
@@ -61,8 +61,8 @@
                                                     {% for quotationitem in quotationitems %}
                                                         {% get_customer quotationitem.quotation.customer_code as customer %}
                                                     <tr>
-                                                        <th><a href="{% url 'sls:quotations.view' quotationitem.quotation.id %} ">{{ quotationitem.id }}</a></th>
-                                                    <th><a href="{% url 'sls:quotations.view' quotationitem.quotation.id %} ">{{ quotationitem.quotation.id }}</a></th>
+                                                        <th><a href="{% url 'micmod_base:quotations.view' quotationitem.quotation.id %} ">{{ quotationitem.id }}</a></th>
+                                                    <th><a href="{% url 'micmod_base:quotations.view' quotationitem.quotation.id %} ">{{ quotationitem.quotation.id }}</a></th>
                                                         <td>{{ quotationitem.quantity}}</td>
                                                         <td>{{ customer.name }}</td>
                                                         <td >{{ quotationitem.created_date|to_jalali:'%Y/%m/%d - %H:%M:%S'}}</td>

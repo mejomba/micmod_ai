@@ -12,10 +12,10 @@
         {{ forloop.counter }}
     </td>
 <!-- DEFINING CUSTOMER -->
-    <td class="">
-        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>
-        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>
-    </td>
+{#    <td class="">#}
+{#        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>#}
+{#        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>#}
+{#    </td>#}
 <!-- GOODS NAME AND CODE -->
     <td class="">
         <div class="bold font-size-12 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
@@ -31,36 +31,50 @@
         </div>
     </td>
 <!-- SALE HISTORY -->
-    <td class="font-size-12 replace-digits">
-        <div class="d-flex ms-5 me-5">
-            <div class="mx-1 persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class="mx-2  text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|intcomma }}</div>
-            <div class="mx-2 persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+    <td class="font-size-12 ">
+        <div class="row row-cols-3 text-left">
+            <div class="persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
+            <div class="persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
         </div>
-        <div class="d-flex border-top ">
-            <div class=" mx-2 persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class=" mx-2 text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|intcomma }}</div>
-            <div class=" mx-2 persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        <div class="row row-cols-3 border-top text-left">
+            <div class="persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
+            <div class="text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
+            <div class="persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
         </div>
 {#        <br class="border-dark w-100"/>#}
-        <div class="d-flex ">
-            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class=" px-1 text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        <div class="row row-cols-3 text-left">
+            <div class="text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:'-4g' }}</div>
+            <div class="text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:'-4g' }}</div>
+            <div class="text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:'-4g' }}</div>
         </div>
     </td>
 <!-- PRICE INQUIRY -->
     <td class=" font-size-12 replace-digits">
-        <div class="d-flex ">
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        <div class="row row-cols-3 text-left">
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
-
-        <div class="d-flex border-top">
-            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+{#        <div class="d-flex ">#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#        </div>#}
+        <div class="row row-cols-3 border-top text-left">
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_3|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_3|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_3|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+        </div>
+{#        <div class="d-flex border-top">#}
+{#            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#        </div>#}
+        <div class="row row-cols-3 border-top text-left">
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+            <div class="col persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
         </div>
 
         <div class="d-flex border-top">
@@ -75,10 +89,8 @@
     </td>
 
 <!-- LEAD TIME -->
- <td class="">
-        <div class="">
-            <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
-        </div>
+ <td class="align-middle">
+     <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
  </td>
 <!-- FINAL PRICE -->
 <td class=" font-size-12 replace-digits">
