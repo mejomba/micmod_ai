@@ -322,35 +322,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        # context['full_copy'] = True
-
-        # if 'sales_admin' in user_groups or self.request.user.is_superuser:
-        #     if self.request.GET.get('duplicate'):
-        #         context['duplicate'] = False
-        #         context['submit_duplicate'] = True
-        #         context['workflow_form'] = WorkFlowModelForm(
-        #             content_type_model=self.model,
-        #             initial={
-        #                     'wf_access': True,
-        #                     'from_user': self.request.user,
-        #                     'to_user': self.request.user,
-        #                     'state': self.flow_config.get('flow_state_list')[0],
-        #                     'state_index': 0,
-        #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-        #                     'action': self.flow_config.get('flow_action'),
-        #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-        #                         days=self.flow_config.get('flow_deadline')[0]),
-        #                     'flow_config': self.flow_config,
-        #                     'create': True
-        #                 },
-        #             current_user=self.request.user,
-        #         )
-        #         context['flow'] = None
-        #         context['flow_state_index'] = 0
-        #
-        #     else:
-        #         context['duplicate'] = True
-        #         context['submit_duplicate'] = False
+        # for f in context['formset']:
+        #     if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+        #         f.has_alt_code = True
         return context
 
 
