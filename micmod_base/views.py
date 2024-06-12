@@ -124,7 +124,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             return res
         if not self.object.is_official:
             self.object.official_value = 0
-            self.object.save()
+            # self.object.save()
 
         new_quotation = None
         try:
@@ -132,7 +132,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
-                self.object.save()
+                # self.object.save()
             elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method, save=True)
@@ -273,7 +273,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-                self.object.save()
+                # self.object.save()
                 if api_res[0] == 400:
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
@@ -284,6 +284,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         flow_object.delete()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
+            self.object.save()
         except Exception as e:
             pass
             print('rol back ....')
