@@ -260,7 +260,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Discount': self.object.self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
+<<<<<<< HEAD
                     'Addition': 0,
+=======
+                    'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
+>>>>>>> bc2c4a8d6296c100f535f6ad64bbdc47bcfa6a5f
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
@@ -633,7 +637,12 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         quotations_record_lst = quotations_record_lst.order_by('-quotation_id', 'id')
 
-        for qi in quotations_record_lst:
+        paginator = Paginator(quotations_record_lst, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        for qi in page_obj.object_list:
+        #for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
                 "constraint": {
                     "wf_access": True,
@@ -647,12 +656,13 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             form.enable = False
             forms.append(form)
 
-        paginator = Paginator(forms, 10)
-        page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
+        #paginator = Paginator(forms, 10)
+        #page_number = request.GET.get("page")
+        #page_obj = paginator.get_page(page_number)
 
         d = dict()
-        for item in page_obj:
+        #for item in page_obj:
+        for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
             d[item.instance.quotation.pk].append(item)
@@ -862,8 +872,8 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
-        # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
+        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
     ]
@@ -902,7 +912,7 @@ class QuotationListDatatable(AjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        row['quotation_state'] = '%s' % obj.get_inquiry_state
+        # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
