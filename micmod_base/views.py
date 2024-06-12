@@ -242,7 +242,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': 0,
+                        'Addition': self.object.addition,
                     }
                     quotation_items.append(qi_dict)
                 #
@@ -267,6 +267,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 #
                 api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
                                            method=Urls.pos_quotations.method, data=d)
+                api_log_obj = api_res[2]
+                api_log_obj.extra_data.request = self.request if api_log_obj else ''
+                api_log_obj.save()
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
