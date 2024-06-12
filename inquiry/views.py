@@ -319,6 +319,7 @@ class InquiryResultListView(BaseView):
         if self.request.GET.get('pk'):
             context['submit_copy'] = False
             context['form'].instance.submit_copy = False
+        context['app_name'] = self.request.resolver_match.app_name
 
         # if cache.get(f'{self.request.user}__submit/copy'):
         #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()

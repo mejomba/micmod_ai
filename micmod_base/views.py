@@ -267,6 +267,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 #
                 api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
                                            method=Urls.pos_quotations.method, data=d)
+                api_log_obj = api_res[2]
+                api_log_obj.extra_data.request = self.request if api_log_obj else ''
+                api_log_obj.save()
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
@@ -322,35 +325,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        # context['full_copy'] = True
-
-        # if 'sales_admin' in user_groups or self.request.user.is_superuser:
-        #     if self.request.GET.get('duplicate'):
-        #         context['duplicate'] = False
-        #         context['submit_duplicate'] = True
-        #         context['workflow_form'] = WorkFlowModelForm(
-        #             content_type_model=self.model,
-        #             initial={
-        #                     'wf_access': True,
-        #                     'from_user': self.request.user,
-        #                     'to_user': self.request.user,
-        #                     'state': self.flow_config.get('flow_state_list')[0],
-        #                     'state_index': 0,
-        #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-        #                     'action': self.flow_config.get('flow_action'),
-        #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-        #                         days=self.flow_config.get('flow_deadline')[0]),
-        #                     'flow_config': self.flow_config,
-        #                     'create': True
-        #                 },
-        #             current_user=self.request.user,
-        #         )
-        #         context['flow'] = None
-        #         context['flow_state_index'] = 0
-        #
-        #     else:
-        #         context['duplicate'] = True
-        #         context['submit_duplicate'] = False
+        for f in context['formset']:
+            if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+                f.has_alt_code = True
         return context
 
 

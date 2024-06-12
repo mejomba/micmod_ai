@@ -496,6 +496,15 @@ class BaseView(UserPassesTestMixin,
         if form.is_valid():
             """save main form"""
             old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
+            if 'uncanceled' in self.request.POST:
+                old_obj.cancel = False
+                old_obj.extra_data.request = self.request
+                old_obj.save()
+                # old_obj.save_comment(request=self.request)
+                self.object.cancel = False
+                self.object.extra_data.request = self.request
+                self.object.save()
+                return HttpResponseRedirect(self.get_success_url())
             if getattr(old_obj, 'cancel', None):
                 if old_obj.cancel:
                     return HttpResponseRedirect(reverse_lazy('micmod_base:quotations.view', kwargs={'pk': old_obj.pk}))

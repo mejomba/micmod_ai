@@ -555,6 +555,7 @@ class APILogs(core.models.AbsBaseModel):
     api_method = models.CharField(verbose_name=_('api_method'), max_length=20)
     api_payload = models.JSONField(verbose_name=_('api_payload'),null=True,blank=True)
     api_result = models.JSONField(verbose_name=_('api_result'))
+    api_response = models.JSONField(verbose_name=_('api_response'), null=True, blank=True)
 
     @staticmethod
     def new_call( url, device: Device = Device.objects.all().first(), method: Method = Method.Get, data=None, save=True):
@@ -582,9 +583,12 @@ class APILogs(core.models.AbsBaseModel):
             log_data['api_result'] = f'delete quotation {url.split("/")[-1]}'
         else:
             log_data['api_result'] = response.reason
-        log = APILogs.objects.create(**log_data) if save else None
+
         try:
             response_json = response.json()
         except Exception as e:
-            response_json = {}
+            response_json = {'res': 'not_json'}
+
+        log_data['api_response'] = response_json
+        log = APILogs.objects.create(**log_data) if save else None
         return response.status_code, response_json, log
