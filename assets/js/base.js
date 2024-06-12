@@ -341,20 +341,36 @@ function copyToClipboard(elem) {
     })
 
 
-    const emptyModal = document.getElementById('id_kt_empty_modal')
-    emptyModal.addEventListener('hidden.bs.modal', function (e) {
-        document.querySelector('#id-empty-modal-body').innerHTML = ''
-    })
+        const emptyModal = document.getElementById('id_kt_empty_modal')
+        if (emptyModal){
+            emptyModal.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body').innerHTML = ''
+            })
+        }
 
         const emptyModalLG = document.getElementById('id_kt_empty_modal_lg')
-    emptyModalLG.addEventListener('hidden.bs.modal', function (e) {
-        document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
-    })
+        if (emptyModalLG){
+            emptyModalLG.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
+        })
+        }
 
         const emptyModalSM = document.getElementById('id_kt_empty_modal_sm')
-    emptyModalSM.addEventListener('hidden.bs.modal', function (e) {
-        document.querySelector('#id-empty-modal-body-sm').innerHTML = ''
-    })
+        if (emptyModalSM) {
+            emptyModalSM.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body-sm').innerHTML = ''
+        })
+        }
+
+        const modalLG = document.querySelector('#id_kt_empty_modal_lg');
+        if (modalLG){
+            modalLG.addEventListener('click', function (e){
+                if (formFooterContainer) {
+                    console.log('hide')
+                      formFooterContainer.classList.add('position-fixed')
+                  }
+            })
+        }
 
     }
 

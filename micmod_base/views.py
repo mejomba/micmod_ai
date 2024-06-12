@@ -124,7 +124,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             return res
         if not self.object.is_official:
             self.object.official_value = 0
-            self.object.save()
+            # self.object.save()
 
         new_quotation = None
         try:
@@ -132,7 +132,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
-                self.object.save()
+                # self.object.save()
             elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method, save=True)
@@ -242,7 +242,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': self.object.addition if idx == 1 else 0,
+                        'Addition': self.object.addition if (idx == 1 and self.object.addition) else  0,
                     }
                     quotation_items.append(qi_dict)
                 #
@@ -267,10 +267,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 #
                 api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
                                            method=Urls.pos_quotations.method, data=d)
+                api_log_obj = api_res[2]
+                api_log_obj.extra_data.request = self.request if api_log_obj else ''
+                api_log_obj.save()
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-                self.object.save()
+                # self.object.save()
                 if api_res[0] == 400:
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
@@ -281,6 +284,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         flow_object.delete()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
+            self.object.save()
         except Exception as e:
             pass
             print('rol back ....')
@@ -322,35 +326,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        # context['full_copy'] = True
-
-        # if 'sales_admin' in user_groups or self.request.user.is_superuser:
-        #     if self.request.GET.get('duplicate'):
-        #         context['duplicate'] = False
-        #         context['submit_duplicate'] = True
-        #         context['workflow_form'] = WorkFlowModelForm(
-        #             content_type_model=self.model,
-        #             initial={
-        #                     'wf_access': True,
-        #                     'from_user': self.request.user,
-        #                     'to_user': self.request.user,
-        #                     'state': self.flow_config.get('flow_state_list')[0],
-        #                     'state_index': 0,
-        #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-        #                     'action': self.flow_config.get('flow_action'),
-        #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-        #                         days=self.flow_config.get('flow_deadline')[0]),
-        #                     'flow_config': self.flow_config,
-        #                     'create': True
-        #                 },
-        #             current_user=self.request.user,
-        #         )
-        #         context['flow'] = None
-        #         context['flow_state_index'] = 0
-        #
-        #     else:
-        #         context['duplicate'] = True
-        #         context['submit_duplicate'] = False
+        for f in context['formset']:
+            if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+                f.has_alt_code = True
         return context
 
 
