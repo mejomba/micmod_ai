@@ -455,7 +455,8 @@ class QuotationItem(BaseModel):
         return d
 
     def pre_process_on_post_method(self, data=None):
-        obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        # obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        obj = self if self.pk else None
         self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
         self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
         self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
