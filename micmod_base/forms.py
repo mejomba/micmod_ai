@@ -344,9 +344,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         user_groups = request.user.groups.values_list('name', flat=True) if request else None
         if request and not request.user.is_superuser:
             if 'trade_user' not in user_groups:
-                self.make_disable(['foreign_price_inquiry_done', 'trade_price_code', 'lead_time'])
+                self.make_disable(['foreign_price_inquiry_done', 'lead_time']) # 'trade_price_code',
             if 'bazar_user' not in user_groups:
-                self.make_disable(['local_price_inquiry_done', 'bazar_price_code'])
+                self.make_disable(['local_price_inquiry_done', ]) #'bazar_price_code'
         try:
             x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
             self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
@@ -431,6 +431,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'goods_q_last_price': forms.HiddenInput(),
             'goods_q_total_sales': forms.HiddenInput(),
             'itemid': forms.HiddenInput(),
+            'bazar_price_code': forms.HiddenInput(),
+            'trade_price_code': forms.HiddenInput(),
             # 'price_method': forms.RadioSelect(attrs={"class": "price_method","m-data":"price_method"}),
             # 'delivery_time': forms.RadioSelect(),
             # 'goods_name': forms.Textarea(attrs={'class': 'goods_name','hidden': False, "rows": 1}),
