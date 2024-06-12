@@ -260,11 +260,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Discount': self.object.self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
-<<<<<<< HEAD
-                    'Addition': 0,
-=======
                     'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
->>>>>>> bc2c4a8d6296c100f535f6ad64bbdc47bcfa6a5f
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
