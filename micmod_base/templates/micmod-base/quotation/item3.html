@@ -49,9 +49,9 @@
                     <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>
                 {% endif %}
             </div>
-{#            {% if form_s.has_alt_code %}#}
-{#                <span class="bg-info text-white px-2 rounded position-absolute" style="left: 0">آیتم مشابه دارد</span>#}
-{#            {% endif %}#}
+            {% if form_s.has_alt_code %}
+                <span class="bg-info text-white px-2 py-1 rounded position-absolute font-size-12" style="left: 0">آیتم مشابه دارد</span>
+            {% endif %}
         </div>
         <div class="row answer m-0">
             <div class="col-lg-2 border rounded">

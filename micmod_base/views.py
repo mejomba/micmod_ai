@@ -325,9 +325,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        # for f in context['formset']:
-        #     if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
-        #         f.has_alt_code = True
+        for f in context['formset']:
+            if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+                f.has_alt_code = True
         return context
 
 
