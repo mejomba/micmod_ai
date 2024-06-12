@@ -6,6 +6,7 @@ from translator import get_text as _
 
 class Comments(BaseContentType):
     Comment_CHOICES = (
+        # cancel
         ('C', 'کنسلی'),
         ('D', 'تاخیر در استعلام بازرگانی'),
         ('E', 'تاخیر در استعلام تدارکات داخل'),
@@ -15,9 +16,12 @@ class Comments(BaseContentType):
         ('I', 'زمان تحویل استعلام خارج'),
         ('J', 'پیدا نشدن کالای مد نظر مشتری'),
         ('K', 'عدم پاسخگویی مشتری نسبت به سوالات مطرح شده'),
+        ('P', 'برآورد قیمت'),
+        # trade
         ('L', 'قیمت کمتر'),
         ('M', 'آیتم جایگزین'),
         ('N', 'کیفیت بهتر'),
+        # other
         ('O','موارد دیگر')
     )
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))

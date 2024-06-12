@@ -42,6 +42,7 @@ class CommentsForm(CustomBaseModelForm):
                 ('I', 'زمان تحویل استعلام خارج'),
                 ('J', 'پیدا نشدن کالای مد نظر مشتری'),
                 ('K', 'عدم پاسخگویی مشتری نسبت به سوالات مطرح شده'),
+                ('P', 'برآورد قیمت'),
             )
             self.initial['comment_title'] = 'C'  # initial as cancel
 
