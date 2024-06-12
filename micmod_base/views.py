@@ -242,7 +242,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': self.object.addition if idx == 1 else 0,
+                        'Addition': self.object.addition if (idx == 1 and self.object.addition) else  0,
                     }
                     quotation_items.append(qi_dict)
                 #
