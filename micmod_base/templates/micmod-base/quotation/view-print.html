@@ -33,14 +33,23 @@
                 <a href="javascript:window.print()" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
                 <a href="{% url 'micmod_base:print_customer' id=data.id %}" class="button print btn btn-primary btn-bordered mb-10"
                    target="_blank">پرینت پیش فاکتور مشتری</a>
-            <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
+                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}"
                    class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
                     {% if comments_url_params == '0' %}
                         بدون نظرات
                     {% elif comments_url_params == '1' %}
                         با نظرات
 
-                    {% endif %}</a>
+                    {% endif %}
+                </a>
+                <a href="{% url "micmod_base:quotations.print-view" id=data.pk %}?comments_url_params={{ comments_url_params }}&alt_code={{ alt_code }}"
+                   class="button print px-5 mx-5 btn btn-primary btn-bordered mb-10">
+                    {% if alt_code == '0' %}
+                        بدون کد مشابه
+                    {% elif alt_code == '1' %}
+                        با کد مشابه
+                    {% endif %}
+                </a>
                 <div class="">
                     <div class="font-size-12 mx-5 px-5">
                         <div class="d-flex">
@@ -178,14 +187,17 @@
                             {% if with_comments == '1' %}
                                 <th scope="col">نظرات</th>
                             {% endif %}
+                            {% if with_alt_code == '1' %}
+                                <th scope="col">کد مشابه</th>
+                            {% endif %}
                         </tr>
                         </thead>
                         <tbody>
                         {% for form_ in formset %}
                             {% if form.currency_ref.value == 1 %}
-                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 with_comments=with_comments %}
+                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=0 with_comments=with_comments with_alt_code=with_alt_code %}
                             {% else %}
-                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 with_comments=with_comments %}
+                                {% include "micmod-base/quotation/item-print.html" with form=form_ digit=4 with_comments=with_comments with_alt_code=with_alt_code %}
                             {% endif %}
                         {% endfor %}
                         </tbody>

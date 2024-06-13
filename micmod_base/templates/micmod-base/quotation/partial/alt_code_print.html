@@ -1,0 +1,33 @@
+<div class="border-bottom font-size-8 d-none">
+    <span class="badge badge-light-info p-1 rounded">کالای</span>
+    <u class="me-1">{{ obj.sku }}</u>
+    <span class="me-2">({{ obj.part_number }})</span><br>
+
+{#    <span class="me-1 badge badge-light-info p-1 rounded">موجودی</span>#}
+{#    <span class="me-2">({{ obj.stock_amount }})</span>#}
+
+    {% if quotation.currency_ref.pk == 1 %}
+        <div>
+        <span class="badge badge-light-info">قیمت</span>
+        <span class="me-2 ">{{ rial_final_price.express|default_if_none:'-' }}<i class="ki-outline ki-courier-express"></i></span>|
+        <span class="me-2 bg-light-warning">{{ rial_final_price.air|default_if_none:'-' }}<i class="ki-outline ki-airplane"></i></span>|
+        <span class="">{{ rial_final_price.sea|default_if_none:'-' }}<i class="ki-outline ki-ship"></i></span>
+        <span class="mx-3"></span>
+        <span class="me-2 bg-light-warning">{{ rial_final_price_new_order.express|default_if_none:'-' }}<i class="ki-outline ki-courier-express"></i></span>|
+        <span class="me-2 bg-light-warning">{{ rial_final_price_new_order.air|default_if_none:'-' }}<i class="ki-outline ki-airplane"></i></span>|
+        <span class="me-2">{{ rial_final_price_new_order.sea|default_if_none:'-' }}<i class="ki-outline ki-ship"></i></span>|
+        <span class="badge badge-light-danger">{{ price_update_date }}</span>
+        </div>
+
+        <span class="me-2 px-1 bg-secondary">{{ goods_price_market|default_if_none:'-' }}</span>
+        <span class="badge badge-light-danger">{{ goods_market_date|default_if_none:'-' }}</span>
+    {% else %}
+        <span class="badge badge-light-info">قیمت</span>
+        <span class="me-2">{{ rmb_final_price.express|floatformat:'-4g'|default_if_none:'-' }}</span>
+        <span class="me-2">{{ rmb_final_price.air|floatformat:'-4g'|default_if_none:'-' }}</span>
+        <span class="me-2">{{ rmb_final_price.sea|floatformat:'-4g'|default_if_none:'-' }}</span>
+    {% endif %}
+
+{#    <span class="me-1 bg-light-primary p-1 rounded">تحویل</span>#}
+{#    <span class="me-2 ">...</span>#}
+</div>
