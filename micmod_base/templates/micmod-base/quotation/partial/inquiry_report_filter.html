@@ -3,10 +3,13 @@
 <table class="table table-bordered">
   <thead>
     <tr>
-      <th scope="col" class="text-center">کاربران</th>
-      <th scope="col" class="text-center">استعلام های امروز</th>
-      <th scope="col" class="text-center">استعلام های شروع شده</th>
-      <th scope="col" class="text-center">استعلام شده</th>
+        <th scope="col" class="text-center">کاربران</th>
+        <th scope="col" class="text-center">تخصیص ها</th>
+
+        <th scope="col" class="text-center">شروع شده</th>
+        <th scope="col" class="text-center">انجام شده ها</th>
+        <th scope="col" class="text-center">همه انجام شده ها</th>
+        <th scope="col" class="text-center">مانده ها</th>
     </tr>
   </thead>
 
@@ -17,9 +20,10 @@
       <tr>
       <th scope="row">{{ users }}</th>
       <td>{{ quotations.0 }}</td>
-      <td>{{ quotations.1 }} از <b>{{ quotations.3 }}</b></td>
+      <td>{{ quotations.1 }}</td>
       <td>{{ quotations.2 }}</td>
-
+      <td>{{ quotations.3 }}</td>
+      <td>{{ quotations.4 }}</td>
 
     </tr>
 {% endfor %}

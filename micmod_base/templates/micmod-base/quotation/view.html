@@ -213,15 +213,6 @@
               formFooterContainer.classList.add('position-fixed')
           }
       });
-    const modalLG = document.querySelector('#id_kt_empty_modal_lg');
-    if (modalLG){
-        modalLG.addEventListener('click', function (e){
-            if (formFooterContainer) {
-                console.log('hide')
-                  formFooterContainer.classList.add('position-fixed')
-              }
-        })
-    }
 
     $('*[id*=_x]').on('hide.bs.modal', function (e) {
             console.log('hide')
