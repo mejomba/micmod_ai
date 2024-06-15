@@ -216,10 +216,11 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
         {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
-        {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
+        {'name': 'id', 'visible': False, },
         {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
+        {'name': 'weight', 'visible': True, 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -244,6 +245,10 @@ class SkuListDataTableView(AjaxDatatableView):
             column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
             column.append({'name': 'air_extra_cost_percentage', 'visible': True})
             column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
+            pass
+        else:
+            column = column[:14]
         return column
 
     def customize_row(self, row, obj):
@@ -316,6 +321,7 @@ class InquiryResultListView(BaseView):
         if self.request.GET.get('pk'):
             context['submit_copy'] = False
             context['form'].instance.submit_copy = False
+        context['app_name'] = self.request.resolver_match.app_name
 
         # if cache.get(f'{self.request.user}__submit/copy'):
         #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
@@ -367,9 +373,11 @@ class InquiryResultListView(BaseView):
             qi_obj = QuotationItem.objects.filter(pk=qi_id).first()
             if self.request.user.base_group == 'bazar':
                 qi_obj.local_price_inquiry_done = True
+                qi_obj.bazar_price_code = self.object
                 qi_obj.save()
             elif self.request.user.base_group == 'trade':
                 qi_obj.foreign_price_inquiry_done = True
+                qi_obj.trade_price_code = self.object
                 qi_obj.save()
 
             iqr_obj = qi_obj.quotation_item_rel.first()
@@ -530,7 +538,7 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = self.form_class(initial={'currency': 1})
+        context['form'] = self.form_class(initial={'currency': 1, 'request':self.request})
         return context
 
 
@@ -562,7 +570,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
-                                             'payment_method': payment_method, 'grade': grade
+                                             'payment_method': payment_method, 'grade': grade,
+                                             'request': request
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')

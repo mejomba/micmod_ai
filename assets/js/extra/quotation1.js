@@ -26,14 +26,14 @@ $(document).ready(function () {
             party_id = -1
         }
 
-        const tradePriceCode = elem.querySelector('#id_trade_price_code')
-        const bazarPriceCode = elem.querySelector('#id_bazar_price_code')
+        const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
+        const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
         let bazarPriceCodeValue;
-        if (tradePriceCode && tradePriceCode == e.target){
+        if (tradePriceCode && tradePriceCode.options[tradePriceCode.selectedIndex]){
             tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
         }
-        if (bazarPriceCode && bazarPriceCode == e.target){
+        if (bazarPriceCode && bazarPriceCode.options[bazarPriceCode.selectedIndex]){
             bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
         }
 
@@ -915,8 +915,13 @@ function round_rial(x){
     return x
 }
 function numberWithCommas(x, digits = 2) {
+    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency_ref != 1) {
+        digits = 4
+    }
     if (x == '' || x == null || isNaN(x)) return ''
     x = parseFloat(x)
+    if (x >= 100){digits=2}
     let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
     return res
 }

@@ -341,12 +341,12 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         # if not request.user.is_superuser and kwargs.get('instance') and kwargs.get('instance').quotation.workflows.last() and not kwargs.get('instance').quotation.workflows.last().to_user == request.user:
-        user_groups = request.user.groups.values_list('name', flat=True)
-        if not request.user.is_superuser:
+        user_groups = request.user.groups.values_list('name', flat=True) if request else None
+        if request and not request.user.is_superuser:
             if 'trade_user' not in user_groups:
-                self.make_disable(['foreign_price_inquiry_done', 'trade_price_code', 'lead_time'])
+                self.make_disable(['foreign_price_inquiry_done', 'lead_time']) # 'trade_price_code',
             if 'bazar_user' not in user_groups:
-                self.make_disable(['local_price_inquiry_done', 'bazar_price_code'])
+                self.make_disable(['local_price_inquiry_done', ]) #'bazar_price_code'
         try:
             x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
             self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
@@ -382,7 +382,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
-                  'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time',
+                  'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {
@@ -431,6 +431,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'goods_q_last_price': forms.HiddenInput(),
             'goods_q_total_sales': forms.HiddenInput(),
             'itemid': forms.HiddenInput(),
+            'bazar_price_code': forms.HiddenInput(),
+            'trade_price_code': forms.HiddenInput(),
             # 'price_method': forms.RadioSelect(attrs={"class": "price_method","m-data":"price_method"}),
             # 'delivery_time': forms.RadioSelect(),
             # 'goods_name': forms.Textarea(attrs={'class': 'goods_name','hidden': False, "rows": 1}),
@@ -568,7 +570,7 @@ qi_fields = [
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
-    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description'
+    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description', 'item_in_china'
     ]
 
 

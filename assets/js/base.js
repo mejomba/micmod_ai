@@ -212,6 +212,7 @@ function loadJS(file) {
 }
 
 function custom_ajax_get(form, url, element) {
+    removeCommaSeperator()
     let new_url = url
     if (form) {
         const formSerialize = form.serialize();
@@ -305,4 +306,71 @@ function copyToClipboard(elem) {
         document.getSelection().addRange(selected);
     }
 }
+
+
+    const changeLogBtnAjax = document.querySelectorAll('[name="name_change_log"]')
+    debugger
+    if (changeLogBtnAjax){
+    changeLogBtnAjax.forEach(function (item) {
+        item.addEventListener('click',function (e){
+            const modelName = item.dataset.model_name
+            const objectId = item.dataset.object_id
+            const appName = item.dataset.app_name
+            debugger
+        let new_url = `/core/ajax/changelog/${appName}/${modelName}/${objectId}/`
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = html
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+
+        });
+     })
+    })
+
+
+        const emptyModal = document.getElementById('id_kt_empty_modal')
+        if (emptyModal){
+            emptyModal.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body').innerHTML = ''
+            })
+        }
+
+        const emptyModalLG = document.getElementById('id_kt_empty_modal_lg')
+        if (emptyModalLG){
+            emptyModalLG.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
+        })
+        }
+
+        const emptyModalSM = document.getElementById('id_kt_empty_modal_sm')
+        if (emptyModalSM) {
+            emptyModalSM.addEventListener('hidden.bs.modal', function (e) {
+            document.querySelector('#id-empty-modal-body-sm').innerHTML = ''
+        })
+        }
+
+        const modalLG = document.querySelector('#id_kt_empty_modal_lg');
+        if (modalLG){
+            modalLG.addEventListener('click', function (e){
+                if (formFooterContainer) {
+                    console.log('hide')
+                      formFooterContainer.classList.add('position-fixed')
+                  }
+            })
+        }
+
+    }
 

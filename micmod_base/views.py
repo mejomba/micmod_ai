@@ -7,10 +7,12 @@ from django.db.models import Q, QuerySet, CharField
 from django.db.models.functions import Cast
 
 from django.utils import timezone
+from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
 from extra_data.models import Item
 from inquiry.models import InquiryResult
+from notifications.models import Messages
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -20,7 +22,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.models import User
 from django.core.paginator import Paginator
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -33,6 +35,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
     QuotationItemFormset, InquiryResultFormset
 from sepidar.models import Dl
+from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
 from django.contrib.auth import get_user_model
@@ -44,21 +47,23 @@ from core.views import BaseView, Base
 from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 from .forms import PendingFormFilter
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 # from core.mixins import DuplicateMixin
 # from workflow.forms import WorkFlowModelForm
 # import datetime
-
+import re
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
         q = self.request.GET.get('q')
-        quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
+        # quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
 
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
         # greeting['quotations'] = quotations_record
-        greeting['quotations'] = quotations_record_lst
+        # greeting['quotations'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
@@ -88,20 +93,39 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     related_name_fk = 'quotation'
 
     def get_success_url(self):
-        return reverse_lazy('sls:quotations.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         # if 'submit_duplicate' in self.request.POST:
         #     return self.duplicate(self.object, [], ['quotation'])
+        """ run import customer from sepidar before object create"""
+        if self.object is None:
+            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
         res = super().form_valid(form)
+        # if self.object and self.object.last_work_flow.current_state_name == 'استعلام قیمت':
+        #     Messages.send_message(
+        #         **{
+        #             'creator_user_id': self.object.creator_user_id,
+        #             'user': self.object.last_work_flow.to_user,
+        #             'title': f'{_(self.object.last_work_flow.content_type.name)}| {_(self.object.last_work_flow.state)}',
+        #             'body': f' کاربر {self.object.creator_user.username} فرایند این موضوع را به شما واگذار کرده است.',
+        #             'icon_url': getattr(self.model, 'icon_url', None) or "cube-2",
+        #             'link': f'/{self.object.last_work_flow.content_type.app_label}/{self.object.last_work_flow.content_type.model}/view/{self.object.pk}',
+        #             'content_type': self.object.last_work_flow.content_type,
+        #             'object_id': self.object.pk
+        #         }
+        #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
         if not self.object.is_official:
             self.object.official_value = 0
-            self.object.save()
+            # self.object.save()
 
         new_quotation = None
         try:
@@ -109,7 +133,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
-                self.object.save()
+                # self.object.save()
             elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method, save=True)
@@ -219,7 +243,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
-                        'Addition': 0,
+                        'Addition': self.object.addition if (idx == 1 and self.object.addition) else  0,
                     }
                     quotation_items.append(qi_dict)
                 #
@@ -237,17 +261,20 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Discount': self.object.self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
-                    'Addition': self.object.addition or 0,
+                    'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
                     'items': quotation_items,
                 }
                 d = json.dumps(quotation_data)
                 #
                 api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
                                            method=Urls.pos_quotations.method, data=d)
+                api_log_obj = api_res[2]
+                api_log_obj.extra_data.request = self.request if api_log_obj else ''
+                api_log_obj.save()
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
-                self.object.save()
+                # self.object.save()
                 if api_res[0] == 400:
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
@@ -258,6 +285,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         flow_object.delete()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
+            self.object.save()
         except Exception as e:
             pass
             print('rol back ....')
@@ -276,12 +304,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
+        context['app_name'] = self.request.resolver_match.app_name
 
         related_obj = getattr(self.object, f'{self.related_name_fk}', None)
-        context['detail_logs'] = []
-        if related_obj:
-            for item in related_obj.all():
-                context['detail_logs'].append(item.change_logs.all())
+        # context['detail_logs'] = []
+        # if related_obj:
+        #     for item in related_obj.all():
+        #         context['detail_logs'].append(item.change_logs.all())
         # context['detail_logs'].reverse()
         if self.object:
             qis = self.object.quotation.all()
@@ -298,54 +327,44 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-
-        # if 'sales_admin' in user_groups or self.request.user.is_superuser:
-        #     if self.request.GET.get('duplicate'):
-        #         context['duplicate'] = False
-        #         context['submit_duplicate'] = True
-        #         context['workflow_form'] = WorkFlowModelForm(
-        #             content_type_model=self.model,
-        #             initial={
-        #                     'wf_access': True,
-        #                     'from_user': self.request.user,
-        #                     'to_user': self.request.user,
-        #                     'state': self.flow_config.get('flow_state_list')[0],
-        #                     'state_index': 0,
-        #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-        #                     'action': self.flow_config.get('flow_action'),
-        #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-        #                         days=self.flow_config.get('flow_deadline')[0]),
-        #                     'flow_config': self.flow_config,
-        #                     'create': True
-        #                 },
-        #             current_user=self.request.user,
-        #         )
-        #         context['flow'] = None
-        #         context['flow_state_index'] = 0
-        #
-        #     else:
-        #         context['duplicate'] = True
-        #         context['submit_duplicate'] = False
+        for f in context['formset']:
+            if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+                f.has_alt_code = True
         return context
 
 
 def print_view(request,id=-1):
-    template_name = 'micmod-base/quotation/view-print.html'
+    customer_print = reverse("micmod_base:print_customer", args=[id])
+    if request.META.get('PATH_INFO') == customer_print:
+        template_name = 'micmod-base/quotation/view-print-raw.html'
+    else:
+        template_name = 'micmod-base/quotation/view-print.html'
     comments_url_params = '0'
     with_comments = '1'
+    with_alt_code = '0'
+    alt_code = '1'
     if request.GET.get('comments_url_params') == '1':
         with_comments = '1'
         comments_url_params = '0'
     elif request.GET.get('comments_url_params') == '0':
         with_comments = '0'
         comments_url_params = '1'
+    if request.GET.get('alt_code') == '1':
+        with_alt_code = '1'
+        alt_code = '0'
+    elif request.GET.get('alt_code') == '0':
+        with_alt_code = '0'
+        alt_code = '1'
     # formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm, extra=0, )
     formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm2, extra=0, )
     greeting = {}
+    greeting['alt_code_html'] = []
     greeting['heading'] = _("create")
     greeting['pageview'] = _("quotation")
     greeting['with_comments'] = with_comments
     greeting['comments_url_params'] = comments_url_params
+    greeting['with_alt_code'] = with_alt_code
+    greeting['alt_code'] = alt_code
     quotation = Quotation.objects.filter(id=id).first()
     greeting['form'] = QuotationForm(instance=quotation)
     greeting['formset'] = formset(instance=quotation,
@@ -358,6 +377,65 @@ def print_view(request,id=-1):
                                       }
                                   }
                                   )
+    for f in greeting['formset']:
+        if alt_qs := f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+            for alt_comment in alt_qs:
+                comment_str_lower = alt_comment.comment_content.lower()
+                pattern_pk = r'sku_(\d+)'
+                pks = re.findall(pattern_pk, comment_str_lower)
+                sku_item = Item.objects.filter(pk__in=pks).first()
+                try:
+                    if sku_item:
+                        item = dict()
+                        item['obj'] = sku_item
+                        item['quotation'] = f.instance.quotation
+                        price_inquiry_result = sku_item.price if sku_item else None
+                        price_inquiry_result_bazar = sku_item.bazar_price if sku_item else None
+                        id_currency_ref = f.instance.quotation.currency_ref.pk
+                        id_customer_grade = f.instance.quotation.customer_grade
+                        id_customer_grade = id_customer_grade.split(',')[-1] if id_customer_grade else None
+                        id_payment_method = f.instance.quotation.payment_method
+                        id_payment_method = id_payment_method.split(',')[-1] if id_payment_method else None
+                        quantity = f.instance.quantity
+                        if price_inquiry_result:
+                            price_setting = price_inquiry_result.price_settings
+                            price_inquiry_result.set_discount_params(
+                                quantity=quantity,
+                                customer_grade=id_customer_grade,
+                                payment_method=id_payment_method,
+                                currency=id_currency_ref,
+                                price_setting=price_setting
+                            )
+                            item["price_settings"] = price_setting.pk
+                            if str(id_currency_ref) == str(1):  # rial
+                                item["rial_final_price"] = price_inquiry_result.rial_final_price
+                                item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+                            elif str(id_currency_ref) == str(2):  # rmb
+                                item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+                            item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+                        else:
+                            item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
+                            item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
+
+                        if price_inquiry_result_bazar:
+                            price_setting = price_inquiry_result_bazar.price_settings
+                            price_inquiry_result_bazar.set_discount_params(
+                                quantity=quantity,
+                                customer_grade=id_customer_grade,
+                                payment_method=id_payment_method,
+                                currency=id_currency_ref,
+                                price_setting=price_setting
+                            )
+                            item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                            item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        else:
+                            item["goods_price_market"] = None
+                            item["goods_market_date"] = None
+                        # render html
+                        html = render_to_string('micmod-base/quotation/partial/alt_code_print.html', context=item)
+                        greeting['alt_code_html'].append(html)
+                except Exception as e:
+                    show_error(e, __file__)
     if quotation:
         quotation.created_date = datetime2jalali(quotation.created_date).strftime('%y/%m/%d-%H:%M')
         quotation.last_update_date = datetime2jalali(quotation.last_update_date).strftime('%y/%m/%d-%H:%M')
@@ -369,7 +447,7 @@ class CurrencyExchangeView(LoginRequiredMixin, BaseView):
     model = CurrencyExchange
     form_class = CurrencyExchangeForm
     template_name = 'micmod-base/currency_exchange_list_or_create.html'
-    success_url = reverse_lazy('sls:currency_exchange')
+    success_url = reverse_lazy('micmod_base:currency_exchange')
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
@@ -417,7 +495,7 @@ class CurrencyExchangeDataTableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['currency'] = '<a class="fw-bold" href="%s">%s</a>' % (
-                      reverse('sls:currency_exchange', args=(obj.id,)),
+                      reverse('micmod_base:currency_exchange', args=(obj.id,)),
                       obj.currency if obj.currency else '_'
                     )
 
@@ -561,7 +639,7 @@ class QuotationItemFormPending(LoginRequiredMixin, View):
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 
@@ -620,12 +698,19 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         elif force_inquiry:
             f = {'quotation__force_inquiry': True}
             quotations_record_lst = quotations_record_lst.filter(**f)
+        elif self.request.GET.get('item_in_china'):
+            quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
         else:
             quotations_record_lst = quotations_record_lst
 
-        quotations_record_lst = quotations_record_lst.order_by('-id')
+        quotations_record_lst = quotations_record_lst.order_by('-quotation_id', 'id')
 
-        for qi in quotations_record_lst:
+        paginator = Paginator(quotations_record_lst, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        for qi in page_obj.object_list:
+        #for qi in quotations_record_lst:
             form = QuotationItemForm2(instance=qi, initial={
                 "constraint": {
                     "wf_access": True,
@@ -639,12 +724,13 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             form.enable = False
             forms.append(form)
 
-        paginator = Paginator(forms, 10)
-        page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
+        #paginator = Paginator(forms, 10)
+        #page_number = request.GET.get("page")
+        #page_obj = paginator.get_page(page_number)
 
         d = dict()
-        for item in page_obj:
+        #for item in page_obj:
+        for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
             d[item.instance.quotation.pk].append(item)
@@ -671,29 +757,33 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.goods_code = new_goods_code
                 obj.old_goods_name = obj.goods_name
                 obj.item_editor_user = self.request.user
+                obj.extra_data.request = self.request
                 obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
+                obj.extra_data.request = self.request
                 obj.save()
-            else:
+            elif self.request.POST.get('need_foreign_price_inquiry') and not self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = False
                 obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
+                obj.extra_data.request = self.request
                 obj.save()
-            else:
+            elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = False
+                obj.extra_data.request = self.request
                 obj.save()
 
 
             data = {
-                'lead_time': request.POST.get('lead_time'),
+                'lead_time': request.POST.get('lead_time') or obj.lead_time,
                 'goods_code': request.POST.get('goods_code'),
                 'goods_name': request.POST.get('goods_name'),
-                'has_delay': True if request.POST.get('has_delay') else False,
-                'delay_reason': request.POST.get('delay_reason'),
-                'delay_time': request.POST.get('delay_time') or None,
+                'has_delay': True if request.POST.get('has_delay') else False or obj.has_delay,
+                'delay_reason': request.POST.get('delay_reason') or obj.delay_reason,
+                'delay_time': request.POST.get('delay_time') or obj.delay_time,
             }
             obj_qs.update(**data)
 
@@ -702,8 +792,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             if iqr_form.is_valid():
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
+                iqr_obj.extra_data.request = self.request
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 
@@ -818,7 +909,7 @@ class MyQuotationItemFormPendingToday(LoginRequiredMixin, View):
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = obj
                 iqr_obj.save()
-        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('sls:quotationitem.form.pending')
+        redirect_path = self.request.META.get('HTTP_REFERER', None) or reverse('micmod_base:quotationitem.form.pending')
         return redirect(redirect_path)
 
 def get_sku(request):
@@ -833,7 +924,7 @@ def get_sku(request):
 class QuotationListDatatable(AjaxDatatableView):
     model = Quotation
     title = 'currency_list'
-    initial_order = [["pk", "asc"], ]
+    initial_order = [["pk", "desc"], ]
     length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
@@ -849,21 +940,26 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
-        # {'name': 'last_work_flow', 'visible': True, 'orderable': False, 'lookup_field': '__current_state_name__icontains'},
+        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = Quotation.get_qs(request)
+        if request.user.base_group == 'trade':
+            qs = Quotation.objects.filter(cancel=True, is_deleted=False)
+        else:
+            qs = Quotation.get_qs(request)
         # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
-        return self.model.objects.filter(pk__in=[i.pk for i in qs])
+        qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
+        return qs
 
     # @timer
     def customize_row(self, row, obj):
 
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('sls:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
         )
 
@@ -881,12 +977,17 @@ class QuotationListDatatable(AjaxDatatableView):
         row['inquiry_status'] = out
 
         row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('sls:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        row['quotation_state'] = '%s' % obj.get_inquiry_state
+        # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
+        if obj.cancel:
+            row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
+        else:
+            row['cancel'] = '-'
 
 
 def inquiry_report(request):

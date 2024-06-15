@@ -22,7 +22,7 @@ from translator import get_text as _
 from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
-
+import datetime
 
 class QuotationManager(models.Manager):
     def own_quotations(self, request):
@@ -69,7 +69,7 @@ class Quotation(SLSDoc):
                                       verbose_name=_('payment_method'), default="6,2 Month")
     market_grade = models.CharField(choices=MarketGrade, max_length=10, null=True, blank=True,
                                     verbose_name=_('market_grade'), default="5,A")
-    description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
+    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
     sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
@@ -84,13 +84,17 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
-    absolute_url_update = 'sls:quotations.view'
+    absolute_url_update = 'micmod_base:quotations.view'
 
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True)
         return qs
+
+    @classmethod
+    def get_qs_count(cls, user):
+        return len(cls.objects.get_access_object(user, q='active', quotation=True))
 
     def progress_from_inquiry_state(self, total_hour=72):
         if self.is_inquiry_state:
@@ -293,6 +297,36 @@ class Quotation(SLSDoc):
         else:
             return
 
+    @property
+    def sum_prices(self):
+        qis = self.quotation.all()
+        sum_price = 0
+        for qi in qis:
+            quantity = qi.quantity
+            fee = qi.fee
+            price = quantity * fee
+            sum_price += price
+            if sum_price is None:
+                return 0
+        return sum_price
+
+    @property
+    def payment(self):
+        sum_price = self.sum_prices
+
+        tax = self.tax_amount
+        additions = self.addition or 0
+        if self.self_discount:
+            discount = sum_price - ((self.self_discount / 100) * sum_price)
+        else:
+            discount = 0
+
+        total = sum_price + additions - discount + tax
+
+        if self.currency_ref.title_en == 'Rial':
+            return int(sum_price), int(additions), int(discount), int(tax), int(total)
+        return sum_price, additions, discount, tax, total
+
 
 class QuotationItem(BaseModel):
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
@@ -365,6 +399,7 @@ class QuotationItem(BaseModel):
     has_delay = models.BooleanField(default=False, verbose_name=_('has_delay'))
     delay_reason = models.CharField(max_length=250, verbose_name=_('delay_reason'), null=True, blank=True)
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
+    item_in_china = models.BooleanField(_('item_in_china'), default=False)
 
     objects = QuotationItemManager()
 
@@ -398,29 +433,45 @@ class QuotationItem(BaseModel):
     @classmethod
     def get_inquiry_report(cls):
         trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()
-        today = timezone.now() - timedelta(days=1)
+
+        from django.conf import settings
+        from pytz import timezone as ptz
+        tz = ptz("UTC")
+        yesterday = timezone.now() - timedelta(days=1)
+        now = timezone.now()
+        # if yesterday.hour < 13 or (yesterday.hour == 13 and yesterday.minute < 30):  # yesterday 17:00
+        #     if time before 17:00 yesterday set to yesterday 17:01
+        yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=16, minute=30,
+                                      second=1, tzinfo=datetime.timezone.utc)  # begin from 20:00 yesterday
+
+        # if now.hour > 13 or (now.hour == 13 and now.minute > 30):  # today 17:00
+        today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=16, minute=30, tzinfo=tz)  # end at 20:00 today
+
         d =dict()
         quotation_items = cls.objects.filter(Q(assigned_trade_user__in=trade_user) |
                                              Q(assigned_trade_user2__in=trade_user))
         for user in trade_user:
 
-            time_filter = (Q(assigned_trade_user=user, assigned_trade_user_date__gte=today) |
-                           Q(assigned_trade_user2=user, assigned_trade_user_date2__gte=today))
-            task_start_filter = (Q(assigned_trade_user=user, task_start=True) |
-                                 Q(assigned_trade_user2=user, task_start2=True))
-            price_inquiry_filter = (Q(assigned_trade_user=user, foreign_price_inquiry_done=True) |
-                                    Q(assigned_trade_user2=user, foreign_price_inquiry_done=True))
-            all_tasks_filter = (Q(assigned_trade_user=user) | Q(assigned_trade_user2=user))
-            today_qi = quotation_items.filter(time_filter).count()
-            task_start_qi = quotation_items.filter(task_start_filter).count()
-            price_inquiry_qi = quotation_items.filter(price_inquiry_filter).count()
-            all_tasks = quotation_items.filter(all_tasks_filter).count()
+            user_filter = Q(assigned_trade_user=user) | Q(assigned_trade_user2=user)
+            time_filter = (Q(assigned_trade_user_date__gte=yesterday, assigned_trade_user_date__lte=today) |
+                           Q(assigned_trade_user_date2__gte=yesterday, assigned_trade_user_date2__lte=today))
+            task_start_filter = (Q(task_start=True) | Q(task_start2=True))
+            price_inquiry_filter = (Q(foreign_price_inquiry_done=True) | Q(foreign_price_inquiry_done=True))
 
-            d[user.username] = today_qi, task_start_qi, price_inquiry_qi, all_tasks
+            all_tasks_qs = quotation_items.filter(user_filter)
+            today_assigned = all_tasks_qs.filter(time_filter).count()
+            today_task_start = all_tasks_qs.filter(task_start_filter).count()
+            all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
+            all_tasks = all_tasks_qs.count()
+
+            reminder_task = all_tasks - all_price_inquiry_done
+
+            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, all_tasks, reminder_task
         return d
 
     def pre_process_on_post_method(self, data=None):
-        obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        # obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
+        obj = self if self.pk else None
         self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
         self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
         self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
@@ -443,6 +494,17 @@ class QuotationItem(BaseModel):
                 qs = cls.quotation_item_all_pending(inquiry_type='bazar', path=None)
         return qs.count()
 
+    @classmethod
+    def item_in_china_(cls, user):
+        count = 0
+        qs = cls.objects.none()
+        inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                              Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+        if getattr(user, 'base_group', None):
+            if 'trade' in user.base_group:
+                qs = cls.objects.filter(inquiry_type_filter, item_in_china=True, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
+        return qs.count()
+
     @property
     def local_pending(self):
         return self.need_local_price_inquiry != self.local_price_inquiry_done
@@ -453,6 +515,8 @@ class QuotationItem(BaseModel):
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
+        if iqr is None:
+            return self.final_price or 0
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price

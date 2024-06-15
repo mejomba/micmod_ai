@@ -177,10 +177,6 @@ class BaseView(UserPassesTestMixin,
                                               })
 
         self.object = self.get_object()
-        """ run import customer from sepidar before object create"""
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-
         if self.has_flow:
             self.state_index = self.get_flow_index(self.object)
 
@@ -218,13 +214,32 @@ class BaseView(UserPassesTestMixin,
                 return self.form_invalid(self.form)
 
         self.form.wfform = wfform
+        self.formset = self.get_formset_from_struct()(self.request.POST, self.request.FILES,
+                                                      instance=self.form.instance,
+                                                      form_kwargs={
+                                                          "constraint": {
+                                                              "wf_access": True,
+                                                              'form_state': self.state_index,
+                                                              'request': self.request,
+                                                              'form_constraint': self.flow_config.get(
+                                                                  'flow_form_constraint'),
+                                                              'formset_constraint': self.flow_config.get(
+                                                                  'flow_formset_constraint')
+                                                          }
+                                                      }) if self.has_formset else None
         wf_form_valid = wfform.is_valid()
-        if self.form.is_valid() and wf_form_valid:
-            # if 'submit/copy' in self.request.POST:
-                # cache.set(f'{self.request.user}__submit/copy', True)
-            # else:
-            #     cache.delete(f'{self.request.user}__submit/copy')
-
+        if self.formset:
+            if self.form.is_valid() and wf_form_valid and self.formset.is_valid():
+                x = self.form_valid(self.form)
+                if 'submit/copy' in self.request.POST:
+                    self.form.instance.pk = None
+                    return self.render_to_response(super().get_context_data(form=self.form))
+                else:
+                    return x
+            else:
+                return self.render_to_response(
+                    self.get_context_data(form=self.form, workflow_form=wfform, formset=self.formset))
+        elif self.form.is_valid() and wf_form_valid:
             x = self.form_valid(self.form)
             if 'submit/copy' in self.request.POST:
                 self.form.instance.pk = None
@@ -245,7 +260,9 @@ class BaseView(UserPassesTestMixin,
                                                               }
                                                           }) if self.has_formset else None
             # return self.form_invalid(self.form)
-            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform))
+            if self.formset:
+                self.formset.is_valid()
+            return self.render_to_response(self.get_context_data(form=self.form, workflow_form= wfform, formset=self.formset))
             # self.form_invalid(self.form)
         # if not self.form.is_valid():
         #     print(self.form.errors.as_data())
@@ -327,7 +344,8 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        context['object_logs'] = ChangeLog.get_log(self.object)
+        # context['object_logs'] = ChangeLog.get_log(self.object)
+        # context['object_logs'] = []
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                       "constraint": {
@@ -478,7 +496,18 @@ class BaseView(UserPassesTestMixin,
         if form.is_valid():
             """save main form"""
             old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
-
+            if 'uncanceled' in self.request.POST:
+                old_obj.cancel = False
+                old_obj.extra_data.request = self.request
+                old_obj.save()
+                # old_obj.save_comment(request=self.request)
+                self.object.cancel = False
+                self.object.extra_data.request = self.request
+                self.object.save()
+                return HttpResponseRedirect(self.get_success_url())
+            if getattr(old_obj, 'cancel', None):
+                if old_obj.cancel:
+                    return HttpResponseRedirect(reverse_lazy('micmod_base:quotations.view', kwargs={'pk': old_obj.pk}))
             if old_obj:
                 old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
@@ -743,6 +772,56 @@ class BaseView(UserPassesTestMixin,
             return super().form_valid(form)
         return HttpResponseRedirect('.')
 
+    # def copy_view(self, related_name, nested_name):
+    #     wfform = None
+    #     formset = None
+    #     form = None
+    #
+    #
+    #     if self.has_flow:
+    #         wfform = self.workflow_form(
+    #             content_type_model=self.model,
+    #             initial={
+    #                     'wf_access': True,
+    #                     'from_user': None,
+    #                     'to_user': self.request.user,
+    #                     'state': 0,
+    #                     'state_index': 0,
+    #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
+    #                     'action': self.flow_config.get('flow_action'),
+    #                     'deadline': datetime.datetime.now() + datetime.timedelta(
+    #                         days=self.flow_config.get('flow_deadline')[0]) if self.has_flow else None,
+    #                     'flow_config': self.flow_config,
+    #                     'create': False if self.object else True
+    #                 },
+    #             current_user=self.request.user,
+    #         )
+    #
+    #     if self.has_formset:
+    #         formset = self.formset_form(
+    #             instance=self.object, form_kwargs={
+    #                 "constraint": {
+    #                     "wf_access": self.wf_access,
+    #                     'form_state': self.state_index,
+    #                     'request': self.request,
+    #                     'form_constraint': self.flow_config.get('flow_form_constraint'),
+    #                     'formset_constraint': self.flow_config.get('flow_formset_constraint')
+    #                 }
+    #             }
+    #         )
+    #         formset_prefix = formset.prefix
+    #         self.request.POST._mutable = True
+    #         for idx in range(getattr(self.object, related_name), 0):
+    #             formset_pattern = f'{formset_prefix}_{idx}_{related_name}'
+    #             self.request.POST[formset_pattern] = ''
+    #
+    #             nesterd_pattern = f'{prefix}_{idx}_{nested_name}'
+    #             self.request.POST[nesterd_pattern] = ''
+    #         self.request.POST._mutable = False
+    #
+    #     form = self.get_form_class()(data=self.request.POST)
+    #     self.request.full_copy = True
+    #     return self.render_to_response(context={'data': None, 'form': form, 'formset': formset, 'workflow_form': wfform},)
 
 class Base:
     @classmethod
@@ -841,6 +920,9 @@ class CommentsFormView(View):
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
             # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
+            comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'trade_inquiry':
+            kwargs['submit_type'] = 'trade_inquiry'
             comments = obj.comments.all().order_by('-created_date')
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
@@ -1016,3 +1098,16 @@ class BaseCustomListView(BaseCustomView,ListView):
     def get(self, request, *args, **kwargs):
         return super().get(self, request, *args, **kwargs)
 
+
+def ajax_change_logs(request, *args, **kwargs):
+    object_id = kwargs.get('object_id')
+    app_name =  kwargs.get('app_name')
+    model_name = kwargs.get('model_name')
+    from django.apps import apps
+    x = apps.get_model(app_name, model_name)
+    ctt =ContentType.objects.get_for_model(x).pk
+    # ctt = ContentType.objects.filter(app_label=app_name, model=model_name)
+    change_log = ChangeLog.objects.filter(object_id=object_id, content_type=ctt)
+    context = {'logs': change_log}
+    res = render_to_string(template_name='changelog/changelog.html', context=context)
+    return JsonResponse({'res': res})

@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from itertools import chain
 
 from accounts.models import User
-from tools.utils import c_get, round_price
+from tools.utils import c_get, round_price, show_error
 
 from django.template.loader import render_to_string
 
@@ -198,7 +198,7 @@ class PriceInquiryResult(BaseModel):
                     'payment_method_discount_percentage': payment_method_discount_percentage or 0,
                     'office_cost_percentage': office_cost_percentage or 0,
                 }
-                self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + (self.sku.extra_cost_percentage if not settings.delivery_in_china else 0 or 0))) * (self.effective_rmb_price or 0+ self.customs_cost or 0)
+                self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + (self.sku.extra_cost_percentage or 0 if not settings.delivery_in_china else 0 or 0))) * (self.effective_rmb_price or 0+ self.customs_cost or 0)
                 self.extra_data.after_price_discount_price = (self.extra_data.after_office_price *
                                                               (1 + 0.01 * (settings.get_discount_based_price(self.extra_data.after_office_price))))
                 self.extra_data.rmb_final_price_custom_office = dict( map(lambda x: (x[0], x[1] + self.extra_data.after_price_discount_price),
@@ -219,11 +219,11 @@ class PriceInquiryResult(BaseModel):
                         self.extra_data.rmb_final_price_custom_office.items()))
                 self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
                                                                             (
-                                                                                (self.sku.express_extra_cost_percentage if not settings.delivery_in_china else 0)
+                                                                                (self.sku.express_extra_cost_percentage or 0 if not settings.delivery_in_china else 0)
                                                                                             if x[0] == "express" else
-                                                                                (self.sku.air_extra_cost_percentage if not settings.delivery_in_china else 0)
+                                                                                (self.sku.air_extra_cost_percentage or 0 if not settings.delivery_in_china else 0)
                                                                                             if x[0] == "air" else
-                                                                                (self.sku.sea_extra_cost_percentage
+                                                                                (self.sku.sea_extra_cost_percentage or 0
                                                                                             if not settings.delivery_in_china else 0)
                                                                             )
                                                                                                      )
@@ -254,6 +254,7 @@ class PriceInquiryResult(BaseModel):
 
                 return self.extra_data._rmb_final_price_
             except Exception as e:
+                show_error(e, __file__)
                 return 0
 
 

@@ -2,7 +2,7 @@ from django.urls import path, re_path
 
 from .views import *
 
-app_name = "sls"
+app_name = "micmod_base"
 urlpatterns = [
     # Ecommerce
     path(
@@ -35,11 +35,14 @@ urlpatterns = [
     path('currency_exchange_list_datatable/', CurrencyExchangeDataTableView.as_view(), name="currency_exchange.list.datatable"),
     path('quotationitem/list/pending/', QuotationItemPending.as_view(), name='quotationitem.pending'),
     # path('quotationitem/list/form/pending/', QuotationItemFormPending.as_view(), name='quotationitem.form.pending'),
+    path('quotationitem/list/form/item_in_china/', QuotationItemFormPending2.as_view(), name='quotationitem.item_in_china'),
     path('quotationitem/list/form/pending/', QuotationItemFormPending2.as_view(), name='quotationitem.form.pending'),
     # path('quotationitem/list/form/pending2/', QuotationItemFormPending2.as_view(), name='quotationitem.form.pending2'),
     path('quotationitem/past/quotationitems', QuotationItemFormPending2.as_view(), name='quotationitem.form.past'),
     path('quotation/list/datatable', QuotationListDatatable.as_view(), name='quotation.list.datatable'),
     path('get_sku/', get_sku, name='get_sku'),
     path('quotation/print/<int:id>/', print_view, name='print'),
-    path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report')
+    path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
+    path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
+
 ]

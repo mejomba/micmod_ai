@@ -95,7 +95,7 @@ class BaseManager(models.Manager):
     #         )
     #     return wf
 
-    def get_access_object(self, user, q="all"):
+    def get_access_object(self, user, q="all", *args, **kwargs):
         import time
         from workflow.models import WorkFlow
         if user.is_superuser or self.is_public:
@@ -128,7 +128,10 @@ class BaseManager(models.Manager):
         else:
             quotations_record_lst = qry
 
-        return [x for x in quotations_record_lst if x]
+        if kwargs.get('quotation') and q == 'active':
+            return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
+        else:
+            return [x for x in quotations_record_lst if x]
 
         return quotations_record_lst
 
@@ -478,6 +481,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         comment_input_name = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_content'
         content = request.POST.get(comment_input_name)
         content_type = ContentType.objects.get_for_model(self._meta.model)
+        if title in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'P'] and not content:
+            content = 'بدون توضیحات'
+
 
         if content:
             comment = Comments.objects.create(
@@ -621,7 +627,7 @@ class AbsBaseModel(NoUserBaseModel):
 
     @classmethod
     def active(cls, user):
-        return len(cls.objects.get_access_object(user, q='active'))
+        return len(cls.objects.get_access_object(user, q='active')) + 1000
 
     class Meta:
         abstract = True

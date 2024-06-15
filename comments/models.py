@@ -6,8 +6,23 @@ from translator import get_text as _
 
 class Comments(BaseContentType):
     Comment_CHOICES = (
+        # cancel
         ('C', 'کنسلی'),
-        ('O','موارد دیگر')
+        ('D', 'تاخیر در استعلام بازرگانی'),
+        ('E', 'تاخیر در استعلام تدارکات داخل'),
+        ('F', 'تاخیر در ارسال پیش فاکتور'),
+        ('G', 'قیمت بالای استعلام خارج'),
+        ('H', 'قیمت بالای استعلام داخل'),
+        ('I', 'زمان تحویل استعلام خارج'),
+        ('J', 'پیدا نشدن کالای مد نظر مشتری'),
+        ('K', 'عدم پاسخگویی مشتری نسبت به سوالات مطرح شده'),
+        ('P', 'برآورد قیمت'),
+        # trade
+        ('L', 'قیمت کمتر'),
+        ('M', 'آیتم جایگزین'),
+        ('N', 'کیفیت بهتر'),
+        # other
+        ('O','کامنت ساده')
     )
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))
     comment_content = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('comment_content'))
