@@ -441,11 +441,11 @@ class QuotationItem(BaseModel):
         now = timezone.now()
         # if yesterday.hour < 13 or (yesterday.hour == 13 and yesterday.minute < 30):  # yesterday 17:00
         #     if time before 17:00 yesterday set to yesterday 17:01
-        yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=13, minute=30,
-                                      second=1, tzinfo=datetime.timezone.utc)  # begin from 17:00 yesterday
+        yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=16, minute=30,
+                                      second=1, tzinfo=datetime.timezone.utc)  # begin from 20:00 yesterday
 
         # if now.hour > 13 or (now.hour == 13 and now.minute > 30):  # today 17:00
-        today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=13, minute=30, tzinfo=tz)  # end at 17:00 today
+        today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=16, minute=30, tzinfo=tz)  # end at 20:00 today
 
         d =dict()
         quotation_items = cls.objects.filter(Q(assigned_trade_user__in=trade_user) |
