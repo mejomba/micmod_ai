@@ -66,6 +66,7 @@ def update_price_list():
             if item.price and item.price.rmb_final_price:
                 price = item.price.rmb_final_price
                 price['sku'] = int(item.sku)
+                price['weight'] = item.weight
                 price['is_sea_default'] = item.is_sea_default
                 prices.append(price)
                 if not y_rate:
@@ -80,14 +81,14 @@ def update_price_list():
         g_sheet.update_rows('portal_prices', prices, 2)
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
         print(f'task done at:{update_time}')
-        g_sheet.wb.worksheet('portal_prices').update_cell(1, 7, update_time)
-        g_sheet.wb.worksheet('portal_prices').update_cell(1, 9, y_rate)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 10, grade_a)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, qty_1_9)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_10_99)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
+        g_sheet.wb.worksheet('portal_prices').update_cell(1, 8, update_time)
+        g_sheet.wb.worksheet('portal_prices').update_cell(1, 10, y_rate)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, grade_a)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_1_9)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_10_99)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_100_999)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, qty_1000_)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 16, chash_rial)
     except Exception as e:
         print(str(e))
     finally:
