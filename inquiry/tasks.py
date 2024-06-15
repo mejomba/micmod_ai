@@ -26,6 +26,7 @@ def update_components():
             component_['brand'] = component.brand.title if component.brand else None
             component_['is_sea_default'] = component.is_sea_default
             component_['package'] = component.package
+            component_['weight'] = component.weight
             # print(component_)
             components_lst.append(component_)
         print('update_components validate')
@@ -33,7 +34,7 @@ def update_components():
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
         g_sheet.clear_rows('Portal_list')
         g_sheet.update_rows('Portal_list', components_lst, 2)
-        g_sheet.wb.worksheet('Portal_list').update_cell(2, 8, update_time)
+        g_sheet.wb.worksheet('Portal_list').update_cell(2, 9, update_time)
         print(f'task update_components done at:{update_time}')
         print('update_components done')
     except Exception as e:
@@ -66,7 +67,6 @@ def update_price_list():
             if item.price and item.price.rmb_final_price:
                 price = item.price.rmb_final_price
                 price['sku'] = int(item.sku)
-                price['weight'] = item.weight
                 price['is_sea_default'] = item.is_sea_default
                 prices.append(price)
                 if not y_rate:
@@ -81,14 +81,14 @@ def update_price_list():
         g_sheet.update_rows('portal_prices', prices, 2)
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
         print(f'task done at:{update_time}')
-        g_sheet.wb.worksheet('portal_prices').update_cell(1, 8, update_time)
-        g_sheet.wb.worksheet('portal_prices').update_cell(1, 10, y_rate)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, grade_a)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_1_9)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_10_99)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_100_999)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, qty_1000_)
-        g_sheet.wb.worksheet('portal_prices').update_cell(2, 16, chash_rial)
+        g_sheet.wb.worksheet('portal_prices').update_cell(1, 7, update_time)
+        g_sheet.wb.worksheet('portal_prices').update_cell(1, 9, y_rate)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 10, grade_a)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, qty_1_9)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_10_99)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
+        g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
     except Exception as e:
         print(str(e))
     finally:
