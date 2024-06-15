@@ -147,7 +147,8 @@ class SkuUpdateView(LoginRequiredMixin,
         context['related_receipt_detail'] = ReceiptDetail.objects.filter(sku=self.kwargs['pk'])
         if flow := self.get_flow(context['item']):
             context['flow'] = flow.order_by('-id')
-        context['object_logs'] = ChangeLog.get_log(context['item'])
+        # context['object_logs'] = ChangeLog.get_log(context['item'])
+        context['app_name'] = self.request.resolver_match.app_name
         return context
 
     def form_valid(self, form):
@@ -198,6 +199,7 @@ class SkuRelatedView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         context['related_price_inquiry_files'] = context['item'].sku_const.all()
         context['related_receipt_detail'] = ReceiptDetail.objects.filter(sku=self.kwargs['pk'])
+        context['app_name'] = self.request.resolver_match.app_name
         #  Todo 'check related_receipt_detail on production'
         try:
             context['related_receipt_detail'] = Item.objects.filter(sku=self.kwargs['pk']).first().sku_set.all()
@@ -241,6 +243,7 @@ class ItemWeightUpdateView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
         return context
 
     def get_success_url(self):

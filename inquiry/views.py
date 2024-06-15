@@ -216,8 +216,8 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
         {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
-        {'name': 'id', 'visible': False, },
         {'name': 'created_date', 'visible': True, },
+        {'name': 'id', 'visible': False, },
         {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False}
@@ -245,6 +245,10 @@ class SkuListDataTableView(AjaxDatatableView):
             column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
             column.append({'name': 'air_extra_cost_percentage', 'visible': True})
             column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
+            pass
+        else:
+            column = column[:14]
         return column
 
     def customize_row(self, row, obj):
