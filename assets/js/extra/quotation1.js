@@ -898,7 +898,7 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    debugger
+    return x
     if (x / 100000 > 1){
         // round 3 digit
         x = x / 1000
