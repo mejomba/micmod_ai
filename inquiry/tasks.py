@@ -26,6 +26,7 @@ def update_components():
             component_['brand'] = component.brand.title if component.brand else None
             component_['is_sea_default'] = component.is_sea_default
             component_['package'] = component.package
+            component_['weight'] = component.weight
             # print(component_)
             components_lst.append(component_)
         print('update_components validate')
@@ -33,7 +34,7 @@ def update_components():
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
         g_sheet.clear_rows('Portal_list')
         g_sheet.update_rows('Portal_list', components_lst, 2)
-        g_sheet.wb.worksheet('Portal_list').update_cell(2, 8, update_time)
+        g_sheet.wb.worksheet('Portal_list').update_cell(2, 9, update_time)
         print(f'task update_components done at:{update_time}')
         print('update_components done')
     except Exception as e:
