@@ -11,12 +11,12 @@ from django.views import generic
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
-from .forms import ItemWeightForm, PurchaseGroupForm, HsForm
+from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -410,3 +410,51 @@ class HsDataTableView(AjaxDatatableView):
 def ajax_update_from_sepidar(request):
     set_items_sepidar_id_from_sepidar()
     return JsonResponse({'res': 'ok'})
+
+
+class CustomerView(LoginRequiredMixin, BaseView):
+    model = Customer
+    template_name = 'extra_data/customer.html'
+    success_url = reverse_lazy('extra_data:customer.list')
+    success_message = '%(title)s update'
+    form_struct = {
+        'form': CustomerForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+
+class CustomerListView(LoginRequiredMixin, generic.ListView):
+    model = Item
+    template_name = 'extra_data/customer_list.html'
+    context_object_name = 'items'
+
+
+class CustomerDataTableView(AjaxDatatableView):
+    model = Customer
+    title = 'customer'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'title', 'orderable': True, 'visible': True, },
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+    ]
+
+    # def get_initial_queryset(self, request=None):
+    #     pass
+
+    def customize_row(self, row, obj):
+        row['title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('extra_data:customer.update', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )
