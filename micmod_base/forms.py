@@ -445,7 +445,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             # 'goods_last_price': forms.TextInput(attrs={'class': 'goods_last_price','hidden': False}),
             # 'goods_total_sales': forms.TextInput(attrs={'class': 'goods_total_sales','hidden': True}),
             # 'final_price': forms.TextInput(attrs={'class': 'final_price','hidden': True, }),
-            'quantity': forms.TextInput(attrs={'class': 'quantity comma-seperator  w-100',
+            'quantity': forms.TextInput(attrs={'class': 'quantity comma-seperator  w-100', 'required': 'required'
                                                }),
         }
 
