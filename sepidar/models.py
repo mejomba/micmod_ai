@@ -95,7 +95,7 @@ from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.In
 union
 select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
         ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.QuotationItemID itemId
-        ,0 as coef,'qutation' as doc_type
+        ,0 as coef,'quotation' as doc_type
 from [SLS].[Quotation] as I Join [SLS].[QuotationItem] as II on II.QuotationRef = I.QuotationId
 union
 select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
@@ -247,7 +247,7 @@ from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.In
 union
 select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
 	,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.QuotationItemID itemId
-	,0 as coef,'qutation' as doc_type
+	,0 as coef,'quotation' as doc_type
 from [SLS].[Quotation] as I Join [SLS].[QuotationItem] as II on II.QuotationRef = I.QuotationId
 union
 select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
