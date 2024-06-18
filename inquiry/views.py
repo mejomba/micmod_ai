@@ -245,6 +245,8 @@ class SkuListDataTableView(AjaxDatatableView):
             column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
             column.append({'name': 'air_extra_cost_percentage', 'visible': True})
             column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
+            pass
         else:
             column = column[:14]
         return column

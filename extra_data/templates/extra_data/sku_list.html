@@ -69,29 +69,31 @@
     <script>
     const update_from_sepidar = document.querySelector('#update_from_sepidar')
     debugger
-    update_from_sepidar.addEventListener('click', function (e){
-        $.ajax({
-            type: 'GET',
-            url: '{% url 'extra_data:update_from_sepidar' %}',
-            dataType: 'json',
-            cache: false,
-            processData: false,
-            contentType: false,
-            beforeSend: function (){
-                update_from_sepidar.innerHTML = 'در حال بروز رسانی ...'
-                update_from_sepidar.classList.add('disabled')
-            },
-            success: function (data) {
-                debugger
-                update_from_sepidar.classList.add('bg-success')
-                update_from_sepidar.innerHTML = 'بروز رسانی شد'
-                window.location = '.'
-            },
-            error: function () {
-                alert('error')
-            },
-        }) // end ajax
-    })
+    if (update_from_sepidar){
+        update_from_sepidar.addEventListener('click', function (e){
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'extra_data:update_from_sepidar' %}',
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                beforeSend: function (){
+                    update_from_sepidar.innerHTML = 'در حال بروز رسانی ...'
+                    update_from_sepidar.classList.add('disabled')
+                },
+                success: function (data) {
+                    debugger
+                    update_from_sepidar.classList.add('bg-success')
+                    update_from_sepidar.innerHTML = 'بروز رسانی شد'
+                    window.location = '.'
+                },
+                error: function () {
+                    alert('error')
+                },
+            }) // end ajax
+        })
+    }
     </script>
 
     <script language="javascript">

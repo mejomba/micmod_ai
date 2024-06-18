@@ -432,7 +432,7 @@ class QuotationItem(BaseModel):
 
     @classmethod
     def get_inquiry_report(cls):
-        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()
+        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()#.order_by('username')
 
         from django.conf import settings
         from pytz import timezone as ptz
@@ -441,32 +441,33 @@ class QuotationItem(BaseModel):
         now = timezone.now()
         # if yesterday.hour < 13 or (yesterday.hour == 13 and yesterday.minute < 30):  # yesterday 17:00
         #     if time before 17:00 yesterday set to yesterday 17:01
-        yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=13, minute=30,
-                                      second=1, tzinfo=datetime.timezone.utc)  # begin from 17:00 yesterday
+        yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=16, minute=30,
+                                      second=1, tzinfo=datetime.timezone.utc)  # begin from 20:00 yesterday
 
         # if now.hour > 13 or (now.hour == 13 and now.minute > 30):  # today 17:00
-        today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=13, minute=30, tzinfo=tz)  # end at 17:00 today
+        today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=16, minute=30, tzinfo=tz)  # end at 20:00 today
 
         d =dict()
         quotation_items = cls.objects.filter(Q(assigned_trade_user__in=trade_user) |
                                              Q(assigned_trade_user2__in=trade_user))
         for user in trade_user:
-
+            if user.pk == 13:
+                pass
             user_filter = Q(assigned_trade_user=user) | Q(assigned_trade_user2=user)
-            time_filter = (Q(assigned_trade_user_date__gte=yesterday, assigned_trade_user_date__lte=today) |
-                           Q(assigned_trade_user_date2__gte=yesterday, assigned_trade_user_date2__lte=today))
-            task_start_filter = (Q(task_start=True) | Q(task_start2=True))
-            price_inquiry_filter = (Q(foreign_price_inquiry_done=True) | Q(foreign_price_inquiry_done=True))
+            time_filter = (Q(assigned_trade_user_date__gte=yesterday, assigned_trade_user_date__lte=today, assigned_trade_user=user) |
+                           Q(assigned_trade_user_date2__gte=yesterday, assigned_trade_user_date2__lte=today, assigned_trade_user2=user))
+            task_start_filter = (Q(task_start=True, assigned_trade_user=user) | Q(task_start2=True, assigned_trade_user2=user))
+            price_inquiry_filter = (Q(foreign_price_inquiry_done=True, assigned_trade_user=user) | Q(foreign_price_inquiry_done=True, assigned_trade_user2=user))
 
             all_tasks_qs = quotation_items.filter(user_filter)
             today_assigned = all_tasks_qs.filter(time_filter).count()
-            today_task_start = all_tasks_qs.filter(task_start_filter).count()
-            all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
+            today_task_start = all_tasks_qs.filter(task_start_filter, time_filter).count()
+            all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
             all_tasks = all_tasks_qs.count()
 
-            reminder_task = all_tasks - all_price_inquiry_done
+            reminder_task = all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
-            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, all_tasks, reminder_task
+            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks
         return d
 
     def pre_process_on_post_method(self, data=None):
