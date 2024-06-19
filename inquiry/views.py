@@ -754,7 +754,7 @@ def get_item(request):
                 print(str(e))
 
         if not items:
-            for item_ in Item.objects.filter(Q(sku__icontains=q) | Q(part_number__icontains=q), sepidar_id_0__isnull=True):
+            for item_ in Item.objects.filter(Q(sku__iexact=q) | Q(part_number__iexact=q), sepidar_id_0__isnull=True):
                 item = {}
                 try:
                     item['id'] = item_.pk
@@ -897,7 +897,7 @@ def get_items(request):
                 print(show_error(e, __file__))
 
         # local items
-        local_items = Item.objects.filter(Q(sku__icontains=q) | Q(part_number__icontains=q), sepidar_id_0__isnull=True) if len(q) > 2 else ''
+        local_items = Item.objects.filter(Q(sku__icontains=q) | Q(part_number__icontains=q), sepidar_id_0__isnull=True)[:3] if len(q) > 2 else ''
         for item_ in local_items:
             item = {}
             try:
