@@ -400,6 +400,7 @@ class QuotationItem(BaseModel):
     delay_reason = models.CharField(max_length=250, verbose_name=_('delay_reason'), null=True, blank=True)
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
+    price_target = models.PositiveIntegerField(_('price_target'), null=True, blank=True)
 
     objects = QuotationItemManager()
 
