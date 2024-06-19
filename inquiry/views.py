@@ -746,14 +746,67 @@ def get_item(request):
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
-
-
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
                 count += 1
             except Exception as e:
                 print(str(e))
+
+        if not items:
+            for item_ in Item.objects.filter(Q(sku__iexact=q) | Q(part_number__iexact=q), sepidar_id_0__isnull=True):
+                item = {}
+                try:
+                    item['id'] = item_.pk
+                    item['itemid'] = item_.sku
+                    item['text'] = item_.part_number
+                    try:
+                        item_obj: Item = item_
+                        price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                            pk=trade_price_code).first() if (trade_price_code) else item_obj.price
+                        price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                            pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
+                        # price_inquiry_result: PriceInquiryResult = item_obj.price
+                        if price_inquiry_result:
+                            price_setting = price_inquiry_result.price_settings
+                            price_inquiry_result.set_discount_params(
+                                quantity=quantity,
+                                customer_grade=id_customer_grade,
+                                payment_method=id_payment_method,
+                                currency=id_currency_ref,
+                                price_setting=price_setting
+                            )
+                            item["price_settings"] = price_setting.pk
+                            if str(id_currency_ref) == str(1):  # rial
+                                item["rial_final_price"] = price_inquiry_result.rial_final_price
+                                item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+                            elif str(id_currency_ref) == str(2):  # rmb
+                                item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+                            item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+
+                        if price_inquiry_result_bazar:
+                            price_setting = price_inquiry_result_bazar.price_settings
+                            price_inquiry_result_bazar.set_discount_params(
+                                quantity=quantity,
+                                customer_grade=id_customer_grade,
+                                payment_method=id_payment_method,
+                                currency=id_currency_ref,
+                                price_setting=price_setting
+                            )
+                            item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                            item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
+                                                                  "%Y-%m-%d")
+                        else:
+                            item["goods_price_market"] = None
+                            item["goods_market_date"] = None
+
+                    except Exception as e:
+                        show_error(e, __file__)
+
+                    obj['items'].append(item)
+                    count += 1
+                except Exception as e:
+                    print(show_error(e, __file__))
 
     obj['total_count'] = count
     return JsonResponse(obj, safe=False)
@@ -799,6 +852,72 @@ def get_items(request):
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
                     sku_item: Item = Item.objects.filter(sku=item_.code).first()
+                    price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
+                    price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
+                    if price_inquiry_result:
+                        price_setting = price_inquiry_result.price_settings
+                        price_inquiry_result.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
+                        item["price_settings"] = price_setting.pk
+                        if str(id_currency_ref) == str(1):  # rial
+                            item["rial_final_price"] = price_inquiry_result.rial_final_price
+                            item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+                        elif str(id_currency_ref) == str(2):  # rmb
+                            item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+                        item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+                    else:
+                        item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
+                        item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
+
+                    if price_inquiry_result_bazar:
+                        price_setting = price_inquiry_result_bazar.price_settings
+                        price_inquiry_result_bazar.set_discount_params(
+                            quantity=quantity,
+                            customer_grade=id_customer_grade,
+                            payment_method=id_payment_method,
+                            currency=id_currency_ref,
+                            price_setting=price_setting
+                        )
+                        item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                        item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                    else:
+                        item["goods_price_market"] = None
+                        item["goods_market_date"] = None
+                except Exception as e:
+                    show_error(e, __file__)
+
+                obj['items'].append(item)
+                count += 1
+            except Exception as e:
+                print(show_error(e, __file__))
+
+        # local items
+        local_items = Item.objects.filter(Q(sku__icontains=q) | Q(part_number__icontains=q), sepidar_id_0__isnull=True)[:3] if len(q) > 2 else ''
+        for item_ in local_items:
+            item = {}
+            try:
+                item['id'] = item_.pk
+                item['itemid'] = item_.sku
+                item['text'] = item_.part_number
+                # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
+                # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
+                # item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
+                # item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
+                # item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
+                # item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
+                # item['f_qty_all'] = item_.f_qty_all
+                # item['min_price'] = round_price(item_.min_price)
+                # item['avg_price'] = round_price(item_.avg_price)
+                # item['max_price'] = round_price(item_.max_price)
+                # item['stock_qty'] = item_.stock_qty
+                # item['stock_qty_res'] = item_.stock_res_qty
+                try:
+                    sku_item: Item = item_
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
                     price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
                     if price_inquiry_result:
