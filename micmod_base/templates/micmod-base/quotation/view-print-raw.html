@@ -263,7 +263,7 @@
         </div>
         <div class="col-11 col-md-11">
             <p class="mb-10 mt-2">
-                {{ data.description|default_if_none:"-" }}
+                {{ data.description|default_if_none:"-"|linebreaks }}
             </p>
         </div>
     </div>
