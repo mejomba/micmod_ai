@@ -52,7 +52,7 @@
                 {% render_field_by_order form form.description form.active form.update_price form.item_weight label='on-border' %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
-                {% render_field_by_order form form.submit_for_qi label='on-border' margin_b=5 %}
+                {% render_field_by_order form form.submit_for_qi form.active_main_item label='on-border' margin_b=5 %}
             </div>
         </div>
         <div class="col-2">
@@ -95,16 +95,24 @@
                     processData: false,
                     contentType: false,
                     success: function (data) {
+                        debugger
+                        const br = document.createElement('br')
+                        const sku_detail = document.createElement('small')
                         const id_sku_c_container = document.createElement('small')
                         const weight_input_container = document.createElement('small')
+                        const parent_element_container = document.createElement('small')
                         const id_sku_c_j = document.getElementById('id_sku_c')
                         id_sku_c_container.appendChild(document.createTextNode(` نام کالا: ${data['sku_name']}`))
                         weight_input_container.appendChild(document.createTextNode(`وزن قبلی: ${data['item_weight']}`))
+                        parent_element_container.appendChild(document.createTextNode(`کد مادر: ${data['parent']}`))
                         if (weightInput.parentElement.lastElementChild.tagName == 'SMALL') {
                             id_sku_c_j.parentElement.lastElementChild.innerHTML = ''
                             weightInput.parentElement.lastElementChild.innerHTML = ''
                         }
-                        id_sku_c_j.parentElement.appendChild(id_sku_c_container)
+                        sku_detail.appendChild(id_sku_c_container)
+                        sku_detail.appendChild(br)
+                        sku_detail.appendChild(parent_element_container)
+                        id_sku_c_j.parentElement.appendChild(sku_detail)
                         id_sku_c_j.parentElement.classList.remove('mb-3')
                         weightInput.parentElement.appendChild(weight_input_container)
                         weightInput.parentElement.classList.remove('mb-3')

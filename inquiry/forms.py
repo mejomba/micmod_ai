@@ -1,5 +1,6 @@
 from django import forms
 from django.db.models import Q
+from django_select2.forms import ModelSelect2MultipleWidget
 
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
@@ -15,6 +16,13 @@ from django_select2 import forms as s2forms
 from jalali_date.fields import JalaliDateField
 
 
+class ParentItemWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "part_number__icontains",
+        "sku__icontains",
+    ]
+
+
 class SkuCreateForm(CustomBaseModelForm):
     image_groups = 2
     file_groups = 1
@@ -27,6 +35,9 @@ class SkuCreateForm(CustomBaseModelForm):
     class Meta:
         model = Item
         exclude = ['group']
+        widgets = {
+            'parent': ParentItemWidget,
+        }
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
