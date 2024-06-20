@@ -426,6 +426,17 @@
           "trade_admin"
         ]
       }
+    },
+    {
+      "title": "customer",
+      "icon": "burger-menu",
+      "path_key": "tlg/message/list",
+      "link": "extra_data:customer.list",
+      "permission": {
+        "groups": [
+          "total_admin"
+        ]
+      }
     }
   ]
 }

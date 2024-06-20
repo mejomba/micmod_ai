@@ -1,0 +1,34 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}Customer{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <style>
+
+    </style>
+{% endblock extra_css %}
+
+{% block form_content %}
+
+    {% csrf_token %}
+    <div class="row row-cols-6">
+    {% render_field_by_order form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.mobile form.max_credit form.credit_with_doc form.customer_group form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.revival_date label='on-border' margin_b=4 %}
+    </div>
+{% endblock form_content %}
+
+{% block form_footer_extra %}
+{% include "core/partial/add_formset_button.html" %}
+
+
+{% endblock form_footer_extra %}
+
+
+{% block extra_js %}
+
+{% endblock extra_js %}
