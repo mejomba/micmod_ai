@@ -5,6 +5,7 @@ from django import template
 from django.contrib.contenttypes.models import ContentType
 
 from comments.models import Comments, CommentSeen
+from extra_data.models import Item
 from files.models import File, Image
 from tools.utils import show_error
 from num2fawords import words
@@ -398,3 +399,9 @@ def item_count(page_obj):
 @register.simple_tag
 def num_to_fa_words(num):
     return words(num)
+
+
+@register.simple_tag
+def parent_code_data(goods_code):
+    item = Item.objects.filter(sku=goods_code).first()
+    return item.parent if item else None

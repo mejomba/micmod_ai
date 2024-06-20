@@ -539,5 +539,7 @@
     "has_delay": "تاخیر دارد",
     "delay_reason": "علت تاخیر با | جدا کنید",
     "delay_time":  "زمان تاخیر (روز به عدد) با | جدا کنید",
-    "item_in_china": "آیتم در چین"
+    "item_in_china": "آیتم در چین",
+    "parent_code": "کد مادر",
+    "active_main_item": "کد مادر فعال"
 }
