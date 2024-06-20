@@ -207,20 +207,21 @@ class SkuListDataTableView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
-        {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 border',
+        {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
-        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 border'},
-        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 border'},
-        {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 border'},
-        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
-        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
-        {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 border', 'lookup_field': '__title__icontains'},
-        {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 border'},
+        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
+        {'name': 'parent', 'visible': True, 'searchable': True},
+        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 '},
+        {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
+        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
+        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
+        {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
+        {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
         {'name': 'created_date', 'visible': True, },
         {'name': 'id', 'visible': False, },
         {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
-        {'name': 'weight', 'visible': True, 'searchable': False}
+        {'name': 'weight', 'visible': True, 'searchable': False},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -248,7 +249,7 @@ class SkuListDataTableView(AjaxDatatableView):
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
-            column = column[:14]
+            column = column[:15]
         return column
 
     def customize_row(self, row, obj):
@@ -708,6 +709,8 @@ def get_item(request):
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
                     item_obj = Item.objects.filter(sku=q).first()
+                    if item_obj and item_obj.parent and item_obj.active_main_item:
+                        item_obj = item_obj.parent
 
                     # if trade_price_code or bazar_price_code:
                     price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
@@ -852,6 +855,8 @@ def get_items(request):
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
                     sku_item: Item = Item.objects.filter(sku=item_.code).first()
+                    if sku_item and sku_item.parent and sku_item.active_main_item:
+                        sku_item = sku_item.parent
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
                     price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
                     if price_inquiry_result:
@@ -1073,13 +1078,14 @@ class AjaxInquiryResultListData(View):
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
         if sku:
             try:
+                parent = sku.parent
                 username = sku.weight_obj
                 username = username.editor_user.username if username else ''
                 return JsonResponse(
-                    {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, })
+                    {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': f'{parent.sku} - {parent.part_number}'})
             except:
                 pass
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id})
+        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})
 
 
 # Todo ino yadet nare shanbe

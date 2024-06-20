@@ -323,6 +323,8 @@ class Item(BaseModel):
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
                                        on_delete=models.CASCADE)
     is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
+    active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
+    parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
     objects = BaseManager(is_public=True)
 
     # base_fields = ['sku','part_number']

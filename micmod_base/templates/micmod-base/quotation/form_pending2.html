@@ -101,9 +101,15 @@
 
                                         <div class="w-75">
                                             <div class="d-flex justify-content-end">
-                                                <div class="w-75 mt-3 ms-2">{{ form_s.goods_name.label }}:<br><br>
+                                                <div class="w-75 mt-3 ms-2">{{ form_s.goods_name.label }}:<br>
                                                     <span name="goods_name_lbl" class="goods_name">{{ form_s.instance.goods_name }}</span>
                                                     <input type="hidden" class="goods_name_input" name="goods_name" value="{{ form_s.instance.goods_name }}">
+                                                    {% parent_code_data form_s.instance.goods_code as parent_code %}
+                                                    {% if parent_code %}
+                                                        <br>
+                                                    <small class="me-1">کد مادر</small>
+                                                        <small class="bg-light-danger"><a target="_blank" href="{% url 'extra_data:sku.update'  form_s.instance.goods_code %}">{{ parent_code.sku }} - {{ parent_code.part_number }}</a></small>
+                                                    {% endif %}
                                                 </div>
                                                 {% if form_s.instance.goods_code_alt %}
                                                     <div class="w-25 bg-light-danger text-center"
@@ -243,7 +249,11 @@
                                             <div class="d-flex justify-content-between mt-auto px-1">
                                                 <div class="d-flex justify-content-start">
                                                     {% if form_s.instance.goods_code %}
-                                                        <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}&qi_id={{ form_s.instance.pk }}"
+                                                        {% if parent_code %}
+                                                            <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ parent_code.pk }}&qi_id={{ form_s.instance.pk }}"
+                                                        {% else %}
+                                                            <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}&qi_id={{ form_s.instance.pk }}"
+                                                        {% endif %}
                                                            target="_blank"
                                                            class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">مشاهده
                                                             پرونده استعلام</a>
