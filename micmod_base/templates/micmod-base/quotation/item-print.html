@@ -17,7 +17,7 @@
 {#        <div class="font-size-12 persian-digit">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>#}
 {#    </td>#}
 <!-- GOODS NAME AND CODE -->
-    <td class="">
+    <td class="p-0 m-0">
         <div class="bold font-size-12 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
         <div class="w-100 font-size-12 text-center ">{{ form.instance.goods_name|default_if_none:"" }}</div>
     </td>
@@ -32,18 +32,18 @@
     </td>
 <!-- SALE HISTORY -->
     <td class="font-size-12 ">
-        <div class="row row-cols-3 text-left">
+        <div class="d-flex justify-content-between">
             <div class="persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
             <div class="text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
             <div class="persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
         </div>
-        <div class="row row-cols-3 border-top text-left">
+        <div class="d-flex justify-content-between">
             <div class="persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
             <div class="text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
             <div class="persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
         </div>
 {#        <br class="border-dark w-100"/>#}
-        <div class="row row-cols-3 text-left">
+        <div class="d-flex justify-content-between">
             <div class="text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:'-4g' }}</div>
             <div class="text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:'-4g' }}</div>
             <div class="text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:'-4g' }}</div>
