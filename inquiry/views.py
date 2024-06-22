@@ -804,6 +804,8 @@ def get_items(request):
                     sku_item: Item = Item.objects.filter(sku=item_.code).first()
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
+                        item['parent_sku'] = sku_item.sku
+                        item['parent_part_number'] = sku_item.part_number
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
                     price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
                     if price_inquiry_result:
