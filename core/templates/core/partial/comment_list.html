@@ -30,7 +30,12 @@
                     <!--begin::Date-->
                     <p class="badge ms-auto {% if comment.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
                         {{ comment.get_comment_title_display }}
-                    </p>{% if comment.creator_user == request.user %} <p class="btn btn-light-danger ms-auto comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete</p> {% endif %}
+                    </p>
+                    {% if comment.creator_user == request.user %}
+                        <p class="btn btn-light-danger ms-auto comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
+                        </p>
+                    {% endif %}
+
                     <!--end::Date-->
                     <div class="d-flex">
                     </div>
@@ -40,8 +45,22 @@
             <!--end::Message header-->
 
             <!--begin::Message content-->
-            <div class="d-flex justify-content-start">
+            <div class="d-flex flex-column justify-content-start">
                 <p class="px-4" style="text-align: right">{{ comment.comment_content|get_comment_link }}</p>
+                <div>
+                    {% for pic in comment.images.all %}
+
+                        <a href="{{ pic.path.url }}" target="_blank" class="me-1"><img src="{{ pic.path.url }}"
+                                                                                       alt="pic" class="rounded-circle"
+                                                                                       width="22" height="22"></a>
+                    {% endfor %}
+                    <span class="mx-2"></span>
+                    {% for file in comment.files.all %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1"><i
+                                class="fas fa-file-upload icon-lg"></i></a>
+
+                    {% endfor %}
+                </div>
             </div>
         </div>
     {% endfor %}
