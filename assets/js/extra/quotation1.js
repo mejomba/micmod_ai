@@ -838,6 +838,10 @@ function newFormatRepoItem(repo) {
     }
     if (repo.goods_market_date){goods_market_date=repo.goods_market_date} else {goods_market_date='-'}
     if (repo.goods_price_market){goods_price_market=repo.goods_price_market} else {goods_price_market='-'}
+    let parent_code = '';
+    if (repo.parent_sku){
+        parent_code = "<div class='bold text-warning'>کد مادر " + repo.parent_sku + "(" +repo.parent_part_number +")" + "</div>"
+    }
     // debugger
     var $container = $(
         "<div class='w-100 replace-digits' dir='rtl' style='font-family: BYekan'>" +
@@ -884,7 +888,11 @@ function newFormatRepoItem(repo) {
         "<div class='w-60'>" + goods_market_date + "</div>" +
         "</div> " +
         "</div> " +
-        "</div></div>"
+
+        "</div>" +
+        parent_code +
+        "</div>"
+
     );
     return ($container);
 }

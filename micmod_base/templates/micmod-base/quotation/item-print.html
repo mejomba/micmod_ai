@@ -93,7 +93,7 @@
 {% if with_alt_code == '1' %}
 <!-- FINAL PRICE -->
     <td class=" font-size-12 replace-digits" style="text-align: right">
-        {% for alt_html in alt_code_html %}
+        {% for alt_html in form.alt_codes_html %}
             {{ alt_html }}
         {% endfor %}
     </td>
