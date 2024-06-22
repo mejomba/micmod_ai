@@ -44,6 +44,4 @@ urlpatterns = [
     path('quotation/print/<int:id>/', print_view, name='print'),
     path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
     path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
-    path('quotation/print/customer/<int:id>/', print_view, name='sales.list.datatable'),
-
 ]
