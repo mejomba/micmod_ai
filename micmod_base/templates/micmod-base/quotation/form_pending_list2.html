@@ -232,6 +232,27 @@
         document.querySelector('#id-empty-modal-body').innerHTML = ''
     })
 
+    const parent_code_input = document.querySelectorAll('.parent_code_input')
+    const add_parent_code = document.querySelectorAll('.add_parent_code')
+    if (add_parent_code){
+        add_parent_code.forEach(function (item, idx){
+            item.addEventListener('click', function (e){
+                e.preventDefault()
+                try {
+                    parent_code_input[idx].classList.remove('d-none')
+                }
+                catch (err){
+                    console.log(err)
+                }
+            })
+        }) // end forEach
+    }
+    if (parent_code_input){
+        parent_code_input.forEach(function (item){
+            item.addEventListener('key-up')
+        })
+    }
+
 </script>
 
 {% endblock extra_js %}

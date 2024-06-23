@@ -109,6 +109,13 @@
                                                         <br>
                                                     <small class="me-1">کد مادر</small>
                                                         <small class="bg-light-danger"><a target="_blank" href="{% url 'extra_data:sku.update'  form_s.instance.goods_code %}">{{ parent_code.sku }} - {{ parent_code.part_number }}</a></small>
+                                                    {% else %}
+                                                        <br>
+                                                        <a class="btn btn-link p-0 mt-1 add_parent_code text-primary" id="add_parent_code">افزودن کد مادر</a>
+                                                        <div class="input-group d-none parent_code_input">
+                                                        <input type="text" class="form-control" id="parent_code_input" name="parent_code_input" placeholder="فقط کد کالا وارد کنید">
+                                                        <button class="btn btn-secondary" type="button" id="parent_code_submit">ذخیره</button>
+                                                        </div>
                                                     {% endif %}
                                                 </div>
                                                 {% if form_s.instance.goods_code_alt %}
@@ -374,6 +381,12 @@
     {#  }#}
     {##}
     //);
+
+        const parent_code_submit = document.querySelector('#parent_code_submit')
+        parent_code_submit.addEventListener('click', function (e){
+            e.preventDefault()
+
+        })
 
     </script>
 
