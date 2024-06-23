@@ -123,7 +123,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
-        if not self.object.is_official:
+        if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
             # self.object.save()
 
