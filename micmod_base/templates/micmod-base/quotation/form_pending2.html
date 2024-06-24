@@ -114,7 +114,7 @@
                                                         <a class="btn btn-link p-0 mt-1 add_parent_code text-primary" id="add_parent_code">افزودن کد مادر</a>
                                                         <div class="input-group d-none parent_code_input">
                                                         <input type="text" class="form-control" id="parent_code_input" name="parent_code_input" placeholder="فقط کد کالا وارد کنید">
-                                                        <button class="btn btn-secondary" type="button" id="parent_code_submit">ذخیره</button>
+                                                        <button class="btn btn-secondary parent_code_submit" type="button" id="parent_code_submit">ذخیره</button>
                                                         </div>
                                                     {% endif %}
                                                 </div>
@@ -383,10 +383,38 @@
     //);
 
         const parent_code_submit = document.querySelector('#parent_code_submit')
-        parent_code_submit.addEventListener('click', function (e){
-            e.preventDefault()
+        if (parent_code_submit){
+            parent_code_submit.addEventListener('click', function (e){
+                e.preventDefault()
+                debugger
+                const originUrl = window.location.origin
+                const item = document.querySelector('[name="goods_code"]')
+                const parent = document.querySelector('[name="parent_code_input"]')
+                const url = `${originUrl}/micmod_base/ajax/save_parent_item/?item=${item.value()}&parent=${parent.value()}`
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    dataType: 'json',
+                    data: formData,
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: block_main_container,
+                    success: function (data) {
+                        html = data['res'];
+                        element.html(html);
+                        run_scripts(html);
+                    },
+                    error: function () {
 
-        })
+                    },
+                    complete: release_main_container
+                }); // end ajax
+            })
+        }
 
     </script>
 

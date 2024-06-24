@@ -996,3 +996,17 @@ def inquiry_report(request):
     inquiry_report_call = QuotationItem.get_inquiry_report()
     res = render_to_string('micmod-base/quotation/partial/inquiry_report_filter.html', context={'quotationitem_filters':inquiry_report_call})
     return JsonResponse({'res': res}, safe=False)
+
+
+def save_parent_item(request):
+    item_sku = request.GET.get('item')
+    parent_sku = request.GET.get('parent')
+
+    item = Item.objects.filter(sku=item_sku).first()
+    parent_item = Item.objects.filter(sku=parent_sku).first()
+
+    if item and parent_item:
+        item.parent = parent_item
+        item.save()
+
+
