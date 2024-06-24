@@ -999,14 +999,23 @@ def inquiry_report(request):
 
 
 def save_parent_item(request):
-    item_sku = request.GET.get('item')
-    parent_sku = request.GET.get('parent')
+    import json
+    data = json.loads(request.body)
+    item_sku = data.get('item')
+    parent_sku = data.get('parent')
 
     item = Item.objects.filter(sku=item_sku).first()
     parent_item = Item.objects.filter(sku=parent_sku).first()
 
+    if request.method == 'DELETE' and item:
+        item.parent = None
+        item.save()
+        return JsonResponse({'res': 'delete'}, status=200)
+
     if item and parent_item:
         item.parent = parent_item
         item.save()
+        return JsonResponse({'res': 'ok'})
+    return JsonResponse({'res': 'کد نامعتبر'}, status=400)
 
 

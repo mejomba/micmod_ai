@@ -107,15 +107,23 @@
                                                     {% parent_code_data form_s.instance.goods_code as parent_code %}
                                                     {% if parent_code %}
                                                         <br>
-                                                    <small class="me-1">کد مادر</small>
-                                                        <small class="bg-light-danger"><a target="_blank" href="{% url 'extra_data:sku.update'  form_s.instance.goods_code %}">{{ parent_code.sku }} - {{ parent_code.part_number }}</a></small>
+                                                        <small class="me-1">کد مادر</small>
+                                                        <small class="bg-light-danger"><span class="add_parent_code">{{ parent_code.sku }} - {{ parent_code.part_number }}</span></small>
+                                                        <small class="bg-danger text-white p-0 rounded px-1 ms-5 cursor-pointer remove_parent_item" data-goods_code="{{ form_s.instance.goods_code }}">حذف</small>
+                                                        <div class="input-group d-none parent_code_input">
+                                                        <input type="text" class="form-control" id="parent_code_input" name="parent_code_input" placeholder="فقط کد کالا وارد کنید" value="{{ parent_code.sku }}">
+                                                        <button class="btn btn-secondary parent_code_submit" type="button" id="parent_code_submit" data-goods_code="{{ form_s.instance.goods_code }}">ذخیره</button>
+                                                        </div>
+                                                        <span class="d-none parent_submit_message"></span>
                                                     {% else %}
                                                         <br>
                                                         <a class="btn btn-link p-0 mt-1 add_parent_code text-primary" id="add_parent_code">افزودن کد مادر</a>
+                                                        <small class="bg-danger text-white p-0 rounded px-1 ms-5 cursor-pointer remove_parent_item d-none">حذف</small>
                                                         <div class="input-group d-none parent_code_input">
                                                         <input type="text" class="form-control" id="parent_code_input" name="parent_code_input" placeholder="فقط کد کالا وارد کنید">
-                                                        <button class="btn btn-secondary parent_code_submit" type="button" id="parent_code_submit">ذخیره</button>
+                                                        <button class="btn btn-secondary parent_code_submit" type="button" id="parent_code_submit" data-goods_code="{{ form_s.instance.goods_code }}">ذخیره</button>
                                                         </div>
+                                                        <span class="d-none parent_submit_message"></span>
                                                     {% endif %}
                                                 </div>
                                                 {% if form_s.instance.goods_code_alt %}
@@ -381,40 +389,6 @@
     {#  }#}
     {##}
     //);
-
-        const parent_code_submit = document.querySelector('#parent_code_submit')
-        if (parent_code_submit){
-            parent_code_submit.addEventListener('click', function (e){
-                e.preventDefault()
-                debugger
-                const originUrl = window.location.origin
-                const item = document.querySelector('[name="goods_code"]')
-                const parent = document.querySelector('[name="parent_code_input"]')
-                const url = `${originUrl}/micmod_base/ajax/save_parent_item/?item=${item.value()}&parent=${parent.value()}`
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    dataType: 'json',
-                    data: formData,
-                    headers: {
-                        "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    cache: false,
-                    processData: false,
-                    contentType: false,
-                    beforeSend: block_main_container,
-                    success: function (data) {
-                        html = data['res'];
-                        element.html(html);
-                        run_scripts(html);
-                    },
-                    error: function () {
-
-                    },
-                    complete: release_main_container
-                }); // end ajax
-            })
-        }
 
     </script>
 
