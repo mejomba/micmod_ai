@@ -222,9 +222,9 @@ class SkuListDataTableView(AjaxDatatableView):
         # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'trade_last_weight', 'visible': True},
+        {'name': 'wh_last_weight', 'visible': True},
+        {'name': 'weight_percentage', 'visible': True},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -264,7 +264,7 @@ class SkuListDataTableView(AjaxDatatableView):
         )
         row['technical_confirm'] = f'<b class="text-success" >Yes</b>' if obj.technical_confirm else '<p>No</p>'
         x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
-        row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' if obj.weight_percentage else '<p>-</p>'
+        row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>'
 
 
 def sku_list(request):
