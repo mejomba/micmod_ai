@@ -1096,8 +1096,7 @@ class AjaxInquiryResultListData(View):
                          'parent': f'{parent.sku} - {parent.part_number}'})
                 else:
                     return JsonResponse(
-                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,
-                         'parent': '-'})
+                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': '-'})
             except:
                 pass
         return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})
