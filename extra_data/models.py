@@ -715,7 +715,7 @@ class CustomerContract(AbsBaseModel):
 
 class CustomerFields(AbsBaseModel):
     title = models.CharField(_('customer_field'), max_length=255, null=True, blank=True)
-    icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path)
+    icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path, null=True, blank=True)
 
 
 class ChangeCustomerGroup(AbsBaseModel):
