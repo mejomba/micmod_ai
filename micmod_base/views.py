@@ -123,7 +123,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
-        if not self.object.is_official:
+        if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
             # self.object.save()
 
@@ -378,6 +378,7 @@ def print_view(request,id=-1):
                                   }
                                   )
     for f in greeting['formset']:
+        f.alt_codes_html = []
         if alt_qs := f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
             for alt_comment in alt_qs:
                 comment_str_lower = alt_comment.comment_content.lower()
@@ -433,7 +434,7 @@ def print_view(request,id=-1):
                             item["goods_market_date"] = None
                         # render html
                         html = render_to_string('micmod-base/quotation/partial/alt_code_print.html', context=item)
-                        greeting['alt_code_html'].append(html)
+                        f.alt_codes_html.append(html)
                 except Exception as e:
                     show_error(e, __file__)
     if quotation:
