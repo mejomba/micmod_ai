@@ -123,7 +123,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
-        if not self.object.is_official:
+        if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
             # self.object.save()
 
@@ -996,3 +996,26 @@ def inquiry_report(request):
     inquiry_report_call = QuotationItem.get_inquiry_report()
     res = render_to_string('micmod-base/quotation/partial/inquiry_report_filter.html', context={'quotationitem_filters':inquiry_report_call})
     return JsonResponse({'res': res}, safe=False)
+
+
+def save_parent_item(request):
+    import json
+    data = json.loads(request.body)
+    item_sku = data.get('item')
+    parent_sku = data.get('parent')
+
+    item = Item.objects.filter(sku=item_sku).first()
+    parent_item = Item.objects.filter(sku=parent_sku).first()
+
+    if request.method == 'DELETE' and item:
+        item.parent = None
+        item.save()
+        return JsonResponse({'res': 'delete'}, status=200)
+
+    if item and parent_item:
+        item.parent = parent_item
+        item.save()
+        return JsonResponse({'res': 'ok'})
+    return JsonResponse({'res': 'کد نامعتبر'}, status=400)
+
+

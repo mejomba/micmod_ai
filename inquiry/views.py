@@ -203,7 +203,7 @@ class SkuListDataTableView(AjaxDatatableView):
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
-
+    from translator import get_text as _
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
@@ -212,21 +212,26 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
         {'name': 'parent', 'visible': True, 'searchable': True},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 '},
-        {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
+        # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
+        # {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
         {'name': 'created_date', 'visible': True, },
         {'name': 'id', 'visible': False, },
-        {'name': 'technical_confirm', 'visible': True, },
+        # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
-        {'name': 'weight', 'visible': True, 'searchable': False},
+        {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'trade_last_weight', 'visible': True},
+        {'name': 'wh_last_weight', 'visible': True},
+        {'name': 'weight_percentage', 'visible': True},
     ]
 
     def get_initial_queryset(self, request=None):
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
+        # qs = qs.annotate(trade_last_weight=1+2)
+        # qs = qs.annotate(wh_last_weight='wh_last_weight')
         q = self.request.POST.get('q')
         # if q == 'update_from_sepidar':
         #     set_items_sepidar_id_from_sepidar()
@@ -257,7 +262,10 @@ class SkuListDataTableView(AjaxDatatableView):
             reverse('extra_data:sku.update', args=(obj.id,)),
             obj.sku if obj.sku else '_'
         )
-        row['technical_confirm'] = f'<b class="text-success" >Yes</b>' if obj.technical_confirm else '<p>No</b>'
+        row['technical_confirm'] = f'<b class="text-success" >Yes</b>' if obj.technical_confirm else '<p>No</p>'
+        x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
+        row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
+            if obj.weight_percentage else '<p>-</p>'
 
 
 def sku_list(request):
@@ -1083,8 +1091,13 @@ class AjaxInquiryResultListData(View):
                 parent = sku.parent
                 username = sku.weight_obj
                 username = username.editor_user.username if username else ''
-                return JsonResponse(
-                    {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': f'{parent.sku} - {parent.part_number}'})
+                if parent:
+                    return JsonResponse(
+                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,
+                         'parent': f'{parent.sku} - {parent.part_number}'})
+                else:
+                    return JsonResponse(
+                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': '-'})
             except:
                 pass
         return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})

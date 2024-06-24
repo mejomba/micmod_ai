@@ -1,6 +1,10 @@
 {% load more_tags %}
 <div id="id_comment_form_for_copy__{{ object_id }}">
-    {{ form }}
+{#    {{ form }}#}
+    {% render_field_by_order form form.comment_title form.comment_content form.object_id form.content_type %}
+    <div class="d-flex gap-3">
+        {% render_field_by_order form form.image_1 form.file_1 %}
+    </div>
 </div>
     <div class="d-flex gap-2 mt-5 mb-15" id="object_id__" data-pk="{{ object_id }}" data-ctt_id="{{ ctt_id }}">
         {% if comment_type == 'cancel' %}

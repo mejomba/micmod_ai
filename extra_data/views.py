@@ -149,6 +149,12 @@ class SkuUpdateView(LoginRequiredMixin,
             context['flow'] = flow.order_by('-id')
         # context['object_logs'] = ChangeLog.get_log(context['item'])
         context['app_name'] = self.request.resolver_match.app_name
+        if 'wh_user' in self.request.user.groups.values_list('name', flat=True):
+            for name, field in context['form'].fields.items():
+                if name not in ['image_1', 'image_2', 'file_1', 'batch_type', 'batch_count']:
+                    field.widget.attrs['readonly'] = 'readonly'
+                if name in ['is_sea_default', 'active_main_item', 'technical_confirm']:
+                    field.disabled = True
         return context
 
     def form_valid(self, form):
