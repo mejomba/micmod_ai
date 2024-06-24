@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-
+import os
 import dw.models
 from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
@@ -12,6 +12,8 @@ from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 from sepidar.models import BaseData
 from tools.form_tools import select_cquery
+from django.core.validators import MaxValueValidator
+
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
@@ -504,6 +506,7 @@ class ItemWeight(AbsBaseModel):
     def __str__(self):
         return f'{self.sku}'
 
+
 class CustomerGroup(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
     sepidar_id = models.AutoField(verbose_name=_('sepidar_id'), unique=True, primary_key=True, editable=False)
@@ -550,6 +553,44 @@ class Province(AbsBaseModel):
     auto_complete = 'title'
 
 
+CustomerGrade = (
+    ("-2,A+", _("A+ Cash")),
+    ("-1,A", _("A Cash")),
+    ("0,B", _("B Cash")),
+
+    ("-2,A+", _("A+ 1 Month")),
+    ("-1,A", _("A 1 Month")),
+    ("0,B", _("B 1 Month")),
+
+    ("-2,A+", _("A+ 2 Month")),
+    ("-1,A", _("A 2 Month")),
+    ("0,B", _("B 2 Month")),
+
+    ("-2,A+", _("A+ 3 Month")),
+    ("-1,A", _("A 3 Month")),
+    ("0,B", _("B 3 Month")),
+
+    ("-2,A+", _("A+ 4 Month")),
+    ("-1,A", _("A 4 Month")),
+    ("0,B", _("B 4 Month")),
+)
+
+
+def uploaded_file_path(instance, filename: str):
+    """generate file path for file"""
+    name = '_'.join(filename.split(' '))
+    name = f"_{name}"
+    return os.path.join('uploads/file/customer/', name)
+
+
+def uploaded_image_path(instance, filename: str):
+    """generate file path for image"""
+    name = '_'.join(filename.split(' '))
+    name = f"_{name}"
+
+    return os.path.join('uploads/icons/customer/', name)
+
+
 class Customer(AbsBaseModel):
     sepidar_dl_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     sepidar_dl_code = models.BigIntegerField(verbose_name=_('sepidar_code'), null=True, blank=True, unique=True)
@@ -564,9 +605,9 @@ class Customer(AbsBaseModel):
     website = models.URLField(max_length=150, verbose_name=_("website"), null=True, blank=True)
     phone = models.CharField(max_length=50, verbose_name=_("phone"), null=True, blank=True)
     mobile = models.CharField(max_length=50, verbose_name=_("mobile"), null=True, blank=True)
-    max_credit = models.BigIntegerField(verbose_name=_("max_credit"), null=True, blank=True)
-    credit_with_doc = models.BigIntegerField(verbose_name=_("credit_with_doc"), null=True, blank=True)
-    customer_group = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("customer_group"), null=True, blank=True)
+
+    credit_with_doc = models.BigIntegerField(verbose_name=_("credit_with_doc"), null=True, blank=True)  # delete
+    customer_group = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("customer_group"), null=True, blank=True)  # delete
     province = models.ForeignKey(Province, on_delete=models.DO_NOTHING, related_name='customers_p',verbose_name=_("province"), null=True, blank=True)
     location = models.ForeignKey(Province, on_delete=models.DO_NOTHING, related_name='customers_l',verbose_name=_("location"), null=True, blank=True)
     address = models.CharField(max_length=400, verbose_name=_("address"), null=True, blank=True)
@@ -574,8 +615,51 @@ class Customer(AbsBaseModel):
     sub_senf = models.ForeignKey(SubSenf, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("sub_senf"), null=True, blank=True)
     introduction_method = models.ForeignKey(IntroductionMethod, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("introduction_method"), null=True, blank=True)
     introducer = models.ForeignKey(Introducer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("introducer"), null=True, blank=True)
-    marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("marketer"), null=True, blank=True)
+
     revival_date = models.DateField(verbose_name=_("revival_date"), null=True, blank=True)
+
+    # new field
+    # ضمانت
+    z_no = models.BooleanField(_('Z_no'), default=False)
+    z_safte = models.PositiveBigIntegerField(_('Z_safte'), null=True, blank=True)
+    z_cheque_s = models.PositiveBigIntegerField(_('Z_cheque_s'), null=True, blank=True)
+    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False)
+    z_max_credit_rafi = models.PositiveBigIntegerField(_('Z_max_credit_rafi'), null=True, blank=True)
+    # مبلغ زمانت
+    extra_credit = models.PositiveBigIntegerField(_('extra_credit'), null=True, blank=True)
+
+    # نوع فاکتور
+    i_type1_target = models.PositiveSmallIntegerField(_('Z_credit'), null=True, blank=True, validators=[MaxValueValidator(100)])
+
+    # حد اعتبار
+    # مشتریان فعال
+    # کارشناس
+    marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',
+                                 verbose_name=_("marketer"), null=True, blank=True)
+    # مشتریان بدون قرارداد ( چک هنگام تحویل کالا)
+    cheque_to_delivery = models.BooleanField(_('cheque_to_delivery'), default=False)
+
+    # قرارداد
+    contract = models.ForeignKey('CustomerContract', verbose_name=_('contract'), null=True, blank=True,
+                                 on_delete=models.DO_NOTHING)
+
+    # توافق با مشتری
+    customer_sale_type = models.ForeignKey('micmod_base.SaleType', on_delete=models.DO_NOTHING,
+                                           verbose_name=_('customer_sale_type'), null=True, blank=True)
+
+    # نام رسمی
+    official_name = models.CharField(_('official_name'), max_length=255, null=True, blank=True)
+    customer_grade = models.CharField(choices=CustomerGrade, max_length=10, null=True, blank=True,
+                                      verbose_name=_('customer_grade'), default="-1,A")
+
+    description = models.TextField(_('description'), max_length=1000, null=True, blank=True)
+    lat = models.CharField(_('lat'), max_length=100, null=True, blank=True)
+    long = models.CharField(_('long'), max_length=100, null=True, blank=True)
+
+    customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
+
+    customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
+    customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
 
     @staticmethod
     def get_list(text):
@@ -585,3 +669,36 @@ class Customer(AbsBaseModel):
         return res
 
 
+class CustomerDocuments(AbsBaseModel):
+    DOC_CHOICES = (
+        ("A", _("id_card")),
+    )
+    path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
+    doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
+    description = models.CharField(_('description'), max_length=255, null=True, blank=True)
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
+
+
+class CustomerContract(AbsBaseModel):
+    CONTRACT_TYPE = (
+        ("A", _('contract')),
+        ("B", _('sorat_jalase')),
+    )
+    contract_date = models.DateTimeField(_('contract_date'), null=True, blank=True)
+    contract_due_date = models.DateTimeField(_('contract_due_date'), null=True, blank=True)
+    description = models.TextField(_('description'), max_length=3000)
+    contract_type = models.CharField(_('contract_type'), max_length=1, choices=CONTRACT_TYPE)
+    # file = ... generic
+
+
+class CustomerFields(AbsBaseModel):
+    title = models.CharField(_('customer_field'), max_length=255, null=True, blank=True)
+    icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path, null=True, blank=True)
+
+
+class ChangeCustomerGroup(AbsBaseModel):
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING, related_name='change_marketer_rel')
+    from_marketer = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='from_marketer_rel',
+                                      verbose_name=_("from_marketer"), null=True, blank=True)
+    to_marketer = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='to_marketer_rel',
+                                    verbose_name=_("to_marketer"), null=True, blank=True)

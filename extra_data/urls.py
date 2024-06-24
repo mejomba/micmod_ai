@@ -24,9 +24,15 @@ urlpatterns = [
     path('purchasegroup/datatable/', views.PurchaseGroupDataTableView.as_view(), name='purchase_group.datatable'),
 
     path('ajax/update_from_sepidar/', views.ajax_update_from_sepidar, name='update_from_sepidar'),
+
     path('hs/create/', views.HsView.as_view(), name='hs.create'),
     path('hs/update/<int:pk>/', views.HsView.as_view(), name='hs.update'),
     path('hs/list/', views.HsListView.as_view(), name='hs.list'),
     path('hs/datatable/', views.HsDataTableView.as_view(), name='hs.datatable'),
+
+    path('customer/create/', views.CustomerView.as_view(), name='customer.create'),
+    path('customer/update/<int:pk>/', views.CustomerView.as_view(), name='customer.update'),
+    path('customer/list/', views.CustomerListView.as_view(), name='customer.list'),
+    path('customer/datatable/', views.CustomerDataTableView.as_view(), name='customer.datatable'),
 
 ]
