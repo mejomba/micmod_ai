@@ -1,4 +1,5 @@
 {% load more_tags %}
+{% load crispy_forms_tags %}
 <div id="div_id_wf_description" class="form-group mb-5">
 
     {% render_field_by_order comment_form comment_form.comment_title comment_form.comment_content %}
@@ -8,3 +9,8 @@
 </div>
 
 <hr width="100%" size="100%" style="color: midnightblue">
+
+
+{% block extra_js %}
+    <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+{% endblock %}

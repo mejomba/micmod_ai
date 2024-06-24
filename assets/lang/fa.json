@@ -561,5 +561,9 @@
     "Z_no": "بلامانع",
     "from_marketer": "از کارشناس",
     "to_marketer": "به کارشناس",
-    "customer_sale_type": "توافق با مشتری"
+    "customer_sale_type": "توافق با مشتری",
+    "trade_last_weight": "وزن بازرگانی زده",
+    "wh_last_weight": "وزن انبار زده",
+    "weight_percentage": "درصد اختلاف وزن",
+    "sepidar_id": "شناسه سپیدار"
 }

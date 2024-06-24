@@ -238,6 +238,105 @@
         document.querySelector('#id-empty-modal-body').innerHTML = ''
     })
 
+    const parent_code_input = document.querySelectorAll('.parent_code_input')
+    const add_parent_code = document.querySelectorAll('.add_parent_code')
+    if (add_parent_code){
+        add_parent_code.forEach(function (item, idx){
+            item.addEventListener('click', function (e){
+                e.preventDefault()
+                try {
+                    parent_code_input[idx].classList.remove('d-none')
+                }
+                catch (err){
+                    console.log(err)
+                }
+            })
+        }) // end forEach
+    }
+
+    const parent_code_submit = document.querySelectorAll('.parent_code_submit')
+    const parent_submit_message = document.querySelectorAll('.parent_submit_message')
+    const remove_parent_item = document.querySelectorAll('.remove_parent_item')
+        if (parent_code_submit){
+            parent_code_submit.forEach(function (item, idx){
+                item.addEventListener('click', function (e){
+                    e.preventDefault()
+                    debugger
+                    const originUrl = window.location.origin
+                    const item_code = item.dataset.goods_code
+                    const parent_code = item.previousElementSibling // findAncestor(item, "parent_code_input")
+                    if (item_code && parent_code){
+                        const url = `${originUrl}/micmod_base/ajax/save_parent_item/`
+                        let data_json = JSON.stringify({'item': item_code, 'parent': parent_code.value})
+                        $.ajax({
+                            type: 'POST',
+                            url: url,
+                            dataType: 'json',
+                            data: data_json,
+                            headers: {
+                                "X-CSRFToken": getCookie("csrftoken")
+                            },
+                            cache: false,
+                            processData: false,
+                            contentType: false,
+                            beforeSend: block_main_container,
+                            success: function (data) {
+                                parent_submit_message[idx].classList.remove('d-none')
+                                parent_submit_message[idx].innerHTML = 'موفقیت آمیز'
+                            },
+                            error: function (xhr, status, error) {
+                                parent_submit_message[idx].classList.remove('d-none')
+                                parent_submit_message[idx].innerHTML = xhr.responseJSON.res
+                            },
+                            complete: release_main_container
+                        }); // end ajax
+                    }
+                })
+            }) // end forEach
+            remove_parent_item.forEach(function (item, idx){
+                item.addEventListener('click', function (e){
+                    debugger
+                    e.preventDefault()
+                    const originUrl = window.location.origin
+                    const item_code = item.dataset.goods_code
+                    //const parent_code = item.previousElementSibling // findAncestor(item, "parent_code_input")
+                    if (item_code){
+                        const url = `${originUrl}/micmod_base/ajax/save_parent_item/`
+                        let data_json = JSON.stringify({'item': item_code})
+                        $.ajax({
+                            type: 'DELETE',
+                            url: url,
+                            dataType: 'json',
+                            data: data_json,
+                            headers: {
+                                "X-CSRFToken": getCookie("csrftoken")
+                            },
+                            cache: false,
+                            processData: false,
+                            contentType: false,
+                            beforeSend: block_main_container,
+                            success: function (data) {
+                                parent_submit_message[idx].classList.remove('d-none')
+                                parent_submit_message[idx].innerHTML = 'حذف شد'
+                                add_parent_code[idx].classList.add('d-none')
+                                item.classList.add('d-none')
+                            },
+                            error: function (xhr, status, error) {
+                                parent_submit_message[idx].classList.remove('d-none')
+                                parent_submit_message[idx].innerHTML = xhr.responseJSON.res
+                            },
+                            complete: release_main_container
+                        }); // end ajax
+                    }
+                })
+            }) // end forEach
+        }
+    if (parent_code_input){
+        parent_code_input.forEach(function (item){
+            console.log('')
+        })
+    }
+
 </script>
 
 {% endblock extra_js %}
