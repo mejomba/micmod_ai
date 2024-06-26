@@ -736,20 +736,20 @@ class BaseView(UserPassesTestMixin,
                         if comment_form.is_valid():
                             comment_form.instance.extra_data.request = self.request
                             cmnt = comment_form.save()
-                            cmnt.save_image(
-                                request=self.request,
-                                image_groups=comment_form.image_groups,
-                                image_model=comment_form.image_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-image',
-                            )
-                            cmnt.save_file(
-                                request=self.request,
-                                file_groups=comment_form.file_groups,
-                                file_model=comment_form.file_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-file',
-                            )
+                            # cmnt.save_image(
+                            #     request=self.request,
+                            #     image_groups=comment_form.image_groups,
+                            #     image_model=comment_form.image_model,
+                            #     obj=cmnt,
+                            #     input_prefix=f'{prefix}-image',
+                            # )
+                            # cmnt.save_file(
+                            #     request=self.request,
+                            #     file_groups=comment_form.file_groups,
+                            #     file_model=comment_form.file_model,
+                            #     obj=cmnt,
+                            #     input_prefix=f'{prefix}-file',
+                            # )
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
