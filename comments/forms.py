@@ -7,13 +7,13 @@ from .models import Comments
 
 class CommentsForm(CustomBaseModelForm):
     submit_type = 'save_comment'
-    image_groups = 1
-    file_groups = 1
-    image_model = Image
-    file_model = File
-    has_file = True
-    has_image = True
-    crispy = True
+    # image_groups = 1
+    # file_groups = 1
+    # image_model = Image
+    # file_model = File
+    # has_file = True
+    # has_image = True
+    # crispy = True
 
     class Meta:
         model = Comments
@@ -55,4 +55,4 @@ class CommentsForm(CustomBaseModelForm):
             self.initial['comment_title'] = 'C'  # initial as cancel
 
         self.make_hidden(['object_id', 'content_type'])
-        self.make_optional(['image_1', 'file_1'])
+        # self.make_optional(['image_1', 'file_1'])
