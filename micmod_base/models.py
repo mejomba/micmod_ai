@@ -343,6 +343,7 @@ class QuotationItem(BaseModel):
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     goods_code = models.CharField(verbose_name=_("goods_code"), max_length=20)
+    goods_code_fk = models.ForeignKey('extra_data.Item', on_delete=models.DO_NOTHING, related_name='quotation_item_rel', null=True, blank=True)
     itemid = models.BigIntegerField(null=True, blank=True, verbose_name=_("itemid"))
     goods_name = models.CharField(null=True, blank=True, verbose_name=_("goods_name"), max_length=200)
     stock_amount = models.BigIntegerField(null=True, blank=True, verbose_name=_("stock_amount"))
