@@ -372,7 +372,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'
-        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
+        fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'price_target',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
                   'goods_price_sheet3',
@@ -562,7 +562,7 @@ class BaseQIFormset(BaseInlineFormSet):
 
 
 qi_fields = [
-    'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid',
+    'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'price_target',
     'delivery_time', 'goods_code', 'goods_code_alt', 'price_method',
     'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
     'goods_price_sheet3', 'final_price',

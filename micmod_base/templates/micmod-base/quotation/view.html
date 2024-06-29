@@ -11,10 +11,6 @@
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
-{#    <link href="/metronic/theme/html/demo8/dist/assets/plugins/global/plugins.bundle.css?v=7.2.9" rel="stylesheet" type="text/css">#}
-{#    <link href="/metronic/theme/html/demo8/dist/assets/plugins/custom/prismjs/prismjs.bundle.css?v=7.2.9" rel="stylesheet" type="text/css">#}
-{#    <link href="/metronic/theme/html/demo8/dist/assets/css/style.bundle.css?v=7.2.9" rel="stylesheet" type="text/css">#}
-
 
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
     <style>
@@ -59,11 +55,6 @@
                                                         </div>
 
                                                     </div>
-
-{#                                                        <div class="mb-5 mt-3">{% get_comments form.instance %}</div>#}
-{#                                                        <div>{% include "addition_tag.html" %}</div>#}
-
-
                                                 </div>
                                             </div>
                                         </div>
@@ -97,7 +88,6 @@
                                                             </div>
                                                         </div>
                                                     </div>
-{#                                                    <div>{{ form.description|as_crispy_field }}</div>#}
                                                 </div>
                                             </div>
                                         </div>
@@ -125,9 +115,7 @@
                                 {% endif %}
                             <div class="row row-cols-4 align-items-baseline ms-5">
                                 {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
-{#                                {% get_comments form.instance comment_form "کنسل" "btn btn-danger" 'کنسلی' %}#}
                                 {% get_comment_user_list form request.user cancel=True %}
-{#                                {% get_comments obj=form.instance comment_form=comment_form button_text="کنسل/لغو کنسلی" button_style="btn btn-danger" comment_type='کنسلی' %}#}
                             </div>
                             </div>
                                 {% for form_ in formset.forms %}
@@ -157,7 +145,7 @@
         {% endif %}
 
         <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
-            <div><label class="col-3 col-form-label">استعلام سریع</label></div>
+            <div><label class="col-form-label">استعلام سریع</label></div>
             <div>
                 <span class="switch switch-brand">
                     <label>
@@ -169,10 +157,6 @@
             </div>
         </div>
 
-{#    <div class="d-flex justify-content-around align-items-center btn-sm bg-danger text-white rounded me-1">#}
-{#        <label class="ms-1 mb-0 p-1" for="id_force-inquiry">{% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}</label>#}
-{#    </div>#}
-
     <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
          m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
@@ -180,7 +164,6 @@
     </div>
     {% else %}
         <div class="px-2 mx-auto">
-{#            {% include "micmod-base/base/create_info_bar.html" %}#}
         </div>
     {% endif %}
 
@@ -204,7 +187,6 @@
 
 
 {% block extra_js %}
-{#    <script src="{% static 'js/jquery.slim.min.js' %}"></script>#}
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
@@ -224,7 +206,6 @@
 
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
-{#    <script src="{% static 'js/extra/quotation.js' %}"></script>#}
     <script src="{% static 'js/extra/quotation1.js' %}"></script>
     <script src="{% static 'js/extra/formset.js' %}"></script>
 
