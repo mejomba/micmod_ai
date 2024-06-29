@@ -24,7 +24,7 @@
                     <h1 class="mb-3">{{ comment_type }}</h1>
                     <!--end::Title-->
 
-                    <div>{% include "comments.html" with comment_form=comment_form obj=obj %}</div>
+                    <div class="bg-danger">{% include "comments.html" with comment_form=comment_form obj=obj %}</div>
                     {% include 'core/partial/comment_list.html' with comments=comments %}
 
                 </div>

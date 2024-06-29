@@ -105,10 +105,20 @@
                         {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
+                            {% if form_s.instance.old_goods_code %}
+                                <small style="font-size: 0.7rem;">{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                <br>
+                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                            {% endif %}
                         {% else %}
                             <label>کد کالا</label>
                             <div class="mt-4 select2-selection__rendered">
                             {{ form_s.instance.goods_code }}
+                            {% if form_s.instance.old_goods_code %}
+                                <small>{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
+                                <br>
+                                <small style="font-size: 0.6rem;">{{ form_s.instance.old_goods_name }}</small>
+                            {% endif %}
                             </div>
                         {% endif %}
 
@@ -130,7 +140,18 @@
                             {% if request.user|has_groups:"sales_user" %}
 
 
-                            <div class="" style="padding-right: 19rem !important;">
+                            <div class="d-flex justify-content-between px-3">
+                            <span>
+                            {% parent_code_data form_s.instance.goods_code as parent_code %}
+
+                                {% if parent_code %}
+                                    <small class="me-1">کد مادر</small>
+                                    <small class="bg-light-danger">{{ parent_code.sku }}</small>
+                                     -
+                                    <small class="bg-light-info">{{ parent_code.part_number }}</small>
+                                {% endif %}
+
+                            </span>
                                 <a href="/extra_data/item/create/" target="_blank">
                                     <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
                                 </a>

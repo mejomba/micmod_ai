@@ -420,7 +420,6 @@ class BaseView(UserPassesTestMixin,
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
-                    print(__file__, flow.order_by('id').last())
                     last_flow = flow.order_by('id').last()
                     self.finish = True if last_flow.wf_status == 3 and last_flow.state == self.flow_config.get('flow_state_list')[-2] else None
                 if self.finish and not self.wf_last_step_is_open:
@@ -737,6 +736,20 @@ class BaseView(UserPassesTestMixin,
                         if comment_form.is_valid():
                             comment_form.instance.extra_data.request = self.request
                             cmnt = comment_form.save()
+                            # cmnt.save_image(
+                            #     request=self.request,
+                            #     image_groups=comment_form.image_groups,
+                            #     image_model=comment_form.image_model,
+                            #     obj=cmnt,
+                            #     input_prefix=f'{prefix}-image',
+                            # )
+                            # cmnt.save_file(
+                            #     request=self.request,
+                            #     file_groups=comment_form.file_groups,
+                            #     file_model=comment_form.file_model,
+                            #     obj=cmnt,
+                            #     input_prefix=f'{prefix}-file',
+                            # )
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
@@ -909,6 +922,8 @@ class CommentsFormView(View):
         model_name = kwargs.get('model_name')
         ctt_id = kwargs.get('content_type')
         object_id = kwargs.get('object_id')
+        # image = kwargs.get('image')
+        # file = kwargs.get('file')
         comment_type = self.request.GET.get('comment_type')
         model = apps.get_model(app_label, model_name)
         obj = model.objects.filter(pk=object_id).first()
@@ -929,12 +944,15 @@ class CommentsFormView(View):
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')
 
         form = CommentsForm(prefix=prefix, initial=kwargs)
-
+        image = None
+        file = None
         for comment in comments:
             try:
                 comment_seen, _ = CommentSeen.objects.get_or_create(comment=comment,
                                                                     creator_user=request.user,
                                                                     editor_user=request.user)
+                image = comment.files.content_type.image_set
+                file = comment.files.content_type.file_set
                 # comment_seen.save_user(self.request)
                 comment_seen.extra_data.request = self.request
                 comment_seen.save()
@@ -946,6 +964,8 @@ class CommentsFormView(View):
                    'ctt_id': ctt_id,
                    'comments': comments,
                    'comment_type': comment_type,
+                   'image': image,
+                   'file': file,
                    'cancel_btn_text': 'uncanceled' if getattr(obj, 'cancel', None) else 'canceled',
                    'request': request}
         x = render_to_string('core/partial/form.html', context)
