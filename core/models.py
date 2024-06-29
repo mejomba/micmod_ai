@@ -477,8 +477,8 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         obj_id = self.pk
         # title = request.POST.get('comment_title')
         title = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_title')
-        image = request.FILES.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-image_1')
-        file = request.FILES.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file_1')
+        # image = request.FILES.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-image_1')
+        # file = request.FILES.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file_1')
         # comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
         comment_input_name = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_content'
         content = request.POST.get(comment_input_name)
@@ -495,8 +495,8 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
                 object_id=self.pk,
                 creator_user=request.user,
                 editor_user=request.user,
-                images=image,
-                files=file
+                # images=image,
+                # files=file
             )
 
     """***NEW***"""
