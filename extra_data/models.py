@@ -2,6 +2,9 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 import os
+
+from django.utils.safestring import mark_safe
+
 import dw.models
 from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
@@ -13,6 +16,7 @@ from translator import get_text as _
 from sepidar.models import BaseData
 from tools.form_tools import select_cquery
 from django.core.validators import MaxValueValidator
+from queryable_properties.properties import queryable_property
 
 
 class DiscountBasedPriceType(models.TextChoices):
@@ -348,6 +352,24 @@ class Item(BaseModel):
         # obj = self.item_weights.order_by('-creator_user__groups__name', '-created_date').first()
         obj = self.item_weights.filter(creator_user__isnull=False).order_by('-creator_user__groups__name', '-created_date').first()
         return obj.weight if obj else None
+
+    @property
+    def wh_last_weight(self):
+        obj = self.item_weights.filter(Q(creator_user__isnull=False) & Q(creator_user__groups__name='wh_user')).order_by('id').last()
+        return obj.weight if obj else None
+
+    @property
+    def trade_last_weight(self):
+        obj = self.item_weights.filter(Q(creator_user__isnull=False) & Q(creator_user__groups__name='trade_user')).order_by('id').last()
+        return obj.weight if obj else None
+
+    @property
+    def weight_percentage(self):
+        if self.trade_last_weight and self.wh_last_weight is not None:
+            difference = self.wh_last_weight - self.trade_last_weight
+            difference_average = (difference / self.trade_last_weight) * 100
+            res = round(difference_average)
+            return abs(res)
 
     @property
     def weight_obj(self):

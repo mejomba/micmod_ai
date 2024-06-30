@@ -72,12 +72,12 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
-                <div class="mb-3">
-                    <span class="mx-2">زمان تحویل: </span>
-                    {{ form_s.instance.lead_time }}
-                </div>
+{#                <div class="mb-3">#}
+{#                    <span class="mx-2">زمان تحویل: </span>#}
+{#                    {{ form_s.instance.lead_time|default_if_none:'-' }}#}
+{#                </div>#}
                 <div>
-                    {% render_field_by_order form_s form_s.item_in_china label='on-border' %}
+{#                    {% render_field_by_order form_s form_s.item_in_china label='on-border' %}#}
                 </div>
                 {% if form_s.instance.need_local_price_inquiry %}
                     <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
@@ -90,14 +90,16 @@
 {#                    creator_users.add(comment.creator_user)#}
 {#                {% get_comments_button %}#}
 {#                <div class="btn btn-sm btn-primary" id="id_comment__{{ form_s.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" data-pk="{{ form_s.instance.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ form_s.instance.comments.content_type.pk }}/{{ form_s.instance.pk }}">ثبت نظر</div>#}
+                <div class="mt-2">
+                    {% render_field_by_order form_s form_s.price_target label='on-border' %}
+                </div>
                 {% get_comment_user_list form_s request.user %}
-            {% if form_s.instance.need_foreign_price_inquiry %}
-            <div>
-                <p><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user }}</span></p>
-                <p><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></p>
-            </div>
-            {% endif %}
-{#                  <div  class="w-75">{% render_field_by_order form_s form_s.comment label="" %}</div>#}
+{#            {% if form_s.instance.need_foreign_price_inquiry %}#}
+{#            <div>#}
+{#                <p><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></p>#}
+{#                <p><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></p>#}
+{#            </div>#}
+{#            {% endif %}#}
             </div>
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
                 <div class="d-flex border-bottom px-1 align-items-start">
@@ -197,30 +199,25 @@
                     <div class="w-100">
                         <div class="card-text bold">آخرین فروش به مشتری</div>
                         <div class="d-flex" id="customer-last-sales">
-                            <div class="w-30 mt-5">
+                            <div class="w-30 mt-3">
                                 <div class="">فاکتور</div>
-                                <div class="mt-5 ">پیش فاکتور</div>
+                                <div class="mt-3 ">پیش فاکتور</div>
                             </div>
                             <div class="w-50">
                                 <div class="card-title-desc text-center" data-key="date">تاریخ</div>
                                 <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>
-                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>
+                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>
                             </div>
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="count">تعداد</div>
                                 <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>
-                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>
-{#                                <div class="card-title-desc text-center" name="total_sales">-</div>#}
-{#                                <div class="card-title-desc text-center" name="q_total_sales">-</div>#}
-
+                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>
                             </div>
 
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="price">قیمت</div>
                                 <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>
-                                <div class="mt-5">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>
-{#                                <div class="card-title-desc text-center" name="last_price">-</div>#}
-{#                                <div class="card-title-desc text-center" name="q_last_price">-</div>#}
+                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>
                             </div>
                         </div>
                     </div>
@@ -301,7 +298,7 @@
                 </div>
             </div>
             <div class="col-lg-3 border-top">
-                <div class="row h-100">
+                <div class="row h-100 border-bottom">
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
                             <div class="card-text text-center bold">قیمت نهایی</div>
@@ -335,7 +332,7 @@
                                     <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
                                        target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
                                 {% endif %}
-                                <div class="border-bottom ps-1">
+                                <div class="ps-1">
 {#                                    <div class="d-flex justify-content-between mt-1">#}
 {#                                        {% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}#}
 {#                                    </div>#}
@@ -410,6 +407,17 @@
             {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
             {% include 'core/partial/empty_modal_sm.html' %}
+        <div class="d-flex align-items-center gap-8 py-2">
+             <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
+            <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
+
+{#            {% render_field_by_order form_s form_s.item_in_china label='on-border' %}#}
+{#            <div>#}
+                <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
+                <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+{#            </div>#}
+
+        </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 </div>
         </div>

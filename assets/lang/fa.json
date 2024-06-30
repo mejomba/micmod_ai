@@ -540,6 +540,7 @@
     "delay_reason": "علت تاخیر با | جدا کنید",
     "delay_time":  "زمان تاخیر (روز به عدد) با | جدا کنید",
     "item_in_china": "آیتم در چین",
+    "price_target": "تارگت قیمت",
     "parent_code": "کد مادر",
     "active_main_item": "کد مادر فعال",
     "contract": "قرارداد",
@@ -561,5 +562,8 @@
     "Z_no": "بلامانع",
     "from_marketer": "از کارشناس",
     "to_marketer": "به کارشناس",
-    "customer_sale_type": "توافق با مشتری"
+    "customer_sale_type": "توافق با مشتری",
+    "trade_last_weight": "وزن بازرگانی زده",
+    "wh_last_weight": "وزن انبار زده",
+    "weight_percentage": "درصد اختلاف وزن"
 }
