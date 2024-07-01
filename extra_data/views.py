@@ -457,7 +457,7 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'website', 'orderable': True, 'visible': True, },
         {'name': 'phone', 'orderable': True, 'visible': True, },
         {'name': 'mobile', 'orderable': True, 'visible': True, },
-        {'name': 'max_credit', 'orderable': True, 'visible': True, },
+        # {'name': 'max_credit', 'orderable': True, 'visible': True, },
         {'name': 'credit_with_doc', 'orderable': True, 'visible': True, },
         {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
@@ -471,6 +471,20 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
          'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_no', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_safte', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_cheque_s', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_cheque_ns', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_max_credit_rafi', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'extra_credit', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': False},
+
+        {'name': 'cheque_to_delivery', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
+        {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__title__icontains'},
+        {'name': 'official_name', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description', 'orderable': True, 'visible': True, 'searchable': False},
     ]
 
     # def get_initial_queryset(self, request=None):

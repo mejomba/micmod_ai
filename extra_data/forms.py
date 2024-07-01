@@ -53,6 +53,7 @@ class CustomerForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1
     #
     #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
     #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)

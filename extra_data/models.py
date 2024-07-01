@@ -645,7 +645,7 @@ class Customer(AbsBaseModel):
     z_no = models.BooleanField(_('Z_no'), default=False)
     z_safte = models.PositiveBigIntegerField(_('Z_safte'), null=True, blank=True)
     z_cheque_s = models.PositiveBigIntegerField(_('Z_cheque_s'), null=True, blank=True)
-    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False)
+    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False, null=True, blank=True)
     z_max_credit_rafi = models.PositiveBigIntegerField(_('Z_max_credit_rafi'), null=True, blank=True)
     # مبلغ زمانت
     extra_credit = models.PositiveBigIntegerField(_('extra_credit'), null=True, blank=True)
@@ -716,6 +716,9 @@ class CustomerContract(AbsBaseModel):
 class CustomerFields(AbsBaseModel):
     title = models.CharField(_('customer_field'), max_length=255, null=True, blank=True)
     icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.title}'
 
 
 class ChangeCustomerGroup(AbsBaseModel):

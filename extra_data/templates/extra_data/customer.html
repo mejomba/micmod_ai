@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load more_tags %}
 {% load accounts_tag %}
+{% load jalali_tags %}
 
 {% block title %}Customer{% endblock title %} {"title": ""})
 {% block extra_css %}
@@ -17,9 +18,44 @@
 {% block form_content %}
 
     {% csrf_token %}
-    <div class="row row-cols-6">
-    {% render_field_by_order form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.mobile form.max_credit form.credit_with_doc form.customer_group form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.revival_date label='on-border' margin_b=4 %}
+    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative">
+        <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
+        {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.mobile form.customer_group form.description form.customer_expert_phone_number label='on-border' margin_b=4 %}
     </div>
+
+    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative">
+        <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
+        {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.contract form.customer_sale_type form.official_name form.customer_grade label='on-border' margin_b=4 %}
+    </div>
+
+    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative">
+        <h4 class="position-absolute" style="top: -10px">اطلاعات تکمیلی</h4>
+        {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long form.customer_field label='on-border' margin_b=4 %}
+    </div>
+
+    <div class="row row-cols-1">
+    {% for change_customer in form.instance.change_marketer_rel.all %}
+        <div class="col d-flex my-3 gap-5">
+        <span>
+            <span>از:</span>
+            <span>{{ change_customer.from_marketer }}</span>
+        </span>
+        <span>
+            <span>به:</span>
+            <span>{{ change_customer.to_marketer }}</span>
+        </span>
+        <span>
+            <span>توسط:</span>
+            <span>{{ change_customer.creator_user }}</span>
+        </span>
+        <span>
+            <span>{{ change_customer.created_date|to_jalali }}</span>
+        </span>
+        </div>
+    {% endfor %}
+
+    </div>
+
 {% endblock form_content %}
 
 {% block form_footer_extra %}
