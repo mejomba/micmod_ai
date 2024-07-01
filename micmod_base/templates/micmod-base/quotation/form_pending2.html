@@ -8,7 +8,7 @@
     <div id="main-content">
         {% block content %}
             {% for form_s in forms %}
-                <form method="post" id="main_form">
+                <form method="post" id="main_form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
                     <div class="card item p-0 mb-2" dir="rtl">
