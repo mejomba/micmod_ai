@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
+from django.views import View
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django.conf import settings
@@ -6,6 +8,8 @@ from django.urls import resolve
 from _keenthemes.__init__ import KTLayout
 from _keenthemes.libs.theme import KTTheme
 from pprint import pprint
+
+from core.views import BaseView
 
 """
 This file is a view controller for multiple pages as a module.
@@ -41,3 +45,9 @@ class DashboardsView(LoginRequiredMixin,TemplateView):
         KTTheme.addVendors(['amcharts', 'amcharts-maps', 'amcharts-stock'])
 
         return context
+
+
+class BIView(View):
+    def get(self, request):
+        context = {'url': request.GET.get('report_url')}
+        return render(request, 'dashboards/bi_report.html', context)
