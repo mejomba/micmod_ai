@@ -8,7 +8,7 @@
     <div id="main-content">
         {% block content %}
             {% for form_s in forms %}
-                <form method="post" id="main_form">
+                <form method="post" id="main_form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="hidden" value="{{ form_s.instance.pk }}" name="obj_pk">
                     <div class="card item p-0 mb-2" dir="rtl">
@@ -102,7 +102,7 @@
                                         <div class="w-75">
                                             <div class="d-flex justify-content-end">
                                                 <div class="w-75 mt-3 ms-2">{{ form_s.goods_name.label }}:<br>
-                                                    <span name="goods_name_lbl" class="goods_name">{{ form_s.instance.goods_name }}</span>
+                                                    <span name="goods_name_lbl" class="goods_name">{% if form_s.instance.goods_code_fk.part_number %}{{ form_s.instance.goods_code_fk.part_number }}{% else %}{{ form_s.instance.goods_name }}{% endif %}</span>
                                                     <input type="hidden" class="goods_name_input" name="goods_name" value="{{ form_s.instance.goods_name }}">
                                                     {% parent_code_data form_s.instance.goods_code as parent_code %}
                                                     {% if parent_code %}
@@ -278,9 +278,6 @@
                                                     {% endif %}
                                                 {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
                                                 </div>
-                                                {#                    <div class="btn btn-bordered w-100 btn-outline-success my-1 py-1" id="new-inquiry-result-{{ form_s.instance.goods_code }}" data-value="{{ form_s.instance.goods_code }}">#}
-                                                {#                        استعلام قیمت#}
-                                                {#                    </div>#}
                                                 <div>
                                                     <input type="submit" value="ذخیره" data-key="save"
                                                            class="btn btn-block btn-primary w-100" id="submit">
