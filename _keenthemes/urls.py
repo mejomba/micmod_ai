@@ -73,6 +73,7 @@ urlpatterns = [
     path('comments/', include('comments.urls')),
 
     path('api/', include('api.urls')),
+    path('dashboards/', include('dashboards.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 handler404 = SystemView.as_view(template_name = 'pages/system/not-found.html', status=404)

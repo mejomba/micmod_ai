@@ -83,6 +83,49 @@ def get_menus():
 
 
 @register.simple_tag
+def get_bi_menus(user):
+    from dashboards.models import BIReport
+    reports = BIReport.objects.filter(user_list=user)
+    menus = []
+    m = []
+    for report in reports:
+        sub_menu = {
+                "permission": {
+                    "permissions": [
+                        ""
+                    ],
+                    "groups": [
+                        ""
+                    ]
+                },
+                "title": f"{report.name}",
+                "path_key": "dashboard",
+                "icon": "",
+                "direct_link": f"dashboards/bi?report_url={report.url}",
+                "link": ""
+            }
+        m.append(sub_menu)
+    menu = {
+        "title": "Dashboard",
+        "section": "False",
+        "icon": "element-11",
+        "path_key": "dashboard",
+        "permission": {
+            "permissions": [
+                ""
+            ],
+            "groups": [
+                "base_user"
+            ]
+        },
+        "menus": m
+    }
+
+    menus.append(menu)
+    return menus
+
+
+@register.simple_tag
 def addHtmlAttributes(scope, attributes):
     KTTheme.addHtmlAttributes(scope, attributes)
     return ''
