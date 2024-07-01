@@ -1,13 +1,13 @@
 {% load more_tags %}
 <div id="id_comment_form_for_copy__{{ object_id }}">
-{#    {{ form }}#}
+
     {{ form.comment_title.label_tag }}
     {{ form.comment_title }} <br>
     {{ form.comment_content.label_tag }}
     {{ form.comment_content }} <br>
     {{ form.object_id }}
     {{ form.content_type }}
-{#    {% render_field_by_order form form.comment_title form.comment_content form.object_id form.content_type %}#}
+
     <div class="d-flex gap-3">
         {% render_field_by_order form form.image_1 form.file_1 %}
     </div>

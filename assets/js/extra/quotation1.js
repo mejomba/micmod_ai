@@ -225,10 +225,11 @@ function set_item_classes(item) {
     // debugger
     if(item.getElementsByClassName('goods_code')) {
         $(item).find('.goods_code').on("select2:select", function (e) {
-        const elem = findAncestor(e.target, "item")
-        const data = e.params.data;
+            const elem = findAncestor(e.target, "item")
+            const data = e.params.data;
             console.log(data)
-        set_price_data(data, elem, e.target)
+            set_price_data(data, elem, e.target)
+            item.find('input[id*="goods_code_fk"]').val(data['id'])
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
