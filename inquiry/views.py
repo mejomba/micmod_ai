@@ -716,7 +716,7 @@ def get_item(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    item_obj = Item.objects.filter(sku=q).first()
+                    item_obj = old_item_obj = Item.objects.filter(sku=q).first()
                     if item_obj and item_obj.parent and item_obj.active_main_item:
                         item_obj = item_obj.parent
 
@@ -724,7 +724,7 @@ def get_item(request):
                     price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                         pk=trade_price_code).first() if (trade_price_code) else item_obj.price
                     price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
-                        pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
+                        pk=bazar_price_code).first() if (bazar_price_code) else old_item_obj.bazar_price
                     # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
@@ -862,13 +862,13 @@ def get_items(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    sku_item: Item = Item.objects.filter(sku=item_.code).first()
+                    sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
                         item['parent_part_number'] = sku_item.part_number
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
-                    price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
+                    price_inquiry_result_bazar: PriceInquiryResult = old_sku_item.bazar_price if old_sku_item else None
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(
