@@ -36,7 +36,7 @@ class CommentsForm(CustomBaseModelForm):
             self.fields['comment_title'].choices = (
                 ('L', 'قیمت کمتر'),
                 ('M', 'آیتم جایگزین'),
-                ('N', 'کیفیت بهتر'),
+                ('N', 'زمان تحویل'),
                 ('O', 'کامنت ساده'),
             )
         if self.submit_type == 'cancel':

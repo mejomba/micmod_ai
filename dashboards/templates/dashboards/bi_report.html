@@ -1,0 +1,34 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}BI Report{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <style>
+    body, html {width: 100%; height: 100%; margin: 0; padding: 0}
+    .row-container {display: flex; width: 100%; height: 90vh; flex-direction: column; background-color: blue; overflow: hidden;}
+    {#.first-row {background-color: lime; }#}
+    .second-row { flex-grow: 1; border: none; margin: 0; padding: 0; }
+    </style>
+{% endblock extra_css %}
+
+{% block content_ %}
+
+    <div class="row-container">
+
+      <iframe src="{{ url }}" frameborder=0 allowFullScreen="true" class="second-row"></iframe>
+    </div>
+
+
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+{% endblock extra_js %}

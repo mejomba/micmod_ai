@@ -41,19 +41,6 @@
   },
   "menus": [
     {
-      "title": "Dashboard",
-      "section": "False",
-      "icon": "element-11",
-      "path_key": "dashboard",
-      "menus": [
-        {
-          "title": "Default",
-          "path_key": "dashboard",
-          "link": ""
-        }
-      ]
-    },
-    {
       "title": "sale",
       "section": "True",
       "menus": [
