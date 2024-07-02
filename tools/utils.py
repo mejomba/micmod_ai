@@ -75,6 +75,30 @@ def elapsed_time(m_datetime):
     return f'{m_str} قبل'
 
 
+def diff_time(first_time, second_time):
+    first_time , second_time = second_time, first_time
+    if not first_time and not second_time:
+        return None
+    delta = first_time - second_time
+    relative_delta = relativedelta(first_time, second_time)
+    m_str = ""
+    if delta.seconds < 60:
+        return f'بلافاصله'
+    elif delta.seconds < 2592000:  # day&hour&minute
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += " و " if m_str else ""
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += " و " if m_str and relative_delta.hours else ""
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    else:# year&month&day
+        m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
+        m_str += " و " if m_str else ""
+        m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+        m_str += " و " if m_str and relative_delta.months else ""
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    return f'{m_str} '
+
+
 def to_persian_number(mystr):
     number = {
         "0": "۰",
