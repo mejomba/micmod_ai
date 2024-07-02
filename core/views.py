@@ -13,6 +13,7 @@ from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
@@ -23,7 +24,7 @@ from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import map_model_to_python_type, show_error
+from tools.utils import map_model_to_python_type, show_error, diff_time
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -489,6 +490,20 @@ class BaseView(UserPassesTestMixin,
                                 },
                                  'create': self.create
                                  }
+        object_id = self.request.GET.get('object_id')
+        ctt_id = self.request.GET.get('ctt_id')
+        request_type = self.request.GET.get('request_type')
+        if object_id and ctt_id and request_type:
+            ctt = ContentType.objects.filter(pk=ctt_id)
+            app_label = ctt.first().app_label
+            model_name = ctt.first().model
+            from django.apps import apps
+            model = apps.get_model(app_label=app_label, model_name=model_name)
+            x = model.objects.filter(pk=object_id).first()
+            x.pk = None
+            x.sku = None
+            kwargs['instance'] = x
+
         return kwargs
 
     def form_valid(self, form):
@@ -1121,11 +1136,11 @@ class BaseCustomListView(BaseCustomView,ListView):
 
 def ajax_change_logs(request, *args, **kwargs):
     object_id = kwargs.get('object_id')
-    app_name =  kwargs.get('app_name')
+    app_name = kwargs.get('app_name')
     model_name = kwargs.get('model_name')
     from django.apps import apps
     x = apps.get_model(app_name, model_name)
-    ctt =ContentType.objects.get_for_model(x).pk
+    ctt = ContentType.objects.get_for_model(x).pk
     # ctt = ContentType.objects.filter(app_label=app_name, model=model_name)
     change_log = ChangeLog.objects.filter(object_id=object_id, content_type=ctt)
     context = {'logs': change_log}
