@@ -106,6 +106,14 @@ class PriceInquiryResult(BaseModel):
         # qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
         # return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
 
+    @classmethod
+    def inquiry_list(cls, user, param):
+        if user.base_group == 'sales' or user.is_superuser:
+            qs = cls.objects.filter(**param)
+            return qs
+        else:
+            return cls.objects.none()
+
     @property
     def elapsed_from_last_price(self):
         return elapsed_time(self.price_update_date)
