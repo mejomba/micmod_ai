@@ -1083,8 +1083,14 @@ class AjaxInquiryResultListData(View):
                 parent = sku.parent
                 username = sku.weight_obj
                 username = username.editor_user.username if username else ''
-                return JsonResponse(
-                    {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': f'{parent.sku} - {parent.part_number}'})
+                if parent:
+                    return JsonResponse(
+                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,
+                         'parent': f'{parent.sku} - {parent.part_number}'})
+                else:
+                    return JsonResponse(
+                        {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id,
+                         'parent': '-'})
             except:
                 pass
         return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})
