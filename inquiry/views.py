@@ -225,6 +225,7 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'trade_last_weight', 'visible': True},
         {'name': 'wh_last_weight', 'visible': True},
         {'name': 'weight_percentage', 'visible': True},
+        {'name': 'duplicate_item', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -266,6 +267,7 @@ class SkuListDataTableView(AjaxDatatableView):
         x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
         row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
             if obj.weight_percentage else '<p>-</p>'
+        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="">رونوشت</a>'
 
 
 def sku_list(request):
