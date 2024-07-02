@@ -2,7 +2,7 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
-from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments
+from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -66,12 +66,62 @@ class CustomerForm(CustomBaseModelForm):
     #     self.select2(['sepidar_dl_id'])
 
 
+class CustomerDocumentsFormCustomerWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "title__icontains",
+        "name__icontains",
+        "last_name__icontains",
+        "sepidar_party_id__icontains",
+        "sepidar_dl_id__icontains",
+        "sepidar_dl_code__icontains",
+        "id__iexact",
+    ]
+
+
 class CustomerDocumentsForm(CustomBaseModelForm):
     class Meta:
         model = CustomerDocuments
         fields = '__all__'
 
+        widgets = {
+            'customer': CustomerDocumentsFormCustomerWidget,
+        }
+
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+
+
+class ChangeCustomerGroupWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "title__icontains",
+        "name__icontains",
+        "last_name__icontains",
+        "sepidar_party_id__icontains",
+        "sepidar_dl_id__icontains",
+        "sepidar_dl_code__icontains",
+        "id__iexact",
+    ]
+
+
+class ChangeCustomerGroupMarketerWidget2(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "title__icontains",
+    ]
+
+
+class ChangeCustomerGroupForm(CustomBaseModelForm):
+    class Meta:
+        model = ChangeCustomerGroup
+        fields = '__all__'
+
+        widgets = {
+            'customer': ChangeCustomerGroupWidget,
+            'from_marketer': ChangeCustomerGroupMarketerWidget2,
+            'to_marketer': ChangeCustomerGroupMarketerWidget2,
+        }
+
+    def __init__(self, *args, **kwargs):
+        access = None
+        super().__init__(*args, **kwargs)

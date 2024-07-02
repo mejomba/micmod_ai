@@ -33,28 +33,75 @@
         {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long form.customer_field label='on-border' margin_b=4 %}
     </div>
 
-    <div class="row row-cols-1">
-    {% for change_customer in form.instance.change_marketer_rel.all %}
-        <div class="col d-flex my-3 gap-5">
-        <span>
-            <span>از:</span>
-            <span>{{ change_customer.from_marketer }}</span>
-        </span>
-        <span>
-            <span>به:</span>
-            <span>{{ change_customer.to_marketer }}</span>
-        </span>
-        <span>
-            <span>توسط:</span>
-            <span>{{ change_customer.creator_user }}</span>
-        </span>
-        <span>
-            <span>{{ change_customer.created_date|to_jalali }}</span>
-        </span>
-        </div>
-    {% endfor %}
 
+    <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
+        <h4 class="position-absolute" style="top: -10px">مدارک و داکیومنت ها</h4>
+        <div class="d-flex gap-10 align-items-center">
+            {% for doc in form.instance.customerdocuments_set.all %}
+                <span>
+                    <a href="{{ doc.path.url }}" target="_blank" class="me-1">{{ doc.get_doc_type_display }} ({{ doc.created_date|to_jalali:'%Y/%m/%d' }})</a>
+                </span>
+            {% endfor %}
+            <a href="{% url 'extra_data:customer_document.create' %}" class="" target="_blank">
+                <h1 class="border px-3 py-1 rounded">+</h1>
+            </a>
+        </div>
     </div>
+
+    <div class="bg-white row rounded border my-10 pt-10 position-relative shadow mb-20">
+        <h4 class="position-absolute" style="top: -10px">تغییر کارشناس</h4>
+        <div class="row row-cols-1">
+            {% for change_customer in form.instance.change_marketer_rel.all %}
+                <div class="col d-flex my-3 gap-5">
+                    <span>
+                        <span class="me-3">{{ forloop.revcounter }}) </span>
+                        <span>از:</span>
+                        <span>{{ change_customer.from_marketer|default_if_none:"-" }}</span>
+                    </span>
+                    <span>
+                        <span>به:</span>
+                        <span>{{ change_customer.to_marketer|default_if_none:"-" }}</span>
+                    </span>
+                    <span>
+                        <span>توسط:</span>
+                        <span>{{ change_customer.creator_user }}</span>
+                    </span>
+                    <span>
+                        <span>{{ change_customer.created_date|to_jalali:'%Y/%m/%d' }}</span>
+                    </span>
+                </div>
+                {% empty %}
+                <span>ندارد</span>
+            {% endfor %}
+            <div class="d-flex">
+                <a href="{% url 'extra_data:customer_change_marketer.create' %}" class="" target="_blank">
+                    <h1 class="border px-3 py-1 rounded">+</h1>
+                </a>
+            </div>
+        </div>
+    </div>
+
+{#    <div class="row row-cols-1">#}
+{#    {% for change_customer in form.instance.change_marketer_rel.all %}#}
+{#        <div class="col d-flex my-3 gap-5">#}
+{#        <span>#}
+{#            <span>از:</span>#}
+{#            <span>{{ change_customer.from_marketer }}</span>#}
+{#        </span>#}
+{#        <span>#}
+{#            <span>به:</span>#}
+{#            <span>{{ change_customer.to_marketer }}</span>#}
+{#        </span>#}
+{#        <span>#}
+{#            <span>توسط:</span>#}
+{#            <span>{{ change_customer.creator_user }}</span>#}
+{#        </span>#}
+{#        <span>#}
+{#            <span>{{ change_customer.created_date|to_jalali }}</span>#}
+{#        </span>#}
+{#        </div>#}
+{#    {% endfor %}#}
+{#    </div>#}
 
 {% endblock form_content %}
 

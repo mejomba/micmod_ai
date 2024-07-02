@@ -11,7 +11,8 @@ from django.views import generic
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
-from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm
+from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
+    ChangeCustomerGroupForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
@@ -501,9 +502,25 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
     template_name = 'extra_data/customer_document.html'
     success_url = reverse_lazy('extra_data:customer.list')
-    success_message = '%(title)s update'
+    success_message = '%(customer)s update'
     form_struct = {
         'form': CustomerDocumentsForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+
+class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
+    model = CustomerDocuments
+    template_name = 'extra_data/customer_change_marketer.html'
+    success_url = reverse_lazy('extra_data:customer.list')
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': ChangeCustomerGroupForm,
         'childes': [
             {
                 'form': '',

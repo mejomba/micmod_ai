@@ -690,6 +690,9 @@ class Customer(AbsBaseModel):
         # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
         return res
 
+    def __str__(self):
+        return f'{self.title}'
+
 
 class CustomerDocuments(AbsBaseModel):
     DOC_CHOICES = (

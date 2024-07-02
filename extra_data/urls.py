@@ -38,4 +38,7 @@ urlpatterns = [
     path('customer/document/create/', views.CustomerDocumentView.as_view(), name='customer_document.create'),
     path('customer/document/update/<int:pk>/', views.CustomerDocumentView.as_view(), name='customer_document.update'),
 
+    path('customer/change_marketer/create/', views.CustomerChangeMarketerView.as_view(), name='customer_change_marketer.create'),
+    path('customer/change_marketer/update/<int:pk>/', views.CustomerChangeMarketerView.as_view(), name='customer_change_marketer.update'),
+
 ]
