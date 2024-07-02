@@ -2,7 +2,7 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
-from .models import ItemWeight, PurchaseGroup, HS, Customer
+from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -64,3 +64,14 @@ class CustomerForm(CustomBaseModelForm):
     #     self.make_optional(['introduction_method'])
     #     self.make_optional(['introducer'])
     #     self.select2(['sepidar_dl_id'])
+
+
+class CustomerDocumentsForm(CustomBaseModelForm):
+    class Meta:
+        model = CustomerDocuments
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        access = None
+        super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1

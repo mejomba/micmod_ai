@@ -11,12 +11,12 @@ from django.views import generic
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
-from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm
+from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -495,3 +495,19 @@ class CustomerDataTableView(AjaxDatatableView):
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
+
+class CustomerDocumentView(LoginRequiredMixin, BaseView):
+    model = CustomerDocuments
+    template_name = 'extra_data/customer_document.html'
+    success_url = reverse_lazy('extra_data:customer.list')
+    success_message = '%(title)s update'
+    form_struct = {
+        'form': CustomerDocumentsForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }

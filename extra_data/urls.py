@@ -35,4 +35,7 @@ urlpatterns = [
     path('customer/list/', views.CustomerListView.as_view(), name='customer.list'),
     path('customer/datatable/', views.CustomerDataTableView.as_view(), name='customer.datatable'),
 
+    path('customer/document/create/', views.CustomerDocumentView.as_view(), name='customer_document.create'),
+    path('customer/document/update/<int:pk>/', views.CustomerDocumentView.as_view(), name='customer_document.update'),
+
 ]
