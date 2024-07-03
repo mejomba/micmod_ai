@@ -419,7 +419,7 @@ def ajax_update_from_sepidar(request):
     return JsonResponse({'res': 'ok'})
 
 
-class CustomerView(LoginRequiredMixin, View):
+class CustomerView(LoginRequiredMixin, BaseView):
     model = Customer
     template_name = 'extra_data/customer.html'
     # success_url = reverse_lazy('extra_data:customer.update')
@@ -434,24 +434,24 @@ class CustomerView(LoginRequiredMixin, View):
         ]
     }
 
-    def get(self, request, pk=-1):
-        form = self.form_struct.get('form')
-        if pk > 0:
-            self.object = self.model.objects.get(pk=pk)
-            f = form(instance=self.object)
-        else:
-            f = form()
-        return render(request, self.template_name, {'form': f})
+    # def get(self, request, pk=-1):
+    #     form = self.form_struct.get('form')
+    #     if pk > 0:
+    #         self.object = self.model.objects.get(pk=pk)
+    #         f = form(instance=self.object)
+    #     else:
+    #         f = form()
+    #     return render(request, self.template_name, {'form': f})
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
 
-    def post(self, request, pk=-1):
-        self.object = self.model.objects.get(pk=pk)
-        form = self.form_struct.get('form')(self.request.POST, instance=self.object)
-        if form.is_valid():
-            self.object = form.save()
-        return HttpResponseRedirect(self.get_success_url)
+    # def post(self, request, pk=-1):
+    #     self.object = self.model.objects.get(pk=pk)
+    #     form = self.form_struct.get('form')(self.request.POST, instance=self.object)
+    #     if form.is_valid():
+    #         self.object = form.save()
+    #     return HttpResponseRedirect(self.get_success_url)
     # def form_valid(self, form):
     #     res = super().form_valid(form)
     #     return res
