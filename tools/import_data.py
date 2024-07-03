@@ -157,7 +157,7 @@ def import_customers_from_sepidar(extra_data):
             data['introducer'] = Introducer.objects.filter(title=valid_title(item.introducer)).first()
             data['marketer'] = Marketer.objects.filter(title=valid_title(item.marketer)).first()
             data['revival_date'] = item.revival_date
-            data['max_credit'] = item.max_credit
+            # data['max_credit'] = item.max_credit
             data['credit_with_doc'] = item.credit_with_doc
             Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
             # data['sepidar_dl_id'] = item.sepidar_dl_id
