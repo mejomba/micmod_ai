@@ -6,18 +6,18 @@ from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views import generic
+from django.views import generic, View
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
-    ChangeCustomerGroupForm
+    ChangeCustomerGroupForm, CustomerExpertForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -419,11 +419,11 @@ def ajax_update_from_sepidar(request):
     return JsonResponse({'res': 'ok'})
 
 
-class CustomerView(LoginRequiredMixin, BaseView):
+class CustomerView(LoginRequiredMixin, View):
     model = Customer
     template_name = 'extra_data/customer.html'
-    success_url = reverse_lazy('extra_data:customer.list')
-    success_message = '%(title)s update'
+    # success_url = reverse_lazy('extra_data:customer.update')
+    success_message = '%(title)s create'
     form_struct = {
         'form': CustomerForm,
         'childes': [
@@ -433,6 +433,32 @@ class CustomerView(LoginRequiredMixin, BaseView):
             },
         ]
     }
+
+    def get(self, request, pk=-1):
+        form = self.form_struct.get('form')
+        if pk > 0:
+            self.object = self.model.objects.get(pk=pk)
+            f = form(instance=self.object)
+        else:
+            f = form()
+        return render(request, self.template_name, {'form': f})
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
+
+    def post(self, request, pk=-1):
+        self.object = self.model.objects.get(pk=pk)
+        form = self.form_struct.get('form')(self.request.POST, instance=self.object)
+        if form.is_valid():
+            self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url)
+    # def form_valid(self, form):
+    #     res = super().form_valid(form)
+    #     return res
+        # instance = form.save(commit=False)
+        # instance.save()
+        # form.save_m2m()
+        # return HttpResponseRedirect(self.get_success_url())
 
 
 class CustomerListView(LoginRequiredMixin, generic.ListView):
@@ -501,7 +527,7 @@ class CustomerDataTableView(AjaxDatatableView):
 class CustomerDocumentView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
     template_name = 'extra_data/customer_document.html'
-    success_url = reverse_lazy('extra_data:customer.list')
+    # success_url = reverse_lazy('extra_data:customer.list')
     success_message = '%(customer)s update'
     form_struct = {
         'form': CustomerDocumentsForm,
@@ -513,11 +539,14 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
         ]
     }
 
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
     template_name = 'extra_data/customer_change_marketer.html'
-    success_url = reverse_lazy('extra_data:customer.list')
+    # success_url = reverse_lazy('extra_data:customer.list')
     success_message = '%(customer)s update'
     form_struct = {
         'form': ChangeCustomerGroupForm,
@@ -528,3 +557,24 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
             },
         ]
     }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+
+class CustomerExpertView(LoginRequiredMixin, BaseView):
+    model = CustomerExpert
+    template_name = 'extra_data/customer_expert.html'
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerExpertForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})

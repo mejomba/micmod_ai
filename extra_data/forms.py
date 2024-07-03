@@ -1,8 +1,10 @@
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
-from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup
+from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
+    CustomerFields
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -54,6 +56,11 @@ class CustomerForm(CustomBaseModelForm):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+        # self.fields['customer_field'] = forms.ModelMultipleChoiceField(
+        #     queryset=CustomerFields.objects.all(),
+        #     required=False,
+        #     widget=FilteredSelectMultiple(_("customer field"), is_stacked=True),
+        # )
     #
     #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
     #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
@@ -120,6 +127,20 @@ class ChangeCustomerGroupForm(CustomBaseModelForm):
             'customer': ChangeCustomerGroupWidget,
             'from_marketer': ChangeCustomerGroupMarketerWidget2,
             'to_marketer': ChangeCustomerGroupMarketerWidget2,
+        }
+
+    def __init__(self, *args, **kwargs):
+        access = None
+        super().__init__(*args, **kwargs)
+
+
+class CustomerExpertForm(CustomBaseModelForm):
+    class Meta:
+        model = CustomerExpert
+        fields = '__all__'
+
+        widgets = {
+            'customer': ChangeCustomerGroupWidget,
         }
 
     def __init__(self, *args, **kwargs):

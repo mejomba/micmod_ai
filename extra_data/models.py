@@ -680,8 +680,9 @@ class Customer(AbsBaseModel):
 
     customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
 
-    customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
-    customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
+    # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
+    # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
+
 
     @staticmethod
     def get_list(text):
@@ -704,6 +705,13 @@ class CustomerDocuments(AbsBaseModel):
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
 
 
+class CustomerExpert(AbsBaseModel):
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
+    name = models.CharField(_('name'), max_length=200)
+    phone = models.CharField(_('phone'), max_length=20, null=True, blank=True, help_text='09123456789 or 0213456789')
+    position = models.CharField(_('position'), max_length=200, null=True, blank=True, help_text='')
+
+
 class CustomerContract(AbsBaseModel):
     CONTRACT_TYPE = (
         ("A", _('contract')),
@@ -719,6 +727,7 @@ class CustomerContract(AbsBaseModel):
 class CustomerFields(AbsBaseModel):
     title = models.CharField(_('customer_field'), max_length=255, null=True, blank=True)
     icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path, null=True, blank=True)
+    # customer = models.ManyToManyField(Customer)
 
     def __str__(self):
         return f'{self.title}'
