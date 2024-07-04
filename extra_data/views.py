@@ -542,6 +542,12 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerDocumentsForm(initial={'customer': customer})
+        return context
+
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
@@ -561,6 +567,12 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer})
+        return context
+
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
@@ -578,3 +590,9 @@ class CustomerExpertView(LoginRequiredMixin, BaseView):
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        return context

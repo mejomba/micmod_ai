@@ -89,12 +89,10 @@
                         <a href="{% url 'extra_data:customer_expert.update' expert.pk %}" target="_blank" class="me-1">ویرایش</a>
                     </span>
                 </div>
-                {% empty %}
-                <span>ندارد</span>
             {% endfor %}
 
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_expert.create' %}" class="" target="_blank">
+                <a href="{% url 'extra_data:customer_expert.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
                     <h1 class="border px-3 py-1 rounded">+</h1>
                 </a>
             </div>
@@ -113,9 +111,8 @@
                     <a href="{{ doc.path.url }}" target="_blank" class="me-1">{{ doc.get_doc_type_display }} ({{ doc.created_date|to_jalali:'%Y/%m/%d' }})</a>
                 </span>
             {% endfor %}
-
-            <div class="d-flex mt-3">
-                <a href="{% url 'extra_data:customer_document.create' %}" class="" target="_blank">
+            <div class="d-flex">
+                <a href="{% url 'extra_data:customer_document.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
                     <h1 class="border px-3 py-1 rounded">+</h1>
                 </a>
             </div>
@@ -149,12 +146,10 @@
                         <span>{{ change_customer.created_date|to_jalali:'%Y/%m/%d' }}</span>
                     </span>
                 </div>
-                {% empty %}
-                <span>ندارد</span>
             {% endfor %}
 
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_change_marketer.create' %}" class="" target="_blank">
+                <a href="{% url 'extra_data:customer_change_marketer.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
                     <h1 class="border px-3 py-1 rounded">+</h1>
                 </a>
             </div>
