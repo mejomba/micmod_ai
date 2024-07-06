@@ -255,7 +255,7 @@ class SkuListDataTableView(AjaxDatatableView):
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
-            column = column[:15]
+            column = column[:16]
         return column
 
     def customize_row(self, row, obj):
