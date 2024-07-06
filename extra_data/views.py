@@ -523,6 +523,10 @@ class CustomerDataTableView(AjaxDatatableView):
             obj.title if obj.title else '_'
         )
 
+        # row['address'] = f"""
+        # <div id="" class="" data-bs-toggle="tooltip" data-bs-original-title="{obj.address}" data-bs-placement="top" data-kt-initialized="1">{obj.address}</div>
+        # """ if obj.address else '-'
+
 
 class CustomerDocumentView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
