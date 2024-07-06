@@ -695,3 +695,22 @@ class BaseAbsContentType(models.Model, BaseModelAuto):
 
     class Meta:
         abstract = True
+
+
+class LogError(AbsBaseModel):
+    error_message = models.TextField(verbose_name=_('error'), null=True, blank=True)
+    error_type = models.CharField(max_length=255, verbose_name=_('code'), null=True, blank=True)
+    file = models.TextField(verbose_name=_('file'))
+    line_number = models.CharField(max_length=10, verbose_name=_('line_number'), null=True, blank=True)
+
+    @classmethod
+    def save_db(cls, request, e, file):
+        data = {
+            'error_message': e.args[0],
+            'error_type': type(e).__name__,
+            'file': file,
+            'line_number': e.__traceback__.tb_lineno,
+            "creator_user": request.user,
+            "editor_user": request.user
+        }
+        cls.objects.create(**data)

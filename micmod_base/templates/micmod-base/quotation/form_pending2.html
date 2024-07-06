@@ -267,14 +267,17 @@
                                             <div class="d-flex justify-content-between mt-auto px-1">
                                                 <div class="d-flex justify-content-start">
                                                     {% if form_s.instance.goods_code %}
+
+                                                        <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}&qi_id={{ form_s.instance.pk }}"
+                                                           target="_blank"
+                                                            class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">
+                                                            پرونده استعلام ({{ form_s.instance.goods_code }})</a>
                                                         {% if parent_code %}
                                                             <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ parent_code.pk }}&qi_id={{ form_s.instance.pk }}"
-                                                        {% else %}
-                                                            <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}&qi_id={{ form_s.instance.pk }}"
+                                                               target="_blank"
+                                                               class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">
+                                                            پرونده استعلام (کد مادر)</a>
                                                         {% endif %}
-                                                           target="_blank"
-                                                           class="btn mb-1 mx-1 btn-block btn-bordered btn-outline-info">مشاهده
-                                                            پرونده استعلام</a>
                                                     {% endif %}
                                                 {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
                                                 </div>

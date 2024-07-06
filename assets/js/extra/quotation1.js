@@ -25,7 +25,7 @@ $(document).ready(function () {
         if (party_id == 'None'){
             party_id = -1
         }
-
+        debugger
         const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
         const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
