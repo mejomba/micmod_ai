@@ -35,4 +35,13 @@ urlpatterns = [
     path('customer/list/', views.CustomerListView.as_view(), name='customer.list'),
     path('customer/datatable/', views.CustomerDataTableView.as_view(), name='customer.datatable'),
 
+    path('customer/document/create/', views.CustomerDocumentView.as_view(), name='customer_document.create'),
+    path('customer/document/update/<int:pk>/', views.CustomerDocumentView.as_view(), name='customer_document.update'),
+
+    path('customer/change_marketer/create/', views.CustomerChangeMarketerView.as_view(), name='customer_change_marketer.create'),
+    path('customer/change_marketer/update/<int:pk>/', views.CustomerChangeMarketerView.as_view(), name='customer_change_marketer.update'),
+
+    path('customer/expert/create/', views.CustomerExpertView.as_view(), name='customer_expert.create'),
+    path('customer/expert/update/<int:pk>/', views.CustomerExpertView.as_view(), name='customer_expert.update'),
+
 ]

@@ -645,7 +645,7 @@ class Customer(AbsBaseModel):
     z_no = models.BooleanField(_('Z_no'), default=False)
     z_safte = models.PositiveBigIntegerField(_('Z_safte'), null=True, blank=True)
     z_cheque_s = models.PositiveBigIntegerField(_('Z_cheque_s'), null=True, blank=True)
-    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False)
+    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False, null=True, blank=True)
     z_max_credit_rafi = models.PositiveBigIntegerField(_('Z_max_credit_rafi'), null=True, blank=True)
     # مبلغ زمانت
     extra_credit = models.PositiveBigIntegerField(_('extra_credit'), null=True, blank=True)
@@ -680,8 +680,9 @@ class Customer(AbsBaseModel):
 
     customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
 
-    customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
-    customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
+    # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
+    # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
+
 
     @staticmethod
     def get_list(text):
@@ -689,6 +690,9 @@ class Customer(AbsBaseModel):
             # ('default').raw(f"""
         # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
         return res
+
+    def __str__(self):
+        return f'{self.title}'
 
 
 class CustomerDocuments(AbsBaseModel):
@@ -699,6 +703,13 @@ class CustomerDocuments(AbsBaseModel):
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
     description = models.CharField(_('description'), max_length=255, null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
+
+
+class CustomerExpert(AbsBaseModel):
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
+    name = models.CharField(_('name'), max_length=200)
+    phone = models.CharField(_('phone'), max_length=20, null=True, blank=True, help_text='09123456789 or 0213456789')
+    position = models.CharField(_('position'), max_length=200, null=True, blank=True, help_text='')
 
 
 class CustomerContract(AbsBaseModel):
@@ -716,6 +727,10 @@ class CustomerContract(AbsBaseModel):
 class CustomerFields(AbsBaseModel):
     title = models.CharField(_('customer_field'), max_length=255, null=True, blank=True)
     icon = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path, null=True, blank=True)
+    # customer = models.ManyToManyField(Customer)
+
+    def __str__(self):
+        return f'{self.title}'
 
 
 class ChangeCustomerGroup(AbsBaseModel):

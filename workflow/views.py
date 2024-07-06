@@ -66,8 +66,11 @@ class FlowBaseView(SingleObjectMixin):
             """if flow object exist select user from that"""
             if flow_belong_to_object:
                 flow_belong_to_object = flow_belong_to_object.order_by('id')
+                last_change_user_qs = flow_belong_to_object.filter(wf_status=4).last()
+                last_change_user = last_change_user_qs.to_user if last_change_user_qs else None
                 for flow in flow_belong_to_object:
-                    # if flow.from_user in user_list:
+                    if last_change_user in user_list:
+                        return last_change_user
                     if flow.to_user in user_list:
                         return flow.to_user
 
