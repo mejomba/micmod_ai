@@ -113,6 +113,9 @@ class FlowAdminGroup(models.Model):
         if user.is_superuser:
             return True
 
+        if 'direct_access' in user.groups.values_list('name', flat=True):
+            return True
+
         current_user_group = group_memo.get('target_group')
         if not current_user_group:
             current_user_group = Group.objects.filter(name=group_name).first()
