@@ -89,7 +89,7 @@ class PriceInquiryResult(BaseModel):
     # _rmb_final_price_ = dict()
     # rmb_final_price_before_ondemand_percentage = dict()
     def __str__(self):
-        return f'{self.id}: {self.price_inquiry_file} {self.sku}'
+        return f'{self.id}: {self.jalali_last_update_date} - {self.sku}'
 
     @classmethod
     def inquiry_list_datatable(cls, user, param={}):
