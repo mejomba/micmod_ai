@@ -3,6 +3,13 @@
   font-family: Sahel;
   src: url(../fonts/Sahel.woff2);
 }
+@font-face {
+  font-family: persian-digit;
+  src: url(../fonts/Samim-FD.woff);
+}
+.persian-number{
+    font-family: persian-digit;
+}
 html body {
     font-family: Sahel;
     overflow-x: hidden;
@@ -829,4 +836,13 @@ span .select2-selection{
 
 .modal-xl {
     min-width: 1200px !important;
+}
+.s-1 {
+    letter-spacing: 0.1rem;
+}
+.s-2 {
+    letter-spacing: 0.15rem;
+}
+.s-3 {
+    letter-spacing: 0.2rem;
 }

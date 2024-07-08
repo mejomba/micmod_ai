@@ -1,5 +1,5 @@
 from django.utils import timezone
-from jalali_date.fields import JalaliDateTimeField
+from jalali_date.fields import JalaliDateTimeField, JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
@@ -18,9 +18,9 @@ class PaymentOrderModelForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['request_date'] = JalaliDateTimeField(widget=AdminJalaliDateWidget(
-                                      attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
-        self.fields['payment_date'] = JalaliDateTimeField(widget=AdminJalaliDateWidget(
-            attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['request_date'] = JalaliDateField(widget=AdminJalaliDateWidget(
+                                      attrs={'class': 'jalali_date-date underline_dash_border', 'size': '10'}), required=True)
+        self.fields['payment_date'] = JalaliDateField(widget=AdminJalaliDateWidget(
+            attrs={'class': 'jalali_date-date underline_dash_border', 'size': '10'}), required=False)
 
         self.fields['request_date'].initial = timezone.now()

@@ -565,5 +565,7 @@
     "customer_sale_type": "توافق با مشتری",
     "trade_last_weight": "وزن بازرگانی زده",
     "wh_last_weight": "وزن انبار زده",
-    "weight_percentage": "درصد اختلاف وزن"
+    "weight_percentage": "درصد اختلاف وزن",
+    "payment_order": "دستور پرداخت",
+    "payment_date": "تاریخ پرداخت"
 }

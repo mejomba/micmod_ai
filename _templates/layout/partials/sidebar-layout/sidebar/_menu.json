@@ -426,7 +426,7 @@
       }
     },
     {
-      "title": "t-quotation",
+      "title": "payment_order",
       "icon": "cheque",
       "path_key": "payment_order",
       "permission": {
