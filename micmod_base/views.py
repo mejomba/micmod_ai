@@ -659,6 +659,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
     def get(self, request):
         from django.core.paginator import Paginator
+        filter_form = PendingFormFilter(self.request.GET)
+        filter_form.is_valid()
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
@@ -671,6 +673,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
         search_sku = request.GET.get('search_sku')
         force_inquiry = request.GET.get('force_inquiry')
+        time_range = request.GET.get('time_range')
+        from_time = self.request.GET.get('from_time')
+        to_time = self.request.GET.get('to_time')
 
         quotations_record_lst = QuotationItem.objects.none()
 
@@ -701,6 +706,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             quotations_record_lst = quotations_record_lst.filter(**f)
         elif self.request.GET.get('item_in_china'):
             quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
+
+        elif self.request.GET.get('from_time') or self.request.GET.get('to_time'):
+            quotations_record_lst = quotations_record_lst.filter(quotation__created_date__range=[filter_form.cleaned_data.get('from_time'),filter_form.cleaned_data.get('to_time')])
         else:
             quotations_record_lst = quotations_record_lst
 

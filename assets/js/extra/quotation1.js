@@ -657,15 +657,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="express_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -679,15 +679,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="air_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -907,7 +907,7 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    return x
+    // return x
     if (x / 100000 > 1){
         // round 3 digit
         x = x / 1000
@@ -974,7 +974,7 @@ function calculate_price(target) {
 
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
-        total_price.innerHTML = numberWithCommas(round_rial((price * qty) - totalDiscount + taxValue)) || numberWithCommas(round_rial(price * qty))
+        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     }
