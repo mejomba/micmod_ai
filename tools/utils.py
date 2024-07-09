@@ -204,3 +204,19 @@ def round_price(x):
         x = x / 10
         x = int(x) * 10
     return x
+
+
+def round_rial(x):
+    if x and x / 100_000 > 1:
+        # round 3 digit
+        x = x / 1000
+        x = (int(x) + 1) * 1000
+    elif x and x / 10_000 > 1:
+        # round 2 digit
+        x = x / 100
+        x = (int(x) + 1) * 100
+    elif x and x / 1_000 > 1:
+        # round 1 digit
+        x = x / 10
+        x = (int(x) + 1) * 10
+    return x

@@ -23,6 +23,7 @@ from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 import datetime
+from tools.utils import round_rial
 
 class QuotationManager(models.Manager):
     def own_quotations(self, request):
@@ -373,6 +374,7 @@ class QuotationItem(BaseModel):
     price_method = models.CharField(choices=PriceMethod, max_length=20, default="last_sale",
                                     verbose_name=_('price_method'))
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
+    final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
@@ -530,13 +532,17 @@ class QuotationItem(BaseModel):
             case 'sales_admin':
                 return self.final_price
             case 'price_sheet1':
-                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                x = iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_sheet2':
-                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                x = iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_sheet3':
-                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                x = iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_market':
-                return iqr.goods_price_market
+                x = iqr.goods_price_market
+                return round_rial(x) if isinstance(x, (int, float)) else 1
 
     @property
     def fee(self):
