@@ -26,6 +26,9 @@
 
 {% block form_content %}
 {% csrf_token %}
+    <div class="mt-5 mb-2">
+                            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+                        </div>
 <div class="container persian-number">
     <div class="row row-cols-3">
     <div class="col">
@@ -44,12 +47,12 @@
             <div class="d-flex gap-5 align-items-center my-6">
                 <span>لطفا مبلغ </span>
                 <div class="col mb-3">
-                    <input type="number" class="underline_dash_border s-1" name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
+                    <input type="number" class="underline_dash_border s-1 text-center" name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
                     {{ form.amount.errors }}
                 </div>
                 <span>ریال بابت</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border" name="{{ form.behalf.name }}" {% if form.behalf.value != None %}value="{{ form.behalf.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border text-center" name="{{ form.behalf.name }}" {% if form.behalf.value != None %}value="{{ form.behalf.value|stringformat:'s' }}"{% endif %}>
                     {{ form.behalf.errors }}
                 </div>
             </div>
@@ -57,45 +60,42 @@
             <div class="d-flex gap-5 align-items-center my-6">
                 <span>در وجه</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border" name="{{ form.pay_to.name }}" {% if form.pay_to.value != None %}value="{{ form.pay_to.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border text-center" name="{{ form.pay_to.name }}" {% if form.pay_to.value != None %}value="{{ form.pay_to.value|stringformat:'s' }}"{% endif %}>
                     {{ form.pay_to.errors }}
                 </div>
                 <span>از محل</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border" name="{{ form.from_source.name }}" {% if form.from_source.value != None %}value="{{ form.from_source.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border text-center" name="{{ form.from_source.name }}" {% if form.from_source.value != None %}value="{{ form.from_source.value|stringformat:'s' }}"{% endif %}>
                     {{ form.from_source.errors }}
                 </div>
             </div>
             <div class="d-flex gap-5 align-items-center my-6">
                 <span>به شماره حساب/کارت</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border s-1" name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border s-1 text-center" name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
                     {{ form.to_account.errors }}
                 </div>
                 <span>پرداخت نمایید</span>
             </div>
         </div>
         <div>
-            <div class="d-flex gap-5 align-items-center my-4 mt-20">
+            <div class="d-flex gap-10 align-items-center my-4 mt-20">
                 <span>در خواست کننده</span>
             <div class="col mb-3">
-                <input type="text" class="underline_dash_border" name="{{ form.applicant.name }}" {% if form.applicant.value != None %}value="{{ form.applicant.value|stringformat:'s' }}"{% endif %}>
+                <input type="text" class="underline_dash_border text-center" name="{{ form.applicant.name }}" {% if form.applicant.value != None %}value="{{ form.applicant.value|stringformat:'s' }}"{% endif %}>
                 {{ form.applicant.errors }}
             </div>
 
             <span>حسابداری</span>
             <div class="col mb-3">
-                <input type="text" class="underline_dash_border" name="{{ form.accounting.name }}" {% if form.accounting.value != None %}value="{{ form.accounting.value|stringformat:'s' }}"{% endif %}>
+                <input type="text" class="underline_dash_border text-center" name="{{ form.accounting.name }}" {% if form.accounting.value != None %}value="{{ form.accounting.value|stringformat:'s' }}"{% endif %}>
                 {{ form.accounting.errors }}
             </div>
 
 {#            <span>امضا مدیر عامل</span>#}
-{#            <div class="col mb-3">#}
-            {% if request.user %}
-
-            {% endif %}
-                {% render_field_by_order form form.manager_confirmation label='in-line' %}
-{#            </div>#}
+            <div class="">
+                {% render_field_by_order form form.manager_confirmation label='in-line' margin_b=0 %}
+            </div>
 
 
             </div>

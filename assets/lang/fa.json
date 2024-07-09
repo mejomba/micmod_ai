@@ -567,5 +567,6 @@
     "wh_last_weight": "وزن انبار زده",
     "weight_percentage": "درصد اختلاف وزن",
     "payment_order": "دستور پرداخت",
-    "payment_date": "تاریخ پرداخت"
+    "payment_date": "تاریخ پرداخت",
+    "manager_confirm": "تایید / امضا مدیر عامل"
 }

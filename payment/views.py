@@ -1,19 +1,26 @@
 from ajax_datatable import AjaxDatatableView
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView
 
-from core.views import BaseView
+from core.views import BaseView, Base
 from payment.forms import PaymentOrderModelForm
 from payment.models import PaymentOrder
 from translator import get_text as _
 
 
-class PaymentOrderView(LoginRequiredMixin, BaseView):
+class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
     model = PaymentOrder
-    form_class = PaymentOrderModelForm
-    template_name = 'payment/payment_order.html'
+    # form_class = PaymentOrderModelForm
+    template_name = 'payment/payment_local.html'
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json',
+                                       'LocalPaymentOrderView')
+    form_struct = {
+        'form': PaymentOrderModelForm,
+        'childes': [{}]
+    }
 
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
