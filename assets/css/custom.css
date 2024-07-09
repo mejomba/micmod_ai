@@ -846,3 +846,22 @@ span .select2-selection{
 .s-3 {
     letter-spacing: 0.2rem;
 }
+
+@media print {
+    .DivToPrint {
+        background-color: white;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 15px;
+        padding: 15px;
+        /*font-size: 14px;*/
+        line-height: 10px;
+        z-index: 1000;
+    }
+}
+.text-left {
+    text-align: left;
+}
