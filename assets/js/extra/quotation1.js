@@ -701,15 +701,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="sea_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -717,7 +717,9 @@ function set_price(target) {
         case
             'price_market':
             final_price.disabled = true;
-            final_price.value = elem.querySelector('[name*="goods_price_market"]').value;
+            const x_ = elem.querySelector('[name*="goods_price_market"]').value
+            if (x_){final_price.value = round_rial(x_);}
+
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             break;
