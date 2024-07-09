@@ -413,7 +413,7 @@ class BaseView(UserPassesTestMixin,
 
             if self.has_flow:
                 self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
-                    FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index]) or \
+                    FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index], model=self.model) or \
                     (belong_to_group in self.request.user.groups.values_list('name', flat=True) and
                     (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
                 # if self.object.cancel:

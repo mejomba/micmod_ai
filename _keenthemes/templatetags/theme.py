@@ -95,7 +95,7 @@ def get_bi_menus(user):
                         ""
                     ],
                     "groups": [
-                        ""
+                        "base_user"
                     ]
                 },
                 "title": f"{report.name}",
