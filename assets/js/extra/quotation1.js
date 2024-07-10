@@ -912,18 +912,29 @@ function findAncestor(el, cls) {
 function round_rial(x){
     debugger
     // return x
-    if (x / 100000 > 1){
-        // round 3 digit
+    if (x >= 1000000) {
+        // more than 6 digit, round 3 digit
         x = x / 1000
         x = (parseInt(x) + 1) * 1000
-    } else if (x / 10000 > 1){
-        // round 2 digit
-        x = x / 100
-        x = (parseInt(x) + 1) * 100
-    } else if (x / 1000 > 1){
-        // round 1 digit
-        x = x / 10
-        x = (parseInt(x) + 1) * 10
+    }
+    else if (x <= 999999 || x > 10000){
+        // 5 or 6 digit, round 2 digit
+        x = parseInt(x)
+        if (x % 10 === 0){
+            return x
+        }else {
+            x = x / 10
+            x = (parseInt(x) + 1) * 10
+        }
+    } else if (x <= 9999 || x > 100){
+        // 3 or 4 digit, round 2 digit (always to up)
+        x = parseInt(x)
+        if (x % 10 === 0) {
+            return x
+        }else {
+            x = x / 10
+            x = (parseInt(x) + 1) * 10
+        }
     } else if (x / 10 > 1) {
         // remove decimal placement
         x = parseInt(x)
