@@ -229,7 +229,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'StockRef': 2,  # optional
                         'Quantity': qi.quantity,
                         'SecondaryQuantity': 0,
-                        'Fee': qi.fee or 1,
+                        # 'Fee': qi.fee or 1,
+                        'Fee': qi.sepidar_fee or 1,
                         'Price': qi.price or 1,
                         'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
@@ -239,7 +240,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'AggregateAmountDiscountRate': 0,
                         'CustomerDiscount': 0,
                         'CustomerDiscountRate': 0,
-                        'Discount': 0,
+                        'Discount': qi.sepidar_discount * qi.quantity or 0,
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
@@ -953,6 +954,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
+        {'name': 'comment', 'visible': True}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -966,6 +968,20 @@ class QuotationListDatatable(AjaxDatatableView):
 
     # @timer
     def customize_row(self, row, obj):
+        qi_comments = [x.comments.all() for x in obj.quotation.all()]
+        c = 0
+        for qs in qi_comments:
+            for comment in qs:
+                if not comment.commentseen_set.all():
+                    c += 1
+        for comment in obj.comments.all():
+            if not comment.commentseen_set.all():
+                c += 1
+        if c > 0:
+            row['comment'] = f'<span class="bg-success rounded px-2">{c} کامنت جدید</span>'
+        else:
+            row['comment'] = f'{c} کامنت جدید'
+
 
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('micmod_base:quotations.view', args=(obj.id,)),

@@ -264,6 +264,14 @@ class Quotation(SLSDoc):
             return None
 
     @property
+    def sepidar_price(self):
+        try:
+            return sum(x.price for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return None
+
+    @property
     def tax_amount(self):
         try:
             return sum(x.tax for x in self.quotation.all())
@@ -547,7 +555,9 @@ class QuotationItem(BaseModel):
     @property
     def fee(self):
         if self.quotation.is_official:
-            total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            # total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+            total_ = (100 - (official_value)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
 
@@ -558,12 +568,35 @@ class QuotationItem(BaseModel):
         return fee_price * total_
 
     @property
+    def sepidar_discount(self):
+        if self.quotation.is_official:
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            total_ = official_value / 100
+        else:
+            total_ = self.quotation.self_discount / 100
+
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price * total_
+
+    @property
+    def sepidar_fee(self):
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price
+
+    @property
     def price(self):
         try:
             # if self.quotation.is_official:
             #     return self.fee * self.quantity * 1.09
             # else:
-                return self.fee * self.quantity
+            return self.fee_() * self.quantity + (self.tax * (self.quotation.official_value * 10)/100)
+            return self.fee_() * self.quantity + self.tax
         except Exception as e:
             show_error(e, __file__)
             return 0
@@ -572,7 +605,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0
+                return self.fee_() * self.quantity * 0
             else:
                 return 0
         except Exception as e:
@@ -583,7 +616,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.1
+                return self.fee_() * self.quantity * 0.1
             else:
                 return 0
         except Exception as e:
