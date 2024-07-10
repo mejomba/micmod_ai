@@ -967,9 +967,10 @@ function calculate_price(target) {
     }
     // totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
     // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
-    totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100)
+    totalDiscount = ((price * qty) * selfDiscountValue/100)
     if (tax){
-        taxValue = ((price * qty) - totalDiscount) * tax/100
+        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
+        taxValue = ((price * qty) - totalDiscount) * (final_tax_value)/100
     } else {
         taxValue = 0
     }
