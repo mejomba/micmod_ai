@@ -686,3 +686,4 @@ KT_THEME_VENDORS = {
         ]
     }
 }
+TAX_VALUE = 10
