@@ -830,3 +830,6 @@ span .select2-selection{
 .modal-xl {
     min-width: 1200px !important;
 }
+.ui-datepicker{
+    z-index: 100 !important;
+}
