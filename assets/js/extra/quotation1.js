@@ -911,6 +911,10 @@ function findAncestor(el, cls) {
 
 function round_rial(x){
     debugger
+    const currency = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency != 1){
+        return x
+    }
     // return x
     if (x >= 1000000) {
         // more than 6 digit, round 3 digit
