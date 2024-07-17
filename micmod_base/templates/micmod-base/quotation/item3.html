@@ -281,11 +281,30 @@
                             </div>
                             <div class="d-flex">
                                 <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
+                                {% if request.user|has_permission:"micmod_base_discount_per_item" %}
+                                <div>{% render_field_by_order form_s form_s.discount_per_item label='on-border' %}</div>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="bg-soft-info bold replace-digits h-75">
-                            <div class="text-center">جمع کل (ردیف)</div>
-                            <h3 class="card-title text-center persian-digit" name="-total_price">-</h3>
+                        <div class="bg-soft-info replace-digits h-75 text-center">
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">جمع خالص</small>
+                                <small name="MAC">{{ form_s.instance.net_price_after_tax_discount|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">مالیات</small>
+                                <small name="tax_value">{{ form_s.instance.tax|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mb-2 d-flex gap-1">
+                                <small class="w-25 text-right">تخفیف</small>
+                                <small name="discount_value">{{ form_s.instance.discount_value|floatformat:'-4g' }}</small>
+                            </div>
+                            <div class="mt-4 d-flex flex-column bg-light-info bold">
+                                <span>مبلغ نهایی</span>
+                                <span name="-total_price">-</span>
+                            </div>
+{#                            <div class="text-center">جمع کل (ردیف)</div>#}
+{#                            <h3 class="card-title text-center persian-digit" name="-total_price">-</h3>#}
                         </div>
                     </div>
                     <div class="col-lg-5 d-block p-0">

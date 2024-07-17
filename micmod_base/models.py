@@ -87,6 +87,12 @@ class Quotation(SLSDoc):
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
 
+    @property
+    def total_discount(self):
+        total = 0
+        total_qi_discount = sum([qi.discount_per_item for qi in self.quotation.all()])
+        return total
+
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
@@ -412,6 +418,7 @@ class QuotationItem(BaseModel):
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
+    discount_per_item = models.FloatField(_('discount_per_item'), default=0)
 
     objects = QuotationItemManager()
 
@@ -553,6 +560,20 @@ class QuotationItem(BaseModel):
                 return round_rial(x) if isinstance(x, (int, float)) else 1
 
     @property
+    def net_price(self):
+        try:
+            return self.fee_() * self.quantity if self.pk else 0
+        except Exception as e:
+            raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
+
+    @property
+    def net_price_after_tax_discount(self):
+        value = self.net_price
+        if self.quotation.is_official:
+            value -= (self.net_price * (self.quotation.official_value / 100))
+        return value
+
+    @property
     def fee(self):
         if self.quotation.is_official:
             official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
@@ -595,6 +616,7 @@ class QuotationItem(BaseModel):
             # if self.quotation.is_official:
             #     return self.fee * self.quantity * 1.09
             # else:
+            return self.net_price - self.discount_value + self.tax
             return self.fee_() * self.quantity + (self.tax * (self.quotation.official_value * 10)/100)
             return self.fee_() * self.quantity + self.tax
         except Exception as e:
@@ -616,13 +638,24 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee_() * self.quantity * 0.1
+                # return self.fee_() * self.quantity * 0.1
+                return self.net_price_after_tax_discount * (settings.TAX_VALUE / 100)
             else:
                 return 0
         except Exception as e:
             show_error(e, __file__)
             return None
 
+    @property
+    def discount_tuple(self):
+        row_discount = self.discount_per_item * self.quantity if self.pk else 0
+        tax_discount = self.net_price * (self.quotation.official_value / 100) if self.quotation.is_official else 0
+        discount_for_all = self.net_price * (self.quotation.self_discount / 100) if self.pk else 0
+        return row_discount, tax_discount, discount_for_all
+
+    @property
+    def discount_value(self):
+        return sum(self.discount_tuple)
 
     class Meta:
         ordering = ['id']
