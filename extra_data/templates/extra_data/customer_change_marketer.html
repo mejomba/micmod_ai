@@ -1,0 +1,37 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+{% load jalali_tags %}
+
+{% block title %}Customer{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <style>
+
+    </style>
+{% endblock extra_css %}
+
+{% block form_content %}
+
+    {% csrf_token %}
+    <div class="row row-cols-4 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <h4 class="position-absolute" style="top: -10px">تغییر کارشناس</h4>
+        {% render_field_by_order form form.customer form.from_marketer form.to_marketer label='on-border' margin_b=4 %}
+    </div>
+
+{% endblock form_content %}
+
+{% block form_footer_extra %}
+{% include "core/partial/add_formset_button.html" %}
+
+
+{% endblock form_footer_extra %}
+
+
+{% block extra_js %}
+{{ form.media.js }}
+{% endblock extra_js %}

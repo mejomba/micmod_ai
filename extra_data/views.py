@@ -6,17 +6,18 @@ from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views import generic
+from django.views import generic, View
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
-from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm
+from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
+    ChangeCustomerGroupForm, CustomerExpertForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -421,8 +422,8 @@ def ajax_update_from_sepidar(request):
 class CustomerView(LoginRequiredMixin, BaseView):
     model = Customer
     template_name = 'extra_data/customer.html'
-    success_url = reverse_lazy('extra_data:customer.list')
-    success_message = '%(title)s update'
+    # success_url = reverse_lazy('extra_data:customer.update')
+    success_message = '%(title)s create'
     form_struct = {
         'form': CustomerForm,
         'childes': [
@@ -432,6 +433,32 @@ class CustomerView(LoginRequiredMixin, BaseView):
             },
         ]
     }
+
+    # def get(self, request, pk=-1):
+    #     form = self.form_struct.get('form')
+    #     if pk > 0:
+    #         self.object = self.model.objects.get(pk=pk)
+    #         f = form(instance=self.object)
+    #     else:
+    #         f = form()
+    #     return render(request, self.template_name, {'form': f})
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
+
+    # def post(self, request, pk=-1):
+    #     self.object = self.model.objects.get(pk=pk)
+    #     form = self.form_struct.get('form')(self.request.POST, instance=self.object)
+    #     if form.is_valid():
+    #         self.object = form.save()
+    #     return HttpResponseRedirect(self.get_success_url)
+    # def form_valid(self, form):
+    #     res = super().form_valid(form)
+    #     return res
+        # instance = form.save(commit=False)
+        # instance.save()
+        # form.save_m2m()
+        # return HttpResponseRedirect(self.get_success_url())
 
 
 class CustomerListView(LoginRequiredMixin, generic.ListView):
@@ -457,7 +484,7 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'website', 'orderable': True, 'visible': True, },
         {'name': 'phone', 'orderable': True, 'visible': True, },
         {'name': 'mobile', 'orderable': True, 'visible': True, },
-        {'name': 'max_credit', 'orderable': True, 'visible': True, },
+        # {'name': 'max_credit', 'orderable': True, 'visible': True, },
         {'name': 'credit_with_doc', 'orderable': True, 'visible': True, },
         {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
@@ -471,6 +498,20 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
          'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_no', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_safte', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_cheque_s', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_cheque_ns', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'z_max_credit_rafi', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'extra_credit', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': False},
+
+        {'name': 'cheque_to_delivery', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
+        {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__title__icontains'},
+        {'name': 'official_name', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description', 'orderable': True, 'visible': True, 'searchable': False},
     ]
 
     # def get_initial_queryset(self, request=None):
@@ -481,3 +522,81 @@ class CustomerDataTableView(AjaxDatatableView):
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
+        # row['address'] = f"""
+        # <div id="" class="" data-bs-toggle="tooltip" data-bs-original-title="{obj.address}" data-bs-placement="top" data-kt-initialized="1">{obj.address}</div>
+        # """ if obj.address else '-'
+
+
+class CustomerDocumentView(LoginRequiredMixin, BaseView):
+    model = CustomerDocuments
+    template_name = 'extra_data/customer_document.html'
+    # success_url = reverse_lazy('extra_data:customer.list')
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerDocumentsForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerDocumentsForm(initial={'customer': customer})
+        return context
+
+
+class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
+    model = CustomerDocuments
+    template_name = 'extra_data/customer_change_marketer.html'
+    # success_url = reverse_lazy('extra_data:customer.list')
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': ChangeCustomerGroupForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer})
+        return context
+
+
+class CustomerExpertView(LoginRequiredMixin, BaseView):
+    model = CustomerExpert
+    template_name = 'extra_data/customer_expert.html'
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerExpertForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        return context
