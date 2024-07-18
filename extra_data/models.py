@@ -617,7 +617,7 @@ class Customer(AbsBaseModel):
     sepidar_dl_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     sepidar_dl_code = models.BigIntegerField(verbose_name=_('sepidar_code'), null=True, blank=True, unique=True)
     sepidar_party_id = models.BigIntegerField(verbose_name=_('sepidar_party_id'), null=True, blank=True, unique=True)
-    sepidar_sl_ref = models.BigIntegerField(verbose_name=_('sepidar_sl_ref'), null=True, blank=True, unique=True)
+    # sepidar_sl_ref = models.BigIntegerField(verbose_name=_('sepidar_sl_ref'), null=True, blank=True, unique=True)#delete
     title = models.CharField(max_length=350, verbose_name=_('title'), unique=True)
     type = models.CharField(choices=CustomerType.choices,verbose_name=_("type"), max_length=10, default=CustomerType.Company)
     national_code = models.CharField(max_length=12, verbose_name=_("national_code"), null=True, blank=True)
@@ -626,7 +626,7 @@ class Customer(AbsBaseModel):
     email = models.EmailField(max_length=150, verbose_name=_("email"), null=True, blank=True)
     website = models.URLField(max_length=150, verbose_name=_("website"), null=True, blank=True)
     phone = models.CharField(max_length=50, verbose_name=_("phone"), null=True, blank=True)
-    mobile = models.CharField(max_length=50, verbose_name=_("mobile"), null=True, blank=True)
+    # mobile = models.CharField(max_length=50, verbose_name=_("mobile"), null=True, blank=True)#delete
 
     credit_with_doc = models.BigIntegerField(verbose_name=_("credit_with_doc"), null=True, blank=True)  # delete
     customer_group = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='customers',verbose_name=_("customer_group"), null=True, blank=True)  # delete
