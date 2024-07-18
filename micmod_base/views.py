@@ -181,30 +181,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                             """ این آیتم در مرحله استعلام می ماند و wf ثبت نمیکند """
                             # """ این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند """
-                            # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                            # pad = 2 if self.state_index >= 2 else 1
-                            # for item in flow_items:
-                            #     if pad >= 2:
-                            #         to_user = item.to_user
-                            #     else:
-                            #         to_user = item.from_user
-                            #     # to_user = item.to_user if pad >= 2 else item.from_usre
-                            #     deadline = item.deadline
-                            # data = {
-                            #     "wf_status": 2,  # back
-                            #     "action": self.flow_config.get('flow_action'),
-                            #     "flow_name": None,
-                            #     "from_user": self.request.user,
-                            #     "to_user": to_user,
-                            #     "state": self.flow_config.get('flow_state_list')[self.state_index],
-                            #     "duty": None,
-                            #     "deadline": deadline,
-                            #     "wf_description": "back in copy",
-                            #     "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
-                            #     "content_type": ContentType.objects.get_for_model(Quotation),
-                            #     "object_id": new_quotation.id
-                            # }
-                            # back = WorkFlow.objects.create(**data)
 
                             new_quotation.quotation_self = self.object
                             new_quotation.extra_data.request = self.request
@@ -259,7 +235,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': self.object.self_discount or 0,
+                    'Discount': self.object.total_discount or 0, #self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
                     'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
