@@ -648,10 +648,11 @@ class QuotationItem(BaseModel):
 
     @property
     def discount_tuple(self):
-        row_discount = self.discount_per_item * self.quantity if self.pk else 0
+        # row_discount = self.discount_per_item * self.quantity if self.pk else 0
         tax_discount = self.net_price * (self.quotation.official_value / 100) if self.quotation.is_official else 0
         discount_for_all = self.net_price * (self.quotation.self_discount / 100) if self.pk else 0
-        return row_discount, tax_discount, discount_for_all
+        # return row_discount, tax_discount, discount_for_all
+        return tax_discount, discount_for_all
 
     @property
     def discount_value(self):

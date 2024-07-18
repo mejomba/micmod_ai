@@ -235,7 +235,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': self.object.total_discount or 0, #self_discount or 0,
+                    'Discount':  self.object.self_discount or 0,# self.object.total_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
                     'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
