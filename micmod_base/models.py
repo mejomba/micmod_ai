@@ -418,7 +418,7 @@ class QuotationItem(BaseModel):
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
-    # discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+    discount_per_item = models.FloatField(_('discount_per_item'), default=0)
 
     objects = QuotationItemManager()
 
@@ -562,7 +562,7 @@ class QuotationItem(BaseModel):
     @property
     def net_price(self):
         try:
-            return self.fee_() * self.quantity if self.pk else 0
+            return self.fee_() * self.quantity if self.pk and self.fee_() else 0
         except Exception as e:
             raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
 
@@ -648,10 +648,11 @@ class QuotationItem(BaseModel):
 
     @property
     def discount_tuple(self):
-        row_discount = self.discount_per_item * self.quantity if self.pk else 0
+        # row_discount = self.discount_per_item * self.quantity if self.pk else 0
         tax_discount = self.net_price * (self.quotation.official_value / 100) if self.quotation.is_official else 0
         discount_for_all = self.net_price * (self.quotation.self_discount / 100) if self.pk else 0
-        return row_discount, tax_discount, discount_for_all
+        # return row_discount, tax_discount, discount_for_all
+        return tax_discount, discount_for_all
 
     @property
     def discount_value(self):
