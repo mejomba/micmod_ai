@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-blehs+vjho@s4qug%9ferf0-tucvbr9#_1k2!#ebs4u68@)ss+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1',  '192.168.1.131','192.168.1.80', '192.168.40.197', '192.168.1.178']
+ALLOWED_HOSTS = ['127.0.0.1',  '192.168.1.131','192.168.1.80', '192.168.40.197', '192.168.1.178', '192.168.1.143']
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 
 # Application definition
@@ -686,3 +686,5 @@ KT_THEME_VENDORS = {
         ]
     }
 }
+TAX_VALUE = 10
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None

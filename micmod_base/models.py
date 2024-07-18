@@ -23,6 +23,7 @@ from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 import datetime
+from tools.utils import round_rial
 
 class QuotationManager(models.Manager):
     def own_quotations(self, request):
@@ -263,6 +264,14 @@ class Quotation(SLSDoc):
             return None
 
     @property
+    def sepidar_price(self):
+        try:
+            return sum(x.price for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return None
+
+    @property
     def tax_amount(self):
         try:
             return sum(x.tax for x in self.quotation.all())
@@ -343,6 +352,7 @@ class QuotationItem(BaseModel):
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     goods_code = models.CharField(verbose_name=_("goods_code"), max_length=20)
+    goods_code_fk = models.ForeignKey('extra_data.Item', on_delete=models.DO_NOTHING, related_name='quotation_item_rel', null=True, blank=True)
     itemid = models.BigIntegerField(null=True, blank=True, verbose_name=_("itemid"))
     goods_name = models.CharField(null=True, blank=True, verbose_name=_("goods_name"), max_length=200)
     stock_amount = models.BigIntegerField(null=True, blank=True, verbose_name=_("stock_amount"))
@@ -372,6 +382,7 @@ class QuotationItem(BaseModel):
     price_method = models.CharField(choices=PriceMethod, max_length=20, default="last_sale",
                                     verbose_name=_('price_method'))
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
+    final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
@@ -426,9 +437,9 @@ class QuotationItem(BaseModel):
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
         if path == past_path:
-            x = cls.objects.filter(inquiry_type_filter).order_by('-quotation_id')
+            x = cls.objects.filter(inquiry_type_filter, quotation__cancel=False).order_by('-quotation_id')
         else:
-            x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت').order_by('-quotation_id')
+            x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
@@ -529,18 +540,24 @@ class QuotationItem(BaseModel):
             case 'sales_admin':
                 return self.final_price
             case 'price_sheet1':
-                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                x = iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_sheet2':
-                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                x = iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_sheet3':
-                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                x = iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                return round_rial(x) if isinstance(x, (int, float)) else 1
             case 'price_market':
-                return iqr.goods_price_market
+                x = iqr.goods_price_market
+                return round_rial(x) if isinstance(x, (int, float)) else 1
 
     @property
     def fee(self):
         if self.quotation.is_official:
-            total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            # total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+            total_ = (100 - (official_value)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
 
@@ -551,12 +568,35 @@ class QuotationItem(BaseModel):
         return fee_price * total_
 
     @property
+    def sepidar_discount(self):
+        if self.quotation.is_official:
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            total_ = official_value / 100
+        else:
+            total_ = self.quotation.self_discount / 100
+
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price * total_
+
+    @property
+    def sepidar_fee(self):
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price
+
+    @property
     def price(self):
         try:
             # if self.quotation.is_official:
             #     return self.fee * self.quantity * 1.09
             # else:
-                return self.fee * self.quantity
+            return self.fee_() * self.quantity + (self.tax * (self.quotation.official_value * 10)/100)
+            return self.fee_() * self.quantity + self.tax
         except Exception as e:
             show_error(e, __file__)
             return 0
@@ -565,7 +605,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0
+                return self.fee_() * self.quantity * 0
             else:
                 return 0
         except Exception as e:
@@ -576,7 +616,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.1
+                return self.fee_() * self.quantity * 0.1
             else:
                 return 0
         except Exception as e:

@@ -103,7 +103,7 @@ class FlowAdminGroup(models.Model):
             return user in flow_admin.user_rel.all()
 
     @classmethod
-    def is_admin_of_group(cls, user, group_name) -> bool:
+    def is_admin_of_group(cls, user, group_name, model=None) -> bool:
         """if user inside of admin group
         Args:
             user -> current user
@@ -111,6 +111,10 @@ class FlowAdminGroup(models.Model):
         return -> bool
         """
         if user.is_superuser:
+            return True
+        
+        direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
+        if model and model._meta.model_name.lower() == "item" and direct_group_name in user.groups.values_list('name', flat=True):
             return True
 
         current_user_group = group_memo.get('target_group')

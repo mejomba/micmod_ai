@@ -107,6 +107,7 @@
                         {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
+{#                            {% render_field_by_order form_s form_s.goods_code_fk %}#}
                             {% if form_s.instance.old_goods_code %}
                                 <small style="font-size: 0.7rem;">{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
                                 <br>
@@ -137,8 +138,8 @@
                         {#                        {% render_field_by_order form_s form_s.goods_name_alt label='on-border' %}#}
                         <div class="col on-border">
                             <label>نام کالا</label>
-                            <textarea class="goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl"
-                                      disabled></textarea>
+                            <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl" disabled></textarea>
+                            <textarea class="w-100 form-control bg-white bold text-black" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if request.user|has_groups:"sales_user" %}
 
 
@@ -167,13 +168,10 @@
                 <div class="d-none border-bottom px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
-                            {#                            {% render_field_by_order form_s form_s.goods_code_alt label='on-border' margin_b=2 %}#}
-                            {#                            <div class="card-text bold">کد کالا (قیمت)</div>#}
-{#                            <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>#}
-{#                            <label>کد کالا</label>#}
                             {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
                                 <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
                                 <label>کد کالا</label>
+                                {% render_field_by_order form_s form_s.goods_code_fk %}
                             {% else %}
                                 <div class="mt-4">
                                 {{ form_s.instance.goods_code_alt }}
@@ -185,13 +183,10 @@
                         <div class="w-75">
                             <div class="col on-border">
                                 <label>نام کالا</label>
-                                <textarea class="w-100 rounded form-control bg-white" rows="1"
-                                          name="-goods_name_alt_lbl" disabled></textarea>
+                                <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_alt_lbl" disabled></textarea>
+                                <textarea class="w-100 form-control bg-white bold text-black" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
 
                             </div>
-                            {#                            <div class="card-text bold" data-key="goods_name_alt">نام کالا</div>#}
-                            {#                            <textarea class="w-100 rounded form_s-control" rows="1" name="-goods_name_alt_lbl" disabled></textarea>#}
-
                         </div>
                     </div>
                 </div>
@@ -230,18 +225,11 @@
                     <div class="d-flex h-20">
                         <div class="w-45 card-title-desc">بیشترین</div>
                         {% render_field_by_order nested nested.goods_max_price no_input=True %}
-<!--                        <div class="w-55 card-title-desc text-center" name="max_price"></div>-->
                     </div>
                     <div class="d-flex h-20">
                         <div class="w-40 card-title-desc">میانگین</div>
                         {% render_field_by_order nested nested.goods_avg_price no_input=True %}
-<!--                        <div class="w-60 card-title-desc text-center" name="avg_price"></div>-->
                     </div>
-{#                    <div class="d-flex h-20">#}
-{#                        <div class="w-40 card-title-desc">کمترین</div>#}
-{#                        {% render_field_by_order nested nested.goods_min_price no_input=True %}#}
-{#<!--                        <div class="w-55 card-title-desc text-center" name="min_price"></div>-->#}
-{#                    </div>#}
                 </div>
             </div>
             <div class="col-lg-3 border p-0 replace-digits">
@@ -250,34 +238,22 @@
                     <div class="d-flex ">
                         <div class="w-25">
                             <div class="card-title-desc text-center">تاریخ</div>
-{#                            <div class="mt-2 pt-1">#}
-{#                            {% render_field_by_order nested nested.price_update_date no_input=True %}#}
-{#                            </div>#}
                             <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>
                         </div>
                         <div class="w-25">
                             <div class="card-title-desc text-center">2-3 هفته</div>
-{#                            {% if form.instance.currency_ref.pk == 1 %}#}
                                 {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}
-{#                            {% else %}#}
                                 {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}
-{#                            {% endif %}#}
                         </div>
                         <div class="w-25">
                             <div class="card-title-desc text-center">3 تا 5 هفته</div>
-{#                            {% if form.instance.currency_ref.pk == 1 %}#}
                                 {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}
-{#                            {% else %}#}
                                 {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}
-{#                            {% endif %}#}
                         </div>
                         <div class="w-25">
                             <div class="card-title-desc text-center">12 تا 14 هفته</div>
-{#                            {% if form.instance.currency_ref.pk == 1 %}#}
                                 {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}
-{#                            {% else %}#}
                                 {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}
-{#                            {% endif %}#}
                         </div>
                     </div>
                 </div>
@@ -287,12 +263,10 @@
                         <div class="w-50">
                             <div class="card-title-desc text-center">تاریخ</div>
                             {% render_field_by_order nested nested.goods_market_date no_input=True %}
-<!--                            <div class="text-center card-title-desc" name="goods_market_date">-</div>-->
                         </div>
                         <div class="w-50">
                             <div class="card-title-desc text-center">قیمت</div>
                             {% render_field_by_order nested nested.goods_price_market no_input=True %}
-<!--                            <div class="text-center card-title-desc" name="goods_price_market">-</div>-->
                         </div>
                     </div>
                 </div>
@@ -303,17 +277,10 @@
                         <div class="">
                             <div class="card-text text-center bold">قیمت نهایی</div>
                             <div class="d-flex mt-1 ">
-{#                                                        <div class="w-25 card-title-desc ps-2">روش</div>#}
                                 <div class="text-center w-100">{% render_field_by_order form_s form_s.price_method label='on-border' %}</div>
                             </div>
                             <div class="d-flex">
-{#                                                        <div class="w-25 card-title-desc ps-2">فی</div>#}
-{#                                <div class="w-100 card-text text-center">#}
-{#                                    <div name="{{ form_s.final_price.html_name }}_div" class="border border-secondary mb-3" type="input"></div>#}
-{#                                    {% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}#}
-{#                                </div>#}
                                 <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
-{#                                <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' label_text='فی' margin_b="0" %}</div>#}
                             </div>
                         </div>
                         <div class="bg-soft-info bold replace-digits h-75">
@@ -324,18 +291,12 @@
                     <div class="col-lg-5 d-block p-0">
                         <div class="align-content-sm-stretch d-flex flex-column align-items-center justify-content-between"
                              style="min-height: 100%;">
-                            {#                    <button type="submit" class="btn btn-primary w-100 h-25 replace-digits" data-key="save">ذخیره</button>#}
                             <div class="w-100">
-                                {#                                {% if form_s.instance.price_inquiry_done == True %}#}
                                 {% if form_s.instance.goods_code %}
-{#                                    <a href="{% url 'extra_data:sku.view-related' form_s.instance.goods_code %}"#}
                                     <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
                                        target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
                                 {% endif %}
-                                <div class="ps-1">
-{#                                    <div class="d-flex justify-content-between mt-1">#}
-{#                                        {% render_field_by_order form form.force_inquiry label='on-border' margin_b=0 %}#}
-{#                                    </div>#}
+                                <div class="border-bottom ps-1">
                                     <div class="d-flex justify-content-between mt-1">
                                         {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
                                     </div>
@@ -351,15 +312,12 @@
                                 </div>
                                 <div class="border-top ps-1">
                                     <div class="d-flex justify-content-between mt-1">
-{#                                        {{ form_s.need_foreign_price_inquiry }}#}
                                         {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between">
-{#                                        {{ form_s.foreign_price_inquiry_done }}#}
                                         {% render_field_by_order form_s form_s.foreign_price_inquiry_done label='on-order' margin_b=0 %}
                                     </div>
                                     <div class="d-flex justify-content-between">
-{#                                        {{ form_s.foreign_price_inquiry_done }}#}
                                         <div class="d-none">
                                         {% render_field_by_order form_s form_s.trade_price_code margin_b=0 %}
                                         </div>
@@ -376,10 +334,6 @@
                                         استعلام قیمت
                                     </div>
                                 </div>
-{#                                <div class="mb-1">#}
-{#                                    {% render_field_by_order form_s form_s.cancel label='in-line' %}#}
-{#                                    <div class="btn btn-outline-danger btn-bordered py-0 px-3 m-0" data-key="cancel">cancel</div>#}
-{#                                </div>#}
                                 <button type="button" class="btn btn-outline-primary btn-bordered changelog-btn"
                                         data-bs-toggle="modal"
                                         data-bs-target="#id_kt_empty_modal_lg"
@@ -392,12 +346,10 @@
                                 {% if object_logs or detail_logs%}
                                     <div class="text-center">
                                     {% with counter=forloop.counter0 %}
-{#                                        {% include 'changelog/changelog_popup.html' with logs=detail_logs|get_list_item:counter %}#}
                                         {% include 'changelog/changelog.html' with logs=form_s.instance.change_logs.all %}
                                     {% endwith %}
                                     </div>
                                 {% endif %}
-                                {#                    <button type="submit" class="btn btn-danger w-100 h-25 " data-key="delete">حذف</button>#}
                             </div>
                         </div>
                     </div>
