@@ -90,7 +90,7 @@ class Quotation(SLSDoc):
     @property
     def total_discount(self):
         total = 0
-        total_qi_discount = sum([qi.discount_per_item for qi in self.quotation.all()])
+        total_qi_discount = sum([qi.discount_value for qi in self.quotation.all()])
         return total
 
     @classmethod
@@ -327,14 +327,17 @@ class Quotation(SLSDoc):
 
     @property
     def payment(self):
-        sum_price = self.sum_prices
+        sum_price = sum([qi.price for qi in self.quotation.all()])
+        tax = sum([qi.tax for qi in self.quotation.all()])
+        discount = sum([qi.discount_value for qi in self.quotation.all()])
+        # sum_price = self.sum_prices
 
-        tax = self.tax_amount
+        # tax = self.tax_amount
         additions = self.addition or 0
-        if self.self_discount:
-            discount = sum_price - ((self.self_discount / 100) * sum_price)
-        else:
-            discount = 0
+        # if self.self_discount:
+        #     discount = sum_price - ((self.self_discount / 100) * sum_price)
+        # else:
+        #     discount = 0
 
         total = sum_price + additions - discount + tax
 
@@ -616,7 +619,10 @@ class QuotationItem(BaseModel):
             # if self.quotation.is_official:
             #     return self.fee * self.quantity * 1.09
             # else:
-            return self.net_price - self.discount_value + self.tax
+            if self.quotation.currency_ref.title == 'ریال':
+                return round_rial(int(self.net_price - self.discount_value + self.tax))
+            else:
+                return self.net_price - self.discount_value + self.tax
             return self.fee_() * self.quantity + (self.tax * (self.quotation.official_value * 10)/100)
             return self.fee_() * self.quantity + self.tax
         except Exception as e:
@@ -648,11 +654,11 @@ class QuotationItem(BaseModel):
 
     @property
     def discount_tuple(self):
-        # row_discount = self.discount_per_item * self.quantity if self.pk else 0
+        row_discount = self.discount_per_item * self.quantity if self.pk else 0
         tax_discount = self.net_price * (self.quotation.official_value / 100) if self.quotation.is_official else 0
         discount_for_all = self.net_price * (self.quotation.self_discount / 100) if self.pk else 0
         # return row_discount, tax_discount, discount_for_all
-        return tax_discount, discount_for_all
+        return tax_discount, discount_for_all, row_discount
 
     @property
     def discount_value(self):

@@ -210,8 +210,8 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
-        {'name': 'parent', 'visible': True, 'searchable': True},
-        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 '},
+        {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
@@ -222,10 +222,10 @@ class SkuListDataTableView(AjaxDatatableView):
         # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True},
-        {'name': 'wh_last_weight', 'visible': True},
-        {'name': 'weight_percentage', 'visible': True},
-        {'name': 'duplicate_item', 'visible': True, },
+        {'name': 'trade_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'wh_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False},
+        {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
     def get_initial_queryset(self, request=None):

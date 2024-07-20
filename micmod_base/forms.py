@@ -275,7 +275,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                          widget=forms.HiddenInput())
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
-
+        self.fields['discount_per_item'].widget.attrs['onchange'] = 'refresh_prices()'
 
         # if self.instance.trade_price_code:
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
@@ -375,7 +375,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'price_target',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-                  'goods_price_sheet3',
+                  'goods_price_sheet3', 'discount_per_item',
                   'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
@@ -530,7 +530,8 @@ class BaseQIFormset(BaseInlineFormSet):
             form.instance.extra_data.request = request
             if 'DELETE' in form.changed_data and form.cleaned_data['DELETE']:
                 if form.instance.pk:
-                    form.instance.delete()
+                    form.instance.is_deleted = True
+                    form.instance.save()
                     obj = None
                 else:
                     # Don't save form

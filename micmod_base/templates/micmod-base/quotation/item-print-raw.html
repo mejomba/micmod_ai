@@ -30,7 +30,7 @@
 <!-- GOODS LAST PRICE -->
     <td class="font-size-10 replace-digits">
 {#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}
-        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.fee|default_if_none:0|floatformat:digit|intcomma }}</div>
+        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.sepidar_fee|default_if_none:0|floatformat:digit|intcomma }}</div>
     </td>
 <!-- FEE -->
     <td class="font-size-10 replace-digits">

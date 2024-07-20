@@ -216,7 +216,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'AggregateAmountDiscountRate': 0,
                         'CustomerDiscount': 0,
                         'CustomerDiscountRate': 0,
-                        'Discount': qi.sepidar_discount * qi.quantity or 0,
+                        'Discount': qi.discount_value or 0, #qi.sepidar_discount * qi.quantity or 0,
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
