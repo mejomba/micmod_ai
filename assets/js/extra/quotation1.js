@@ -599,7 +599,11 @@ function set_alt_price_data(data, elem) {
         set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
         set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
         set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), data.id,)
-        elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        try{
+            elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        } catch (err){
+            console.log('catch error: ', err)
+        }
     }
     set_price(elem.querySelector('[name*="-goods_name"]'))
 }
