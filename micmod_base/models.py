@@ -25,6 +25,7 @@ from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, P
 import datetime
 from tools.utils import round_rial
 
+
 class QuotationManager(models.Manager):
     def own_quotations(self, request):
         has_permission(request.user,"")
@@ -54,6 +55,7 @@ class SaleType(AbsBaseModel):
 
     def __str__(self):
         return f'{self.title}'
+
 
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
@@ -447,9 +449,9 @@ class QuotationItem(BaseModel):
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
         if path == past_path:
-            x = cls.objects.filter(inquiry_type_filter, quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter, quotation__cancel=False).order_by('-quotation_id')
         else:
-            x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
