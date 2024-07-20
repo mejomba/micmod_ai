@@ -216,7 +216,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'AggregateAmountDiscountRate': 0,
                         'CustomerDiscount': 0,
                         'CustomerDiscountRate': 0,
-                        'Discount': qi.sepidar_discount * qi.quantity or 0,
+                        'Discount': qi.discount_value or 0, #qi.sepidar_discount * qi.quantity or 0,
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
@@ -735,7 +735,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
     def post(self, request):
         if obj_pk := self.request.POST.get('obj_pk'):
-            obj_qs = QuotationItem.objects.filter(pk=obj_pk)
+            obj_qs = QuotationItem.objects.full_queryset(pk=obj_pk)
             obj = obj_qs.first()
             obj.save_comment(self.request)
 
@@ -773,7 +773,17 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     'delay_reason': request.POST.get('delay_reason') or '',
                     'delay_time': request.POST.get('delay_time') or '',
                 }
-                obj_qs.update(**data)
+                # obj_qs.update(**data)
+                obj_for_update = obj_qs.first()
+                if obj_for_update:
+                    obj_for_update.lead_time = data['lead_time']
+                    obj_for_update.goods_code = data['goods_code']
+                    obj_for_update.goods_name = data['goods_name']
+                    obj_for_update.has_delay = data['has_delay']
+                    obj_for_update.delay_reason = data['delay_reason']
+                    obj_for_update.delay_time = data['delay_time']
+                    obj_for_update.extra_data.request = self.request
+                    obj_for_update.save()
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
