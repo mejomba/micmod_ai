@@ -284,7 +284,7 @@
                                 {% if request.user|has_permission:"micmod_base_discount_per_item" %}
                                 <div>{% render_field_by_order form_s form_s.discount_per_item label='on-border' %}</div>
                                 {% else %}
-                                    <input type="hidden" name="-discount_per_item">
+                                    <input type="hidden" name="{{ form_s.discount_per_item.html_name }}" value="{{ form_s.instance.discount_per_item }}">
                                 {% endif %}
                             </div>
                         </div>
