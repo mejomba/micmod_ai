@@ -283,6 +283,8 @@
                                 <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>
                                 {% if request.user|has_permission:"micmod_base_discount_per_item" %}
                                 <div>{% render_field_by_order form_s form_s.discount_per_item label='on-border' %}</div>
+                                {% else %}
+                                    <input type="hidden" name="-discount_per_item">
                                 {% endif %}
                             </div>
                         </div>
