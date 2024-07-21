@@ -560,7 +560,7 @@ class QuotationItem(BaseModel):
                 return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
             case 'price_market':
                 x = iqr.goods_price_market
-                return round_rial(x, currency_ref='Rial') if isinstance(x, (int, float)) else 1
+                return round_rial(x, currency_ref='RIAL') if isinstance(x, (int, float)) else 1
 
     @property
     def net_price(self):
