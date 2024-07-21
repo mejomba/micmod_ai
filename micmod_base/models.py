@@ -534,12 +534,12 @@ class QuotationItem(BaseModel):
 
     def fee_(self):
         iqr = self.quotation_item_rel.all().last()
+        if iqr is None:
+            return self.final_price or 0
         if iqr.quotation_item.quotation.currency_ref.title == 'ریال':
             currency_ref = 'RIAL'
         else:
             currency_ref = 'RMB'
-        if iqr is None:
-            return self.final_price or 0
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price
