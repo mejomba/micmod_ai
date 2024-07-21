@@ -567,6 +567,7 @@ class QuotationItem(BaseModel):
         try:
             return self.fee_() * self.quantity if self.pk and self.fee_() else 0
         except Exception as e:
+            return 0
             raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
 
     @property

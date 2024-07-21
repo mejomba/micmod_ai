@@ -231,11 +231,11 @@ function set_item_classes(item) {
             set_price_data(data, elem, e.target)
             $(item).find('input[id*="goods_code_fk"]').val(data['id'])
     })
-        // $(item).find('.goods_code_alt').on("select2:select", function (e) {
-        //     var elem = findAncestor(e.target, "item")
-        //     var data = e.params.data;
-        //     set_alt_price_data(data, elem)
-        // })
+        $(item).find('.goods_code_alt').on("select2:select", function (e) {
+            var elem = findAncestor(e.target, "item")
+            var data = e.params.data;
+            set_alt_price_data(data, elem)
+        })
         $(item).find('.goods_code').select2({
             dir: 'ltr',
             ajax: {
@@ -276,48 +276,48 @@ function set_item_classes(item) {
             templateResult: newFormatRepoItem,
             templateSelection: formatRepoSelection,
         });
-        // $(item).find('.goods_code_alt').select2({
-        //     dir: 'ltr',
-        //     ajax: {
-        //         // url: '/sepidar/items_list',
-        //         url: '/inquiry/items_list',
-        //         dataType: "json",
-        //         type: "GET",
-        //         data: function (data) {
-        //             const p_id = document.getElementById('customer_pid').textContent;
-        //             return {
-        //                 q: data.term, party_id: p_id, page: data.page,
-        //                 id_currency_ref: document.getElementById('id_currency_ref').value,
-        //                 id_payment_method: document.getElementById('id_payment_method').value,
-        //                 id_market_grade: document.getElementById('id_market_grade').value,
-        //                 id_customer_grade: document.getElementById('id_customer_grade').value,
-        //                 quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
-        //             }
-        //         },
-        //         processResults: function (data, params){
-        //             params.page = params.page || 1;
-        //             const items = [];
-        //             for (const item in data.items) {
-        //                 if (data.items[item].f_fee_cust) {
-        //                     items.push(data.items[item]);
-        //                 }
-        //             }
-        //             return {
-        //                 results: items,
-        //                 pagination: {
-        //                     more: (params.page * 30) < data.total_count
-        //                 }
-        //             };
-        //         },
-        //         cache: true
-        //     },
-        //     dropdownAutoWidth: true,
-        //     dropdownCssClass: 'goods_select2',
-        //     minimumInputLength: 1,
-        //     //placeholder: $(document).find("#hiden_customer_code").text(),
-        //     templateResult: newFormatRepoItem,
-        //     templateSelection: formatRepoSelection
-        // });
+        $(item).find('.goods_code_alt').select2({
+            dir: 'ltr',
+            ajax: {
+                // url: '/sepidar/items_list',
+                url: '/inquiry/items_list',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    const p_id = document.getElementById('customer_pid').textContent;
+                    return {
+                        q: data.term, party_id: p_id, page: data.page,
+                        id_currency_ref: document.getElementById('id_currency_ref').value,
+                        id_payment_method: document.getElementById('id_payment_method').value,
+                        id_market_grade: document.getElementById('id_market_grade').value,
+                        id_customer_grade: document.getElementById('id_customer_grade').value,
+                        quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    }
+                },
+                processResults: function (data, params){
+                    params.page = params.page || 1;
+                    const items = [];
+                    for (const item in data.items) {
+                        if (data.items[item].f_fee_cust) {
+                            items.push(data.items[item]);
+                        }
+                    }
+                    return {
+                        results: items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            dropdownAutoWidth: true,
+            dropdownCssClass: 'goods_select2',
+            minimumInputLength: 1,
+            //placeholder: $(document).find("#hiden_customer_code").text(),
+            templateResult: newFormatRepoItem,
+            templateSelection: formatRepoSelection
+        });
     }
     $(item).find('[id$="final_price"]').on('change keydown paste input', function (e) {
         calculate_price(e.target);
@@ -365,21 +365,21 @@ function set_item_classes(item) {
     const select01 = item.querySelector('[id*="select2-goods_code"][id*="container"]')
     if (select01) {
         select01.innerHTML = item.querySelector('[id*="-goods_code"]').value
-        // item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
+        item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
     copy_values(item, '-goods_name_alt')
     // const w = item.querySelector('[name*="-goods_code"]')
     // const ww = item.querySelector('[name*="-goods_code_alt"]')
-    // const box = item.querySelector('[name="box-alt-goods"]')
-    // if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
-    //     if (box) {
-    //         box.classList.remove('d-none')
-    //     }
-    // } else {
-    //     if (box) {
-    //         box.classList.add('d-none')
-    //     }
-    // }
+    const box = item.querySelector('[name="box-alt-goods"]')
+    if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
+        if (box) {
+            box.classList.remove('d-none')
+        }
+    } else {
+        if (box) {
+            box.classList.add('d-none')
+        }
+    }
     // const item = item.querySelector('[class*="final_price"]')
     set_price(item)
 
@@ -471,11 +471,11 @@ function refresh_prices() {
         const code = items[i].querySelector('[id*="-goods_code"]').value
         const data = get_price_data(code, party_id, items[i])
         set_price_data(data, items[i], items[i])
-        // const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
-        // if (alt_code != "") {
-        //     const alt_data = get_price_data(alt_code, party_id, items[i])
-        //     set_alt_price_data(alt_data, items[i])
-        // }
+        const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
+        if (alt_code != "") {
+            const alt_data = get_price_data(alt_code, party_id, items[i])
+            set_alt_price_data(alt_data, items[i])
+        }
     }
 }
 
@@ -580,7 +580,7 @@ function set_price_data(data, elem, target) {
         if (!data.f_fee_cust) {
             elem.querySelector('[name="box-alt-goods"]').classList.remove('d-none')
             set_values(elem.querySelectorAll('[name*="-goods_name_alt"]'), '',)
-            // set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
+            set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
         } else {
             elem.querySelector('[name="box-alt-goods"]').classList.add('d-none')
         }
@@ -597,12 +597,12 @@ function set_alt_price_data(data, elem) {
         set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
         set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
         set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
-        // set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), data.id,)
-        // try{
-        //     elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
-        // } catch (err){
-        //     console.log('catch error: ', err)
-        // }
+        set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), data.id,)
+        try{
+            elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        } catch (err){
+            console.log('catch error: ', err)
+        }
     }
     set_price(elem.querySelector('[name*="-goods_name"]'))
 }
@@ -738,7 +738,7 @@ function hide_show_goods_alt(el) {
     if (box.classList.contains('d-none')) {
         box.classList.remove('d-none')
         set_values(elem.querySelectorAll('[name*="-goods_name_alt"]'), '',)
-        // set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
+        set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
     } else {
         box.classList.add('d-none')
     }

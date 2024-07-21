@@ -130,12 +130,12 @@
                     <div class="w-75">
                         <div class="d-flex justify-content-end">
                             {% render_field_by_order form_s form_s.goods_name label='on-border' %}
-                            {#                            <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>#}
-{#                            <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"#}
-{#                                 data-key="show_alt">مشابه#}
-{#                            </div>#}
+                                                        <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>
+                            <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
+                                 data-key="show_alt">مشابه
+                            </div>
                         </div>
-                        {#                        {% render_field_by_order form_s form_s.goods_name_alt label='on-border' %}#}
+{#                                                {% render_field_by_order form_s form_s.goods_name_alt label='on-border' %}#}
                         <div class="col on-border">
                             <label>نام کالا</label>
 {#                            <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl" disabled></textarea>#}
@@ -166,29 +166,29 @@
                 </div>
 
                 <div class="d-none border-bottom px-1" name="box-alt-goods">
-{#                    <div class="d-flex mt-3">#}
-{#                        <div class="w-25 on-border">#}
-{#                            {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}#}
-{#                                <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>#}
-{#                                <label>کد کالا</label>#}
-{#                                {% render_field_by_order form_s form_s.goods_code_fk %}#}
-{#                            {% else %}#}
-{#                                <div class="mt-4">#}
-{#                                {{ form_s.instance.goods_code_alt }}#}
-{#                                </div>#}
-{#                                <label>کد کالا</label>#}
-{#                            {% endif %}#}
-{##}
-{#                        </div>#}
-{#                        <div class="w-75">#}
-{#                            <div class="col on-border">#}
-{#                                <label>نام کالا</label>#}
+                    <div class="d-flex mt-3">
+                        <div class="w-25 on-border">
+                            {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
+                                <div class="select2 w-100 goods_code_alt" name="goods_code_alt"></div>
+                                <label>کد کالا</label>
+                                {% render_field_by_order form_s form_s.goods_code_fk %}
+                            {% else %}
+                                <div class="mt-4">
+                                {{ form_s.instance.goods_code_alt }}
+                                </div>
+                                <label>کد کالا</label>
+                            {% endif %}
+
+                        </div>
+                        <div class="w-75">
+                            <div class="col on-border">
+                                <label>نام کالا</label>
 {#                                <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_alt_lbl" disabled></textarea>#}
-{#                                <textarea class="w-100 form-control bg-white bold text-black" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>#}
-{##}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
+                                <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="px-1 replace-digits">
                     <div class="w-100">
