@@ -75,6 +75,30 @@ def elapsed_time(m_datetime):
     return f'{m_str} قبل'
 
 
+def diff_time(first_time, second_time):
+    first_time , second_time = second_time, first_time
+    if not first_time and not second_time:
+        return None
+    delta = first_time - second_time
+    relative_delta = relativedelta(first_time, second_time)
+    m_str = ""
+    if delta.seconds < 60:
+        return f'بلافاصله'
+    elif delta.seconds < 2592000:  # day&hour&minute
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += " و " if m_str else ""
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += " و " if m_str and relative_delta.hours else ""
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    else:# year&month&day
+        m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
+        m_str += " و " if m_str else ""
+        m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+        m_str += " و " if m_str and relative_delta.months else ""
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    return f'{m_str} '
+
+
 def to_persian_number(mystr):
     number = {
         "0": "۰",
@@ -179,4 +203,20 @@ def round_price(x):
         # round 1 digit
         x = x / 10
         x = int(x) * 10
+    return x
+
+
+def round_rial(x):
+    if x and x / 100_000 > 1:
+        # round 3 digit
+        x = x / 1000
+        x = (int(x) + 1) * 1000
+    elif x and x / 10_000 > 1:
+        # round 2 digit
+        x = x / 100
+        x = (int(x) + 1) * 100
+    elif x and x / 1_000 > 1:
+        # round 1 digit
+        x = x / 10
+        x = (int(x) + 1) * 10
     return x

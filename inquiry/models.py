@@ -89,7 +89,7 @@ class PriceInquiryResult(BaseModel):
     # _rmb_final_price_ = dict()
     # rmb_final_price_before_ondemand_percentage = dict()
     def __str__(self):
-        return f'{self.id}: {self.price_inquiry_file} {self.sku}'
+        return f'{self.id}: {self.jalali_last_update_date} - {self.sku}'
 
     @classmethod
     def inquiry_list_datatable(cls, user, param={}):
@@ -105,6 +105,14 @@ class PriceInquiryResult(BaseModel):
             return cls.objects.none()
         # qq = InquiryResultVariant.objects.filter(Q(base_group_id__in=list(g)) | Q(base_group__isnull=True))
         # return qs.filter(Q(inquiry_type_id__in=qq) | Q(inquiry_type_id__isnull=True))
+
+    @classmethod
+    def inquiry_list(cls, user, param):
+        if user.base_group == 'sales' or user.is_superuser:
+            qs = cls.objects.filter(**param)
+            return qs
+        else:
+            return cls.objects.none()
 
     @property
     def elapsed_from_last_price(self):

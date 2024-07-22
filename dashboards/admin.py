@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import BIReport
 
-# Register your models here.
+
+admin.site.register([BIReport])

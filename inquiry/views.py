@@ -225,6 +225,7 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'trade_last_weight', 'visible': True},
         {'name': 'wh_last_weight', 'visible': True},
         {'name': 'weight_percentage', 'visible': True},
+        {'name': 'duplicate_item', 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -254,7 +255,7 @@ class SkuListDataTableView(AjaxDatatableView):
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
-            column = column[:15]
+            column = column[:16]
         return column
 
     def customize_row(self, row, obj):
@@ -266,6 +267,7 @@ class SkuListDataTableView(AjaxDatatableView):
         x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
         row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
             if obj.weight_percentage else '<p>-</p>'
+        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="">رونوشت</a>'
 
 
 def sku_list(request):
@@ -380,12 +382,13 @@ class InquiryResultListView(BaseView):
         """save quotation_item inquiry result"""
         if submit_for_qi and qi_id:
             qi_obj = QuotationItem.objects.filter(pk=qi_id).first()
+            qi_obj.extra_data.request = self.request
             if self.request.user.base_group == 'bazar':
-                qi_obj.local_price_inquiry_done = True
+                qi_obj.local_price_inquiry_done = True  # آقای اسدی گفتن وقتی ثبت برای پیش فاکتور رو میزنن لزومی نداره که دوباره برن ذخیره کنن پس خودکار تایید بشه
                 qi_obj.bazar_price_code = self.object
                 qi_obj.save()
             elif self.request.user.base_group == 'trade':
-                qi_obj.foreign_price_inquiry_done = True
+                # qi_obj.foreign_price_inquiry_done = True  # خانم شیوا ابراهیمی گفتن این مورد رو لازم ندارن و خودشون باید تیک تایید رو بزنن
                 qi_obj.trade_price_code = self.object
                 qi_obj.save()
 
@@ -716,7 +719,7 @@ def get_item(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    item_obj = Item.objects.filter(sku=q).first()
+                    item_obj = old_item_obj = Item.objects.filter(sku=q).first()
                     if item_obj and item_obj.parent and item_obj.active_main_item:
                         item_obj = item_obj.parent
 
@@ -724,7 +727,7 @@ def get_item(request):
                     price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                         pk=trade_price_code).first() if (trade_price_code) else item_obj.price
                     price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
-                        pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
+                        pk=bazar_price_code).first() if (bazar_price_code) else old_item_obj.bazar_price
                     # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
@@ -862,13 +865,13 @@ def get_items(request):
                 item['stock_qty'] = item_.stock_qty
                 item['stock_qty_res'] = item_.stock_res_qty
                 try:
-                    sku_item: Item = Item.objects.filter(sku=item_.code).first()
+                    sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
                         item['parent_part_number'] = sku_item.part_number
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
-                    price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
+                    price_inquiry_result_bazar: PriceInquiryResult = old_sku_item.bazar_price if old_sku_item else None
                     if price_inquiry_result:
                         price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(

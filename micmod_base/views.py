@@ -229,7 +229,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'StockRef': 2,  # optional
                         'Quantity': qi.quantity,
                         'SecondaryQuantity': 0,
-                        'Fee': qi.fee or 1,
+                        # 'Fee': qi.fee or 1,
+                        'Fee': qi.sepidar_fee or 1,
                         'Price': qi.price or 1,
                         'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
@@ -239,7 +240,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'AggregateAmountDiscountRate': 0,
                         'CustomerDiscount': 0,
                         'CustomerDiscountRate': 0,
-                        'Discount': 0,
+                        'Discount': qi.sepidar_discount * qi.quantity or 0,
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
@@ -661,6 +662,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
     def get(self, request):
         from django.core.paginator import Paginator
+        filter_form = PendingFormFilter(self.request.GET)
+        filter_form.is_valid()
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
@@ -673,6 +676,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
         search_sku = request.GET.get('search_sku')
         force_inquiry = request.GET.get('force_inquiry')
+        time_range = request.GET.get('time_range')
+        from_time = self.request.GET.get('from_time')
+        to_time = self.request.GET.get('to_time')
 
         quotations_record_lst = QuotationItem.objects.none()
 
@@ -703,6 +709,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             quotations_record_lst = quotations_record_lst.filter(**f)
         elif self.request.GET.get('item_in_china'):
             quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
+
+        elif self.request.GET.get('from_time') or self.request.GET.get('to_time'):
+            quotations_record_lst = quotations_record_lst.filter(quotation__created_date__range=[filter_form.cleaned_data.get('from_time'),filter_form.cleaned_data.get('to_time')])
         else:
             quotations_record_lst = quotations_record_lst
 
@@ -767,7 +776,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.foreign_price_inquiry_done = True
                 obj.extra_data.request = self.request
                 obj.save()
-            elif self.request.POST.get('need_foreign_price_inquiry') and not self.request.POST.get('foreign_price_inquiry_done'):
+            elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = False
                 obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
@@ -779,16 +788,16 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.extra_data.request = self.request
                 obj.save()
 
-
-            data = {
-                'lead_time': request.POST.get('lead_time') or obj.lead_time,
-                'goods_code': request.POST.get('goods_code'),
-                'goods_name': request.POST.get('goods_name'),
-                'has_delay': True if request.POST.get('has_delay') else False or obj.has_delay,
-                'delay_reason': request.POST.get('delay_reason') or obj.delay_reason,
-                'delay_time': request.POST.get('delay_time') or obj.delay_time,
-            }
-            obj_qs.update(**data)
+            if self.request.user.base_group == 'trade':
+                data = {
+                    'lead_time': request.POST.get('lead_time') or obj.lead_time,
+                    'goods_code': request.POST.get('goods_code'),
+                    'goods_name': request.POST.get('goods_name'),
+                    'has_delay': True if request.POST.get('has_delay') else False,
+                    'delay_reason': request.POST.get('delay_reason') or '',
+                    'delay_time': request.POST.get('delay_time') or '',
+                }
+                obj_qs.update(**data)
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
@@ -947,6 +956,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
+        {'name': 'comment', 'visible': True}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -960,6 +970,20 @@ class QuotationListDatatable(AjaxDatatableView):
 
     # @timer
     def customize_row(self, row, obj):
+        qi_comments = [x.comments.all() for x in obj.quotation.all()]
+        c = 0
+        for qs in qi_comments:
+            for comment in qs:
+                if not comment.commentseen_set.all():
+                    c += 1
+        for comment in obj.comments.all():
+            if not comment.commentseen_set.all():
+                c += 1
+        if c > 0:
+            row['comment'] = f'<span class="bg-success rounded px-2">{c} کامنت جدید</span>'
+        else:
+            row['comment'] = f'{c} کامنت جدید'
+
 
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('micmod_base:quotations.view', args=(obj.id,)),

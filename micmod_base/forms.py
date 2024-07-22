@@ -279,7 +279,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         # if self.instance.trade_price_code:
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
-                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.trade_price_code,
                                                                               self.instance.trade_price_code) if self.instance.trade_price_code else None
                                                                      )
@@ -291,7 +291,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         #                                                              )
         # if self.instance.bazar_price_code:
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100 form-control'}),
-                                                                     queryset=PriceInquiryResult.inquiry_list_datatable(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'bazar'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
+                                                                     queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'bazar'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=(self.instance.bazar_price_code,
                                                                               self.instance.bazar_price_code) if self.instance.bazar_price_code else None,
                                                                      )
@@ -433,6 +433,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'itemid': forms.HiddenInput(),
             'bazar_price_code': forms.HiddenInput(),
             'trade_price_code': forms.HiddenInput(),
+            'goods_code_fk': forms.HiddenInput(),
             # 'price_method': forms.RadioSelect(attrs={"class": "price_method","m-data":"price_method"}),
             # 'delivery_time': forms.RadioSelect(),
             # 'goods_name': forms.Textarea(attrs={'class': 'goods_name','hidden': False, "rows": 1}),
@@ -570,7 +571,8 @@ qi_fields = [
     'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
-    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description', 'item_in_china'
+    'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
+    'item_in_china', 'goods_code_fk',
     ]
 
 
@@ -587,7 +589,7 @@ QuotationItemFormset = inlineformset_factory(
 class PendingFormFilter(CustomBaseForm):
     from django.db.models.fields import BLANK_CHOICE_DASH
     CHOOSE_CHOICES = [
-                      # ('time', _('time')),
+                      ('time_range', _('time_range')),
                       ('my_quotations', _('my_quotations')),
                       ('quotation', _('quotation')),
                       ('customer_code', _('customer_code')),
@@ -601,8 +603,8 @@ class PendingFormFilter(CustomBaseForm):
                       ('all', _('all'))
                         ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
-    # from_time = forms.DateTimeField(required=False)
-    # to_time = forms.DateTimeField(required=False)
+    from_time = forms.DateField(required=False)
+    to_time = forms.DateField(required=False)
     quotation = forms.IntegerField(required=False)
     customer_code = forms.IntegerField(required=False)
     my_quotations = forms.CharField(required=False)
@@ -610,15 +612,17 @@ class PendingFormFilter(CustomBaseForm):
     my_inquiry_not_started = forms.CharField(required=False)
     inquiry_not_assigned = forms.CharField(required=False)
     force_inquiry = forms.CharField(required=False)
-    # search_part_number = forms.CharField(required=False)
-    # search_customer_name = forms.CharField(required=False)
-    # search_create_date = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
         self.fields['choice'].widget.attrs.update()
-        # self.fields['from_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('from_time')})
-        # self.fields['to_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('to_time')})
+        self.fields['from_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['to_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['from_time'].widget.attrs.update(
+            {'class': 'jalali_date-date d-none form-control', 'placeholder': _('from_time'), 'required': False})
+        self.fields['to_time'].widget.attrs.update(
+            {'class': 'jalali_date-date d-none form-control', 'placeholder': _('to_time'), 'required': False})
+
         self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation')})
         self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})
