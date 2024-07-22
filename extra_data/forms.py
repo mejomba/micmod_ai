@@ -61,7 +61,7 @@ class CustomerForm(CustomBaseModelForm):
         # self.fields['customer_field'] = forms.ModelMultipleChoiceField(
         #     queryset=CustomerFields.objects.all(),
         #     required=False,
-        #     widget=FilteredSelectMultiple(_("customer field"), is_stacked=True),
+        #     widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
         # )
     #
     #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(

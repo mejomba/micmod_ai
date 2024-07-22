@@ -620,7 +620,7 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
         return f'قرارداد {self.object.customer.title} save'
 
     def get_success_url(self):
-        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.0pk})
+        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
