@@ -12,7 +12,7 @@ from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
-    ChangeCustomerGroupForm, CustomerExpertForm
+    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
@@ -549,7 +549,7 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerDocumentsForm(initial={'customer': customer})
+        context['form'] = CustomerDocumentsForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
 
@@ -574,7 +574,7 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer})
+        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
 
@@ -598,7 +598,7 @@ class CustomerExpertView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        context['form'] = CustomerExpertForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
 
@@ -607,7 +607,7 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
     template_name = 'extra_data/customer_contract.html'
     success_message = '%(customer)s update'
     form_struct = {
-        'form': CustomerExpertForm,
+        'form': CustomerContractForm,
         'childes': [
             {
                 'form': '',
@@ -625,5 +625,5 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        context['form'] = CustomerContractForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context

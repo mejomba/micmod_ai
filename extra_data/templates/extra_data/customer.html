@@ -11,9 +11,12 @@
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 
+    <script>
+    </script>
+    <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
 
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
-{#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/dark_mode.css' %}">#}
+    {#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/dark_mode.css' %}">#}
     <script src="{% static 'admin/js/theme.js' %}" type="text/javascript" ></script>
 {#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/nav_sidebar.css' %}">#}
     <script src="{% static 'admin/js/nav_sidebar.js' %}" type="text/javascript" ></script>
@@ -30,11 +33,9 @@
     <script src="{% static 'admin/js/prepopulate.js' %}" type="text/javascript" ></script>
     <script src="{% static 'admin/js/vendor/xregexp/xregexp.js' %}" type="text/javascript" ></script>
     <link href="{% static 'admin/css/responsive.css' %}" type="text/css" />
-
+    <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">
     <style>
-    .form-control {
-        height: 3rem !important;
-    }
+
     </style>
 {% endblock extra_css %}
 
@@ -51,9 +52,21 @@
         {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.official_name form.customer_grade label='on-border' margin_b=4 %}
     </div>
 
-    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
+    <div class="row bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات تکمیلی</h4>
-        {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long form.customer_field label='on-border' margin_b=4 %}
+        <div class="col-5">
+            <div class="row row-cols-2">
+                {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long label='on-border' margin_b=4 %}
+            </div>
+        </div>
+        <div class="col-7 d-flex flex-column">
+{#            <div class="text-center">{{ form.customer_field.label }}</div>#}
+            {{ form.customer_field }}
+        </div>
+    </div>
+    <div class="RTL-LTR row d-flex">
+        <label for=""></label>
+
     </div>
     <div>
 
@@ -99,19 +112,37 @@
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">قرارداد ها</h4>
-        <div class="row row-cols-1 align-items-center">
         {% if form.instance.pk %}
+            <div class="row align-items-center mb-7 bold">
+            <div class="col-1 "><span class="ms-7">نوع قرارداد</span></div>
+            <div class="col-1">تاریخ</div>
+            <div class="col-1">سر رسید</div>
+            <div class="col-3">توضیحات</div>
+            <div class="col-1">عملیات</div>
+            <div class="col-5"></div>
+            </div>
+            <div class="row align-items-center">
             {% for contract in form.instance.customercontract_set.all %}
-                <div class="col d-flex gap-5 mb-3">
-                    <span class="me-3">{{ forloop.counter }}) </span>
-                    <span>{{ contract.contract_type|default_if_none:"-" }}</span>
-                    <span>{{ contract.contract_date|to_jalali }}</span>
-                    <span>{{ contract.contract_due_date|to_jalali }}</span>
-                    <span>{{ contract.description|default_if_none:"-" }}</span>
-                    <span>
+                    <div class="col-1 mb-3">
+                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                        <span>{{ contract.get_contract_type_display|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ contract.contract_date|to_jalali:"%y-%m-%d" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ contract.contract_due_date|to_jalali:"%y-%m-%d"  }}</span>
+                    </div>
+                    <div class="col-3">
+                        <span>{{ contract.description|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>
                         <a href="{% url 'extra_data:customer_contract.update' contract.pk %}" target="_blank" class="me-1">ویرایش</a>
                     </span>
-                </div>
+                    </div>
+                <div class="col-5"></div>
+
             {% endfor %}
 
             <div class="d-flex">
@@ -127,18 +158,36 @@
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
-        <div class="row row-cols-1 align-items-center">
         {% if form.instance.pk %}
+
+            <div class="row align-items-center bold mb-5">
+            <div class="col-1"><span class="ms-7">نام</span></div>
+            <div class="col-1">تلفن</div>
+            <div class="col-1">سمت</div>
+            <div class="col-1">عملیات</div>
+            <div class="col-8"></div>
+
+            </div>
+            <div class="row align-items-center">
             {% for expert in form.instance.customerexpert_set.all %}
-                <div class="col d-flex gap-5 mb-3">
-                    <span class="me-3">{{ forloop.counter }}) </span>
-                    <span>{{ expert.name|default_if_none:"-" }}</span>
-                    <span>{{ expert.phone|default_if_none:"-" }}</span>
-                    <span>{{ expert.position|default_if_none:"-" }}</span>
-                    <span>
+
+                    <div class="col-1 mb-3">
+                        <span class="me-3 bold">{{ forloop.counter }}) </span>
+                        <span>{{ expert.name|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ expert.phone|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ expert.position|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>
                         <a href="{% url 'extra_data:customer_expert.update' expert.pk %}" target="_blank" class="me-1">ویرایش</a>
                     </span>
-                </div>
+                    </div>
+                    <div class="col-8"></div>
+
             {% endfor %}
 
             <div class="d-flex">
@@ -154,15 +203,28 @@
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">مدارک و داکیومنت ها</h4>
-        <div class="d-flex gap-10 align-items-center">
         {% if form.instance.pk %}
+            <div class="row d-flex align-items-center bold mb-5">
+                <div class="col-1"><span class="ms-7">نوع سند</span></div>
+                <div class="col-1">تاریخ</div>
+                <div class="col-2">توضیحات</div>
+                <div class="col-1">فایل</div>
+                <div class="col-7"></div>
+            </div>
+            <div class="row d-flex align-items-center">
             {% for doc in form.instance.customerdocuments_set.all %}
-                <span>
-                    <a href="{{ doc.path.url }}" target="_blank" class="me-1">{{ doc.get_doc_type_display }} ({{ doc.created_date|to_jalali:'%Y/%m/%d' }})</a>
-                </span>
+                <div class="col-1 mb-3">
+                    <span class="bold me-3">{{ forloop.counter }}) </span>
+                    <span class="">{{ doc.get_doc_type_display }}</span>
+                </div>
+                <div class="col-1">{{ doc.created_date|to_jalali:'%Y/%m/%d' }}</div>
+                <div class="col-2">{{ doc.description|default_if_none:"-" }}</div>
+                <div class="col-1"><a href="{{ doc.path.url }}" target="_blank">فایل</a></div>
+                <div class="col-7"></div>
             {% endfor %}
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_document.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
+                <a href="{% url 'extra_data:customer_document.create' %}?pk={{ form.instance.pk }}" class=""
+                   target="_blank">
                     <h1 class="border px-3 py-1 rounded">+</h1>
                 </a>
             </div>
@@ -179,7 +241,7 @@
             {% for change_customer in form.instance.change_marketer_rel.all %}
                 <div class="col d-flex my-3 gap-5">
                     <span>
-                        <span class="me-3">{{ forloop.revcounter }}) </span>
+                        <span class="me-3 bold">{{ forloop.counter }}) </span>
 {#                        <span>از:</span>#}
                         <span>{{ change_customer.from_marketer|default_if_none:"-" }}</span>
                     </span>
@@ -242,5 +304,16 @@
 
 
 {% block extra_js %}
-
+    <script>
+    window.addEventListener('load', function (){
+        const addm2m = document.querySelector('.selector-add')
+        const removem2m = document.querySelector('.selector-remove')
+        addm2m.addEventListener('click', function (e){
+            e.preventDefault()
+        })
+        removem2m.addEventListener('click', function (e){
+            e.preventDefault()
+        })
+    })
+    </script>
 {% endblock extra_js %}
