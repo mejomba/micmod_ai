@@ -20,18 +20,17 @@
     {% csrf_token %}
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
-        {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.mobile form.customer_group form.description label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.customer_group form.description label='on-border' margin_b=4 %}
     </div>
 
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
-        {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.contract form.customer_sale_type form.official_name form.customer_grade label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.official_name form.customer_grade label='on-border' margin_b=4 %}
     </div>
 
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات تکمیلی</h4>
         {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long form.customer_field label='on-border' margin_b=4 %}
-
     </div>
     <div>
 
@@ -73,6 +72,34 @@
 {#                <option value="{{ item.pk }}">{{ item.title }}</option>#}
 {#            {% endfor %}#}
 {#        </select>#}
+    </div>
+
+    <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
+        <h4 class="position-absolute" style="top: -10px">قرارداد ها</h4>
+        <div class="row row-cols-1 align-items-center">
+        {% if form.instance.pk %}
+            {% for contract in form.instance.customercontract_set.all %}
+                <div class="col d-flex gap-5 mb-3">
+                    <span class="me-3">{{ forloop.counter }}) </span>
+                    <span>{{ contract.contract_type|default_if_none:"-" }}</span>
+                    <span>{{ contract.contract_date|to_jalali }}</span>
+                    <span>{{ contract.contract_due_date|to_jalali }}</span>
+                    <span>{{ contract.description|default_if_none:"-" }}</span>
+                    <span>
+                        <a href="{% url 'extra_data:customer_contract.update' contract.pk %}" target="_blank" class="me-1">ویرایش</a>
+                    </span>
+                </div>
+            {% endfor %}
+
+            <div class="d-flex">
+                <a href="{% url 'extra_data:customer_contract.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
+                    <h1 class="border px-3 py-1 rounded">+</h1>
+                </a>
+            </div>
+        {% else %}
+            <span class="mx-3">پس از ثبت اطلاعات پایه امکان ثبت کارشناس مشتری وجود دارد</span>
+        {% endif %}
+        </div>
     </div>
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">

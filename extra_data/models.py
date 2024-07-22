@@ -662,8 +662,8 @@ class Customer(AbsBaseModel):
     cheque_to_delivery = models.BooleanField(_('cheque_to_delivery'), default=False)
 
     # قرارداد
-    contract = models.ForeignKey('CustomerContract', verbose_name=_('contract'), null=True, blank=True,
-                                 on_delete=models.DO_NOTHING)
+    # contract = models.ForeignKey('CustomerContract', verbose_name=_('contract'), null=True, blank=True,
+    #                              on_delete=models.DO_NOTHING)
 
     # توافق با مشتری
     customer_sale_type = models.ForeignKey('micmod_base.SaleType', on_delete=models.DO_NOTHING,
@@ -721,6 +721,7 @@ class CustomerContract(AbsBaseModel):
     contract_due_date = models.DateTimeField(_('contract_due_date'), null=True, blank=True)
     description = models.TextField(_('description'), max_length=3000)
     contract_type = models.CharField(_('contract_type'), max_length=1, choices=CONTRACT_TYPE)
+    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, verbose_name=_('contract'), null=True, blank=True)
     # file = ... generic
 
 

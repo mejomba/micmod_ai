@@ -48,9 +48,11 @@ class HsForm(CustomBaseModelForm):
 class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
-        fields = '__all__'# ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'mobile',
-                  # 'max_credit', 'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf',
-                  # 'introduction_method', 'introducer', 'marketer', 'revival_date', 'sepidar_dl_id']
+        fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
+                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf',
+                  'introduction_method', 'introducer', 'marketer', 'sepidar_dl_id', 'description', 'lat', 'long',
+                  'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
+                  'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
 
     def __init__(self, *args, **kwargs):
         access = None

@@ -17,7 +17,8 @@ from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, Cust
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
+    CustomerContract
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -423,7 +424,6 @@ class CustomerView(LoginRequiredMixin, BaseView):
     model = Customer
     template_name = 'extra_data/customer.html'
     # success_url = reverse_lazy('extra_data:customer.update')
-    success_message = '%(title)s create'
     form_struct = {
         'form': CustomerForm,
         'childes': [
@@ -434,6 +434,8 @@ class CustomerView(LoginRequiredMixin, BaseView):
         ]
     }
 
+    def get_success_message(self, cleaned_data):
+        return f'{self.object.title} save'
     # def get(self, request, pk=-1):
     #     form = self.form_struct.get('form')
     #     if pk > 0:
@@ -483,8 +485,6 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'email', 'orderable': True, 'visible': True, },
         {'name': 'website', 'orderable': True, 'visible': True, },
         {'name': 'phone', 'orderable': True, 'visible': True, },
-        {'name': 'mobile', 'orderable': True, 'visible': True, },
-        # {'name': 'max_credit', 'orderable': True, 'visible': True, },
         {'name': 'credit_with_doc', 'orderable': True, 'visible': True, },
         {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
@@ -594,6 +594,33 @@ class CustomerExpertView(LoginRequiredMixin, BaseView):
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        return context
+
+
+class CustomerContractView(LoginRequiredMixin, BaseView):
+    model = CustomerContract
+    template_name = 'extra_data/customer_contract.html'
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerExpertForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_message(self, cleaned_data):
+        return f'قرارداد {self.object.customer.title} save'
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.0pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

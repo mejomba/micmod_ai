@@ -44,4 +44,7 @@ urlpatterns = [
     path('customer/expert/create/', views.CustomerExpertView.as_view(), name='customer_expert.create'),
     path('customer/expert/update/<int:pk>/', views.CustomerExpertView.as_view(), name='customer_expert.update'),
 
+    path('customer/contract/create/', views.CustomerContractView.as_view(), name='customer_contract.create'),
+    path('customer/contract/update/<int:pk>/', views.CustomerContractView.as_view(), name='customer_contract.update'),
+
 ]
