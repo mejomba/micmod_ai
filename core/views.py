@@ -608,15 +608,6 @@ class BaseView(UserPassesTestMixin,
                                                                          model=new_obj._meta.model_name).first()
 
                         wf_obj.wf_status = 3  # next
-                        # if 'next' in self.request.POST:
-                        #     """to_user submit as default to next user"""
-                        #     wf_obj.wf_status = 3  # next
-                        #
-                        # if 'submit' in self.request.POST:
-                        #     """to_user submit as default to next user"""
-                        #     wf_obj.wf_status = 3  # next
-
-                        # wf_obj.save_user(self.request)
                         wf_obj.extra_data.request = self.request
                         wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index + 1]  # Todo test for last step [index error]
                         wf_obj.save()
@@ -768,14 +759,6 @@ class BaseView(UserPassesTestMixin,
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
-                # new_obj = self.attach_image_file(new_obj, form)
-                # if not old_obj:
-                #     # new_obj.extra_data.request = self.request
-                #     new_obj.save_log(self.request, obj=new_obj, action=1)
-                # else:
-                #     # new_obj.extra_data.request = self.request
-                #     new_obj.save_log(self.request, obj=new_obj, old=old_obj, action=2)
-
                 print('form valid base view')
 
                 if self.has_simple_flow:

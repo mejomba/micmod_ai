@@ -476,10 +476,12 @@ class CustomerDataTableView(AjaxDatatableView):
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
-
+    base_columns = dict()
+    base_columns = {'name': 'title', 'orderable': True, 'visible': True, }
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'title', 'orderable': True, 'visible': True, },
+        base_columns,
+        # {'name': 'title', 'orderable': True, 'visible': True, },
         {'name': 'name', 'orderable': True, 'visible': True, },
         {'name': 'last_name', 'orderable': True, 'visible': True, },
         {'name': 'email', 'orderable': True, 'visible': True, },
@@ -522,6 +524,7 @@ class CustomerDataTableView(AjaxDatatableView):
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
 
         # row['address'] = f"""
         # <div id="" class="" data-bs-toggle="tooltip" data-bs-original-title="{obj.address}" data-bs-placement="top" data-kt-initialized="1">{obj.address}</div>
@@ -620,7 +623,7 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
         return f'قرارداد {self.object.customer.title} save'
 
     def get_success_url(self):
-        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.0pk})
+        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
