@@ -772,7 +772,7 @@ def get_item(request):
                 item = {}
                 try:
                     item['id'] = item_.pk
-                    item['itemid'] = item_.sku
+                    item['itemid'] = item_.sepidar_id_0
                     item['text'] = item_.part_number
                     try:
                         item_obj: Item = item_
@@ -920,7 +920,7 @@ def get_items(request):
             item = {}
             try:
                 item['id'] = item_.pk
-                item['itemid'] = item_.sku
+                item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
                 # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
