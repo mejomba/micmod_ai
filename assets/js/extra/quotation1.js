@@ -1024,12 +1024,12 @@ function calculate_price(target) {
         net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
         taxValue = parseInt(taxValue)
         totalDiscount = parseInt(totalDiscount)
-        elem.querySelector('[name*="MAC"]').innerHTML = net_price_after_tax_discount
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
         elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
-        elem.querySelector('[name*="MAC"]').innerHTML = net_price_after_tax_discount
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
         elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)

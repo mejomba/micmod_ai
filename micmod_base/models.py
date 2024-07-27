@@ -329,7 +329,7 @@ class Quotation(SLSDoc):
 
     @property
     def payment(self):
-        sum_price = sum([qi.price for qi in self.quotation.all()])
+        sum_price = sum([qi.row_price for qi in self.quotation.all()])
         tax = sum([qi.tax for qi in self.quotation.all()])
         discount = sum([qi.discount_value for qi in self.quotation.all()])
         # sum_price = self.sum_prices
@@ -612,6 +612,10 @@ class QuotationItem(BaseModel):
             return 0
 
         return fee_price
+
+    @property
+    def row_price(self):
+        return round_rial(int(self.net_price))
 
     @property
     def price(self):
