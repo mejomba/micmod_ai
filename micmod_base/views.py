@@ -201,13 +201,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 for idx, qi in enumerate(self.object.quotation.all(), 1):
                     qi_dict = {
                         'RowID': idx,
-                        'ItemRef': qi.itemid,  # optional
+                        'ItemRef': qi.goods_code_fk.sepidar_id_0,  # itemid,  # optional
                         'StockRef': 2,  # optional
                         'Quantity': qi.quantity,
                         'SecondaryQuantity': 0,
                         # 'Fee': qi.fee or 1,
                         'Fee': qi.sepidar_fee or 1,
-                        'Price': qi.price or 1,
+                        'Price': qi.net_price or 1,
                         'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
                         'PriceInfoDiscountRate': 0,

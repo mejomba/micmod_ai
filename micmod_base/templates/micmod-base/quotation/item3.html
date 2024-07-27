@@ -140,6 +140,11 @@
                             <label>نام کالا</label>
 {#                            <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl" disabled></textarea>#}
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
+                            {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
+                                <div class="sepidar_id_warning">
+                                <small class="text-danger">این کالا در سپیدار نیست. یا بروز رسانی از سپیدار انجام نشده</small>
+                                </div>
+                            {% endif %}
                             {% if request.user|has_groups:"sales_user" %}
 
 
@@ -291,7 +296,7 @@
                         <div class="bg-soft-info replace-digits h-75 text-center">
                             <div class="mb-2 d-flex gap-1">
                                 <small class="w-25 text-right">جمع خالص</small>
-                                <small name="MAC">{{ form_s.instance.net_price_after_tax_discount|floatformat:'-4g' }}</small>
+                                <small name="MAC">{{ form_s.instance.net_price|floatformat:'-4g' }}</small>
                             </div>
                             <div class="mb-2 d-flex gap-1">
                                 <small class="w-25 text-right">مالیات</small>

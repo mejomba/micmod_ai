@@ -363,7 +363,7 @@ def set_items_sepidar_id_from_sepidar():
     items_code = []
     items_id = []
     for item in items:
-        print(item)
+        # print(item)
 
         items_code.append(item.Code)
         items_id.append(item.ItemID)
