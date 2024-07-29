@@ -155,15 +155,16 @@ class BaseView(UserPassesTestMixin,
         for key, value in list(self.request.POST.items()):
             if key.__contains__("__auto__"):
                 model_str, key = key.split("__auto__")
+                model = get_function(model_str)  # self.form_class.base_fields[key].queryset.model
                 value = value.strip()
                 if value:
-                    model = get_function(model_str) #self.form_class.base_fields[key].queryset.model
                     obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
-                    if not obj:
+                    if not obj and model.insert_new:
                         obj = model.objects.create(**{model.auto_complete: value})
                         obj.extra_data.request = self.request
                         obj.auto_complete_func()
-                    value = getattr(obj, 'pk', None)
+
+                    value = getattr(obj, 'pk', -1)
                 self.request.POST[key] = value
         self.request.POST._mutable = False
 
@@ -209,7 +210,7 @@ class BaseView(UserPassesTestMixin,
                     s = super().get_context_data(form=self.form)
                     return self.render_to_response(s)
                 else:
-                    return x
+                    return self.form_invalid(self.form)
             if not self.form.is_valid():
                 print(self.form.errors.as_data())
                 return self.form_invalid(self.form)
@@ -1129,3 +1130,27 @@ def ajax_change_logs(request, *args, **kwargs):
     context = {'logs': change_log}
     res = render_to_string(template_name='changelog/changelog.html', context=context)
     return JsonResponse({'res': res})
+
+
+def delete_confirm(request, *args, **kwargs):
+    template = 'core/partial/confirm_modal.html'
+    context = {"main_message": "آیا از حذف این آیتم اطمینان دارید؟", "model": request.GET.get('model'),
+               'object_id': request.GET.get('object_id'), 'app_label': request.GET.get('app_label')}
+    res = render_to_string(template, context=context, request=request)
+    return JsonResponse({"res": res})
+
+
+def delete_ajax(request, *args, **kwargs):
+    data = json.loads(request.body)
+    app_label = data.get("app_label")
+    model_name = data.get("model")
+    object_id = data.get("object_id")
+    from django.apps import apps
+    model = apps.get_model(app_label, model_name)
+    obj = model.objects.filter(pk=object_id).first()
+    if obj:
+        obj.extra_data.request = request
+        obj.is_deleted = True
+        obj.save()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False})
