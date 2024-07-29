@@ -562,6 +562,7 @@ class BaseView(UserPassesTestMixin,
                 old_obj.save()
                 old_obj.save_comment(request=self.request)
                 self.object.cancel = True
+                self.object.extra_data.request = self.request
                 self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
                 # return super().form_valid(form)
@@ -570,6 +571,7 @@ class BaseView(UserPassesTestMixin,
                 old_obj.save()
                 old_obj.save_comment(request=self.request)
                 self.object.cancel = False
+                self.object.extra_data.request = self.request
                 self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
                 # return super().form_valid(form)

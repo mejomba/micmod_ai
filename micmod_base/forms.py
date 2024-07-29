@@ -322,7 +322,10 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                 self.make_disable(self.fields)
                 self.enable = False
             if self.instance and getattr(self.instance, 'quotation', None) and getattr(self.instance.quotation, 'cancel', None):
-                self.make_disable(self.fields)
+                m_fields = self.fields.copy()
+                m_fields.pop('trade_price_code')
+                m_fields.pop('bazar_price_code')
+                self.make_disable(m_fields)
 
 
         self.select2(['goods_code', 'goods_code_alt', 'goods_name_alt'])

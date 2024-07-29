@@ -19,7 +19,7 @@
 {##}
 <form method="POST" action="{% if form.instance.pk %}{% url "extra_data:customer_expert.update" form.instance.pk %}{% else %}{% url "extra_data:customer_expert.create" %}{% endif %}"  id="customer-expert-form">
     {% csrf_token %}
-    <div class="row row-cols-5 bg-white rounded border my-10 pt-10 position-relative align-items-baseline shadow">
+    <div class="row row-cols-5 mx-xl-10 bg-white rounded border my-10 pt-10 position-relative align-items-baseline shadow">
         <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
         {% render_field_by_order form form.customer form.name form.phone form.position form.is_main label='on-border' margin_b=4 %}
     </div>
@@ -27,8 +27,7 @@
 </form>
 <script>
 
-    const customer_expert_form = $('#customer-expert-form')
-    customer_expert_form.on('submit', function (e){
+    $('#customer-expert-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit(this)
         setInterval(function (){

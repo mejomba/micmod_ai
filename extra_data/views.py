@@ -515,7 +515,7 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': False},
 
         {'name': 'cheque_to_delivery', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
+        # {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
         {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__title__icontains'},
         {'name': 'official_name', 'orderable': True, 'visible': True, 'searchable': False},
         {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': False},
