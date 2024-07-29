@@ -1,6 +1,10 @@
-.form-control {
+/*.form-control {*/
+/*    height: 3rem !important;*/
+/*}*/
+select, input{
     height: 3rem !important;
 }
+
 #id_customer_field_add_link, #id_customer_field_remove_link{
     rotate: 180deg;
     text-align: center;
