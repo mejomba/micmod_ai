@@ -5,6 +5,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic, View
 
@@ -448,6 +449,11 @@ class CustomerView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
     # def post(self, request, pk=-1):
     #     self.object = self.model.objects.get(pk=pk)
     #     form = self.form_struct.get('form')(self.request.POST, instance=self.object)
@@ -552,6 +558,11 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
         context['form'] = CustomerDocumentsForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res})
+
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     model = CustomerDocuments
@@ -577,6 +588,16 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
         context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        from django.templatetags.static import static
+        # jss = context['form'].media._js
+        #
+        # import requests
+        # x = [requests.get('http://' + self.request.META.get('HTTP_HOST') + static(js)).text for js in jss]
+
+        return JsonResponse({'res': res})
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
@@ -601,6 +622,13 @@ class CustomerExpertView(LoginRequiredMixin, BaseView):
         context['form'] = CustomerExpertForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
 class CustomerContractView(LoginRequiredMixin, BaseView):
     model = CustomerContract
@@ -620,10 +648,38 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
         return f'قرارداد {self.object.customer.title} save'
 
     def get_success_url(self):
-        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.pk})
+        return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.customer.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerContractForm(initial={'customer': customer or self.object.customer}, instance=self.object)
+        context['form'] = CustomerContractForm(initial={'customer': customer or self.object.customer},
+                                               instance=self.object)
         return context
+    
+    def post(self, request, *args, **kwargs):
+        x = super().post(request,*args, **kwargs)
+        return x
+
+    def get(self, request, *args, **kwargs):
+        # super().get(request, *args, **kwargs)
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        # from django.templatetags.static import static
+        # jss = context['form'].media._js
+
+        # import requests
+        # jss = [
+        #          '/assets/admin/js/django_jalali.min.js',
+        #          '/assets/admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc.js',
+        #          '/assets/admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc-fa.js',
+        #          ]
+        # jss.insert(0, "https://code.jquery.com/ui/1.12.1/jquery-ui.js")
+        # csss = [
+        #     '/assets/libs/select2/dist/css/select2.min.css',
+        #     '/assets/admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css',
+        # ]
+        # js = [requests.get('http://' + self.request.META.get('HTTP_HOST') + js).text if js.startswith('/assets') else requests.get(js).text for js in jss]
+        # css = [requests.get('http://' + self.request.META.get('HTTP_HOST') + js).text for js in csss]
+
+        return JsonResponse({'res': res, 'jss': '', 'csss': ''})
