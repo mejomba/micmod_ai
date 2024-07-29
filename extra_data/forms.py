@@ -1,5 +1,5 @@
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from jalali_date.fields import JalaliDateField
+from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
@@ -49,8 +49,8 @@ class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
         fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
-                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf',
-                  'introduction_method', 'introducer', 'marketer', 'sepidar_dl_id', 'description', 'lat', 'long',
+                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf', 'active',
+                  'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
 
@@ -127,8 +127,8 @@ class ChangeCustomerGroupForm(CustomBaseModelForm):
 
         widgets = {
             'customer': ChangeCustomerGroupWidget,
-            'from_marketer': ChangeCustomerGroupMarketerWidget2,
-            'to_marketer': ChangeCustomerGroupMarketerWidget2,
+            # 'from_marketer': ChangeCustomerGroupMarketerWidget2,
+            # 'to_marketer': ChangeCustomerGroupMarketerWidget2,
         }
 
     def __init__(self, *args, **kwargs):
@@ -162,9 +162,11 @@ class CustomerContractForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
-        self.fields['contract_date'] = JalaliDateField(widget=AdminJalaliDateWidget, required=True)
-        self.fields['contract_due_date'] = JalaliDateField(widget=AdminJalaliDateWidget, required=True)
-        date_picker_class = self.fields['contract_date'].widget.attrs.get('class')
-        self.fields['contract_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
-        self.fields['contract_due_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
-        self.fields['description'].widget.attrs.update({'rows': 1})
+        self.fields['contract_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # JalaliDateField(widget=AdminJalaliDateWidget, required=True)
+        self.fields['contract_due_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # JalaliDateField(widget=AdminJalaliDateWidget, required=True)
+        # date_picker_class = self.fields['contract_date'].widget.attrs.get('class')
+        # self.fields['contract_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
+        # self.fields['contract_due_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
+        self.fields['description'].widget.attrs.update({'rows': 2})
