@@ -1009,7 +1009,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
         # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
-        row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
