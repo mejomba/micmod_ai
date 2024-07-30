@@ -68,18 +68,35 @@
 
 
 {#        {% block form_footer_extra %}#}
-        <div>
-            <a href="{% url 'extra_data:sku.update' item.pk|add:'-1' %}" class="">
-            <i class="ki-outline ki-left-square fs-3x text-warning"></i>
-            </a>
-            <a href="{% url 'extra_data:sku.update' item.pk|add:'1' %}" class=" mr-3 mx-1">
-            <i class="ki-outline ki-right-square fs-3x text-primary"></i>
-            </a>
+        <div class="d-flex align-items-center gap-3">
+            <div>
+                <a href="{% url 'extra_data:sku.update' item.pk|add:'-1' %}" class="">
+                    <i class="ki-outline ki-left-square fs-3x text-warning"></i>
+                </a>
+                <a href="{% url 'extra_data:sku.update' item.pk|add:'1' %}" class=" mr-3 mx-1">
+                    <i class="ki-outline ki-right-square fs-3x text-primary"></i>
+                </a>
+            </div>
+
             {% if request.user|has_group:'technical_admin' %}
                 <a href="{% url 'extra_data:sku.create' %}" class="mr-3 mx-1">
                     <i class="fas fa-plus-square text-success icon-xl" style="font-size: 2.5rem"></i>
                 </a>
             {% endif %}
+            {% if request.user|has_permission:"extra_data.duplicate_item" %}
+                <a href="{% url 'extra_data:sku.create' %}?object_id={{ item.pk }}&ctt_id={{ item.content_type.id}}&request_type=duplicate" class="" target="_blank">
+                    <i class="ki-duotone ki-copy fs-2tx"></i>
+                </a>
+            {% endif %}
+            <a href="{% url 'extra_data:sku.list' %}">
+                <i class="ki-duotone ki-burger-menu fs-2hx">
+                 <span class="path1"></span>
+                 <span class="path2"></span>
+                 <span class="path3"></span>
+                 <span class="path4"></span>
+                </i>
+            </a>
+
         </div>
 
 {#        {% endblock form_footer_extra %}#}

@@ -229,7 +229,7 @@ function set_item_classes(item) {
             const data = e.params.data;
             console.log(data)
             set_price_data(data, elem, e.target)
-            item.find('input[id*="goods_code_fk"]').val(data['id'])
+            $(item).find('input[id*="goods_code_fk"]').val(data['id'])
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
@@ -368,8 +368,8 @@ function set_item_classes(item) {
         item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
     copy_values(item, '-goods_name_alt')
-    const w = item.querySelector('[name*="-goods_code"]')
-    const ww = item.querySelector('[name*="-goods_code_alt"]')
+    // const w = item.querySelector('[name*="-goods_code"]')
+    // const ww = item.querySelector('[name*="-goods_code_alt"]')
     const box = item.querySelector('[name="box-alt-goods"]')
     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
         if (box) {
@@ -468,7 +468,6 @@ function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
-        console.log(items[i])
         const code = items[i].querySelector('[id*="-goods_code"]').value
         const data = get_price_data(code, party_id, items[i])
         set_price_data(data, items[i], items[i])
@@ -599,7 +598,11 @@ function set_alt_price_data(data, elem) {
         set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
         set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
         set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), data.id,)
-        elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        try{
+            elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        } catch (err){
+            console.log('catch error: ', err)
+        }
     }
     set_price(elem.querySelector('[name*="-goods_name"]'))
 }
@@ -973,39 +976,65 @@ function calculate_price(target) {
     let isOfficialValue_number = 0
     let tax = 0;
     let taxValue = 0
+    let row_discount = 0
+    let tax_discount = 0
+    let discount_for_all = 0
     let totalDiscount = 0
-    if (isOfficial && isOfficial.checked){
-        tax = 10
-        if (isOfficialValue){
-            isOfficialValue_number = parseFloat(isOfficialValue.value);
-        }
-    }
-
+    let net_price = 0
+    let net_price_after_tax_discount = 0
+    let calculated_price = 0
+    debugger
+    // qty
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
+
+    // price
     let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
     if (isNaN(price)) {
         price = final_price.value
     }
-    // totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
-    // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
-    totalDiscount = ((price * qty) * selfDiscountValue/100)
+    net_price = price * qty
+    net_price_after_tax_discount = net_price
+
+    if (isOfficial && isOfficial.checked){
+        tax = 10
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue.value);
+            tax_discount = net_price * (isOfficialValue_number / 100)
+        }
+        net_price_after_tax_discount = net_price - tax_discount
+    }
+
+    row_discount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', '')) * qty
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    discount_for_all = net_price_after_tax_discount * (selfDiscountValue/100)
+
+    totalDiscount = row_discount + tax_discount + discount_for_all //((price * qty) * selfDiscountValue/100)
     if (tax){
         const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
-        taxValue = ((price * qty) - totalDiscount) * (final_tax_value)/100
+        taxValue = net_price_after_tax_discount * (tax/100)
     } else {
         taxValue = 0
     }
 
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
+        net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
+        taxValue = parseInt(taxValue)
+        totalDiscount = parseInt(totalDiscount)
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
+        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
+        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
+        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
+        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     }
+    calculated_price = net_price - totalDiscount + tax
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0

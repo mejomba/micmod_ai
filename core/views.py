@@ -927,7 +927,10 @@ class CommentsFormView(View):
         # file = kwargs.get('file')
         comment_type = self.request.GET.get('comment_type')
         model = apps.get_model(app_label, model_name)
-        obj = model.objects.filter(pk=object_id).first()
+        if model.__name__.lower() == 'quotationitem':
+            obj = model.objects.full_queryset(pk=object_id).first()
+        else:
+            obj = model.objects.filter(pk=object_id).first()
         comments = Comments.objects.none()
         if comment_type == 'cancel':
             kwargs['submit_type'] = 'cancel'

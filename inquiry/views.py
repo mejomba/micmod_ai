@@ -210,8 +210,8 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
-        {'name': 'parent', 'visible': True, 'searchable': True},
-        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 '},
+        {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
@@ -222,10 +222,10 @@ class SkuListDataTableView(AjaxDatatableView):
         # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True},
-        {'name': 'wh_last_weight', 'visible': True},
-        {'name': 'weight_percentage', 'visible': True},
-        {'name': 'duplicate_item', 'visible': True, },
+        {'name': 'trade_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'wh_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False},
+        {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -267,7 +267,7 @@ class SkuListDataTableView(AjaxDatatableView):
         x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
         row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
             if obj.weight_percentage else '<p>-</p>'
-        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="">رونوشت</a>'
+        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="" target="_blank"><i class="ki-duotone ki-copy fs-2qx"></i></a>'
 
 
 def sku_list(request):
@@ -772,7 +772,7 @@ def get_item(request):
                 item = {}
                 try:
                     item['id'] = item_.pk
-                    item['itemid'] = item_.sku
+                    item['itemid'] = item_.sepidar_id_0
                     item['text'] = item_.part_number
                     try:
                         item_obj: Item = item_
@@ -920,7 +920,7 @@ def get_items(request):
             item = {}
             try:
                 item['id'] = item_.pk
-                item['itemid'] = item_.sku
+                item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
                 # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price

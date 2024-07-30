@@ -11,13 +11,7 @@ class BaseData():
         if cls.current_year_ref_ == None:
             cls.current_year_ref_ = int(select_cquery("select max(FiscalYearId) as current_year from fmk.FiscalYear","sepidar").current_year)
         return cls.current_year_ref_
-# Create your models here.
-# class CustomManager(manager.Manager):
-#     def get_for_index(self, index_id):
-#         qs = self.get_queryset()
-#         sql = "myapp_model_b.id IN (SELECT UNNEST(myapp_model_a.pk_values) FROM myapp_model_a WHERE myapp_model_a.id='%s')" % index_id
-#         return qs.extra(where=[sql])
-from django.db.models.expressions import RawSQL
+
 
 import core.models
 import dw.models
@@ -108,7 +102,7 @@ join [INV].[Item] as Item on Item.ItemID = docs.ItemRef
 left join [GNR].[Grouping] as g_p on g_p.GroupingID = Item.PurchaseGroupRef
 --left join [GNR].[Grouping] as g_s on g_s.GroupingID = Item.SaleGroupRef
 join [GNR].[Party] as p on p.PartyId = docs.CustomerPartyRef join [ACC].[DL] as dl on dl.DLId = p.DLRef
-join [GNR].[Grouping] as g1 on g1.GroupingID = p.CustomerGroupingRef
+left join [GNR].[Grouping] as g1 on g1.GroupingID = p.CustomerGroupingRef
 join [FMK].[FiscalYear] as fy on fy.FiscalYearId = docs.FiscalYearRef
 join [GNR].[Currency] as curr on curr.CurrencyID = docs.CurrencyRef
 where 1=1 {dl_filter} 
@@ -120,15 +114,6 @@ order by docs.Date desc
             """
         qs = Dl.objects.using('sepidar').raw(qry)
         return qs
-        # sku_items = dw.models.ItemModel.get_items_extra_data(list=True)
-        # items = []
-        # for item in qs:
-        #     sku_item = sku_items.get(item.item_code)
-        #     if not g_p or str(sku_item.purchase_group).lower().__contains__(g_p):
-        #         item.purchase_group = sku_item.purchase_group if sku_item else None
-        #         item.sales_group = sku_item.sales_group if sku_item else None
-        #         items.append(item)
-        # return items
 
     @staticmethod
     def get_dl(code):
@@ -559,7 +544,7 @@ class APILogs(core.models.AbsBaseModel):
 
     @staticmethod
     def new_call( url, device: Device = Device.objects.all().first(), method: Method = Method.Get, data=None, save=True):
-        return
+        # return
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)
