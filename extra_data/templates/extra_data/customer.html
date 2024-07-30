@@ -10,6 +10,27 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+    <script>
+    </script>
+    <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'admin/css/dark_mode.css' %}">
+    <script src="{% static 'admin/js/theme.js' %}" type="text/javascript" ></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/nav_sidebar.css' %}">
+    <script src="{% static 'admin/js/nav_sidebar.js' %}" type="text/javascript" ></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+
+    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/jquery.init.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/core.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectBox.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/actions.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectFilter2.js' %}" type="text/javascript" ></script>
+
+    <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">
     <style>
 
     </style>
@@ -18,19 +39,40 @@
 {% block form_content %}
 
     {% csrf_token %}
-    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
-        <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
-        {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.mobile form.customer_group form.description label='on-border' margin_b=4 %}
+    <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-6 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
+                {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.customer_group form.official_name label='on-border' margin_b=4 %}
+                {% render_field_by_order form form.active label='on-border' %}
+            </div>
+        </div>
+        <div class="col">
+            <div class="row">
+            {% render_field_by_order form form.description label='on-border' %}
+            </div>
+        </div>
     </div>
 
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
-        {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.contract form.customer_sale_type form.official_name form.customer_grade label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.z_no form.cheque_to_delivery form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.customer_grade label='on-border' margin_b=4 %}
     </div>
 
-    <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
+    <div class="row bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات تکمیلی</h4>
-        {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long form.customer_field label='on-border' margin_b=4 %}
+        <div class="col-5">
+            <div class="row row-cols-2">
+                {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long label='on-border' margin_b=4 %}
+            </div>
+        </div>
+        <div class="col-7 d-flex flex-column">
+{#            <div class="text-center">{{ form.customer_field.label }}</div>#}
+            {{ form.customer_field }}
+        </div>
+    </div>
+    <div class="RTL-LTR row d-flex">
+        <label for=""></label>
 
     </div>
     <div>
@@ -39,61 +81,101 @@
 
 
 
+    </div>
 
+    <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
+        <h4 class="position-absolute" style="top: -10px">قرارداد ها</h4>
+        {% if form.instance.pk %}
+            {% with form.instance.customercontract_set.all as contracts %}
+                {% if contracts %}
+                    <div class="row align-items-center mb-7 bold">
+                        <div class="col-1 "><span class="ms-7">نوع قرارداد</span></div>
+                        <div class="col-1">تاریخ</div>
+                        <div class="col-1">سر رسید</div>
+                        <div class="col-3">توضیحات</div>
+                        <div class="col-1">عملیات</div>
+                        <div class="col-5"></div>
+                    </div>
+                {% endif %}
+            <div class="row align-items-center">
+            {% for contract in contracts %}
+                    <div class="col-1 mb-3">
+                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                        <span>{{ contract.get_contract_type_display|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ contract.contract_date|to_jalali:"%Y-%m-%d" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ contract.contract_due_date|to_jalali:"%Y-%m-%d"  }}</span>
+                    </div>
+                    <div class="col-3">
+                        <span>{{ contract.description|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>
+                        <a href="#" target="_blank" class="me-1 edit-customer-contract" data-url="{% url 'extra_data:customer_contract.update' contract.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">ویرایش</a>
+                        <a href="#" target="_blank" class="me-1 delete-customer-contract text-danger" data-url="{% url 'core:delete.confirm' %}?model={{ contract|model_name }}&object_id={{ contract.pk }}&app_label={{ contract|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">حذف</a>
+                    </span>
+                    </div>
+                <div class="col-5"></div>
 
+            {% endfor %}
+            {% endwith %}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{#    <label for="{{ form.customer_field.auto_id }}">{{ form.customer_field.name }}</label>#}
-{#        <select name="{{ form.customer_field.html_name }}" id="{{ form.customer_field.auto_id }}" multiple>#}
-{#            {% for item in form.customer_field.field.queryset %}#}
-{#                <option value="{{ item.pk }}">{{ item.title }}</option>#}
-{#            {% endfor %}#}
-{#        </select>#}
+            <div class="d-flex">
+                <a href="#" class="" target="_blank">
+                    <h1 class="border px-3 py-1 rounded" id="customer_contract" data-url="{% url 'extra_data:customer_contract.create' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
+                </a>
+            </div>
+        {% else %}
+            <span class="mx-3">پس از ثبت اطلاعات پایه امکان ثبت کارشناس مشتری وجود دارد</span>
+        {% endif %}
+        </div>
     </div>
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
-        <div class="row row-cols-1 align-items-center">
         {% if form.instance.pk %}
-            {% for expert in form.instance.customerexpert_set.all %}
-                <div class="col d-flex gap-5 mb-3">
-                    <span class="me-3">{{ forloop.counter }}) </span>
-                    <span>{{ expert.name|default_if_none:"-" }}</span>
-                    <span>{{ expert.phone|default_if_none:"-" }}</span>
-                    <span>{{ expert.position|default_if_none:"-" }}</span>
-                    <span>
-                        <a href="{% url 'extra_data:customer_expert.update' expert.pk %}" target="_blank" class="me-1">ویرایش</a>
-                    </span>
-                </div>
-            {% endfor %}
+            {% with form.instance.customerexpert_set.all as experts %}
+                {% if experts %}
+                    <div class="row align-items-center bold mb-5">
+                    <div class="col-1"><span class="ms-7">نام</span></div>
+                    <div class="col-1">تلفن</div>
+                    <div class="col-1">سمت</div>
+                    <div class="col-1">اصلی</div>
+                    <div class="col-1">عملیات</div>
+                    <div class="col-7"></div>
+                    </div>
+                {% endif %}
+            <div class="row align-items-center">
+            {% for expert in experts %}
+                    <div class="col-1 mb-3">
+                        <span class="me-3 bold">{{ forloop.counter }}) </span>
+                        <span>{{ expert.name|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ expert.phone|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ expert.position|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>{{ expert.is_main|yesno:"بله,خیر" }}</span>
+                    </div>
+                    <div class="col-1">
+                        <span>
+                        <a href="#" target="_blank" id="" class="me-1 edit-customer-expert" data-url="{% url 'extra_data:customer_expert.update' expert.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">ویرایش</a>
+                        <a href="#" target="_blank" class="me-1 delete-customer-expert text-danger" data-url="{% url 'core:delete.confirm' %}?model={{ expert|model_name }}&object_id={{ expert.pk }}&app_label={{ expert|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">حذف</a>
 
+                    </span>
+                    </div>
+                    <div class="col-7"></div>
+            {% endfor %}
+            {% endwith %}
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_expert.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
-                    <h1 class="border px-3 py-1 rounded">+</h1>
+                <a href="#" class="" >
+                    <h1 class="border px-3 py-1 rounded" id="customer-expert" data-url="{% url 'extra_data:customer_expert.create' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
                 </a>
             </div>
         {% else %}
@@ -104,16 +186,36 @@
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">مدارک و داکیومنت ها</h4>
-        <div class="d-flex gap-10 align-items-center">
         {% if form.instance.pk %}
-            {% for doc in form.instance.customerdocuments_set.all %}
-                <span>
-                    <a href="{{ doc.path.url }}" target="_blank" class="me-1">{{ doc.get_doc_type_display }} ({{ doc.created_date|to_jalali:'%Y/%m/%d' }})</a>
-                </span>
+            {% with form.instance.customerdocuments_set.all as docs %}
+            	{% if docs %}
+                    <div class="row d-flex align-items-center bold mb-5">
+                        <div class="col-1"><span class="ms-7">نوع سند</span></div>
+                        <div class="col-1">تاریخ</div>
+                        <div class="col-3">توضیحات</div>
+                        <div class="col-1">فایل</div>
+                        <div class="col-1">عملیات</div>
+                        <div class="col-5"></div>
+                    </div>
+                {% endif %}
+            <div class="row d-flex align-items-center">
+            {% for doc in docs %}
+                <div class="col-1 mb-3">
+                    <span class="bold me-3">{{ forloop.counter }}) </span>
+                    <span class="">{{ doc.get_doc_type_display }}</span>
+                </div>
+                <div class="col-1">{{ doc.created_date|to_jalali:'%Y/%m/%d' }}</div>
+                <div class="col-3">{{ doc.description|default_if_none:"-" }}</div>
+                <div class="col-1"><a href="{{ doc.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg"></i></a></div>
+                <div class="col-1">
+                <a href="" target="_blank" class="me-1 delete-customer-contract text-danger" data-url="{% url 'core:delete.confirm' %}?model={{ doc|model_name }}&object_id={{ doc.pk }}&app_label={{ doc|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">حذف</a>
+                </div>
+                <div class="col-5"></div>
             {% endfor %}
+            {% endwith %}
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_document.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
-                    <h1 class="border px-3 py-1 rounded">+</h1>
+                <a href="#" class="">
+                    <h1 class="border px-3 py-1 rounded" id="customer-document" data-url="{% url 'extra_data:customer_document.create' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
                 </a>
             </div>
         {% else %}
@@ -129,7 +231,7 @@
             {% for change_customer in form.instance.change_marketer_rel.all %}
                 <div class="col d-flex my-3 gap-5">
                     <span>
-                        <span class="me-3">{{ forloop.revcounter }}) </span>
+                        <span class="me-3 bold">{{ forloop.counter }}) </span>
 {#                        <span>از:</span>#}
                         <span>{{ change_customer.from_marketer|default_if_none:"-" }}</span>
                     </span>
@@ -149,8 +251,8 @@
             {% endfor %}
 
             <div class="d-flex">
-                <a href="{% url 'extra_data:customer_change_marketer.create' %}?pk={{ form.instance.pk }}" class="" target="_blank">
-                    <h1 class="border px-3 py-1 rounded">+</h1>
+                <a href="#" class="">
+                    <h1 class="border px-3 py-1 rounded" id="customer-change-marketer" data-url="{% url 'extra_data:customer_change_marketer.create' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
                 </a>
             </div>
             {% else %}
@@ -159,29 +261,11 @@
         </div>
     </div>
 
-{#    <div class="row row-cols-1">#}
-{#    {% for change_customer in form.instance.change_marketer_rel.all %}#}
-{#        <div class="col d-flex my-3 gap-5">#}
-{#        <span>#}
-{#            <span>از:</span>#}
-{#            <span>{{ change_customer.from_marketer }}</span>#}
-{#        </span>#}
-{#        <span>#}
-{#            <span>به:</span>#}
-{#            <span>{{ change_customer.to_marketer }}</span>#}
-{#        </span>#}
-{#        <span>#}
-{#            <span>توسط:</span>#}
-{#            <span>{{ change_customer.creator_user }}</span>#}
-{#        </span>#}
-{#        <span>#}
-{#            <span>{{ change_customer.created_date|to_jalali }}</span>#}
-{#        </span>#}
-{#        </div>#}
-{#    {% endfor %}#}
-{#    </div>#}
 
 <div class="pb-20 mb-20"></div>
+{#    {% include 'core/partial/empty_modal.html' %}#}
+            {% include 'core/partial/empty_modal_lg.html' %}
+            {% include 'core/partial/empty_modal_sm.html' %}
 {% endblock form_content %}
 
 {% block form_footer_extra %}
@@ -192,5 +276,133 @@
 
 
 {% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+     document.getElementById('id_kt_empty_modal_lg').addEventListener('hidden.bs.modal', function (e) {
+        $('#ui-datepicker-div').remove()
+    })
+    const CustomerContract = document.querySelector('#customer_contract')
+    CustomerContract.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
 
+            },
+            complete: release_main_container
+        });
+        {#custom_ajax_get('', this.dataset.url, modal_lg_body, false)#}
+    })
+
+    const EditCustomerContract = document.querySelectorAll('.edit-customer-contract')
+    const DeleteCustomerContract = document.querySelectorAll('.delete-customer-contract')
+    EditCustomerContract.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteCustomerContract.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+    const CustomerExpert = document.querySelector('#customer-expert')
+    CustomerExpert.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        custom_ajax_get('', this.dataset.url, modal_lg_body)
+    })
+
+    const DeleteCustomerExpert = document.querySelectorAll('.delete-customer-expert')
+    const EditCustomerExpert = document.querySelectorAll('.edit-customer-expert')
+    EditCustomerExpert.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        custom_ajax_get('', this.dataset.url, modal_lg_body)
+    })
+    })
+    DeleteCustomerExpert.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+    const CustomerDocument = document.querySelector('#customer-document')
+    CustomerDocument.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        custom_ajax_get('', this.dataset.url, modal_lg_body)
+    })
+
+    const CustomerChangeMarketer = document.querySelector('#customer-change-marketer')
+    CustomerChangeMarketer.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+        {#custom_ajax_get('', this.dataset.url, modal_lg_body)#}
+
+    })
+
+
+    const emptyModal = document.getElementById('id_kt_empty_modal_lg')
+    emptyModal.addEventListener('hidden.bs.modal', function (e) {
+        document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
+    })
+    </script>
 {% endblock extra_js %}

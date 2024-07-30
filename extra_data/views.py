@@ -5,6 +5,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic, View
 
@@ -12,12 +13,13 @@ from micmod_base.forms import QuotationForm, QuotationItemFormset
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
-    ChangeCustomerGroupForm, CustomerExpertForm
+    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
-from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert
+from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
+    CustomerContract
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -423,7 +425,6 @@ class CustomerView(LoginRequiredMixin, BaseView):
     model = Customer
     template_name = 'extra_data/customer.html'
     # success_url = reverse_lazy('extra_data:customer.update')
-    success_message = '%(title)s create'
     form_struct = {
         'form': CustomerForm,
         'childes': [
@@ -434,6 +435,8 @@ class CustomerView(LoginRequiredMixin, BaseView):
         ]
     }
 
+    def get_success_message(self, cleaned_data):
+        return f'{self.object.title} save'
     # def get(self, request, pk=-1):
     #     form = self.form_struct.get('form')
     #     if pk > 0:
@@ -445,6 +448,11 @@ class CustomerView(LoginRequiredMixin, BaseView):
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
 
     # def post(self, request, pk=-1):
     #     self.object = self.model.objects.get(pk=pk)
@@ -474,17 +482,17 @@ class CustomerDataTableView(AjaxDatatableView):
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
-
+    base_columns = dict()
+    base_columns = {'name': 'title', 'orderable': True, 'visible': True, }
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'title', 'orderable': True, 'visible': True, },
+        base_columns,
+        # {'name': 'title', 'orderable': True, 'visible': True, },
         {'name': 'name', 'orderable': True, 'visible': True, },
         {'name': 'last_name', 'orderable': True, 'visible': True, },
         {'name': 'email', 'orderable': True, 'visible': True, },
         {'name': 'website', 'orderable': True, 'visible': True, },
         {'name': 'phone', 'orderable': True, 'visible': True, },
-        {'name': 'mobile', 'orderable': True, 'visible': True, },
-        # {'name': 'max_credit', 'orderable': True, 'visible': True, },
         {'name': 'credit_with_doc', 'orderable': True, 'visible': True, },
         {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
@@ -507,7 +515,7 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': False},
 
         {'name': 'cheque_to_delivery', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
+        # {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
         {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__title__icontains'},
         {'name': 'official_name', 'orderable': True, 'visible': True, 'searchable': False},
         {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': False},
@@ -522,6 +530,7 @@ class CustomerDataTableView(AjaxDatatableView):
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+
 
         # row['address'] = f"""
         # <div id="" class="" data-bs-toggle="tooltip" data-bs-original-title="{obj.address}" data-bs-placement="top" data-kt-initialized="1">{obj.address}</div>
@@ -549,8 +558,13 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerDocumentsForm(initial={'customer': customer})
+        context['form'] = CustomerDocumentsForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res})
 
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
@@ -574,9 +588,19 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer})
+        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        from django.templatetags.static import static
+        # jss = context['form'].media._js
+        #
+        # import requests
+        # x = [requests.get('http://' + self.request.META.get('HTTP_HOST') + static(js)).text for js in jss]
+
+        return JsonResponse({'res': res})
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
@@ -598,5 +622,50 @@ class CustomerExpertView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = CustomerExpertForm(initial={'customer': customer})
+        context['form'] = CustomerExpertForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+class CustomerContractView(LoginRequiredMixin, BaseView):
+    model = CustomerContract
+    template_name = 'extra_data/customer_contract.html'
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerContractForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_message(self, cleaned_data):
+        return f'قرارداد {self.object.customer.title} save'
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer_contract.update', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerContractForm(initial={'customer': customer or self.object.customer},
+                                               instance=self.object)
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        x = super().post(request,*args, **kwargs)
+        return x
+
+    def get(self, request, *args, **kwargs):
+        # super().get(request, *args, **kwargs)
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res, 'jss': '', 'csss': ''})

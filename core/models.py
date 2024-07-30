@@ -330,6 +330,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
     auto_complete = False
+    insert_new = True
     absolute_url_create = None
     absolute_url_update = None
     absolute_url_delete = None

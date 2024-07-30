@@ -541,6 +541,7 @@ class Senf(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
 
     auto_complete = 'title'
+    insert_new = False
 
 
 class SubSenf(AbsBaseModel):
@@ -573,6 +574,7 @@ class Province(AbsBaseModel):
     sepidar_location_id = models.BigIntegerField(verbose_name=_('sepidar_location_id'), blank=True, null=True, unique=True)
 
     auto_complete = 'title'
+    insert_new = False
 
 
 CustomerGrade = (
@@ -662,8 +664,8 @@ class Customer(AbsBaseModel):
     cheque_to_delivery = models.BooleanField(_('cheque_to_delivery'), default=False)
 
     # قرارداد
-    contract = models.ForeignKey('CustomerContract', verbose_name=_('contract'), null=True, blank=True,
-                                 on_delete=models.DO_NOTHING)
+    # contract = models.ForeignKey('CustomerContract', verbose_name=_('contract'), null=True, blank=True,
+    #                              on_delete=models.DO_NOTHING)
 
     # توافق با مشتری
     customer_sale_type = models.ForeignKey('micmod_base.SaleType', on_delete=models.DO_NOTHING,
@@ -679,7 +681,7 @@ class Customer(AbsBaseModel):
     long = models.CharField(_('long'), max_length=100, null=True, blank=True)
 
     customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
-
+    active = models.BooleanField(_('active'), default=True)
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
 
@@ -710,6 +712,7 @@ class CustomerExpert(AbsBaseModel):
     name = models.CharField(_('name'), max_length=200)
     phone = models.CharField(_('phone'), max_length=20, null=True, blank=True, help_text='09123456789 or 0213456789')
     position = models.CharField(_('position'), max_length=200, null=True, blank=True, help_text='')
+    is_main = models.BooleanField(_('is_main'), default=False)
 
 
 class CustomerContract(AbsBaseModel):
@@ -717,10 +720,11 @@ class CustomerContract(AbsBaseModel):
         ("A", _('contract')),
         ("B", _('sorat_jalase')),
     )
-    contract_date = models.DateTimeField(_('contract_date'), null=True, blank=True)
-    contract_due_date = models.DateTimeField(_('contract_due_date'), null=True, blank=True)
+    contract_date = models.DateField(_('contract_date'), null=True, blank=True)
+    contract_due_date = models.DateField(_('contract_due_date'), null=True, blank=True)
     description = models.TextField(_('description'), max_length=3000)
     contract_type = models.CharField(_('contract_type'), max_length=1, choices=CONTRACT_TYPE)
+    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, verbose_name=_('contract'), null=True, blank=True)
     # file = ... generic
 
 

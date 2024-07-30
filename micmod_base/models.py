@@ -341,7 +341,7 @@ class Quotation(SLSDoc):
         # else:
         #     discount = 0
 
-        total = sum_price + additions - discount + tax
+        total = sum_price # + additions - discount + tax
 
         if self.currency_ref.title_en == 'Rial':
             return int(sum_price), int(additions), int(discount), int(tax), int(total)

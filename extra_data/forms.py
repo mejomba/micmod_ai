@@ -1,10 +1,10 @@
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from jalali_date.fields import JalaliDateField
+from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
-    CustomerFields
+    CustomerFields, CustomerContract
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -48,19 +48,21 @@ class HsForm(CustomBaseModelForm):
 class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
-        fields = '__all__'# ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'mobile',
-                  # 'max_credit', 'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf',
-                  # 'introduction_method', 'introducer', 'marketer', 'revival_date', 'sepidar_dl_id']
+        fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
+                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf', 'active',
+                  'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long',
+                  'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
+                  'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
 
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
-        # self.fields['customer_field'] = forms.ModelMultipleChoiceField(
-        #     queryset=CustomerFields.objects.all(),
-        #     required=False,
-        #     widget=FilteredSelectMultiple(_("customer field"), is_stacked=True),
-        # )
+        self.fields['customer_field'] = forms.ModelMultipleChoiceField(
+            queryset=CustomerFields.objects.all(),
+            required=False,
+            widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
+        )
     #
     #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
     #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
@@ -125,8 +127,8 @@ class ChangeCustomerGroupForm(CustomBaseModelForm):
 
         widgets = {
             'customer': ChangeCustomerGroupWidget,
-            'from_marketer': ChangeCustomerGroupMarketerWidget2,
-            'to_marketer': ChangeCustomerGroupMarketerWidget2,
+            # 'from_marketer': ChangeCustomerGroupMarketerWidget2,
+            # 'to_marketer': ChangeCustomerGroupMarketerWidget2,
         }
 
     def __init__(self, *args, **kwargs):
@@ -146,3 +148,25 @@ class CustomerExpertForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
+
+
+class CustomerContractForm(CustomBaseModelForm):
+    class Meta:
+        model = CustomerContract
+        fields = '__all__'
+
+        widgets = {
+            'customer': ChangeCustomerGroupWidget,
+        }
+
+    def __init__(self, *args, **kwargs):
+        access = None
+        super().__init__(*args, **kwargs)
+        self.fields['contract_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # JalaliDateField(widget=AdminJalaliDateWidget, required=True)
+        self.fields['contract_due_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # JalaliDateField(widget=AdminJalaliDateWidget, required=True)
+        # date_picker_class = self.fields['contract_date'].widget.attrs.get('class')
+        # self.fields['contract_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
+        # self.fields['contract_due_date'].widget.attrs.update({'class': date_picker_class + ' form-control '})
+        self.fields['description'].widget.attrs.update({'rows': 2})

@@ -26,6 +26,11 @@
                     {% endfor %}
                     <div class="row">
                         <div class="col-sm-12">
+    {% if form.instance.pk and form.instance.cancel %}
+        <h3 class="p-5 bg-light-danger text-danger bold text-center">
+        این پیش فاکتور کنسل شده است
+        </h3>
+    {% endif %}
                         <div class="mt-5 mb-2">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
                         </div>
