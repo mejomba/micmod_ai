@@ -23,7 +23,7 @@
         {% render_field_by_order form form.customer form.doc_type form.path label='on-border' margin_b=4 %}
         <div class="col-12 bg-white rounded">{% render_field_by_order form form.description label="on-border" %}</div>
     </div>
-<input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary">
+<input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
 </form>
 {#{% endblock form_content %}#}
 
@@ -57,8 +57,8 @@
             }
         });
         setInterval(function (){
-            {#$('#id_kt_empty_modal_lg').modal('hide');#}
             window.location.reload()
+            $('#id_kt_empty_modal_lg').hide();
         }, 600)
     })
 

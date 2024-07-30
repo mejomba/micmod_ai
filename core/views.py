@@ -210,8 +210,8 @@ class BaseView(UserPassesTestMixin,
                     s = super().get_context_data(form=self.form)
                     return self.render_to_response(s)
                 else:
-                    return self.form_invalid(self.form)
-            if not self.form.is_valid():
+                    return x  # self.form_invalid(self.form)
+            else:
                 print(self.form.errors.as_data())
                 return self.form_invalid(self.form)
 
