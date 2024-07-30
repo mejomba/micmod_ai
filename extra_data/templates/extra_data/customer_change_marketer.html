@@ -21,7 +21,7 @@
         <h4 class="position-absolute" style="top: -10px">تغییر کارشناس</h4>
         {% render_field_by_order form form.customer form.from_marketer form.to_marketer label='on-border' margin_b=4 %}
     </div>
-<input type="submit" value="ثبت" id="submit-customer-change-marketer" class="btn btn-primary">
+<input type="submit" value="ثبت" id="submit-customer-change-marketer" class="btn btn-primary ms-10">
 </form>
 {#{% endblock form_content %}#}
 <script>
@@ -31,8 +31,8 @@
         e.preventDefault()
         ajax_submit(this)
         setInterval(function (){
-            {#$('#id_kt_empty_modal_lg').modal('hide');#}
             window.location.reload()
+            $('#id_kt_empty_modal_lg').hide();
         }, 600)
     })
 

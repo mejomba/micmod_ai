@@ -23,7 +23,7 @@
         <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
         {% render_field_by_order form form.customer form.name form.phone form.position form.is_main label='on-border' margin_b=4 %}
     </div>
-    <input type="submit" value="ثبت" id="submit-customer-expert" class="btn btn-primary" data-bs-dismiss="modal">
+    <input type="submit" value="ثبت" id="submit-customer-expert" class="btn btn-primary ms-10">
 </form>
 <script>
 
@@ -32,6 +32,7 @@
         ajax_submit(this)
         setInterval(function (){
             window.location.reload()
+            $("#id_kt_empty_modal_lg").toggle()
         }, 600)
     })
 
