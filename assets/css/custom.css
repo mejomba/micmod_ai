@@ -98,6 +98,38 @@ div[disabled=disabled] {
     font-size: .95rem !important;
     vertical-align: middle !important;
 }
+.font-size-13 {
+    font-size: 1rem !important;
+    vertical-align: middle !important;
+}
+.font-size-14 {
+    font-size: 1.05rem !important;
+    vertical-align: middle !important;
+}
+.font-size-15 {
+    font-size: 1.1rem !important;
+    vertical-align: middle !important;
+}
+.font-size-16 {
+    font-size: 1.15rem !important;
+    vertical-align: middle !important;
+}
+.font-size-17 {
+    font-size: 1.2rem !important;
+    vertical-align: middle !important;
+}
+.font-size-18 {
+    font-size: 1.3rem !important;
+    vertical-align: middle !important;
+}
+.font-size-19 {
+    font-size: 1.4rem !important;
+    vertical-align: middle !important;
+}
+.font-size-20 {
+    font-size: 1.5rem !important;
+    vertical-align: middle !important;
+}
 .p0{
     padding: 5px !important;
 }
