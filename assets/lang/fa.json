@@ -572,5 +572,6 @@
     "time_range": "محدوده زمان",
     "from_time": "از تاریخ",
     "to_time": "تا تاریخ",
+    "is_main": "اصلی",
     "discount_per_item": "تخفیف"
 }

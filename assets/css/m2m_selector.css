@@ -1,0 +1,24 @@
+/*.form-control {*/
+/*    height: 3rem !important;*/
+/*}*/
+select, input{
+    height: 3rem !important;
+}
+
+#id_customer_field_add_link, #id_customer_field_remove_link{
+    rotate: 180deg;
+    text-align: center;
+}
+.selector {
+    width: unset;
+    float: unset;
+}
+.selector-available h2, .selector-chosen h2 {
+    margin-bottom: 0 !important;
+    font-weight: 400;
+    padding: 5px 0;
+    font-size: 1.15rem !important;
+}
+#id_customer_field_input, #id_customer_field_selected_input {
+    font-size: 1rem;
+}

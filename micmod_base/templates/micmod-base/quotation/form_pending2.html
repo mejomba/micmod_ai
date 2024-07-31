@@ -75,6 +75,11 @@
                                         آیتم در چین
                                         </div>
                                     {% endif %}
+                                    {% if form_s.instance.is_deleted %}
+                                        <small class="my-2 badge badge-light-danger position-absolute" style="bottom: 0; right: 180px;">
+                                        حذف شده
+                                        </small>
+                                    {% endif %}
                                     </div>
                                 </div>
                                 <div class="col-lg-4 p-0 border-top border-bottom border-end">

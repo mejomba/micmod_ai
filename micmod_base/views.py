@@ -936,13 +936,14 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'last_work_flow__to_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True}
+        {'name': 'comment', 'visible': True, 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -970,7 +971,7 @@ class QuotationListDatatable(AjaxDatatableView):
         else:
             row['comment'] = f'{c} کامنت جدید'
 
-
+        row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
@@ -995,7 +996,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
         # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
-        row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''

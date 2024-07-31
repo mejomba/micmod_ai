@@ -1,37 +1,53 @@
-{% extends 'partials/base_level2.html' %}
 {% load static %}
-{% load humanize %}
 {% load more_tags %}
-{% load accounts_tag %}
-{% load jalali_tags %}
 
-{% block title %}Customer{% endblock title %} {"title": ""})
-{% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
-    <style>
 
-    </style>
-{% endblock extra_css %}
-
-{% block form_content %}
-
+<form action="{% if form.instance.pk %}{% url 'extra_data:customer_document.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_document.create' %}{% endif %}" method="POST" id="customer-document-form" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="row row-cols-4 bg-white rounded border my-10 pt-10 position-relative shadow">
+    <div class="row row-cols-3 bg-white rounded border my-10 pt-10 position-relative shadow-sm mx-xl-10 ">
         <h4 class="position-absolute" style="top: -10px">اسناد مشتری</h4>
-        {% render_field_by_order form form.customer form.doc_type form.path form.description label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.customer form.doc_type form.path label='on-border' margin_b=4 %}
+        <div class="col-12 bg-white rounded">{% render_field_by_order form form.description label="on-border" %}</div>
     </div>
+<input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
+</form>
 
-{% endblock form_content %}
+<script>
+    debugger
+    const customer_document_form = $('#customer-document-form')
+    customer_document_form.on('submit', function (e){
+        debugger
+        e.preventDefault()
+        var image = $('#id_path')[0].files[0];
+        var doc_type = $('#id_doc_type').val();
+        var description = $('#customer-document-form #id_description').val();
+        var customer = $('#id_customer').val();
+        let form = new FormData();
+        form.append('path', image);
+        form.append('doc_type', doc_type);
+        form.append('description', description);
+        form.append('customer', customer);
+        $.ajax({
+            url: $('#customer-document-form').attr('action'),
+            data: form,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            success:function(response) {
+                //
+            }
+        });
+        setInterval(function (){
+            window.location.reload()
+            $('#id_kt_empty_modal_lg').hide();
+        }, 600)
+    })
 
-{% block form_footer_extra %}
-{% include "core/partial/add_formset_button.html" %}
-
-
-{% endblock form_footer_extra %}
-
-
-{% block extra_js %}
-{{ form.media.js }}
-{% endblock extra_js %}
+</script>
