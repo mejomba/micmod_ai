@@ -449,7 +449,7 @@ class QuotationItem(BaseModel):
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
         if path == past_path:
-            x = cls.objects.full_queryset(inquiry_type_filter, quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
             x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
         return x

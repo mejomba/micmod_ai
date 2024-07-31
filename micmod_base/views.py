@@ -936,13 +936,14 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'last_work_flow__to_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True}
+        {'name': 'comment', 'visible': True, 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -970,7 +971,7 @@ class QuotationListDatatable(AjaxDatatableView):
         else:
             row['comment'] = f'{c} کامنت جدید'
 
-
+        row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
