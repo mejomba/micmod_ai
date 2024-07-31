@@ -23,5 +23,6 @@ urlpatterns = [
     # path('excel/download/', views.download_excel, name='export_excel'),
     path("ajax/changelog/<str:app_name>/<str:model_name>/<int:object_id>/", views.ajax_change_logs, name="changelog"),
     path('delete/confirm/', views.delete_confirm, name="delete.confirm"),
-    path('delete/', views.delete_ajax, name="delete")
+    path('delete/', views.delete_ajax, name="delete"),
+    path('send/customer/to/sepidar/', views.send_customer_to_sepidar, name="send_customer_to_sepidar")
 ]

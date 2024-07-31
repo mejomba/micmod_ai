@@ -1159,3 +1159,7 @@ def delete_ajax(request, *args, **kwargs):
         obj.save()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+def send_customer_to_sepidar(request, *args, **kwargs):
+    pk = request.POST.get("pk")
