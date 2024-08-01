@@ -153,7 +153,10 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
     # creator_users = set()
     creator_users = dict()
     # obj = form.instance if form else None
-    if form:
+    if form and current_user.base_group != 'trade':
+        obj = form.instance
+        comments = obj.comments.all().filter(~Q(comment_title="C"), ~Q(comment_title="Q")) if obj else None
+    elif form:
         obj = form.instance
         comments = obj.comments.all().filter(~Q(comment_title="C")) if obj else None
     else:
