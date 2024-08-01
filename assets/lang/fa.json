@@ -568,5 +568,11 @@
     "weight_percentage": "درصد اختلاف وزن",
     "payment_order": "دستور پرداخت",
     "payment_date": "تاریخ پرداخت",
-    "manager_confirm": "تایید / امضا مدیر عامل"
+    "manager_confirm": "تایید / امضا مدیر عامل",
+    "amount": "مبلغ",
+    "for_": "برای",
+    "pay_to": "در وجه",
+    "from_source": "از محل",
+    "to_account": "به حساب یا کارت",
+    "applicant": "درخواست کننده"
 }
