@@ -271,7 +271,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirm"]
+              "read": ["manager_confirmation", "accounting"]
             },
             "formset_constraint": [
               {
@@ -299,7 +299,7 @@
           },
           {
             "state": "تایید مدیر عامل",
-            "group": "accounting_user",
+            "group": "total_admin",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
