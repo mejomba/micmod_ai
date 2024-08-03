@@ -658,7 +658,7 @@ class QuotationItem(BaseModel):
         try:
             row_discount = self.discount_per_item * self.quantity if self.pk else 0
             tax_discount = self.net_price * (self.quotation.official_value / 100) if self.pk and self.quotation.is_official else 0
-            discount_for_all = self.net_price * (self.quotation.self_discount / 100) if self.pk else 0
+            discount_for_all = (self.net_price - tax_discount) * (self.quotation.self_discount / 100) if self.pk else 0
         except Exception as e:
             # raise Exception(f'اشکال در ردیف {self.pk} \n{__file__} \n در خط {e.__traceback__.tb_lineno}')
             row_discount = tax_discount = discount_for_all = 0
