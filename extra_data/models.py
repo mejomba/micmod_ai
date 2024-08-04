@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -692,7 +694,7 @@ class Customer(AbsBaseModel):
 
     customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
     active = models.BooleanField(_('active'), default=True)
-    guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
+    guid = models.UUIDField(_('guid'), default=uuid.uuid4, editable=False)
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)

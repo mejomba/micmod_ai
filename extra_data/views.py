@@ -1,3 +1,4 @@
+import json
 import uuid
 from uuid import uuid4
 
@@ -442,14 +443,6 @@ class CustomerView(LoginRequiredMixin, BaseView):
 
     def get_success_message(self, cleaned_data):
         return f'{self.object.title} save'
-    # def get(self, request, pk=-1):
-    #     form = self.form_struct.get('form')
-    #     if pk > 0:
-    #         self.object = self.model.objects.get(pk=pk)
-    #         f = form(instance=self.object)
-    #     else:
-    #         f = form()
-    #     return render(request, self.template_name, {'form': f})
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
@@ -688,7 +681,7 @@ class CustomerSepidarInsertView(View):
             device = Device.objects.all().first()
             address_data = [
                 {
-                    'GUID': uuid.uuid4(),
+                    'GUID': str(uuid.uuid4()),
                     'Title': None,  # '',
                     'IsMain': True,
                     'CityRef': customer.province.pk,
@@ -699,7 +692,7 @@ class CustomerSepidarInsertView(View):
                 },
             ]
             customer_data = {
-                'GUID': customer.guid,
+                'GUID': str(customer.guid),
                 'PhoneNumber': customer.phone,  # optional
                 'CustomerType': customer.type,
                 'Name': customer.name,
@@ -709,8 +702,13 @@ class CustomerSepidarInsertView(View):
                 'EconomicCode': 'customer.economic_code',  # optional
                 'Addresses': address_data  # optional
             }
-            APILogs.new_call(device=device, url=Urls.post_customers.url,
-                             method=Urls.post_customers.method, save=True)
+            d = json.dumps(customer_data)
+            api_res = APILogs.new_call(device=device, url=Urls.post_customers.url,
+                                       method=Urls.post_customers.method, data=d, save=True)
+            api_log_obj = api_res[2]
+            api_log_obj.extra_data.request = self.request if api_log_obj else ''
+            api_log_obj.save()
+            return JsonResponse({'res': 'success'}, status=api_res[0])
         else:
             return JsonResponse({'res': 'error'}, status=404)
         pass
