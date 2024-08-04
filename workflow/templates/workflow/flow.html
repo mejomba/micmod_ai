@@ -65,7 +65,7 @@
                 <td>{{ f.to_user }}</td>
                 <td>{{ f.action }}</td>
                 <td>{{ f.deadline|to_jalali:"%Y/%m/%d" }}</td>
-                <td class="LTR">{{ f.last_update_date|to_jalali:"%Y/%m/%d (%H:%M)" }}</td>
+                <td class="LTR">{{ f.created_date|to_jalali:"%Y/%m/%d (%H:%M)" }}</td>
                 <td>{{ f.wf_description }}</td>
                 <td>
                     {{ f.state }}

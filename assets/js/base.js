@@ -380,11 +380,23 @@ function copyToClipboard(elem) {
     }
 
 function ajax_submit
-(form) {
+(form, reload_=null, elem_for_load=null) {
         debugger
     $.ajax({ // create an AJAX call...
+        beforeSend: function (){
+            debugger
+            if (elem_for_load){
+                console.log('load...')
+            }
+        },
         data: $(form).serialize(), // get the form data
         type: $(form).attr('method'), // GET or POST
         url: $(form).attr('action'), // the file to call
+        success: function (data){
+            debugger
+            if (reload_){
+                window.location.reload()
+            }
+        }
     });
 }
