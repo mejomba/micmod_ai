@@ -382,6 +382,16 @@ class Item(BaseModel):
         return self.extra_data.price
 
     @property
+    def all_trade_active_price_(self):
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(trade_filter, sku=self).filter(active=True)]
+
+    @property
+    def all_bazar_active_price_(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(bazar_filter, sku=self).filter(active=True)]
+
+    @property
     def bazar_price(self):
         bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
