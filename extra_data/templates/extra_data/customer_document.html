@@ -41,13 +41,12 @@
                 "X-CSRFToken": getCookie("csrftoken")
             },
             success:function(response) {
-                //
+                window.location.reload()
             }
         });
         setInterval(function (){
-            window.location.reload()
             $('#id_kt_empty_modal_lg').hide();
-        }, 600)
+        }, 500)
     })
 
 </script>
