@@ -25,8 +25,8 @@ class DiscountBasedPriceType(models.TextChoices):
 
 
 class CustomerType(models.TextChoices):
-    Company = "1", _("company")
-    Person = "2", _("person")
+    Person = "1", _("person")
+    Company = "2", _("company")
 
 
 class CalculationMethod(models.TextChoices):
