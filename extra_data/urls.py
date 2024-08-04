@@ -46,5 +46,6 @@ urlpatterns = [
 
     path('customer/contract/create/', views.CustomerContractView.as_view(), name='customer_contract.create'),
     path('customer/contract/update/<int:pk>/', views.CustomerContractView.as_view(), name='customer_contract.update'),
+    path('customer/sepidar/insert/<int:pk>/', views.CustomerSepidarInsertView.as_view(), name='customer_sepidar.insert')
 
 ]
