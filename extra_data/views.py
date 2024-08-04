@@ -681,6 +681,7 @@ class CustomerSepidarInsertView(View):
             device = Device.objects.all().first()
             address_data = [
                 {
+                    # 'CustomerAddressID': 100000,
                     'GUID': str(uuid.uuid4()),
                     'Title': None,  # '',
                     'IsMain': True,
@@ -697,9 +698,9 @@ class CustomerSepidarInsertView(View):
                 'CustomerType': customer.type,
                 'Name': customer.name,
                 'LastName': customer.last_name,  # blank for company,
-                'BirthDate': 'customer.birth_date',  # optional
-                'NationalId': 'customer.national_id',  # optional
-                'EconomicCode': 'customer.economic_code',  # optional
+                'BirthDate': None,  # optional
+                'NationalId': None,  # optional
+                'EconomicCode': None,  # optional
                 'Addresses': address_data  # optional
             }
             d = json.dumps(customer_data)
