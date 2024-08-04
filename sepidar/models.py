@@ -544,10 +544,10 @@ class APILogs(core.models.AbsBaseModel):
 
     @staticmethod
     def new_call( url, device: Device = Device.objects.all().first(), method: Method = Method.Get, data=None, save=True):
-        # return
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)
+        return
         if method == Method.Get:
             response = requests.get(url, headers=headers, data=data)
         elif method == Method.Post:

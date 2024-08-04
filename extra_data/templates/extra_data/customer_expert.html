@@ -20,11 +20,10 @@
 
     $('#customer-expert-form').on('submit', function (e){
         e.preventDefault()
-        ajax_submit(this)
+        ajax_submit(this, true, true)
         setInterval(function (){
-            window.location.reload()
-            $("#id_kt_empty_modal_lg").toggle()
-        }, 600)
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
     })
 
 </script>
