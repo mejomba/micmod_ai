@@ -29,7 +29,7 @@ def update_components():
             component_['is_sea_default'] = component.is_sea_default
             component_['package'] = component.package
             component_['weight'] = component.weight
-            component_['hs'] = component.purchase_group.hs
+            component_['hs'] = component.purchase_group.hs.code if component.purchase_group.hs else None
             # print(component_)
             components_lst.append(component_)
         print('update_components validate')
