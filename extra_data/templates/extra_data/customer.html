@@ -39,15 +39,23 @@
 {% block form_content %}
 
     {% csrf_token %}
-    <div>
-        <a href="#" class="btn btn-primary">ارسال به سپیدار</a>
+    {% if request.user.is_superuser and form.instance.pk %}
+    <div class="d-flex align-items-center">
+        <span data-url="{% url 'extra_data:customer_sepidar.insert' form.instance.pk %}" class="btn btn-primary cursor-pointer" id="customer_to_sepidar">ارسال به سپیدار</span>
+    {% if not form.instance.sepidar_party_id %}
+        <span class=" p-4 bg-light-danger bold rounded text-center text-danger" >این مشتری در سپیدار ثبت نشده است</span>
+    {% else %}
+        <span class=" p-4 bg-light-success bold rounded text-center text-success" >این مشتری در سپیدار ثبت شده است</span>
+    {% endif %}
     </div>
+
+    {% endif %}
     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
         <div class="col">
             <div class="row row-cols-6 align-items-baseline">
                 <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
                 {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.customer_group form.official_name label='on-border' margin_b=4 %}
-                {% render_field_by_order form form.active label='on-border' %}
+                {% render_field_by_order form form.meet_in_person form.active label='on-border' %}
             </div>
         </div>
         <div class="col">
@@ -490,5 +498,35 @@
     emptyModal.addEventListener('hidden.bs.modal', function (e) {
         document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
     })
+
+    const customer_to_sepidar = document.querySelector('#customer_to_sepidar')
+    debugger
+    if (customer_to_sepidar){
+        customer_to_sepidar.addEventListener('click', function (e){
+            $.ajax({
+                type: 'POST',
+                url: this.dataset.url,
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                beforeSend: function (){
+                    customer_to_sepidar.innerHTML = 'در حال بروز رسانی ...'
+                    customer_to_sepidar.classList.add('disabled')
+                },
+                success: function (data) {
+                    debugger
+                    customer_to_sepidar.classList.add('bg-success')
+                    customer_to_sepidar.innerHTML = 'بروز رسانی شد'
+                    window.location = '.'
+                },
+                error: function () {
+                    alert('error')
+                },
+            }) // end ajax
+        })
+    }
+
     </script>
 {% endblock extra_js %}
