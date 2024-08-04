@@ -54,3 +54,6 @@ class Profile(NoUserBaseModel):
         else:
             return '/assets/media/auth/no_image.png'
 
+    def __str__(self):
+        return self.first_name
+
