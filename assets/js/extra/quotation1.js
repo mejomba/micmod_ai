@@ -20,6 +20,7 @@ $(document).ready(function () {
     if (currencyRef){currencyRefValue = currencyRef.value}
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
+    const all_prices = document.querySelectorAll('.all_prices')
     function setPriceWithAjax(e, elem, price_code=''){
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
@@ -64,6 +65,57 @@ $(document).ready(function () {
                 }
             }); // end ajax
     }
+
+    function setPriceWithAjaxForAllPrices(e, elem, price_code=''){
+        let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
+        if (party_id == 'None'){
+            party_id = -1
+        }
+        debugger
+        setTimeout(function (){
+            const all_prices_form = findAncestor(e.target, "all_prices_form")
+            const params = new URLSearchParams(new FormData(all_prices_form)).toString()
+            $.ajax({
+                url: `/inquiry/item_list/?${params}`,
+                data: {
+                    'q': elem.querySelector('input[name*="goods_code"]').value,
+                    'party_id': party_id,
+                    'id_currency_ref': document.getElementById('id_currency_ref').value,
+                    'id_payment_method': document.getElementById('id_payment_method').value,
+                    'id_market_grade': document.getElementById('id_market_grade').value,
+                    'id_customer_grade': document.getElementById('id_customer_grade').value,
+                    'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    // 'trade_price_code': tradePriceCode,
+                    // 'bazar_price_code': bazarPriceCode,
+                },
+                cache: false,
+                type: 'GET',
+                success: function (response){
+                    console.log(response)
+                    if (response.items){
+                        set_price_data(response.items[0], elem, e.target)
+                    }
+                    console.log(response.items)
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            }); // end ajax
+        }, 200)
+        // const tradePriceCode = e.target.value //elem.querySelector('[id*="-trade_price_code"]')
+        // const bazarPriceCode = null //elem.querySelector('[id*="-bazar_price_code"]')
+        //let tradePriceCodeValue;
+        //let bazarPriceCodeValue;
+        //if (tradePriceCode && tradePriceCode.options[tradePriceCode.selectedIndex]){
+        //    tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
+        //}
+        //if (bazarPriceCode && bazarPriceCode.options[bazarPriceCode.selectedIndex]){
+        //    bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
+        //}
+
+
+    }
+
     if (currencyRefValue == '1'){
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_1"]'), 'show')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_1"]'), 'show')
@@ -86,6 +138,15 @@ $(document).ready(function () {
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="sea_transportation_cost_3"]'), 'show')
     }
 
+    if (all_prices){
+        all_prices.forEach(function (item){
+            item.addEventListener('click', function (e){
+                // e.preventDefault()
+                const elem = findAncestor(e.target, "item")
+                setPriceWithAjaxForAllPrices(e, elem)
+            })
+        })
+    }
     newInquiryResult.forEach(function (item){
         item.addEventListener('click', function (e){
             e.preventDefault();
