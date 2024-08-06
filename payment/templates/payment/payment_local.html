@@ -21,6 +21,32 @@
         outline: none;
     }
     </style>
+
+    <script>
+        {#function printDiv() {#}
+        {#    var divContents = document.getElementById("DivToPrint").innerHTML;#}
+        {#    var a = window.open('', '', 'height=500, width=500');#}
+        {#    a.document.write('<html>');#}
+        {#    a.document.write('<body > <h1>Div contents are <br>');#}
+        {#    a.document.write(divContents);#}
+        {#    a.document.write('</body></html>');#}
+        {#    a.document.close();#}
+        {#    a.print();#}
+        //}
+
+        function printDiv() {
+            debugger
+             var printContents = document.getElementById('DivToPrint').innerHTML;
+             var originalContents = document.body.innerHTML;
+             document.body.innerHTML = printContents;
+             document.body.print()
+             {#window.print();#}
+             document.body.innerHTML = originalContents;
+        }
+    </script>
+
+
+
 {% endblock extra_css %}
 
 
@@ -30,7 +56,7 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 <div class="container mt-10 persian-number mb-20 pb-20">
-    <div class="DivToPrint" id="DivToPrint">
+    <div class="" id="DivToPrint">
         <div class="row row-cols-3">
         <div class="col">
 {#            <img src="{% static 'media/logos/default-dark.svg' %}" alt="" class="text-danger">#}
@@ -103,6 +129,8 @@
             </div>
         </div>
     </div>
+<input type="button" value="click"
+                    onclick="printDiv()">
 </div>
     {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
