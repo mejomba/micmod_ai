@@ -529,14 +529,16 @@ function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
-        const code = items[i].querySelector('[id*="-goods_code"]').value
-        const data = get_price_data(code, party_id, items[i])
-        set_price_data(data, items[i], items[i])
-        const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
-        if (alt_code != "") {
-            const alt_data = get_price_data(alt_code, party_id, items[i])
-            set_alt_price_data(alt_data, items[i])
-        }
+        setTimeout(function (){
+            const code = items[i].querySelector('[id*="-goods_code"]').value
+            const data = get_price_data(code, party_id, items[i])
+            set_price_data(data, items[i], items[i])
+            const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
+            if (alt_code != "") {
+                const alt_data = get_price_data(alt_code, party_id, items[i])
+                set_alt_price_data(alt_data, items[i])
+            }
+        }, 150)
     }
 }
 
