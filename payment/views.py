@@ -1,6 +1,8 @@
+from num2fawords import words
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView
@@ -78,3 +80,19 @@ class PaymentOrderDatatableView(AjaxDatatableView):
     def customize_row(self, row, obj):
         url = reverse_lazy('payment:local.payment.update', args=(obj.pk,))
         row['pk'] = f"""<a href="{url}" target=_blank>{obj.pk}</a>"""
+
+
+def num_to_fa_words(request):
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        if amount:
+            if int(amount) >= 10:
+                amount = int(amount) / 10
+                amount_in_words = words(amount)
+                return JsonResponse({'amount_in_words': amount_in_words})
+            else:
+                return JsonResponse({'': ''}, safe=False)
+        else:
+            return JsonResponse({'': ''}, safe=False)
+    else:
+        return JsonResponse({'error': 'Invalid amount'})
