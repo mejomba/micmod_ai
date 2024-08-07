@@ -72,6 +72,7 @@
                         <input class="underline_dash_border text-center"
                                name="{{ form.from_source|get_base_model }}__auto__{{ form.from_source.html_name }}" {% get_attrs_str form.from_source %} list="lst_{{ form.from_source.name }}"
                                value="{{ items_list.selected_str }}" autocomplete="off">
+                    {{ form.from_source.errors }}
                         <datalist id="lst_{{ form.from_source.name }}">
                             {% for item in items_list.list %}
                                 {% if item.0 %}
