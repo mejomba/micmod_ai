@@ -1040,8 +1040,9 @@ function calculate_price(target) {
     let tax = 0;
     let taxValue = 0
     let row_discount = 0
+    let row_discount_amount = 0
     let tax_discount = 0
-    let discount_for_all = 0
+    let row_discount_base_percentage = 0
     let totalDiscount = 0
     let net_price = 0
     let net_price_after_tax_discount = 0
@@ -1058,6 +1059,9 @@ function calculate_price(target) {
     if (isNaN(price)) {
         price = final_price.value
     }
+    row_discount_amount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', ''))
+    row_discount = row_discount_amount * qty
+    // net_price = (price - row_discount_amount) * qty
     net_price = price * qty
     net_price_after_tax_discount = net_price
 
@@ -1065,19 +1069,21 @@ function calculate_price(target) {
         tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
-            tax_discount = net_price * (isOfficialValue_number / 100)
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
+            // tax_discount = net_price * (isOfficialValue_number / 100)
         }
         net_price_after_tax_discount = net_price - tax_discount
     }
 
-    row_discount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', '')) * qty
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
-    discount_for_all = net_price_after_tax_discount * (selfDiscountValue/100)
 
-    totalDiscount = row_discount + tax_discount + discount_for_all //((price * qty) * selfDiscountValue/100)
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
+
+    totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
     if (tax){
         const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
-        taxValue = net_price_after_tax_discount * (tax/100)
+        taxValue = (net_price - totalDiscount) * (tax/100)
     } else {
         taxValue = 0
     }
@@ -1090,7 +1096,8 @@ function calculate_price(target) {
         elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
         elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
-        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
         elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue

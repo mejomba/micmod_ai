@@ -565,13 +565,25 @@ class QuotationItem(BaseModel):
     @property
     def net_price(self):
         try:
-            return self.fee_() * self.quantity if self.pk and self.fee_() else 0
+            return (self.fee_()) * self.quantity if self.pk and self.fee_() else 0
+        except Exception as e:
+            return 0
+            raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
+
+    @property
+    def net_price_and_tax_discount(self):
+        try:
+            net_price = self.net_price
+            net_discount = self.quantity * self.discount_per_item
+            tax_discount = (net_price - net_discount) * (1 - ((100 + settings.TAX_VALUE - self.quotation.official_value) / (100 + settings.TAX_VALUE)))
+            return net_discount - tax_discount
         except Exception as e:
             return 0
             raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
 
     @property
     def net_price_after_tax_discount(self):
+        x = self.net_price
         value = self.net_price
         if self.quotation.is_official:
             value -= (self.net_price * (self.quotation.official_value / 100))
@@ -585,7 +597,7 @@ class QuotationItem(BaseModel):
         else:
             total_ = (100 - self.quotation.self_discount) / 100
 
-        fee_price = self.fee_()
+        fee_price = self.fee_() - self.discount_per_item
         if fee_price is None:
             return 0
 
@@ -645,8 +657,7 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                # return self.fee_() * self.quantity * 0.1
-                return self.net_price_after_tax_discount * (settings.TAX_VALUE / 100)
+                return (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
             else:
                 return 0
         except Exception as e:
@@ -656,17 +667,24 @@ class QuotationItem(BaseModel):
     @property
     def discount_tuple(self):
         try:
-            row_discount = self.discount_per_item * self.quantity if self.pk else 0
-            tax_discount = self.net_price * (self.quotation.official_value / 100) if self.pk and self.quotation.is_official else 0
-            discount_for_all = (self.net_price - tax_discount) * (self.quotation.self_discount / 100) if self.pk else 0
+            net_price = self.net_price
+            row_discount = self.quantity * self.discount_per_item
+            row_discount_base_percentage = net_price * (self.quotation.self_discount / 100) if self.pk else 0
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + settings.TAX_VALUE - self.quotation.official_value) / (100 + settings.TAX_VALUE)))
         except Exception as e:
-            # raise Exception(f'اشکال در ردیف {self.pk} \n{__file__} \n در خط {e.__traceback__.tb_lineno}')
-            row_discount = tax_discount = discount_for_all = 0
-        return tax_discount, discount_for_all, row_discount
+            row_discount = tax_discount = row_discount_base_percentage = 0
+        return tax_discount, row_discount_base_percentage, row_discount
 
     @property
     def discount_value(self):
-        return sum(self.discount_tuple)
+        x = sum(self.discount_tuple)
+        try:
+            return int(x)
+        except Exception as e:
+            print(e)
+            return 0
+
 
     class Meta:
         ordering = ['id']
