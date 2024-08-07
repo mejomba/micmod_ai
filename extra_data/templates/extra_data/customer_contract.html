@@ -1,0 +1,60 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+    <!-- Include Jalali Datepicker CSS and JS -->
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc.js' %}"></script>
+    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc-fa.js' %}"></script>
+
+<form action="{% if form.instance.pk %}{% url 'extra_data:customer_contract.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_contract.create' %}{% endif %}" method="POST" id="customer-contract-form">
+    {% csrf_token %}
+    <div>
+    <div class="row bg-white rounded border my-10 mx-xl-10 pt-10 position-relative shadow-sm">
+        <div class="col-12">
+            <div class="row row-cols-4">
+                <h4 class="position-absolute" style="top: -10px">قرارداد مشتری</h4>
+                {% render_field_by_order form form.customer form.contract_type form.contract_date form.contract_due_date label='on-border' margin_b=4 %}
+            </div>
+        </div>
+        <div class="col-12">
+            <div>
+                {% render_field_by_order form form.description label="on-border" %}
+            </div>
+        </div>
+    </div>
+        </div>
+    <input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10" >
+</form>
+<script>
+
+    $('#customer-contract-form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+        setInterval(function (){
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
+    })
+
+</script>
+<script>
+        function initializeDatepickers() {
+            debugger
+            console.log('initial datepicker....')
+            $('#id_contract_date').datepicker({
+                dateFormat: 'yy-mm-dd',
+                changeMonth: true,
+                changeYear: true,
+            });
+            $('#id_contract_due_date').datepicker({
+                dateFormat: 'yy-mm-dd',
+                changeMonth: true,
+                changeYear: true,
+            });
+        }
+
+
+    </script>

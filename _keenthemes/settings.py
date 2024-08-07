@@ -687,3 +687,5 @@ KT_THEME_VENDORS = {
         ]
     }
 }
+TAX_VALUE = 10
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None

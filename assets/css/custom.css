@@ -105,6 +105,38 @@ div[disabled=disabled] {
     font-size: .95rem !important;
     vertical-align: middle !important;
 }
+.font-size-13 {
+    font-size: 1rem !important;
+    vertical-align: middle !important;
+}
+.font-size-14 {
+    font-size: 1.05rem !important;
+    vertical-align: middle !important;
+}
+.font-size-15 {
+    font-size: 1.1rem !important;
+    vertical-align: middle !important;
+}
+.font-size-16 {
+    font-size: 1.15rem !important;
+    vertical-align: middle !important;
+}
+.font-size-17 {
+    font-size: 1.2rem !important;
+    vertical-align: middle !important;
+}
+.font-size-18 {
+    font-size: 1.3rem !important;
+    vertical-align: middle !important;
+}
+.font-size-19 {
+    font-size: 1.4rem !important;
+    vertical-align: middle !important;
+}
+.font-size-20 {
+    font-size: 1.5rem !important;
+    vertical-align: middle !important;
+}
 .p0{
     padding: 5px !important;
 }
@@ -837,6 +869,7 @@ span .select2-selection{
 .modal-xl {
     min-width: 1200px !important;
 }
+
 .s-1 {
     letter-spacing: 0.1rem;
 }
@@ -864,4 +897,53 @@ span .select2-selection{
 }
 .text-left {
     text-align: left;
+
+.ui-datepicker{
+    z-index: 2000 !important;
+}
+
+/* Tooltip container */
+.tooltip_ {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip_ .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Tooltip arrow */
+.tooltip_ .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip_:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
 }

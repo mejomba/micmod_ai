@@ -204,3 +204,32 @@ def round_price(x):
         x = x / 10
         x = int(x) * 10
     return x
+
+
+def round_rial(x, currency_ref=None):
+    if currency_ref == 'RIAL':
+        if x >= 1000_000:
+            x = int(x)
+            if x % 100 == 0:
+                return x
+            else:
+                x = x / 1000
+                x = (int(x) + 1) * 1000
+        elif x <= 999999 or x > 10000:
+            x = int(x)
+            if x % 10 == 0:
+                return x
+            else:
+                x = x / 10
+                x = (int(x) + 1) * 10
+        elif x <= 9999 or x > 100:
+            x = int(x)
+            if x % 10 == 0:
+                return x
+            else:
+                x = x / 10
+                x = (int(x) + 1) * 10
+        elif (x / 10) > 1:
+            x = int(x)
+    return x
+

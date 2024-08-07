@@ -28,10 +28,15 @@ from django.apps import apps
 
 
 from tools import utils
-
+from django.db.models.query import QuerySet
 
 class ExtraData(object):
     ...
+
+
+class QuerysetManager(QuerySet):
+    def update(self, **kwargs):
+        super(QuerysetManager, self).update(**kwargs)
 
 
 class BaseManager(models.Manager):
@@ -39,6 +44,16 @@ class BaseManager(models.Manager):
     def __init__(self, is_public=False):
         super().__init__()
         self.is_public = is_public
+
+    def get_for_update(self):
+        return QuerysetManager(self.model, using=self._db)
+
+    def full_queryset(self, *args, **kwargs):
+        qs = self._queryset_class(model=self.model, using=self._db, hints=self._hints)
+        return qs.filter(*args, **kwargs)
+
+    def get_query_set(self):
+        ...
 
     def get_queryset(self):
         qs = super().get_queryset().filter(is_deleted=False)
@@ -315,6 +330,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     # object_uid = models.UUIDField(verbose_name=_("object_uid"), default=uuid.uuid4, unique=True)
 
     auto_complete = False
+    insert_new = True
     absolute_url_create = None
     absolute_url_update = None
     absolute_url_delete = None
@@ -475,11 +491,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         model_name = self._meta.model_name
         ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
         obj_id = self.pk
-        # title = request.POST.get('comment_title')
         title = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_title')
         image_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-image'
         file_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file'
-        # comment_input_name = f'comment_content_{idx}' if idx is not None else 'comment_content'
         comment_input_name = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-comment_content'
         content = request.POST.get(comment_input_name)
         content_type = ContentType.objects.get_for_model(self._meta.model)
@@ -542,7 +556,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     """***NEW***"""
 
     def compare(self, excluded_keys=None):
-        obj = self._meta.model.objects.get(pk=self.pk) if self.pk else None
+        obj = self._meta.model.objects.full_queryset().get(pk=self.pk) if self.pk else None
         if excluded_keys is None:
             excluded_keys = list()
         excluded_keys.extend(['created_date', 'last_update_date', 'editor_user',
@@ -576,7 +590,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         return diff
 
     def save_log(self):
-        old = self._meta.model.objects.get(pk=self.pk) if self.pk else None
+        # old = self._meta.model.objects.full_queryset().get(pk=self.pk) if self.pk else None
         return self.compare()
 
     def save(

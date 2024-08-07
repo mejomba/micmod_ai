@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.models import Permission
+
 from . import models
 from django.contrib.auth.admin import UserAdmin
 
@@ -39,7 +41,7 @@ class AdminUser(UserAdmin):
 
 
 admin.site.register(models.User, AdminUser)
-admin.site.register([Profile])
+admin.site.register([Profile, Permission])
 # admin.site.register(models.User)
 
 

@@ -204,12 +204,11 @@ def get_comment_link(comment_str):
     pattern_pk = r'sku_(\d+)'
 
     comment_str_lower = comment_str.lower()
-    pks = re.findall(pattern_pk, comment_str_lower)
+    pks = re.findall(pattern_pk, comment_str, flags=re.IGNORECASE)
     for pk in pks:
         url = reverse_lazy('extra_data:sku.update', kwargs={'pk': pk})
         link = f'<a href="{url.__str__()}" target=_blank>{pk}</a>'
-        comment_str_lower = re.sub(pattern_sku, link, comment_str_lower, count=1)
-        comment_str = comment_str_lower
+        comment_str = re.sub(pattern_sku, link, comment_str, count=1, flags=re.IGNORECASE)
         comment_str = mark_safe(comment_str)
 
     return comment_str

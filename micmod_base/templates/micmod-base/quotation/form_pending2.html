@@ -75,6 +75,11 @@
                                         آیتم در چین
                                         </div>
                                     {% endif %}
+                                    {% if form_s.instance.is_deleted %}
+                                        <small class="my-2 badge badge-light-danger position-absolute" style="bottom: 0; right: 180px;">
+                                        حذف شده
+                                        </small>
+                                    {% endif %}
                                     </div>
                                 </div>
                                 <div class="col-lg-4 p-0 border-top border-bottom border-end">
@@ -126,13 +131,13 @@
                                                         <span class="d-none parent_submit_message"></span>
                                                     {% endif %}
                                                 </div>
-                                                {% if form_s.instance.goods_code_alt %}
-                                                    <div class="w-25 bg-light-danger text-center"
-                                                         onclick="hide_show_goods_alt(this)"
-                                                         data-key="show_alt">
-                                                        مشابه
-                                                    </div>
-                                                {% endif %}
+{#                                                {% if form_s.instance.goods_code_alt %}#}
+{#                                                    <div class="w-25 bg-light-danger text-center"#}
+{#                                                         onclick="hide_show_goods_alt(this)"#}
+{#                                                         data-key="show_alt">#}
+{#                                                        مشابه#}
+{#                                                    </div>#}
+{#                                                {% endif %}#}
                                             </div>
                                             <div class="col on-border">
                                                 <textarea class="goods_name w-100 form-control bg-white" rows="1"

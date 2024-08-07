@@ -421,7 +421,7 @@
       "link": "extra_data:customer.list",
       "permission": {
         "groups": [
-          "total_admin"
+          "customer_editors", "total_admin"
         ]
       }
     },
