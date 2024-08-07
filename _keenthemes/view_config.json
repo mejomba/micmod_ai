@@ -257,6 +257,66 @@
           }
         ]
       }
+    },
+  "LocalPaymentOrderView":
+    {
+      "workflow":
+      {
+      "name":"payment_create",
+      "action":"create",
+        "list": [
+          {
+            "state": "درخواست اولیه",
+            "group": "base_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["manager_confirmation", "accounting"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "حسابداری",
+            "group": "accounting_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","manager_confirmation"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "تایید مدیر عامل",
+            "group": "CEO",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
     }
 }
 
