@@ -299,7 +299,7 @@
           },
           {
             "state": "تایید مدیر عامل",
-            "group": "total_admin",
+            "group": "CEO",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
