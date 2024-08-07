@@ -275,23 +275,33 @@
             {% with form.instance.customerdocuments_set.all as docs %}
             	{% if docs %}
                     <div class="row d-flex align-items-center bold mb-5">
-                        <div class="col-1"><span class="ms-7">نوع سند</span></div>
+                        <div class="col-2"><span class="ms-7">نوع سند</span></div>
                         <div class="col-1">تاریخ</div>
                         <div class="col-3">توضیحات</div>
                         <div class="col-1">فایل</div>
                         <div class="col-1">عملیات</div>
-                        <div class="col-5"></div>
+                        <div class="col-4"></div>
                     </div>
                 {% endif %}
             <div class="row d-flex align-items-center">
             {% for doc in docs %}
-                <div class="col-1 mb-3">
+                <div class="col-2 mb-3">
                     <span class="bold me-3">{{ forloop.counter }}) </span>
                     <span class="">{{ doc.get_doc_type_display }}</span>
                 </div>
                 <div class="col-1">{{ doc.created_date|to_jalali:'%Y/%m/%d' }}</div>
                 <div class="col-3">{{ doc.description|default_if_none:"-" }}</div>
-                <div class="col-1"><a href="{{ doc.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a></div>
+                <div class="col-1">
+
+                {% for image in doc.images.all %}
+                    <a href="{{ image.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                    {% empty %}
+                    {% if doc.path %}
+                    	<a href="{{ doc.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                    {% endif %}
+                {% endfor %}
+
+                </div>
                 <div class="col-1">
                 <a href="" target="_blank" class="me-1 delete-customer-contract text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ doc|model_name }}&object_id={{ doc.pk }}&app_label={{ doc|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
                     <span class="tooltiptext">حذف</span>
@@ -304,7 +314,8 @@
                     </i>
                 </a>
                 </div>
-                <div class="col-5"></div>
+                <div class="col-4">
+                </div>
             {% endfor %}
             {% endwith %}
             <div class="d-flex">

@@ -3,6 +3,7 @@ from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
+from files.models import Image
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
     CustomerFields, CustomerContract
 from django_select2 import forms as s2forms
@@ -88,6 +89,9 @@ class CustomerDocumentsFormCustomerWidget(s2forms.ModelSelect2Widget):
 
 
 class CustomerDocumentsForm(CustomBaseModelForm):
+    image_model = Image
+    image_groups = 1
+
     class Meta:
         model = CustomerDocuments
         fields = '__all__'
@@ -100,6 +104,7 @@ class CustomerDocumentsForm(CustomBaseModelForm):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['image_1'].widget.attrs['required'] = True
 
 
 class ChangeCustomerGroupWidget(s2forms.ModelSelect2Widget):

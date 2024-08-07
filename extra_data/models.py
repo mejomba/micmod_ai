@@ -714,6 +714,7 @@ class Customer(AbsBaseModel):
 class CustomerDocuments(AbsBaseModel):
     DOC_CHOICES = (
         ("A", _("id_card")),
+        ("B", _("image_meet_in_person")),
     )
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
