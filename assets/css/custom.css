@@ -3,6 +3,13 @@
   font-family: Sahel;
   src: url(../fonts/Sahel.woff2);
 }
+@font-face {
+  font-family: persian-digit;
+  src: url(../fonts/Samim-FD.woff);
+}
+.persian-number{
+    font-family: persian-digit;
+}
 html body {
     font-family: Sahel;
     overflow-x: hidden;
@@ -861,6 +868,35 @@ span .select2-selection{
 
 .modal-xl {
     min-width: 1200px !important;
+}
+
+.s-1 {
+    letter-spacing: 0.1rem;
+}
+.s-2 {
+    letter-spacing: 0.15rem;
+}
+.s-3 {
+    letter-spacing: 0.2rem;
+}
+
+@media print {
+    .DivToPrint {
+        background-color: white;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 15px;
+        padding: 15px;
+        /*font-size: 14px;*/
+        line-height: 10px;
+        z-index: 1000;
+    }
+}
+.text-left {
+    text-align: left;
 }
 .ui-datepicker{
     z-index: 2000 !important;

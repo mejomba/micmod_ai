@@ -9,7 +9,7 @@
     {% csrf_token %}
     <div class="row row-cols-3 bg-white rounded border my-10 pt-10 position-relative shadow-sm mx-xl-10 ">
         <h4 class="position-absolute" style="top: -10px">اسناد مشتری</h4>
-        {% render_field_by_order form form.customer form.doc_type form.path label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.customer form.doc_type form.image_1 label='on-border' margin_b=4 %}
         <div class="col-12 bg-white rounded">{% render_field_by_order form form.description label="on-border" %}</div>
     </div>
 <input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
@@ -17,19 +17,20 @@
 
 <script>
     debugger
-    const customer_document_form = $('#customer-document-form')
-    customer_document_form.on('submit', function (e){
+    $('#customer-document-form').on('submit', function (e){
         debugger
         e.preventDefault()
-        var image = $('#id_path')[0].files[0];
         var doc_type = $('#id_doc_type').val();
         var description = $('#customer-document-form #id_description').val();
         var customer = $('#id_customer').val();
+        var files = $('#id_image_1')[0].files;
         let form = new FormData();
-        form.append('path', image);
         form.append('doc_type', doc_type);
         form.append('description', description);
         form.append('customer', customer);
+        for (var i = 0; i < files.length; i++) {
+            form.append("image_1", files[i]);
+        }
         $.ajax({
             url: $('#customer-document-form').attr('action'),
             data: form,
@@ -41,13 +42,12 @@
                 "X-CSRFToken": getCookie("csrftoken")
             },
             success:function(response) {
-                //
+                window.location.reload()
             }
         });
         setInterval(function (){
-            window.location.reload()
             $('#id_kt_empty_modal_lg').hide();
-        }, 600)
+        }, 500)
     })
 
 </script>

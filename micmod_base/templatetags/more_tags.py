@@ -407,3 +407,18 @@ def num_to_fa_words(num):
 def parent_code_data(goods_code):
     item = Item.objects.filter(sku=goods_code).first()
     return item.parent if item else None
+
+
+@register.inclusion_tag('micmod-base/quotation/partial/quotation_item_all_prices.html')
+def get_quotation_item_all_prices(sku):
+    context = dict()
+    item_sku = Item.objects.filter(sku=sku).first()
+    if not item_sku:
+        return
+
+    all_trade_active_prices = item_sku.all_trade_active_price_
+    all_bazar_active_prices = item_sku.all_bazar_active_price_
+
+    context['all_trade_prices'] = all_trade_active_prices
+    context['all_bazar_prices'] = all_bazar_active_prices
+    return context

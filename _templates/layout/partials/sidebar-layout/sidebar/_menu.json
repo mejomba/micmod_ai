@@ -421,9 +421,33 @@
       "link": "extra_data:customer.list",
       "permission": {
         "groups": [
-          "total_admin"
+          "customer_editors", "total_admin"
         ]
       }
+    },
+    {
+      "title": "payment_order",
+      "icon": "cheque",
+      "path_key": "payment_order",
+      "permission": {
+        "groups": [
+          "base_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "message-add",
+          "title": "create",
+          "path_key": "local/order/create",
+          "link": "payment:local.payment"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "list",
+          "path_key": "local/payment/list",
+          "link": "payment:local.payment.list"
+        }
+      ]
     }
   ]
 }

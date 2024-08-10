@@ -2,7 +2,7 @@
 {% load more_tags %}
 {% load core_tags %}
 
-<div class="row mx-1">
+<div class="row mx-1 mb-20">
     <div class="card-body col-3">
         <div class="align-items-center px-7 py-3 mb-5">
             <div class="mb-4">
@@ -10,15 +10,25 @@
             </div>
             <hr class="mb-6">
             {% render_field_by_order form form.sku form.sku_c form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
-
             {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
+
             {% if request.user|has_group:"total_admin" %}
-                {% if sku and sku.price %}
-                    {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:sku.price.price_settings.pk|add:'/change/' rma_value=sku.price.price_settings.title rma_class="d-flex py-3" %}
+                {% if sku and trade_price %}
+                    {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:trade_price.price_settings.pk|add:'/change/' rma_value=trade_price.price_settings.title rma_class="d-flex py-3" %}
                 {% endif %}
             {% endif %}
             <input type="checkbox" name="load_sepidar" id="load_sepidar" onchange="refresh_data(event)">
             <label for="load_sepidar">دریافت اطلاعات سپیدار</label>
+        </div>
+        <div class="d-flex gap-1">
+            <div class=" col p-1 border rounded">
+                <p class="bg-light-info text-center">قیمت های خارجی</p>
+                {% render_field_by_order form form.all_trade_prices margin_b=10 %}
+            </div>
+            <div class="col p-1 border rounded">
+                <p class="bg-light-info text-center">قیمت های داخلی</p>
+                {% render_field_by_order form form.all_bazar_prices margin_b=10 %}
+            </div>
         </div>
     </div>
     <div class="card-body col-9" id="block_container">

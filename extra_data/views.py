@@ -1,3 +1,7 @@
+import json
+import uuid
+from uuid import uuid4
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -10,6 +14,8 @@ from django.urls import reverse_lazy, reverse
 from django.views import generic, View
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
+from sepidar.models import APILogs, Device
+from sepidar.scripts.sepidar_classes import Urls
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
@@ -437,14 +443,6 @@ class CustomerView(LoginRequiredMixin, BaseView):
 
     def get_success_message(self, cleaned_data):
         return f'{self.object.title} save'
-    # def get(self, request, pk=-1):
-    #     form = self.form_struct.get('form')
-    #     if pk > 0:
-    #         self.object = self.model.objects.get(pk=pk)
-    #         f = form(instance=self.object)
-    #     else:
-    #         f = form()
-    #     return render(request, self.template_name, {'form': f})
 
     def get_success_url(self):
         return reverse_lazy('extra_data:customer.update', kwargs={'pk': self.object.pk})
@@ -664,8 +662,54 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
         x = super().post(request,*args, **kwargs)
         return x
 
+    def form_valid(self, form):
+        x = super().form_valid(form)
+        return JsonResponse({'res': True})
+
     def get(self, request, *args, **kwargs):
         # super().get(request, *args, **kwargs)
         context = self.get_context_data()
         res = render_to_string(self.template_name, context=context, request=self.request)
         return JsonResponse({'res': res, 'jss': '', 'csss': ''})
+
+
+class CustomerSepidarInsertView(View):
+    def post(self, request, *args, **kwargs):
+        customer = Customer.objects.filter(pk=kwargs.get('pk')).first()
+        if customer:
+            '''send customer to sepidar'''
+            device = Device.objects.all().first()
+            address_data = [
+                {
+                    # 'CustomerAddressID': 100000,
+                    'GUID': str(uuid.uuid4()),
+                    'Title': None,  # '',
+                    'IsMain': True,
+                    'CityRef': customer.province.pk,
+                    'Address': customer.address,
+                    'ZipCode': None,  # 'customer.zip_code',
+                    'Latitude': None,  # customer.lat,
+                    'Longitude': None  # customer.long
+                },
+            ]
+            customer_data = {
+                'GUID': str(customer.guid),
+                'PhoneNumber': customer.phone,  # optional
+                'CustomerType': customer.type,
+                'Name': customer.name,
+                'LastName': customer.last_name,  # blank for company,
+                'BirthDate': None,  # optional
+                'NationalId': None,  # optional
+                'EconomicCode': None,  # optional
+                'Addresses': address_data  # optional
+            }
+            d = json.dumps(customer_data)
+            api_res = APILogs.new_call(device=device, url=Urls.post_customers.url,
+                                       method=Urls.post_customers.method, data=d, save=True)
+            api_log_obj = api_res[2]
+            api_log_obj.extra_data.request = self.request if api_log_obj else ''
+            api_log_obj.save()
+            return JsonResponse({'res': 'success'}, status=api_res[0])
+        else:
+            return JsonResponse({'res': 'error'}, status=404)
+        pass
