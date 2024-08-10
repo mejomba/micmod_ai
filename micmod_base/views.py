@@ -723,6 +723,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 d[item.instance.quotation.pk] = []
             d[item.instance.quotation.pk].append(item)
 
+        my_inquiry_not_started_count, inquiry_not_started_count = QuotationItem.inquiry_not_started(request.user)
+
         per_page = page_obj.paginator.per_page
         context['page_obj'] = page_obj
         context['item_count'] = page_obj.number * per_page - (per_page - len(page_obj.object_list))
@@ -731,6 +733,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
+        context['my_inquiry_not_started_count'] = my_inquiry_not_started_count
+        context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -948,7 +952,9 @@ class QuotationListDatatable(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         if request.user.base_group == 'trade':
-            qs = Quotation.objects.filter(cancel=True, is_deleted=False)
+            qs = Quotation.objects.filter(cancel=True, is_deleted=False,
+                                          quotation__need_foreign_price_inquiry=True,
+                                          quotation__foreign_price_inquiry_done=True)
         else:
             qs = Quotation.get_qs(request)
         # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
@@ -1030,5 +1036,3 @@ def save_parent_item(request):
         item.save()
         return JsonResponse({'res': 'ok'})
     return JsonResponse({'res': 'کد نامعتبر'}, status=400)
-
-

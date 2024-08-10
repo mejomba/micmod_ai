@@ -477,17 +477,18 @@ class QuotationItem(BaseModel):
             time_filter = (Q(assigned_trade_user_date__gte=yesterday, assigned_trade_user_date__lte=today, assigned_trade_user=user) |
                            Q(assigned_trade_user_date2__gte=yesterday, assigned_trade_user_date2__lte=today, assigned_trade_user2=user))
             task_start_filter = (Q(task_start=True, assigned_trade_user=user) | Q(task_start2=True, assigned_trade_user2=user))
+            task_not_start_filter = (Q(task_start=False, assigned_trade_user=user) | Q(task_start2=False, assigned_trade_user2=user))
             price_inquiry_filter = (Q(foreign_price_inquiry_done=True, assigned_trade_user=user) | Q(foreign_price_inquiry_done=True, assigned_trade_user2=user))
 
             all_tasks_qs = quotation_items.filter(user_filter)
             today_assigned = all_tasks_qs.filter(time_filter).count()
             today_task_start = all_tasks_qs.filter(task_start_filter, time_filter).count()
-            all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
+            all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
             all_tasks = all_tasks_qs.count()
 
-            reminder_task = all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
+            reminder_task = all_tasks - all_price_inquiry_done
 
-            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks
+            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
         return d
 
     def pre_process_on_post_method(self, data=None):
@@ -667,6 +668,29 @@ class QuotationItem(BaseModel):
     @property
     def discount_value(self):
         return sum(self.discount_tuple)
+
+    @classmethod
+    def inquiry_not_started(cls, trade_user):
+        trade_users = User.objects.filter(groups__name__in=['trade_user', 'trade_admin'])
+        my_inquiry_not_started_count = 0
+        for user in trade_users:
+            if trade_user == user:
+                f = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
+                                      Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+                filter_condition = (Q(assigned_trade_user=trade_user) & Q(task_start=False)) | \
+                                   (Q(assigned_trade_user2=trade_user) & Q(task_start2=False) &
+                                    Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+                not_started = cls.objects.filter(f, filter_condition)
+                my_inquiry_not_started_count = not_started.count()
+                break
+
+        filter_condition = (Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=False) &
+                            Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True) &
+                            Q(task_start=False) & Q(task_start2=False) & Q(quotation__cancel=False) &
+                            Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+        inquiry_not_started_count = QuotationItem.objects.filter(filter_condition).count()
+        return my_inquiry_not_started_count, inquiry_not_started_count
+
 
     class Meta:
         ordering = ['id']
