@@ -596,8 +596,11 @@ class QuotationItem(BaseModel):
             total_ = (100 - (official_value)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
-
-        fee_price = self.fee_() - self.discount_per_item
+        try:
+            fee_price = self.fee_() - self.discount_per_item
+        except Exception as e:
+            print('========== fee price is None ============')
+            fee_price = None
         if fee_price is None:
             return 0
 
