@@ -275,16 +275,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-30 border-top all_prices">
-                     {% if form_s.instance.pk and form_s.instance.goods_code_fk%}
-                         {% if forloop.counter0 == 0 %}
-                             <form action=""></form>
-                         {% endif %}
-                         <form action="{% url 'inquiry:item_list' %}" method="GET" class="all_prices_form">
-                        {% get_quotation_item_all_prices form_s.instance.goods_code_fk.sku %}
-                         </form>
-                    {% endif %}
-                </div>
+{#                <div class="h-30 border-top all_prices">#}
+{#                     {% if form_s.instance.pk and form_s.instance.goods_code_fk%}#}
+{#                         {% if forloop.counter0 == 0 %}#}
+{#                             <form action=""></form>#}
+{#                         {% endif %}#}
+{#                         <form action="{% url 'inquiry:item_list' %}" method="GET" class="all_prices_form">#}
+{#                        {% get_quotation_item_all_prices form_s.instance.goods_code_fk.sku %}#}
+{#                         </form>#}
+{#                    {% endif %}#}
+{#                </div>#}
             </div>
             <div class="col-lg-3 border-top">
                 <div class="row h-100 border-bottom">
