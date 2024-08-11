@@ -744,6 +744,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.old_goods_code = obj.goods_code
                 obj.goods_code = new_goods_code
                 obj.old_goods_name = obj.goods_name
+                obj.goods_code_fk = Item.objects.filter(sku=new_goods_code).first()
                 obj.item_editor_user = self.request.user
                 obj.extra_data.request = self.request
                 obj.save()
