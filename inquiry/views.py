@@ -1210,3 +1210,82 @@ class SalesPriceInqueryLogDataTableView(AjaxDatatableView):
 
     # def get_initial_queryset(self, request=None):
     #     return self.model.objects.all()
+
+
+def trade_all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                    Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in trade_all_price:
+            obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def bazar_all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                    Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                print('exception')
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in bazar_all_price:
+            obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def inquiry_count(request):
+    count = 0
+    if sku := request.GET.get('sku'):
+        item = Item.objects.filter(pk=sku).first()
+        count = item.inquiry_count
+    return JsonResponse({'res': count})

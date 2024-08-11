@@ -403,6 +403,12 @@ class QuotationItem(BaseModel):
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
+    trade_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
+                                         verbose_name=_('trade_selected_price_code'), related_name='trade_selected_quotation_rel',
+                                         null=True, blank=True)
+    bazar_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
+                                         verbose_name=_('bazar_selected_price_code'), related_name='bazar_selected_quotation_rel',
+                                         null=True, blank=True)
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
     assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
     assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
@@ -424,6 +430,7 @@ class QuotationItem(BaseModel):
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+
 
     objects = QuotationItemManager()
 

@@ -19,6 +19,31 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm, CustomBaseForm
 import json
 
+from django_select2 import forms as s2forms
+
+
+class TradeAllPriceWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "inquiry_type__title__icontains",
+        "sku__title__icontains",
+        # "last_name__icontains",
+        # "sepidar_party_id__icontains",
+        # "sepidar_dl_id__icontains",
+        # "sepidar_dl_code__icontains",
+        # "id__iexact",
+    ]
+
+
+class BazarAllPriceWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "inquiry_type__title__icontains",
+        "sku__title__icontains",
+        # "last_name__icontains",
+        # "sepidar_party_id__icontains",
+        # "sepidar_dl_id__icontains",
+        # "sepidar_dl_code__icontains",
+        # "id__iexact",
+    ]
 
 class QuotationForm(CustomBaseModelForm):
     form_state = None
@@ -386,9 +411,14 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
                   'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
+                  'bazar_selected_price_code', 'trade_selected_price_code'
                   ]
         # exclude = ['quotation', 'created_date', 'last_update_date', 'editor_user']
         widgets = {
+            'bazar_selected_price_code': BazarAllPriceWidget,
+            # 'trade_selected_price_code': TradeAllPriceWidget,
+            'trade_selected_price_code': forms.Select(
+                attrs={"class": "select2 trade_selected_price_code", "style": "width:100%", 'name': 'trade_selected_price_code'}),
             'goods_code': forms.Select(
                 attrs={"class": "select2 goods_code", "style": "width:100%", 'name': 'goods_code'}),
             'goods_code_alt': forms.Select(
@@ -397,22 +427,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             # 'price_method': forms.HiddenInput(),
             'price_method': forms.Select(attrs={'class': 'price_method w-100 '}),
             'final_price': forms.TextInput(attrs={'disabled': True, 'class': 'final_price w-100 text-center'}),
-            # 'final_price': forms.HiddenInput(),
-            # 'delivery_time': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_name': forms.TextInput(attrs={'hidden': False}),
-            # 'stock_amount': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_avg_price': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_avg_count': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_price_sheet1': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_price_sheet2': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_price_sheet3': forms.TextInput(attrs={'hidden': False}),
-            # 'goods_price_market': forms.TextInput(attrs={'hidden': False}),
-            # # 'goods_sheet_date': forms.DateInput(attrs={'class': 'goods_sheet_date','disabled': True}),
-            # 'goods_name_alt': forms.TextInput(attrs={'hidden': True}),
-            # # 'goods_last_sale': forms.DateInput(attrs={'class': 'goods_last_sale','disabled': True}),
-            # 'goods_last_price': forms.TextInput(attrs={'hidden': True}),
-            # 'goods_total_sales': forms.TextInput(attrs={'hidden': True}),
             'goods_code': forms.HiddenInput(),
+            'trade_selected_price_code': forms.HiddenInput(),
+            'bazar_selected_price_code': forms.HiddenInput(),
             'goods_code_alt': forms.HiddenInput(),
             'delivery_time': forms.HiddenInput(),
             'goods_name': forms.HiddenInput(),
@@ -437,18 +454,6 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'bazar_price_code': forms.HiddenInput(),
             'trade_price_code': forms.HiddenInput(),
             'goods_code_fk': forms.HiddenInput(),
-            # 'price_method': forms.RadioSelect(attrs={"class": "price_method","m-data":"price_method"}),
-            # 'delivery_time': forms.RadioSelect(),
-            # 'goods_name': forms.Textarea(attrs={'class': 'goods_name','hidden': False, "rows": 1}),
-            # 'stock_amount': forms.TextInput(attrs={'class': 'stock_amount','hidden': False}),
-            # 'goods_avg_price': forms.TextInput(attrs={'class': 'goods_avg_price','hidden': False}),
-            # 'goods_price_sheet': forms.TextInput(attrs={'class': 'goods_price_sheet','hidden': False}),
-            # # 'goods_sheet_date': forms.DateInput(attrs={'class': 'goods_sheet_date','disabled': True}),
-            # 'goods_name_alt': forms.Textarea(attrs={'class': 'goods_name_alt','hidden': False, "rows": 1}),
-            # # 'goods_last_sale': forms.DateInput(attrs={'class': 'goods_last_sale','disabled': True}),
-            # 'goods_last_price': forms.TextInput(attrs={'class': 'goods_last_price','hidden': False}),
-            # 'goods_total_sales': forms.TextInput(attrs={'class': 'goods_total_sales','hidden': True}),
-            # 'final_price': forms.TextInput(attrs={'class': 'final_price','hidden': True, }),
             'quantity': forms.TextInput(attrs={'class': 'quantity comma-seperator  w-100',
                                                }),
         }
@@ -576,7 +581,7 @@ qi_fields = [
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
-    'item_in_china', 'goods_code_fk', 'discount_per_item',
+    'item_in_china', 'goods_code_fk', 'discount_per_item', 'bazar_selected_price_code', 'trade_selected_price_code'
     ]
 
 

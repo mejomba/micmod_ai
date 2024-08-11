@@ -415,6 +415,17 @@ class Item(BaseModel):
     def get_customs_price(self):
         return 0
 
+    @property
+    def inquiry_count(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        bazar_inquiry_count = self.items.filter(bazar_filter, active=True).count()
+
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        trade_inquiry_count = self.items.filter(trade_filter, active=True).count()
+
+        return trade_inquiry_count, bazar_inquiry_count
+
+
     def set_extra_data_sepidar(self, customer_code=None):
         self.extra_data.sepidar_data = dict()
         self.extra_data.sepidar_data['customer_code'] = customer_code

@@ -26,7 +26,6 @@ $(document).ready(function () {
         if (party_id == 'None'){
             party_id = -1
         }
-        debugger
         const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
         const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
@@ -71,7 +70,6 @@ $(document).ready(function () {
         if (party_id == 'None'){
             party_id = -1
         }
-        debugger
         setTimeout(function (){
             const all_prices_form = findAncestor(e.target, "all_prices_form")
             const params = new URLSearchParams(new FormData(all_prices_form)).toString()
@@ -102,18 +100,6 @@ $(document).ready(function () {
                 }
             }); // end ajax
         }, 200)
-        // const tradePriceCode = e.target.value //elem.querySelector('[id*="-trade_price_code"]')
-        // const bazarPriceCode = null //elem.querySelector('[id*="-bazar_price_code"]')
-        //let tradePriceCodeValue;
-        //let bazarPriceCodeValue;
-        //if (tradePriceCode && tradePriceCode.options[tradePriceCode.selectedIndex]){
-        //    tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
-        //}
-        //if (bazarPriceCode && bazarPriceCode.options[bazarPriceCode.selectedIndex]){
-        //    bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
-        //}
-
-
     }
 
     if (currencyRefValue == '1'){
@@ -291,6 +277,23 @@ function set_item_classes(item) {
             console.log(data)
             set_price_data(data, elem, e.target)
             $(item).find('input[id*="goods_code_fk"]').val(data['id'])
+            let m_url = "/inquiry/ajax/count/?sku=" + data['id']
+            $.ajax({
+                type: 'GET',
+                url: m_url,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    debugger
+                    $(item).find('#trade_price_count').html(`(${data['res'][0]})`)
+                    $(item).find('#bazar_price_count').html(`(${data['res'][1]})`)
+                },
+                error: function () {
+                    alert('خطا در دریافت استعلام قیمت')
+                }
+            });
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
@@ -379,6 +382,117 @@ function set_item_classes(item) {
             templateResult: newFormatRepoItem,
             templateSelection: formatRepoSelection
         });
+        $(item).find('.trade_selected_price_code').select2({
+            dir: 'ltr',
+            ajax: {
+                // url: '/sepidar/items_list',
+                url: '/inquiry/trade_all_prices/',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+                    if (!sku){
+                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+                    }
+                    return {
+                        q: data.term,
+                        sku: sku,
+                        page: data.page,
+                        // id_currency_ref: document.getElementById('id_currency_ref').value,
+                        // id_payment_method: document.getElementById('id_payment_method').value,
+                        // id_market_grade: document.getElementById('id_market_grade').value,
+                        // id_customer_grade: document.getElementById('id_customer_grade').value,
+                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    }
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            dropdownAutoWidth: true,
+            dropdownCssClass: 'all_price_select2',
+            minimumInputLength: 0,
+            //placeholder: $(document).find("#customer_code").text(),
+            templateResult: AllPriceFormatRepoItem,
+            templateSelection: formatRepoSelection,
+        });
+        $(item).find('.bazar_selected_price_code').select2({
+            dir: 'ltr',
+            ajax: {
+                // url: '/sepidar/items_list',
+                url: '/inquiry/bazar_all_prices/',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+                    if (!sku){
+                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+                    }
+                    return {
+                        q: data.term,
+                        sku: sku,
+                        page: data.page,
+                        // id_currency_ref: document.getElementById('id_currency_ref').value,
+                        // id_payment_method: document.getElementById('id_payment_method').value,
+                        // id_market_grade: document.getElementById('id_market_grade').value,
+                        // id_customer_grade: document.getElementById('id_customer_grade').value,
+                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    }
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            dropdownAutoWidth: true,
+            // dropdownCssClass: 'jafar',
+            minimumInputLength: 0,
+            //placeholder: $(document).find("#customer_code").text(),
+            templateResult: AllPriceFormatRepoItem,
+            templateSelection: formatRepoSelection,
+        });
+        $(item).find('.trade_selected_price_code').on("select2:select", function (e) {
+            var elem = findAncestor(e.target, "item")
+            const data = e.params.data;
+            const p_id = document.getElementById('customer_pid').textContent || -1
+            const bazar_selected_code = item.querySelector('input[name*="-bazar_selected_price_code"]').value
+            const d = get_all_price_data(data.sku, p_id,  elem, data.id, bazar_selected_code)
+            const select2_trade_price = elem.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
+            elem.querySelector('input[name*="trade_selected_price_code"]').value = data.id
+            if (select2_trade_price) {
+                // select2_trade_price.innerHTML = `<span class="font-size-8">id_${data.id}</span> <span class="font-size-10">${data.inquiry_type}</span> <span class="font-size-9 text-danger">${data.last_update_date}</span>`
+                select2_trade_price.innerHTML = `<span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-10 text-danger">${data.last_update_date}</span>`
+            }
+            set_price_data(d, elem, e.target)
+        })
+        $(item).find('.bazar_selected_price_code').on("select2:select", function (e) {
+            var elem = findAncestor(e.target, "item")
+            const data = e.params.data;
+            const p_id = document.getElementById('customer_pid').textContent || -1
+            const trade_selected_code = item.querySelector('input[name*="-trade_selected_price_code"]').value
+            const d = get_all_price_data(data.sku, p_id,  elem, trade_selected_code, data.id)
+            const select2_bazar_price = elem.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
+            elem.querySelector('input[name*="bazar_selected_price_code"]').value = data.id
+            if (select2_bazar_price) {
+                // select2_bazar_price.innerHTML = `<span class="font-size-8">id_${data.id}</span> <span class="font-size-10">${data.inquiry_type}</span> <span class="font-size-9 text-danger">${data.last_update_date}</span>`
+                select2_bazar_price.innerHTML = `<span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-10 text-danger">${data.last_update_date}</span>`
+            }
+            set_price_data(d, elem, e.target)
+
+        })
     }
     $(item).find('[id$="final_price"]').on('change keydown paste input', function (e) {
         calculate_price(e.target);
@@ -428,9 +542,17 @@ function set_item_classes(item) {
         select01.innerHTML = item.querySelector('[id*="-goods_code"]').value
         item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
+    const select2_trade_price = item.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
+    if (select2_trade_price){
+        let t = item.querySelector('[id*="trade_selected_price_code_data"]')
+        select2_trade_price.innerHTML = `${t.dataset.trade_selected_price_code_inquiry_type}`
+    }
+    const select2_bazar_price = item.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
+    if (select2_bazar_price){
+        let b = item.querySelector('[id*="bazar_selected_price_code_data"]')
+        select2_bazar_price.innerHTML = `${b.dataset.bazar_selected_price_code_inquiry_type}`
+    }
     copy_values(item, '-goods_name_alt')
-    // const w = item.querySelector('[name*="-goods_code"]')
-    // const ww = item.querySelector('[name*="-goods_code_alt"]')
     const box = item.querySelector('[name="box-alt-goods"]')
     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
         if (box) {
@@ -566,9 +688,34 @@ function get_price_data(code, party_id, item) {
     }
 }
 
+function get_all_price_data(code, party_id, item, trade_price_code=null, bazar_price_code=null) {
+    $.ajax({
+        url: '/inquiry/item_list',
+        dataType: "json",
+        type: "GET",
+        async: false,
+        data: {
+                q: code, party_id: party_id, page: 1,
+                trade_price_code: trade_price_code,
+                bazar_price_code: bazar_price_code,
+                id_currency_ref: document.getElementById('id_currency_ref').value,
+                id_payment_method: document.getElementById('id_payment_method').value,
+                id_market_grade: document.getElementById('id_market_grade').value,
+                id_customer_grade: document.getElementById('id_customer_grade').value,
+                quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+            },
+        cache: true,
+        success: function (data) {
+            result = data;
+        }
+    });
+    if (result.total_count > 0) {
+        return result.items[0];
+    }
+}
+
 function set_price_data(data, elem, target) {
     if (data){
-        debugger
         set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
         set_values(elem.querySelectorAll('[name*="stock_amount_res"]'), data.stock_qty_res)
@@ -690,7 +837,6 @@ function set_price(target) {
     switch (p_m) {
         case
             'last_sale':
-            debugger
             final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
@@ -784,7 +930,6 @@ function set_price(target) {
             'price_market':
             final_price.disabled = true;
             const x_ = elem.querySelector('[name*="goods_price_market"]').value
-            debugger
             if (x_){final_price.value = round_rial(x_);}
 
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
@@ -976,7 +1121,6 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    debugger
     const currency = parseInt(document.getElementById('id_currency_ref').value)
     if (currency != 1){
         return x
@@ -1047,7 +1191,6 @@ function calculate_price(target) {
     let net_price = 0
     let net_price_after_tax_discount = 0
     let calculated_price = 0
-    debugger
     // qty
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
@@ -1163,7 +1306,6 @@ function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null,
 }
 
 function set_values(items, value, is_date = false) {
-    debugger
     let value_str = value
     if (!isNaN(parseInt(value)) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
@@ -1251,4 +1393,19 @@ function addPageNumbers() {
 
 function scroll_down() {
     window.scrollTo(0, document.body.scrollHeight);
+}
+
+function AllPriceFormatRepoItem(repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+
+    // debugger
+    var $container = $(
+        `<div class="d-flex flex-row-reverse justify-content-between">
+            <span class="me-3">${repo.inquiry_type}</span>
+            <span>${repo.last_update_date}</span>
+        </div>`
+    );
+    return ($container);
 }
