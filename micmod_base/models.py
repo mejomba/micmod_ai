@@ -492,7 +492,8 @@ class QuotationItem(BaseModel):
             all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
             all_tasks = all_tasks_qs.count()
 
-            reminder_task = all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
+            reminder_task = all_tasks_qs.filter(need_foreign_price_inquiry=True, foreign_price_inquiry_done=False, is_deleted=False,
+                                                quotation__cancel=False, quotation__last_work_flow__current_state_name='استعلام قیمت').count() #all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
             d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks
         return d
