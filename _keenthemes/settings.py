@@ -78,6 +78,7 @@ LOCAL_APPS = [
     'additions',
     'transportation',
     'payment',
+    'factor',
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",

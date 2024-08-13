@@ -947,3 +947,8 @@ span .select2-selection{
   visibility: visible;
   opacity: 1;
 }
+.quotation_to_factor_select2{
+    /*width : 100%;*/
+    text-align: right;
+    color: red;
+}
