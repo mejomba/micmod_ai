@@ -53,6 +53,11 @@
                             <span class="p-3 mx-1 bg-danger"></span>
                         {% endif %}
                     </div>
+                <div>
+                        {% if form_lists.0.instance.quotation.cancel %}
+                            <span class="p-3 mx-1 bold badge badge-light-danger border border-danger-subtle">کنسل شده</span>
+                        {% endif %}
+                    </div>
                 </div>
             <!--end header-->
             </div>
