@@ -403,12 +403,9 @@ class QuotationItem(BaseModel):
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
-    trade_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
-                                         verbose_name=_('trade_selected_price_code'), related_name='trade_selected_quotation_rel',
-                                         null=True, blank=True)
-    bazar_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
-                                         verbose_name=_('bazar_selected_price_code'), related_name='bazar_selected_quotation_rel',
-                                         null=True, blank=True)
+    selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
+                                            verbose_name=_('selected_price_code'), related_name='selected_price_quotation_rel',
+                                            null=True, blank=True)
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
     assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
     assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
@@ -455,10 +452,16 @@ class QuotationItem(BaseModel):
             else:
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
+
+        inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
+                                   (
+                                        Q(quotation__workflows__current_state_name='استعلام قیمت') &
+                                        Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه')
+                                   )
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter, inquiry_state_condition, quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
