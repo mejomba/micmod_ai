@@ -200,97 +200,99 @@
                 </div>
 
             </div>
-            <div class="col-lg-1 border-top border-bottom replace-digits">
-                <div class="w-100 h-100" id="sixty-days-sales">
-                    <div class="card-text text-center h-40 bold">قیمت فروش شصت روز اخیر</div>
-                    <div class="d-flex h-20">
-                        <div class="w-45 card-title-desc">بیشترین</div>
-                        {% render_field_by_order nested nested.goods_max_price no_input=True %}
-                    </div>
-                    <div class="d-flex h-20">
-                        <div class="w-40 card-title-desc">میانگین</div>
-                        {% render_field_by_order nested nested.goods_avg_price no_input=True %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 border p-0 replace-digits">
-                <div class="border-bottom px-2 h-30">
-                    <div class="card-text bold">استعلام قیمت از شیت</div>
+{#            <div class="col-lg-1 border-top border-bottom replace-digits">#}
+{#                <div class="w-100 h-100" id="sixty-days-sales">#}
+{#                    <div class="card-text text-center h-40 bold">قیمت فروش شصت روز اخیر</div>#}
+{#                    <div class="d-flex h-20">#}
+{#                        <div class="w-45 card-title-desc">بیشترین</div>#}
+{#                        {% render_field_by_order nested nested.goods_max_price no_input=True %}#}
+{#                    </div>#}
+{#                    <div class="d-flex h-20">#}
+{#                        <div class="w-40 card-title-desc">میانگین</div>#}
+{#                        {% render_field_by_order nested nested.goods_avg_price no_input=True %}#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
+            <div class="col-lg-4 border p-0 replace-digits">
+                <div class="px-2 h-40">
+                    <div class="card-text bold">استعلام قیمت </div>
                     <div class="d-flex ">
-                        <div class="w-25">
+                        <div class="w-20 d-flex flex-column gap-2">
                             <div class="card-title-desc text-center">تاریخ</div>
                             <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>
                         </div>
-                        <div class="w-25">
-                            <div class="card-title-desc text-center">2-3 هفته</div>
+                        <div class="w-20 d-flex flex-column gap-2">
+                            <div class="card-title-desc text-center">بازار</div>
+                                {% render_field_by_order nested nested.goods_price_market no_input=True %}
+                        </div>
+                        <div class="w-20 d-flex flex-column gap-2">
+                            <div class="card-title-desc text-center">2 تا 3 هفته</div>
                                 {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}
                                 {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}
                         </div>
-                        <div class="w-25">
+                        <div class="w-20 d-flex flex-column gap-2">
                             <div class="card-title-desc text-center">3 تا 5 هفته</div>
                                 {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}
                                 {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}
                         </div>
-                        <div class="w-25">
+                        <div class="w-20 d-flex flex-column gap-2">
                             <div class="card-title-desc text-center">12 تا 14 هفته</div>
                                 {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}
                                 {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}
                         </div>
                     </div>
                 </div>
-                <div class="h-30 px-2">
-                    <div class="card-text bold">استعلام قیمت از بازار</div>
-                    <div class="d-flex">
-                        <div class="w-50">
-                            <div class="card-title-desc text-center">تاریخ</div>
-                            {% render_field_by_order nested nested.goods_market_date no_input=True %}
-                        </div>
-                        <div class="w-50">
-                            <div class="card-title-desc text-center">قیمت</div>
-                            {% render_field_by_order nested nested.goods_price_market no_input=True %}
-                        </div>
-                    </div>
-                </div>
+{#                <div class="h-30 px-2">#}
+{#                    <div class="card-text bold">استعلام قیمت از بازار</div>#}
+{#                    <div class="d-flex">#}
+{#                        <div class="w-50">#}
+{#                            <div class="card-title-desc text-center">تاریخ</div>#}
+{#                            {% render_field_by_order nested nested.goods_market_date no_input=True %}#}
+{#                        </div>#}
+{#                        <div class="w-50">#}
+{#                            <div class="card-title-desc text-center">قیمت</div>#}
+{#                            {% render_field_by_order nested nested.goods_price_market no_input=True %}#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
                 <div class="h-30 border-top all_pricess mt-2">
                     <div class="d-flex">
-                        <div class="p-0 w-50">
-                            <div class="text-center bold bg-light-info">قیمت های خارجی
-                                <span id="trade_price_count">
-                                    ({{ form_s.instance.goods_code_fk.inquiry_count.0 }})
+                        <div class="p-0 w-100">
+                            <div class="text-center bold bg-light-info">قیمت های موجود
+                                <span id="all_price_count">
+                                    ({{ form_s.instance.goods_code_fk.inquiry_count }})
                                 </span>
                             </div>
-                            <div class="d-none" id="trade_selected_price_code_data" data-trade_selected_price_code_inquiry_type="{{ form_s.instance.trade_selected_price_code.inquiry_type }}"></div>
-                            <div class="select2 trade_selected_price_code" name="trade_selected_price_code"></div>
+                            <div class="d-none" id="selected_price_code_data" data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
+                            <div class="select2 selected_price_code" name="selected_price_code"></div>
                         </div>
-                        <div class="p-0 w-50">
-                            <div class="text-center bold bg-light-info">قیمت های داخلی
-                                <span id="bazar_price_count">
-                                    ({{ form_s.instance.goods_code_fk.inquiry_count.1 }})
-                                </span>
-                            </div>
-                            <div class="d-none" id="bazar_selected_price_code_data" data-bazar_selected_price_code_inquiry_type="{{ form_s.instance.bazar_selected_price_code.inquiry_type }}"></div>
-                            <div class="select2 bazar_selected_price_code" name="bazar_selected_price_code"></div>
-                        </div>
+{#                        <div class="p-0 w-50">#}
+{#                            <div class="text-center bold bg-light-info">قیمت های خارجی#}
+{#                                <span id="trade_price_count">#}
+{#                                    ({{ form_s.instance.goods_code_fk.inquiry_count.0 }})#}
+{#                                </span>#}
+{#                            </div>#}
+{#                            <div class="d-none" id="trade_selected_price_code_data" data-trade_selected_price_code_inquiry_type="{{ form_s.instance.trade_selected_price_code.inquiry_type }}"></div>#}
+{#                            <div class="select2 trade_selected_price_code" name="trade_selected_price_code"></div>#}
+{#                        </div>#}
+{#                        <div class="p-0 w-50">#}
+{#                            <div class="text-center bold bg-light-info">قیمت های داخلی#}
+{#                                <span id="bazar_price_count">#}
+{#                                    ({{ form_s.instance.goods_code_fk.inquiry_count.1 }})#}
+{#                                </span>#}
+{#                            </div>#}
+{#                            <div class="d-none" id="bazar_selected_price_code_data" data-bazar_selected_price_code_inquiry_type="{{ form_s.instance.bazar_selected_price_code.inquiry_type }}"></div>#}
+{#                            <div class="select2 bazar_selected_price_code" name="bazar_selected_price_code"></div>#}
+{#                        </div>#}
                     </div>
-{#                jafar{{ form_s.trade_selected_price_code }}#}
-{#                {% render_field_by_order form_s form_s.bazar_selected_price_code %}#}
-
-{#                     {% if form_s.instance.pk and form_s.instance.goods_code_fk%}#}
-{#                         {% if forloop.counter0 == 0 %}#}
-{#                             <form action=""></form>#}
-{#                         {% endif %}#}
-{#                         <form action="{% url 'inquiry:item_list' %}" method="GET" class="all_prices_form">#}
-{#                        {% get_quotation_item_all_prices form_s.instance.goods_code_fk.sku %}#}
-{#                         </form>#}
-{#                    {% endif %}#}
                 </div>
             </div>
             <div class="col-lg-3 border-top">
                 <div class="row h-100 border-bottom">
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
-                            <div class="card-text text-center bold">قیمت نهایی</div>
-                            <div class="d-flex mt-1 ">
+{#                            <div class="card-text text-center bold">قیمت نهایی</div>#}
+                            <div class="d-flex mt-2 ">
                                 <div class="text-center w-100">{% render_field_by_order form_s form_s.price_method label='on-border' %}</div>
                             </div>
                             <div class="d-flex">
@@ -305,15 +307,15 @@
                         <div class="bg-soft-info replace-digits h-75 text-center">
                             <div class="mb-2 d-flex gap-1">
                                 <small class="w-25 text-right">جمع خالص</small>
-                                <small name="MAC">{{ form_s.instance.net_price|floatformat:'-4g' }}</small>
+                                <small name="MAC" class="">{{ form_s.instance.net_price|floatformat:'-4g' }}</small>
                             </div>
                             <div class="mb-2 d-flex gap-1">
                                 <small class="w-25 text-right">مالیات</small>
-                                <small name="tax_value">{{ form_s.instance.tax|floatformat:'-4g' }}</small>
+                                <small name="tax_value" class="">{{ form_s.instance.tax|floatformat:'-4g' }}</small>
                             </div>
                             <div class="mb-2 d-flex gap-1">
                                 <small class="w-25 text-right">تخفیف</small>
-                                <small name="discount_value">{{ form_s.instance.discount_value|floatformat:'-4g' }}</small>
+                                <small name="discount_value" class="">{{ form_s.instance.discount_value|floatformat:'-4g' }}</small>
                             </div>
                             <div class="mt-4 d-flex flex-column bg-light-info bold">
                                 <span>مبلغ نهایی</span>
@@ -386,10 +388,15 @@
             {% include 'core/partial/empty_modal_lg.html' %}
             {% include 'core/partial/empty_modal_sm.html' %}
         <div class="d-flex align-items-center gap-8 py-2 ms-20">
-             <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
+            <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
-                <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
-                <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+            <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
+            <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+            {% if form_s.instance.task_start or form_s.instance.task_start2 %}
+                {% if not form_s.instance.foreign_price_inquiry_done %}
+                    <span class="text-danger">فرایند استعلام این ردیف آغاز شده است، برای هرگونه تغییر در اطلاعات ردیف با کارشناس بازرگانی هماهنگ کنید</span>
+                {% endif %}
+            {% endif %}
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 </div>

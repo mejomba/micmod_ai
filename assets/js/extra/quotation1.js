@@ -286,9 +286,7 @@ function set_item_classes(item) {
                 processData: false,
                 contentType: false,
                 success: function (data) {
-                    debugger
-                    $(item).find('#trade_price_count').html(`(${data['res'][0]})`)
-                    $(item).find('#bazar_price_count').html(`(${data['res'][1]})`)
+                    $(item).find('#all_price_count').html(`(${data['res']})`)
                 },
                 error: function () {
                     alert('خطا در دریافت استعلام قیمت')
@@ -382,27 +380,21 @@ function set_item_classes(item) {
             templateResult: newFormatRepoItem,
             templateSelection: formatRepoSelection
         });
-        $(item).find('.trade_selected_price_code').select2({
+        $(item).find('.selected_price_code').select2({
             dir: 'ltr',
             ajax: {
-                // url: '/sepidar/items_list',
-                url: '/inquiry/trade_all_prices/',
+                url: '/inquiry/all_prices/',
                 dataType: "json",
                 type: "GET",
                 data: function (data) {
-                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+                    let sku = item.querySelector('input[class*="-goods_code"]')
                     if (!sku){
-                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+                        sku = item.querySelector('.select2-selection__rendered').innerText
                     }
                     return {
                         q: data.term,
                         sku: sku,
                         page: data.page,
-                        // id_currency_ref: document.getElementById('id_currency_ref').value,
-                        // id_payment_method: document.getElementById('id_payment_method').value,
-                        // id_market_grade: document.getElementById('id_market_grade').value,
-                        // id_customer_grade: document.getElementById('id_customer_grade').value,
-                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     }
                 },
                 processResults: function (data, params) {
@@ -413,68 +405,92 @@ function set_item_classes(item) {
                             more: (params.page * 30) < data.total_count
                         }
                     };
+                },
+                success: function (){
+                    const header_ = `
+                    <div class="d-flex flex-row-reverse bg-light-success sticky-top text-center">
+                        <div class="col-2">
+                            <span class="bold">کد کالا</span>
+                        </div>
+                        <div class="col-5">
+                            <span class="bold">نوع استعلام</span>
+                        </div>
+                        <div class="col-2">
+                            <span class="bold">تاریخ</span>
+                        </div>
+                        <div class="col-3">
+                            <span class="bold">توسط</span>
+                        </div>
+                    </div>`
+
+                    const div = document.createElement('div')
+                    div.classList.add('singleton')
+                    div.innerHTML = header_
+                    const el = document.querySelector('.select2-results')
+                    if (!el.firstElementChild.classList.contains('singleton')){
+                        el.insertBefore(div, el.firstElementChild)
+                    }
                 },
                 cache: true
             },
             dropdownAutoWidth: true,
             dropdownCssClass: 'all_price_select2',
             minimumInputLength: 0,
-            //placeholder: $(document).find("#customer_code").text(),
+            placeholder: 'برای مشاهده قیمت ها کلیک کنید',
             templateResult: AllPriceFormatRepoItem,
             templateSelection: formatRepoSelection,
         });
-        $(item).find('.bazar_selected_price_code').select2({
-            dir: 'ltr',
-            ajax: {
-                // url: '/sepidar/items_list',
-                url: '/inquiry/bazar_all_prices/',
-                dataType: "json",
-                type: "GET",
-                data: function (data) {
-                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
-                    if (!sku){
-                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
-                    }
-                    return {
-                        q: data.term,
-                        sku: sku,
-                        page: data.page,
-                        // id_currency_ref: document.getElementById('id_currency_ref').value,
-                        // id_payment_method: document.getElementById('id_payment_method').value,
-                        // id_market_grade: document.getElementById('id_market_grade').value,
-                        // id_customer_grade: document.getElementById('id_customer_grade').value,
-                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
-                    }
-                },
-                processResults: function (data, params) {
-                    params.page = params.page || 1;
-                    return {
-                        results: data.items,
-                        pagination: {
-                            more: (params.page * 30) < data.total_count
-                        }
-                    };
-                },
-                cache: true
-            },
-            dropdownAutoWidth: true,
-            // dropdownCssClass: 'jafar',
-            minimumInputLength: 0,
-            //placeholder: $(document).find("#customer_code").text(),
-            templateResult: AllPriceFormatRepoItem,
-            templateSelection: formatRepoSelection,
-        });
-        $(item).find('.trade_selected_price_code').on("select2:select", function (e) {
+        // $(item).find('.bazar_selected_price_code').select2({
+        //     dir: 'ltr',
+        //     ajax: {
+        //         // url: '/sepidar/items_list',
+        //         url: '/inquiry/bazar_all_prices/',
+        //         dataType: "json",
+        //         type: "GET",
+        //         data: function (data) {
+        //             let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+        //             if (!sku){
+        //                 sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+        //             }
+        //             return {
+        //                 q: data.term,
+        //                 sku: sku,
+        //                 page: data.page,
+        //                 // id_currency_ref: document.getElementById('id_currency_ref').value,
+        //                 // id_payment_method: document.getElementById('id_payment_method').value,
+        //                 // id_market_grade: document.getElementById('id_market_grade').value,
+        //                 // id_customer_grade: document.getElementById('id_customer_grade').value,
+        //                 // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+        //             }
+        //         },
+        //         processResults: function (data, params) {
+        //             params.page = params.page || 1;
+        //             return {
+        //                 results: data.items,
+        //                 pagination: {
+        //                     more: (params.page * 30) < data.total_count
+        //                 }
+        //             };
+        //         },
+        //         cache: true
+        //     },
+        //     dropdownAutoWidth: true,
+        //     // dropdownCssClass: 'jafar',
+        //     minimumInputLength: 0,
+        //     //placeholder: $(document).find("#customer_code").text(),
+        //     templateResult: AllPriceFormatRepoItem,
+        //     templateSelection: formatRepoSelection,
+        // });
+        $(item).find('.selected_price_code').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
             const data = e.params.data;
             const p_id = document.getElementById('customer_pid').textContent || -1
-            const bazar_selected_code = item.querySelector('input[name*="-bazar_selected_price_code"]').value
-            const d = get_all_price_data(data.sku, p_id,  elem, data.id, bazar_selected_code)
-            const select2_trade_price = elem.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
-            elem.querySelector('input[name*="trade_selected_price_code"]').value = data.id
-            if (select2_trade_price) {
-                // select2_trade_price.innerHTML = `<span class="font-size-8">id_${data.id}</span> <span class="font-size-10">${data.inquiry_type}</span> <span class="font-size-9 text-danger">${data.last_update_date}</span>`
-                select2_trade_price.innerHTML = `<span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-10 text-danger">${data.last_update_date}</span>`
+            const price_selected_code = item.querySelector('input[name*="-selected_price_code"]').value
+            const d = get_all_price_data(data.sku, p_id,  elem, data.id, data.inquiry_type_detector)
+            const select2_price = elem.querySelector('[id*="select2-selected_price_code"][id*="container"]')
+            elem.querySelector('input[name*="selected_price_code"]').value = data.id
+            if (select2_price) {
+                select2_price.innerHTML = `<span class="d-flex flex-row-reverse gap-2"><span class="font-size-12">${data.sku}</span> <span class="me-3">&#8592;</span> <span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-11 text-danger">${data.last_update_date}</span> <span class="font-size-11">${data.editor_user}</span></span>`
             }
             set_price_data(d, elem, e.target)
         })
@@ -542,16 +558,16 @@ function set_item_classes(item) {
         select01.innerHTML = item.querySelector('[id*="-goods_code"]').value
         item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
-    const select2_trade_price = item.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
-    if (select2_trade_price){
-        let t = item.querySelector('[id*="trade_selected_price_code_data"]')
-        select2_trade_price.innerHTML = `${t.dataset.trade_selected_price_code_inquiry_type}`
+    const select2_price = item.querySelector('[id*="select2-selected_price_code"][id*="container"]')
+    if (select2_price){
+        let t = item.querySelector('[id*="selected_price_code_data"]')
+        select2_price.innerHTML = `${t.dataset.selected_price_code_inquiry_type}`
     }
-    const select2_bazar_price = item.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
-    if (select2_bazar_price){
-        let b = item.querySelector('[id*="bazar_selected_price_code_data"]')
-        select2_bazar_price.innerHTML = `${b.dataset.bazar_selected_price_code_inquiry_type}`
-    }
+    // const select2_bazar_price = item.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
+    // if (select2_bazar_price){
+    //     let b = item.querySelector('[id*="bazar_selected_price_code_data"]')
+    //     select2_bazar_price.innerHTML = `${b.dataset.bazar_selected_price_code_inquiry_type}`
+    // }
     copy_values(item, '-goods_name_alt')
     const box = item.querySelector('[name="box-alt-goods"]')
     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
@@ -688,7 +704,17 @@ function get_price_data(code, party_id, item) {
     }
 }
 
-function get_all_price_data(code, party_id, item, trade_price_code=null, bazar_price_code=null) {
+function get_all_price_data(code, party_id, item, selected_price_code=null, price_type=null) {
+    debugger
+    let trade_price_code;
+    let bazar_price_code;
+    if (price_type == 1){
+        trade_price_code = selected_price_code
+        bazar_price_code = -1
+    } else if (price_type == 2){
+        bazar_price_code = selected_price_code
+        trade_price_code = -1
+    }
     $.ajax({
         url: '/inquiry/item_list',
         dataType: "json",
@@ -1055,7 +1081,7 @@ function newFormatRepoItem(repo) {
     if (repo.goods_price_market){goods_price_market=repo.goods_price_market} else {goods_price_market='-'}
     let parent_code = '';
     if (repo.parent_sku){
-        parent_code = "<div class='bold text-warning'>کد مادر " + repo.parent_sku + "(" +repo.parent_part_number +")" + "</div>"
+        parent_code = "<div class='bold text-info d-flex align-items-center'>کد مادر " + repo.parent_sku + "<span class='font-size-12 mx-1'>(" +repo.parent_part_number +")</span>" + "</div>"
     }
     // debugger
     var $container = $(
@@ -1402,9 +1428,19 @@ function AllPriceFormatRepoItem(repo) {
 
     // debugger
     var $container = $(
-        `<div class="d-flex flex-row-reverse justify-content-between">
-            <span class="me-3">${repo.inquiry_type}</span>
-            <span>${repo.last_update_date}</span>
+        `<div class="row flex-row-reverse text-center">
+            <div class="col-2">
+                <span class="me-3">${repo.sku}</span>
+            </div>
+            <div class="col-5">
+                <span class="me-3">${repo.inquiry_type}</span>
+            </div>
+            <div class="col-2">
+                <span>${repo.last_update_date}</span>
+            </div>
+            <div class="col-3">
+                <span>${repo.editor_user}</span>
+            </div>
         </div>`
     );
     return ($container);

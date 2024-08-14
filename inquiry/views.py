@@ -781,6 +781,7 @@ def get_item(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1274,6 +1275,40 @@ def bazar_all_prices(request):
         data = list()
         for item in bazar_all_price:
             obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                print('exception')
+                bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in bazar_all_price:
+            obj = dict()
+            obj['inquiry_type_detector'] = 1 if item.inquiry_type.title.lower().__contains__('خارج') else 2
             obj['id'] = item.pk
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
