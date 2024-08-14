@@ -331,9 +331,6 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
     class Meta:
         model = SalesPriceInqueryLog
         fields = ['sku_c', 'sku', 'party_code', 'quantity', 'grade', 'payment_method', 'currency', 'price_setting']
-        # widgets = {
-        #     'sku': PriceInquiryFileSKUWidget,
-        # }
 
     def __init__(self, *args, **kwargs):
         super(SalesPriceInqueryLogForm, self).__init__(*args, **kwargs)
@@ -350,6 +347,16 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
                 field.widget.attrs['onkeydown'] = "refresh_data(event)"
             else:
                 field.widget.attrs['onchange'] = "refresh_data(event)"
+
+        if all_trade_prices := self.initial.get('all_trade_active_prices'):
+            self.fields['all_trade_prices'] = forms.ChoiceField(widget=forms.RadioSelect, choices=all_trade_prices,
+                                                                initial=self.initial.get('trade_price'))
+            self.fields['all_trade_prices'].widget.attrs['onchange'] = "refresh_data(event)"
+
+        if all_bazar_prices := self.initial.get('all_bazar_active_prices'):
+            self.fields['all_bazar_prices'] = forms.ChoiceField(widget=forms.RadioSelect, choices=all_bazar_prices,
+                                                                initial=self.initial.get('bazar_price'))
+            self.fields['all_bazar_prices'].widget.attrs['onchange'] = "refresh_data(event)"
 
         if request and not request.user.is_superuser:
             ps = PriceSettings.objects.none()

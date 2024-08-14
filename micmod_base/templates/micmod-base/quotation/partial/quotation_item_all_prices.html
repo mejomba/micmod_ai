@@ -1,0 +1,34 @@
+
+    <div class="d-flex ">
+        <div class="col h-100 me-1">
+            <div class="text-center bold bg-light-info">قیمت های خارجی</div>
+            <div>
+                {% for trade_price in all_trade_prices %}
+                    <div class="ps-1">
+
+                        <label class="" for="id_{{ trade_price.0 }}">
+                            <input class="" type="radio" name="trade_price_code" id="id_{{ trade_price.0 }}"
+                               value="{{ trade_price.0 }}">
+                            {{ trade_price.1 }}
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col border-right-1">
+            <div class="text-center bold bg-light-info">قیمت های داخلی</div>
+            <div>
+                {% for bazar_price in all_bazar_prices %}
+                    <div class="ps-1">
+
+                        <label class="" for="id_{{ bazar_price.0 }}">
+                            <input class="" type="radio" name="bazar_price_code" id="id_{{ bazar_price.0 }}"
+                               value="{{ bazar_price.0 }}">
+                            {{ bazar_price.1 }}
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>

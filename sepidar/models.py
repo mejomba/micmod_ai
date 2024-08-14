@@ -547,7 +547,6 @@ class APILogs(core.models.AbsBaseModel):
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)
-        return
         if method == Method.Get:
             response = requests.get(url, headers=headers, data=data)
         elif method == Method.Post:
