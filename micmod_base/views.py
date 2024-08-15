@@ -1,76 +1,53 @@
-from pprint import pprint
 import json
 
-from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
-from django.db.models import Q, QuerySet, CharField
-from django.db.models.functions import Cast
-
-from django.utils import timezone
+from django.db.models import Q
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
 from extra_data.models import Item
-from inquiry.models import InquiryResult
-from notifications.models import Messages
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
 import uuid
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from accounts.models import User
-from django.core.paginator import Paginator
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect, reverse, get_object_or_404
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings
-from django.views.generic.edit import FormView
 from jalali_date import datetime2jalali
 
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset, InquiryResultFormset
-from sepidar.models import Dl
+    QuotationItemFormset
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
-from django.contrib.auth import get_user_model
-# Create your views here.
 from django.views import View
 
 from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
-from workflow.models import WorkFlow
 from django.contrib.contenttypes.models import ContentType
 from .forms import PendingFormFilter
-from django.http import HttpResponseRedirect
 from django.urls import reverse
-# from core.mixins import DuplicateMixin
-# from workflow.forms import WorkFlowModelForm
-# import datetime
 import re
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
         q = self.request.GET.get('q')
-        # quotations_record_lst = Quotation.objects.get_access_object(request.user, q=q)
-
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
-        # greeting['quotations'] = quotations_record
-        # greeting['quotations'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
 
 class QuotationsView(LoginRequiredMixin, BaseView):
     template_name = 'micmod-base/quotation/view.html'
-    # formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm, extra=1,)
     form_class = QuotationForm
     model = Quotation
     wf_last_step_is_open = True
@@ -101,31 +78,15 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # if 'submit_duplicate' in self.request.POST:
-        #     return self.duplicate(self.object, [], ['quotation'])
         """ run import customer from sepidar before object create"""
         if self.object is None:
             import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
-        # if self.object and self.object.last_work_flow.current_state_name == 'استعلام قیمت':
-        #     Messages.send_message(
-        #         **{
-        #             'creator_user_id': self.object.creator_user_id,
-        #             'user': self.object.last_work_flow.to_user,
-        #             'title': f'{_(self.object.last_work_flow.content_type.name)}| {_(self.object.last_work_flow.state)}',
-        #             'body': f' کاربر {self.object.creator_user.username} فرایند این موضوع را به شما واگذار کرده است.',
-        #             'icon_url': getattr(self.model, 'icon_url', None) or "cube-2",
-        #             'link': f'/{self.object.last_work_flow.content_type.app_label}/{self.object.last_work_flow.content_type.model}/view/{self.object.pk}',
-        #             'content_type': self.object.last_work_flow.content_type,
-        #             'object_id': self.object.pk
-        #         }
-        #     )
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
         if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
-            # self.object.save()
 
         new_quotation = None
         try:
@@ -133,7 +94,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
-                # self.object.save()
             elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
                 APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
                                  method=Urls.del_quotation.method, save=True)
@@ -285,12 +245,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
 
-        related_obj = getattr(self.object, f'{self.related_name_fk}', None)
-        # context['detail_logs'] = []
-        # if related_obj:
-        #     for item in related_obj.all():
-        #         context['detail_logs'].append(item.change_logs.all())
-        # context['detail_logs'].reverse()
         if self.object:
             qis = self.object.quotation.all()
             counter = 0
@@ -334,7 +288,7 @@ def print_view(request,id=-1):
     elif request.GET.get('alt_code') == '0':
         with_alt_code = '0'
         alt_code = '1'
-    # formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm, extra=0, )
+
     formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm2, extra=0, )
     greeting = {}
     greeting['alt_code_html'] = []
@@ -434,10 +388,6 @@ class CurrencyExchangeView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['form'] = self.form_class(initial={'currency': 2})
-        # context.update({
-        #     'form': self.form_class(initial=map(lambda x: x, self.request.GET.items()))
-        # })
         return context
 
 
@@ -507,7 +457,6 @@ class QuotationItemPending(LoginRequiredMixin, View):
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
-        # greeting['quotations'] = quotations_record
         greeting['quotationitems'] = quotations_record_lst
 
         return render(request,'micmod-base/quotation/pending_list.html',greeting)
@@ -712,12 +661,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             form.enable = False
             forms.append(form)
 
-        #paginator = Paginator(forms, 10)
-        #page_number = request.GET.get("page")
-        #page_obj = paginator.get_page(page_number)
-
         d = dict()
-        #for item in page_obj:
         for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
@@ -788,7 +732,6 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     'delay_reason': request.POST.get('delay_reason') or '',
                     'delay_time': request.POST.get('delay_time') or '',
                 }
-                # obj_qs.update(**data)
                 obj_for_update = obj_qs.first()
                 if obj_for_update:
                     obj_for_update.lead_time = data['lead_time']
@@ -851,11 +794,6 @@ class MyQuotationItemFormPendingToday(LoginRequiredMixin, View):
         elif self.request.GET.get('choice') == 'my_inquiry_not_started':
             quotations_record_lst = Quotation.quotation_pending(self.request,
                                                                 extra_filter={'my_inquiry_not_started': True})
-        # elif 'goods_code and my_quotations':
-        #     quotations_record_lst = Quotation.quotation_pending(self.request,
-        #                                                         extra_filter={'goods_code': search_sku, "my_quotations": True})
-        # elif from_time and to_time:
-        #     quotations_record_lst = Quotation.quotation_pending(self.request, filter={'created_date__gte': from_time, 'created_date__lte': to_time})
         else:
             quotations_record_lst = Quotation.quotation_pending(self.request)
 
@@ -883,9 +821,6 @@ class MyQuotationItemFormPendingToday(LoginRequiredMixin, View):
         context['forms'] = form_list
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
-        # t2 = time.time()
-        # print(t2 - t1)
-        # print('yyyyyyyyyyyyyyy')
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -968,7 +903,6 @@ class QuotationListDatatable(AjaxDatatableView):
                                           quotation__foreign_price_inquiry_done=True)
         else:
             qs = Quotation.get_qs(request)
-        # qs = qs.annotate(quotation_state=Cast('quotation', CharField()))
         qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
         return qs
 
@@ -1011,7 +945,6 @@ class QuotationListDatatable(AjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()

@@ -143,16 +143,12 @@ def get_comments(obj, comment_form=None, button_text=None, button_style=None, co
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
 def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
-    # seen_comment = list()
     unseen_comment = list()
 
     comments_info = list()
     unseen_comment_count = 0
 
-
-    # creator_users = set()
     creator_users = dict()
-    # obj = form.instance if form else None
     if form and current_user.base_group != 'trade' and not current_user.is_superuser:
         obj = form.instance
         comments = obj.comments.all().filter(~Q(comment_title="C"), ~Q(comment_title="Q")) if obj else None
@@ -167,15 +163,12 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
         return {}
     for comment in comments:
         try:
-            # creator_users.add(comment.creator_user.profile.get_user_image)
             if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
                 comment.seen = True
                 creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
-                # seen_comment.append(comment)
                 comments_info.append([comment,
                                      comment.creator_user,
                                      comment.creator_user.profile.get_user_image])
-
 
             if not comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
                 comment.seen = False
@@ -198,6 +191,8 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
                'user': current_user,
                'comment_type': comment_type if comment_type else 'comment'}
     return context
+
+
 @register.filter
 def get_comment_link(comment_str):
     import re
