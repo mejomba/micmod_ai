@@ -49,7 +49,6 @@ $(document).ready(function () {
         dir: 'ltr',
         ajax: {
             delay: 150,
-            // url: '/sepidar/items_list',
             url: '/factor/search',
             dataType: "json",
             type: "GET",
@@ -61,35 +60,42 @@ $(document).ready(function () {
             },
             processResults: function (data, params) {
                 params.page = params.page || 1;
-                const div = document.createElement('div')
-                const s = document.createTextNode(`<div class="row bg-light-info sticky-top">
-            <div class="col-3">
-                <span>شرکت</span>
-            </div>
-            <div class="col-2">
-                <span>پیش فاکتور</span>
-            </div>
-            <div class="col-1">
-                <span>تعداد ردیف</span>
-            </div>
-            <div class="col-2">
-                <span>کارشناس</span>
-            </div>
-            <div class="col-2">
-                <span>تاریخ انقضا</span>
-            </div>
-            <div class="col-2">
-                <span>نوع فروش</span>
-            </div>
-        </div>`)
-                div.innerHTML = s
-                document.querySelector('.select2-results').appendChild(div)
                 return {
                     results: data.items,
                     pagination: {
                         more: (params.page * 30) < data.total_count
                     }
                 };
+            },
+            success: function (){
+                const s = `<div class="d-flex  bg-light-success sticky-top text-center">
+                                    <div class="col-3 ">
+                                        <span>شرکت</span>
+                                    </div>
+                                    <div class="col-2 ">
+                                        <span>پیش فاکتور</span>
+                                    </div>
+                                    <div class="col-1 ">
+                                        <span>تعداد ردیف</span>
+                                    </div>
+                                    <div class="col-2 ">
+                                        <span>کارشناس</span>
+                                    </div>
+                                    <div class="col-2 ">
+                                        <span>تاریخ انقضا</span>
+                                    </div>
+                                    <div class="col-2 ">
+                                        <span>نوع فروش</span>
+                                    </div>
+                                  </div>`
+                const div = document.createElement('div')
+                div.classList.add('singleton')
+                div.innerHTML = s
+                const s2el = document.querySelector('.select2-results')
+                if (!s2el.firstElementChild.classList.contains('singleton')){
+                    s2el.insertBefore(div, s2el.firstElementChild)
+                }
+
             },
             cache: true
         },
@@ -112,7 +118,7 @@ function selectQuotationForFactorRepoItem(repo) {
         `<div class="quotation_search_result">
         <div class="row">
             <div class="col-3">
-                <span>${repo.customer_name}</span>
+                <span>${repo.customer_title}</span>
                 <span>(${repo.customer_party_id})</span>
             </div>
             <div class="col-2">

@@ -950,5 +950,9 @@ span .select2-selection{
 .quotation_to_factor_select2{
     /*width : 100%;*/
     text-align: right;
-    color: red;
+}
+.quotation_to_factor_select2:hover{
+    /*width : 100%;*/
+    text-align: right;
+    background-color: #16DAF1FF;
 }
