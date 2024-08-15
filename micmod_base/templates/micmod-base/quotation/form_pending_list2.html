@@ -7,6 +7,13 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
+<div class="mb-10 p-3 d-none">
+    <p class="text-success bg-light-success font-size-15 bold p-0 m-0">
+        استعلام شروع نشده‌ی شما : {{ my_inquiry_not_started_count }}
+        <br>
+         استعلام های جدید : {{ inquiry_not_started_count }}
+    </p>
+</div>
     {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
 {% block content %}
     {% for pk, form_lists in d.items %}
@@ -51,6 +58,11 @@
                     <div>
                         {% if form_lists.0.instance.quotation.force_inquiry %}
                             <span class="p-3 mx-1 bg-danger"></span>
+                        {% endif %}
+                    </div>
+                <div>
+                        {% if form_lists.0.instance.quotation.cancel %}
+                            <span class="p-3 mx-1 bold badge badge-light-danger border border-danger-subtle">کنسل شده</span>
                         {% endif %}
                     </div>
                 </div>

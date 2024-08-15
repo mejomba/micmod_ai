@@ -538,6 +538,11 @@
             }) // end ajax
         })
     }
+    </script>
 
+    <script src="{% static 'js/base_define.js' %}"></script>
+    <script>
+    setTimeout(addCommaSeperator, 500, true)
+    document.querySelector('#main-form').addEventListener('submit', removeCommaSeperator)
     </script>
 {% endblock extra_js %}

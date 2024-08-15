@@ -394,6 +394,10 @@ class Item(BaseModel):
         return [(k.pk, k.inquiry_type.title) for k in self.items.filter(bazar_filter, sku=self).filter(active=True)]
 
     @property
+    def all_active_price_(self):
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(active=True)]
+
+    @property
     def bazar_price(self):
         bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
@@ -414,6 +418,17 @@ class Item(BaseModel):
     @property
     def get_customs_price(self):
         return 0
+
+    @property
+    def inquiry_count(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        bazar_inquiry_count = self.items.filter(bazar_filter, active=True).count()
+
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        trade_inquiry_count = self.items.filter(trade_filter, active=True).count()
+
+        return trade_inquiry_count + bazar_inquiry_count
+
 
     def set_extra_data_sepidar(self, customer_code=None):
         self.extra_data.sepidar_data = dict()
