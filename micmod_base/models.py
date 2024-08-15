@@ -501,15 +501,17 @@ class QuotationItem(BaseModel):
             all_tasks_qs = quotation_items.filter(user_filter)
             today_assigned = all_tasks_qs.filter(time_filter).count()
             today_task_start = all_tasks_qs.filter(task_start_filter, time_filter).count()
+            today_all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
             all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
             all_tasks = all_tasks_qs.count()
+            reminder_task = all_tasks_qs.filter(foreign_price_inquiry_done=False).count()
 
-            reminder_task = all_tasks - all_price_inquiry_done
-            #reminder_task = all_tasks_qs.filter(need_foreign_price_inquiry=True, foreign_price_inquiry_done=False, is_deleted=False,
+            # reminder_task = all_tasks - all_price_inquiry_done
+            # reminder_task = all_tasks_qs.filter(need_foreign_price_inquiry=True, foreign_price_inquiry_done=False, is_deleted=False,
             #                                    quotation__cancel=False, quotation__last_work_flow__current_state_name='استعلام قیمت').count() #all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
 
-            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
+            d[user.username] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
         return d
 
     def pre_process_on_post_method(self, data=None):
@@ -722,7 +724,7 @@ class QuotationItem(BaseModel):
                 filter_condition = (Q(assigned_trade_user=trade_user) & Q(task_start=False)) | \
                                    (Q(assigned_trade_user2=trade_user) & Q(task_start2=False) &
                                     Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
-                not_started = cls.objects.filter(f, filter_condition)
+                not_started = cls.objects.filter(f, filter_condition, is_deleted=False, quotation__cancel=False)
                 my_inquiry_not_started_count = not_started.count()
                 break
 
@@ -730,7 +732,7 @@ class QuotationItem(BaseModel):
                             Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True) &
                             Q(task_start=False) & Q(task_start2=False) & Q(quotation__cancel=False) &
                             Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
-        inquiry_not_started_count = QuotationItem.objects.filter(filter_condition).count()
+        inquiry_not_started_count = QuotationItem.objects.filter(filter_condition, is_deleted=False, quotation__cancel=False).count()
         return my_inquiry_not_started_count, inquiry_not_started_count
 
 
