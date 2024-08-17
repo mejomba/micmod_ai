@@ -146,13 +146,11 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
-                                                                     initial=(self.instance.trade_price_code,
-                                                                              self.instance.trade_price_code) if self.instance.trade_price_code else None
+                                                                     initial=self.instance.trade_price_code if self.instance.trade_price_code else None
                                                                      )
         self.fields['bazar_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'bazar'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
-                                                                     initial=(self.instance.bazar_price_code,
-                                                                              self.instance.bazar_price_code) if self.instance.bazar_price_code else None,
+                                                                     initial=self.instance.bazar_price_code if self.instance.bazar_price_code else None,
                                                                      )
         if request and not request.user.is_superuser:
             if form_constraint_hide:
