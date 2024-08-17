@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -25,8 +27,8 @@ class DiscountBasedPriceType(models.TextChoices):
 
 
 class CustomerType(models.TextChoices):
-    Company = "1", _("company")
-    Person = "2", _("person")
+    Person = "1", _("person")
+    Company = "2", _("company")
 
 
 class CalculationMethod(models.TextChoices):
@@ -382,6 +384,16 @@ class Item(BaseModel):
         return self.extra_data.price
 
     @property
+    def all_trade_active_price_(self):
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(trade_filter, sku=self).filter(active=True)]
+
+    @property
+    def all_bazar_active_price_(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(bazar_filter, sku=self).filter(active=True)]
+
+    @property
     def bazar_price(self):
         bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
         if not self.extra_data.bazar_price:
@@ -402,6 +414,17 @@ class Item(BaseModel):
     @property
     def get_customs_price(self):
         return 0
+
+    @property
+    def inquiry_count(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        bazar_inquiry_count = self.items.filter(bazar_filter, active=True).count()
+
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        trade_inquiry_count = self.items.filter(trade_filter, active=True).count()
+
+        return trade_inquiry_count, bazar_inquiry_count
+
 
     def set_extra_data_sepidar(self, customer_code=None):
         self.extra_data.sepidar_data = dict()
@@ -682,7 +705,7 @@ class Customer(AbsBaseModel):
 
     customer_field = models.ManyToManyField('CustomerFields', related_name='customer_rel', verbose_name=_('customer_field'))
     active = models.BooleanField(_('active'), default=True)
-    guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
+    guid = models.UUIDField(_('guid'), default=uuid.uuid4, editable=False)
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)

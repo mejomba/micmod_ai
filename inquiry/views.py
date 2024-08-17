@@ -568,14 +568,33 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     currency = dict_.get('currency')
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
+    if request.GET.get('sku_c') == request.GET.get('sku'):
+        target_trade_price = request.GET.get('all_trade_prices')
+        target_bazar_price = request.GET.get('all_bazar_prices')
+    else:
+        target_trade_price = ''
+        target_bazar_price = ''
+
+    currency_obj = Currency.objects.filter(pk=currency).first()
 
     if load_sepidar:
         dl_obj = Dl.get_dl(party_code)
         party_id = dl_obj[0].PartyId if len(dl_obj) else None
-    # party_id = None
+
     item_sku = Item.objects.filter(sku=sku).first()
-    currency_obj = Currency.objects.filter(pk=currency).first()
-    price = item_sku.price if item_sku else None
+    all_trade_active_prices = item_sku.all_trade_active_price_
+    all_bazar_active_prices = item_sku.all_bazar_active_price_
+
+    if not target_trade_price:
+        price = item_sku.price if item_sku else None
+    else:
+        price = PriceInquiryResult.objects.filter(pk=target_trade_price).first()
+
+    if not target_bazar_price:
+        bazar_price = item_sku.bazar_price if item_sku else None
+    else:
+        bazar_price = PriceInquiryResult.objects.filter(pk=target_bazar_price).first()
+
     price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
     final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
 
@@ -583,7 +602,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
                                              'payment_method': payment_method, 'grade': grade,
-                                             'request': request
+                                             'request': request,
+                                             'trade_price': (price.pk, price.inquiry_type.title) if price else '',
+                                             'bazar_price': (bazar_price.pk, bazar_price.inquiry_type.title) if bazar_price else '',
+                                             'all_trade_active_prices': all_trade_active_prices,
+                                             'all_bazar_active_prices': all_bazar_active_prices
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
@@ -592,16 +615,15 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
     form.fields['grade'] = get_choice_field(grades, grade)
     form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
-    # item_sku.set_extra_data_sepidar(customer_code=party_code)
 
-    if item_sku and item_sku.price is not None:
-        item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                           payment_method=payment_method, currency=currency,
-                                           price_setting=price_setting_obj)
-    if item_sku and item_sku.bazar_price is not None:
-        item_sku.bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                                 payment_method=payment_method, currency=currency,
-                                                 price_setting=price_setting_obj)
+    if item_sku and price is not None:
+        price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                  payment_method=payment_method, currency=currency,
+                                  price_setting=price_setting_obj)
+    if item_sku and bazar_price is not None:
+        bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                        payment_method=payment_method, currency=currency,
+                                        price_setting=price_setting_obj)
 
     sepidar_inquiry_result = []
     if load_sepidar:
@@ -618,6 +640,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
                                                                                           "sku": item_sku,
                                                                                           'item': item,
+                                                                                          'trade_price': price,
+                                                                                          'bazar_price': bazar_price,
                                                                                           }, request)
 
         return JsonResponse({'res': html})
@@ -1186,3 +1210,82 @@ class SalesPriceInqueryLogDataTableView(AjaxDatatableView):
 
     # def get_initial_queryset(self, request=None):
     #     return self.model.objects.all()
+
+
+def trade_all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                    Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            trade_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='خارج'),
+                                                                sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in trade_all_price:
+            obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def bazar_all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                    Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                print('exception')
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                                                                sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in bazar_all_price:
+            obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def inquiry_count(request):
+    count = 0
+    if sku := request.GET.get('sku'):
+        item = Item.objects.filter(pk=sku).first()
+        count = item.inquiry_count
+    return JsonResponse({'res': count})

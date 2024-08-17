@@ -20,12 +20,12 @@ $(document).ready(function () {
     if (currencyRef){currencyRefValue = currencyRef.value}
     const paymentMethod = document.getElementById('id_payment_method')
     const customerGrade = document.getElementById('id_customer_grade')
+    const all_prices = document.querySelectorAll('.all_prices')
     function setPriceWithAjax(e, elem, price_code=''){
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
             party_id = -1
         }
-        debugger
         const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
         const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
@@ -64,6 +64,44 @@ $(document).ready(function () {
                 }
             }); // end ajax
     }
+
+    function setPriceWithAjaxForAllPrices(e, elem, price_code=''){
+        let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
+        if (party_id == 'None'){
+            party_id = -1
+        }
+        setTimeout(function (){
+            const all_prices_form = findAncestor(e.target, "all_prices_form")
+            const params = new URLSearchParams(new FormData(all_prices_form)).toString()
+            $.ajax({
+                url: `/inquiry/item_list/?${params}`,
+                data: {
+                    'q': elem.querySelector('input[name*="goods_code"]').value,
+                    'party_id': party_id,
+                    'id_currency_ref': document.getElementById('id_currency_ref').value,
+                    'id_payment_method': document.getElementById('id_payment_method').value,
+                    'id_market_grade': document.getElementById('id_market_grade').value,
+                    'id_customer_grade': document.getElementById('id_customer_grade').value,
+                    'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    // 'trade_price_code': tradePriceCode,
+                    // 'bazar_price_code': bazarPriceCode,
+                },
+                cache: false,
+                type: 'GET',
+                success: function (response){
+                    console.log(response)
+                    if (response.items){
+                        set_price_data(response.items[0], elem, e.target)
+                    }
+                    console.log(response.items)
+                },
+                error: function (xhr) {
+                    console.log(xhr)
+                }
+            }); // end ajax
+        }, 200)
+    }
+
     if (currencyRefValue == '1'){
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="express_transportation_cost_1"]'), 'show')
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="air_transportation_cost_1"]'), 'show')
@@ -86,6 +124,15 @@ $(document).ready(function () {
         hideShowQuotationItemTransportationCost(document.querySelectorAll('[name*="sea_transportation_cost_3"]'), 'show')
     }
 
+    if (all_prices){
+        all_prices.forEach(function (item){
+            item.addEventListener('click', function (e){
+                // e.preventDefault()
+                const elem = findAncestor(e.target, "item")
+                setPriceWithAjaxForAllPrices(e, elem)
+            })
+        })
+    }
     newInquiryResult.forEach(function (item){
         item.addEventListener('click', function (e){
             e.preventDefault();
@@ -230,6 +277,23 @@ function set_item_classes(item) {
             console.log(data)
             set_price_data(data, elem, e.target)
             $(item).find('input[id*="goods_code_fk"]').val(data['id'])
+            let m_url = "/inquiry/ajax/count/?sku=" + data['id']
+            $.ajax({
+                type: 'GET',
+                url: m_url,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    debugger
+                    $(item).find('#trade_price_count').html(`(${data['res'][0]})`)
+                    $(item).find('#bazar_price_count').html(`(${data['res'][1]})`)
+                },
+                error: function () {
+                    alert('خطا در دریافت استعلام قیمت')
+                }
+            });
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
@@ -318,6 +382,117 @@ function set_item_classes(item) {
             templateResult: newFormatRepoItem,
             templateSelection: formatRepoSelection
         });
+        $(item).find('.trade_selected_price_code').select2({
+            dir: 'ltr',
+            ajax: {
+                // url: '/sepidar/items_list',
+                url: '/inquiry/trade_all_prices/',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+                    if (!sku){
+                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+                    }
+                    return {
+                        q: data.term,
+                        sku: sku,
+                        page: data.page,
+                        // id_currency_ref: document.getElementById('id_currency_ref').value,
+                        // id_payment_method: document.getElementById('id_payment_method').value,
+                        // id_market_grade: document.getElementById('id_market_grade').value,
+                        // id_customer_grade: document.getElementById('id_customer_grade').value,
+                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    }
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            dropdownAutoWidth: true,
+            dropdownCssClass: 'all_price_select2',
+            minimumInputLength: 0,
+            //placeholder: $(document).find("#customer_code").text(),
+            templateResult: AllPriceFormatRepoItem,
+            templateSelection: formatRepoSelection,
+        });
+        $(item).find('.bazar_selected_price_code').select2({
+            dir: 'ltr',
+            ajax: {
+                // url: '/sepidar/items_list',
+                url: '/inquiry/bazar_all_prices/',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    let sku = item.querySelector('input[class*="-goods_code"]') //$(item).find('input[class*="-goods_code"]');
+                    if (!sku){
+                        sku = item.querySelector('.select2-selection__rendered').innerText // $(item).find('.select2-selection__rendered').text() || -1;
+                    }
+                    return {
+                        q: data.term,
+                        sku: sku,
+                        page: data.page,
+                        // id_currency_ref: document.getElementById('id_currency_ref').value,
+                        // id_payment_method: document.getElementById('id_payment_method').value,
+                        // id_market_grade: document.getElementById('id_market_grade').value,
+                        // id_customer_grade: document.getElementById('id_customer_grade').value,
+                        // quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                    }
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            dropdownAutoWidth: true,
+            // dropdownCssClass: 'jafar',
+            minimumInputLength: 0,
+            //placeholder: $(document).find("#customer_code").text(),
+            templateResult: AllPriceFormatRepoItem,
+            templateSelection: formatRepoSelection,
+        });
+        $(item).find('.trade_selected_price_code').on("select2:select", function (e) {
+            var elem = findAncestor(e.target, "item")
+            const data = e.params.data;
+            const p_id = document.getElementById('customer_pid').textContent || -1
+            const bazar_selected_code = item.querySelector('input[name*="-bazar_selected_price_code"]').value
+            const d = get_all_price_data(data.sku, p_id,  elem, data.id, bazar_selected_code)
+            const select2_trade_price = elem.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
+            elem.querySelector('input[name*="trade_selected_price_code"]').value = data.id
+            if (select2_trade_price) {
+                // select2_trade_price.innerHTML = `<span class="font-size-8">id_${data.id}</span> <span class="font-size-10">${data.inquiry_type}</span> <span class="font-size-9 text-danger">${data.last_update_date}</span>`
+                select2_trade_price.innerHTML = `<span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-10 text-danger">${data.last_update_date}</span>`
+            }
+            set_price_data(d, elem, e.target)
+        })
+        $(item).find('.bazar_selected_price_code').on("select2:select", function (e) {
+            var elem = findAncestor(e.target, "item")
+            const data = e.params.data;
+            const p_id = document.getElementById('customer_pid').textContent || -1
+            const trade_selected_code = item.querySelector('input[name*="-trade_selected_price_code"]').value
+            const d = get_all_price_data(data.sku, p_id,  elem, trade_selected_code, data.id)
+            const select2_bazar_price = elem.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
+            elem.querySelector('input[name*="bazar_selected_price_code"]').value = data.id
+            if (select2_bazar_price) {
+                // select2_bazar_price.innerHTML = `<span class="font-size-8">id_${data.id}</span> <span class="font-size-10">${data.inquiry_type}</span> <span class="font-size-9 text-danger">${data.last_update_date}</span>`
+                select2_bazar_price.innerHTML = `<span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-10 text-danger">${data.last_update_date}</span>`
+            }
+            set_price_data(d, elem, e.target)
+
+        })
     }
     $(item).find('[id$="final_price"]').on('change keydown paste input', function (e) {
         calculate_price(e.target);
@@ -367,9 +542,17 @@ function set_item_classes(item) {
         select01.innerHTML = item.querySelector('[id*="-goods_code"]').value
         item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
+    const select2_trade_price = item.querySelector('[id*="select2-trade_selected_price_code"][id*="container"]')
+    if (select2_trade_price){
+        let t = item.querySelector('[id*="trade_selected_price_code_data"]')
+        select2_trade_price.innerHTML = `${t.dataset.trade_selected_price_code_inquiry_type}`
+    }
+    const select2_bazar_price = item.querySelector('[id*="select2-bazar_selected_price_code"][id*="container"]')
+    if (select2_bazar_price){
+        let b = item.querySelector('[id*="bazar_selected_price_code_data"]')
+        select2_bazar_price.innerHTML = `${b.dataset.bazar_selected_price_code_inquiry_type}`
+    }
     copy_values(item, '-goods_name_alt')
-    // const w = item.querySelector('[name*="-goods_code"]')
-    // const ww = item.querySelector('[name*="-goods_code_alt"]')
     const box = item.querySelector('[name="box-alt-goods"]')
     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
         if (box) {
@@ -468,14 +651,16 @@ function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
-        const code = items[i].querySelector('[id*="-goods_code"]').value
-        const data = get_price_data(code, party_id, items[i])
-        set_price_data(data, items[i], items[i])
-        const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
-        if (alt_code != "") {
-            const alt_data = get_price_data(alt_code, party_id, items[i])
-            set_alt_price_data(alt_data, items[i])
-        }
+        setTimeout(function (){
+            const code = items[i].querySelector('[id*="-goods_code"]').value
+            const data = get_price_data(code, party_id, items[i])
+            set_price_data(data, items[i], items[i])
+            const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
+            if (alt_code != "") {
+                const alt_data = get_price_data(alt_code, party_id, items[i])
+                set_alt_price_data(alt_data, items[i])
+            }
+        }, 150)
     }
 }
 
@@ -503,9 +688,34 @@ function get_price_data(code, party_id, item) {
     }
 }
 
+function get_all_price_data(code, party_id, item, trade_price_code=null, bazar_price_code=null) {
+    $.ajax({
+        url: '/inquiry/item_list',
+        dataType: "json",
+        type: "GET",
+        async: false,
+        data: {
+                q: code, party_id: party_id, page: 1,
+                trade_price_code: trade_price_code,
+                bazar_price_code: bazar_price_code,
+                id_currency_ref: document.getElementById('id_currency_ref').value,
+                id_payment_method: document.getElementById('id_payment_method').value,
+                id_market_grade: document.getElementById('id_market_grade').value,
+                id_customer_grade: document.getElementById('id_customer_grade').value,
+                quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+            },
+        cache: true,
+        success: function (data) {
+            result = data;
+        }
+    });
+    if (result.total_count > 0) {
+        return result.items[0];
+    }
+}
+
 function set_price_data(data, elem, target) {
     if (data){
-        debugger
         set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
         set_values(elem.querySelectorAll('[name*="stock_amount_res"]'), data.stock_qty_res)
@@ -627,7 +837,6 @@ function set_price(target) {
     switch (p_m) {
         case
             'last_sale':
-            debugger
             final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
@@ -721,7 +930,6 @@ function set_price(target) {
             'price_market':
             final_price.disabled = true;
             const x_ = elem.querySelector('[name*="goods_price_market"]').value
-            debugger
             if (x_){final_price.value = round_rial(x_);}
 
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
@@ -913,7 +1121,6 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    debugger
     const currency = parseInt(document.getElementById('id_currency_ref').value)
     if (currency != 1){
         return x
@@ -977,13 +1184,13 @@ function calculate_price(target) {
     let tax = 0;
     let taxValue = 0
     let row_discount = 0
+    let row_discount_amount = 0
     let tax_discount = 0
-    let discount_for_all = 0
+    let row_discount_base_percentage = 0
     let totalDiscount = 0
     let net_price = 0
     let net_price_after_tax_discount = 0
     let calculated_price = 0
-    debugger
     // qty
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
@@ -995,6 +1202,9 @@ function calculate_price(target) {
     if (isNaN(price)) {
         price = final_price.value
     }
+    row_discount_amount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', ''))
+    row_discount = row_discount_amount * qty
+    // net_price = (price - row_discount_amount) * qty
     net_price = price * qty
     net_price_after_tax_discount = net_price
 
@@ -1002,19 +1212,21 @@ function calculate_price(target) {
         tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
-            tax_discount = net_price * (isOfficialValue_number / 100)
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
+            // tax_discount = net_price * (isOfficialValue_number / 100)
         }
         net_price_after_tax_discount = net_price - tax_discount
     }
 
-    row_discount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', '')) * qty
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
-    discount_for_all = net_price_after_tax_discount * (selfDiscountValue/100)
 
-    totalDiscount = row_discount + tax_discount + discount_for_all //((price * qty) * selfDiscountValue/100)
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
+
+    totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
     if (tax){
         const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
-        taxValue = net_price_after_tax_discount * (tax/100)
+        taxValue = (net_price - totalDiscount) * (tax/100)
     } else {
         taxValue = 0
     }
@@ -1027,7 +1239,8 @@ function calculate_price(target) {
         elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
         elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
-        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
         elem.querySelector('[name*="MAC"]').innerHTML = net_price
         elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
@@ -1093,7 +1306,6 @@ function add_discounts(value, yuan_rate, type = 1, target = null, QTYDis = null,
 }
 
 function set_values(items, value, is_date = false) {
-    debugger
     let value_str = value
     if (!isNaN(parseInt(value)) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
@@ -1181,4 +1393,19 @@ function addPageNumbers() {
 
 function scroll_down() {
     window.scrollTo(0, document.body.scrollHeight);
+}
+
+function AllPriceFormatRepoItem(repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+
+    // debugger
+    var $container = $(
+        `<div class="d-flex flex-row-reverse justify-content-between">
+            <span class="me-3">${repo.inquiry_type}</span>
+            <span>${repo.last_update_date}</span>
+        </div>`
+    );
+    return ($container);
 }

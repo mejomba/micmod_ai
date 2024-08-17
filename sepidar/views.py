@@ -56,6 +56,43 @@ def get_customers(request):
     obj['total_count'] = count
     return JsonResponse(obj,safe=False)
 
+    # q = request.GET.get('q', None)
+    # map_table = {
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    #     '': '',
+    # }
+    # obj = {}
+    # count = 0
+    # from extra_data.models import Customer
+    # if q:
+    #     if q.isdigit():
+    #         from django.db.models.functions import Cast
+    #         from django.db.models import CharField
+    #         customer_filter = Q(sepidar_dl_id_str__icontains=q) | Q(sepidar_dl_code_str__icontains=q) | Q(sepidar_party_id_str__icontains=q)
+    #         Dls = Customer.objects.annotate(sepidar_dl_id_str=Cast('sepidar_dl_id', CharField()))\
+    #             .annotate(sepidar_dl_code_str=Cast('sepidar_dl_code', CharField()))\
+    #             .annotate(sepidar_party_id_str=Cast('sepidar_party_id', CharField())).filter(customer_filter)
+    #     else:
+    #         customer_filter = Q(title__icontains=q) | Q(name__icontains=q) | Q(last_name__icontains=q)
+    #         Dls = Customer.objects.filter(customer_filter)
+    #     obj['items'] = []
+    #     for dl in Dls:
+    #         item = {}
+    #         item['id'] = dl.sepidar_dl_code or 1
+    #         item['text'] = dl.title or 1
+    #         item['pid'] = dl.sepidar_party_id or 1
+    #         item['sepidar_party_id'] = dl.sepidar_party_id or 1
+    #         obj['items'].append(item)
+    #         count += 1
+    # obj['total_count'] = count
+    # return JsonResponse(obj, safe=False)
+
 def get_customers_from_pg(request):
     from extra_data.models import Customer
     q = request.GET.get('q', None)

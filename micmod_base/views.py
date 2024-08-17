@@ -750,6 +750,17 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 obj.old_goods_code = obj.goods_code
                 obj.goods_code = new_goods_code
                 obj.old_goods_name = obj.goods_name
+                obj.goods_code_fk = Item.objects.filter(sku=new_goods_code).first()
+
+                from sepidar.models import Item as sepidar_item
+                items = sepidar_item.get_item(new_goods_code)
+                for item_ in items:
+                    try:
+                        obj.itemid = item_.itemid
+                        obj.stock_amount = item_.stock_qty
+                        obj.stock_amount_res = item_.stock_res_qty
+                    except Exception as e:
+                        pass
                 obj.item_editor_user = self.request.user
                 obj.extra_data.request = self.request
                 obj.save()
@@ -942,11 +953,11 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        {'name': 'last_work_flow__to_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+        {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
         {'name': 'comment', 'visible': True, 'searchable': False}

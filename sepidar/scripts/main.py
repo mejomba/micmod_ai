@@ -10,7 +10,7 @@ from UsersService import UsersService
 
 BASE_URL = 'http://192.168.1.93:7373/'
 GENERATION_VERSION = '1000'
-REGISTRATION__CODE = '100075d3'
+REGISTRATION__CODE = '10044a33'
 USERNAME = 'DjangoUser'
 PASSWORD = '123'
 
