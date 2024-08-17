@@ -673,6 +673,8 @@ class QuotationItem(BaseModel):
     def inquiry_not_started(cls, trade_user):
         trade_users = User.objects.filter(groups__name__in=['trade_user', 'trade_admin'])
         my_inquiry_not_started_count = 0
+        item_in_china = 0
+        new_inquiry = 0
         for user in trade_users:
             if trade_user == user:
                 f = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
@@ -680,8 +682,11 @@ class QuotationItem(BaseModel):
                 filter_condition = (Q(assigned_trade_user=trade_user) & Q(task_start=False)) | \
                                    (Q(assigned_trade_user2=trade_user) & Q(task_start2=False) &
                                     Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+                filter_condition_china = Q(item_in_china=True) & Q(quotation__last_work_flow__current_state_name='استعلام قیمت')
                 not_started = cls.objects.filter(f, filter_condition)
                 my_inquiry_not_started_count = not_started.count()
+                item_in_china = cls.objects.filter(f, filter_condition_china).order_by('-quotation_id').count()
+                new_inquiry = cls.quotation_item_all_pending(inquiry_type='trade', path=None).count()
                 break
 
         filter_condition = (Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=False) &
@@ -689,7 +694,7 @@ class QuotationItem(BaseModel):
                             Q(task_start=False) & Q(task_start2=False) & Q(quotation__cancel=False) &
                             Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
         inquiry_not_started_count = QuotationItem.objects.filter(filter_condition).count()
-        return my_inquiry_not_started_count, inquiry_not_started_count
+        return my_inquiry_not_started_count, inquiry_not_started_count, item_in_china, new_inquiry
 
 
     class Meta:
