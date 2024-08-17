@@ -44,6 +44,13 @@ function set_values(items, value, is_date = false) {
     }
 }
 
+function get_quotation_items(quotation_pk){
+    const ajax_quotation_items = $('#ajax_quotation_items')
+    if (ajax_quotation_items){
+        custom_ajax_get(null, `/factor/ajax/get_quotation_items_for_factor/${quotation_pk}/`, ajax_quotation_items)
+    }
+}
+
 $(document).ready(function () {
     $('#id_select_quotation_for_factor').select2({
         dir: 'ltr',
@@ -68,24 +75,24 @@ $(document).ready(function () {
                 };
             },
             success: function (){
-                const s = `<div class="d-flex  bg-light-success sticky-top text-center">
+                const s = `<div class="d-flex  bg-light-success sticky-top  py-2 bold">
                                     <div class="col-3 ">
-                                        <span>شرکت</span>
+                                        <span class="ms-5">شرکت</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span>پیش فاکتور</span>
+                                        <span class="ms-5">پیش فاکتور</span>
                                     </div>
                                     <div class="col-1 ">
-                                        <span>تعداد ردیف</span>
+                                        <span class="ms-5">تعداد ردیف</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span>کارشناس</span>
+                                        <span class="ms-5">کارشناس</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span>تاریخ انقضا</span>
+                                        <span class="ms-5">تاریخ انقضا</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span>نوع فروش</span>
+                                        <span class="ms-5">نوع فروش</span>
                                     </div>
                                   </div>`
                 const div = document.createElement('div')
@@ -106,14 +113,20 @@ $(document).ready(function () {
         templateResult: selectQuotationForFactorRepoItem,
         templateSelection: formatRepoSelection,
     });
+    $('#id_select_quotation_for_factor').on("select2:select", function (e){
+        const data = e.params.data;
+        document.querySelector('input[name="q"]').value = data.id
+        document.querySelector('[id*="select2-id_select_quotation_for_factor-container"]')
+            .querySelector('span').innerHTML = `${data.customer_title}(${data.customer_party_id}) - ${data.sale_type} - ${data.expiration_date} - پیش فاکتور ${data.quotation_id}`
+        get_quotation_items(data.id)
+
+    })
 })
 
 function selectQuotationForFactorRepoItem(repo) {
-    console.log(repo)
     if (repo.loading) {
-        return "repo.text";
+        return repo.text;
     }
-    // debugger
     var $container = $(
         `<div class="quotation_search_result">
         <div class="row">
@@ -126,7 +139,6 @@ function selectQuotationForFactorRepoItem(repo) {
             </div>
             <div class="col-1">
                 <span>${repo.row_count}</span>
-                <span>ردیف</span>
             </div>
             <div class="col-2">
                 <span>${repo.last_work_flow_user}</span>

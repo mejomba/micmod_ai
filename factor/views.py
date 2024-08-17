@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from jalali_date import datetime2jalali
 
@@ -12,6 +13,7 @@ from factor.forms import FactorModelForm, FactorItemFormset
 from factor.models import Factor
 from micmod_base.models import Quotation
 from tools.import_data import import_customers_from_sepidar
+from tools.utils import to_jalali_date
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -110,9 +112,16 @@ def search_factor_view(request, *args, **kwargs):
         item['quotation_id'] = q.pk
         item['row_count'] = q.quotation.all().count()
         item['last_work_flow_user'] = q.last_work_flow.creator_user.username
-        item['expiration_date'] = q.expiration_date
+        item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title
         res['items'].append(item)
     else:
         res['items'].append(total_count)
     return JsonResponse(res)
+
+
+def get_quotation_items_for_factor(request, pk, *args, **kwargs):
+    quotation = Quotation.objects.filter(pk=pk).first()
+    context = {'quotation': quotation}
+    html = render_to_string('factor/factor_item.html', context)
+    return JsonResponse({'res': html})

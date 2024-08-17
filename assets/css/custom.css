@@ -280,6 +280,14 @@ td {
     direction: rtl;
     text-align: left;
 }
+.RTL-RTL {
+    direction: rtl;
+    text-align: right;
+}
+.LTR-LTR {
+    direction: ltr;
+    text-align: left;
+}
 
 /* ====== slider with thumbnail ======*/
 
@@ -951,8 +959,16 @@ span .select2-selection{
     /*width : 100%;*/
     text-align: right;
 }
-.quotation_to_factor_select2:hover{
-    /*width : 100%;*/
-    text-align: right;
-    background-color: #16DAF1FF;
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    color: #131313;
+    background-color: #b9e2ff;
+}
+.hover_light_primary:hover{
+    background-color: #ebf9ff !important;
+}
+.hover_light_success:hover{
+    background-color: #d5ffd1 !important;
+}
+.hover_light_info:hover{
+    background-color: #f3effd !important;
 }

@@ -1,5 +1,6 @@
 from django.forms import inlineformset_factory
 
+from django import forms
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem
 
@@ -7,7 +8,10 @@ from factor.models import Factor, FactorItem
 class FactorModelForm(CustomBaseModelForm):
     class Meta:
         model = Factor
-        exclude = ['factor_self']
+        exclude = ['factor_self', 'guid']
+        widgets = {
+            'q': forms.HiddenInput()
+        }
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None

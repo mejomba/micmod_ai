@@ -1,0 +1,67 @@
+{% load humanize %}
+<style>
+
+
+</style>
+<div class="bg-white rounded border p-5 mt-10 mb-20">
+    <div class="mb-10 mt-5 sticky-top">
+        quotation and customer information
+    </div>
+
+    <div class="sticky-top px-3" style="top: 74px;">
+        <div class="row">
+            <!--quotation item header-->
+            <div class="col-7 py-2 bg-info tex--">
+                <div class="row">
+                    <span class="col-1 bold">
+                        <span>ID</span>
+                    </span>
+                    <span class="col-1 bold">
+                        <span data-key="">کد کالا</span>
+                    </span>
+                    <span class="col-5 bold">
+                        <span data-key="goods_name">goods_name</span>
+                    </span>
+                    <span class="col-2 bold">
+                        <span data-key="quantity">quantity</span>
+                    </span>
+                    <span class="col-3 bold">
+                        <span data-key="lead_time">lead_time</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item header-->
+            <div class="col-5 py-2 bg-light-primary"></div>
+        </div>
+    </div>
+    {% for qi in quotation.quotation.all %}
+    <div class="mb-1 bg-white border rounded p-4 hover_light_info">
+        <div class="row">
+            <!--quotation item information-->
+            <div class="col-7">
+                <div class="row">
+                    <span class="col-1 gap-2">
+                        <span>{{ qi.pk }}</span>
+                    </span>
+                    <span class="col-1 gap-2">
+                        <span>{{ qi.goods_code_fk.sku }}</span>
+                    </span>
+                    <span class="col-5 gap-2">
+                        <span>{{ qi.goods_code_fk.part_number }}</span>
+                    </span>
+                    <span class="col-2 gap-2">
+                        <span>{{ qi.quantity|intcomma }}</span>
+                    </span>
+                    <span class="col-3 gap-2">
+                        <span>{{ qi.lead_time|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item information and input-->
+            <div class="col-5">
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

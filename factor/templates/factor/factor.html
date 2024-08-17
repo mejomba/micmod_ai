@@ -19,11 +19,13 @@
 {% endblock extra_css %}
 
 {% block form_content %}
-<div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div> hhh
     {% csrf_token %}
         {% for hidden in form.hidden_fields %}
             {{ hidden }}
         {% endfor %}
+    <div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div>
+
+    <div id="ajax_quotation_items"></div>
 {% endblock form_content %}
 
 {% block before_button %}
