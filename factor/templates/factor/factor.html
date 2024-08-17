@@ -90,6 +90,22 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'js/extra/factor.js' %}"></script>
-{#    <script src="{% static 'js/extra/quotation1.js' %}"></script>#}
-{#    <script src="{% static 'js/extra/formset.js' %}"></script>#}
+
+    <script>
+    function factor_to_quotation(){
+        const factor_to_quotation_btns = document.querySelectorAll('.factor_to_quotation')
+        factor_to_quotation_btns.forEach(function (item){
+            console.log(item)
+        })
+    }
+    function quotation_to_factor(){
+        const quotation_to_factor_btns = document.querySelectorAll('.quotation_to_factor')
+        quotation_to_factor_btns.forEach(function (item){
+            console.log(item)
+        })
+    }
+
+    setTimeout(factor_to_quotation, 2000)
+    setTimeout(quotation_to_factor, 2000)
+    </script>
 {% endblock extra_js %}

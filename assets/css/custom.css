@@ -964,11 +964,50 @@ span .select2-selection{
     background-color: #b9e2ff;
 }
 .hover_light_primary:hover{
-    background-color: #ebf9ff !important;
+    background-color: #f3fbff !important;
 }
 .hover_light_success:hover{
     background-color: #d5ffd1 !important;
 }
 .hover_light_info:hover{
-    background-color: #f3effd !important;
+    background-color: #faf8ff !important;
+}
+.rounded-right {
+  border-top-right-radius: 0.35rem !important;
+  border-bottom-right-radius: 0.35rem !important;
+}
+.rounded-left {
+  border-top-left-radius: 0.35rem !important;
+  border-bottom-left-radius: 0.35rem !important;
+}
+.border-left {
+  border-left: 1px solid #626E82 !important;
+}
+.factor_right_arrow{
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    right: 50%;
+    left: 0;
+    font-size: 1.6rem;
+    cursor: default;
+    width: max-content;
+    transform: translate(100%, -10%);
+}
+.factor_right_arrow:hover{
+    color: red;
+}
+.factor_left_arrow{
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    right: 50%;
+    left: 0;
+    font-size: 1.6rem;
+    cursor: default;
+    width: max-content;
+    transform: translate(10%, -10%);
+}
+.factor_left_arrow:hover{
+    color: #00c200;
 }
