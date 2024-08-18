@@ -108,14 +108,14 @@
 
                     <div class="w-75">
                         <div class="d-flex justify-content-end">
-                            {% render_field_by_order form_s form_s.goods_name label='on-border' %}
+                            {% render_field_by_order form_s form_s.goods_name %}
                                                         <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>
                             <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
                                  data-key="show_alt">مشابه
                             </div>
                         </div>
                         <div class="col on-border">
-                            <label>نام کالا</label>
+{#                            <label>نام کالا</label>#}
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
                                 <div class="sepidar_id_warning">

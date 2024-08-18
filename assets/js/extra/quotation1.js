@@ -521,8 +521,7 @@ function set_item_classes(item) {
     $(item).find('[id$="price_method"]').on('change', function (e) {
         set_price(e.target)
     })
-    // debugger;
-    copy_values(item, '-goods_name')
+    // copy_values(item, '-goods_name')
     copy_values(item, 'stock_amount')
     copy_values(item, 'stock_amount_res')
     copy_values(item, 'goods_max_price')
