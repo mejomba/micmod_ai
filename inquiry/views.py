@@ -500,7 +500,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
-            {'name': 'supplier', 'lookup_field': '__title__icontains'}
+            {'name': 'supplier', 'lookup_field': '__title__icontains'},
+            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False}
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -525,10 +526,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
+        qi = obj.trade_quotation_rel.first()
+        row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
+                          f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
             f"/inquiry/inquiryresult/list/?pk={obj.id}", obj.sku if obj.sku else '_'
-            # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
-            # obj.sku if obj.sku else '_'
         )
         if self.request.user.is_superuser or 'total_admin' in self.request.user.groups.values_list('name', flat=True):
             row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
@@ -781,6 +783,7 @@ def get_item(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1274,6 +1277,40 @@ def bazar_all_prices(request):
         data = list()
         for item in bazar_all_price:
             obj = dict()
+            obj['id'] = item.pk
+            obj['sku'] = item.sku.pk
+            obj['last_update_date'] = item.jalali_last_update_date
+            obj['inquiry_type'] = item.inquiry_type.title
+            obj['editor_user'] = item.editor_user.username
+            data.append(obj)
+        return JsonResponse({'items': data})
+
+
+def all_prices(request):
+    if request.method == 'GET':
+        sku = request.GET.get('sku')
+        if not sku.isdigit():
+            return JsonResponse({'items': [{'invalid': 'item'}]})
+        if q := request.GET.get('q'):
+            try:
+                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                                                                    sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+            except Exception as e:
+                print('exception')
+                bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                                                                    active=True,
+                                                                    is_deleted=False)
+        else:
+            bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                                                                active=True,
+                                                                is_deleted=False)
+
+        data = list()
+        for item in bazar_all_price:
+            obj = dict()
+            obj['inquiry_type_detector'] = 1 if item.inquiry_type.title.lower().__contains__('خارج') else 2
             obj['id'] = item.pk
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date

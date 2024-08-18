@@ -403,12 +403,9 @@ class QuotationItem(BaseModel):
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)
     bazar_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('bazar_price_code'), related_name='bazar_quotation_rel', null=True, blank=True)
-    trade_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
-                                         verbose_name=_('trade_selected_price_code'), related_name='trade_selected_quotation_rel',
-                                         null=True, blank=True)
-    bazar_selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
-                                         verbose_name=_('bazar_selected_price_code'), related_name='bazar_selected_quotation_rel',
-                                         null=True, blank=True)
+    selected_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING,
+                                            verbose_name=_('selected_price_code'), related_name='selected_price_quotation_rel',
+                                            null=True, blank=True)
     lead_time = models.CharField(verbose_name=_('lead time'), null=True, blank=True)
     assigned_trade_user = models.ForeignKey(User, verbose_name=_('assigned_trade_user'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user_rel')
     assigned_trade_user2 = models.ForeignKey(User, verbose_name=_('assigned_trade_user2'), null=True, blank=True, on_delete=models.DO_NOTHING, related_name='assigned_trade_user2_rel')
@@ -460,11 +457,19 @@ class QuotationItem(BaseModel):
             else:
                 inquiry_type_filter = (Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) |
                                        Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)) & \
-                                       (Q(quotation__cancel=False) & Q(is_deleted=False))
+                                      (Q(quotation__cancel=False) & Q(is_deleted=False))
+
+        inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
+                                   (
+                                        Q(quotation__last_work_flow__state='استعلام قیمت') &
+                                        Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
+                                        (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+                                   )
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
         return x
 
     @classmethod
@@ -496,15 +501,17 @@ class QuotationItem(BaseModel):
             all_tasks_qs = quotation_items.filter(user_filter)
             today_assigned = all_tasks_qs.filter(time_filter).count()
             today_task_start = all_tasks_qs.filter(task_start_filter, time_filter).count()
+            today_all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
             all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
             all_tasks = all_tasks_qs.count()
+            reminder_task = all_tasks_qs.filter(foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).count()
 
-            reminder_task = all_tasks - all_price_inquiry_done
-            #reminder_task = all_tasks_qs.filter(need_foreign_price_inquiry=True, foreign_price_inquiry_done=False, is_deleted=False,
+            # reminder_task = all_tasks - all_price_inquiry_done
+            # reminder_task = all_tasks_qs.filter(need_foreign_price_inquiry=True, foreign_price_inquiry_done=False, is_deleted=False,
             #                                    quotation__cancel=False, quotation__last_work_flow__current_state_name='استعلام قیمت').count() #all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
 
-            d[user.username] = today_assigned, today_task_start, all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
+            d[user.username] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
         return d
 
     def pre_process_on_post_method(self, data=None):
@@ -724,6 +731,7 @@ class QuotationItem(BaseModel):
 
                 filter_condition_china = Q(item_in_china=True) & Q(quotation__last_work_flow__current_state_name='استعلام قیمت')
                 not_started = cls.objects.filter(f, filter_condition)
+
                 my_inquiry_not_started_count = not_started.count()
                 item_in_china = cls.objects.filter(f, filter_condition_china).order_by('-quotation_id').count()
                 new_inquiry = cls.quotation_item_all_pending(inquiry_type='trade', path=None).count()
@@ -733,8 +741,10 @@ class QuotationItem(BaseModel):
                             Q(assigned_trade_user__isnull=True) & Q(assigned_trade_user2__isnull=True) &
                             Q(task_start=False) & Q(task_start2=False) & Q(quotation__cancel=False) &
                             Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+        
         inquiry_not_started_count = QuotationItem.objects.filter(filter_condition).count()
         return my_inquiry_not_started_count, inquiry_not_started_count, item_in_china, new_inquiry
+
 
 
     class Meta:

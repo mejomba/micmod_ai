@@ -94,7 +94,7 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator() {
+function addCommaSeperator(on_load=null) {
     let inputNumberValue;
     let numberWithComma;
 
@@ -106,6 +106,12 @@ function addCommaSeperator() {
             numberWithComma = commaSeperator(inputNumberValue)
             e.currentTarget.value = numberWithComma.reverse_string()
         })
+        if (on_load){
+            inputNumberValue = item.value.replaceAll(',', '').reverse_string();
+            numberWithComma = inputNumberValue;
+            numberWithComma = commaSeperator(inputNumberValue)
+            item.value = numberWithComma.reverse_string()
+        }
     })
 }
 
@@ -314,7 +320,6 @@ function copyToClipboard(elem) {
 
 
     const changeLogBtnAjax = document.querySelectorAll('[name="name_change_log"]')
-    debugger
     if (changeLogBtnAjax){
     changeLogBtnAjax.forEach(function (item) {
         item.addEventListener('click',function (e){

@@ -64,6 +64,11 @@ class CustomerForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
         )
+        self.fields['z_safte'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_cheque_s'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_cheque_ns'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_max_credit_rafi'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['extra_credit'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
     #
     #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
     #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)

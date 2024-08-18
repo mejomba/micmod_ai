@@ -954,5 +954,9 @@ span .select2-selection{
 
 .all_price_select2 {
     min-width: 100px;
-    font-size: 0.85rem;
+    font-size: 1rem;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    color: #131313;
+    background-color: #b9e2ff;
 }
