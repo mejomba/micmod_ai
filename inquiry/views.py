@@ -500,7 +500,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
-            {'name': 'supplier', 'lookup_field': '__title__icontains'}
+            {'name': 'supplier', 'lookup_field': '__title__icontains'},
+            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False}
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -525,10 +526,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
+        qi = obj.trade_quotation_rel.first()
+        row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
+                          f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
             f"/inquiry/inquiryresult/list/?pk={obj.id}", obj.sku if obj.sku else '_'
-            # reverse('inquiry:inquiry_result.list', args=(obj.id,)),
-            # obj.sku if obj.sku else '_'
         )
         if self.request.user.is_superuser or 'total_admin' in self.request.user.groups.values_list('name', flat=True):
             row['rmb_final_price_rendered'] = obj.rmb_final_price_rendered()
