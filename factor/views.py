@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -14,6 +15,7 @@ from factor.models import Factor
 from micmod_base.models import Quotation
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import to_jalali_date
+import json
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -100,23 +102,51 @@ class FactorView(LoginRequiredMixin, BaseView):
 
 def search_factor_view(request, *args, **kwargs):
     q = request.GET.get('q')
-    quotations = Quotation.objects.filter(customer_party_id__title__icontains=q).order_by('-id')
+    search_by = request.GET.get('search_by')
+    search_by = json.loads(search_by)
+    q_int = -1
+    q_str = ''
+    if q.isdigit():
+        q_int = int(q)
+    q_str = q
+    q_filter = Q()
+    q_required = {}#{'cancel': False, "is_deleted": False, "last_work_flow__current_state_name": 'مرحله نهایی'}
+    for s in search_by:
+        if s == 'search_customer':
+            q_filter |= Q(customer_party_id__title__icontains=q_str)
+        if s == 'search_id':
+            q_filter |= Q(pk=q_int)
+        if s == 'search_marketer':
+            q_filter |= Q(last_work_flow__creator_user__username__icontains=q_str)
+        if s == 'search_sepidar_id':
+            q_filter |= Q(sepidar_number__icontains=q_int)
+        if s == 'search_sku':
+            q_filter |= Q(quotation__goods_code_fk__sku__icontains=q_str)
+        if s == 'search_part_number':
+            q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
+    if not search_by:
+        q_filter = Q(customer_party_id__title__icontains=q_str) | Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
+                   Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
+                   Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
+                   Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str)
+    quotations = Quotation.objects.filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
-    for total_count, q in enumerate(quotations):
+    for total_count, q in enumerate(quotations, 1):
         item = dict()
         item['id'] = q.pk
-        item['customer_title'] = q.customer_party_id.title
-        item['customer_party_id'] = q.customer_party_id.sepidar_dl_code
+        item['customer_title'] = q.customer_party_id.title if q.customer_party_id else '-'
+        item['customer_party_id'] = q.customer_party_id.sepidar_dl_code if q.customer_party_id else '-'
         item['quotation_id'] = q.pk
         item['row_count'] = q.quotation.all().count()
-        item['last_work_flow_user'] = q.last_work_flow.creator_user.username
+        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow.creator_user else '-'
+        item['last_work_flow_state'] = q.last_work_flow.current_state_name if q.last_work_flow else '-'
         item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title
         res['items'].append(item)
     else:
-        res['items'].append(total_count)
+        res['total_count'] = total_count
     return JsonResponse(res)
 
 

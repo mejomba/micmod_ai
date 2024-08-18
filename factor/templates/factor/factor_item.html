@@ -1,9 +1,5 @@
 {% load humanize %}
 {% load jalali_tags %}
-<style>
-
-
-</style>
 <div class="bg-white rounded border p-5 mt-10 mb-20">
     <div class="mb-8 pb-2 bg-white mt-3 sticky-top" style="top: 10px">
         <div class="row row-cols-3">
@@ -64,27 +60,22 @@
     <div class="sticky-top text-center" style="top: 110px;">
         <div class="row">
             <!--quotation item header-->
-            <div class="col-6 py-2 bg-light-info rounded-right">
+            <div class="col-4 py-2 bg-light-info rounded-right">
                 <div class="row">
                     <span class="col-1 bold">
                         <span>ID</span>
                     </span>
-                    <span class="col-1 bold">
-                        <span data-key="">کد کالا</span>
+                    <span class="col-7 bold">
+                        <span data-key="">نام کالا | کد کالا</span><br>
+                        <span data-key="">تعداد | قیمت</span>
                     </span>
-                    <span class="col-6 bold">
-                        <span data-key="goods_name">goods_name</span>
-                    </span>
-                    <span class="col-1 bold">
-                        <span data-key="quantity">quantity</span>
-                    </span>
-                    <span class="col-3 bold">
+                    <span class="col-4 bold">
                         <span data-key="lead_time">lead_time</span>
                     </span>
                 </div>
             </div>
             <!--factor item header-->
-            <div class="col-6 py-2 bg-light-primary rounded-left">
+            <div class="col-8 py-2 bg-light-primary rounded-left">
                 <div class="row">
                     <span class="col-1 bold">
                         <span data-key="">کد کالا</span>
@@ -106,32 +97,36 @@
         </div>
     </div>
     {% for qi in quotation.quotation.all %}
-        <div class="row mb-1 text-center bg-white border rounded">
+        <div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
+        <div class="factor_right_arrow factor_to_quotation" onclick="factor_to_quotation(event)">&#129094;</div>
+        <div class="factor_left_arrow quotation_to_factor" onclick="quotation_to_factor(event)">&#129092;</div>
             <!--quotation item information-->
-            <div class="col-6 border-left">
-                <div class="row py-4 hover_light_info">
+            <div class="col-4 border-left hover_light_info" style="height: fit-content">
+                <div class="row py-2 align-items-center">
                     <span class="col-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>
                     </span>
-                    <span class="col-1">
-                        <span class=" cursor-pointer">{{ qi.goods_code_fk.sku }}</span>
+                    <span class="col-7">
+                        <div class="d-flex flex-column">
+                            <span class=" cursor-pointer d-flex justify-content-center">
+                                <span class="font-size-11 mx-1">{{ qi.goods_code_fk.part_number }}</span> <b>|</b>
+                                <span>{{ qi.goods_code_fk.sku }}</span>
+                            </span> <hr>
+                            <span class=" cursor-pointer">
+                                <span class="font-size-10 text-success"> تعداد: </span> {{ qi.quantity|intcomma }}
+                                <b>|</b>
+                                 <span class="font-size-10 text-danger"> قیمت: </span>{{ qi.fee }}
+                            </span>
+                        </div>
                     </span>
-                    <span class="col-6 font-size-11">
-                        <span class=" cursor-pointer">{{ qi.goods_code_fk.part_number }}</span>
-                    </span>
-                    <span class="col-1">
-                        <span class=" cursor-pointer">{{ qi.quantity|intcomma }}</span>
-                    </span>
-                    <span class="col-3">
+                    <span class="col-4">
                         <span class=" cursor-pointer">{{ qi.lead_time|default_if_none:'-' }}</span>
                     </span>
                 </div>
             </div>
-            <div class="factor_right_arrow factor_to_quotation" onclick="factor_to_quotation(event)">&#129094;</div>
-            <div class="factor_left_arrow quotation_to_factor" onclick="quotation_to_factor(event)">&#129092;</div>
             <!--factor item information and input-->
-            <div class="col-6 text-center">
-                <div class="row py-4 hover_light_primary">
+            <div class="col-8 text-center hover_light_primary" style="height: fit-content">
+                <div class="row py-2">
                     <span class="col-1 text-center gap-1">
                         <span class=" cursor-pointer">{{ qi.goods_code_fk.sku }}</span>
                     </span>

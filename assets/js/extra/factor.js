@@ -53,46 +53,58 @@ function get_quotation_items(quotation_pk){
 
 $(document).ready(function () {
     $('#id_select_quotation_for_factor').select2({
-        dir: 'ltr',
+        dir: 'rtl',
+        pageLength: 5,
         ajax: {
             delay: 150,
             url: '/factor/search',
             dataType: "json",
             type: "GET",
             data: function (data) {
-                console.log('inside data', data)
+                debugger
+                const search_by = document.querySelectorAll('.limit_query input[type="checkbox"]')
+                const search_by_list = []
+                if (search_by){
+                    search_by.forEach(function (item){
+                        if (item.checked){
+                            search_by_list.push(item.name)
+                        }
+                    })
+                }
                 return {
                     q: data.term, page: data.page, // party_id: p_id,
+                    search_by: JSON.stringify(search_by_list)
                 }
             },
             processResults: function (data, params) {
+                debugger
                 params.page = params.page || 1;
                 return {
                     results: data.items,
                     pagination: {
-                        more: (params.page * 30) < data.total_count
+                        more: (params.page * 10) < data.total_count
                     }
                 };
             },
             success: function (){
-                const s = `<div class="d-flex  bg-light-success sticky-top  py-2 bold">
+                const s = `<div class="d-flex  bg-light-info sticky-top  py-2 bold">
                                     <div class="col-3 ">
-                                        <span class="ms-5">شرکت</span>
+                                        <span class="ms-1">مشتری</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span class="ms-5">پیش فاکتور</span>
+                                        <span class="ms-1">پیش فاکتور</span>
                                     </div>
                                     <div class="col-1 ">
-                                        <span class="ms-5">تعداد ردیف</span>
+                                        <span class="ms-1">تعداد ردیف</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span class="ms-5">کارشناس</span>
+                                        <span class="ms-1">کارشناس</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span class="ms-5">تاریخ انقضا</span>
+                                        <span class="ms-1">تاریخ انقضا</span>
                                     </div>
                                     <div class="col-2 ">
-                                        <span class="ms-5">نوع فروش</span>
+                                        <span class="ms-1">نوع فروش</span>
                                     </div>
                                   </div>`
                 const div = document.createElement('div')
@@ -109,7 +121,7 @@ $(document).ready(function () {
         dropdownAutoWidth: true,
         dropdownCssClass: 'quotation_to_factor_select2',
         minimumInputLength: 3,
-        placeholder: 'جستجوی پیش فاکتور با [نام مشتری ...]',
+        placeholder: 'جستجوی پیش فاکتور با [شناسه پیش فاکتور، شماره سپیدار پیش فاکتور، نام مشتری، شناسه مشتری، کد کالا، پارت نامبر، ...]',
         templateResult: selectQuotationForFactorRepoItem,
         templateSelection: formatRepoSelection,
     });
@@ -136,6 +148,7 @@ function selectQuotationForFactorRepoItem(repo) {
             </div>
             <div class="col-2">
                 <span>${repo.quotation_id}</span>
+                <span>(${repo.last_work_flow_state})</span>
             </div>
             <div class="col-1">
                 <span>${repo.row_count}</span>

@@ -961,7 +961,7 @@ span .select2-selection{
 }
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     color: #131313;
-    background-color: #b9e2ff;
+    background-color: #d6ecff;
 }
 .hover_light_primary:hover{
     background-color: #f3fbff !important;
@@ -987,12 +987,12 @@ span .select2-selection{
     padding: 0;
     margin: 0;
     position: absolute;
-    right: 50%;
+    right: 34%;
     left: 0;
     font-size: 1.6rem;
     cursor: default;
     width: max-content;
-    transform: translate(100%, -10%);
+    transform: translate(120%, -10%);
 }
 .factor_right_arrow:hover{
     color: red;
@@ -1001,12 +1001,12 @@ span .select2-selection{
     padding: 0;
     margin: 0;
     position: absolute;
-    right: 50%;
+    right: 34%;
     left: 0;
     font-size: 1.6rem;
     cursor: default;
     width: max-content;
-    transform: translate(10%, -10%);
+    transform: translate(30%, -10%);
 }
 .factor_left_arrow:hover{
     color: #00c200;

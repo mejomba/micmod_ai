@@ -17,7 +17,7 @@
     </td>
 <!-- GOODS NAME -->
     <td class="">
-        <div class="font-size-12">{{ form.instance.goods_name|default_if_none:"" }}</div>
+        <div class="font-size-12">{{ form.instance.goods_code_fk.part_number|default_if_none:"" }}</div>
     </td>
 <!-- QUANTITY -->
     <td class="font-size-10 replace-digits">
