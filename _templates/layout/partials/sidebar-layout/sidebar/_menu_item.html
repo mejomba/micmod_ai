@@ -18,7 +18,7 @@
             {% endif %}
             {% if menu.count %}
                 <span class="menu-badge">
-					    <span class="badge badge-danger">{% get_object_count request.user menu.count %}</span>
+					    <span class="badge badge-danger" id="id_{{ menu.title }}">{% get_object_count request.user menu.count %}</span>
 				    </span>
             {% endif %}
         </a>

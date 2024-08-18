@@ -667,7 +667,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 d[item.instance.quotation.pk] = []
             d[item.instance.quotation.pk].append(item)
 
-        my_inquiry_not_started_count, inquiry_not_started_count = QuotationItem.inquiry_not_started(request.user)
+        inquiry = QuotationItem.inquiry_not_started(request.user)
+        # my_inquiry_not_started = inquiry[0]
+        # inquiry_not_started_count = inquiry[1]
 
         per_page = page_obj.paginator.per_page
         context['page_obj'] = page_obj
@@ -677,8 +679,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
-        context['my_inquiry_not_started_count'] = my_inquiry_not_started_count
-        context['inquiry_not_started_count'] = inquiry_not_started_count
+        # context['my_inquiry_not_started'] = my_inquiry_not_started
+        # context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -980,3 +982,16 @@ def save_parent_item(request):
         item.save()
         return JsonResponse({'res': 'ok'})
     return JsonResponse({'res': 'کد نامعتبر'}, status=400)
+
+
+def inquiry_not_started(request):
+    trade_user = request.user
+    inquiry = QuotationItem.inquiry_not_started(trade_user)
+    res = {'my_inquiry_not_started': inquiry[0],
+           'inquiry_not_started_count': inquiry[1],
+           'item_in_china': inquiry[2],
+           'new_inquiry': inquiry[3]
+           }
+
+    return JsonResponse(res)
+
