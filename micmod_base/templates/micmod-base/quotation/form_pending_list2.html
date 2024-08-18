@@ -7,13 +7,16 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
-<div class="mb-10 p-3">
-    <p class="text-success bg-light-success font-size-15 bold p-0 m-0 ">
-        استعلام شروع نشده‌ی شما :
-        <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started }}</span>
-        <br>
-        استعلام های جدید :
-        <span id="id_inquiry_not_started">{{ inquiry_not_started_count }}</span>
+<div class="mb-10 py-3 px-5 border border-success badge badge-light-success text-start sticky-top">
+    <p class="text-success font-size-15 bold p-0 m-0 d-flex flex-column">
+        <span class="mb-2">
+            استعلام شروع نشده‌ی شما :
+            <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started }}</span>
+        </span>
+        <span>
+            استعلام های جدید :
+            <span id="id_inquiry_not_started">{{ inquiry_not_started_count }}</span>
+        </span>
     </p>
 </div>
     {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
@@ -246,33 +249,34 @@
      })
     })
 
+function update_inquiry_count() {
+    const url = "{% url 'micmod_base:inquiry_not_started' %}"
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            debugger
+            try {
+                document.querySelector('#id_inquiry_not_started').innerHTML = data['inquiry_not_started_count']
+                document.querySelector('#id_my_inquiry_not_started').innerHTML = data['my_inquiry_not_started']
+                document.querySelector('#id_pending_list').innerHTML = data['new_inquiry']
+                document.querySelector('#id_item_in_china').innerHTML = data['item_in_china']
 
-    setInterval(function() {
-        const url = "{% url 'micmod_base:inquiry_not_started' %}"
-        $.ajax({
-            type: 'GET',
-            url: url,
-            dataType: 'json',
-            cache: false,
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                debugger
-                try {
-                    document.querySelector('#id_inquiry_not_started').innerHTML = data['inquiry_not_started_count']
-                    document.querySelector('#id_my_inquiry_not_started').innerHTML = data['my_inquiry_not_started']
-                    document.querySelector('#id_pending_list').innerHTML = data['new_inquiry']
-                    document.querySelector('#id_item_in_china').innerHTML = data['item_in_china']
+            }
+            catch (error) {}
 
-                }
-                catch (error) {}
-
-            },
-            error: function(xhr, status, error) {
-            console.error('Error fetching data:', status, error);
         },
-        });
-    }, 100 * 60 );
+        error: function(xhr, status, error) {
+        console.error('Error fetching data:', status, error);
+    },
+    });
+}
+    setTimeout(update_inquiry_count, 1000)
+    setInterval(update_inquiry_count, 1000 * 60 );
 
 
     const emptyModal = document.getElementById('id_kt_empty_modal')
