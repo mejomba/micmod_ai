@@ -11,7 +11,7 @@
     <p class="text-success bg-light-success font-size-15 bold p-0 m-0 ">
 
         استعلام شروع نشده‌ی شما :
-        <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started_count }}</span>
+        <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started }}</span>
         <br>
 
         استعلام های جدید :
@@ -274,7 +274,7 @@
             console.error('Error fetching data:', status, error);
         },
         });
-    }, 1000 * 60 * 2 );
+    }, 100 * 60 );
 
 
     const emptyModal = document.getElementById('id_kt_empty_modal')

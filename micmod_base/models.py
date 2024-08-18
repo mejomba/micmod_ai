@@ -715,10 +715,13 @@ class QuotationItem(BaseModel):
         for user in trade_users:
             if trade_user == user:
                 f = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
-                                      Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
+                    Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True) & \
+                    (Q(quotation__cancel=False) & Q(is_deleted=False))
+
                 filter_condition = (Q(assigned_trade_user=trade_user) & Q(task_start=False)) | \
-                                   (Q(assigned_trade_user2=trade_user) & Q(task_start2=False) &
-                                    Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+                                   (Q(assigned_trade_user2=trade_user) & Q(task_start2=False)) & \
+                                   (Q(quotation__last_work_flow__current_state_name='استعلام قیمت'))
+
                 filter_condition_china = Q(item_in_china=True) & Q(quotation__last_work_flow__current_state_name='استعلام قیمت')
                 not_started = cls.objects.filter(f, filter_condition)
                 my_inquiry_not_started_count = not_started.count()

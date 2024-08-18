@@ -236,6 +236,7 @@ def get_inquiry_report():
 
     return {'quotationitem_filters': qi_filter}
 
+
 @register.simple_tag()
 def inquiry_not_started(user):
     from micmod_base.models import QuotationItem

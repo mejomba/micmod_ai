@@ -724,8 +724,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             d[item.instance.quotation.pk].append(item)
 
         inquiry = QuotationItem.inquiry_not_started(request.user)
-        my_inquiry_not_started_count = inquiry[0]
-        inquiry_not_started_count = inquiry[1]
+        # my_inquiry_not_started = inquiry[0]
+        # inquiry_not_started_count = inquiry[1]
 
         per_page = page_obj.paginator.per_page
         context['page_obj'] = page_obj
@@ -735,8 +735,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
-        context['my_inquiry_not_started_count'] = my_inquiry_not_started_count
-        context['inquiry_not_started_count'] = inquiry_not_started_count
+        # context['my_inquiry_not_started'] = my_inquiry_not_started
+        # context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
 
     def post(self, request):
