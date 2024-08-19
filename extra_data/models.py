@@ -299,6 +299,7 @@ class Brand(AbsBaseModel):
 
 
 class Item(BaseModel):
+    print('import item .....')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data.dl_code = None
@@ -336,6 +337,17 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     # base_fields = ['sku','part_number']
+
+    @property
+    def supply_locations(self):
+        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+
+        if 'موجودی انبار داشت':
+            res.append(('pk', 'موجودی انبار'))
+        if 'سفارش در راه داشت':
+            res.append('سفارش در راه  N')
+
+        return res
 
     @property
     def sepidar_id(self):

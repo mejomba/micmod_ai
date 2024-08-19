@@ -731,6 +731,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
+        context['app_name'] = self.request.resolver_match.app_name
         return render(request, self.template_name, context)
 
     def post(self, request):

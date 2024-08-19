@@ -284,7 +284,16 @@
                                                             پرونده استعلام (کد مادر)</a>
                                                         {% endif %}
                                                     {% endif %}
-                                                {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}
+                                                <button type="button" class="btn btn-outline-primary btn-bordered changelog-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#id_kt_empty_modal_lg"
+                                                        data-model_name="{{ form_s.instance.files.content_type.model }}"
+                                                        data-object_id="{{ form_s.instance.pk }}"
+                                                        data-app_name="{{ app_name }}"
+                                                        name="name_change_log">
+                                                    تاریخچه تغییرات
+                                                </button>
+{#                                                {% include 'changelog/changelog_popup.html' with logs=form_s.instance.change_logs.all %}#}
                                                 </div>
                                                 <div>
                                                     <input type="submit" value="ذخیره" data-key="save"
@@ -297,7 +306,7 @@
 
                                 {% include 'core/partial/empty_modal.html' %}
 {#                                {% include 'core/partial/empty_modal_sm.html' %}#}
-{#                                {% include 'core/partial/empty_modal_lg.html' %}#}
+                                {% include 'core/partial/empty_modal_lg.html' %}
                                 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
                                 </div>
                             </div>

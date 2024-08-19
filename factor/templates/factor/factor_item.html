@@ -6,7 +6,7 @@
             <div class="col">
                 <div class="d-flex flex-column gap-2">
                     <span class="bold text-primary">
-                    {{ quotation.customer_party_id.title }} ({{ quotation.customer_code }})
+                    <a href="{% url 'extra_data:customer.update' quotation.customer_party_id.pk %}" target="_blank">{{ quotation.customer_party_id.title }} ({{ quotation.customer_code }})</a>
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">رتبه مشتری:</span>
@@ -14,7 +14,7 @@
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">توضیحات:</span>
-                        <span>{{ quotation.description }}</span>
+                        <span>{{ quotation.description|default_if_none:'-' }}</span>
                     </span>
                 </div>
             </div>
@@ -30,7 +30,7 @@
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">شماره سپیدار:</span>
-                        <span>{{ quotation.sepidar_number }}</span>
+                        <span>{{ quotation.sepidar_number|default_if_none:'-' }}</span>
                     </span>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                 <div class="d-flex flex-column gap-2">
                     <span class="d-flex">
                         <span class="me-3 bold w-25">پیش فاکتور:</span>
-                        <span>{{ quotation.pk }}</span>
+                        <a href="{% url 'micmod_base:quotations.view' quotation.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12" target="_blank" style="letter-spacing: 1.5px">{{ quotation.pk }}</a>
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-25">تاریخ درخواست:</span>
@@ -98,12 +98,12 @@
     </div>
     {% for qi in quotation.quotation.all %}
         <div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
-        <div class="factor_right_arrow factor_to_quotation" onclick="factor_to_quotation(event)">&#129094;</div>
-        <div class="factor_left_arrow quotation_to_factor" onclick="quotation_to_factor(event)">&#129092;</div>
+        <div class="factor_right_arrow factor_to_quotation d-none" onclick="factor_to_quotation(event)">&#129094;</div>
+        <div class="factor_left_arrow quotation_to_factor d-none" onclick="quotation_to_factor(event)">&#129092;</div>
             <!--quotation item information-->
-            <div class="col-4 border-left hover_light_info" style="height: fit-content">
+            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
-                    <span class="col-1">
+                    <span class="col-1 px-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>
                     </span>
                     <span class="col-7">
@@ -113,19 +113,19 @@
                                 <span>{{ qi.goods_code_fk.sku }}</span>
                             </span> <hr>
                             <span class=" cursor-pointer">
-                                <span class="font-size-10 text-success"> تعداد: </span> {{ qi.quantity|intcomma }}
+                                <span class="font-size-11 text-success"> تعداد: </span> {{ qi.quantity|intcomma }}
                                 <b>|</b>
-                                 <span class="font-size-10 text-danger"> قیمت: </span>{{ qi.fee }}
+                                 <span class="font-size-11 text-danger"> قیمت: </span>{{ qi.fee }}
                             </span>
                         </div>
                     </span>
                     <span class="col-4">
-                        <span class=" cursor-pointer">{{ qi.lead_time|default_if_none:'-' }}</span>
+                        <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
                     </span>
                 </div>
             </div>
             <!--factor item information and input-->
-            <div class="col-8 text-center hover_light_primary" style="height: fit-content">
+            <div class="col-8 text-center hover_light_primary d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
                         <span class=" cursor-pointer">{{ qi.goods_code_fk.sku }}</span>
@@ -137,7 +137,7 @@
                         <span class=" cursor-pointer">{{ qi.quantity|intcomma }}</span>
                     </span>
                     <span class="col-3 text-center gap-1">
-                        <span class=" cursor-pointer">{{ qi.lead_time|default_if_none:'-' }}</span>
+                        <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
                     </span>
                     <div class="col-2">
 {#                        <span class=" cursor-pointer">#}
