@@ -734,7 +734,7 @@ class QuotationItem(BaseModel):
 
                 my_inquiry_not_started_count = not_started.count()
                 item_in_china = cls.objects.filter(f, filter_condition_china).order_by('-quotation_id').count()
-                new_inquiry = cls.quotation_item_all_pending(inquiry_type='trade', path=None).count()
+                new_inquiry = cls.quotation_item_all_pending(inquiry_type=trade_user.base_group, path=None).count()
                 break
 
         filter_condition = (Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=False) &
