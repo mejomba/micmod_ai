@@ -733,7 +733,7 @@ class CustomerDocuments(AbsBaseModel):
     )
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
-    description = models.CharField(_('description'), max_length=255, null=True, blank=True)
+    description = models.TextField(_('description'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
 
 
