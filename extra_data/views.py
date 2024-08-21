@@ -475,7 +475,7 @@ class CustomerListView(LoginRequiredMixin, generic.ListView):
 
 class CustomerDataTableView(AjaxDatatableView):
     model = Customer
-    title = 'customer'
+    title = 'customer_list'
     initial_order = [["created_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
@@ -485,7 +485,7 @@ class CustomerDataTableView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         base_columns,
-        # {'name': 'title', 'orderable': True, 'visible': True, },
+        {'name': 'id', 'orderable': True, 'visible': False, },
         {'name': 'name', 'orderable': True, 'visible': True, },
         {'name': 'last_name', 'orderable': True, 'visible': True, },
         {'name': 'email', 'orderable': True, 'visible': True, },

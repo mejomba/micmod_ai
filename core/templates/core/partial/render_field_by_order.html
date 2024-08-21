@@ -10,7 +10,7 @@
                 <div class="col {% if margin_b is not None %}
                 mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
                 {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
-                {{ field.errors }}
+                <div class="text-danger">{{ field.errors }}</div>
 
             {% elif field.field.select2 %}
 
@@ -20,7 +20,7 @@
                 <div class="select2 {{ field|get_field_name }} form-control w-100" id="{{ field.html_name }}"
                      name="{{ field|get_field_name }}">{{ field.value }}</div>
                 <label data-key="{{ field|get_field_name }}" class="{{ css }}" id="{{ id }}"></label>
-                {{ field.errors }}
+                <div class="text-danger">{{ field.errors }}</div>
 
             {% elif label %}
 
@@ -31,7 +31,7 @@
                 <label data-key="{{ field|get_field_name }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
                     {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
-                {{ field.errors }}
+                <div class="text-danger">{{ field.errors }}</div>
 
 
             {% else %}
@@ -46,7 +46,7 @@
                                id={{ id }} name="{{ field|get_field_name }}"></label>
                     {% endif %}
                     {{ field.help_text }}
-                    {{ field.errors }}
+                    <div class="text-danger">{{ field.errors }}</div>
                 {% endif %}
 
             {% endif %}

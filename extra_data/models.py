@@ -605,25 +605,25 @@ class Province(AbsBaseModel):
 
 
 CustomerGrade = (
-    ("-2,A+", _("A+ Cash")),
-    ("-1,A", _("A Cash")),
-    ("0,B", _("B Cash")),
+    ("-2,A+,0", _("A+ Cash")),
+    ("-1,A,0", _("A Cash")),
+    ("0,B,0", _("B Cash")),
 
-    ("-2,A+", _("A+ 1 Month")),
-    ("-1,A", _("A 1 Month")),
-    ("0,B", _("B 1 Month")),
+    ("-2,A+,1", _("A+ 1 Month")),
+    ("-1,A,1", _("A 1 Month")),
+    ("0,B,1", _("B 1 Month")),
 
-    ("-2,A+", _("A+ 2 Month")),
-    ("-1,A", _("A 2 Month")),
-    ("0,B", _("B 2 Month")),
+    ("-2,A+,2", _("A+ 2 Month")),
+    ("-1,A,2", _("A 2 Month")),
+    ("0,B,2", _("B 2 Month")),
 
-    ("-2,A+", _("A+ 3 Month")),
-    ("-1,A", _("A 3 Month")),
-    ("0,B", _("B 3 Month")),
+    ("-2,A+,3", _("A+ 3 Month")),
+    ("-1,A,3", _("A 3 Month")),
+    ("0,B,3", _("B 3 Month")),
 
-    ("-2,A+", _("A+ 4 Month")),
-    ("-1,A", _("A 4 Month")),
-    ("0,B", _("B 4 Month")),
+    ("-2,A+,4", _("A+ 4 Month")),
+    ("-1,A,4", _("A 4 Month")),
+    ("0,B,4", _("B 4 Month")),
 )
 
 
@@ -733,7 +733,7 @@ class CustomerDocuments(AbsBaseModel):
     )
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
-    description = models.CharField(_('description'), max_length=255, null=True, blank=True)
+    description = models.TextField(_('description'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
 
 
