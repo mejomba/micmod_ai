@@ -1,6 +1,8 @@
+{% load factor_tags %}
 {% load humanize %}
 {% load jalali_tags %}
-<div class="bg-white rounded border p-5 mt-10 mb-20">
+{% load more_tags %}
+<div class="bg-white rounded border p-5 pb-20 mt-10 mb-20">
     <div class="mb-8 pb-2 bg-white mt-3 sticky-top" style="top: 10px">
         <div class="row row-cols-3">
             <div class="col">
@@ -55,19 +57,28 @@
                 </div>
             </div>
         </div>
+        <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
+        <input type="hidden" value="{{ quotation.is_official }}" name="is_official">
+        <input type="hidden" value="{{ quotation.official_value }}" name="official_value">
+        <input type="hidden" value="{{ quotation.self_discount }}" name="self_discount">
     </div>
+    {% for hidden in form_s.forms.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
 
+{{ form_s.management_form }}
+{{ form_s.non_form_errors }}
     <div class="sticky-top text-center" style="top: 110px;">
         <div class="row">
             <!--quotation item header-->
             <div class="col-4 py-2 bg-light-info rounded-right">
-                <div class="row">
+                <div class="row align-items-center">
                     <span class="col-1 bold">
                         <span>ID</span>
                     </span>
                     <span class="col-7 bold">
-                        <span data-key="">نام کالا | کد کالا</span><br>
-                        <span data-key="">تعداد | قیمت</span>
+                        <span data-key="">نام کالا | کد کالا</span> <br>
+                        <span data-key=""> تعداد | قیمت</span>
                     </span>
                     <span class="col-4 bold">
                         <span data-key="lead_time">lead_time</span>
@@ -76,7 +87,7 @@
             </div>
             <!--factor item header-->
             <div class="col-8 py-2 bg-light-primary rounded-left">
-                <div class="row">
+                <div class="row mt-2">
                     <span class="col-1 bold">
                         <span data-key="">کد کالا</span>
                     </span>
@@ -97,9 +108,12 @@
         </div>
     </div>
     {% for qi in quotation.quotation.all %}
-        <div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
-        <div class="factor_right_arrow factor_to_quotation d-none" onclick="factor_to_quotation(event)">&#129094;</div>
-        <div class="factor_left_arrow quotation_to_factor d-none" onclick="quotation_to_factor(event)">&#129092;</div>
+        <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
+        {% if form_s.instance.pk %}
+            {% with form_s|get_list_item:forloop.counter0 as factor %}
+
+            <div class="bg-danger">{{ factor.instance.pk }}</div>
+        	<div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
             <!--quotation item information-->
             <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
@@ -128,29 +142,77 @@
             <div class="col-8 text-center hover_light_primary d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
-                        <span class=" cursor-pointer">{{ qi.goods_code_fk.sku }}</span>
+                        <span class=" cursor-pointer">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor.instance.goods_code.sku }}" >
+                        </span>
                     </span>
                     <span class="col-5 text-center gap-1">
-                        <span class="font-size-11 cursor-pointer">{{ qi.goods_code_fk.part_number }}</span>
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor.instance.goods_code.part_number }}" >
                     </span>
                     <span class="col-1 text-center gap-1">
-                        <span class=" cursor-pointer">{{ qi.quantity|intcomma }}</span>
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor.instance.quantity }}" >
+                    </span>
+                    <span class="col-3 text-center gap-1">
+                        <span class=" cursor-pointer font-size-11">{{ factor.lead_time|default_if_none:'-' }}</span>
+                    </span>
+                    <div class="col-2">
+                        {% supply_locations factor.instance.goods_code form_s.prefix forloop.counter0 %}
+                    </div>
+                </div>
+            </div>
+        </div>
+            {% endwith %}
+        {% else %}
+            <div class="bg-dark">not  form_s.instance.pk </div>
+            <div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
+            <!--quotation item information-->
+            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2 align-items-center">
+                    <span class="col-1 px-1">
+                        <span class=" cursor-pointer">{{ qi.pk }}</span>
+                    </span>
+                    <span class="col-7">
+                        <div class="d-flex flex-column">
+                            <span class=" cursor-pointer d-flex justify-content-center">
+                                <span class="font-size-11 mx-1">{{ qi.goods_code_fk.part_number }}</span> <b>|</b>
+                                <span>{{ qi.goods_code_fk.sku }}</span>
+                            </span> <hr>
+                            <span class=" cursor-pointer">
+                                <span class="font-size-11 text-success"> تعداد: </span> {{ qi.quantity|intcomma }}
+                                <b>|</b>
+                                 <span class="font-size-11 text-danger"> قیمت: </span>{{ qi.fee }}
+                            </span>
+                        </div>
+                    </span>
+                    <span class="col-4">
+                        <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item information and input-->
+            <div class="col-8 text-center hover_light_primary d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2">
+                    <span class="col-1 text-center gap-1">
+                        <span class=" cursor-pointer">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ qi.goods_code_fk.sku }}" >
+                        </span>
+                    </span>
+                    <span class="col-5 text-center gap-1">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.goods_code_fk.part_number }}" >
+                    </span>
+                    <span class="col-1 text-center gap-1">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.quantity }}" >
                     </span>
                     <span class="col-3 text-center gap-1">
                         <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
                     </span>
                     <div class="col-2">
-{#                        <span class=" cursor-pointer">#}
-                        <select name="" id="">
-                            <option value="1">انبار</option>
-                            <option value="2">سفارش در راه</option>
-                            <option value="3">سفارش جدید</option>
-                        </select>
-{#                        </span>#}
+                        {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 %}
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     {% endfor %}
 </div>
 
