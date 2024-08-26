@@ -8,7 +8,7 @@ from factor.models import Factor, FactorItem
 class FactorModelForm(CustomBaseModelForm):
     class Meta:
         model = Factor
-        exclude = ['factor_self', 'guid']
+        exclude = ['factor_self', 'guid', 'status', 'group', ]
         widgets = {
             'q': forms.HiddenInput()
         }
@@ -46,7 +46,7 @@ class FactorModelForm(CustomBaseModelForm):
 class FactorItemModelForm(CustomBaseModelForm):
     class Meta:
         model = FactorItem
-        exclude = ['qi']
+        exclude = ['group']
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -78,12 +78,14 @@ class FactorItemModelForm(CustomBaseModelForm):
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
 
 
-factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price']
+factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
+                      'part_number_show', 'price', 'supply_locations',
+                      ]
 
 FactorItemFormset = inlineformset_factory(
     Factor,
     FactorItem,
     form=FactorItemModelForm,
-    extra=1,
+    extra=0,
     fields=factor_item_fields,
 )
