@@ -1011,3 +1011,8 @@ span .select2-selection{
 .factor_left_arrow:hover{
     color: #00c200;
 }
+
+.hover-link:hover{
+    color: #0c1e33 !important;
+    font-weight: 700;
+}
