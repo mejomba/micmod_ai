@@ -11,7 +11,7 @@ from comments.forms import CommentsForm
 from core.views import BaseView, Base
 from extra_data.models import Customer
 from factor.forms import FactorModelForm, FactorItemFormset
-from factor.models import Factor
+from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import to_jalali_date
@@ -22,8 +22,8 @@ class FactorView(LoginRequiredMixin, BaseView):
     template_name = 'factor/factor.html'
     form_class = FactorModelForm
     model = Factor
-    wf_last_step_is_open = True
-    has_flow = True
+    # wf_last_step_is_open = True
+    # has_flow = True
     form_struct = {
         'form': FactorModelForm,
         'childes': [
@@ -35,14 +35,14 @@ class FactorView(LoginRequiredMixin, BaseView):
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
 
-    # has_formset = True
-    # formset_form = QuotationItemForm2
-    # formset_model = QuotationItem
-    formset_fk_field = 'quotation'
-    related_name_fk = 'quotation'
+    has_formset = True
+    formset_form = FactorItemFormset
+    formset_model = FactorItem
+    formset_fk_field = 'factoritem_set'
+    related_name_fk = 'factoritem_set'
 
     def get_success_url(self):
-        return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         if self.object is None:
@@ -62,10 +62,16 @@ class FactorView(LoginRequiredMixin, BaseView):
         return res
 
     def get_context_data(self, **kwargs):
+
+
+
+
         context = super().get_context_data(**kwargs)
-        return context
-        context['heading'] = _('create')
-        context['pageview'] = _('quotation')
+        context['obj'] = self.object
+        context['quotation'] = self.object.q if self.object else None
+        FactorItemFormset.extra = self.object.q.quotation.count() -1 if self.object else None
+        context['form_s'] = FactorItemFormset(instance=self.object)
+
         user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
@@ -73,14 +79,8 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
 
-        related_obj = getattr(self.object, f'{self.related_name_fk}', None)
-        # context['detail_logs'] = []
-        # if related_obj:
-        #     for item in related_obj.all():
-        #         context['detail_logs'].append(item.change_logs.all())
-        # context['detail_logs'].reverse()
         if self.object:
-            qis = self.object.quotation.all()
+            qis = self.object.factoritem_set.all()
             counter = 0
             for qi in qis:
                 if (self.state_index == 1 or self.state_index == 1) and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
@@ -94,9 +94,9 @@ class FactorView(LoginRequiredMixin, BaseView):
             context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
         else:
             context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        for f in context['formset']:
-            if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
-                f.has_alt_code = True
+        # for f in context['formset']:
+        #     if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
+        #         f.has_alt_code = True
         return context
 
 
@@ -152,6 +152,9 @@ def search_factor_view(request, *args, **kwargs):
 
 def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     quotation = Quotation.objects.filter(pk=pk).first()
-    context = {'quotation': quotation}
+    form = FactorModelForm(instance=quotation)
+    FactorItemFormset.extra = quotation.quotation.count()
+    form_s = FactorItemFormset()
+    context = {'quotation': quotation, 'form': form, 'form_s': form_s}
     html = render_to_string('factor/factor_item.html', context)
     return JsonResponse({'res': html})
