@@ -380,7 +380,8 @@ class Item(BaseModel):
     @property
     def price(self):
         if not self.extra_data.price:
-            self.extra_data.price = self.items.filter(sku=self).filter(active=True,inquiry_type_id=1).first()
+            # self.extra_data.price = self.items.filter(sku=self).filter(active=True,inquiry_type_id=1).first()
+            self.extra_data.price = self.items.filter(sku=self).filter(active=True).order_by('-last_update_date').first()
         return self.extra_data.price
 
     @property
