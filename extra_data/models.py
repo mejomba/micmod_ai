@@ -345,7 +345,8 @@ class Item(BaseModel):
         if 'موجودی انبار داشت':
             res.append(('pk', 'موجودی انبار'))
         if 'سفارش در راه داشت':
-            res.append('سفارش در راه  N')
+            for item in range(1):
+                res.append(('pk', "سفارش در راه n ام"))
 
         return res
 
