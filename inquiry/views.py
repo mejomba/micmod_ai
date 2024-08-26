@@ -501,7 +501,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
-            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False}
+            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
+            {'name': 'delete', 'title': 'حذف', 'searchable': False, 'orderable': False}
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -526,6 +527,19 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
+        delete_url = reverse('core:delete.confirm')
+        row['delete'] = f"""
+        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </a>
+                        """
         qi = obj.trade_quotation_rel.first()
         row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
                           f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
