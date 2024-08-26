@@ -1,5 +1,9 @@
-<select name="supply_location" id="id_supply_location">
+<select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-100">
 {% for location in locations %}
-    <option value="{{ location.0 }}">{{ location.1 }}</option>
+    <option value="{{ location.0 }}" class="font-size-12">{{ location.1 }}</option>
 {% endfor %}
 </select>
+<div class="font-size-11 position-absolute submit-new-order d-flex flex-row-reverse gap-3" style="left: 2%; transform: translate(0, 30%)">
+    <a href="" target="_blank" class="hover-link">ثبت سفارش</a>
+    <a href="" target="_blank" class="hover-link">123456</a>
+</div>
