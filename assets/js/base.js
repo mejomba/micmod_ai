@@ -193,7 +193,9 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
             }
             if(reload_page){
                 setTimeout(function (){
-                    location.reload()
+                    var loc = window.location;
+                    window.location = loc.protocol + '//' + loc.host + loc.pathname + loc.search;
+                    // location.reload()
                 }, 500)
             }
         },
