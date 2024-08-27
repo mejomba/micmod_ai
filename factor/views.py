@@ -62,10 +62,6 @@ class FactorView(LoginRequiredMixin, BaseView):
         return res
 
     def get_context_data(self, **kwargs):
-
-
-
-
         context = super().get_context_data(**kwargs)
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
@@ -79,24 +75,6 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
 
-        if self.object:
-            qis = self.object.factoritem_set.all()
-            counter = 0
-            for qi in qis:
-                if (self.state_index == 1 or self.state_index == 1) and (bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
-                        bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry)):
-                    counter += 1
-                    context['allow_next'] = False
-                    context['submit_copy_q'] = True
-            if counter == len(qis):
-                context['submit_copy_q'] = False
-        if self.object and self.object.cancel:
-            context['comment_form'] = CommentsForm(initial={'submit_type': 'uncanceled'})
-        else:
-            context['comment_form'] = CommentsForm(initial={'submit_type': 'cancel'})
-        # for f in context['formset']:
-        #     if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
-        #         f.has_alt_code = True
         return context
 
 

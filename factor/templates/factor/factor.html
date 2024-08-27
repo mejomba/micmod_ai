@@ -150,7 +150,7 @@
         const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
         const qi_quantity = row.querySelector('.qi_quantity')
         const Alert = document.querySelector('.alert')
-        if (elem.value > qi_quantity.dataset.quantity){
+        if (parseFloat(elem.value) > parseFloat(qi_quantity.dataset.quantity)){
             elem.classList.add('border-danger')
             elem.classList.add('text-danger')
             Alert.classList.add('alert-danger')

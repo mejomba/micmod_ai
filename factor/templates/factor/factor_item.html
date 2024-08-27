@@ -78,7 +78,7 @@
                     </span>
                     <span class="col-7 bold">
                         <span data-key="">نام کالا | کد کالا</span> <br>
-                        <span data-key=""> تعداد | قیمت</span>
+                        <span data-key=""> تعداد | فاکتور شده | قیمت</span>
                     </span>
                     <span class="col-4 bold">
                         <span data-key="lead_time">lead_time</span>
@@ -110,7 +110,7 @@
         </div>
     </div>
     <!-- row per item -->
-    {% for qi in quotation.quotation.all %}
+    {% for qi in quotation.quotation.all_quotations_for_factor %}
 {#<div class="bg-danger">{{ form_s.forms }}</div>#}
 {% with form_s|get_list_item:forloop.counter0 as factor_item %}
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
@@ -123,7 +123,7 @@
                 </div>
         	<div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
             <!--quotation item information-->
-            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>
@@ -135,7 +135,9 @@
                                 <span>{{ qi.goods_code_fk.sku }}</span>
                             </span> <hr>
                             <span class=" cursor-pointer">
-                                <span class="font-size-11 text-success"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <b>|</b>
+                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
                                 <b>|</b>
                                  <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
                             </span>
@@ -183,19 +185,21 @@
         {% else %}
             <div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
             <!--quotation item information-->
-            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+            <div class="col-4 border-left hover_light_info d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>
                     </span>
-                    <span class="col-7">
+                    <span class="col-7 ps-1">
                         <div class="d-flex flex-column">
                             <span class=" cursor-pointer d-flex justify-content-center">
                                 <span class="font-size-11 mx-1">{{ qi.goods_code_fk.part_number }}</span> <b>|</b>
                                 <span>{{ qi.goods_code_fk.sku }}</span>
                             </span> <hr>
                             <span class=" cursor-pointer">
-                                <span class="font-size-11 text-success"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <b>|</b>
+                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
                                 <b>|</b>
                                  <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
                             </span>
@@ -218,7 +222,7 @@
                         <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.goods_code_fk.part_number }}" >
                     </span>
                     <span class="col-1 text-center px-1">
-                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ qi.quantity }}" >
+                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ qi.remaining_quantity_in_factor }}" >
                         <input type="text" onkeyup="check_price(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee }}" >
                     </span>
                     <span class="col-3 text-center px-1">

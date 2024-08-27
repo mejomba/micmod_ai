@@ -40,6 +40,9 @@ class QuotationItemManager(BaseManager):
         qs = super().get_queryset()
         return qs.order_by('id')
 
+    def all_quotations_for_factor(self):
+        return self.get_queryset().order_by('id', 'is_over')
+
 
 class Month(AbsBaseModel):
     title = models.CharField(verbose_name=_('title'), max_length=20)
@@ -424,8 +427,25 @@ class QuotationItem(BaseModel):
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+    is_over = models.BooleanField(_('is_over'), default=False)
 
     objects = QuotationItemManager()
+
+    @property
+    def total_quantity_in_factor(self):
+        total_quantity = 0
+        all_factor_items = self.qi.all()
+        for f in all_factor_items:
+            total_quantity += f.quantity if f.quantity else 0
+        return total_quantity
+
+    @property
+    def remaining_quantity_in_factor(self):
+        remaining_quantity = self.quantity - self.total_quantity_in_factor
+        if remaining_quantity > 0:
+            return remaining_quantity
+        else:
+            return 0
 
     @classmethod
     def quotation_item_all_pending(cls, inquiry_type=None, path=None):

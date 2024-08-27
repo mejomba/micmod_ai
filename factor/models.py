@@ -14,10 +14,13 @@ from tools.utils import show_error
 from translator import get_text as _
 
 
-class FactorManager(BaseManager):
+class FactorItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.order_by('id')
+        return qs.order_by('qi__is_over', 'id')
+
+    def base_qs(self):
+        return self.get_queryset().order_by('id')
 
 
 class Factor(SLSDoc):
@@ -54,8 +57,17 @@ class FactorItem(BaseModel):
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
 
-    objects = FactorManager()
+    objects = FactorItemManager()
 
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        super().save(force_insert, force_update, using, update_fields)
+        total_quantity = self.qi.total_quantity_in_factor
+        total_quantity += self.quantity
+        if total_quantity >= self.qi.quantity:
+            self.qi.is_over = True
+            self.qi.save()
 
     class Meta:
         ordering = ['id']
