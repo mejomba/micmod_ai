@@ -69,7 +69,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
-        FactorItemFormset.extra = self.object.q.quotation.count() -1 if self.object else None
+        FactorItemFormset.extra = 0
         context['form_s'] = FactorItemFormset(instance=self.object)
 
         user_groups = self.request.user.groups.values_list('name', flat=True)

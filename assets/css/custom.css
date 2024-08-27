@@ -878,6 +878,9 @@ span .select2-selection{
     min-width: 1200px !important;
 }
 
+.s-0 {
+    letter-spacing: 0.05rem;
+}
 .s-1 {
     letter-spacing: 0.1rem;
 }

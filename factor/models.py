@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Q
 
 from accounts.models import User
-from core.models import BaseModel
+from core.models import BaseModel, BaseManager
 from extra_data.models import Item
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem
@@ -12,6 +12,12 @@ from order.models import Order
 from tools.utils import show_error
 
 from translator import get_text as _
+
+
+class FactorManager(BaseManager):
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.order_by('id')
 
 
 class Factor(SLSDoc):
@@ -47,6 +53,8 @@ class FactorItem(BaseModel):
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
+
+    objects = FactorManager()
 
 
     class Meta:

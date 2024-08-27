@@ -23,7 +23,7 @@
         transition: 0.3s;
     }
     input:focus {
-        border: 1px solid #858585 !important;
+        border: 1px solid #858585;
     }
     .select2-search__field:focus {
         border: 2px solid #858585 !important;
@@ -33,6 +33,10 @@
 {% endblock extra_css %}
 
 {% block form_content %}
+    <div class="alert alert-dismissible fade position-fixed" role="alert" style="z-index: 5000; bottom: 40px">
+      <span id="alert_message"></span>
+{#      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>#}
+    </div>
     {% csrf_token %}
         {% for hidden in form.hidden_fields %}
             {{ hidden }}
@@ -41,14 +45,8 @@
 
     {% if obj %}
         {% include 'factor/factor_item.html' with form_s=form_s quotation=quotation %}
-    	<div id="update-factor">
-        {{ obj }}
-        {% for factoritem in obj.factoritem_set.all %}
-        	{{ factoritem }}
-        {% endfor %}
-
-        </div>
     {% else %}
+        <!-- search quotation-->
         <div class="mb-4 limit_query">
         <span class="text-muted font-size-14 me-3">محدود کردن جستجو به: </span>
         <div class="form-check form-check-inline">
@@ -77,6 +75,7 @@
         </div>
     </div>
         <div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div>
+
         <div id="ajax_quotation_items"></div>
     {% endif %} 
 
@@ -146,20 +145,47 @@
     <script src="{% static 'js/extra/factor.js' %}"></script>
 
     <script>
-    function factor_to_quotation(){
-        const factor_to_quotation_btns = document.querySelectorAll('.factor_to_quotation')
-        factor_to_quotation_btns.forEach(function (item){
-            console.log(item)
-        })
-    }
-    function quotation_to_factor(){
-        const quotation_to_factor_btns = document.querySelectorAll('.quotation_to_factor')
-        quotation_to_factor_btns.forEach(function (item){
-            console.log(item)
-        })
+    function check_quantity(event){
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_quantity = row.querySelector('.qi_quantity')
+        const Alert = document.querySelector('.alert')
+        if (elem.value > qi_quantity.dataset.quantity){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'تعداد انتخابی بیش از تعداد خواسته شده در پیش فاکتور است!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+        }
     }
 
-    setTimeout(factor_to_quotation, 2000)
-    setTimeout(quotation_to_factor, 2000)
+    function check_price(event){
+        debugger
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_price = row.querySelector('.qi_price')
+        const Alert = document.querySelector('.alert')
+        if (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price)){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+        }
+    }
     </script>
 {% endblock extra_js %}
