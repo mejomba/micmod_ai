@@ -282,7 +282,10 @@ class Quotation(SLSDoc):
     @property
     def tax_amount(self):
         try:
-            return sum(x.tax for x in self.quotation.all())
+            x = sum(x.tax for x in self.quotation.all())
+            return x
+            if x:
+                return round(x, 1)
         except Exception as e:
             show_error(e, __file__)
             return 0
@@ -684,7 +687,10 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                return x
+                if x:
+                    return round(x, 1)
             else:
                 return 0
         except Exception as e:
