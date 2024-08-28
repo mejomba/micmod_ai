@@ -60,11 +60,7 @@
                     <div class="w-50 replace-digits">
                         <label class="card-title-desc text-center bold mt-1 ms-1"
                                data-key="stock_amount">موجودی:</label>
-{#                        {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}#}
-{#                        {{ nested }}#}
                         {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
-{#                        <label class="text-center w-100  card-title-desc h-25" name="stock_amount_lbl">-</label>#}
-{#                        <label class="text-center w-100  card-title-desc h-25" name="stock_amount_res_lbl">-</label>#}
                     </div>
                     <div>{% render_field_by_order nested nested.description label='on-border' %}</div>
                 </div>
@@ -72,34 +68,17 @@
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
                     <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
                 </div>
-{#                <div class="mb-3">#}
-{#                    <span class="mx-2">زمان تحویل: </span>#}
-{#                    {{ form_s.instance.lead_time|default_if_none:'-' }}#}
-{#                </div>#}
                 <div>
-{#                    {% render_field_by_order form_s form_s.item_in_china label='on-border' %}#}
                 </div>
                 {% if form_s.instance.need_local_price_inquiry %}
                     <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" title="{% get_inquiry_result_description quotation_item=form_s.instance %}" style="bottom: 0; right: 30px;">
                     <i class="ki-outline ki-message-notif fs-2x"></i>
                     </span>
                 {% endif %}
-
-{#                creator_users = set()#}
-{#                for comment in comments:#}
-{#                    creator_users.add(comment.creator_user)#}
-{#                {% get_comments_button %}#}
-{#                <div class="btn btn-sm btn-primary" id="id_comment__{{ form_s.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" data-pk="{{ form_s.instance.pk }}" data-form_url="/core/micmod_base/quotationitem/{{ form_s.instance.comments.content_type.pk }}/{{ form_s.instance.pk }}">ثبت نظر</div>#}
                 <div class="mt-2">
                     {% render_field_by_order form_s form_s.price_target label='on-border' %}
                 </div>
                 {% get_comment_user_list form_s request.user %}
-{#            {% if form_s.instance.need_foreign_price_inquiry %}#}
-{#            <div>#}
-{#                <p><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></p>#}
-{#                <p><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></p>#}
-{#            </div>#}
-{#            {% endif %}#}
             </div>
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
                 <div class="d-flex border-bottom px-1 align-items-start">
@@ -107,7 +86,6 @@
                         {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
                             <label>کد کالا</label>
-{#                            {% render_field_by_order form_s form_s.goods_code_fk %}#}
                             {% if form_s.instance.old_goods_code %}
                                 <small style="font-size: 0.7rem;">{{ form_s.instance.old_goods_code }} ({{ form_s.instance.item_editor_user }})</small>
                                 <br>
@@ -124,9 +102,7 @@
                             {% endif %}
                             </div>
                         {% endif %}
-
                     </div>
-
                     <div class="w-75">
                         <div class="d-flex justify-content-end">
                             {% render_field_by_order form_s form_s.goods_name label='on-border' %}
@@ -135,10 +111,8 @@
                                  data-key="show_alt">مشابه
                             </div>
                         </div>
-{#                                                {% render_field_by_order form_s form_s.goods_name_alt label='on-border' %}#}
                         <div class="col on-border">
                             <label>نام کالا</label>
-{#                            <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_lbl" disabled></textarea>#}
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
                                 <div class="sepidar_id_warning">
@@ -146,19 +120,15 @@
                                 </div>
                             {% endif %}
                             {% if request.user|has_groups:"sales_user" %}
-
-
                             <div class="d-flex justify-content-between px-3">
                             <span>
                             {% parent_code_data form_s.instance.goods_code as parent_code %}
-
                                 {% if parent_code %}
                                     <small class="me-1">کد مادر</small>
                                     <small class="bg-light-danger">{{ parent_code.sku }}</small>
                                      -
                                     <small class="bg-light-info">{{ parent_code.part_number }}</small>
                                 {% endif %}
-
                             </span>
                                 <a href="/extra_data/item/create/" target="_blank">
                                     <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
@@ -167,9 +137,7 @@
                             {% endif %}
                         </div>
                     </div>
-
                 </div>
-
                 <div class="d-none border-bottom px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
@@ -183,12 +151,10 @@
                                 </div>
                                 <label>کد کالا</label>
                             {% endif %}
-
                         </div>
                         <div class="w-75">
                             <div class="col on-border">
                                 <label>نام کالا</label>
-{#                                <textarea class="d-none goods_name w-100 form-control bg-white bold text-black" rows="1" name="-goods_name_alt_lbl" disabled></textarea>#}
                                 <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
 
                             </div>
@@ -213,7 +179,6 @@
                                 <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>
                                 <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>
                             </div>
-
                             <div class="w-25">
                                 <div class="card-title-desc text-center" data-key="price">قیمت</div>
                                 <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>
@@ -222,7 +187,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
             <div class="col-lg-1 border-top border-bottom replace-digits">
                 <div class="w-100 h-100" id="sixty-days-sales">
@@ -320,8 +284,6 @@
                                 <span>مبلغ نهایی</span>
                                 <span name="-total_price">-</span>
                             </div>
-{#                            <div class="text-center">جمع کل (ردیف)</div>#}
-{#                            <h3 class="card-title text-center persian-digit" name="-total_price">-</h3>#}
                         </div>
                     </div>
                     <div class="col-lg-5 d-block p-0">
@@ -392,19 +354,11 @@
                 </div>
             </div>
 
-            {% include 'core/partial/empty_modal.html' %}
-            {% include 'core/partial/empty_modal_lg.html' %}
-            {% include 'core/partial/empty_modal_sm.html' %}
         <div class="d-flex align-items-center gap-8 py-2 ms-20">
              <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
-
-{#            {% render_field_by_order form_s form_s.item_in_china label='on-border' %}#}
-{#            <div>#}
                 <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
                 <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
-{#            </div>#}
-
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 </div>
