@@ -12,7 +12,7 @@ from core.views import BaseView, Base
 from extra_data.models import Customer
 from factor.forms import FactorModelForm, FactorItemFormset
 from factor.models import Factor, FactorItem
-from micmod_base.models import Quotation
+from micmod_base.models import Quotation, QuotationItem
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import to_jalali_date
 import json
@@ -63,12 +63,34 @@ class FactorView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if not self.object:
+            return context
+        context['update'] = True if self.object else False
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
-        FactorItemFormset.extra = 0
+        qis = self.object.q.quotation.all() if self.object else None
+        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
         context['form_s'] = FactorItemFormset(instance=self.object)
 
-        user_groups = self.request.user.groups.values_list('name', flat=True)
+        exclude_qi = set()
+        context['factoritem_qi_pair'] = []
+        for factor_item_form in context['form_s'].forms:
+            for qi in qis:
+                factor_item_form_instance_pk = factor_item_form.instance.pk
+                if factor_item_form_instance_pk:
+                    exclude_qi.add(factor_item_form.instance.qi.pk)
+                if factor_item_form_instance_pk and factor_item_form.instance.qi.pk == qi.pk:
+                    if qi.is_over:
+                        """(qi is_over, factor item)"""
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        break
+                    else:
+                        """(qi, factor item)"""
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        break
+        exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
+        empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
+        context['factoritem_qi_pair'].extend(empty_pair)
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
@@ -118,7 +140,7 @@ def search_factor_view(request, *args, **kwargs):
         item['customer_party_id'] = q.customer_party_id.sepidar_dl_code if q.customer_party_id else '-'
         item['quotation_id'] = q.pk
         item['row_count'] = q.quotation.all().count()
-        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow.creator_user else '-'
+        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow else '-'
         item['last_work_flow_state'] = q.last_work_flow.current_state_name if q.last_work_flow else '-'
         item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title
@@ -130,9 +152,15 @@ def search_factor_view(request, *args, **kwargs):
 
 def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     quotation = Quotation.objects.filter(pk=pk).first()
+    qis = QuotationItem.objects.filter(quotation_id=pk)
     form = FactorModelForm(instance=quotation)
     FactorItemFormset.extra = quotation.quotation.count()
     form_s = FactorItemFormset()
-    context = {'quotation': quotation, 'form': form, 'form_s': form_s}
+    context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': []}
+
+    empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
+    empty_pair.sort(key=lambda x: x[0].is_over)
+    context['factoritem_qi_pair'] = empty_pair
+
     html = render_to_string('factor/factor_item.html', context)
     return JsonResponse({'res': html})

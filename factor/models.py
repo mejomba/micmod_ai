@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 
@@ -17,7 +17,7 @@ from translator import get_text as _
 class FactorItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.order_by('qi__is_over', 'id')
+        return qs.order_by('qi__is_over', 'qi__id')
 
     def base_qs(self):
         return self.get_queryset().order_by('id')
@@ -51,7 +51,7 @@ class FactorItem(BaseModel):
     part_number_show = models.CharField(max_length=255, verbose_name=_('part_number_show'), null=True, blank=True)
     price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
     index = models.IntegerField(null=True, blank=True, verbose_name=_("index"))
-    quantity = models.BigIntegerField(null=True, blank=True, verbose_name=_("quantity"))
+    quantity = models.PositiveBigIntegerField(null=True, blank=True, validators=[MinValueValidator(0)], verbose_name=_("quantity"))
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
@@ -62,12 +62,19 @@ class FactorItem(BaseModel):
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
-        super().save(force_insert, force_update, using, update_fields)
-        total_quantity = self.qi.total_quantity_in_factor
-        total_quantity += self.quantity
-        if total_quantity >= self.qi.quantity:
-            self.qi.is_over = True
-            self.qi.save()
+        if self.quantity == 0 and not self.pk:
+            return
+        else:
+            if self.pk and self.quantity == 0:
+                self.is_deleted = True
+            super().save(force_insert, force_update, using, update_fields)
+            total_quantity = self.qi.total_quantity_in_factor
+            if total_quantity >= self.qi.quantity:
+                self.qi.is_over = True
+                self.qi.save()
+            else:
+                self.qi.is_over = False
+                self.qi.save()
 
     class Meta:
         ordering = ['id']

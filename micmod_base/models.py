@@ -41,7 +41,10 @@ class QuotationItemManager(BaseManager):
         return qs.order_by('id')
 
     def all_quotations_for_factor(self):
-        return self.get_queryset().order_by('id', 'is_over')
+        return self.get_queryset().order_by('is_over', 'id')
+
+    # def remaining_quotations_for_factor(self, exclude_qi):
+    #     return self.get_queryset().filter(quotation=self.quotation, pk__not_in=exclude_qi)
 
 
 class Month(AbsBaseModel):
