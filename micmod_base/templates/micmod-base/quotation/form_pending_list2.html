@@ -11,11 +11,11 @@
     <p class="text-success font-size-15 bold p-0 m-0 d-flex flex-column">
         <span class="mb-2">
             استعلام شروع نشده‌ی شما :
-            <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started }}</span>
+            <span id="id_my_inquiry_not_started_">{{ my_inquiry_not_started }}</span>
         </span>
         <span>
             استعلام های جدید :
-            <span id="id_inquiry_not_started">{{ inquiry_not_started_count }}</span>
+            <span id="id_inquiry_not_started_">{{ inquiry_not_started_count }}</span>
         </span>
     </p>
 </div>
@@ -223,8 +223,8 @@ function update_inquiry_count() {
         success: function (data) {
             debugger
             try {
-                document.querySelector('#id_inquiry_not_started').innerHTML = data['inquiry_not_started_count']
-                document.querySelector('#id_my_inquiry_not_started').innerHTML = data['my_inquiry_not_started']
+                document.querySelector('#id_inquiry_not_started_').innerHTML = data['inquiry_not_started_count']
+                document.querySelector('#id_my_inquiry_not_started_').innerHTML = data['my_inquiry_not_started']
                 document.querySelector('#id_pending_list').innerHTML = data['new_inquiry']
                 document.querySelector('#id_item_in_china').innerHTML = data['item_in_china']
 
