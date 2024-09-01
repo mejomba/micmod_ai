@@ -569,15 +569,20 @@ function set_item_classes(item) {
     // }
     copy_values(item, '-goods_name_alt')
     const box = item.querySelector('[name="box-alt-goods"]')
-    if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
+    try {
+        if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
         if (box) {
             box.classList.remove('d-none')
+            }
+        } else {
+            if (box) {
+                box.classList.add('d-none')
+            }
         }
-    } else {
-        if (box) {
-            box.classList.add('d-none')
-        }
+    } catch (e) {
+        console.log('[[this error catch....]] ', e)
     }
+
     // const item = item.querySelector('[class*="final_price"]')
     set_price(item)
 
