@@ -596,10 +596,12 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         quotation = request.GET.get('quotation')
         customer_code = request.GET.get('customer_code')
+        customer_name = request.GET.get('customer_name')
         my_quotations = request.GET.get('my_quotations')
         my_inquiry_not_started = request.GET.get('my_inquiry_not_started')
         inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
         search_sku = request.GET.get('search_sku')
+        search_part_number = request.GET.get('search_part_number')
         force_inquiry = request.GET.get('force_inquiry')
         time_range = request.GET.get('time_range')
         from_time = self.request.GET.get('from_time')
@@ -637,6 +639,13 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         elif self.request.GET.get('from_time') or self.request.GET.get('to_time'):
             quotations_record_lst = quotations_record_lst.filter(quotation__created_date__range=[filter_form.cleaned_data.get('from_time'),filter_form.cleaned_data.get('to_time')])
+        elif self.request.GET.get('choice') == 'search_part_number' or search_part_number:
+            quotations_record_lst = quotations_record_lst.filter(goods_code_fk__part_number__icontains=search_part_number)
+        elif self.request.GET.get('choice') == 'customer_name' or customer_name:
+            customer_filter = (Q(quotation__customer_party_id__title__icontains=customer_name) |
+                               Q(quotation__customer_party_id__name__icontains=customer_name) |
+                               Q(quotation__customer_party_id__last_name__icontains=customer_name))
+            quotations_record_lst = quotations_record_lst.filter(customer_filter)
         else:
             quotations_record_lst = quotations_record_lst
 

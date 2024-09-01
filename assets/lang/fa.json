@@ -584,5 +584,6 @@
     "is_main": "اصلی",
     "discount_per_item": "تخفیف",
     "meet_in_person": "مراجعه حضوری",
-    "image_meet_in_person": "تصاویر مراجعه حضوری"
+    "image_meet_in_person": "تصاویر مراجعه حضوری",
+    "search_customer_name": "نام مشتری"
 }
