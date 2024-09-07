@@ -1,3 +1,4 @@
+from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -5,7 +6,10 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.urls import reverse
+from django.views import View
 from jalali_date import datetime2jalali
+from translator import get_text as _
 
 from comments.forms import CommentsForm
 from core.views import BaseView, Base
@@ -164,3 +168,55 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
 
     html = render_to_string('factor/factor_item.html', context)
     return JsonResponse({'res': html})
+
+
+class FactorsList(LoginRequiredMixin, View):
+    def get(self, request):
+        q = self.request.GET.get('q')
+        factors = Factor.objects.all()
+
+        greeting = {}
+        greeting['heading'] = _("factor")
+        greeting['pageview'] = _("factor")
+        greeting['factor'] = factors
+
+        return render(request, 'factor/partial/list_datatable.html', greeting)
+
+
+class FactorListDatatable(AjaxDatatableView):
+    model = Factor
+    title = 'currency_list'
+    initial_order = [["pk", "desc"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, },
+        {'name': 'q', 'visible': True, 'title': _('quotation'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
+        {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
+         'orderable': True, 'lookup_field': '__title__icontains'},
+        {'name': 'delivery_time', 'visible': True, 'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
+        {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+        # {'name': 'workflows', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        # {'name': 'factor_self', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': False, 'orderable': True},
+        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'description', 'visible': True, 'orderable': False, 'searchable': True, 'lookup_field': '__icontains'},
+
+    ]
+
+    def customize_row(self, row, obj):
+        row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+            reverse('micmod_base:quotations.view', args=(obj.id,)),
+            obj.q.id if obj.q else '-'
+        )
+        row['pk'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+            reverse('factor:factor.view', args=(obj.id,)),
+            obj.pk if obj.pk else '-'
+        )
+
