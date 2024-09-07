@@ -1,6 +1,6 @@
 from django.db import models
 from core.models import BaseModel, BaseModeWF
-from extra_data.models import Brand
+from extra_data.models import Brand, Item
 
 
 class Order(BaseModeWF):
@@ -10,6 +10,7 @@ class Order(BaseModeWF):
 class OrderItem(BaseModel):
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_items')
     quantity = models.FloatField(blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
 
     # fields
     QUALITY_CHOICES = (('l', 'Low'), ('m', 'Medium'), ('h', 'high'))

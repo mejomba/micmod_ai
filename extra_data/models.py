@@ -12,7 +12,7 @@ from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
 
-from sepidar.models import APILogs
+from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 from sepidar.models import BaseData
@@ -341,12 +341,13 @@ class Item(BaseModel):
     @property
     def supply_locations(self):
         res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+        stock_qty = sepidarItem.get_stock_qty(self.sepidar_id_0)
+        stock_qty = stock_qty[0].stock_qty
 
-        if 'موجودی انبار داشت':
-            res.append(('pk', 'موجودی انبار'))
-        if 'سفارش در راه داشت':
-            for item in range(1):
-                res.append(('pk', "سفارش در راه n ام"))
+        if stock_qty:
+            res.append(('pk', f'موجودی انبار {stock_qty}'))
+        for o in self.orderitem_set.all():
+            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
 
         return res
 
