@@ -42,6 +42,10 @@ class Factor(SLSDoc):
 
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
 
+    @classmethod
+    def get_qs_count(cls, user):
+        return len(cls.objects.get_access_object(user, q='active', quotation=False))
+
 
 class FactorItem(BaseModel):
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))

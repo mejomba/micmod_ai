@@ -89,6 +89,32 @@
           ]
         },
         {
+          "title": "t-factor",
+          "icon": "cheque",
+          "path_key": "factor",
+          "permission": {
+            "permissions": [
+              "factor.view_factor"
+            ]
+          },
+          "count": "factor.factor:get_qs_count",
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "factor/view",
+              "link": "factor:factor.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "factor/list",
+              "link": "factor:factor.list",
+              "count": "factor.factor:get_qs_count"
+            }
+          ]
+        },
+        {
               "title": "pending_list",
               "icon": "burger-menu",
               "path_key": "quotationitem/list/pending/",
