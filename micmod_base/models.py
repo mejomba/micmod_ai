@@ -688,6 +688,8 @@ class QuotationItem(BaseModel):
         try:
             if self.quotation.is_official:
                 x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                if self.quotation.currency_ref.title_en == 'Rial':
+                    return int(x)
                 return x
                 if x:
                     return round(x, 1)
