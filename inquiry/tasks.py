@@ -118,8 +118,8 @@ def create_essentials():
     db_host = db_config['HOST']
     db_port = db_config['PORT']
     backup_path = db_config["BACKUP_PATH"] or ''
-    filename = f'db_backup__{datetime.datetime.now()}__'
-    filename = filename + "-" + time.strftime("%Y%m%d") + ".backup"
+    filename = f'db_backup__'
+    filename = filename + time.strftime("%Y%m%d__%H:%M:%S") + ".backup"
     command_str = str(db_host) + " -p " + str(db_port) + " -d " + db_name + " -U " + db_user
     return command_str, backup_path, filename
 
@@ -132,7 +132,7 @@ def db_backup(table_names=None):
         for x in table_names:
             command_str = command_str + " -t " + x
 
-    command_str = command_str + " -F c -b -v -f '" + backup_path + "/" + filename + "'"
+    command_str = command_str + " -F c -b -v -f " + backup_path + filename
     try:
         os.system(command_str)
         print("Backup completed")
