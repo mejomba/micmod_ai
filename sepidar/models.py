@@ -463,6 +463,54 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
         # print(qry)
         return res
 
+    @staticmethod
+    def get_stock_qty(code):
+        qry = f"""
+        select TOP (1) item.Code AS code, item.ItemID as itemid, item.Title AS title, invoice_1.qty AS f_qty_cust, 
+    						 sum_stock.total_quantity AS stock_qty, sum_stock_res.total_quantity as stock_res_qty,
+							 quotation_1.Quantity as quotation_qty
+        FROM            INV.Item AS item LEFT OUTER JOIN
+                                 (SELECT        i_invoice.ItemRef, invoice.Date, i_invoice.Fee, i_invoice.Quantity as qty
+                                   FROM            SLS.InvoiceItem AS i_invoice INNER JOIN
+                                                             SLS.Invoice AS invoice ON i_invoice.InvoiceRef = invoice.InvoiceId INNER JOIN
+                                                                 (SELECT        InvI.ItemRef, MAX(Inv.InvoiceId) AS max_id
+                                                                   FROM         SLS.Invoice AS Inv INNER JOIN
+                                                                                SLS.InvoiceItem AS InvI ON Inv.InvoiceId = InvI.InvoiceRef
+                                                                   GROUP BY InvI.ItemRef) AS mx ON i_invoice.ItemRef = mx.ItemRef AND invoice.InvoiceId = mx.max_id) AS invoice_1 ON item.ItemID = invoice_1.ItemRef LEFT OUTER JOIN
+                                 (SELECT        invi.ItemRef, sum(invi.Quantity) as qty
+                                   FROM         SLS.Invoice AS inv INNER JOIN
+                                                SLS.InvoiceItem AS InvI ON Inv.InvoiceId = InvI.InvoiceRef
+    											where inv.Date > DATEADD(DAY,-60,GETDATE())
+                                                                GROUP BY InvI.ItemRef) AS invoice_2 ON item.ItemID = invoice_2.ItemRef LEFT OUTER JOIN
+                                 (SELECT        ItemRef, SUM(Quantity) AS total_quantity
+                                   FROM            INV.ItemStockSummary
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (2)
+                                   GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
+                                 (SELECT        ItemRef, SUM(Quantity) AS total_quantity
+                                   FROM            INV.ItemStockSummary
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28)
+                                   GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
+                                 (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
+                                   FROM            SLS.Invoice AS Inv INNER JOIN
+                                                             SLS.InvoiceItem AS InvI ON Inv.InvoiceId = InvI.InvoiceRef
+                                   
+                                   GROUP BY InvI.ItemRef) AS sell_1 ON sell_1.ItemRef = item.ItemID LEFT OUTER JOIN
+                                 (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
+                                   FROM            SLS.Invoice AS Inv INNER JOIN
+                                                             SLS.InvoiceItem AS InvI ON Inv.InvoiceId = InvI.InvoiceRef
+                                   GROUP BY InvI.ItemRef) AS sell_2 ON sell_2.ItemRef = item.ItemID LEFT OUTER JOIN
+                                 (SELECT        i_quotation.ItemRef, quotation.Date, i_quotation.Fee, i_quotation.Quantity
+                                   FROM            SLS.QuotationItem AS i_quotation INNER JOIN
+                                                             SLS.Quotation AS quotation ON i_quotation.QuotationRef = quotation.QuotationId INNER JOIN
+                                                                 (SELECT        quI.ItemRef, MAX(qu.QuotationId) AS max_id
+                                                                   FROM            SLS.Quotation AS qu INNER JOIN
+                                                                                             SLS.QuotationItem AS quI ON qu.QuotationId = quI.QuotationRef
+                                                                   GROUP BY quI.ItemRef) AS mx ON i_quotation.ItemRef = mx.ItemRef AND quotation.QuotationId = mx.max_id) AS quotation_1 ON item.ItemID = quotation_1.ItemRef
+    WHERE  (item.Code = '{code}')
+    """
+        res = Item.objects.raw(qry, using='sepidar')
+        return res
+
 
 class WhereHouse(models.Model):
     stock_id = models.CharField(primary_key=True, verbose_name='stock id', max_length=200)
