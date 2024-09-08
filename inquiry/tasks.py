@@ -1,4 +1,5 @@
-import datetime
+import os
+import datetime, time
 
 from celery import shared_task
 from django.core.cache import cache
@@ -7,6 +8,8 @@ from django.utils import timezone
 from extra_data.models import Item
 from inquiry.models import PriceInquiryResult
 from tools.google_sheet import GSheet
+
+from django.conf import settings
 
 
 @shared_task
@@ -105,3 +108,52 @@ def deactivate_old_bazar_price(expiration_in_day=3):
     prices.update({'active': False})
     for price in prices:
         price.active = False
+
+
+def create_essentials():
+    db_config = settings.DATABASES.get('default')
+    db_name = db_config['NAME']
+    db_user = db_config['USER']
+    db_password = db_config['PASSWORD']
+    db_host = db_config['HOST']
+    db_port = db_config['PORT']
+    backup_path = db_config["BACKUP_PATH"] or ''
+    filename = f'db_backup__{datetime.datetime.now()}__'
+    filename = filename + "-" + time.strftime("%Y%m%d") + ".backup"
+    command_str = str(db_host) + " -p " + str(db_port) + " -d " + db_name + " -U " + db_user
+    return command_str, backup_path, filename
+
+
+def db_backup(table_names=None):
+    command_str, backup_path, filename = create_essentials()
+    command_str = "pg_dump -h " + command_str
+
+    if table_names is not None:
+        for x in table_names:
+            command_str = command_str + " -t " + x
+
+    command_str = command_str + " -F c -b -v -f '" + backup_path + "/" + filename + "'"
+    try:
+        os.system(command_str)
+        print("Backup completed")
+    except Exception as e:
+        print("!!Problem occured!!")
+        print(e)
+
+
+def restore_database(table_names=None):
+    command_str, backup_path, filename = create_essentials()
+    command_str = "pg_restore -h " + command_str
+
+    if table_names is not None:
+        for x in table_names:
+            command_str = command_str + " -t " + x
+
+    command_str = command_str + " -v '" + backup_path + "/" + filename + "'"
+
+    try:
+        os.system(command_str)
+        print("Restore completed")
+    except Exception as e:
+        print("!!Problem occured!!")
+        print(e)

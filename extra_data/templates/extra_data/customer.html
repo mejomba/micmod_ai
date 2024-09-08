@@ -67,14 +67,14 @@
 
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
-        {% render_field_by_order form form.z_no form.z_safte form.z_cheque_s form.z_cheque_ns form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.customer_grade label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.z_safte form.z_cheque_s form.z_cheque_ns form.z_no form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.customer_grade label='on-border' margin_b=4 %}
     </div>
 
     <div class="row bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات تکمیلی</h4>
         <div class="col-5">
             <div class="row row-cols-2">
-                {% render_field_by_order form form.province form.location form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long label='on-border' margin_b=4 %}
+                {% render_field_by_order form form.province form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long label='on-border' margin_b=4 %}
             </div>
         </div>
         <div class="col-7 d-flex flex-column">
@@ -542,6 +542,20 @@
 
     <script src="{% static 'js/base_define.js' %}"></script>
     <script>
+    const z_no = document.querySelector('#id_z_no')
+    function z_no_check(){
+        if (z_no.checked){
+            if (z_max_credit_rafi){z_max_credit_rafi.disabled=false}
+        } else {
+            if (z_max_credit_rafi){z_max_credit_rafi.disabled=true}
+        }
+    }
+    const z_max_credit_rafi = document.querySelector('#id_z_max_credit_rafi')
+    z_no_check()
+    z_no.addEventListener('click', function (e){
+        z_no_check()
+    })
+
     setTimeout(addCommaSeperator, 500, true)
     document.querySelector('#main-form').addEventListener('submit', removeCommaSeperator)
     </script>

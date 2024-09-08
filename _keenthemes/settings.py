@@ -209,6 +209,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),
         'PORT': os.environ.get('PG_PORT'),
+        'BACKUP_PATH': os.environ.get('BACKUP_PATH')
         # 'HOST': '192.168.1.80',  # os.environ.get('PG_HOST'),
         # 'PORT': 5437,  # os.environ.get('PG_PORT'),
         # 'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server',}
