@@ -595,5 +595,7 @@
     "phone": "تلفن",
     "customer_group": "کارشناس فروش",
     "website": "وب سایت",
-    "introducer": "معرف"
+    "introducer": "معرف",
+    "black_list": "لیست سیاه",
+    "extra_credit": "max credit"
 }

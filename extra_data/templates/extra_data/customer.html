@@ -55,7 +55,10 @@
             <div class="row row-cols-6 align-items-baseline">
                 <h4 class="position-absolute" style="top: -10px">اطلاعات پایه</h4>
                 {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.customer_group form.official_name label='on-border' margin_b=4 %}
-                {% render_field_by_order form form.meet_in_person form.active label='on-border' %}
+                <div class="d-flex col-4">
+                    {% render_field_by_order form form.meet_in_person form.active form.black_list label='on-border' %}
+                </div>
+
             </div>
         </div>
         <div class="col">

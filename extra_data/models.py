@@ -714,7 +714,7 @@ class Customer(AbsBaseModel):
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)
-
+    black_list = models.BooleanField(_('black_list'), default=False)
 
     @staticmethod
     def get_list(text):
