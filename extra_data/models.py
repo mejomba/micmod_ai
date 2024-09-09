@@ -341,11 +341,15 @@ class Item(BaseModel):
     @property
     def supply_locations(self):
         res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
-        stock_qty = sepidarItem.get_stock_qty(self.sepidar_id_0)
-        stock_qty = stock_qty[0].stock_qty
+        stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
+        for stock_qty in stock_qty_qry:
+            if stock_qty.quantity:
+                if stock_qty.quantity.is_integer():
+                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                else:
+                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
 
-        if stock_qty:
-            res.append(('pk', f'موجودی انبار {stock_qty}'))
+
         for o in self.orderitem_set.all():
             res.append((o.pk, f"سفارش در راه {o.pk} ام"))
 
