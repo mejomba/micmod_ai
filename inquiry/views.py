@@ -3,6 +3,7 @@ import threading
 
 from django.core.cache import cache
 from django.conf import settings
+from django.db.models.lookups import LessThan
 from django.forms import inlineformset_factory
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -14,8 +15,8 @@ from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import Min, IntegerField, F, Q
-from django.db.models.functions import Cast
+from django.db.models import Min, IntegerField, F, Q, ExpressionWrapper, FloatField, When, Case, Subquery, Value
+from django.db.models.functions import Cast, Abs, Coalesce
 
 from micmod_base.models import QuotationItem
 from sepidar.models import Item as sepidar_item
@@ -234,14 +235,40 @@ class SkuListDataTableView(AjaxDatatableView):
         # qs = qs.annotate(trade_last_weight=1+2)
         # qs = qs.annotate(wh_last_weight='wh_last_weight')
         q = self.request.POST.get('q')
-        # if q == 'update_from_sepidar':
-        #     set_items_sepidar_id_from_sepidar()
+        #
+        # wh_last_weight = Subquery(
+        #     self.model.objects.filter(
+        #         creator_user__isnull=False,
+        #         creator_user__groups__name='wh_user'
+        #     ).order_by('-id').values('item_weights')[:1])
+        #
+        # trade_last_weight = Subquery(
+        #     self.model.objects.filter(
+        #         creator_user__isnull=False,
+        #         creator_user__groups__name='trade_user'
+        #     ).order_by('-id').values('item_weights')[:1])
+        #
+        # annotated_queryset = self.model.objects.annotate(
+        #     wh_last_weight=Coalesce(wh_last_weight, 0),
+        #     trade_last_weight=Coalesce(trade_last_weight, 0)
+        # ).annotate(
+        #     weight_percentage=ExpressionWrapper(
+        #         Case(
+        #             When(trade_last_weight__gt=0,
+        #                  then=(F('wh_last_weight') - F('trade_last_weight')) / F('trade_last_weight') * 100),
+        #             default=Value(0),  # If trade_last_weight is 0 or None
+        #             output_field=FloatField()
+        #         ),
+        #         output_field=FloatField()
+        #     )
+        # )
 
         if q == 'sales_user':
             qs = qs.filter(creator_user__groups__name=q)
         elif q == 'not_confirm':
             qs = qs.filter(technical_confirm=False)
-
+        # elif q == 'weight_percentage':
+        #     qs = annotated_queryset.filter(weight_percentage__gte=20)
         return qs
 
     def get_column_defs(self, request):
