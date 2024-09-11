@@ -1031,3 +1031,11 @@ def save_parent_item(request):
         item.save()
         return JsonResponse({'res': 'ok'})
     return JsonResponse({'res': 'کد نامعتبر'}, status=400)
+
+
+def sale_user_report(request):
+    from .models import Quotation
+    wf_states = ['پیش فاکتور اولیه', 'استعلام قیمت', 'تایید پیش فاکتور', 'تایید مشتری', 'تایید کارشناس', 'مرحله نهایی']
+    sale_user_report_call = Quotation.sale_user_report(request.user, wf_states)
+    res = render_to_string('micmod-base/quotation/partial/sale_user_report.html', context={'sale_user_report_call':sale_user_report_call, 'wf_states': wf_states})
+    return JsonResponse({'res': res}, safe=False)
