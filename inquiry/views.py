@@ -230,45 +230,42 @@ class SkuListDataTableView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
+        from django.db.models import Avg, Count, Min, Sum
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
-        # qs = qs.annotate(trade_last_weight=1+2)
-        # qs = qs.annotate(wh_last_weight='wh_last_weight')
         q = self.request.POST.get('q')
-        #
-        # wh_last_weight = Subquery(
-        #     self.model.objects.filter(
-        #         creator_user__isnull=False,
-        #         creator_user__groups__name='wh_user'
-        #     ).order_by('-id').values('item_weights')[:1])
-        #
-        # trade_last_weight = Subquery(
-        #     self.model.objects.filter(
-        #         creator_user__isnull=False,
-        #         creator_user__groups__name='trade_user'
-        #     ).order_by('-id').values('item_weights')[:1])
-        #
-        # annotated_queryset = self.model.objects.annotate(
-        #     wh_last_weight=Coalesce(wh_last_weight, 0),
-        #     trade_last_weight=Coalesce(trade_last_weight, 0)
-        # ).annotate(
-        #     weight_percentage=ExpressionWrapper(
-        #         Case(
-        #             When(trade_last_weight__gt=0,
-        #                  then=(F('wh_last_weight') - F('trade_last_weight')) / F('trade_last_weight') * 100),
-        #             default=Value(0),  # If trade_last_weight is 0 or None
-        #             output_field=FloatField()
-        #         ),
-        #         output_field=FloatField()
-        #     )
-        # )
 
         if q == 'sales_user':
             qs = qs.filter(creator_user__groups__name=q)
         elif q == 'not_confirm':
             qs = qs.filter(technical_confirm=False)
-        # elif q == 'weight_percentage':
-        #     qs = annotated_queryset.filter(weight_percentage__gte=20)
+        elif q == 'weight_percentage':
+            qry = """
+            select distinct(WH.sku_id), WH.id, WH.sku_id sku from
+	(
+	SELECT  "extra_data_itemweight"."id", "extra_data_itemweight"."created_date", "extra_data_itemweight"."last_update_date", "extra_data_itemweight"."is_deleted",
+	"extra_data_itemweight"."creator_user_id", "extra_data_itemweight"."editor_user_id", "extra_data_itemweight"."sku_id", "extra_data_itemweight"."weight"
+	FROM "extra_data_itemweight" 
+	INNER JOIN "auth_user" ON ("extra_data_itemweight"."creator_user_id" = "auth_user"."id") 
+	INNER JOIN "auth_user_groups" ON ("auth_user"."id" = "auth_user_groups"."user_id") 
+	INNER JOIN "auth_group" ON ("auth_user_groups"."group_id" = "auth_group"."id") 
+	WHERE (NOT "extra_data_itemweight"."is_deleted" AND "extra_data_itemweight"."sku_id" in (select id from extra_data_item ) AND "extra_data_itemweight"."creator_user_id" IS NOT NULL AND "auth_group"."name" in ('trade_user', 'trade_admin') ) ORDER BY "extra_data_itemweight"."id" asc
+) TRADE,
+	(
+	SELECT  "extra_data_itemweight"."id", "extra_data_itemweight"."created_date", "extra_data_itemweight"."last_update_date", "extra_data_itemweight"."is_deleted",
+	"extra_data_itemweight"."creator_user_id", "extra_data_itemweight"."editor_user_id", "extra_data_itemweight"."sku_id", "extra_data_itemweight"."weight"
+	FROM "extra_data_itemweight" 
+	INNER JOIN "auth_user" ON ("extra_data_itemweight"."creator_user_id" = "auth_user"."id") 
+	INNER JOIN "auth_user_groups" ON ("auth_user"."id" = "auth_user_groups"."user_id") 
+	INNER JOIN "auth_group" ON ("auth_user_groups"."group_id" = "auth_group"."id") 
+	WHERE (NOT "extra_data_itemweight"."is_deleted" AND "extra_data_itemweight"."sku_id" in (select id from extra_data_item ) AND "extra_data_itemweight"."creator_user_id" IS NOT NULL AND "auth_group"."name" in ('wh_user', 'wh_admin')) ORDER BY "extra_data_itemweight"."id" asc
+	) WH
+	where TRADE.sku_id=WH.sku_id """
+
+            #"""and abs(((WH.weight-TRADE.weight)/Trade.weight)*100)::integer>10"""
+            raw = self.model.objects.raw(qry)
+            ids = [x.sku for x in raw]
+            qs = qs.filter(id__in=ids)
         return qs
 
     def get_column_defs(self, request):
