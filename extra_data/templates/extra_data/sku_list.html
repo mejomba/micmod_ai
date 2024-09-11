@@ -29,8 +29,8 @@
         <span>استفاده از فیلتر</span>
         <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>
         <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>
-{#        <a href="{% url 'extra_data:sku.list' %}?q=weight_percentage" class="btn btn-light-danger mx-1">اختلاف وزن غیرعادی</a>#}
-{#        <a href="{% url 'extra_data:sku.list' %}" class="btn btn-success mx-1">همه</a>#}
+        <a href="{% url 'extra_data:sku.list' %}?q=weight_percentage" class="btn btn-light-danger mx-1">اختلاف وزن</a>
+        <a href="{% url 'extra_data:sku.list' %}" class="btn btn-success mx-1">همه</a>
 
         <div class="btn btn-secondary mx-1" id="update_from_sepidar">بروز رسانی از سپیدار</div>
 
@@ -125,13 +125,18 @@
         );
     });
     </script>
+    {% static 'js/local/jqury.dataTables.min.js' %}
+{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
 
-    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    {% static 'js/local/dataTables.buttons.min.js' %}
+    {% static 'js/local/jszip.min.js' %}
+    {% static 'js/local/pdfmake.min.js' %}
+    {% static 'js/local/vfs_fonts.js' %}
+    {% static 'js/local/buttons.html5.min.js' %}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
 {% endblock extra_js %}
