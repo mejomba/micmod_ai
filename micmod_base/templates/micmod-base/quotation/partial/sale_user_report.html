@@ -1,0 +1,25 @@
+{% load more_tags %}
+
+<table class="table table-striped">
+  <thead class="mb-5 bg-light-info rounded">
+    <tr>
+        <th scope="col"><h6>کاربر</h6></th>
+        {% for wf_state in wf_states %}
+        <th scope="col"><h6>{{ wf_state }}</h6></th>
+        {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for user_, wf_count_list in sale_user_report_call.items %}
+    <tr>
+      <th scope="row">
+        <span>{{ user_.profile.avatar_symbol }}</span>
+        <span class="ms-3">{{ user_.profile }}</span>
+      </th>
+        {% for wf_count in wf_count_list %}
+            <td>{{ wf_count }}</td>
+        {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
