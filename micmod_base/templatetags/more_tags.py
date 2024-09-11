@@ -237,6 +237,13 @@ def get_inquiry_report():
     return {'quotationitem_filters': qi_filter}
 
 
+@register.inclusion_tag('micmod-base/quotation/partial/sale_user_report.html')
+def sale_user_report():
+    from micmod_base.models import Quotation
+    sale_user_report_call = Quotation.sale_user_report
+    return {'sale_user_report_call': sale_user_report_call}
+
+
 @register.inclusion_tag('core/partial/render_field.html')
 def render_field(field, crispy=None):
     context = {'field': field, 'crispy': crispy}
