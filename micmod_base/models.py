@@ -95,6 +95,17 @@ class Quotation(SLSDoc):
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
 
+    @classmethod
+    def sale_user_report(cls, current_user, wf_states):
+        sales_user = current_user.team.all()
+        res = dict()
+        for sale_user in sales_user:
+            res[sale_user] = []
+            for wf_state in wf_states:
+                wf = cls.objects.filter(Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state))
+                res[sale_user].append(wf.count())
+        return res
+
     @property
     def total_discount(self):
         total = 0
