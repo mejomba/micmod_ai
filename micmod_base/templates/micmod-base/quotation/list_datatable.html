@@ -28,6 +28,7 @@
     <div class="border rounded mb-5 p-3">
         <span>استفاده از فیلتر</span>
         <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+        <a href="{% url 'micmod_base:sale_user_report' %}" class="btn btn-primary mx-1" target="_blank" data-bs-toggle="modal" id="id_sale_user_report" data-bs-target="#id_kt_empty_modal_lg">گزارش کار</a>
         <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
     </div>
 
@@ -52,7 +53,7 @@
                 </div> <!-- container-fluid -->
             </div>
             <!-- End Page-content -->
-
+{% include 'core/partial/empty_modal_lg.html' %}
         </div>
         <!-- end main content-->
 {% endblock content %}
@@ -86,14 +87,47 @@
             },
         );
     });
+
+    const SaleUserReportBtn = document.querySelector("#id_sale_user_report")
+    if (SaleUserReportBtn){
+        SaleUserReportBtn.addEventListener('click',function (e){
+        let new_url = "{% url 'micmod_base:sale_user_report' %}"
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            {#beforeSend: block_main_container,#}
+            success: function (data) {
+                debugger
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = html
+            },
+            error: function () {
+
+            },
+            {#complete: release_main_container#}
+
+        });
+     })
+    }
+
     </script>
 
-    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    {% static 'js/local/jqury.dataTables.min.js' %}
 
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    {% static 'js/local/dataTables.buttons.min.js' %}
+    {% static 'js/local/jszip.min.js' %}
+    {% static 'js/local/pdfmake.min.js' %}
+    {% static 'js/local/vfs_fonts.js' %}
+    {% static 'js/local/buttons.html5.min.js' %}
+
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
 {% endblock extra_js %}
