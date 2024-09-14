@@ -33,7 +33,7 @@ from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset, InquiryResultFormset
+    QuotationItemFormset, InquiryResultFormset, TimeForm
 from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
@@ -62,6 +62,7 @@ class QuotationsList(LoginRequiredMixin,View):
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
+        greeting['time_form'] = TimeForm()
         # greeting['quotations'] = quotations_record
         # greeting['quotations'] = quotations_record_lst
 
@@ -1036,6 +1037,10 @@ def save_parent_item(request):
 def sale_user_report(request):
     from .models import Quotation
     wf_states = ['پیش فاکتور اولیه', 'استعلام قیمت', 'تایید پیش فاکتور', 'تایید مشتری', 'تایید کارشناس', 'مرحله نهایی']
-    sale_user_report_call = Quotation.sale_user_report(request.user, wf_states)
-    res = render_to_string('micmod-base/quotation/partial/sale_user_report.html', context={'sale_user_report_call':sale_user_report_call, 'wf_states': wf_states})
+    from_date = request.GET.get('from_time')
+    to_date = request.GET.get('to_time')
+    sale_user_report_call = Quotation.sale_user_report(request.user, wf_states, from_date, to_date)
+    res = render_to_string('micmod-base/quotation/partial/sale_user_report.html',
+                           context={'sale_user_report_call': sale_user_report_call, 'wf_states': wf_states,
+                                    'from_date': from_date, 'to_date':to_date})
     return JsonResponse({'res': res}, safe=False)

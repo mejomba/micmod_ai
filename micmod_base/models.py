@@ -16,6 +16,7 @@ from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
+from tools.myjalali import Persian
 from tools.utils import show_error
 
 from translator import get_text as _
@@ -96,14 +97,23 @@ class Quotation(SLSDoc):
     absolute_url_update = 'micmod_base:quotations.view'
 
     @classmethod
-    def sale_user_report(cls, current_user, wf_states):
+    def sale_user_report(cls, current_user, wf_states, from_date, to_date):
         sales_user = current_user.team.all()
         res = dict()
         for sale_user in sales_user:
             res[sale_user] = []
             for wf_state in wf_states:
-                wf = cls.objects.filter(Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state))
-                res[sale_user].append(wf.count())
+                condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
+                if from_date and to_date:
+                    f_date = Persian(from_date).gregorian_datetime()
+                    t_date = Persian(to_date).gregorian_datetime()
+                    filter_by_time = Q(created_date__range=(f_date, t_date))
+                    wf = cls.objects.filter(filter_by_time & condition)
+                    wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
+                else:
+                    wf = cls.objects.filter(condition)
+                    wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
+                res[sale_user].append((wf.count(), wf_cancel))
         return res
 
     @property

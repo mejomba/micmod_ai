@@ -1,11 +1,20 @@
 {% load more_tags %}
+{% if from_date and to_date %}
+    <div class="mb-3">
+<span class="bg-light-success px-3 rounded mb-2">
+    <span dir="rtl">{{ from_date }}</span>
+    <span class="mx-3">تا </span>
+    <span dir="rtl">{{ to_date }}</span>
+</span>
+    </div>
+{% endif %}
 
 <table class="table table-striped">
   <thead class="mb-5 bg-light-info rounded">
     <tr>
         <th scope="col"><h6>کاربر</h6></th>
         {% for wf_state in wf_states %}
-        <th scope="col"><h6>{{ wf_state }}</h6></th>
+        <th scope="col" class="text-center"><h6>{{ wf_state }}</h6></th>
         {% endfor %}
     </tr>
   </thead>
@@ -17,7 +26,9 @@
         <span class="ms-3">{{ user_.profile }}</span>
       </th>
         {% for wf_count in wf_count_list %}
-            <td>{{ wf_count }}</td>
+            <td class="text-center">{{ wf_count.0}}<br>
+                <span class="font-size-10 text-danger">{{ wf_count.1|default_if_falsy:"-" }}</span>
+            </td>
         {% endfor %}
     </tr>
   {% endfor %}
