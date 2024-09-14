@@ -207,25 +207,21 @@ class SkuListDataTableView(AjaxDatatableView):
     from translator import get_text as _
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
         {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        # {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
         {'name': 'created_date', 'visible': True, },
         {'name': 'id', 'visible': False, },
-        # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True, 'searchable': False},
-        {'name': 'wh_last_weight', 'visible': True, 'searchable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False},
+        {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
