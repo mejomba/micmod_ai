@@ -317,6 +317,14 @@ function copyToClipboard(elem) {
     if (selected) {
         document.getSelection().removeAllRanges();
         document.getSelection().addRange(selected);
+        const div = document.createElement('div')
+        div.classList.add('message-bottom-middle')
+        div.classList.add('bg-light-success')
+        div.classList.add('rounded')
+        const message = document.createTextNode(`${str} کپی شد`)
+        div.appendChild(message)
+        document.body.appendChild(div)
+        setTimeout(function (){div.classList.add('d-none')}, 2500)
     }
 }
 

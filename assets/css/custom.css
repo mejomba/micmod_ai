@@ -960,3 +960,30 @@ span .select2-selection{
     color: #131313;
     background-color: #b9e2ff;
 }
+.message-bottom-middle{
+    position: fixed;
+    top: 0;
+    right: 50%;
+    z-index: 1111;
+    min-width: 100px;
+    min-height: 20px;
+    padding: 2px 5px;
+    text-align: center;
+    transform: translate(50%, 50%);
+
+    opacity: 1;
+	animation-name: fadeInOpacity;
+	animation-iteration-count: 1;
+	animation-timing-function: ease-in;
+	animation-duration: 1s;
+    animation-delay: 1.5s;
+
+}
+@keyframes fadeInOpacity {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}

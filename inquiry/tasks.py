@@ -22,7 +22,11 @@ def update_components():
         print('update_components start')
         components = Item.objects.all().order_by('id')
         components_lst = list()
+        c = 0
         for component in components:
+            # c += 1
+            # if c % 1000 == 0:
+            #     print(c)
             component_ = dict()
             component_['sku'] = int(component.sku)
             component_['part_number'] = component.part_number

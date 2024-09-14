@@ -577,6 +577,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         return
     load_sepidar = request.GET.get('load_sepidar')
     dict_ = request.GET or request.POST
+    prev_value = dict_.get('prev_value')
     sku = dict_.get('sku_c')
     party_code = dict_.get('party_code')
     quantity = dict_.get('quantity') or 1
@@ -584,6 +585,10 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     currency = dict_.get('currency')
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
+    if prev_value.isdigit():
+        search_sku = True
+    else:
+        search_sku = False
     if request.GET.get('sku_c') == request.GET.get('sku'):
         target_trade_price = request.GET.get('all_trade_prices')
         target_bazar_price = request.GET.get('all_bazar_prices')
@@ -597,7 +602,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         dl_obj = Dl.get_dl(party_code)
         party_id = dl_obj[0].PartyId if len(dl_obj) else None
 
-    item_sku = Item.objects.filter(sku=sku).first()
+    sku_or_partnumber_filter = Q(sku=sku) | Q(part_number=sku)
+    item_sku = Item.objects.filter(sku_or_partnumber_filter).first()
+    # item_sku = Item.objects.filter(sku=sku).first()
     all_trade_active_prices = item_sku.all_trade_active_price_
     all_bazar_active_prices = item_sku.all_bazar_active_price_
 
@@ -618,11 +625,12 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
                                              'payment_method': payment_method, 'grade': grade,
-                                             'request': request,
+                                             'request': request, 'part_number': item_sku.part_number if item_sku else "",
                                              'trade_price': (price.pk, price.inquiry_type.title) if price else '',
                                              'bazar_price': (bazar_price.pk, bazar_price.inquiry_type.title) if bazar_price else '',
                                              'all_trade_active_prices': all_trade_active_prices,
-                                             'all_bazar_active_prices': all_bazar_active_prices
+                                             'all_bazar_active_prices': all_bazar_active_prices,
+                                             'search_sku': search_sku
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
@@ -871,7 +879,7 @@ def get_items(request):
     nested = None
     form_s = None
     q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
+    party_id = request.GET.get('party_id', 0)
     id_currency_ref = request.GET.get('id_currency_ref', None)
     id_payment_method = request.GET.get('id_payment_method', None)
     id_payment_method = id_payment_method.split(',')[-1] if id_payment_method else None
@@ -1157,6 +1165,7 @@ class AjaxInquiryResultListData(View):
 
 
 def update_components_view(request, *args, **kwargs):
+    update_components()
     if cache.get('update_components'):
         print('task is running')
         return JsonResponse({'result': f'task_is running'})
