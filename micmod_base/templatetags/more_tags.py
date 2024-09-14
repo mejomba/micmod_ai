@@ -426,3 +426,11 @@ def get_quotation_item_all_prices(sku):
     context['all_trade_prices'] = all_trade_active_prices
     context['all_bazar_prices'] = all_bazar_active_prices
     return context
+
+
+@register.filter(is_safe=False)
+def default_if_falsy(value, arg):
+    """If value interpreted to False, use given default."""
+    if not bool(value):
+        return arg
+    return value
