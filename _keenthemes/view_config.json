@@ -271,7 +271,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting"]
+              "read": ["manager_confirmation", "accounting", "from_source"]
             },
             "formset_constraint": [
               {
@@ -282,12 +282,12 @@
 
           },
           {
-            "state": "حسابداری",
+            "state": "کنترل حسابداری",
             "group": "accounting_user",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","manager_confirmation"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation"]
             },
             "formset_constraint": [
               {
@@ -299,11 +299,27 @@
           },
           {
             "state": "تایید مدیر عامل",
-            "group": "CEO",
+            "group": "accounting_admin",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
               "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "پرداخت",
+            "group": "accounting_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting"]
             },
             "formset_constraint": [
               {

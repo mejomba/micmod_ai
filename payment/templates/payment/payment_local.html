@@ -144,8 +144,8 @@
             </div>
         </div>
     </div>
-<input type="button" value="click"
-                    onclick="printDiv()">
+{#<input type="button" value="click"#}
+{#                    onclick="printDiv()">#}
 </div>
     {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
@@ -168,7 +168,7 @@
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " تومان "
+                        let amountInWords = response.amount_in_words + " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
