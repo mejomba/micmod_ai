@@ -68,6 +68,7 @@
         </table>
     </div>
     {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
 {% endblock form_content %}
 {% block extra_js %}
 
@@ -207,6 +208,10 @@
 
         });
 
+        function delete_inquiry(event){
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', event.currentTarget.dataset.url, modal_sm_body)
+        }
 
     </script>
 
@@ -260,9 +265,9 @@
     <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     {{ form.media.js }}
 

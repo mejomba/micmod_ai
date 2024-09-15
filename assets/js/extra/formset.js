@@ -1,7 +1,11 @@
 window.addEventListener('load', (event) => {
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
-        item.value = commaSeperator(item.value.toString().reverse_string()).reverse_string()
+        if (item.tagName === 'INPUT'){
+            item.value = commaSeperator(item.value.toString().reverse_string()).reverse_string()
+        } else {
+            item.innerText = commaSeperator(item.innerText.toString().reverse_string()).reverse_string()
+        }
     })
     // get form template and total number of forms from management form
     const templateForm = document.getElementById('id_formset_empty_form');

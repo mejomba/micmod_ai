@@ -1,9 +1,9 @@
 from django.db import models
-from core.models import AbsBaseModel
+from core.models import AbsBaseModel, BaseModeWF
 from translator import get_text as _
 
 
-class PaymentOrder(AbsBaseModel):
+class PaymentOrder(BaseModeWF):
     SOURCE_CHOICES = (('1','تنخواه مالی'), ('2', 'پرداخت مستقیم'))
     request_date = models.DateField(verbose_name=_('request_date'))
     payment_date = models.DateField(verbose_name=_('payment_date'), null=True, blank=True)

@@ -12,3 +12,8 @@ class BIReport(AbsBaseModel):
 
     def __str__(self):
         return f'{self.name}'
+
+
+class BIGroup(AbsBaseModel):
+    title = models.CharField(max_length=200, verbose_name=_('title'))
+    users = models.ManyToManyField(User, related_name='bi_groups')
