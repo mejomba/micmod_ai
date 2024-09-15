@@ -3,7 +3,7 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
-from django.db.models import Q, QuerySet, CharField
+from django.db.models import Q, QuerySet, CharField, Count
 from django.db.models.functions import Cast
 
 from django.utils import timezone
@@ -1013,6 +1013,18 @@ def inquiry_report(request):
     return JsonResponse({'res': res}, safe=False)
 
 
+def repeated_goods_code_view(request):
+    if 'trade' in request.user.base_group:
+        qi = QuotationItem.quotation_item_all_pending()
+        repeated_goods_code_qi = qi.values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
+            goods_code_count__gt=1)
+        repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
+        repeated_codes = list(repeated_goods_code)
+        res = render_to_string('micmod-base/quotation/partial/repeated_goods_code.html',
+                               context={'repeated_goods_code': repeated_codes})
+        return JsonResponse({'res': res}, safe=False)
+
+
 def save_parent_item(request):
     import json
     data = json.loads(request.body)
@@ -1042,5 +1054,5 @@ def sale_user_report(request):
     sale_user_report_call = Quotation.sale_user_report(request.user, wf_states, from_date, to_date)
     res = render_to_string('micmod-base/quotation/partial/sale_user_report.html',
                            context={'sale_user_report_call': sale_user_report_call, 'wf_states': wf_states,
-                                    'from_date': from_date, 'to_date':to_date})
+                                    'from_date': from_date, 'to_date': to_date})
     return JsonResponse({'res': res}, safe=False)
