@@ -10,11 +10,12 @@ class PaymentOrder(BaseModeWF):
     amount = models.PositiveBigIntegerField(verbose_name=_('amount'), default=1)
     behalf = models.CharField(verbose_name=_('for_'), max_length=255)
     pay_to = models.CharField(verbose_name=_('pay_to'), max_length=255)
-    from_source = models.ForeignKey('PaymentSource', verbose_name=_('from_source'), on_delete=models.DO_NOTHING)
+    from_source = models.ForeignKey('PaymentSource', verbose_name=_('from_source'), on_delete=models.DO_NOTHING, null=True, blank=True)
     to_account = models.CharField(verbose_name=_('to_account'), max_length=40)
     applicant = models.CharField(verbose_name=_('applicant'), max_length=255)
     accounting = models.CharField(verbose_name=_('applicant'), max_length=255, null=True, blank=True)
     manager_confirmation = models.BooleanField(verbose_name=_('manager_confirm'), default=False)
+    group = models.IntegerField(null=True, blank=True)
 
 
 class PaymentSource(AbsBaseModel):

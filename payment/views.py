@@ -29,9 +29,16 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
     def get(self, *args, **kwargs):
         return super().get(*args, **kwargs)
 
+    # def form_valid(self, form):
+    #     res = super().form_valid(form)
+
+
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        if self.object and self.object.workflows.last().current_state_name in ['کنترل حسابداری']:
+            context['form'].initial["accounting"] = self.object.workflows.last().to_user.username
         return context
 
     def get_success_url(self):
@@ -101,12 +108,12 @@ def num_to_fa_words(request):
     if request.method == 'POST':
         amount = request.POST.get('amount')
         if amount:
-            if int(amount) >= 10:
-                amount = int(amount) / 10
-                amount_in_words = words(amount)
-                return JsonResponse({'amount_in_words': amount_in_words})
-            else:
-                return JsonResponse({'': ''}, safe=False)
+            # if int(amount) >= 10:
+            #     amount = int(amount) / 10
+            amount_in_words = words(amount)
+            return JsonResponse({'amount_in_words': amount_in_words})
+            # else:
+            #     return JsonResponse({'': ''}, safe=False)
         else:
             return JsonResponse({'': ''}, safe=False)
     else:
