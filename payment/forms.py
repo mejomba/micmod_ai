@@ -14,7 +14,7 @@ class PaymentOrderModelForm(CustomBaseModelForm):
 
     class Meta:
         model = PaymentOrder
-        fields = '__all__'
+        exclude = ['group']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,6 +32,9 @@ class PaymentOrderModelForm(CustomBaseModelForm):
                 self.form_state = kwargs.get('constraint').get('form_state')
 
         if self.form_state is not None:
+            if self.form_state >= 1:
+                self.fields['accounting'].widget.attrs['required'] = 'required'
+                self.fields['from_source'].widget.attrs['readonly'] = 'readonly'
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
                 formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs

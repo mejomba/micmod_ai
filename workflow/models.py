@@ -8,6 +8,21 @@ from notifications.models import Messages
 from django.apps import apps
 from translator import get_text as _
 
+from inspect import stack
+already_called_recursively = False
+
+
+def test():
+    global already_called_recursively
+    function_name = stack()[1].function
+    if not already_called_recursively:
+        already_called_recursively = True
+        print(test())  # One recursive call, leads to Recursion Detected!
+
+    if function_name == test.__name__:
+        return True
+    else:
+        return "Called from {}".format(function_name)
 
 class WorkFlow(BaseContentType):
     STATUS = ((1, _('draft')), (2, _('back')), (3, _('next')), (4, _('change_user')), (5, _('first_draft')))
@@ -81,6 +96,7 @@ class WorkFlow(BaseContentType):
 #     def __str__(self):
 #         return f'{self.action}'
 group_memo = dict()
+target_group_memo = dict()
 class FlowAdminGroup(models.Model):
     group_name = models.CharField(max_length=255, verbose_name=_('group_name'), null=True, blank=True)
     group_rel = models.ForeignKey(Group, on_delete=models.DO_NOTHING, verbose_name=_('group_rel'), null=True,
@@ -117,29 +133,34 @@ class FlowAdminGroup(models.Model):
         if model and model._meta.model_name.lower() == "item" and direct_group_name in user.groups.values_list('name', flat=True):
             return True
 
-        current_user_group = group_memo.get('target_group')
+        current_user_group = target_group_memo.get('target_group')
         if not current_user_group:
             current_user_group = Group.objects.filter(name=group_name).first()
-            group_memo['target_group'] = current_user_group
+            target_group_memo['target_group'] = current_user_group
+            group_memo['prev'] = []
 
-        # qs = cls.objects.filter(pk=-1)
+        # qry = f""" select case when name Like '%%_admin' then 1 else 0 end AS "x", "auth_group"."id", "auth_group"."name" FROM "auth_group" INNER JOIN "auth_user_groups" ON ("auth_group"."id" = "auth_user_groups"."group_id") WHERE "auth_user_groups"."user_id" = {user.pk} ORDER BY 1 desc """
+        # user_all_groups = user.__class__.objects.raw(qry)
         user_all_groups = user.groups.all()
         for ug in user_all_groups:
             for my_flow_admin in cls.objects.filter(group_rel=ug):
                 my_flow_admin_child = my_flow_admin.group_child.all()
                 for ru in my_flow_admin_child:  # get all subgroups
-                    if ru == group_memo.get('prev'):
-                        group_memo.clear()
+                    if ru in group_memo.get('prev'):
+                        # group_memo.clear()
                         # group_memo['prev'] = None
                         # continue
                         pass #continue
                     elif current_user_group in my_flow_admin_child:# or current_user_group in user_all_groups:
                         group_memo.clear()
+                        target_group_memo.clear()
                         # group_memo['prev'] = None
                         return True
                     else:
-                        group_memo['prev'] = ru
+                        group_memo['prev'].append(ru)
                         return cls.is_admin_of_group(user, ru.name)
+        target_group_memo.clear()
+        group_memo.clear()
         return False
 
     @classmethod

@@ -12,7 +12,7 @@ from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
 
-from sepidar.models import APILogs
+from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 from sepidar.models import BaseData
@@ -299,6 +299,7 @@ class Brand(AbsBaseModel):
 
 
 class Item(BaseModel):
+    print('import item .....')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data.dl_code = None
@@ -336,6 +337,23 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     # base_fields = ['sku','part_number']
+
+    @property
+    def supply_locations(self):
+        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+        stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
+        for stock_qty in stock_qty_qry:
+            if stock_qty.quantity:
+                if stock_qty.quantity.is_integer():
+                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                else:
+                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
+
+
+        for o in self.orderitem_set.all():
+            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
+
+        return res
 
     @property
     def sepidar_id(self):
@@ -380,7 +398,8 @@ class Item(BaseModel):
     @property
     def price(self):
         if not self.extra_data.price:
-            self.extra_data.price = self.items.filter(sku=self).filter(active=True,inquiry_type_id=1).first()
+            # self.extra_data.price = self.items.filter(sku=self).filter(active=True,inquiry_type_id=1).first()
+            self.extra_data.price = self.items.filter(sku=self).filter(active=True, inquiry_type_id__in=[1, 2, 3, 6]).order_by('-last_update_date').first()
         return self.extra_data.price
 
     @property
@@ -392,6 +411,10 @@ class Item(BaseModel):
     def all_bazar_active_price_(self):
         bazar_filter = Q(inquiry_type__title__icontains='داخل')
         return [(k.pk, k.inquiry_type.title) for k in self.items.filter(bazar_filter, sku=self).filter(active=True)]
+
+    @property
+    def all_active_price_(self):
+        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(active=True)]
 
     @property
     def bazar_price(self):
@@ -414,6 +437,17 @@ class Item(BaseModel):
     @property
     def get_customs_price(self):
         return 0
+
+    @property
+    def inquiry_count(self):
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        bazar_inquiry_count = self.items.filter(bazar_filter, active=True).count()
+
+        trade_filter = Q(inquiry_type__title__icontains='خارج')
+        trade_inquiry_count = self.items.filter(trade_filter, active=True).count()
+
+        return trade_inquiry_count + bazar_inquiry_count
+
 
     def set_extra_data_sepidar(self, customer_code=None):
         self.extra_data.sepidar_data = dict()
@@ -590,25 +624,25 @@ class Province(AbsBaseModel):
 
 
 CustomerGrade = (
-    ("-2,A+", _("A+ Cash")),
-    ("-1,A", _("A Cash")),
-    ("0,B", _("B Cash")),
+    ("-2,A+,0", _("A+ Cash")),
+    ("-1,A,0", _("A Cash")),
+    ("0,B,0", _("B Cash")),
 
-    ("-2,A+", _("A+ 1 Month")),
-    ("-1,A", _("A 1 Month")),
-    ("0,B", _("B 1 Month")),
+    ("-2,A+,1", _("A+ 1 Month")),
+    ("-1,A,1", _("A 1 Month")),
+    ("0,B,1", _("B 1 Month")),
 
-    ("-2,A+", _("A+ 2 Month")),
-    ("-1,A", _("A 2 Month")),
-    ("0,B", _("B 2 Month")),
+    ("-2,A+,2", _("A+ 2 Month")),
+    ("-1,A,2", _("A 2 Month")),
+    ("0,B,2", _("B 2 Month")),
 
-    ("-2,A+", _("A+ 3 Month")),
-    ("-1,A", _("A 3 Month")),
-    ("0,B", _("B 3 Month")),
+    ("-2,A+,3", _("A+ 3 Month")),
+    ("-1,A,3", _("A 3 Month")),
+    ("0,B,3", _("B 3 Month")),
 
-    ("-2,A+", _("A+ 4 Month")),
-    ("-1,A", _("A 4 Month")),
-    ("0,B", _("B 4 Month")),
+    ("-2,A+,4", _("A+ 4 Month")),
+    ("-1,A,4", _("A 4 Month")),
+    ("0,B,4", _("B 4 Month")),
 )
 
 
@@ -698,7 +732,7 @@ class Customer(AbsBaseModel):
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)
-
+    black_list = models.BooleanField(_('black_list'), default=False)
 
     @staticmethod
     def get_list(text):
@@ -714,10 +748,11 @@ class Customer(AbsBaseModel):
 class CustomerDocuments(AbsBaseModel):
     DOC_CHOICES = (
         ("A", _("id_card")),
+        ("B", _("image_meet_in_person")),
     )
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
-    description = models.CharField(_('description'), max_length=255, null=True, blank=True)
+    description = models.TextField(_('description'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
 
 

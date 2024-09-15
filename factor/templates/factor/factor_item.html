@@ -1,0 +1,309 @@
+{% load factor_tags %}
+{% load humanize %}
+{% load jalali_tags %}
+{% load more_tags %}
+
+{{ form_s.management_form }}
+{{ form_s.non_form_errors }}
+<div class="mt-10 mb-5 badge bg-light-warning py-2 px-3 rounded font-size-15">
+    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در
+    <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>
+    آمده است به رنگ
+    <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>
+    در انتهای لیست نمایش داده میشوند
+</div>
+<div class="bg-white rounded border p-5 pb-20 mb-20">
+    <!-- factor header -->
+    <div class="mb-8 pb-2 bg-white mt-3 sticky-top" style="top: 10px">
+        <div class="row row-cols-3 bg-white">
+            <div class="col">
+                <div class="d-flex flex-column gap-2">
+                    <span class="bold text-primary">
+                    <a href="{% url 'extra_data:customer.update' quotation.customer_party_id.pk %}" target="_blank">{{ quotation.customer_party_id.title }} ({{ quotation.customer_code }})</a>
+                    </span>
+                    <span class="d-flex">
+                        <span class="bold w-25">رتبه مشتری:</span>
+                        {{ quotation.get_customer_grade_display }}
+                    </span>
+                    <span class="d-flex">
+                        <span class="bold w-25">توضیحات:</span>
+                        <span>{{ quotation.description|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex flex-column gap-2">
+                    <span class="d-flex">
+                        <span class="bold w-25">روش پرداخت:</span>
+                        <span>{{ quotation.sale_type }}</span>
+                    </span>
+                    <span class="d-flex">
+                        <span class=" bold w-25">نوع فروش:</span>
+                        <span>{{ quotation.sale_type }}</span>
+                    </span>
+                    <span class="d-flex">
+                        <span class="bold w-25">شماره سپیدار:</span>
+                        <span>{{ quotation.sepidar_number|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex flex-column gap-2">
+                    <span class="d-flex">
+                        <span class="me-3 bold w-25">پیش فاکتور:</span>
+                        <a href="{% url 'micmod_base:quotations.view' quotation.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12" target="_blank" style="letter-spacing: 1.5px">{{ quotation.pk }}</a>
+                        <span class="ms-3 me-1">({{ quotation.quotation.count }})</span>
+                        <span>ردیف</span>
+                    </span>
+                    <span class="d-flex">
+                        <span class="me-3 bold w-25">تاریخ درخواست:</span>
+                        <span>{{ quotation.request_date|to_jalali:'%Y/%m/%d' }}</span>
+                    </span>
+                    <span class="d-flex">
+                        <span class="me-3 bold w-25">تاریخ انقضا:</span>
+                        <span>{{ quotation.expiration_date|to_jalali:'%Y/%m/%d' }}</span>
+                    </span>
+                    <span class="d-flex">
+                        <span class="me-3 bold w-25">کارشناس:</span>
+                        <span>{{ quotation.last_work_flow.creator_user }}</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
+        <input type="hidden" value="{{ quotation.is_official }}" name="is_official">
+        <input type="hidden" value="{{ quotation.official_value }}" name="official_value">
+        <input type="hidden" value="{{ quotation.self_discount }}" name="self_discount">
+    </div>
+
+    <!-- items header -->
+    <div class="sticky-top text-center" style="top: 110px;">
+        <div class="row">
+            <!--quotation item header-->
+            <div class="col-4 py-2 bg-light-info rounded-right">
+                <div class="row align-items-center">
+                    <span class="col-1 bold">
+                        <span>ID</span>
+                    </span>
+                    <span class="col-7 bold">
+                        <span data-key="">نام کالا | کد کالا</span>
+                        <div class="border-top border-gray-500"></div>
+                        <span data-key=""> تعداد | فاکتور شده | قیمت</span>
+                    </span>
+                    <span class="col-4 bold">
+                        <span data-key="lead_time">lead_time</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item header-->
+            <div class="col-8 py-2 bg-light-primary rounded-left">
+                <div class="row mt-2">
+                    <span class="col-1 bold">
+                        <span data-key="">کد کالا</span>
+                    </span>
+                    <span class="col-5 bold">
+                        <span data-key="">نام کالا</span>
+                    </span>
+                    <span class="col-1 bold">
+                        <span> تعداد</span>
+                        <div class="border-top border-gray-500"></div>
+                        <span >قیمت</span>
+                    </span>
+                    <span class="col-3 bold">
+                        <span data-key="lead_time">lead_time</span>
+                        <div class="border-top border-gray-500"></div>
+                        <span>قیمت کل ردیف</span>
+                    </span>
+                    <span class="col-2 bold">
+                        <span data-key="">محل تامین</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- row per item -->
+    {% for qi, factor_item, first_empty in factoritem_qi_pair %}
+        <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
+        {% if factor_item.instance.pk %}
+                <div class="hidden-section">
+                {% for hidden_field in factor_item.hidden_fields %}
+                    {{ hidden_field }}
+                {% endfor %}
+                </div>
+        	<div class="row mb-1 text-center bg-white border rounded shadow-sm" style="height: fit-content">
+            <!--quotation item information-->
+            <div class="col-4 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2 align-items-center">
+                    <span class="col-1 px-1">
+                        <span class=" cursor-pointer">{{ qi.pk }}</span>
+                    </span>
+                    <span class="col-7">
+                        <div class="d-flex flex-column">
+                            <span class=" cursor-pointer d-flex justify-content-center">
+                                <span class="font-size-11 mx-1">{{ qi.goods_code_fk.part_number }}</span> <b>|</b>
+                                <span>{{ qi.goods_code_fk.sku }}</span>
+                            </span> <hr>
+                            <span class=" cursor-pointer">
+                                <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <b>|</b>
+                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
+                                <b>|</b>
+                                 <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
+                            </span>
+                        </div>
+                    </span>
+                    <span class="col-4">
+                        <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item information and input-->
+            <div class="col-8 text-center hover_light_primary d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2">
+                    <span class="col-1 text-center gap-1">
+                        <span class=" cursor-pointer">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor_item.instance.goods_code.sku }}" >
+                        </span>
+                    </span>
+                    <span class="col-5 text-center gap-1">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor_item.instance.part_number_show }}" >
+                        {% if factor_item.instance.part_number_show != factor_item.instance.goods_code.part_number %}
+                            <span class="float-start mt-2 font-size-10">
+                                <span>پارت نامبر اصلی:</span>
+                                <span class="bg-light-success rounded px-1">
+                                    {{ factor_item.instance.goods_code.part_number }}
+                                </span>
+                            </span>
+                        {% endif %}
+                    </span>
+                    <span class="col-1 text-center px-0">
+                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_price(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
+                    </span>
+                    <span class="col-3 text-center">
+                        <div class="d-flex flex-column">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                        <span class="row-price pt-1">12345678</span>
+                            </div>
+                    </span>
+                    <div class="col-2">
+                        {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+            {% if update and first_empty %}
+                <div class="mt-20 pt-20">
+                    <div class="row bg-warning p-1 rounded mt-20">
+                        <span>آیتم هایی که در ادامه مشاهده میکنید متعلق به پیش فاکتور
+                    <span class="bg-info text-white px-2 rounded">{{ quotation.pk }}</span>
+                    هستند اما در فاکتور فعلی استفاده نشده اند
+                            </span>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% with qi.is_over as is_over %}
+            <div class="row mb-1 text-center bg-white border rounded shadow-sm {% if is_over %} bg-secondary {% endif %} " style="height: fit-content">
+            <!--quotation item information-->
+            <div class="col-4 border-left d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2 align-items-center">
+                    <span class="col-1 px-1">
+                        <span class=" cursor-pointer">{{ qi.pk }}</span>
+                    </span>
+                    <span class="col-7 ps-1">
+                        <div class="d-flex flex-column">
+                            <span class=" cursor-pointer d-flex justify-content-center">
+                                <span class="font-size-11 mx-1">{{ qi.goods_code_fk.part_number }}</span> <b>|</b>
+                                <span>{{ qi.goods_code_fk.sku }}</span>
+                            </span> <hr>
+                            <span class=" cursor-pointer">
+                                <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
+                                <b>|</b>
+                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
+                                <b>|</b>
+                                 <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
+                            </span>
+                        </div>
+                    </span>
+                    <span class="col-4">
+                        <span class=" cursor-pointer font-size-11">{{ qi.lead_time|default_if_none:'-' }}</span>
+                    </span>
+                </div>
+            </div>
+            <!--factor item information and input-->
+            <div class="col-8 text-center d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_primary {% endif %}" style="height: fit-content; min-height: 70px;">
+                <div class="row py-2 align-items-center">
+                    <span class="col-1 text-center px-1">
+                        <span class=" cursor-pointer">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ qi.goods_code_fk.sku }}" >
+                        </span>
+                    </span>
+                    <span class="col-5 text-center px-1">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.goods_code_fk.part_number }}" >
+                    </span>
+                    <span class="col-1 text-center px-1">
+                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+                        <input type="text" onkeyup="check_price(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
+                    </span>
+                    <span class="col-3 text-center px-1">
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                    </span>
+                    <div class="col-2 px-1">
+                        {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 %}
+                    </div>
+                </div>
+            </div>
+        </div>
+            {% endwith %}
+        {% endif %}
+    {% endfor %}
+</div>
+
+<script>
+    function findAncestor(el, cls) {
+        if (el.classList.contains(cls)) {
+            return el
+        }
+        while ((el = el.parentElement) && !el.classList.contains(cls)) ;
+        return el;
+    }
+
+    document.querySelectorAll('input[name*="-goods_code"]').forEach(function (item){
+        item.addEventListener('keyup', function (e) {
+            e.preventDefault()
+            const goodsName = item.parentElement.parentElement.parentElement.querySelector('input[name*="-part_number_show"]')
+            $.ajax({
+                type: 'GET',
+                url: `/micmod_base/get_sku/?sku=${item.value}`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data['res']){
+                        item.classList.remove('border-danger')
+                        item.classList.add('border-success')
+                        goodsName.classList.remove('text-danger')
+                        goodsName.classList.remove('border-danger')
+                        goodsName.classList.add('border-success')
+                        goodsName.value = data['part_number']
+                        item.after('')
+                    } else {
+                        item.classList.add('border-danger')
+                        item.classList.remove('border-success')
+                        goodsName.value = 'کد نامعتبر'
+                        goodsName.classList.add('text-danger')
+                        goodsName.classList.add('border-danger')
+                    }
+                },
+                error: function () {
+                    console.log('error')
+                }
+            }); // end ajax
+        })
+    })
+
+</script>

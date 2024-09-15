@@ -101,7 +101,7 @@ def get_bi_menus(user):
                 "title": f"{report.name}",
                 "path_key": "dashboard",
                 "icon": "",
-                "direct_link": f"/dashboards/bi?report_url={report.url}",
+                "direct_link": f"/dashboards/bi/report/{report.pk}",
                 "link": ""
             }
         m.append(sub_menu)

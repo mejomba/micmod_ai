@@ -5,7 +5,7 @@
          role="alert">
         <span></span>
     </div>
-    <div class="mt-5 gap-3 bg-white rounded shadow pt-3 px-1 ">
+    <div class="gap-3 bg-white rounded shadow pt-3 px-1 ">
         {% csrf_token %}
         <div id="id_ajax">
             {% include 'inquiry/partial/partial_inquiry_result_for_sales.html' %}
@@ -20,7 +20,7 @@
 
     <script>
         function refresh_data(e) {
-            if (e.type === "change" || e.keyCode === 13) {
+            if (e.type === "change" || e.type === "mouseup" || e.keyCode === 13) {
                 e.preventDefault();
                 const skuInput = document.querySelector('#id_sku_c')
                 const requiredField = [skuInput.value]
@@ -46,4 +46,78 @@
                 }
         })
     </script>
+
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+<script>
+
+    function select2_sku_c(){
+        $('#select2_sku_c').select2({
+            ajax: {
+                url: '/inquiry/items_list/',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    return {q: data.term, page: data.page}
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            placeholder: {
+                text: "کد کالا، پارت نامبر"
+            },
+            allowClear: false,
+            templateResult: formatRepoDL,
+            templateSelection: formatRepoSelection
+        });
+
+        $('#select2_sku_c').on("select2:select", function (e) {
+            const data = e.params.data;
+            $(document).find("#id_sku_c").val(data.id)
+            refresh_data(event)
+        })
+
+        $('#select2_sku_c').on("select2:open", function (e){
+            const s2_input = document.querySelector('.select2-search__field')
+            const prev_value = document.querySelector("#id_prev_value")
+            s2_input.addEventListener('input', function (e){
+                if(prev_value){
+                    prev_value.value = s2_input.value
+                }
+            })
+            {#const sku_c = document.querySelector('#id_sku_c')#}
+            s2_input.value = prev_value.value
+        })
+    }
+
+    window.addEventListener("DOMContentLoaded", function (){
+        select2_sku_c()
+    })
+
+
+    function formatRepoDL(repo) {
+        if (repo.loading) {
+            return repo.text;
+        }
+        var $container = $(`
+        <div class='d-flex'>
+<span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
+<span>${repo.text}</span>
+</div>
+`);
+        return ($container)
+    }
+
+    function formatRepoSelection(repo) {
+        return repo.id || repo.text
+    }
+</script>
 {% endblock extra_js %}

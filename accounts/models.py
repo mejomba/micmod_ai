@@ -30,6 +30,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=11, null=True, blank=True, verbose_name=_('phone'))
     is_customer = models.BooleanField(default=False, verbose_name=_('is_customer'))
     head = models.ForeignKey('self', null=True, blank=True, verbose_name=_('team'), on_delete=models.DO_NOTHING, related_name='team')
+    is_bi_user = models.BooleanField(default=False, verbose_name=_('is_bi_user'))
 
     class Meta:
         db_table = 'auth_user'

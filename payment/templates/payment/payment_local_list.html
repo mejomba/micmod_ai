@@ -27,8 +27,8 @@
 
     <div class="border rounded mb-5 p-3">
         <span>استفاده از فیلتر</span>
-        <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-        <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <a href="{% url 'payment:local.payment.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+        <a href="{% url 'payment:local.payment.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
     </div>
 
         <!-- ============================================================== -->
@@ -88,6 +88,7 @@
     });
     </script>
 
+
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
     <script src="{% static 'js/local/jszip.min.js' %}"></script>
@@ -96,11 +97,5 @@
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 
 {#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
-{##}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
 {% endblock extra_js %}

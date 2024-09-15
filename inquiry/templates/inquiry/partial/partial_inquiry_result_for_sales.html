@@ -2,14 +2,23 @@
 {% load more_tags %}
 {% load core_tags %}
 
-<div class="row mx-1">
+<div class="row mx-1 mb-20">
     <div class="card-body col-3">
         <div class="align-items-center px-7 py-3 mb-5">
             <div class="mb-4">
                 <span data-key="information">information</span>
             </div>
             <hr class="mb-6">
-            {% render_field_by_order form form.sku form.sku_c form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
+            <div class="mb-8">
+                <div class="select2 s2_sku_c mb-" id="select2_sku_c" name="s2_sku_c">{{ form.initial.sku_c }}</div>
+                <div class="mt-1">
+                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.sku_c }}</span>
+                    <span class="d-none" id="part_number">{{ form.initial.part_number }}</span>
+                </div>
+            </div>
+            <input type="hidden" name="sku_c" maxlength="100" class="form-control" value="{{ form.initial.sku_c }}" onchange="refresh_data(event)" required="" id="id_sku_c">
+            <input type="hidden" name="prev_value" id="id_prev_value" value="{% if form.initial.search_sku %}{{ form.initial.sku }}{% else %}{{ form.initial.part_number }}{% endif %}">
+            {% render_field_by_order form form.sku form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
             {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
 
             {% if request.user|has_group:"total_admin" %}
@@ -43,3 +52,24 @@
 
     </div>
 </div>
+<script>
+    try {
+        select2_sku_c()
+    } catch (err){
+        console.log(err)
+    }
+
+    setTimeout(function (){
+        const s2_placeholder = document.querySelector('.select2-selection__placeholder')
+        const s2_input = document.querySelector('.select2-search__field')
+        const sku_c = document.querySelector('#id_sku_c')
+        const part_number = document.querySelector('#part_number')
+        if (s2_placeholder && part_number && sku_c){
+            s2_placeholder.innerHTML = `
+            <span class="bg-light-success me-3 rounded mt-1">${sku_c.value}</span>
+            ${part_number.innerText}
+            `
+        }
+    }, 300)
+
+</script>

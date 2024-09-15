@@ -27,16 +27,15 @@
 {% if request.user|has_group:'technical_admin' %}
     <div class="border rounded p-3">
         <span>استفاده از فیلتر</span>
-        <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>
-        <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>
-{#        <a href="{% url 'extra_data:sku.list' %}" class="btn btn-success mx-1">همه</a>#}
+        <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-outline-secondary mx-1 border border-secondary">کارشناس فروش</a>
+        <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-outline-secondary mx-1 border border-secondary">تائید نشده ها</a>
+        <a href="{% url 'extra_data:sku.list' %}?q=weight_percentage" class="btn btn-outline-secondary mx-1 border border-secondary">اختلاف وزن</a>
+        <a href="{% url 'extra_data:sku.list' %}" class="btn btn-outline-secondary mx-1 border border-secondary">همه</a>
 
         <div class="btn btn-secondary mx-1" id="update_from_sepidar">بروز رسانی از سپیدار</div>
-
         <a href="{% url 'extra_data:sku.create' %}" target="_blank" class="btn p-0 cursor-pointer">
             {% getIcon 'message-add' 'fs-4x text-primary' %}
         </a>
-{#        <button id="upddate_item_from_sepidar" class="btn btn-secondary mx-1">بروز رسانی از سپیدار</button>#}
     </div>
     {% endif %}
         <!-- ============================================================== -->
@@ -124,13 +123,13 @@
         );
     });
     </script>
-
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
     <script src="{% static 'js/local/jszip.min.js' %}"></script>
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
 
 {#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
 {#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}

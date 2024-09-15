@@ -950,6 +950,8 @@ class CommentsFormView(View):
         form = CommentsForm(prefix=prefix, initial=kwargs)
         image = None
         file = None
+        if self.request.user.base_group != 'trade':
+            comments = comments.filter(~Q(comment_title='Q'))
         for comment in comments:
             try:
                 comment_seen, _ = CommentSeen.objects.get_or_create(comment=comment,

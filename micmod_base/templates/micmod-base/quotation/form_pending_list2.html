@@ -7,6 +7,18 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
+<div class="mb-10 py-3 px-5 border border-success badge badge-light-success text-start sticky-top {% if request.user.base_group != 'trade' %} d-none {% endif %}">
+    <p class="text-success font-size-15 bold p-0 m-0 d-flex flex-column">
+        <span class="mb-2">
+            استعلام شروع نشده‌ی شما :
+            <span id="id_my_inquiry_not_started_">{{ my_inquiry_not_started }}</span>
+        </span>
+        <span>
+            استعلام های جدید :
+            <span id="id_inquiry_not_started_">{{ inquiry_not_started_count }}</span>
+        </span>
+    </p>
+</div>
     {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
 {% block content %}
     {% for pk, form_lists in d.items %}
@@ -27,14 +39,6 @@
                         <span class="me-2">تاریخ درخواست استعلام:</span>
                         <span>{{ form_lists.0.instance.quotation.workflows.first.created_date.date }}</span>
                     </div>
-{#                    <div class="col">#}
-{#                        <span class="me-2">تاریخ درخواست:</span>#}
-{#                        <span>{{ form_lists.0.instance.quotation.request_date}}</span>#}
-{#                    </div>#}
-{#                    <div class="col">#}
-{#                        <span class="me-2">تاریخ انقضا:</span>#}
-{#                        <span>{{ form_lists.0.instance.quotation.expiration_date }}</span>#}
-{#                    </div>#}
                     <div class="col">
                         <a class="btn btn-link mb-1" href="{% url 'micmod_base:quotations.view' form_lists.0.instance.quotation.pk %}" target="_blank">
                             مشاهده پیش فاکتور
@@ -44,13 +48,14 @@
                 <div class="col">
                     ({{ form_lists.0.instance.quotation.creator_user }})
                 </div>
-{#                <div class="col text-center">#}
-{#                    {% item_count page_obj %}#}
-{#                    ({{ item_count }} از {{ page_obj.paginator.count }}) --- {{ form_lists|length }}#}
-{#                </div>#}
                     <div>
                         {% if form_lists.0.instance.quotation.force_inquiry %}
                             <span class="p-3 mx-1 bg-danger"></span>
+                        {% endif %}
+                    </div>
+                <div>
+                        {% if form_lists.0.instance.quotation.cancel %}
+                            <span class="p-3 mx-1 bold badge badge-light-danger border border-danger-subtle">کنسل شده</span>
                         {% endif %}
                     </div>
                 </div>
@@ -61,14 +66,10 @@
                 <!--header-->
                     <div class="row-counter rounded d-flex align-items-center question-btn active-form h-30px" style="background-color: white">
                         <span class="counter">{{ forloop.counter }}</span>
-                        <div class="col ms-4">
-                        </div>
-                        <div class="col">
-                        </div>
-                        <div class="col">
-                        </div>
-                        <div class="col">
-                        </div>
+                        <div class="col ms-4"></div>
+                        <div class="col"></div>
+                        <div class="col"></div>
+                        <div class="col"></div>
                     </div>
                 <!--end header-->
                 <div class="answer m-0">
@@ -78,46 +79,24 @@
         </div>
     {% endfor %}
     <ul class="pagination LTR-RTL mb-16">
-{#        {% if page_obj.has_previous %}#}
-            <li class="page-item"><a href="?page=1&{{ request.get_full_path|remove_question_mark }}" class="page-link">&laquo; first</a></li>
-{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">previous</a></li>#}
-{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number|add:-1 }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number|add:-1 }}</a></li>#}
-{#            <li class="page-item"><a href="?page={{ page_obj.previous_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.previous_page_number }}</a></li>#}
-{#        {% endif %}#}
-{#        <li class="page-item border border-primary rounded"><a href="#" class="page-link border border-active">{{ page_obj.number  }}</a></li>#}
-{#        {% if page_obj.has_next %}#}
+        <li class="page-item"><a href="?page=1&{{ request.get_full_path|remove_question_mark }}" class="page-link">&laquo; first</a></li>
 
-            {% for page_number in page_obj.paginator.page_range %}
-{#                {% if page_number <= 10 %}#}
-                <li class="page-item {% if page_number == page_obj.number %} active {% endif %}"><a href="?page={{ page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_number }}</a></li>
-{#                {% endif %}#}
-            {% endfor %}
+        {% for page_number in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_number == page_obj.number %} active {% endif %}"><a href="?page={{ page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_number }}</a></li>
+        {% endfor %}
 
-{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.next_page_number }}</a></li>#}
-{#            {% if not page_obj.number|add:1 == page_obj.paginator.num_pages %}#}
-{#                <li class="page-item mt-1">. . .</li>#}
-{#                <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">{{ page_obj.paginator.num_pages }}</a></li>#}
-{#            {% endif %}#}
-{#            <li class="page-item"><a href="?page={{ page_obj.next_page_number }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">next</a></li>#}
-            <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">last &raquo;</a></li>
-{#        {% endif %}#}
-{#    <li class="page-item mx-2">#}
-{#        <div class="input-group" dir="rtl">#}
-{#            <button class="btn btn-primary" type="button" id="page_number">برو به</button>#}
-{#            <input type="text" class="form-control" placeholder="" aria-label="Example text with button addon" aria-describedby="button-addon1">#}
-{#        </div>#}
-{#    </li>#}
+        <li class="page-item"><a href="?page={{ page_obj.paginator.num_pages }}&{{ request.get_full_path|remove_question_mark }}" class="page-link">last &raquo;</a></li>
     </ul>
-
-
 
 {% endblock %}
     </div>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+{#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
+{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>#}
+    <script src="{% static 'js/local/jquery3.6.4.jquery.slim.min.js' %}"></script>
+    <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
 
     <script>
     $('*[id*=_x]').on('hide.bs.modal', function (e) {
@@ -232,6 +211,32 @@
      })
     })
 
+function update_inquiry_count() {
+    const url = "{% url 'micmod_base:inquiry_not_started' %}"
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            debugger
+            try {
+                document.querySelector('#id_inquiry_not_started_').innerHTML = data['inquiry_not_started_count']
+                document.querySelector('#id_my_inquiry_not_started_').innerHTML = data['my_inquiry_not_started']
+                document.querySelector('#id_pending_list').innerHTML = data['new_inquiry']
+                document.querySelector('#id_item_in_china').innerHTML = data['item_in_china']
+
+            }
+            catch (error) {}
+
+        },
+        error: function(xhr, status, error) {
+        console.error('Error fetching data:', status, error);
+    },
+    });
+}
 
     const emptyModal = document.getElementById('id_kt_empty_modal')
     emptyModal.addEventListener('hidden.bs.modal', function (e) {
@@ -338,5 +343,12 @@
     }
 
 </script>
+
+    {% if request.user.base_group == 'trade' %}
+        <script>
+            setTimeout(update_inquiry_count, 1000)
+            setInterval(update_inquiry_count, 1000 * 60 );
+        </script>
+    {% endif %}
 
 {% endblock extra_js %}

@@ -583,5 +583,20 @@
     "to_time": "تا تاریخ",
     "is_main": "اصلی",
     "discount_per_item": "تخفیف",
-    "meet_in_person": "مراجعه حضوری"
+    "meet_in_person": "مراجعه حضوری",
+    "image_meet_in_person": "تصاویر مراجعه حضوری",
+    "t-factor": "فاکتور",
+    "search_customer_name": "نام مشتری",
+    "senf": "صنف",
+    "sub_senf": "زیر صنف",
+    "province": "استان",
+    "address": "آدرس",
+    "introduction_method": "روش معرفی",
+    "national_code": "کد / شناسه ملی",
+    "phone": "تلفن",
+    "customer_group": "کارشناس فروش",
+    "website": "وب سایت",
+    "introducer": "معرف",
+    "black_list": "لیست سیاه",
+    "extra_credit": "max credit"
 }
