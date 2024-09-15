@@ -94,7 +94,7 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator() {
+function addCommaSeperator(on_load=null) {
     let inputNumberValue;
     let numberWithComma;
 
@@ -106,6 +106,12 @@ function addCommaSeperator() {
             numberWithComma = commaSeperator(inputNumberValue)
             e.currentTarget.value = numberWithComma.reverse_string()
         })
+        if (on_load){
+            inputNumberValue = item.value.replaceAll(',', '').reverse_string();
+            numberWithComma = inputNumberValue;
+            numberWithComma = commaSeperator(inputNumberValue)
+            item.value = numberWithComma.reverse_string()
+        }
     })
 }
 
@@ -187,7 +193,9 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
             }
             if(reload_page){
                 setTimeout(function (){
-                    location.reload()
+                    var loc = window.location;
+                    window.location = loc.protocol + '//' + loc.host + loc.pathname + loc.search;
+                    // location.reload()
                 }, 500)
             }
         },
@@ -309,12 +317,19 @@ function copyToClipboard(elem) {
     if (selected) {
         document.getSelection().removeAllRanges();
         document.getSelection().addRange(selected);
+        const div = document.createElement('div')
+        div.classList.add('message-bottom-middle')
+        div.classList.add('bg-light-success')
+        div.classList.add('rounded')
+        const message = document.createTextNode(`${str} کپی شد`)
+        div.appendChild(message)
+        document.body.appendChild(div)
+        setTimeout(function (){div.classList.add('d-none')}, 2500)
     }
 }
 
 
     const changeLogBtnAjax = document.querySelectorAll('[name="name_change_log"]')
-    debugger
     if (changeLogBtnAjax){
     changeLogBtnAjax.forEach(function (item) {
         item.addEventListener('click',function (e){

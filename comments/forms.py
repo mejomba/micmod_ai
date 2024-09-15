@@ -38,6 +38,7 @@ class CommentsForm(CustomBaseModelForm):
                 ('M', 'آیتم جایگزین'),
                 ('N', 'زمان تحویل'),
                 ('O', 'کامنت ساده'),
+                ('Q', 'فقط بازرگانی'),
             )
         if self.submit_type == 'cancel':
             self.fields['comment_title'].choices = (
