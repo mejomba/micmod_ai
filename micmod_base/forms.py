@@ -463,3 +463,16 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_customer_name')})
         # self.fields['search_create_date'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
 
+
+class TimeForm(CustomBaseForm):
+    from_time = forms.DateField(required=False)
+    to_time = forms.DateField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(TimeForm, self).__init__(*args, **kwargs)
+        self.fields['from_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['to_time'] = JalaliDateField(label=_('to_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['from_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('from_time'), 'required': False})
+        self.fields['to_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('to_time'), 'required': False})

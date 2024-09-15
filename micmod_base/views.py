@@ -22,8 +22,8 @@ from jalali_date import datetime2jalali
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset
+from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
+from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
@@ -42,7 +42,9 @@ class QuotationsList(LoginRequiredMixin,View):
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
-
+        greeting['time_form'] = TimeForm()
+        # greeting['quotations'] = quotations_record
+        # greeting['quotations'] = quotations_record_lst
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
 
@@ -688,6 +690,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
+        context['app_name'] = self.request.resolver_match.app_name
         # context['my_inquiry_not_started'] = my_inquiry_not_started
         # context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
@@ -993,6 +996,18 @@ def save_parent_item(request):
     return JsonResponse({'res': 'کد نامعتبر'}, status=400)
 
 
+def sale_user_report(request):
+    from .models import Quotation
+    wf_states = ['پیش فاکتور اولیه', 'استعلام قیمت', 'تایید پیش فاکتور', 'تایید مشتری', 'تایید کارشناس', 'مرحله نهایی']
+    from_date = request.GET.get('from_time')
+    to_date = request.GET.get('to_time')
+    sale_user_report_call = Quotation.sale_user_report(request.user, wf_states, from_date, to_date)
+    res = render_to_string('micmod-base/quotation/partial/sale_user_report.html',
+                           context={'sale_user_report_call': sale_user_report_call, 'wf_states': wf_states,
+                                    'from_date': from_date, 'to_date':to_date})
+    return JsonResponse({'res': res}, safe=False)
+
+  
 def inquiry_not_started(request):
     trade_user = request.user
     inquiry = QuotationItem.inquiry_not_started(trade_user)
@@ -1003,4 +1018,3 @@ def inquiry_not_started(request):
            }
 
     return JsonResponse(res)
-

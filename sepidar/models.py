@@ -471,6 +471,20 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
         # print(qry)
         return res
 
+    @staticmethod
+    def get_stock_qty(sku):
+        qry = f"""
+        with fis_year as (select max(FiscalYearId) as fis_year_id from fmk.FiscalYear)
+
+SELECT i.code code, cast(SUM(Quantity) as float) AS quantity
+FROM          INV.ItemStockSummary as inv_s
+join inv.item as i on i.ItemID = inv_s.ItemRef
+WHERE        (inv_s.FiscalYearRef = (select * from fis_year)) and StockRef in (2,50,51,53,54,60,84,   73,74,75,76,77,78,85) and i.code={sku}
+GROUP BY i.code
+    """
+        res = Item.objects.raw(qry, using='sepidar')
+        return res
+
 
 class WhereHouse(models.Model):
     stock_id = models.CharField(primary_key=True, verbose_name='stock id', max_length=200)

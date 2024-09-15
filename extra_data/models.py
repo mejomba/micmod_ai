@@ -12,7 +12,7 @@ from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
 
-from sepidar.models import APILogs
+from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 from sepidar.models import BaseData
@@ -299,6 +299,7 @@ class Brand(AbsBaseModel):
 
 
 class Item(BaseModel):
+    print('import item .....')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data.dl_code = None
@@ -336,6 +337,23 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     # base_fields = ['sku','part_number']
+
+    @property
+    def supply_locations(self):
+        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+        stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
+        for stock_qty in stock_qty_qry:
+            if stock_qty.quantity:
+                if stock_qty.quantity.is_integer():
+                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                else:
+                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
+
+
+        for o in self.orderitem_set.all():
+            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
+
+        return res
 
     @property
     def sepidar_id(self):

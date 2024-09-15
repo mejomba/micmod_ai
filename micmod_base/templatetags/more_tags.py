@@ -235,11 +235,16 @@ def get_inquiry_report():
     return {'quotationitem_filters': qi_filter}
 
 
+@register.inclusion_tag('micmod-base/quotation/partial/sale_user_report.html')
+def sale_user_report():
+    from micmod_base.models import Quotation
+    sale_user_report_call = Quotation.sale_user_report
+    return {'sale_user_report_call': sale_user_report_call}
+
 @register.simple_tag()
 def inquiry_not_started(user):
     from micmod_base.models import QuotationItem
     return QuotationItem.inquiry_not_started(user)
-
 
 
 @register.inclusion_tag('core/partial/render_field.html')
@@ -424,3 +429,11 @@ def get_quotation_item_all_prices(sku):
     context['all_trade_prices'] = all_trade_active_prices
     context['all_bazar_prices'] = all_bazar_active_prices
     return context
+
+
+@register.filter(is_safe=False)
+def default_if_falsy(value, arg):
+    """If value interpreted to False, use given default."""
+    if not bool(value):
+        return arg
+    return value

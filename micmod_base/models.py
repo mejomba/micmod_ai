@@ -16,6 +16,7 @@ from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
+from tools.myjalali import Persian
 from tools.utils import show_error
 
 from translator import get_text as _
@@ -39,6 +40,12 @@ class QuotationItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.order_by('id')
+
+    def all_quotations_for_factor(self):
+        return self.get_queryset().order_by('is_over', 'id')
+
+    # def remaining_quotations_for_factor(self, exclude_qi):
+    #     return self.get_queryset().filter(quotation=self.quotation, pk__not_in=exclude_qi)
 
 
 class Month(AbsBaseModel):
@@ -88,6 +95,26 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+    @classmethod
+    def sale_user_report(cls, current_user, wf_states, from_date, to_date):
+        sales_user = current_user.team.all()
+        res = dict()
+        for sale_user in sales_user:
+            res[sale_user] = []
+            for wf_state in wf_states:
+                condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
+                if from_date and to_date:
+                    f_date = Persian(from_date).gregorian_datetime()
+                    t_date = Persian(to_date).gregorian_datetime()
+                    filter_by_time = Q(created_date__range=(f_date, t_date))
+                    wf = cls.objects.filter(filter_by_time & condition)
+                    wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
+                else:
+                    wf = cls.objects.filter(condition)
+                    wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
+                res[sale_user].append((wf.count(), wf_cancel))
+        return res
 
     @property
     def total_discount(self):
@@ -430,9 +457,26 @@ class QuotationItem(BaseModel):
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+    is_over = models.BooleanField(_('is_over'), default=False)
 
 
     objects = QuotationItemManager()
+
+    @property
+    def total_quantity_in_factor(self):
+        total_quantity = 0
+        all_factor_items = self.qi.all()
+        for f in all_factor_items:
+            total_quantity += f.quantity if f.quantity else 0
+        return total_quantity
+
+    @property
+    def remaining_quantity_in_factor(self):
+        remaining_quantity = self.quantity - self.total_quantity_in_factor
+        if remaining_quantity > 0:
+            return remaining_quantity
+        else:
+            return 0
 
     @classmethod
     def quotation_item_all_pending(cls, inquiry_type=None, path=None):
@@ -757,4 +801,3 @@ class QuotationItem(BaseModel):
 
     class Meta:
         ordering = ['id']
-
