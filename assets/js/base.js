@@ -165,7 +165,7 @@ function custom_ajax_post(form, url, element) {
     }); // end ajax
 }
 
-function custom_ajax_post_data(post_data, url, element=null) {
+function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
     debugger
     $.ajax({
         type: 'POST',
@@ -184,6 +184,11 @@ function custom_ajax_post_data(post_data, url, element=null) {
                 html = data['res'];
                 element.html(html);
                 run_scripts(html);
+            }
+            if(reload_page){
+                setTimeout(function (){
+                    location.reload()
+                }, 500)
             }
         },
         error: function () {
@@ -211,11 +216,11 @@ function loadJS(file) {
     content.appendChild(jsElm);
 }
 
-function custom_ajax_get(form, url, element) {
+function custom_ajax_get(form_, url, element) {
     removeCommaSeperator()
     let new_url = url
-    if (form) {
-        const formSerialize = form.serialize();
+    if (form_) {
+        const formSerialize = form_.serialize();
         new_url = `${url}?${formSerialize}`
     }
     $.ajax({
@@ -374,3 +379,24 @@ function copyToClipboard(elem) {
 
     }
 
+function ajax_submit
+(form, reload_=null, elem_for_load=null) {
+        debugger
+    $.ajax({ // create an AJAX call...
+        beforeSend: function (){
+            debugger
+            if (elem_for_load){
+                console.log('load...')
+            }
+        },
+        data: $(form).serialize(), // get the form data
+        type: $(form).attr('method'), // GET or POST
+        url: $(form).attr('action'), // the file to call
+        success: function (data){
+            debugger
+            if (reload_){
+                window.location.reload()
+            }
+        }
+    });
+}

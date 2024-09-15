@@ -23,6 +23,8 @@ from workflow.models import WorkFlow
 # Create your models here.
 from .base import SLSDoc, CustomerGrade, DeliveryTime, MarketGrade, BaseModel, PriceMethod, AbsBaseModel, Currency, PaymentMethod
 import datetime
+from tools.utils import round_rial
+
 
 class QuotationManager(models.Manager):
     def own_quotations(self, request):
@@ -54,6 +56,7 @@ class SaleType(AbsBaseModel):
     def __str__(self):
         return f'{self.title}'
 
+
 class Quotation(SLSDoc):
     # translations = TranslatedFields(
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True, to_field='sepidar_party_id', on_delete=models.DO_NOTHING, db_column='customer_party_id')
@@ -78,13 +81,19 @@ class Quotation(SLSDoc):
     quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
     self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, validators=[MaxValueValidator(100)])
     is_official = models.BooleanField(default=False, verbose_name=_('is_official'))
-    official_value = models.PositiveSmallIntegerField(default=0, verbose_name=_('official_value'), null=True, blank=True)
+    official_value = models.FloatField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+    @property
+    def total_discount(self):
+        total = 0
+        total_qi_discount = sum([qi.discount_value for qi in self.quotation.all()])
+        return total
 
     @classmethod
     def get_qs(cls, request):
@@ -263,6 +272,14 @@ class Quotation(SLSDoc):
             return None
 
     @property
+    def sepidar_price(self):
+        try:
+            return sum(x.price for x in self.quotation.all())
+        except Exception as e:
+            show_error(e, __file__)
+            return None
+
+    @property
     def tax_amount(self):
         try:
             return sum(x.tax for x in self.quotation.all())
@@ -312,14 +329,17 @@ class Quotation(SLSDoc):
 
     @property
     def payment(self):
-        sum_price = self.sum_prices
+        sum_price = sum([qi.row_price for qi in self.quotation.all()])
+        tax = sum([qi.tax for qi in self.quotation.all()])
+        discount = sum([qi.discount_value for qi in self.quotation.all()])
+        # sum_price = self.sum_prices
 
-        tax = self.tax_amount
+        # tax = self.tax_amount
         additions = self.addition or 0
-        if self.self_discount:
-            discount = sum_price - ((self.self_discount / 100) * sum_price)
-        else:
-            discount = 0
+        # if self.self_discount:
+        #     discount = sum_price - ((self.self_discount / 100) * sum_price)
+        # else:
+        #     discount = 0
 
         total = sum_price + additions - discount + tax
 
@@ -373,6 +393,7 @@ class QuotationItem(BaseModel):
     price_method = models.CharField(choices=PriceMethod, max_length=20, default="last_sale",
                                     verbose_name=_('price_method'))
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
+    final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
@@ -402,6 +423,7 @@ class QuotationItem(BaseModel):
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
+    discount_per_item = models.FloatField(_('discount_per_item'), default=0)
 
     objects = QuotationItemManager()
 
@@ -427,26 +449,22 @@ class QuotationItem(BaseModel):
                 inquiry_type_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                                       Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
         if path == past_path:
-            x = cls.objects.filter(inquiry_type_filter, quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            x = cls.objects.filter(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
     def get_inquiry_report(cls):
         trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()#.order_by('username')
 
-        from django.conf import settings
         from pytz import timezone as ptz
         tz = ptz("UTC")
         yesterday = timezone.now() - timedelta(days=1)
         now = timezone.now()
-        # if yesterday.hour < 13 or (yesterday.hour == 13 and yesterday.minute < 30):  # yesterday 17:00
-        #     if time before 17:00 yesterday set to yesterday 17:01
         yesterday = datetime.datetime(year=yesterday.year, month=yesterday.month, day=yesterday.day, hour=16, minute=30,
                                       second=1, tzinfo=datetime.timezone.utc)  # begin from 20:00 yesterday
 
-        # if now.hour > 13 or (now.hour == 13 and now.minute > 30):  # today 17:00
         today = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=16, minute=30, tzinfo=tz)  # end at 20:00 today
 
         d =dict()
@@ -473,7 +491,6 @@ class QuotationItem(BaseModel):
         return d
 
     def pre_process_on_post_method(self, data=None):
-        # obj = self._meta.model.objects.filter(pk=self.pk).first() if self.pk else None
         obj = self if self.pk else None
         self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
         self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
@@ -499,7 +516,6 @@ class QuotationItem(BaseModel):
 
     @classmethod
     def item_in_china_(cls, user):
-        count = 0
         qs = cls.objects.none()
         inquiry_type_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
                               Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
@@ -520,6 +536,10 @@ class QuotationItem(BaseModel):
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
             return self.final_price or 0
+        if iqr.quotation_item.quotation.currency_ref.title == 'ریال':
+            currency_ref = 'RIAL'
+        else:
+            currency_ref = 'RMB'
         match self.price_method:
             case 'last_sale':
                 return iqr.goods_last_price
@@ -530,18 +550,38 @@ class QuotationItem(BaseModel):
             case 'sales_admin':
                 return self.final_price
             case 'price_sheet1':
-                return iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                x = iqr.express_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
             case 'price_sheet2':
-                return iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                x = iqr.air_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
             case 'price_sheet3':
-                return iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                x = iqr.sea_transportation_cost_1 if self.quotation.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
             case 'price_market':
-                return iqr.goods_price_market
+                x = iqr.goods_price_market
+                return round_rial(x, currency_ref='RIAL') if isinstance(x, (int, float)) else 1
+
+    @property
+    def net_price(self):
+        try:
+            return self.fee_() * self.quantity if self.pk and self.fee_() else 0
+        except Exception as e:
+            return 0
+            raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
+
+    @property
+    def net_price_after_tax_discount(self):
+        value = self.net_price
+        if self.quotation.is_official:
+            value -= (self.net_price * (self.quotation.official_value / 100))
+        return value
 
     @property
     def fee(self):
         if self.quotation.is_official:
-            total_ = (100 - (self.quotation.official_value + self.quotation.self_discount)) / 100
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            total_ = (100 - (official_value)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
 
@@ -552,12 +592,40 @@ class QuotationItem(BaseModel):
         return fee_price * total_
 
     @property
+    def sepidar_discount(self):
+        if self.quotation.is_official:
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            total_ = official_value / 100
+        else:
+            total_ = self.quotation.self_discount / 100
+
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price * total_
+
+    @property
+    def sepidar_fee(self):
+        fee_price = self.fee_()
+        if fee_price is None:
+            return 0
+
+        return fee_price
+
+    @property
+    def row_price(self):
+        return round_rial(int(self.net_price))
+
+    @property
     def price(self):
         try:
-            # if self.quotation.is_official:
-            #     return self.fee * self.quantity * 1.09
-            # else:
-                return self.fee * self.quantity
+            if self.quotation.currency_ref.title == 'ریال':
+                return round_rial(int(self.net_price - self.discount_value + self.tax))
+            else:
+                return self.net_price - self.discount_value + self.tax
+            return self.fee_() * self.quantity + (self.tax * (self.quotation.official_value * 10)/100)
+            return self.fee_() * self.quantity + self.tax
         except Exception as e:
             show_error(e, __file__)
             return 0
@@ -566,7 +634,7 @@ class QuotationItem(BaseModel):
     def duty(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0
+                return self.fee_() * self.quantity * 0
             else:
                 return 0
         except Exception as e:
@@ -577,13 +645,28 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return self.fee * self.quantity * 0.1
+                # return self.fee_() * self.quantity * 0.1
+                return self.net_price_after_tax_discount * (settings.TAX_VALUE / 100)
             else:
                 return 0
         except Exception as e:
             show_error(e, __file__)
             return None
 
+    @property
+    def discount_tuple(self):
+        try:
+            row_discount = self.discount_per_item * self.quantity if self.pk else 0
+            tax_discount = self.net_price * (self.quotation.official_value / 100) if self.pk and self.quotation.is_official else 0
+            discount_for_all = (self.net_price - tax_discount) * (self.quotation.self_discount / 100) if self.pk else 0
+        except Exception as e:
+            # raise Exception(f'اشکال در ردیف {self.pk} \n{__file__} \n در خط {e.__traceback__.tb_lineno}')
+            row_discount = tax_discount = discount_for_all = 0
+        return tax_discount, discount_for_all, row_discount
+
+    @property
+    def discount_value(self):
+        return sum(self.discount_tuple)
 
     class Meta:
         ordering = ['id']

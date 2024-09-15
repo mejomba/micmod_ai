@@ -275,7 +275,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                          widget=forms.HiddenInput())
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
-
+        self.fields['discount_per_item'].widget.attrs['onchange'] = 'refresh_prices()'
 
         # if self.instance.trade_price_code:
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
@@ -322,7 +322,10 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                 self.make_disable(self.fields)
                 self.enable = False
             if self.instance and getattr(self.instance, 'quotation', None) and getattr(self.instance.quotation, 'cancel', None):
-                self.make_disable(self.fields)
+                m_fields = self.fields.copy()
+                m_fields.pop('trade_price_code')
+                m_fields.pop('bazar_price_code')
+                self.make_disable(m_fields)
 
 
         self.select2(['goods_code', 'goods_code_alt', 'goods_name_alt'])
@@ -375,7 +378,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         fields = ['index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'price_target',
                   'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
                   'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
-                  'goods_price_sheet3',
+                  'goods_price_sheet3', 'discount_per_item',
                   'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
                   'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
                   'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
@@ -530,7 +533,8 @@ class BaseQIFormset(BaseInlineFormSet):
             form.instance.extra_data.request = request
             if 'DELETE' in form.changed_data and form.cleaned_data['DELETE']:
                 if form.instance.pk:
-                    form.instance.delete()
+                    form.instance.is_deleted = True
+                    form.instance.save()
                     obj = None
                 else:
                     # Don't save form
@@ -572,7 +576,7 @@ qi_fields = [
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
-    'item_in_china', 'goods_code_fk',
+    'item_in_china', 'goods_code_fk', 'discount_per_item',
     ]
 
 
@@ -589,7 +593,7 @@ QuotationItemFormset = inlineformset_factory(
 class PendingFormFilter(CustomBaseForm):
     from django.db.models.fields import BLANK_CHOICE_DASH
     CHOOSE_CHOICES = [
-                      # ('time', _('time')),
+                      ('time_range', _('time_range')),
                       ('my_quotations', _('my_quotations')),
                       ('quotation', _('quotation')),
                       ('customer_code', _('customer_code')),
@@ -603,8 +607,8 @@ class PendingFormFilter(CustomBaseForm):
                       ('all', _('all'))
                         ]
     choice = forms.ChoiceField(choices=BLANK_CHOICE_DASH + CHOOSE_CHOICES)
-    # from_time = forms.DateTimeField(required=False)
-    # to_time = forms.DateTimeField(required=False)
+    from_time = forms.DateField(required=False)
+    to_time = forms.DateField(required=False)
     quotation = forms.IntegerField(required=False)
     customer_code = forms.IntegerField(required=False)
     my_quotations = forms.CharField(required=False)
@@ -612,15 +616,17 @@ class PendingFormFilter(CustomBaseForm):
     my_inquiry_not_started = forms.CharField(required=False)
     inquiry_not_assigned = forms.CharField(required=False)
     force_inquiry = forms.CharField(required=False)
-    # search_part_number = forms.CharField(required=False)
-    # search_customer_name = forms.CharField(required=False)
-    # search_create_date = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
         self.fields['choice'].widget.attrs.update()
-        # self.fields['from_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('from_time')})
-        # self.fields['to_time'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('to_time')})
+        self.fields['from_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['to_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['from_time'].widget.attrs.update(
+            {'class': 'jalali_date-date d-none form-control', 'placeholder': _('from_time'), 'required': False})
+        self.fields['to_time'].widget.attrs.update(
+            {'class': 'jalali_date-date d-none form-control', 'placeholder': _('to_time'), 'required': False})
+
         self.fields['quotation'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('quotation')})
         self.fields['customer_code'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('customer_code')})
         self.fields['my_quotations'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_quotations')})

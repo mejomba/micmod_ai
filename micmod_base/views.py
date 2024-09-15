@@ -181,30 +181,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                             """ این آیتم در مرحله استعلام می ماند و wf ثبت نمیکند """
                             # """ این آیتم به مرحله قبل میرود و wf برگشت ثبت میکند """
-                            # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                            # pad = 2 if self.state_index >= 2 else 1
-                            # for item in flow_items:
-                            #     if pad >= 2:
-                            #         to_user = item.to_user
-                            #     else:
-                            #         to_user = item.from_user
-                            #     # to_user = item.to_user if pad >= 2 else item.from_usre
-                            #     deadline = item.deadline
-                            # data = {
-                            #     "wf_status": 2,  # back
-                            #     "action": self.flow_config.get('flow_action'),
-                            #     "flow_name": None,
-                            #     "from_user": self.request.user,
-                            #     "to_user": to_user,
-                            #     "state": self.flow_config.get('flow_state_list')[self.state_index],
-                            #     "duty": None,
-                            #     "deadline": deadline,
-                            #     "wf_description": "back in copy",
-                            #     "belong_to_group": self.flow_config.get('flow_users_groups')[self.state_index],
-                            #     "content_type": ContentType.objects.get_for_model(Quotation),
-                            #     "object_id": new_quotation.id
-                            # }
-                            # back = WorkFlow.objects.create(**data)
 
                             new_quotation.quotation_self = self.object
                             new_quotation.extra_data.request = self.request
@@ -225,12 +201,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 for idx, qi in enumerate(self.object.quotation.all(), 1):
                     qi_dict = {
                         'RowID': idx,
-                        'ItemRef': qi.itemid,  # optional
+                        'ItemRef': qi.goods_code_fk.sepidar_id_0,  # itemid,  # optional
                         'StockRef': 2,  # optional
                         'Quantity': qi.quantity,
                         'SecondaryQuantity': 0,
-                        'Fee': qi.fee or 1,
-                        'Price': qi.price or 1,
+                        # 'Fee': qi.fee or 1,
+                        'Fee': qi.sepidar_fee or 1,
+                        'Price': qi.net_price or 1,
                         'Description': qi.description or '',
                         'PriceInfoPercentDiscount': 0,
                         'PriceInfoDiscountRate': 0,
@@ -239,7 +216,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         'AggregateAmountDiscountRate': 0,
                         'CustomerDiscount': 0,
                         'CustomerDiscountRate': 0,
-                        'Discount': 0,
+                        'Discount': qi.discount_value or 0, #qi.sepidar_discount * qi.quantity or 0,
                        # 'DiscountParentRef': 1,  # optional
                         'Tax': qi.tax or 0,
                         'Duty': qi.duty or 0,
@@ -258,7 +235,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,
-                    'Discount': self.object.self_discount or 0,
+                    'Discount': self.object.total_discount or 0, #self_discount or 0,
                     'Tax': self.object.tax_amount or 0,
                     'Duty': self.object.duty_amount or 0,
                     'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
@@ -275,14 +252,15 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
                 # self.object.save()
-                if api_res[0] == 400:
+                if api_res[0] >= 400:
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
                                                               app_label=self.object._meta.app_label).first()
                     flow_object = self.flow_model.objects.filter(object_id=self.object.id,
                                                                  content_type=content_type).last()
                     if flow_object:
-                        flow_object.delete()
+                        flow_object.is_deleted = True
+                        flow_object.save()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
             self.object.save()
@@ -292,7 +270,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
             flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
             if flow_object:
-                flow_object.delete()
+                flow_object.is_deleted = True
+                flow_object.save()
         return res
 
     def get_context_data(self, **kwargs):
@@ -659,6 +638,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
     def get(self, request):
         from django.core.paginator import Paginator
+        filter_form = PendingFormFilter(self.request.GET)
+        filter_form.is_valid()
         context = dict()
         context['heading'] = _("quotation")
         context['pageview'] = _("micmod_base")
@@ -671,6 +652,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
         search_sku = request.GET.get('search_sku')
         force_inquiry = request.GET.get('force_inquiry')
+        time_range = request.GET.get('time_range')
+        from_time = self.request.GET.get('from_time')
+        to_time = self.request.GET.get('to_time')
 
         quotations_record_lst = QuotationItem.objects.none()
 
@@ -701,6 +685,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
             quotations_record_lst = quotations_record_lst.filter(**f)
         elif self.request.GET.get('item_in_china'):
             quotations_record_lst = quotations_record_lst.filter(item_in_china=True)
+
+        elif self.request.GET.get('from_time') or self.request.GET.get('to_time'):
+            quotations_record_lst = quotations_record_lst.filter(quotation__created_date__range=[filter_form.cleaned_data.get('from_time'),filter_form.cleaned_data.get('to_time')])
         else:
             quotations_record_lst = quotations_record_lst
 
@@ -748,7 +735,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
     def post(self, request):
         if obj_pk := self.request.POST.get('obj_pk'):
-            obj_qs = QuotationItem.objects.filter(pk=obj_pk)
+            obj_qs = QuotationItem.objects.full_queryset(pk=obj_pk)
             obj = obj_qs.first()
             obj.save_comment(self.request)
 
@@ -786,7 +773,17 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     'delay_reason': request.POST.get('delay_reason') or '',
                     'delay_time': request.POST.get('delay_time') or '',
                 }
-                obj_qs.update(**data)
+                # obj_qs.update(**data)
+                obj_for_update = obj_qs.first()
+                if obj_for_update:
+                    obj_for_update.lead_time = data['lead_time']
+                    obj_for_update.goods_code = data['goods_code']
+                    obj_for_update.goods_name = data['goods_name']
+                    obj_for_update.has_delay = data['has_delay']
+                    obj_for_update.delay_reason = data['delay_reason']
+                    obj_for_update.delay_time = data['delay_time']
+                    obj_for_update.extra_data.request = self.request
+                    obj_for_update.save()
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
@@ -939,12 +936,14 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'inquiry_status', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
         # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'last_work_flow', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+        {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
+        {'name': 'comment', 'visible': True, 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -958,7 +957,21 @@ class QuotationListDatatable(AjaxDatatableView):
 
     # @timer
     def customize_row(self, row, obj):
+        qi_comments = [x.comments.all() for x in obj.quotation.all()]
+        c = 0
+        for qs in qi_comments:
+            for comment in qs:
+                if not comment.commentseen_set.all():
+                    c += 1
+        for comment in obj.comments.all():
+            if not comment.commentseen_set.all():
+                c += 1
+        if c > 0:
+            row['comment'] = f'<span class="bg-success rounded px-2">{c} کامنت جدید</span>'
+        else:
+            row['comment'] = f'{c} کامنت جدید'
 
+        row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
@@ -983,7 +996,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
         # row['quotation_state'] = '%s' % obj.get_inquiry_state
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
-        row['expiration_date'] = '%s' % to_jalali_date(obj.created_date)
+        row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''

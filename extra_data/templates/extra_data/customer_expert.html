@@ -1,0 +1,29 @@
+{% load static %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+{% load jalali_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+<form method="POST" action="{% if form.instance.pk %}{% url "extra_data:customer_expert.update" form.instance.pk %}{% else %}{% url "extra_data:customer_expert.create" %}{% endif %}"  id="customer-expert-form">
+    {% csrf_token %}
+    <div class="row row-cols-5 mx-xl-10 bg-white rounded border my-10 pt-10 position-relative align-items-baseline shadow">
+        <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
+        {% render_field_by_order form form.customer form.name form.phone form.position form.is_main label='on-border' margin_b=4 %}
+    </div>
+    <input type="submit" value="ثبت" id="submit-customer-expert" class="btn btn-primary ms-10">
+</form>
+<script>
+
+    $('#customer-expert-form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+        setInterval(function (){
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
+    })
+
+</script>

@@ -229,7 +229,7 @@ function set_item_classes(item) {
             const data = e.params.data;
             console.log(data)
             set_price_data(data, elem, e.target)
-            item.find('input[id*="goods_code_fk"]').val(data['id'])
+            $(item).find('input[id*="goods_code_fk"]').val(data['id'])
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
@@ -368,8 +368,8 @@ function set_item_classes(item) {
         item.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = item.querySelector('[id*="-goods_code_alt"]').value
     }
     copy_values(item, '-goods_name_alt')
-    const w = item.querySelector('[name*="-goods_code"]')
-    const ww = item.querySelector('[name*="-goods_code_alt"]')
+    // const w = item.querySelector('[name*="-goods_code"]')
+    // const ww = item.querySelector('[name*="-goods_code_alt"]')
     const box = item.querySelector('[name="box-alt-goods"]')
     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
         if (box) {
@@ -468,15 +468,16 @@ function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
-        console.log(items[i])
-        const code = items[i].querySelector('[id*="-goods_code"]').value
-        const data = get_price_data(code, party_id, items[i])
-        set_price_data(data, items[i], items[i])
-        const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
-        if (alt_code != "") {
-            const alt_data = get_price_data(alt_code, party_id, items[i])
-            set_alt_price_data(alt_data, items[i])
-        }
+        setTimeout(function (){
+            const code = items[i].querySelector('[id*="-goods_code"]').value
+            const data = get_price_data(code, party_id, items[i])
+            set_price_data(data, items[i], items[i])
+            const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
+            if (alt_code != "") {
+                const alt_data = get_price_data(alt_code, party_id, items[i])
+                set_alt_price_data(alt_data, items[i])
+            }
+        }, 150)
     }
 }
 
@@ -599,7 +600,11 @@ function set_alt_price_data(data, elem) {
         set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
         set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
         set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), data.id,)
-        elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        try{
+            elem.querySelector('[id*="select2-goods_code_alt"][id*="container"]').innerHTML = data.id
+        } catch (err){
+            console.log('catch error: ', err)
+        }
     }
     set_price(elem.querySelector('[name*="-goods_name"]'))
 }
@@ -657,15 +662,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="express_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -679,15 +684,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="air_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -701,15 +706,15 @@ function set_price(target) {
             cost3 = elem.querySelector('[name*="sea_transportation_cost_3"]')
 
             if (cost1 && !cost1.classList.contains('d-none')) {
-                final_price.value = cost1.value;
+                final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
             } else if (cost2 && !cost2.classList.contains('d-none')) {
-                final_price.value = cost2.value;
+                final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
             } else if (cost3 && !cost3.classList.contains('d-none')) {
-                final_price.value = cost3.value;
+                final_price.value = round_rial(cost3.value);
                 final_price.innerHTML = numberWithCommas(cost3.value);
                 // final_price_div.innerHTML = numberWithCommas(cost3.value);
             }
@@ -717,7 +722,10 @@ function set_price(target) {
         case
             'price_market':
             final_price.disabled = true;
-            final_price.value = elem.querySelector('[name*="goods_price_market"]').value;
+            const x_ = elem.querySelector('[name*="goods_price_market"]').value
+            debugger
+            if (x_){final_price.value = round_rial(x_);}
+
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             break;
@@ -907,19 +915,43 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    return x
-    if (x / 100000 > 1){
-        // round 3 digit
-        x = x / 1000
-        x = (parseInt(x) + 1) * 1000
-    } else if (x / 10000 > 1){
-        // round 2 digit
-        x = x / 100
-        x = (parseInt(x) + 1) * 100
-    } else if (x / 1000 > 1){
-        // round 1 digit
-        x = x / 10
-        x = (parseInt(x) + 1) * 10
+    debugger
+    const currency = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency != 1){
+        return x
+    }
+    // return x
+    if (x >= 1000000) {
+        // more than 6 digit, round 3 digit
+        x = parseInt(x)
+        if (x % 100 === 0){
+            return x
+        }else {
+            x = x / 1000
+            x = (parseInt(x) + 1) * 1000
+        }
+    }
+    else if (x <= 999999 || x > 10000){
+        // 5 or 6 digit, round 2 digit
+        x = parseInt(x)
+        if (x % 10 === 0){
+            return x
+        }else {
+            x = x / 10
+            x = (parseInt(x) + 1) * 10
+        }
+    } else if (x <= 9999 || x > 100){
+        // 3 or 4 digit, round 2 digit (always to up)
+        x = parseInt(x)
+        if (x % 10 === 0) {
+            return x
+        }else {
+            x = x / 10
+            x = (parseInt(x) + 1) * 10
+        }
+    } else if (x / 10 > 1) {
+        // remove decimal placement
+        x = parseInt(x)
     }
     return x
 }
@@ -946,38 +978,65 @@ function calculate_price(target) {
     let isOfficialValue_number = 0
     let tax = 0;
     let taxValue = 0
+    let row_discount = 0
+    let tax_discount = 0
+    let discount_for_all = 0
     let totalDiscount = 0
-    if (isOfficial && isOfficial.checked){
-        tax = 10
-        if (isOfficialValue){
-            isOfficialValue_number = parseFloat(isOfficialValue.value);
-        }
-    }
-
+    let net_price = 0
+    let net_price_after_tax_discount = 0
+    let calculated_price = 0
+    debugger
+    // qty
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
+
+    // price
     let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
     if (isNaN(price)) {
         price = final_price.value
     }
-    // totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100) - ((price * qty) * tax/100)
-    // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount) || numberWithCommas(price * qty)
-    totalDiscount = ((price * qty) * selfDiscountValue/100) + ((price * qty) * isOfficialValue_number/100)
+    net_price = price * qty
+    net_price_after_tax_discount = net_price
+
+    if (isOfficial && isOfficial.checked){
+        tax = 10
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue.value);
+            tax_discount = net_price * (isOfficialValue_number / 100)
+        }
+        net_price_after_tax_discount = net_price - tax_discount
+    }
+
+    row_discount = parseFloat(elem.querySelector('[name*="-discount_per_item"]').value.replaceAll(',', '')) * qty
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    discount_for_all = net_price_after_tax_discount * (selfDiscountValue/100)
+
+    totalDiscount = row_discount + tax_discount + discount_for_all //((price * qty) * selfDiscountValue/100)
     if (tax){
-        taxValue = ((price * qty) - totalDiscount) * tax/100
+        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
+        taxValue = net_price_after_tax_discount * (tax/100)
     } else {
         taxValue = 0
     }
 
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
-        total_price.innerHTML = numberWithCommas(round_rial((price * qty) - totalDiscount + taxValue)) || numberWithCommas(round_rial(price * qty))
+        net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
+        taxValue = parseInt(taxValue)
+        totalDiscount = parseInt(totalDiscount)
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
+        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
+        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
+        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     } else {
+        elem.querySelector('[name*="MAC"]').innerHTML = net_price
+        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue
+        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     }
+    calculated_price = net_price - totalDiscount + tax
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0

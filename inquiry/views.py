@@ -210,8 +210,8 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
-        {'name': 'parent', 'visible': True, 'searchable': True},
-        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 '},
+        {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
@@ -222,10 +222,10 @@ class SkuListDataTableView(AjaxDatatableView):
         # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True},
-        {'name': 'wh_last_weight', 'visible': True},
-        {'name': 'weight_percentage', 'visible': True},
-        {'name': 'duplicate_item', 'visible': True, },
+        {'name': 'trade_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'wh_last_weight', 'visible': True, 'searchable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False},
+        {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -267,7 +267,7 @@ class SkuListDataTableView(AjaxDatatableView):
         x = 'text-danger' if abs(obj.weight_percentage or 0) >= 20 else ''
         row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
             if obj.weight_percentage else '<p>-</p>'
-        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="">رونوشت</a>'
+        row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="" target="_blank"><i class="ki-duotone ki-copy fs-2qx"></i></a>'
 
 
 def sku_list(request):
@@ -568,14 +568,33 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     currency = dict_.get('currency')
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
+    if request.GET.get('sku_c') == request.GET.get('sku'):
+        target_trade_price = request.GET.get('all_trade_prices')
+        target_bazar_price = request.GET.get('all_bazar_prices')
+    else:
+        target_trade_price = ''
+        target_bazar_price = ''
+
+    currency_obj = Currency.objects.filter(pk=currency).first()
 
     if load_sepidar:
         dl_obj = Dl.get_dl(party_code)
         party_id = dl_obj[0].PartyId if len(dl_obj) else None
-    # party_id = None
+
     item_sku = Item.objects.filter(sku=sku).first()
-    currency_obj = Currency.objects.filter(pk=currency).first()
-    price = item_sku.price if item_sku else None
+    all_trade_active_prices = item_sku.all_trade_active_price_
+    all_bazar_active_prices = item_sku.all_bazar_active_price_
+
+    if not target_trade_price:
+        price = item_sku.price if item_sku else None
+    else:
+        price = PriceInquiryResult.objects.filter(pk=target_trade_price).first()
+
+    if not target_bazar_price:
+        bazar_price = item_sku.bazar_price if item_sku else None
+    else:
+        bazar_price = PriceInquiryResult.objects.filter(pk=target_bazar_price).first()
+
     price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
     final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
 
@@ -583,7 +602,11 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
                                              'payment_method': payment_method, 'grade': grade,
-                                             'request': request
+                                             'request': request,
+                                             'trade_price': (price.pk, price.inquiry_type.title) if price else '',
+                                             'bazar_price': (bazar_price.pk, bazar_price.inquiry_type.title) if bazar_price else '',
+                                             'all_trade_active_prices': all_trade_active_prices,
+                                             'all_bazar_active_prices': all_bazar_active_prices
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
@@ -592,16 +615,15 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     form.fields['payment_method'].widget.attrs['onchange'] = "refresh_data(event)"
     form.fields['grade'] = get_choice_field(grades, grade)
     form.fields['grade'].widget.attrs['onchange'] = "refresh_data(event)"
-    # item_sku.set_extra_data_sepidar(customer_code=party_code)
 
-    if item_sku and item_sku.price is not None:
-        item_sku.price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                           payment_method=payment_method, currency=currency,
-                                           price_setting=price_setting_obj)
-    if item_sku and item_sku.bazar_price is not None:
-        item_sku.bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
-                                                 payment_method=payment_method, currency=currency,
-                                                 price_setting=price_setting_obj)
+    if item_sku and price is not None:
+        price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                  payment_method=payment_method, currency=currency,
+                                  price_setting=price_setting_obj)
+    if item_sku and bazar_price is not None:
+        bazar_price.set_discount_params(quantity=quantity, customer_grade=grade,
+                                        payment_method=payment_method, currency=currency,
+                                        price_setting=price_setting_obj)
 
     sepidar_inquiry_result = []
     if load_sepidar:
@@ -618,6 +640,8 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
                                                                                           "sku": item_sku,
                                                                                           'item': item,
+                                                                                          'trade_price': price,
+                                                                                          'bazar_price': bazar_price,
                                                                                           }, request)
 
         return JsonResponse({'res': html})
@@ -772,7 +796,7 @@ def get_item(request):
                 item = {}
                 try:
                     item['id'] = item_.pk
-                    item['itemid'] = item_.sku
+                    item['itemid'] = item_.sepidar_id_0
                     item['text'] = item_.part_number
                     try:
                         item_obj: Item = item_
@@ -920,7 +944,7 @@ def get_items(request):
             item = {}
             try:
                 item['id'] = item_.pk
-                item['itemid'] = item_.sku
+                item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
                 # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
