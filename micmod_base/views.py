@@ -980,8 +980,8 @@ def inquiry_report(request):
 
 def repeated_goods_code_view(request):
     if 'trade' in request.user.base_group:
-        qi = QuotationItem.quotation_item_all_pending()
-        repeated_goods_code_qi = qi.values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
+        qi = QuotationItem.quotation_item_all_pending(request.user.base_group)
+        repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
             goods_code_count__gt=1)
         repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
         repeated_codes = list(repeated_goods_code)
