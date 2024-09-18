@@ -37,8 +37,8 @@ class FactorView(LoginRequiredMixin, BaseView):
             },
         ]
     }
-    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
-
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
+    has_flow = True
     has_formset = True
     formset_form = FactorItemFormset
     formset_model = FactorItem
@@ -155,6 +155,8 @@ def search_factor_view(request, *args, **kwargs):
 
 
 def get_quotation_items_for_factor(request, pk, *args, **kwargs):
+    from workflow.forms import WorkFlowModelForm
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
     quotation = Quotation.objects.filter(pk=pk).first()
     qis = QuotationItem.objects.filter(quotation_id=pk)
     form = FactorModelForm(instance=quotation)
@@ -165,6 +167,22 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
     empty_pair.sort(key=lambda x: x[0].is_over)
     context['factoritem_qi_pair'] = empty_pair
+    context['workflow_form'] = WorkFlowModelForm(
+        content_type_model=Factor,
+        initial={
+                    'wf_access': True,
+                    'from_user': None,
+                    'to_user': request.user,
+                    'state': None,
+                    'state_index': 0,
+                    'belong_to_group': 'sales_user',
+                    'action': None,
+                    'deadline': None,
+                    'flow_config': flow_config,
+                    'create': True
+                },
+        current_user=request.user,
+    )
 
     html = render_to_string('factor/factor_item.html', context)
     return JsonResponse({'res': html})

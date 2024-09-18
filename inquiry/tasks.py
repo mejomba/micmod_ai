@@ -24,9 +24,12 @@ def update_components():
         components_lst = list()
         c = 0
         for component in components:
-            # c += 1
-            # if c % 1000 == 0:
-            #     print(c)
+            c += 1
+            if c % 1000 == 0:
+                print(c)
+                print(component.sku)
+            if component.sku == '26775' or component.sku == 26755:
+                pass
             component_ = dict()
             component_['sku'] = int(component.sku)
             component_['part_number'] = component.part_number
@@ -39,6 +42,7 @@ def update_components():
             component_['hs'] = component.purchase_group.hs.code if component.purchase_group.hs else None
             # print(component_)
             components_lst.append(component_)
+        print(c)
         print('update_components validate')
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")

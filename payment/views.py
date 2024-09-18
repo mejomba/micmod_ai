@@ -1,3 +1,4 @@
+from django.template.loader import render_to_string
 from num2fawords import words
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
@@ -8,8 +9,8 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView
 
 from core.views import BaseView, Base
-from payment.forms import PaymentOrderModelForm
-from payment.models import PaymentOrder
+from payment.forms import PaymentOrderModelForm, PaymentDocumentsForm
+from payment.models import PaymentOrder, PaymentDocument
 from tools.utils import to_jalali_date
 from translator import get_text as _
 
@@ -35,10 +36,19 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
 
 
     def get_context_data(self, **kwargs):
+        # pay => """اسناد مثبته توسط درخواست کننده"""
+        # pay_accounting => """اسناد پرداخت توسط حسابدار"""
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
-        if self.object and self.object.workflows.last().current_state_name in ['کنترل حسابداری']:
-            context['form'].initial["accounting"] = self.object.workflows.last().to_user.username
+        last_wf = self.object.last_work_flow if self.object else None
+        if self.object and last_wf and last_wf.current_state_name in ['کنترل حسابداری']:
+            context['form'].initial["accounting"] = last_wf.to_user
+
+        context['add_pay_doc'] = True if self.state_index == 0 else False
+        context['add_pay_accounting_doc'] = True if self.state_index >= 1 and self.request.user.base_group == 'accounting' else False
+        context['show_pay_doc'] = True if self.state_index >= 1 else False
+        context['show_pay_accounting_doc'] = True if self.state_index >= 1 else False
+
         return context
 
     def get_success_url(self):
@@ -48,12 +58,11 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         return f'تغییرات دخیره شد'
 
     def form_valid(self, form):
-        if self.state_index == 2 and 'next' in self.request.POST and not form.cleaned_data.get('manager_confirmation'):
+        if self.state_index == 3 and 'next' in self.request.POST and not form.cleaned_data.get('manager_confirmation'):
             form.errors.update({'manager_confirmation': 'بدون تایید امکان ارسال به مرحله نهایی وجود ندارد'})
             return super().form_invalid(form)
         
         return super().form_valid(form)
-        
 
 
 class PaymentOrderListView(ListView):
@@ -118,3 +127,55 @@ def num_to_fa_words(request):
             return JsonResponse({'': ''}, safe=False)
     else:
         return JsonResponse({'error': 'Invalid amount'})
+
+
+class LocalPaymentDoc(LoginRequiredMixin, BaseView):
+    model = PaymentDocument
+    template_name = 'payment/pay_accounting_document.html'
+    success_message = '%(payment_order)s update'
+    form_struct = {
+        'form': PaymentDocumentsForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('payment:local.payment.update', kwargs={'pk': self.object.payment_order.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        x = super().form_valid(form)
+        return x
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pay = PaymentOrder.objects.filter(pk=self.request.GET.get('pk')).first()
+        last_wf = pay.last_work_flow if pay else None
+        doc_type = ''
+        if not last_wf:
+            doc_type = "A"
+
+        if last_wf and last_wf.current_state_name in ["درخواست اولیه"]:
+            doc_type = "A"
+            self.template_name = 'payment/pay_document.html'
+        if last_wf and last_wf.current_state_name not in ["درخواست اولیه"]:
+            doc_type = "B"
+            self.template_name = 'payment/pay_accounting_document.html'
+
+        context['form'] = PaymentDocumentsForm(initial={'payment_order': pay or self.object.payment_order,
+                                                        'doc_type': doc_type}, instance=self.object)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res})
+    
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
