@@ -149,6 +149,8 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
+        if 'duplicate' in self.request.POST:
+            return super().post(request, *args, **kwargs)
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True

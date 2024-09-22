@@ -13,7 +13,7 @@ import uuid
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -32,6 +32,8 @@ from django.views import View
 from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
 from django.contrib.contenttypes.models import ContentType
+
+from workflow.forms import WorkFlowModelForm
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
@@ -73,6 +75,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
+        if 'duplicate' in self.request.POST:
+            obj = duplicate_quotation(self.request, self.object.pk)
+            if obj:
+                return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
         if self.object is None:
             import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
@@ -244,6 +250,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
+        context['duplicate'] = True
 
         if self.object:
             qis = self.object.quotation.all()
@@ -994,4 +1001,62 @@ def inquiry_not_started(request):
            }
 
     return JsonResponse(res)
+
+
+from django.db import transaction
+
+
+def duplicate_quotation(request, quotation_id):
+    with transaction.atomic():
+        # Get the original quotation
+        quotation = Quotation.objects.get(pk=quotation_id)
+
+        wf_initial = {
+            'wf_access': True,
+            'from_user': None,
+            'to_user': request.user,
+            'state': 'پیش فاکتور اولیه',
+            'state_index': 0,
+            'belong_to_group': 'sales_user',
+            'action': 'create',
+            'deadline': None,
+            'flow_config': Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView'),
+            'create': True
+        }
+        wfform = WorkFlowModelForm(data=request.POST, initial=wf_initial, content_type_model=Quotation,
+                                   current_user=request.user)
+        if wfform.is_valid():
+            quotation.pk = None
+
+
+            wf_obj = wfform.save()
+            wf_obj.from_user = request.user
+            wf_obj.to_user = request.user
+
+            wf_obj.content_type = ContentType.objects.filter(app_label=quotation._meta.app_label,
+                                                             model=quotation._meta.model_name).first()
+            wf_obj.wf_status = 5  # first draft
+            wf_obj.extra_data.request = request
+            wf_obj.current_state_name = 'پیش فاکتور اولیه'
+            wf_obj.save()
+
+            # Duplicate the quotation
+            quotation.last_work_flow = wf_obj
+
+            quotation.extra_data.request = request
+            quotation.save()
+            wf_obj.object_id = quotation.pk
+            wf_obj.save()
+
+
+            # Duplicate each related QuotationItem
+            quotation_items = QuotationItem.objects.filter(quotation=quotation_id)
+            for item in quotation_items:
+                item.pk = None  # Create a new record
+                item.quotation = quotation  # Assign the new quotation
+                item.extra_data.request = request
+                item.save()
+
+        return quotation
+
 

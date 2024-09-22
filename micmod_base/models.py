@@ -430,6 +430,7 @@ class QuotationItem(BaseModel):
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+    is_over = models.BooleanField(_('is_over'), default=False)
 
 
     objects = QuotationItemManager()
