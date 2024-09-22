@@ -212,3 +212,14 @@ def reminder(number, x):
         return number / int(x)
     except Exception as e:
         return 0
+
+
+@register.filter
+def filter_queryset(queryset, filter_str):
+    try:
+        import ast
+        filter_dict = ast.literal_eval(filter_str)
+        x = queryset.filter(**filter_dict)
+        return x
+    except Exception as e:
+        show_error(e, __file__)

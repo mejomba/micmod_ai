@@ -1185,7 +1185,7 @@ class AjaxInquiryResultListData(View):
 
 
 def update_components_view(request, *args, **kwargs):
-    update_components()
+    # update_components()
     if cache.get('update_components'):
         print('task is running')
         return JsonResponse({'result': f'task_is running'})

@@ -4,6 +4,9 @@
 {% load more_tags %}
 {% load core_tags %}
 
+<div class="mt-5 mb-2">
+                            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+                        </div>
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
 <div class="mt-10 mb-5 badge bg-light-warning py-2 px-3 rounded font-size-15">
