@@ -1,7 +1,7 @@
 import json
 
 from django.template.loader import render_to_string
-from django.db.models import Q, QuerySet, CharField, Count
+from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 
 from django.utils import timezone
@@ -679,6 +679,17 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
+            repeated_goods_code = quotations_record_lst.filter(goods_code_fk=item.instance.goods_code_fk).aggregate(Sum('quantity'), Count('id'))
+            count = repeated_goods_code.get('id__count')
+            if count > 1:
+                html = f"""<div class="mt-3 py-2 px-1 rounded hover_light_primary"><a href="/micmod_base/quotationitem/list/form/pending/?choice=search_sku&search_sku={item.instance.goods_code_fk}">
+                <span class="">{count}</span> 
+                <span class="me-3"> درخواست تکراری</span>
+                <span> جمع کل </span>
+                :
+                <span>{repeated_goods_code.get('quantity__sum')}<span>
+                </a></div>"""
+                item.repeated_goods_code_count = html
             d[item.instance.quotation.pk].append(item)
 
         inquiry = QuotationItem.inquiry_not_started(request.user)
@@ -979,15 +990,15 @@ def inquiry_report(request):
 
 
 def repeated_goods_code_view(request):
-    if 'trade' in request.user.base_group:
-        qi = QuotationItem.quotation_item_all_pending(request.user.base_group)
-        repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
-            goods_code_count__gt=1)
-        repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
-        repeated_codes = list(repeated_goods_code)
-        res = render_to_string('micmod-base/quotation/partial/repeated_goods_code.html',
-                               context={'repeated_goods_code': repeated_codes})
-        return JsonResponse({'res': res}, safe=False)
+    base_group = request.user.base_group
+    qi = QuotationItem.quotation_item_all_pending(base_group)
+    repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
+        goods_code_count__gt=1)
+    repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
+    repeated_codes = list(repeated_goods_code)
+    res = render_to_string('micmod-base/quotation/partial/repeated_goods_code.html',
+                           context={'repeated_goods_code': repeated_codes})
+    return JsonResponse({'res': res}, safe=False)
 
 
 def save_parent_item(request):
