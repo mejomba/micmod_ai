@@ -162,7 +162,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     form = FactorModelForm(instance=quotation)
     FactorItemFormset.extra = quotation.quotation.count()
     form_s = FactorItemFormset()
-    context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': []}
+    context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': [], 'request': request}
 
     empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
     empty_pair.sort(key=lambda x: x[0].is_over)

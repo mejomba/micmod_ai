@@ -211,6 +211,34 @@
      })
     })
 
+
+const RepeatedGoodsCodeBtn = document.querySelectorAll("#id_repeated_goods_code")
+    RepeatedGoodsCodeBtn.forEach(function (item) {
+        item.addEventListener('click',function (e){
+        let new_url = "{% url 'micmod_base:repeated_goods_code' %}"
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body').innerHTML = html
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+
+        });
+     })
+    })
+
+
 function update_inquiry_count() {
     const url = "{% url 'micmod_base:inquiry_not_started' %}"
     $.ajax({
@@ -237,6 +265,7 @@ function update_inquiry_count() {
     },
     });
 }
+
 
     const emptyModal = document.getElementById('id_kt_empty_modal')
     emptyModal.addEventListener('hidden.bs.modal', function (e) {
