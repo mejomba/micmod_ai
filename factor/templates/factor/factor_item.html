@@ -2,6 +2,7 @@
 {% load humanize %}
 {% load jalali_tags %}
 {% load more_tags %}
+{% load core_tags %}
 
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
@@ -165,7 +166,7 @@
                             <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor_item.instance.goods_code.sku }}" >
                         </span>
                         <div class="mt-1">
-                            {% get_comment_user_list factor_item request.user size=25 %}
+                            {% get_comment_user_list factor_item request.user size=25 obj_rel=qi %}
                         </div>
                         <div class="position-absolute d-none" id="comment-form-group__{{ factor_item.instance.pk }}"></div>
                     </span>
@@ -319,6 +320,8 @@
         item.addEventListener('click', function (e){
             e.preventDefault()
             let comment_url = item.dataset.form_url;
+            let comment_url_rel = item.dataset.form_url_rel
+            comment_url += comment_url_rel
             const pk = item.dataset.pk;
             const comment_type = item.dataset.comment_type
             const comment_input_id = comment_url.replace('/', '_')
@@ -337,7 +340,7 @@
                     commentCounter.innerHTML = '0'
                 })
             }
-            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}/MAMAD=AKBAR`} else {comment_url += `?comment_type=${comment_type}`}
             custom_ajax_get(comment_form, comment_url, comment_element)
         }) // end eventListener
     }) // end forEach

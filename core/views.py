@@ -923,6 +923,24 @@ class CommentsFormView(View):
         model_name = kwargs.get('model_name')
         ctt_id = kwargs.get('content_type')
         object_id = kwargs.get('object_id')
+
+        try:
+            app_label_rel = kwargs.get("app_label_rel")
+            model_name_rel = kwargs.get('model_name_rel')
+            ctt_id_rel = kwargs.get('content_type_rel')
+            object_id_rel = kwargs.get('object_id_rel')
+            model_rel = apps.get_model(app_label_rel, model_name_rel)
+            obj_rel = model_rel.objects.filter(pk=object_id_rel).first()
+            comments_rel = obj_rel.comments.all().order_by('-created_date')
+        except Exception as e:
+            app_label_rel = None
+            model_name_rel = None
+            ctt_id_rel = None
+            object_id_rel = None
+            model_rel = None
+            comments_rel = []
+            pass
+
         # image = kwargs.get('image')
         # file = kwargs.get('file')
         comment_type = self.request.GET.get('comment_type')
@@ -968,7 +986,10 @@ class CommentsFormView(View):
         context = {'form': form,
                    'object_id': object_id,
                    'ctt_id': ctt_id,
+                   'ctt_id_rel': ctt_id_rel,
                    'comments': comments,
+                   'model_name_rel': model_name_rel,
+                   'comments_rel': comments_rel,
                    'comment_type': comment_type,
                    'image': image,
                    'file': file,

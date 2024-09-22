@@ -9,7 +9,7 @@
         {% endif %}
     {% endfor %}
 
-    <div href="#" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="modal" data-comment_type="{{ comment_type }}" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.comments.content_type.pk }}/{{ obj.pk }}">
+    <div href="#" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="modal" data-comment_type="{{ comment_type }}" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.comments.content_type.pk }}/{{ obj.pk }}/" data-form_url_rel="{{ obj_rel|app_label }}/{{ obj_rel|model_name }}/{{ obj_rel.comments.content_type.pk }}/{{ obj_rel.pk }}">
         <span class="symbol-label bg-dark text-gray-400 fs-8 fw-bold">+</span>
     </div>
     <span class="badge badge-light-success mx-3 text-wrap fw-bolder">
