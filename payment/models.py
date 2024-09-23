@@ -25,7 +25,7 @@ class PaymentOrder(BaseModeWF):
     accounting = models.CharField(verbose_name=_('applicant'), max_length=255, null=True, blank=True)
     manager_confirmation = models.BooleanField(verbose_name=_('manager_confirm'), default=False)
     group = models.IntegerField(null=True, blank=True)
-    is_official = models.BooleanField(verbose_name=_('is_formal'), default=False)
+    is_formal = models.BooleanField(verbose_name=_('is_formal'), default=False)
     pay_doc = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     need_pay_doc = models.BooleanField(verbose_name=_('need_pay_doc'), default=False)
 
