@@ -14,7 +14,7 @@ from django.db import models
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
-from extra_data.models import Customer
+from extra_data.models import Customer, CustomerPartNumber
 from tools import utils
 from tools.myjalali import Persian
 from tools.utils import show_error
@@ -461,6 +461,19 @@ class QuotationItem(BaseModel):
 
 
     objects = QuotationItemManager()
+
+    @property
+    def appearance_or_real_part_number(self):
+        try:
+            customer = self.quotation.customer_party_id
+            item = self.goods_code_fk
+            customer_part_number = CustomerPartNumber.objects.filter(customer=customer, item=item).last()
+            if customer_part_number:
+                return customer_part_number.part_number
+            else:
+                return self.goods_code_fk.part_number
+        except Exception as e:
+            ...
 
     @property
     def total_quantity_in_factor(self):
