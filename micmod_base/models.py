@@ -467,7 +467,7 @@ class QuotationItem(BaseModel):
         try:
             customer = self.quotation.customer_party_id
             item = self.goods_code_fk
-            customer_part_number = CustomerPartNumber.objects.filter(customer=customer, item=item).last()
+            customer_part_number = CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
             if customer_part_number:
                 return customer_part_number.part_number
             else:
