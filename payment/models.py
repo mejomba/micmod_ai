@@ -28,6 +28,7 @@ class PaymentOrder(BaseModeWF):
     is_formal = models.BooleanField(verbose_name=_('is_formal'), default=False)
     pay_doc = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     need_pay_doc = models.BooleanField(verbose_name=_('need_pay_doc'), default=False)
+    is_paid = models.BooleanField(verbose_name=_('is_paid'), default=False)
 
     def __str__(self):
         return f'دستور پرداخت ({self.id})'

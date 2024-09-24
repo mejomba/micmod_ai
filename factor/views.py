@@ -1,3 +1,5 @@
+import datetime
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -167,16 +169,31 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
     empty_pair.sort(key=lambda x: x[0].is_over)
     context['factoritem_qi_pair'] = empty_pair
+    context['flow_state_index'] = 0
+    context['flow_state_list'] = flow_config.get('flow_state_list')
+    context['flow_state_list'].append('مرحله نهایی')
+    x = {
+            'wf_access': True,
+            'from_user': None,
+            'to_user': request.user,
+            'state': 'فاکتور اولیه',
+            'state_index': 0,
+            'belong_to_group': 'sales_user',
+            'action': 'ایجاد',
+            'deadline': datetime.datetime(2024, 9, 23, 17, 8, 27, 437724),
+            'flow_config': flow_config,
+            'create': True
+    }
     context['workflow_form'] = WorkFlowModelForm(
         content_type_model=Factor,
         initial={
                     'wf_access': True,
                     'from_user': None,
-                    'to_user': request.user,
-                    'state': None,
+                    'to_user': request.user._meta.model.objects.get(pk=21),
+                    'state': 'فاکتور اولیه',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',
-                    'action': None,
+                    'action': 'create',
                     'deadline': None,
                     'flow_config': flow_config,
                     'create': True

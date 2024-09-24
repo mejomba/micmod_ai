@@ -334,7 +334,17 @@ class Item(BaseModel):
     is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
     parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    hs = models.ForeignKey(HS, verbose_name=_('hs'), on_delete=models.DO_NOTHING, null=True, blank=True)
     objects = BaseManager(is_public=True)
+
+    @property
+    def active_hs(self):
+        hs = self.hs
+        if hs:
+            return hs
+        elif self.purchase_group:
+            return self.purchase_group.hs
+        return hs
 
     # base_fields = ['sku','part_number']
 
