@@ -188,6 +188,7 @@
                             <th scope="col">استعلام قیمت</th>
                             <th scope="col">زمان تحویل</th>
                             <th scope="col">قیمت نهایی</th>
+                            <th scope="col">تارگت قیمت</th>
                             {% if with_comments == '1' %}
                                 <th scope="col">نظرات</th>
                             {% endif %}
@@ -208,8 +209,8 @@
                         <tfoot class="bg-secondary replace-digits">
                         <tr>
                         {% with data.payment as payment %}
-                            <td class="w-70 text-end bold " {% if with_comments == '1' %} colspan="8" {% else %}
-                                colspan="8" {% endif %}>جمع کل: <span class="ms-19 ">{{ payment.4|floatformat:'-2g'|default_if_none:0}}</span>
+                            <td class="w-70 text-end bold " {% if with_comments == '1' %} colspan="9" {% else %}
+                                colspan="9" {% endif %}>جمع کل: <span class="ms-19 ">{{ payment.4|floatformat:'-2g'|default_if_none:0}}</span>
                             </td>
                         {% endwith %}
                         </tr>
