@@ -1,4 +1,5 @@
 import datetime
+from itertools import islice
 
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
@@ -15,7 +16,7 @@ from translator import get_text as _
 
 from comments.forms import CommentsForm
 from core.views import BaseView, Base
-from extra_data.models import Customer
+from extra_data.models import Customer, CustomerPartNumber
 from factor.forms import FactorModelForm, FactorItemFormset
 from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation, QuotationItem
@@ -65,6 +66,13 @@ class FactorView(LoginRequiredMixin, BaseView):
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
+
+        customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
+        while True:
+            batch = list(islice(customer_part_number_list, 10))
+            if not batch:
+                break
+            CustomerPartNumber.objects.bulk_create(batch, 10)
         return res
 
     def get_context_data(self, **kwargs):
