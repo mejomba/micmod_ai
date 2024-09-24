@@ -214,6 +214,7 @@ def reminder(number, x):
     except Exception as e:
         return 0
 
+
 @register.simple_tag
 def appearance_or_real_part_number(qi):
     try:
@@ -226,3 +227,14 @@ def appearance_or_real_part_number(qi):
             return qi.goods_code_fk.part_number
     except Exception as e:
         ...
+
+
+@register.filter
+def filter_queryset(queryset, filter_str):
+    try:
+        import ast
+        filter_dict = ast.literal_eval(filter_str)
+        x = queryset.filter(**filter_dict)
+        return x
+    except Exception as e:
+        show_error(e, __file__)

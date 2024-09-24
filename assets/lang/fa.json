@@ -599,5 +599,12 @@
     "introducer": "معرف",
     "black_list": "لیست سیاه",
     "extra_credit": "max credit",
-    "quotationitem": "پیش فاکتور"
+    "quotationitem": "پیش فاکتور",
+    "need_pay_doc": "نیاز به اسناد پرداخت",
+    "is_formal": "رسمی",
+    "receive_doc": "اسناد پرداخت (مالی)",
+    "pay_doc": "اسناد مثبته (درخواست کننده)",
+    "total_amount": "مجموع مبلغ",
+    "from_date": "از تاریخ",
+    "to_date": "تا تاریخ"
 }
