@@ -253,8 +253,21 @@
 {#                        </div>#}
                     </span>
                     <span class="col-5 text-center px-1">
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.appearance_or_real_part_number }}" >
-
+{#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.appearance_or_real_part_number }}" >#}
+                        <div class="col mb-3">
+                            {% get_list form.from_source as items_list %}
+                            <input class="underline_dash_border text-center bold"
+                                   name="{{ form.from_source|get_base_model }}__auto__{{ form.from_source.html_name }}" {% get_attrs_str form.from_source %} list="lst_{{ form.from_source.name }}"
+                                   value="{{ items_list.selected_str }}" autocomplete="off">
+                        {{ form.from_source.errors }}
+                            <datalist id="lst_{{ form.from_source.name }}">
+                                {% for item in items_list.list %}
+                                    {% if item.0 %}
+                                    <option>{{ item.1 }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </datalist>
+                        </div>
                         {% if qi.appearance_or_real_part_number != qi.goods_code_fk.part_number %}
                             <span class="float-start mt-2 font-size-10">
                                 <span>پارت نامبر اصلی:</span>

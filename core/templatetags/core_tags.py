@@ -10,7 +10,6 @@ from pprint import pprint
 from django.apps import apps
 from django.apps import apps
 
-from extra_data.models import CustomerPartNumber
 from tools.utils import show_error
 
 register = template.Library()
@@ -215,18 +214,18 @@ def reminder(number, x):
         return 0
 
 
-@register.simple_tag
-def appearance_or_real_part_number(qi):
-    try:
-        customer = qi.quotation.customer_party_id
-        item = qi.goods_code_fk
-        customer_part_number = CustomerPartNumber.objects.filter(customer=customer, item=item).last()
-        if customer_part_number:
-            return customer_part_number.part_number
-        else:
-            return qi.goods_code_fk.part_number
-    except Exception as e:
-        ...
+# @register.simple_tag
+# def appearance_or_real_part_number(qi):
+#     try:
+#         customer = qi.quotation.customer_party_id
+#         item = qi.goods_code_fk
+#         customer_part_number = CustomerPartNumber.objects.filter(customer=customer, item=item).last()
+#         if customer_part_number:
+#             return customer_part_number.part_number
+#         else:
+#             return qi.goods_code_fk.part_number
+#     except Exception as e:
+#         ...
 
 
 @register.filter

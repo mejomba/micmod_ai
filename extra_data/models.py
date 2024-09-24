@@ -804,7 +804,7 @@ class ChangeCustomerGroup(AbsBaseModel):
                                     verbose_name=_("to_marketer"), null=True, blank=True)
 
 
-class CustomerPartNumber(AbsBaseModel):
-    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='part_number_appearance', null=True, blank=True)
-    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='customer_part_number', null=True, blank=True)
-    part_number = models.CharField(max_length=255, verbose_name=_('customer_part_number'))
+# class CustomerPartNumber(AbsBaseModel):
+#     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='part_number_appearance', null=True, blank=True)
+#     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='customer_part_number', null=True, blank=True)
+#     part_number = models.CharField(max_length=255, verbose_name=_('customer_part_number'))

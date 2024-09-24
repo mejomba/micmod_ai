@@ -16,7 +16,7 @@ from translator import get_text as _
 
 from comments.forms import CommentsForm
 from core.views import BaseView, Base
-from extra_data.models import Customer, CustomerPartNumber
+from extra_data.models import Customer
 from factor.forms import FactorModelForm, FactorItemFormset
 from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation, QuotationItem
@@ -67,12 +67,12 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         res = super().form_valid(form)
 
-        customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
-        while True:
-            batch = list(islice(customer_part_number_list, 10))
-            if not batch:
-                break
-            CustomerPartNumber.objects.bulk_create(batch, 10)
+        # customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
+        # while True:
+        #     batch = list(islice(customer_part_number_list, 10))
+        #     if not batch:
+        #         break
+        #     CustomerPartNumber.objects.bulk_create(batch, 10)
         return res
 
     def get_context_data(self, **kwargs):
