@@ -16,6 +16,7 @@
         {% for wf_state in wf_states %}
         <th scope="col" class="text-center"><h6>{{ wf_state }}</h6></th>
         {% endfor %}
+        <th scope="col" class="text-center"><h6>کل ردیف ها</h6></th>
         <th scope="col" class="text-center"><h6>تعداد استعلام</h6></th>
     </tr>
   </thead>
@@ -46,3 +47,13 @@
   {% endfor %}
   </tbody>
 </table>
+<div class="d-flex gap-8 mt-10">
+    <div class="d-flex gap-2">
+        <div class="bg-info rounded-circle" style="width: 20px; height: 20px"></div>
+        <div>استعلام خارجی</div>
+    </div>
+    <div class="d-flex gap-2">
+        <div class="bg-success rounded-circle" style="width: 20px; height: 20px"></div>
+        <div>استعلام داخلی</div>
+    </div>
+</div>
