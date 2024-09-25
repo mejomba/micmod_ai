@@ -96,14 +96,23 @@ class FactorView(LoginRequiredMixin, BaseView):
                 if factor_item_form_instance_pk and factor_item_form.instance.qi.pk == qi.pk:
                     if qi.is_over:
                         """(qi is_over, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
+                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
+                                                             )
                         break
                     else:
                         """(qi, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
+                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
+                                                             )
                         break
         exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
-        empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
+        # empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
+        empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
+                       qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                       qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(exclude_qi_qs)]
         context['factoritem_qi_pair'].extend(empty_pair)
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
@@ -174,7 +183,9 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     form_s = FactorItemFormset()
     context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': [], 'request': request}
 
-    empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
+    empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
+                   qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                   qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(qis)]
     empty_pair.sort(key=lambda x: x[0].is_over)
     context['factoritem_qi_pair'] = empty_pair
     context['flow_state_index'] = 0

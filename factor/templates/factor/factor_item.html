@@ -126,7 +126,7 @@
         </div>
     </div>
     <!-- row per item -->
-    {% for qi, factor_item, first_empty in factoritem_qi_pair %}
+    {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         {% if factor_item.instance.pk %}
                 <div class="hidden-section">
@@ -174,12 +174,23 @@
                         <div class="position-absolute d-none" id="comment-form-group__{{ factor_item.instance.pk }}"></div>
                     </span>
                     <span class="col-5 text-center gap-1">
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor_item.instance.part_number_show }}" >
-                        {% if factor_item.instance.part_number_show != factor_item.instance.goods_code.part_number %}
+{#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor_item.instance.part_number_show }}" >#}
+                        <input class="LTR-RTL w-100 rounded font-size-11 text-center"
+                                   name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" list="lst_part_number_show"
+                                   value="{{ factor_item.instance.part_number_show }}" autocomplete="off">
+                        {{ form_s.part_number_show.errors }}
+                            <datalist id="lst_part_number_show">
+                                {% for items_list in factoritem_qi_pair.3.list %}
+                                    {% if item.0 %}
+                                    <option>{{ item.1 }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </datalist>
+                        {% if is_part_diff %}
                             <span class="float-start mt-2 font-size-10">
                                 <span>پارت نامبر اصلی:</span>
                                 <span class="bg-light-success rounded px-1">
-                                    {{ factor_item.instance.goods_code.part_number }}
+                                    {{ qi.goods_code_fk.part_number }}
                                 </span>
                             </span>
                         {% endif %}
@@ -253,22 +264,18 @@
 {#                        </div>#}
                     </span>
                     <span class="col-5 text-center px-1">
-{#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ qi.appearance_or_real_part_number }}" >#}
-                        <div class="col mb-3">
-                            {% get_list form.from_source as items_list %}
-                            <input class="underline_dash_border text-center bold"
-                                   name="{{ form.from_source|get_base_model }}__auto__{{ form.from_source.html_name }}" {% get_attrs_str form.from_source %} list="lst_{{ form.from_source.name }}"
-                                   value="{{ items_list.selected_str }}" autocomplete="off">
-                        {{ form.from_source.errors }}
-                            <datalist id="lst_{{ form.from_source.name }}">
-                                {% for item in items_list.list %}
+                            <input class="LTR-RTL w-100 rounded font-size-11 text-center"
+                                   name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" list="lst_part_number_show__{{ forloop.counter0 }}"
+                                   value="{% appearance_or_real_part_number qi.goods_code_fk qi.quotation.customer_party_id %}" autocomplete="off">
+                        {{ form_s.part_number_show.errors }}
+                            <datalist id="lst_part_number_show__{{ forloop.counter0 }}">
+                                {% for item in part_list.list %}
                                     {% if item.0 %}
                                     <option>{{ item.1 }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </datalist>
-                        </div>
-                        {% if qi.appearance_or_real_part_number != qi.goods_code_fk.part_number %}
+                        {% if is_part_diff %}
                             <span class="float-start mt-2 font-size-10">
                                 <span>پارت نامبر اصلی:</span>
                                 <span class="bg-light-success rounded px-1">

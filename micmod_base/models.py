@@ -488,29 +488,28 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
-    @property
-    def appearance_or_real_part_number(self):
-        try:
-            customer = self.quotation.customer_party_id
-            item = self.goods_code_fk
-            customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
-            if customer_part_number:
-                return customer_part_number.part_number_show
-            else:
-                return self.goods_code_fk.part_number
-        except Exception as e:
-            ...
+    # @property
+    # def appearance_or_real_part_number(self):
+    #     try:
+    #         customer = self.quotation.customer_party_id
+    #         item = self.goods_code_fk
+    #         customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+    #         if customer_part_number:
+    #             return customer_part_number.part_number_show
+    #         else:
+    #             return self.goods_code_fk.part_number
+    #     except Exception as e:
+    #         ...
 
-    @property
-    def appearance_or_real_part_number_(self):
-        try:
-            customer_part_number = self.qi.all().first()  # CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
-            if customer_part_number:
-                return customer_part_number.part_number_show
-            else:
-                return self.goods_code_fk.part_number
-        except Exception as e:
-            ...
+    # @property
+    # def appearance_or_real_part_number_(self):
+    #     try:
+    #         l = [("", "--------", "selected")]
+    #         for item in self.qi.all():
+    #             l.append((item.pk, item.part_number_show, ''))
+    #         return {'list': l}
+    #     except Exception as e:
+    #         ...
 
     @property
     def total_quantity_in_factor(self):
