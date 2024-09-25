@@ -334,7 +334,38 @@ class Item(BaseModel):
     is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
     parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    hs = models.ForeignKey(HS, verbose_name=_('hs'), on_delete=models.DO_NOTHING, null=True, blank=True)
     objects = BaseManager(is_public=True)
+
+    @property
+    def active_hs(self):
+        hs = self.hs
+        if hs:
+            return hs
+        elif self.purchase_group:
+            return self.purchase_group.hs
+        return hs
+
+    def appearance_or_real_part_number(self, customer):
+        try:
+            # customer = self.quotation.customer_party_id
+            customer_factor_item = self.factor_goods_code.filter(qi__quotation__customer_party_id=customer).first()
+            #customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+            if customer_factor_item:
+                return customer_factor_item.part_number_show
+            else:
+                return self.part_number
+        except Exception as e:
+            print(e)
+
+    def appearance_or_real_part_number_(self, customer):
+        try:
+            l = [("", "--------", "selected")]
+            for item in self.factor_goods_code.filter(qi__quotation__customer_party_id=customer):
+                l.append((item.pk, item.part_number_show, ''))
+            return {'list': l}
+        except Exception as e:
+            ...
 
     # base_fields = ['sku','part_number']
 

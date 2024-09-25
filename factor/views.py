@@ -1,3 +1,6 @@
+import datetime
+from itertools import islice
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -63,6 +66,13 @@ class FactorView(LoginRequiredMixin, BaseView):
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
+
+        # customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
+        # while True:
+        #     batch = list(islice(customer_part_number_list, 10))
+        #     if not batch:
+        #         break
+        #     CustomerPartNumber.objects.bulk_create(batch, 10)
         return res
 
     def get_context_data(self, **kwargs):
@@ -86,14 +96,23 @@ class FactorView(LoginRequiredMixin, BaseView):
                 if factor_item_form_instance_pk and factor_item_form.instance.qi.pk == qi.pk:
                     if qi.is_over:
                         """(qi is_over, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
+                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
+                                                             )
                         break
                     else:
                         """(qi, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False))
+                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
+                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
+                                                             )
                         break
         exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
-        empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
+        # empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
+        empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
+                       qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                       qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(exclude_qi_qs)]
         context['factoritem_qi_pair'].extend(empty_pair)
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
@@ -164,19 +183,36 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     form_s = FactorItemFormset()
     context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': [], 'request': request}
 
-    empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(qis)]
+    empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
+                   qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
+                   qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(qis)]
     empty_pair.sort(key=lambda x: x[0].is_over)
     context['factoritem_qi_pair'] = empty_pair
+    context['flow_state_index'] = 0
+    context['flow_state_list'] = flow_config.get('flow_state_list')
+    context['flow_state_list'].append('مرحله نهایی')
+    x = {
+            'wf_access': True,
+            'from_user': None,
+            'to_user': request.user,
+            'state': 'فاکتور اولیه',
+            'state_index': 0,
+            'belong_to_group': 'sales_user',
+            'action': 'ایجاد',
+            'deadline': datetime.datetime(2024, 9, 23, 17, 8, 27, 437724),
+            'flow_config': flow_config,
+            'create': True
+    }
     context['workflow_form'] = WorkFlowModelForm(
         content_type_model=Factor,
         initial={
                     'wf_access': True,
                     'from_user': None,
-                    'to_user': request.user,
-                    'state': None,
+                    'to_user': request.user._meta.model.objects.get(pk=21),
+                    'state': 'فاکتور اولیه',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',
-                    'action': None,
+                    'action': 'create',
                     'deadline': None,
                     'flow_config': flow_config,
                     'create': True

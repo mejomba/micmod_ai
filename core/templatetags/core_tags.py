@@ -214,6 +214,27 @@ def reminder(number, x):
         return 0
 
 
+@register.simple_tag
+def appearance_or_real_part_number(item, customer):
+    try:
+        customer_factor_item = item.factor_goods_code.filter(qi__quotation__customer_party_id=customer).first()
+        if customer_factor_item:
+            return customer_factor_item.part_number_show
+        else:
+            return item.part_number
+    except Exception as e:
+        print(e)
+
+
+def appearance_or_real_part_number_(item, customer):
+    try:
+        l = [("", "--------", "selected")]
+        for i in item.factor_goods_code.filter(qi__quotation__customer_party_id=customer):
+            l.append((i.pk, item.part_number_show, ''))
+        return {'list': l}
+    except Exception as e:
+        ...
+
 @register.filter
 def filter_queryset(queryset, filter_str):
     try:

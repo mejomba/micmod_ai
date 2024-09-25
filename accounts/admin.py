@@ -29,6 +29,7 @@ class AdminUser(UserAdmin):
                     "groups",
                     "user_permissions",
                     "head",
+                    "z_index"
                 ),
             },
         ),

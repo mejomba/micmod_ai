@@ -23,7 +23,7 @@
           },
           {
             "state": "استعلام قیمت",
-            "group": "sales_user",
+            "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -358,7 +358,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting", "from_source", "is_official"]
+              "read": ["manager_confirmation", "accounting", "from_source", "is_official", "is_paid"]
             },
             "formset_constraint": [
               {
