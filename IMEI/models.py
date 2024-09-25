@@ -18,8 +18,9 @@ def user_upload_file_path(instance, filename: str):
     name = f"{now.date()}_{now.hour}_{now.minute}_{name}"
     return os.path.join('uploads/', name)
 
-
+from tools.utils import timer
 class IMEIAllSearchManager(Manager):
+    @timer
     def raw_as_qs(self, raw_query):
         """Execute a raw query and return a QuerySet.  The first column in the
         result set must be the id field for the model.
@@ -30,6 +31,8 @@ class IMEIAllSearchManager(Manager):
         try:
             cursor.execute(raw_query)
             return self.filter(id__in=(x[0] for x in cursor))
+        except Exception as e:
+            pass
         finally:
             cursor.close()
 
@@ -153,8 +156,12 @@ class IMEIAllSearch(models.Model):
                         join "IMEI_imeintswreg" as n_ on n_d_.imei_ntsw_reg_id = n_.id)as N on N."IMEI"=S."IMEI")
                         where 1=1 and   '''
 
+        limit = ' limit 10000000'
         if param == 'submit' or param == 'all' or param == '':
             return IMEIAllSearch.objects.all()
+            condition = '1=1'
+            query += ' ' + condition + limit
+            return IMEIAllSearch.objects.raw_as_qs(query)
         elif param == 'register':
             condition = 'N."IMEI" IS NOT NULL'
             query += ' ' + condition
