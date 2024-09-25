@@ -133,11 +133,11 @@
                     </div>
                     <div class="ps-2 bolder d-flex border-dotted border-gray-600 my-1 rounded-4 border-1 w-100">
                         <div class="row row-cols-2 w-100">
-                            {% include "core/partial/components/key_value_text.html" with rma_key="" rma_value=sku.purchase_group.hs.title rma_class="d-flex py-3" %}
-                            {% include "core/partial/components/key_value_text.html" with rma_key="customs_rate" rma_value=sku.purchase_group.hs.customs_rate rma_class="d-flex py-3" %}
+                            {% include "core/partial/components/key_value_text.html" with rma_key="" rma_value=sku.active_hs.title rma_class="d-flex py-3" %}
+                            {% include "core/partial/components/key_value_text.html" with rma_key="customs_rate" rma_value=sku.active_hs.customs_rate rma_class="d-flex py-3" %}
                         </div>
                         <a class="d-flex align-items-center justify-content-end pe-1" target="_blank"
-                           href="/admin/extra_data/hs/{{ sku.purchase_group.hs.id }}/change/"><i
+                           href="/admin/extra_data/hs/{{ sku.active_hs.id }}/change/"><i
                                 class="fa fa-edit fs-5 pe-1"></i><span
                                 data-key="edit"></span></a>
                     </div>

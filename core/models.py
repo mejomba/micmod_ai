@@ -117,7 +117,7 @@ class BaseManager(models.Manager):
         # direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
         direct_access = f'quotation_direct_access'
         user_groups_list = list(user.groups.values_list('name', flat=True))
-        
+
         if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,

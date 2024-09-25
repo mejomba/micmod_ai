@@ -98,22 +98,50 @@ class Quotation(SLSDoc):
 
     @classmethod
     def sale_user_report(cls, current_user, wf_states, from_date, to_date):
-        sales_user = current_user.team.all()
+        filter_by_time = Q()
+        if from_date and to_date:
+            f_date = Persian(from_date).gregorian_datetime()
+            t_date = Persian(to_date).gregorian_datetime()
+            filter_by_time = Q(created_date__range=(f_date, t_date))
+        sales_user = current_user.team.all().order_by('z_index')
         res = dict()
+        inquiry_state = 'استعلام قیمت'
         for sale_user in sales_user:
             res[sale_user] = []
+            local_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                    Q(last_work_flow__current_state_name=inquiry_state) & \
+                                    Q(quotation__need_local_price_inquiry=True) & \
+                                    Q(quotation__is_deleted=False) & \
+                                    Q(cancel=False)
+
+            foreign_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                      Q(last_work_flow__current_state_name=inquiry_state) & \
+                                      Q(quotation__need_foreign_price_inquiry=True)& \
+                                      Q(quotation__is_deleted=False) & \
+                                      Q(cancel=False)
             for wf_state in wf_states:
                 condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
-                if from_date and to_date:
-                    f_date = Persian(from_date).gregorian_datetime()
-                    t_date = Persian(to_date).gregorian_datetime()
-                    filter_by_time = Q(created_date__range=(f_date, t_date))
-                    wf = cls.objects.filter(filter_by_time & condition)
-                    wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
-                else:
-                    wf = cls.objects.filter(condition)
-                    wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
-                res[sale_user].append((wf.count(), wf_cancel))
+                # if filter_by_time:
+                wf = cls.objects.filter(filter_by_time & condition).count()
+                wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
+                # else:
+                #     wf = cls.objects.filter(condition).count()
+                #     wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
+                res[sale_user].append((wf, wf_cancel))
+
+            # if from_date and to_date:
+            #     f_date = Persian(from_date).gregorian_datetime()
+            #     t_date = Persian(to_date).gregorian_datetime()
+            #     filter_by_time = Q(created_date__range=(f_date, t_date))
+            local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
+            foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
+            # else:
+            #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
+            #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
+            res[sale_user].append((all_user_quotation,))
+            res[sale_user].append((foreign_price_inquiry, local_price_inquiry))
+
         return res
 
     @property
@@ -461,6 +489,29 @@ class QuotationItem(BaseModel):
 
 
     objects = QuotationItemManager()
+
+    # @property
+    # def appearance_or_real_part_number(self):
+    #     try:
+    #         customer = self.quotation.customer_party_id
+    #         item = self.goods_code_fk
+    #         customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+    #         if customer_part_number:
+    #             return customer_part_number.part_number_show
+    #         else:
+    #             return self.goods_code_fk.part_number
+    #     except Exception as e:
+    #         ...
+
+    # @property
+    # def appearance_or_real_part_number_(self):
+    #     try:
+    #         l = [("", "--------", "selected")]
+    #         for item in self.qi.all():
+    #             l.append((item.pk, item.part_number_show, ''))
+    #         return {'list': l}
+    #     except Exception as e:
+    #         ...
 
     @property
     def total_quantity_in_factor(self):

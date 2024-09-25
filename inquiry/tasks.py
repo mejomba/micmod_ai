@@ -24,9 +24,10 @@ def update_components():
         components_lst = list()
         c = 0
         for component in components:
-            # c += 1
-            # if c % 1000 == 0:
-            #     print(c)
+            c += 1
+            if c % 1000 == 0:
+                print("update component", c, "sku=", component.sku)
+                print(component.sku)
             component_ = dict()
             component_['sku'] = int(component.sku)
             component_['part_number'] = component.part_number
@@ -36,7 +37,7 @@ def update_components():
             component_['is_sea_default'] = component.is_sea_default
             component_['package'] = component.package
             component_['weight'] = component.weight
-            component_['hs'] = component.purchase_group.hs.code if component.purchase_group.hs else None
+            component_['hs'] = component.active_hs.code if component.active_hs else None
             # print(component_)
             components_lst.append(component_)
         print('update_components validate')
@@ -47,6 +48,7 @@ def update_components():
         g_sheet.wb.worksheet('Portal_list').update_cell(2, 10, update_time)
         print(f'task update_components done at:{update_time}')
         print('update_components done')
+        print('count=', c)
     except Exception as e:
         print(str(e))
     finally:

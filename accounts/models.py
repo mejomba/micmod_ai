@@ -31,6 +31,7 @@ class User(AbstractUser):
     is_customer = models.BooleanField(default=False, verbose_name=_('is_customer'))
     head = models.ForeignKey('self', null=True, blank=True, verbose_name=_('team'), on_delete=models.DO_NOTHING, related_name='team')
     is_bi_user = models.BooleanField(default=False, verbose_name=_('is_bi_user'))
+    z_index = models.IntegerField(null=True, blank=True, verbose_name=_('z_index'))
 
     class Meta:
         db_table = 'auth_user'

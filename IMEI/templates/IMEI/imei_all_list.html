@@ -68,29 +68,11 @@
                     <div class="col-12">
 {#                                new datatable#}
                         <div class="container-fluid">
-                            {{ imei_list }}
                             <div class="table-responsive p-2">
                                 <table id="datatable_imei_all" width="100%" class="m-table table-striped table-bordered w-100">
                                     <div>
-
                                         {% include 'core/partial/download_excel.html' with model=model %}
                                     </div>
-                                    <thead>
-                                        <tr>
-{#                                                    <th>IMEI</th>#}
-{#                                                    <th>packing</th>#}
-{#                                                    <th data-key="register date">register date</th>#}
-{#                                                    <th data-key="main box">main box</th>#}
-{#                                                    <th data-key="internal box">internal box</th>#}
-{#                                                    <th data-key="register status">register status</th>#}
-{#                                                    <th data-key="register code">register code</th>#}
-{#                                                    <th data-key="activation code">activation code</th>#}
-{#                                                    <th data-key="invoice code">invoice code</th>#}
-{#                                                    <th data-key="customer name">customer name</th>#}
-{#                                                    <th data-key="customer code">customer code</th>#}
-{#                                                    <th data-key="is submit">is submit</th>#}
-                                        </tr>
-                                        </thead>
                                 </table>
                             </div>
                         </div>
