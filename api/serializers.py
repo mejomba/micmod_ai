@@ -1,8 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import serializers
+from extra_data.models import Customer, CustomerExpert, CustomerGrade, CustomerGroup, CustomerFields, Senf, SubSenf, \
+    IntroductionMethod, Introducer, Marketer, Province
 
 from inquiry.models import PriceInquiryResult
+from micmod_base.base import Currency
+from micmod_base.models import SaleType, Month
 from sepidar.models import Dl
 
 from translator import get_text as _
@@ -84,3 +88,95 @@ class GeneralSerializer(serializers.ModelSerializer):
         model = None
         # fields = '__all__'
         # fields = ['pk', 'supplier', 'price', 'local_price', 'description']
+
+
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = '__all__'
+
+
+class MonthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Month
+        fields = '__all__'
+
+
+class CustomerGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerGroup
+        fields = ['title', 'sepidar_id', 'sepidar_group_id']
+
+
+class CustomerLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Province
+        fields = ['title', 'location_id', 'sepidar_location_id']
+
+
+class SenfSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Senf
+        fields = ['id', 'title']
+
+
+class SubSenfSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubSenf
+        fields = ['id', 'title']
+
+
+class IntroductionMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IntroductionMethod
+        fields = ['id', 'title']
+
+
+class IntroducerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Introducer
+        fields = ['id', 'title']
+
+
+class MarketerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Marketer
+        fields = ['id', 'title']
+
+
+class CustomerSaleTypeSerializer(serializers.ModelSerializer):
+    month = MonthSerializer(read_only=True)
+    currency = CurrencySerializer(read_only=True)
+
+    class Meta:
+        model = SaleType
+        fields = ['id',  'number', 'title', 'month', 'currency', 'extra_percentage', ]
+
+
+class CustomerFieldSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomerFields
+        fields = ['id', 'title', 'icon']
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    customer_group = CustomerGroupSerializer(read_only=True)
+    province = CustomerLocationSerializer(read_only=True)
+    location = CustomerLocationSerializer(read_only=True)
+    senf = SenfSerializer(read_only=True)  # serializers.PrimaryKeyRelatedField(many=True)
+    sub_senf = SubSenfSerializer(read_only=True)
+    introduction_method = IntroductionMethodSerializer(read_only=True)
+    introducer = IntroducerSerializer(read_only=True)
+    marketer = MarketerSerializer(read_only=True)
+    customer_sale_type = CustomerSaleTypeSerializer(read_only=True)
+    customer_field = CustomerFieldSerializer(many=True, read_only=True)
+    class Meta:
+        model = Customer
+        fields = ['id', 'sepidar_dl_id', 'sepidar_dl_code', 'sepidar_party_id', 'title', 'type', 'national_code',
+                  'name', 'last_name', 'email', 'website', 'phone', 'credit_with_doc', 'customer_group', 'province',
+                  'location', 'address', 'senf', 'sub_senf', 'introduction_method', 'introducer', 'revival_date',
+                  'z_no', 'z_safte', 'z_cheque_s', 'z_cheque_ns', 'z_max_credit_rafi', 'extra_credit', 'i_type1_target',
+                  'marketer', 'cheque_to_delivery', 'customer_sale_type', 'official_name', 'customer_grade',
+                  'description', 'lat', 'long', 'customer_field', 'active', 'guid', 'meet_in_person', 'black_list',
+                  ]

@@ -200,13 +200,14 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(AjaxDatatableView):
     model = Item
     title = 'sku_list'
-    initial_order = [["created_date", "des"], ]
+    # initial_order = [["id", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     from translator import get_text as _
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, "orderable": True},
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
@@ -216,14 +217,17 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
         {'name': 'created_date', 'visible': True, },
-        {'name': 'id', 'visible': False, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': True},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
+
+    def get_initial_order(self, request):
+        res = super().get_initial_order(request)
+        return []
 
     def get_initial_queryset(self, request=None):
         from django.db.models import Avg, Count, Min, Sum
@@ -236,6 +240,7 @@ class SkuListDataTableView(AjaxDatatableView):
         elif q == 'not_confirm':
             qs = qs.filter(technical_confirm=False)
         elif q == 'weight_percentage':
+            self.initial_order = [["id", "des"], ]
             qry = """
             select distinct(WH.sku_id), WH.id, WH.sku_id sku from
 	(
@@ -262,6 +267,12 @@ class SkuListDataTableView(AjaxDatatableView):
             raw = self.model.objects.raw(qry)
             ids = [x.sku for x in raw]
             qs = qs.filter(id__in=ids)
+            qs = sorted(qs, key=lambda x: x.weight_percentage, reverse=True)
+            qs = filter(lambda x: x.weight_percentage > 10, qs)
+            pk_list = [item.pk for item in qs]
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(pk_list)])
+            qs = self.model.objects.filter(pk__in=pk_list).order_by(preserved)
+
         return qs
 
     def get_column_defs(self, request):

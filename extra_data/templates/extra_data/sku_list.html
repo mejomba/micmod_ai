@@ -29,7 +29,10 @@
         <span>استفاده از فیلتر</span>
         <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-outline-secondary mx-1 border border-secondary">کارشناس فروش</a>
         <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-outline-secondary mx-1 border border-secondary">تائید نشده ها</a>
-        <a href="{% url 'extra_data:sku.list' %}?q=weight_percentage" class="btn btn-outline-secondary mx-1 border border-secondary">اختلاف وزن</a>
+        <a href="{% url 'extra_data:sku.list' %}?q=weight_percentage" class="btn btn-outline-secondary mx-1 border border-secondary">
+            <span>اختلاف وزن</span>
+            <span class="bg-light-danger font-size-12 px-2 rounded text-danger bold ms-3">% 10+</span>
+        </a>
         <a href="{% url 'extra_data:sku.list' %}" class="btn btn-outline-secondary mx-1 border border-secondary">همه</a>
 
         <div class="btn btn-secondary mx-1" id="update_from_sepidar">بروز رسانی از سپیدار</div>
