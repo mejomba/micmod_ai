@@ -69,6 +69,7 @@ class PriceInquiryResult(BaseModel):
     active = models.BooleanField(verbose_name=_('active'), default=False)
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
+    variants_json = models.JSONField(_('variants_json'), null=True, blank=True)
 
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
