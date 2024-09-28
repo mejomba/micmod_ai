@@ -23,7 +23,7 @@
           },
           {
             "state": "استعلام قیمت",
-            "group": "sales_admin",
+            "group": "sales_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
