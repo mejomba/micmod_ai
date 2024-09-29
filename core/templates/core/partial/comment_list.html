@@ -65,9 +65,96 @@
         </div>
     {% endfor %}
 
+{% if comments_rel %}
+<div class="accordion accordion-flush border" id="accordionFlushExample">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingOne">
+      <button class="accordion-button collapsed bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+        <span>کامنت های</span>
+        <span data-key="{{ model_name_rel }}"></span>
+      </button>
+    </h2>
+    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+      <div class="accordion-body">
+
+              {% for comment_rel in comments_rel %}
+	<div data-kt-inbox-message="message_wrapper"  class="comment_body mb-10 border-right-1 pt-2 ps-3" style="border-right: 4px solid var(--bs-gray-200)">
+            <!--begin::Message header-->
+            <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
+                 data-kt-inbox-message="header">
+                <!--begin::Author-->
+                <div class="d-flex align-items-baseline">
+                    <!--begin::Author details-->
+                    <div>
+                        {% if comment_rel.creator_user.profile %}
+                            <img src="{{ comment_rel.creator_user.profile.get_user_image }}" alt="user_image__{{ comment_rel.creator_user.firstname }}" class="rounded-circle" width="32" height="32">
+                        {% endif %}
+                    </div>
+                    <p class="me-4 ms-2 fw-bold text-active-gray-800" >
+                        {{ comment_rel.creator_user }}
+                    </p>
+                    <p class="font-size-10 font-italic text-muted text-end" style="font-style: italic">
+                        {{ comment_rel.elapsed_time }}
+                    </p>
+                    <!--end::Author details-->
+                </div>
+                <!--end::Author-->
+                <!--begin::Actions-->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!--begin::Date-->
+                    <p class="badge ms-auto {% if comment_rel.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
+                        {{ comment_rel.get_comment_title_display }}
+                    </p>
+                    {% if comment_rel.creator_user == request.user %}
+                        <p class="btn btn-light-danger ms-auto comment_delete py-0 px-5" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
+                        </p>
+                    {% endif %}
+                    <!--end::Date-->
+                    <div class="d-flex">
+                    </div>
+                </div>
+                <!--end::Actions-->
+            </div>
+            <!--end::Message header-->
+            <!--begin::Message content-->
+            <div class="d-flex flex-column justify-content-start">
+                <p class="px-4" style="text-align: right">{{ comment_rel.comment_content|get_comment_link }}</p>
+                <div>
+                    {% for pic in comment_rel.images.all %}
+
+                        <a href="{{ pic.path.url }}" target="_blank" class="me-1"><img src="{{ pic.path.url }}"
+                                                                                       alt="pic" class="rounded-circle"
+                                                                                       width="22" height="22"></a>
+                    {% endfor %}
+                    <span class="mx-2"></span>
+                    {% for file in comment_rel.files.all %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1"><i
+                                class="fas fa-file-upload icon-lg"></i></a>
+
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+{% endfor %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+
+
 <script>
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const btns = document.querySelectorAll(".comment_delete")
+
+    if (typeof csrftoken !== 'undefined' && typeof btns !== 'undefined'){
+        let csrftoken;
+        let btns;
+    }
+
+    csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    btns = document.querySelectorAll(".comment_delete")
     btns.forEach(function (btn){
         btn.addEventListener("click", function (){
             const url_var = window.location.origin
@@ -92,10 +179,4 @@
                 }); // end ajax
         })// end eventListener
     })
-
-
-
-
-
-
 </script>

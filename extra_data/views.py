@@ -481,43 +481,44 @@ class CustomerDataTableView(AjaxDatatableView):
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     base_columns = dict()
-    base_columns = {'name': 'title', 'orderable': True, 'visible': True, }
+    show_column_filters = True
+    # base_columns = {'name': 'title', 'orderable': True, 'visible': True, }
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        base_columns,
         {'name': 'id', 'orderable': True, 'visible': False, },
-        {'name': 'name', 'orderable': True, 'visible': True, },
-        {'name': 'last_name', 'orderable': True, 'visible': True, },
-        {'name': 'email', 'orderable': True, 'visible': True, },
-        {'name': 'website', 'orderable': True, 'visible': True, },
-        {'name': 'phone', 'orderable': True, 'visible': True, },
-        {'name': 'credit_with_doc', 'orderable': True, 'visible': True, },
-        {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'location', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'address', 'orderable': True, 'visible': True, },
-        {'name': 'senf', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'sub_senf', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'introduction_method', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'introducer', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
-        {'name': 'marketer', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains'},
+        {'name': 'sepidar_dl_code', 'orderable': True, 'visible': True, 'width': 600, },
+        {'name': 'title', 'title': '<div class="px-15">عنوان</div>', 'orderable': True, 'visible': True, 'className': 'text-center'},
+        {'name': 'name', 'orderable': True, 'title': '<div class="px-10">نام</div>', 'visible': True, 'className': 'text-center'},
+        {'name': 'last_name', 'orderable': True, 'visible': True, 'className': 'text-center'},
+        {'name': 'official_name', 'orderable': True, 'title': '<div class="px-6">نام رسمی</div>', 'visible': True, 'className': 'text-center'},
+        {'name': 'phone', 'orderable': True, 'visible': True, 'className': 'text-center'},
+        {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'senf', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'cheque_to_delivery', 'title': '<div class="px-0">بدون قرارداد<br>چک هنگام تحویل</div>', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},
+        {'name': 'z_no', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},
+        {'name': 'z_safte', 'orderable': True, 'title': '<div class="px-10">سفته</div>', 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'z_cheque_s', 'orderable': True, 'title': '<div class="px-5">چک صیادی</div>', 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'z_cheque_ns', 'orderable': True, 'title': '<div class="px-5">چک غیر صیادی</div>', 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'z_max_credit_rafi', 'title': '<div class="text-center">حد اعتباری <br> (صلاحدید آقای رفیع)</div>', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'extra_credit', 'orderable':  True, 'title': '<div class="px-5">extra_credit</div>', 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': True,
+         'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'sub_senf', 'orderable': True, 'title': '<div class="px-5">sub senf</div>','visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'introduction_method', 'orderable': True, 'title': '<div class="px-2">روش آشنایی</div>', 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'province', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'location', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'address', 'title': '<span class="px-20">آدرس</span>',  'orderable': True, 'visible': True, },
+        {'name': 'introducer', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'marketer', 'orderable': True, 'title': '<div class="px-3">بازاریاب</div>', 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'credit_with_doc', 'orderable': True, 'visible': True, 'className': 'text-center'},
+        {'name': 'email', 'orderable': True, 'title': '<div class="px-15">email</div>', 'visible': True, 'className': 'text-center'},
+        {'name': 'website', 'orderable': True, 'title': '<div class="px-15">website</div>', 'visible': True, 'className': 'text-center'},
+        {'name': 'description', 'orderable': False, 'visible': True, 'searchable': False, 'className': 'text-center'},
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
          'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'z_no', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'z_safte', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'z_cheque_s', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'z_cheque_ns', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'z_max_credit_rafi', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'extra_credit', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'i_type1_target', 'orderable': True, 'visible': True, 'searchable': False},
-
-        {'name': 'cheque_to_delivery', 'orderable': True, 'visible': True, 'searchable': False},
-        # {'name': 'contract', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__contract_type__icontains'},
-        {'name': 'customer_sale_type', 'orderable': True, 'visible': True, 'searchable': False, 'lookup_field': '__title__icontains'},
-        {'name': 'official_name', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'customer_grade', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'description', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},
     ]
 
     # def get_initial_queryset(self, request=None):
@@ -528,6 +529,12 @@ class CustomerDataTableView(AjaxDatatableView):
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+        row['z_max_credit_rafi'] = f"""{obj.z_max_credit_rafi:,}""" if obj.z_max_credit_rafi else ''
+        row['z_safte'] = f"""{obj.z_safte:,}""" if obj.z_safte else ''
+        row['z_cheque_s'] = f"""{obj.z_cheque_s:,}""" if obj.z_cheque_s else ''
+        row['z_cheque_ns'] = f"""{obj.z_cheque_ns:,}""" if obj.z_cheque_ns else ''
+        row['extra_credit'] = f"""{obj.extra_credit:,}""" if obj.extra_credit else ''
+        row['credit_with_doc'] = f"""{obj.credit_with_doc:,}""" if obj.credit_with_doc else ''
 
 
         # row['address'] = f"""

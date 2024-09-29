@@ -23,7 +23,7 @@
           },
           {
             "state": "استعلام قیمت",
-            "group": "sales_user",
+            "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -78,6 +78,93 @@
               {
                 "hide": [],
                 "read": ["need_local_price_inquiry", "need_foreign_price_inquiry", "quantity", "goods_code", "goods_code_alt"]
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
+  "Factor":
+    {
+      "workflow":
+      {
+      "name":"create factor",
+      "action":"create",
+        "list": [
+          {
+            "state": "فاکتور اولیه",
+            "group": "sales_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مدیر",
+            "group": "sales_admin",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مالی",
+            "group": "accounting_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "پرداخت",
+            "group": "accounting_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "انبار",
+            "group": "wh_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
               }
             ]
           }
@@ -271,7 +358,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting"]
+              "read": ["manager_confirmation", "accounting", "from_source", "is_official", "is_paid"]
             },
             "formset_constraint": [
               {
@@ -282,12 +369,12 @@
 
           },
           {
-            "state": "حسابداری",
+            "state": "کنترل حسابداری",
             "group": "accounting_user",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","manager_confirmation"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc"]
             },
             "formset_constraint": [
               {
@@ -299,11 +386,27 @@
           },
           {
             "state": "تایید مدیر عامل",
-            "group": "CEO",
+            "group": "Accounting_admin",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+
+          },
+          {
+            "state": "پرداخت",
+            "group": "accounting_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_official", "need_pay_doc"]
             },
             "formset_constraint": [
               {

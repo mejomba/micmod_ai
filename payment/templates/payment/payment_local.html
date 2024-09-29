@@ -51,11 +51,42 @@
 
 }
     </style>
+
+    <script>
+        {#function printDiv() {#}
+        {#    var divContents = document.getElementById("DivToPrint").innerHTML;#}
+        {#    var a = window.open('', '', 'height=500, width=500');#}
+        {#    a.document.write('<html>');#}
+        {#    a.document.write('<body > <h1>Div contents are <br>');#}
+        {#    a.document.write(divContents);#}
+        {#    a.document.write('</body></html>');#}
+        {#    a.document.close();#}
+        {#    a.print();#}
+        //}
+
+        function printDiv() {
+            debugger
+             var printContents = document.getElementById('DivToPrint').innerHTML;
+             var originalContents = document.body.innerHTML;
+             document.body.innerHTML = printContents;
+             document.body.print()
+             {#window.print();#}
+             document.body.innerHTML = originalContents;
+        }
+    </script>
+
+
+
 {% endblock extra_css %}
 
 
 {% block form_content %}
 {% csrf_token %}
+    {% if object.amount > 50000000 %}
+        <div class="bg-light-danger rounded px-5 py-5 mb-3">
+        <span class="bold">مبلغ این درخواست بیش از سقف مجاز است</span>
+        </div>
+    {% endif %}
     <div class="mb-2">
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
@@ -79,7 +110,7 @@
                 <div class="d-flex gap-5 align-items-center my-6" id="num_amount">
                     <span>لطفا مبلغ </span>
                     <div class="col mb-3">
-                        <input type="number" class="underline_dash_border s-1 text-center bold" id="id_toman_amount" {% if form.fields.amount.disabled %} disabled {% endif %} name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
+                        <input dir="rtl" onfocus="cursor_end(this)" type="text" class="underline_dash_border s-1 text-center bold comma-seperator" id="id_toman_amount" {% if form.fields.amount.disabled %} disabled {% endif %} name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
                         {{ form.amount.errors }}
                     </div>
                     <span>ریال بابت</span>
@@ -111,11 +142,17 @@
                             {% endfor %}
                         </datalist>
                     </div>
+                    <div class="col-1">
+                        {% render_field_by_order form form.is_formal label='on-border'  margin_b=0 %}
+                    </div>
+                    <div class="col-2">
+                        {% render_field_by_order form form.need_pay_doc label='on-border'  margin_b=0 %}
+                    </div>
                 </div>
                 <div class="d-flex gap-5 align-items-center my-6">
                     <span>به شماره حساب/کارت</span>
                     <div class="col mb-3">
-                        <input type="text" class="underline_dash_border s-1 text-center bold" {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
+                        <input type="text" class="underline_dash_border s-1 text-center bold shomare-kart" {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
                         {{ form.to_account.errors }}
                     </div>
                     <span>پرداخت نمایید</span>
@@ -136,14 +173,27 @@
                 </div>
                 <div class="">
                     {% render_field_by_order form form.manager_confirmation label='in-line' margin_b=0 %}
-{#                    <span class="text-danger">{{ form.</span> }}</span>#}
                 </div>
-
-
+                <div class="">
+                    {% render_field_by_order form form.is_paid label='in-line' margin_b=0 %}
                 </div>
+                </div>
+            </div>
+            <div class="mt-20">
+
             </div>
         </div>
     </div>
+<div class="d-flex mt-5 justify-content-between">
+        {% if not object %}
+            <span class="text-info">برای آپلود اسناد ابتدا ذخیره پیشنویس کنید</span>
+        {% else %}
+            {% include 'payment/partial/upload_doc.html' with upload_file_modal=add_pay_doc obj=form.instance filter_str="{'doc_type':'A'}" text="آپلود اسناد مثبته (درخواست کننده)" btn_id="local-pay-doc"%}
+            {% include 'payment/partial/upload_doc.html' with upload_file_modal=add_pay_accounting_doc obj=form.instance filter_str="{'doc_type':'B'}" text="آپلود اسناد پرداخت (مالی)" btn_id="local-pay-accounting-doc"%}
+        {% endif %}
+        </div>
+{#<input type="button" value="click"#}
+{#                    onclick="printDiv()">#}
 </div>
     {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
@@ -153,8 +203,81 @@
 {% block extra_js %}
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
     <script>
+    const localPayDoc = document.querySelector('#local-pay-doc')
+    const localPayAccountingDoc = document.querySelector('#local-pay-accounting-doc')
+    const DeletePayDoc = document.querySelectorAll('.delete-pay-doc')
+    {#const DeletePayAccountingDoc = document.querySelectorAll('.delete-pay-accounting-doc')#}
+    localPayDoc && localPayDoc.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers(["id_from_date", "id_to_date"]);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    localPayAccountingDoc && localPayAccountingDoc.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers([["id_from_date", "id_to_date"]]);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    debugger
+    ajax_delete(DeletePayDoc)
+    {#ajax_delete(DeletePayAccountingDoc)#}
+
+
+    function cursor_end(el){
+        console.log('end')
+        const length = el.value.length;
+        el.focus();
+        el.setSelectionRange(0, 0);
+    }
      $(document).ready(function() {
+         String.prototype.insert = function(index, string) {
+            if (index > 0) {
+                return this.substring(0, index) + string + this.substring(index, this.length);
+            }
+            return string + this;
+         };
+         String.prototype.reverse_string=function() {return this.split("").reverse().join("");}
+
+         addCommaSeperator(true)
+         shomare_kart(true)
+
          $.ajax({
                 url: "{% url 'payment:toman.amount' %}",
                 type: "POST",
@@ -164,7 +287,7 @@
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " تومان "
+                        let amountInWords = response.amount_in_words + " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
@@ -190,7 +313,7 @@
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " تومان "
+                        let amountInWords = response.amount_in_words + " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
@@ -219,6 +342,7 @@
 
          document.body.style.height = '100%'
          document.body.style.width = '100%'
+         window.location.reload()
     }
 
     </script>

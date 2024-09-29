@@ -113,7 +113,12 @@ class BaseManager(models.Manager):
     def get_access_object(self, user, q="all", *args, **kwargs):
         import time
         from workflow.models import WorkFlow
-        if user.is_superuser or self.is_public:
+
+        # direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
+        direct_access = f'quotation_direct_access'
+        user_groups_list = list(user.groups.values_list('name', flat=True))
+
+        if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()

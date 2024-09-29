@@ -10,6 +10,7 @@ from _keenthemes.libs.theme import KTTheme
 from pprint import pprint
 
 from core.views import BaseView
+from dashboards.models import BIReport
 
 """
 This file is a view controller for multiple pages as a module.
@@ -48,6 +49,8 @@ class DashboardsView(LoginRequiredMixin,TemplateView):
 
 
 class BIView(View):
-    def get(self, request):
-        context = {'url': request.GET.get('report_url')}
+    def get(self, request, pk):
+        # bi_pk = request.GET.get('report_url')
+        bi_obj = BIReport.objects.filter(pk=pk).first()
+        context = {'url': bi_obj.url if bi_obj else ''}
         return render(request, 'dashboards/bi_report.html', context)

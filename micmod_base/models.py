@@ -16,6 +16,7 @@ from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
+from tools.myjalali import Persian
 from tools.utils import show_error
 
 from translator import get_text as _
@@ -39,6 +40,12 @@ class QuotationItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.order_by('id')
+
+    def all_quotations_for_factor(self):
+        return self.get_queryset().order_by('is_over', 'id')
+
+    # def remaining_quotations_for_factor(self, exclude_qi):
+    #     return self.get_queryset().filter(quotation=self.quotation, pk__not_in=exclude_qi)
 
 
 class Month(AbsBaseModel):
@@ -88,6 +95,52 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+    @classmethod
+    def sale_user_report(cls, current_user, wf_states, from_date, to_date):
+        filter_by_time = Q()
+        if from_date and to_date:
+            f_date = Persian(from_date).gregorian_datetime()
+            t_date = Persian(to_date).gregorian_datetime()
+            filter_by_time = Q(created_date__range=(f_date, t_date))
+        sales_user = current_user.team.all().order_by('z_index')
+        res = dict()
+        inquiry_state = 'استعلام قیمت'
+        for sale_user in sales_user:
+            res[sale_user] = []
+            local_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                    Q(last_work_flow__current_state_name=inquiry_state) & \
+                                    Q(quotation__need_local_price_inquiry=True) & \
+                                    Q(quotation__is_deleted=False) & \
+                                    Q(cancel=False)
+
+            foreign_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                      Q(last_work_flow__current_state_name=inquiry_state) & \
+                                      Q(quotation__need_foreign_price_inquiry=True)& \
+                                      Q(quotation__is_deleted=False) & \
+                                      Q(cancel=False)
+            for wf_state in wf_states:
+                condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
+                # if filter_by_time:
+                wf = cls.objects.filter(filter_by_time & condition).count()
+                wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
+                # else:
+                #     wf = cls.objects.filter(condition).count()
+                #     wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
+                res[sale_user].append((wf, wf_cancel))
+
+            # if from_date and to_date:
+            #     f_date = Persian(from_date).gregorian_datetime()
+            #     t_date = Persian(to_date).gregorian_datetime()
+            #     filter_by_time = Q(created_date__range=(f_date, t_date))
+            local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
+            foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            # else:
+            #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
+            #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
+            res[sale_user].append((foreign_price_inquiry, local_price_inquiry))
+
+        return res
 
     @property
     def total_discount(self):
@@ -435,6 +488,45 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
+    # @property
+    # def appearance_or_real_part_number(self):
+    #     try:
+    #         customer = self.quotation.customer_party_id
+    #         item = self.goods_code_fk
+    #         customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+    #         if customer_part_number:
+    #             return customer_part_number.part_number_show
+    #         else:
+    #             return self.goods_code_fk.part_number
+    #     except Exception as e:
+    #         ...
+
+    # @property
+    # def appearance_or_real_part_number_(self):
+    #     try:
+    #         l = [("", "--------", "selected")]
+    #         for item in self.qi.all():
+    #             l.append((item.pk, item.part_number_show, ''))
+    #         return {'list': l}
+    #     except Exception as e:
+    #         ...
+
+    @property
+    def total_quantity_in_factor(self):
+        total_quantity = 0
+        all_factor_items = self.qi.all()
+        for f in all_factor_items:
+            total_quantity += f.quantity if f.quantity else 0
+        return total_quantity
+
+    @property
+    def remaining_quantity_in_factor(self):
+        remaining_quantity = self.quantity - self.total_quantity_in_factor
+        if remaining_quantity > 0:
+            return remaining_quantity
+        else:
+            return 0
+
     @classmethod
     def quotation_item_all_pending(cls, inquiry_type=None, path=None):
         past_path = '/micmod_base/quotationitem/past/quotationitems'
@@ -689,6 +781,8 @@ class QuotationItem(BaseModel):
         try:
             if self.quotation.is_official:
                 x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                if self.quotation.currency_ref.title_en == 'Rial':
+                    return int(x)
                 return x
                 if x:
                     return round(x, 1)
@@ -756,4 +850,3 @@ class QuotationItem(BaseModel):
 
     class Meta:
         ordering = ['id']
-

@@ -75,12 +75,17 @@ function convertToInt() {
 }
 
 // convertToInt()
-function commaSeperator(n) {
+function commaSeperator(n, step=null, sep=null) {
     let c = 0;
     let nwc = n;
+    if (!step){step = 3}
     for (let i = 0; i <= n.length; i++) {
-        if (i % 3 === 0 && i !== 0 && i !== n.length) {
-            nwc = nwc.insert(i + c, ',')
+        if (i % step === 0 && i !== 0 && i !== n.length) {
+            if (sep){
+                nwc = nwc.insert(i + c, sep)
+            }else {
+                nwc = nwc.insert(i + c, ',')
+            }
             c++;
         }
     }
@@ -110,6 +115,27 @@ function addCommaSeperator(on_load=null) {
             inputNumberValue = item.value.replaceAll(',', '').reverse_string();
             numberWithComma = inputNumberValue;
             numberWithComma = commaSeperator(inputNumberValue)
+            item.value = numberWithComma.reverse_string()
+        }
+    })
+}
+
+function shomare_kart(on_load=null) {
+    let inputNumberValue;
+    let numberWithComma;
+
+    const textInput = document.querySelectorAll('.shomare-kart')
+    textInput.forEach(function (item) {
+        item.addEventListener('keyup', function (e) {
+            inputNumberValue = e.currentTarget.value.replaceAll('-', '').reverse_string();
+            numberWithComma = inputNumberValue;
+            numberWithComma = commaSeperator(inputNumberValue, 4, '-')
+            e.currentTarget.value = numberWithComma.reverse_string()
+        })
+        if (on_load){
+            inputNumberValue = item.value.replaceAll('-', '').reverse_string();
+            numberWithComma = inputNumberValue;
+            numberWithComma = commaSeperator(inputNumberValue, 4, '-')
             item.value = numberWithComma.reverse_string()
         }
     })
@@ -317,6 +343,14 @@ function copyToClipboard(elem) {
     if (selected) {
         document.getSelection().removeAllRanges();
         document.getSelection().addRange(selected);
+        const div = document.createElement('div')
+        div.classList.add('message-bottom-middle')
+        div.classList.add('bg-light-success')
+        div.classList.add('rounded')
+        const message = document.createTextNode(`${str} کپی شد`)
+        div.appendChild(message)
+        document.body.appendChild(div)
+        setTimeout(function (){div.classList.add('d-none')}, 2500)
     }
 }
 
@@ -406,4 +440,29 @@ function ajax_submit
             }
         }
     });
+}
+
+function initializeDatepickers(elem_id=null) {
+    if(elem_id){
+        elem_id.forEach(function (id){
+            console.log(elem_id, $(`#${id}`))
+            $(`#${id}`).datepicker({
+                dateFormat: 'yy-mm-dd',
+                changeMonth: true,
+                changeYear: true,
+            });
+        })
+    }
+}
+
+function ajax_delete(elms) {
+    if (elms) {
+        elms.forEach((element) => {
+            element.addEventListener('click', function (e) {
+                e.preventDefault()
+                const modal_sm_body = $('#id-empty-modal-body-sm')
+                custom_ajax_get('', this.dataset.url, modal_sm_body)
+            })
+        })
+    }
 }

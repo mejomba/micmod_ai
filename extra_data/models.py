@@ -12,7 +12,7 @@ from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
 
-from sepidar.models import APILogs
+from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _
 from sepidar.models import BaseData
@@ -299,6 +299,7 @@ class Brand(AbsBaseModel):
 
 
 class Item(BaseModel):
+    print('import item .....')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data.dl_code = None
@@ -333,9 +334,57 @@ class Item(BaseModel):
     is_sea_default = models.BooleanField(verbose_name=_("is_sea_default"), default=False)
     active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
     parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    hs = models.ForeignKey(HS, verbose_name=_('hs'), on_delete=models.DO_NOTHING, null=True, blank=True)
     objects = BaseManager(is_public=True)
 
+    @property
+    def active_hs(self):
+        hs = self.hs
+        if hs:
+            return hs
+        elif self.purchase_group:
+            return self.purchase_group.hs
+        return hs
+
+    def appearance_or_real_part_number(self, customer):
+        try:
+            # customer = self.quotation.customer_party_id
+            customer_factor_item = self.factor_goods_code.filter(qi__quotation__customer_party_id=customer).first()
+            #customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+            if customer_factor_item:
+                return customer_factor_item.part_number_show
+            else:
+                return self.part_number
+        except Exception as e:
+            print(e)
+
+    def appearance_or_real_part_number_(self, customer):
+        try:
+            l = [("", "--------", "selected")]
+            for item in self.factor_goods_code.filter(qi__quotation__customer_party_id=customer):
+                l.append((item.pk, item.part_number_show, ''))
+            return {'list': l}
+        except Exception as e:
+            ...
+
     # base_fields = ['sku','part_number']
+
+    @property
+    def supply_locations(self):
+        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+        stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
+        for stock_qty in stock_qty_qry:
+            if stock_qty.quantity:
+                if stock_qty.quantity.is_integer():
+                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                else:
+                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
+
+
+        for o in self.orderitem_set.all():
+            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
+
+        return res
 
     @property
     def sepidar_id(self):
@@ -714,7 +763,7 @@ class Customer(AbsBaseModel):
     # customer_expert = models.CharField(_('customer_expert'), max_length=255, null=True, blank=True)
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)
-
+    black_list = models.BooleanField(_('black_list'), default=False)
 
     @staticmethod
     def get_list(text):
@@ -774,3 +823,9 @@ class ChangeCustomerGroup(AbsBaseModel):
                                       verbose_name=_("from_marketer"), null=True, blank=True)
     to_marketer = models.ForeignKey(CustomerGroup, on_delete=models.DO_NOTHING, related_name='to_marketer_rel',
                                     verbose_name=_("to_marketer"), null=True, blank=True)
+
+
+# class CustomerPartNumber(AbsBaseModel):
+#     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='part_number_appearance', null=True, blank=True)
+#     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='customer_part_number', null=True, blank=True)
+#     part_number = models.CharField(max_length=255, verbose_name=_('customer_part_number'))

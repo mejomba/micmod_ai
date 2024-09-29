@@ -26,10 +26,24 @@
 {% block content %}
 
     <div class="border rounded mb-5 p-3">
-        <span>استفاده از فیلتر</span>
-        <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-        <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <div class="d-flex justify-content-between">
+        <span>
+            <span class="mt-3 me-3">استفاده از فیلتر</span>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        </span>
+        {% if request.user|has_group:"sales_admin" %}
+        <span class="d-flex">
+            <a href="{% url 'micmod_base:sale_user_report' %}" class="btn btn-dark mx-1 ms-20 me-3" target="_blank" data-bs-toggle="modal" id="id_sale_user_report" data-bs-target="#id_kt_empty_modal_lg">گزارش کار</a>
+            <span>{{ time_form.from_time }}</span>
+            <span>{{ time_form.to_time }}</span>
+        </span>
+        {% endif %}
+        </div>
+
+
     </div>
+
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
@@ -52,7 +66,7 @@
                 </div> <!-- container-fluid -->
             </div>
             <!-- End Page-content -->
-
+{% include 'core/partial/empty_modal_lg.html' %}
         </div>
         <!-- end main content-->
 {% endblock content %}
@@ -86,14 +100,59 @@
             },
         );
     });
+
+    const SaleUserReportBtn = document.querySelector("#id_sale_user_report")
+    if (SaleUserReportBtn){
+        SaleUserReportBtn.addEventListener('click',function (e){
+            debugger
+        var from_time = document.getElementById("id_from_time").value;
+        var to_time = document.getElementById("id_to_time").value;
+        let new_url = "{% url 'micmod_base:sale_user_report' %}"
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            data: {
+                "from_time": from_time,
+                "to_time": to_time
+            },
+            dataType: 'json',
+            cache: false,
+            {#processData: false,#}
+            {#headers: { "X-CSRFToken": getCookie('csrftoken') },#}
+            {#contentType: false,#}
+            {#beforeSend: block_main_container,#}
+            success: function (data) {
+                debugger
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = html
+            },
+            error: function () {
+
+            },
+            {#complete: release_main_container#}
+
+        });
+     })
+    }
+
     </script>
 
-    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
+
+{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 
 {% endblock extra_js %}

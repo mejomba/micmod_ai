@@ -1,7 +1,10 @@
 import json
 
 from django.template.loader import render_to_string
-from django.db.models import Q
+from django.db.models import Q, QuerySet, CharField, Count, Sum
+from django.db.models.functions import Cast
+
+from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
@@ -22,8 +25,8 @@ from jalali_date import datetime2jalali
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, \
-    QuotationItemFormset
+from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
+from sepidar.models import Dl
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
@@ -44,7 +47,9 @@ class QuotationsList(LoginRequiredMixin,View):
         greeting = {}
         greeting['heading'] = _("quotation")
         greeting['pageview'] = _("micmod_base")
-
+        greeting['time_form'] = TimeForm()
+        # greeting['quotations'] = quotations_record
+        # greeting['quotations'] = quotations_record_lst
         return render(request,'micmod-base/quotation/list_datatable.html',greeting)
 
 
@@ -603,10 +608,12 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         quotation = request.GET.get('quotation')
         customer_code = request.GET.get('customer_code')
+        customer_name = request.GET.get('customer_name')
         my_quotations = request.GET.get('my_quotations')
         my_inquiry_not_started = request.GET.get('my_inquiry_not_started')
         inquiry_not_assigned = request.GET.get('inquiry_not_assigned')
         search_sku = request.GET.get('search_sku')
+        search_part_number = request.GET.get('search_part_number')
         force_inquiry = request.GET.get('force_inquiry')
         time_range = request.GET.get('time_range')
         from_time = self.request.GET.get('from_time')
@@ -644,6 +651,13 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         elif self.request.GET.get('from_time') or self.request.GET.get('to_time'):
             quotations_record_lst = quotations_record_lst.filter(quotation__created_date__range=[filter_form.cleaned_data.get('from_time'),filter_form.cleaned_data.get('to_time')])
+        elif self.request.GET.get('choice') == 'search_part_number' or search_part_number:
+            quotations_record_lst = quotations_record_lst.filter(goods_code_fk__part_number__icontains=search_part_number)
+        elif self.request.GET.get('choice') == 'customer_name' or customer_name:
+            customer_filter = (Q(quotation__customer_party_id__title__icontains=customer_name) |
+                               Q(quotation__customer_party_id__name__icontains=customer_name) |
+                               Q(quotation__customer_party_id__last_name__icontains=customer_name))
+            quotations_record_lst = quotations_record_lst.filter(customer_filter)
         else:
             quotations_record_lst = quotations_record_lst
 
@@ -672,6 +686,17 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         for item in forms:
             if not d.get(item.instance.quotation.pk):
                 d[item.instance.quotation.pk] = []
+            repeated_goods_code = quotations_record_lst.filter(goods_code_fk=item.instance.goods_code_fk).aggregate(Sum('quantity'), Count('id'))
+            count = repeated_goods_code.get('id__count')
+            if count > 1:
+                html = f"""<div class="mt-3 py-2 px-1 rounded hover_light_primary"><a href="/micmod_base/quotationitem/list/form/pending/?choice=search_sku&search_sku={item.instance.goods_code_fk}">
+                <span class="">{count}</span> 
+                <span class="me-3"> درخواست تکراری</span>
+                <span> جمع کل </span>
+                :
+                <span>{repeated_goods_code.get('quantity__sum')}<span>
+                </a></div>"""
+                item.repeated_goods_code_count = html
             d[item.instance.quotation.pk].append(item)
 
         inquiry = QuotationItem.inquiry_not_started(request.user)
@@ -686,6 +711,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         context['zip_data'] = zip(page_obj, d)
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
+        context['app_name'] = self.request.resolver_match.app_name
         # context['my_inquiry_not_started'] = my_inquiry_not_started
         # context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
@@ -970,6 +996,18 @@ def inquiry_report(request):
     return JsonResponse({'res': res}, safe=False)
 
 
+def repeated_goods_code_view(request):
+    base_group = request.user.base_group
+    qi = QuotationItem.quotation_item_all_pending(base_group)
+    repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
+        goods_code_count__gt=1)
+    repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
+    repeated_codes = list(repeated_goods_code)
+    res = render_to_string('micmod-base/quotation/partial/repeated_goods_code.html',
+                           context={'repeated_goods_code': repeated_codes})
+    return JsonResponse({'res': res}, safe=False)
+
+
 def save_parent_item(request):
     import json
     data = json.loads(request.body)
@@ -991,6 +1029,18 @@ def save_parent_item(request):
     return JsonResponse({'res': 'کد نامعتبر'}, status=400)
 
 
+def sale_user_report(request):
+    from .models import Quotation
+    wf_states = ['پیش فاکتور اولیه', 'استعلام قیمت', 'تایید پیش فاکتور', 'تایید مشتری', 'تایید کارشناس', 'مرحله نهایی']
+    from_date = request.GET.get('from_time')
+    to_date = request.GET.get('to_time')
+    sale_user_report_call = Quotation.sale_user_report(request.user, wf_states, from_date, to_date)
+    res = render_to_string('micmod-base/quotation/partial/sale_user_report.html',
+                           context={'sale_user_report_call': sale_user_report_call, 'wf_states': wf_states,
+                                    'from_date': from_date, 'to_date': to_date})
+    return JsonResponse({'res': res}, safe=False)
+
+  
 def inquiry_not_started(request):
     trade_user = request.user
     inquiry = QuotationItem.inquiry_not_started(trade_user)
@@ -1058,5 +1108,3 @@ def duplicate_quotation(request, quotation_id):
                 item.save()
 
         return quotation
-
-

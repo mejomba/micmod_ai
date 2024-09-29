@@ -78,6 +78,8 @@ LOCAL_APPS = [
     'additions',
     'transportation',
     'payment',
+    'factor',
+    'order',
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -209,6 +211,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),
         'PORT': os.environ.get('PG_PORT'),
+        'BACKUP_PATH': os.environ.get('BACKUP_PATH')
         # 'HOST': '192.168.1.80',  # os.environ.get('PG_HOST'),
         # 'PORT': 5437,  # os.environ.get('PG_PORT'),
         # 'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server',}
@@ -689,3 +692,12 @@ KT_THEME_VENDORS = {
 }
 TAX_VALUE = 10
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+# AJAX DATATABLE SETTINGS
+AJAX_DATATABLE_MAX_COLUMNS = 36  # default 30
+AJAX_DATATABLE_TRACE_COLUMNDEFS = False  # default False
+AJAX_DATATABLE_TRACE_QUERYDICT = False  # default False
+AJAX_DATATABLE_TRACE_QUERYSET = False  # default False
+AJAX_DATATABLE_TEST_FILTERS = False  # default False
+AJAX_DATATABLE_DISABLE_QUERYSET_OPTIMIZATION = False  # default False
+AJAX_DATATABLE_STRIP_HTML_TAGS = True  # default True
