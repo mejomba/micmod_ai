@@ -3,7 +3,6 @@ import json
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
-
 from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
 

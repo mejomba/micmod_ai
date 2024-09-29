@@ -135,9 +135,11 @@ class Quotation(SLSDoc):
             #     filter_by_time = Q(created_date__range=(f_date, t_date))
             local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
             # else:
             #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
             #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
+            res[sale_user].append((all_user_quotation,))
             res[sale_user].append((foreign_price_inquiry, local_price_inquiry))
 
         return res
