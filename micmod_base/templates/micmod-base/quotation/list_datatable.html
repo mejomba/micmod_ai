@@ -117,10 +117,6 @@
             },
             dataType: 'json',
             cache: false,
-            {#processData: false,#}
-            {#headers: { "X-CSRFToken": getCookie('csrftoken') },#}
-            {#contentType: false,#}
-            {#beforeSend: block_main_container,#}
             success: function (data) {
                 debugger
                 html = data['res'];
@@ -135,18 +131,34 @@
      })
     }
 
+    function foreign_inquiry_not_responded(event){
+        debugger
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
+
+    function local_inquiry_not_responded(event){
+        debugger
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
     </script>
 
 
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
-
-{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>

@@ -68,47 +68,6 @@ class BaseManager(models.Manager):
             # print('================ private', self.model.objects)
         return qs.order_by('-last_update_date')
 
-    # def get_target_user_from_group(group, level=1):
-    #     from workflow.models import FlowAdminGroup
-    #     from django.contrib.auth import get_user_model
-    #     print('group: ', group)
-    #     qs = get_user_model().objects.filter(pk=-1)
-    #     if level > 1:
-    #         qs |= group.user_set.all()
-    #         print(qs)
-    #     for g in FlowAdminGroup.objects.filter(group_rel=group):
-    #         for gc in g.group_child.all():
-    #             qs |= BaseManager.get_target_user_from_group(gc, level + 1)
-    #     print('qs before return ', qs)
-    #     return qs
-
-    # from tools.utils import get_target_users
-    # from accounts.models import User
-    # x = User.objects.get(username='u2')
-    # get_target_users(x)
-
-    # @staticmethod
-    # def get_target_users(user):
-    #     from django.contrib.auth import get_user_model
-    #     user_qs = get_user_model().objects.filter(id=user.id)
-    #     for main_user_group in user.groups.all():
-    #         user_qs |= BaseManager.get_target_user_from_group(main_user_group)
-    #     print('user_list  > ', user_qs)
-    #     return user_qs
-    #
-    # @staticmethod
-    # def get_target_wf(user):
-    #     from workflow.models import WorkFlow
-    #     user_list = BaseManager.get_target_users(user)
-    #     wf = WorkFlow.objects.filter(id=-1)
-    #     for user in user_list:
-    #         wf |= WorkFlow.objects.filter(
-    #             Q(creator_user=user) |
-    #             Q(editor_user=user) |
-    #             Q(from_user=user) |
-    #             Q(to_user=user)
-    #         )
-    #     return wf
 
     def get_access_object(self, user, q="all", *args, **kwargs):
         import time
@@ -137,19 +96,22 @@ class BaseManager(models.Manager):
 
         qry = objects_from_user | objects_from_flow
         quotations_record_lst = []
-        obj = qry.first()
+        # obj = qry.first()
         # user_team = user.team.all()
-        if obj and q == 'active':
-            content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
-            for item in qry:
-                wf = WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
-                if wf and (wf.to_user == user):
-                    quotations_record_lst.append(item)
+        # if obj and q == 'active':
+        if q == 'active':
+            # content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
+            quotations_record_lst = qry.filter(last_work_flow__to_user=user) #filter(lambda x: x.last_work_flow.to_user == user, qry)
+            # for item in qry:
+            #     wf = item.last_work_flow #WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
+            #     if wf and (wf.to_user == user):
+            #         quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry
 
         if kwargs.get('quotation') and q == 'active':
-            return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
+            return quotations_record_lst.filter(sepidar_number__isnull=True, cancel=False)
+            # return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
         else:
             return [x for x in quotations_record_lst if x]
 

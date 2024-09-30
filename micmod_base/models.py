@@ -121,26 +121,21 @@ class Quotation(SLSDoc):
                                       Q(cancel=False)
             for wf_state in wf_states:
                 condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
-                # if filter_by_time:
-                wf = cls.objects.filter(filter_by_time & condition).count()
+                wf = cls.objects.filter(filter_by_time & condition & Q(cancel=False)).count()
                 wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
-                # else:
-                #     wf = cls.objects.filter(condition).count()
-                #     wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
                 res[sale_user].append((wf, wf_cancel))
 
-            # if from_date and to_date:
-            #     f_date = Persian(from_date).gregorian_datetime()
-            #     t_date = Persian(to_date).gregorian_datetime()
-            #     filter_by_time = Q(created_date__range=(f_date, t_date))
             local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
+            local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct()#.count()
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
             all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
             # else:
             #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
             #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
             res[sale_user].append((all_user_quotation,))
-            res[sale_user].append((foreign_price_inquiry, local_price_inquiry))
+            res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
+                                   local_price_inquiry_not_responded, foreign_price_inquiry_not_responded))
 
         return res
 

@@ -381,7 +381,8 @@ class Item(BaseModel):
                     res.append((0, f'موجودی انبار {stock_qty.quantity}'))
 
 
-        for o in self.orderitem_set.all():
+        # for o in self.orderitem_set.all():
+        for o in self.order_set.all():
             res.append((o.pk, f"سفارش در راه {o.pk} ام"))
 
         return res

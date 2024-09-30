@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Q
 
 from accounts.models import User
-from core.models import BaseModel, BaseManager
+from core.models import BaseModel, BaseManager, BaseModeWF
 from extra_data.models import Item
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem
@@ -59,7 +59,10 @@ class FactorItem(BaseModel):
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
-    supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
+    # supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
+    supply_locations = models.ManyToManyField(Order, through='FactorOrder',
+                                                related_name='factor_items', null=True, blank=True,
+                                                verbose_name=_('supply_locations'))
 
     objects = FactorItemManager()
 
@@ -83,3 +86,8 @@ class FactorItem(BaseModel):
     class Meta:
         ordering = ['id']
 
+
+class FactorOrder(BaseModeWF):
+    fi = models.ForeignKey(FactorItem, on_delete=models.DO_NOTHING, null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=True, blank=True)
+    quantity = models.FloatField(_('quantity'), default=0)

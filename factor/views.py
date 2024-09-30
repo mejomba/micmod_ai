@@ -1,6 +1,4 @@
 import datetime
-from itertools import islice
-
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -14,13 +12,10 @@ from django.views import View
 from jalali_date import datetime2jalali
 from translator import get_text as _
 
-from comments.forms import CommentsForm
 from core.views import BaseView, Base
-from extra_data.models import Customer
 from factor.forms import FactorModelForm, FactorItemFormset
 from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation, QuotationItem
-from tools.import_data import import_customers_from_sepidar
 from tools.utils import to_jalali_date
 import json
 
@@ -29,8 +24,6 @@ class FactorView(LoginRequiredMixin, BaseView):
     template_name = 'factor/factor.html'
     form_class = FactorModelForm
     model = Factor
-    # wf_last_step_is_open = True
-    # has_flow = True
     form_struct = {
         'form': FactorModelForm,
         'childes': [
@@ -58,21 +51,9 @@ class FactorView(LoginRequiredMixin, BaseView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # if 'submit_duplicate' in self.request.POST:
-        #     return self.duplicate(self.object, [], ['quotation'])
-        """ run import customer from sepidar before object create"""
         if self.object is None:
             pass
-            # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-
         res = super().form_valid(form)
-
-        # customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
-        # while True:
-        #     batch = list(islice(customer_part_number_list, 10))
-        #     if not batch:
-        #         break
-        #     CustomerPartNumber.objects.bulk_create(batch, 10)
         return res
 
     def get_context_data(self, **kwargs):
@@ -109,7 +90,6 @@ class FactorView(LoginRequiredMixin, BaseView):
                                                              )
                         break
         exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
-        # empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
         empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
                        qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
                        qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(exclude_qi_qs)]
