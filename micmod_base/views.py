@@ -920,7 +920,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True, 'searchable': False}
+        {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
