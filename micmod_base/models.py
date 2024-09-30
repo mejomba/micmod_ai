@@ -126,9 +126,9 @@ class Quotation(SLSDoc):
                 res[sale_user].append((wf, wf_cancel))
 
             local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
-            local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct().count()
+            local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct()#.count()
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
-            foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct().count()
+            foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
             all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
             # else:
             #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
