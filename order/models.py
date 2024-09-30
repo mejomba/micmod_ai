@@ -11,8 +11,8 @@ class Order(BaseModeWF):
                     (10, _("total-arrived")), (11, _("has-error")), (12, _("completed")), (13, _("canceled")), ]
     TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
-    title = models.CharField(max_length=255, blank=True, null=True)
-    status = models.PositiveSmallIntegerField(verbose_name=_('status'), choices=ORDER_STATUS, default=1)
+    order_title = models.CharField(max_length=255, blank=True, null=True)
+    status = models.PositiveSmallIntegerField(verbose_name=_('status'), default=1)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)

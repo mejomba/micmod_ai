@@ -1,0 +1,53 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{% endblock extra_css %}
+
+
+{% block form_content %}
+{% csrf_token %}
+
+    <div class="mb-2">
+        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+    </div>
+
+
+     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-6 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">سفارش</h4>
+                {% render_field_by_order form form.order_title form.quantity form.status form.transportation_method label='on-border' %}
+                {% render_field_by_order form form.production_lead_time form.trade_commitment_date form.commitment_date_to_customer label='on-border' %}
+                {% render_field_by_order form form.order_type form.sales_admin_confirmation form.cancel form.is_over label='on-border' %}
+
+<div id="id_customer_select2"></div>
+<div id="id_item_select2"></div>
+                <div class="d-flex col-4">
+                    {% render_field_by_order form form.customer form.item label='on-border' %}
+                </div>
+
+            </div>
+        </div>
+        <div class="col">
+            <div class="row">
+            {% render_field_by_order form form.description label='on-border' %}
+            </div>
+        </div>
+    </div>
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/order.js' %}"></script>
+{% endblock extra_js %}

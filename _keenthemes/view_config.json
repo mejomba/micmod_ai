@@ -173,7 +173,63 @@
       "attr1":2,
       "att":3
     },
-
+  "OrderView":
+    {
+      "workflow":
+      {
+      "name":"create order",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس سفارش",
+            "group": "sales_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "مرحله دوم",
+            "group": "sales_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "مرحله سوم",
+            "group": "sales_admin",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
   "SkuCreateView":
     {
       "workflow":
