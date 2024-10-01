@@ -467,7 +467,7 @@ function ajax_delete(elms) {
     }
 }
 
-function select2_generate(select2_element, target_element, url, placeholder, minimumInputLength=null,
+function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null){
     // target_element => '#target_element'
     $(select2_element).select2({
@@ -501,8 +501,7 @@ function select2_generate(select2_element, target_element, url, placeholder, min
     $(select2_element).on("select2:select", function (e) {
         const data = e.params.data;
         const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
-        $(document).find(target_element).val(data.id)
-        debugger
+        $(document).find(target_element).val(data[id_field])
         document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
     })
 }
