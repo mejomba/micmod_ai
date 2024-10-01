@@ -1080,7 +1080,6 @@ def duplicate_quotation(request, quotation_id):
             quotation.sepidar_number = None
             quotation.sepidar_quotation_id = None
 
-
             wf_obj = wfform.save()
             wf_obj.from_user = request.user
             wf_obj.to_user = request.user
@@ -1099,7 +1098,6 @@ def duplicate_quotation(request, quotation_id):
             quotation.save()
             wf_obj.object_id = quotation.pk
             wf_obj.save()
-
 
             # Duplicate each related QuotationItem
             quotation_items = QuotationItem.objects.filter(quotation=quotation_id)
