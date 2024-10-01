@@ -6,15 +6,15 @@ from translator import get_text as _
 
 
 class Order(BaseModeWF):
-    ORDER_STATUS = [(1, _("draft")), (2, _("started")), (3, _("co-conf")), (4, _("supp-sent")), (5, _("sup-conf")),
-                    (6, _("pre-paid")), (7, _("gio")), (8, _("has-packing")), (9, _("partial-arrived")),
-                    (10, _("total-arrived")), (11, _("has-error")), (12, _("completed")), (13, _("canceled")), ]
+    ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
+                    ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
+                    ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
     TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
     order_title = models.CharField(max_length=255, blank=True, null=True)
-    status = models.PositiveSmallIntegerField(verbose_name=_('status'), default=1)
+    status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
-    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING, to_field='sepidar_party_id', db_column='customer_party_id')
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE, default='sea')
     production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
