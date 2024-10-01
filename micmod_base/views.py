@@ -1076,6 +1076,9 @@ def duplicate_quotation(request, quotation_id):
                                    current_user=request.user)
         if wfform.is_valid():
             quotation.pk = None
+            quotation.guid = uuid.uuid4()
+            quotation.sepidar_number = None
+            quotation.sepidar_quotation_id = None
 
 
             wf_obj = wfform.save()
