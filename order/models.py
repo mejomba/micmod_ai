@@ -27,6 +27,10 @@ class Order(BaseModeWF):
     cancel = models.BooleanField(_("cancel"), default=False)
     is_over = models.BooleanField(_('is_over'), default=False)
 
+    @classmethod
+    def get_qs_count(cls, user):
+        return 0
+
 
 # class OrderItem(BaseModel):
 #     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_items')
