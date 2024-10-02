@@ -46,6 +46,30 @@ class Factor(SLSDoc):
     def get_qs_count(cls, user):
         return len(cls.objects.get_access_object(user, q='active', quotation=False))
 
+    def generate_order_per_factor_item(self):
+        for fi in self.factoritem_set.all():
+            order_rel = ''
+            data = {
+                "order_title": "خودکار توسط سیستم",
+                "status": "1",
+                "item": fi.qi.goods_code_fk,
+                "customer": fi.qi.quotation.customer_party_id,
+                # "transportation_method": "",
+                "production_lead_time": fi.qi.lead_time,
+                # "trade_commitment_date": "",
+                # "commitment_date_to_customer": "",
+                "quantity": fi.quantity,
+                # "description_sale": "",
+                # "order_type": "",
+                # "sales_admin_confirmation": "",
+                "cancel": False,
+                "is_over": False,
+                "qi": fi.qi,
+            }
+            if fi.supply_locations.remaining_quantity >= fi.quantity:
+                ...
+            order_base = Order.create_with_rel(data=data, order_rel=order_rel)
+
 
 class FactorItem(BaseModel):
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))
@@ -59,10 +83,10 @@ class FactorItem(BaseModel):
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
-    # supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
-    supply_locations = models.ManyToManyField(Order, through='FactorOrder',
-                                                related_name='factor_items', null=True, blank=True,
-                                                verbose_name=_('supply_locations'))
+    supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
+    # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
+    #                                             related_name='factor_items', null=True, blank=True,
+    #                                             verbose_name=_('supply_locations'))
 
     objects = FactorItemManager()
 
@@ -74,6 +98,8 @@ class FactorItem(BaseModel):
         else:
             if self.pk and self.quantity == 0:
                 self.is_deleted = True
+            if self.supply_locations and self.supply_locations < 0:
+                ...
             super().save(force_insert, force_update, using, update_fields)
             total_quantity = self.qi.total_quantity_in_factor
             if total_quantity >= self.qi.quantity:

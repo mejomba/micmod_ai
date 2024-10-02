@@ -371,14 +371,15 @@ class Item(BaseModel):
 
     @property
     def supply_locations(self):
-        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+        res = [(0, '-----------')]
         stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
         for stock_qty in stock_qty_qry:
             if stock_qty.quantity:
+                wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                 if stock_qty.quantity.is_integer():
-                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                    res.append((wh.pk, f'{wh.front_name} {int(stock_qty.quantity)}'))
                 else:
-                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
+                    res.append((wh.pk, f'{wh.front_name} {stock_qty.quantity}'))
 
 
         # for o in self.orderitem_set.all():
@@ -830,3 +831,12 @@ class ChangeCustomerGroup(AbsBaseModel):
 #     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='part_number_appearance', null=True, blank=True)
 #     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='customer_part_number', null=True, blank=True)
 #     part_number = models.CharField(max_length=255, verbose_name=_('customer_part_number'))
+
+
+class WH(BaseModel):
+    backend_name = models.CharField(max_length=128, unique=True)
+    front_name = models.CharField(max_length=255, unique=True)
+    sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'))
+
+    def __str__(self):
+        return f'{self.sepidar_wh_code} : {self.backend_name} : {self.front_name}'
