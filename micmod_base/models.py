@@ -561,8 +561,8 @@ class QuotationItem(BaseModel):
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            # x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
-            x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
