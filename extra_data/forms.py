@@ -3,6 +3,7 @@ from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
+from files.models import Image
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
     CustomerFields, CustomerContract
 from django_select2 import forms as s2forms
@@ -65,6 +66,13 @@ class CustomerForm(CustomBaseModelForm):
         )
 
         self.fields['revival_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+
+        self.fields['z_safte'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_cheque_s'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_cheque_ns'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['z_max_credit_rafi'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+        self.fields['extra_credit'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
+
     #
     #     if not access:
     #         self.make_disable(fields=self.fields)
@@ -87,6 +95,9 @@ class CustomerDocumentsFormCustomerWidget(s2forms.ModelSelect2Widget):
 
 
 class CustomerDocumentsForm(CustomBaseModelForm):
+    image_model = Image
+    image_groups = 1
+
     class Meta:
         model = CustomerDocuments
         fields = '__all__'
@@ -99,6 +110,7 @@ class CustomerDocumentsForm(CustomBaseModelForm):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['image_1'].widget.attrs['required'] = True
 
 
 class ChangeCustomerGroupWidget(s2forms.ModelSelect2Widget):

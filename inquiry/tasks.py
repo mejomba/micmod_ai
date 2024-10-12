@@ -2,8 +2,10 @@ import datetime
 
 from celery import shared_task
 from django.core.cache import cache
+from django.utils import timezone
 
 from extra_data.models import Item
+from inquiry.models import PriceInquiryResult
 from tools.google_sheet import GSheet
 
 
@@ -27,7 +29,7 @@ def update_components():
             component_['is_sea_default'] = component.is_sea_default
             component_['package'] = component.package
             component_['weight'] = component.weight
-            component_['hs'] = component.purchase_group.hs
+            component_['hs'] = component.purchase_group.hs.code if component.purchase_group.hs else None
             # print(component_)
             components_lst.append(component_)
         print('update_components validate')
@@ -94,3 +96,12 @@ def update_price_list():
         print(str(e))
     finally:
         cache.set('task_is_running', False, 100)
+
+
+@shared_task
+def deactivate_old_bazar_price(expiration_in_day=3):
+    delta = timezone.now() - datetime.timedelta(expiration_in_day, hours=6)
+    prices = PriceInquiryResult.objects.filter(inquiry_type__title__icontains='داخل', last_update_date__lt=delta, active=True)
+    prices.update({'active': False})
+    for price in prices:
+        price.active = False

@@ -32,7 +32,7 @@
                         {{ comment.get_comment_title_display }}
                     </p>
                     {% if comment.creator_user == request.user %}
-                        <p class="btn btn-light-danger ms-auto comment_delete" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
+                        <p class="btn btn-light-danger ms-auto comment_delete py-0 px-5" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
                         </p>
                     {% endif %}
 

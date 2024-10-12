@@ -1,11 +1,4 @@
 $(document).ready(function (){
-    // const elem = document.querySelector('.goods_code')
-    // if (elem) {
-    //     applySelect2Ajax('#customer_code', 'customer_code','/sepidar/customers_list', 'json', 'GET', 'select', 1,
-    //         {text: document.querySelector('[name="customer_code"]').value.toString(),},
-    //         formatRepoDL, formatRepoSelection
-    //     )
-    // }
 
     const items = document.querySelectorAll(".item")
     items.forEach(function (item, idx){
@@ -16,17 +9,7 @@ $(document).ready(function (){
             'goods_price_sheet1' ,'goods_price_sheet2' ,'goods_price_sheet3' ,'goods_sheet_date' ,
             'goods_price_market' ,'goods_market_date' ,'goods_last_price' ,'goods_total_sales' ,'goods_last_sale' ,
             'goods_q_last_price' ,'goods_q_total_sales' ,'goods_q_last_sale'])
-        // set_item_classes(items[i])
     })
-    // for (let i = 0; i < items.length; i++) {
-    //     initDataFromHiddenForm(items[i], 'quotation', i, ['delivery_time', 'goods_code', 'goods_name' ,
-    //         'stock_amount' ,'stock_amount_res' ,'goods_max_price' ,'goods_avg_price' ,'goods_min_price' ,'goods_avg_count' ,
-    //         'goods_price_sheet1' ,'goods_price_sheet2' ,'goods_price_sheet3' ,'goods_sheet_date' ,
-    //         'goods_price_market' ,'goods_market_date' ,'goods_last_price' ,'goods_total_sales' ,'goods_last_sale' ,
-    //         'goods_q_last_price' ,'goods_q_total_sales' ,'goods_q_last_sale'])
-    //     set_item_classes(items[i])
-        // console.log('init data for: ', items[i])
-    // }
 });
 
 function initDataFromHiddenForm(item, model, idx, fields){
@@ -120,53 +103,12 @@ function refresh_prices() {
 }
 
 function set_price_data(dataJson, elem, target, mapDict) {
-    // data = {'field_name': 'value'}
     let d = JSON.stringify(dataJson)
     d = JSON.parse(d)
     console.log(d)
     for(let key in d){
         set_values(elem.querySelectorAll(`[name*="${key}"]`), d[key], d[key])
     }
-    console.log('****************')
-
-
-
-    // set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
-    // set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
-    // set_values(elem.querySelectorAll('[name*="stock_amount_res"]'), data.stock_qty_res)
-    // set_values(elem.querySelectorAll('[name*="max_price"]'), data.max_price)
-    // set_values(elem.querySelectorAll('[name*="avg_price"]'), data.avg_price)
-    // set_values(elem.querySelectorAll('[name*="min_price"]'), data.min_price)
-    // set_values(elem.querySelectorAll('[name*="avg_count"]'), data.f_qty_all)
-    // set_values(elem.querySelectorAll('[name*="goods_price_sheet1"]'), add_discounts(data.week1, data.yuan_rate, 1, target, data.QTYDis, data.PMDisY, data.PMDisR))
-    // set_values(elem.querySelectorAll('[name*="goods_price_sheet2"]'), add_discounts(data.week2, data.yuan_rate, 1, target, data.QTYDis, data.PMDisY, data.PMDisR))
-    // set_values(elem.querySelectorAll('[name*="goods_price_sheet3"]'), add_discounts(data.week3, data.yuan_rate, 1, target, data.QTYDis, data.PMDisY, data.PMDisR))
-    // set_values(elem.querySelectorAll('[name*="goods_sheet_date"]'), data.date, true)
-    // set_values(elem.querySelectorAll('[name*="goods_price_market"]'), add_discounts(data.m_price, data.yuan_rate, 2, target, data.QTYDis))
-    // set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.m_date, true)
-    // set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
-    // set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
-    // set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
-    // set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
-    // set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
-    // set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
-    // set_values(elem.querySelectorAll('[name*="-goods_code"]'), data.id,)
-
-
-    // const select = elem.querySelector('[id*="select2-goods_code"][id*="container"]')
-    // if (select) {
-    //     select.innerHTML = d['goods_code']
-    //     console.log('select item ', d['goods_code'])
-    // }
-    //
-    // if (!dataJson['last_price']) {
-    //     elem.querySelector('[name="box-alt-goods"]').classList.remove('d-none')
-    //     set_values(elem.querySelectorAll('[name*="-goods_name_alt"]'), '',)
-    //     set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
-    // } else {
-    //     elem.querySelector('[name="box-alt-goods"]').classList.add('d-none')
-    // }
-    // set_price(elem.querySelector('[name*="-goods_name"]'))
 }
 
 function set_alt_price_data(data, elem) {
@@ -499,11 +441,8 @@ function applySelect2Ajax(selectorString, name, ajaxUrl, requestDataType,
             cache: true
         },
         minimumInputLength: minimumInputLength,
-        // placeholder: {text: document.querySelector('[name="customer_code"]').value.toString(), },
         placeholder: placeholder,
         allowClear: false,
-        // templateResult: formatRepoDL,
-        // templateSelection: formatRepoSelection
         templateResult: templateResult,
         templateSelection: templateSelection
     });

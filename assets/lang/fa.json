@@ -566,6 +566,15 @@
     "trade_last_weight": "وزن بازرگانی زده",
     "wh_last_weight": "وزن انبار زده",
     "weight_percentage": "درصد اختلاف وزن",
+    "payment_order": "دستور پرداخت",
+    "payment_date": "تاریخ پرداخت",
+    "manager_confirm": "تایید / امضا مدیر عامل",
+    "amount": "مبلغ",
+    "for_": "برای",
+    "pay_to": "در وجه",
+    "from_source": "از محل",
+    "to_account": "به حساب یا کارت",
+    "applicant": "درخواست کننده",
     "last_name": "نام خانوادگی",
     "Z_max_credit_rafi": "حد اعتباری (صلاحدید آقای رفیع)",
     "id_card": "کارت ملی",
@@ -574,5 +583,6 @@
     "to_time": "تا تاریخ",
     "is_main": "اصلی",
     "discount_per_item": "تخفیف",
-    "meet_in_person": "مراجعه حضوری"
+    "meet_in_person": "مراجعه حضوری",
+    "image_meet_in_person": "تصاویر مراجعه حضوری"
 }

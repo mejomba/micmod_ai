@@ -7,6 +7,15 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
+<div class="mb-10 p-3">
+    <p class="text-success bg-light-success font-size-15 bold p-0 m-0 ">
+        استعلام شروع نشده‌ی شما :
+        <span id="id_my_inquiry_not_started">{{ my_inquiry_not_started }}</span>
+        <br>
+        استعلام های جدید :
+        <span id="id_inquiry_not_started">{{ inquiry_not_started_count }}</span>
+    </p>
+</div>
     {% include 'micmod-base/quotation/partial/form_pending_filter.html' with form_filter=form_filter %}
 {% block content %}
     {% for pk, form_lists in d.items %}
@@ -25,7 +34,7 @@
                     </div>
                     <div class="col">
                         <span class="me-2">تاریخ درخواست استعلام:</span>
-                        <span>{{ form_lists.0.instance.quotation.workflows.last.created_date.date }}</span>
+                        <span>{{ form_lists.0.instance.quotation.workflows.first.created_date.date }}</span>
                     </div>
 {#                    <div class="col">#}
 {#                        <span class="me-2">تاریخ درخواست:</span>#}
@@ -51,6 +60,11 @@
                     <div>
                         {% if form_lists.0.instance.quotation.force_inquiry %}
                             <span class="p-3 mx-1 bg-danger"></span>
+                        {% endif %}
+                    </div>
+                <div>
+                        {% if form_lists.0.instance.quotation.cancel %}
+                            <span class="p-3 mx-1 bold badge badge-light-danger border border-danger-subtle">کنسل شده</span>
                         {% endif %}
                     </div>
                 </div>
@@ -231,6 +245,34 @@
         });
      })
     })
+
+
+    setInterval(function() {
+        const url = "{% url 'micmod_base:inquiry_not_started' %}"
+        $.ajax({
+            type: 'GET',
+            url: url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                debugger
+                try {
+                    document.querySelector('#id_inquiry_not_started').innerHTML = data['inquiry_not_started_count']
+                    document.querySelector('#id_my_inquiry_not_started').innerHTML = data['my_inquiry_not_started']
+                    document.querySelector('#id_pending_list').innerHTML = data['new_inquiry']
+                    document.querySelector('#id_item_in_china').innerHTML = data['item_in_china']
+
+                }
+                catch (error) {}
+
+            },
+            error: function(xhr, status, error) {
+            console.error('Error fetching data:', status, error);
+        },
+        });
+    }, 100 * 60 );
 
 
     const emptyModal = document.getElementById('id_kt_empty_modal')

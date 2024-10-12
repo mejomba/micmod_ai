@@ -3,6 +3,13 @@
   font-family: Sahel;
   src: url(../fonts/Sahel.woff2);
 }
+@font-face {
+  font-family: persian-digit;
+  src: url(../fonts/Samim-FD.woff);
+}
+.persian-number{
+    font-family: persian-digit;
+}
 html body {
     font-family: Sahel;
     overflow-x: hidden;
@@ -84,6 +91,10 @@ div[disabled=disabled] {
 }
 .font-size-8 {
     font-size: .65rem !important;
+    vertical-align: middle !important;
+}
+.font-size-9{
+    font-size: .70rem !important;
     vertical-align: middle !important;
 }
 .font-size-10 {
@@ -862,6 +873,35 @@ span .select2-selection{
 .modal-xl {
     min-width: 1200px !important;
 }
+
+.s-1 {
+    letter-spacing: 0.1rem;
+}
+.s-2 {
+    letter-spacing: 0.15rem;
+}
+.s-3 {
+    letter-spacing: 0.2rem;
+}
+
+@media print {
+    .DivToPrint {
+        background-color: white;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin: 15px;
+        padding: 15px;
+        /*font-size: 14px;*/
+        line-height: 10px;
+        z-index: 1000;
+    }
+}
+.text-left {
+    text-align: left;
+}
 .ui-datepicker{
     z-index: 2000 !important;
 }
@@ -910,4 +950,13 @@ span .select2-selection{
 .tooltip_:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
+}
+
+.all_price_select2 {
+    min-width: 100px;
+    font-size: 1rem;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    color: #131313;
+    background-color: #b9e2ff;
 }
