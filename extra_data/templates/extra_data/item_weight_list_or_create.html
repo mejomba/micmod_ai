@@ -94,7 +94,6 @@
                         const id_sku_c_j = document.getElementById('id_sku_c')
                         id_sku_c_j.parentElement.lastElementChild.innerHTML = ''
                         weightInput.parentElement.lastElementChild.innerHTML = ''
-                        {#$('#main-form :input').prop('disabled', true)#}
                     }
                 });
 
@@ -105,15 +104,7 @@
                 realSkuField.dispatchEvent(event);
 
             })
-            {#document.addEventListener("load", function (e) {#}
-            {#    const id_sku_c_value = id_sku_c.val();#}
-            {#    const skuSearch = document.querySelector('.sku-search>input')#}
-            {#    if (id_sku_c_value && skuSearch){#}
-            {#        skuSearch.value = id_sku_c_value#}
-            {#        skuSearch.dispatchEvent(new Event('change'))#}
-            {#    }#}
-            //})
-            {##}
+
             setTimeout(function () {
                 const id_sku_c_value = id_sku_c.val();
                 const skuSearch = document.querySelector('.sku-search>input')
@@ -163,8 +154,6 @@
 
 
         });
-
-
     </script>
 
 <script>
@@ -216,16 +205,25 @@
             })
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+{#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>#}
+{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>#}
+{##}
+{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
+{##}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
+{#    #}
+    <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
+    <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 
 {% endblock extra_js %}
 

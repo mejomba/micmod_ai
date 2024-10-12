@@ -42,5 +42,7 @@ urlpatterns = [
     path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
     path('quotation/print/customer/<int:id>/', print_view, name='print_customer'),
     path('ajax/save_parent_item/', save_parent_item, name='save_parent_item'),
+    path('sale_user_report/', sale_user_report, name='sale_user_report'),
+    path('repeated/goods_code/', repeated_goods_code_view, name='repeated_goods_code'),
     path('ajax/inquiry_not_started/', inquiry_not_started, name='inquiry_not_started'),
 ]

@@ -1,0 +1,20 @@
+<table class="table table-striped">
+  <thead class="mb-5 bg-light-info rounded">
+    <tr>
+        <th scope="col"><h6 class="text-center">کد کالا</h6></th>
+        <th scope="col" ><h6 class="text-center">تعداد</h6></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for goods_code, goods_code_count in repeated_goods_code %}
+
+    <tr>
+{#      <th scope="row">#}
+        <td class="text-center">{{ goods_code }}</td>
+{#      </th>#}
+            <td class="text-center">{{ goods_code_count }}</td>
+    </tr>
+      {% endfor %}
+
+  </tbody>
+</table>

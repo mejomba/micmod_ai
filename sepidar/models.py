@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models, connections, connection
+from django.db.models import Q
 from translator import get_text as _
 from tools.form_tools import select_cquery
 
@@ -25,6 +26,13 @@ class Dl(models.Model):
 
     @staticmethod
     def get_list(text):
+        from extra_data.models import Customer
+        if text.isdigit():
+            customer_filter = Q(sepidar_dl_id__icontains=text) | Q(sepidar_dl_code__icontains=text) | Q(sepidar_party_id__icontains=text)
+        else:
+            customer_filter = Q(title__icontains=text) | Q(name__icontains=text) | Q(last_name__icontains=text)
+        res = Customer.objects.filter(customer_filter)
+        return res
         res = Dl.objects.using('sepidar').raw(f"""
 Select TOP 10 dl.Code as code,dl.Title as name,dl.DLId,p.* 
 From [ACC].[DL] as dl 
@@ -461,6 +469,20 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
             """
         res = Item.objects.raw(qry, using='sepidar')
         # print(qry)
+        return res
+
+    @staticmethod
+    def get_stock_qty(sku):
+        qry = f"""
+        with fis_year as (select max(FiscalYearId) as fis_year_id from fmk.FiscalYear)
+
+SELECT i.code code, cast(SUM(Quantity) as float) AS quantity
+FROM          INV.ItemStockSummary as inv_s
+join inv.item as i on i.ItemID = inv_s.ItemRef
+WHERE        (inv_s.FiscalYearRef = (select * from fis_year)) and StockRef in (2,50,51,53,54,60,84,   73,74,75,76,77,78,85) and i.code={sku}
+GROUP BY i.code
+    """
+        res = Item.objects.raw(qry, using='sepidar')
         return res
 
 

@@ -50,7 +50,7 @@ class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
         fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
-                  'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'revival_date',
+                  'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'revival_date', 'black_list',
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']

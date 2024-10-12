@@ -424,8 +424,8 @@ class PendingFormFilter(CustomBaseForm):
                       ('my_inquiry_not_started', _('my_inquiry_not_started')),
                       ('inquiry_not_assigned', _('inquiry_not_assigned')),
                       ('force_inquiry', _('force_inquiry')),
-                      # ('search_part_number', _('part_number')),
-                      # ('search_customer_name', _('customer_name')),
+                      ('search_part_number', _('part_number')),
+                      ('customer_name', _('search_customer_name')),
                       # ('search_create_date', _('create_date')),
                       ('all', _('all'))
                         ]
@@ -439,6 +439,8 @@ class PendingFormFilter(CustomBaseForm):
     my_inquiry_not_started = forms.CharField(required=False)
     inquiry_not_assigned = forms.CharField(required=False)
     force_inquiry = forms.CharField(required=False)
+    customer_name = forms.CharField(required=False)
+    search_part_number = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(PendingFormFilter, self).__init__(*args, **kwargs)
@@ -457,7 +459,20 @@ class PendingFormFilter(CustomBaseForm):
         self.fields['my_inquiry_not_started'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('my_inquiry_not_started')})
         self.fields['inquiry_not_assigned'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('inquiry_not_assigned')})
         self.fields['force_inquiry'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('force_inquiry')})
-        # self.fields['search_part_number'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_part_number')})
-        # self.fields['search_customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
+        self.fields['search_part_number'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_part_number')})
+        self.fields['customer_name'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('search_customer_name')})
         # self.fields['search_create_date'].widget.attrs.update({'class': 'd-none form-control', 'placeholder': _('goods_code')})
 
+
+class TimeForm(CustomBaseForm):
+    from_time = forms.DateField(required=False)
+    to_time = forms.DateField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(TimeForm, self).__init__(*args, **kwargs)
+        self.fields['from_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['to_time'] = JalaliDateField(label=_('to_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['from_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('from_time'), 'required': False})
+        self.fields['to_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('to_time'), 'required': False})

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Editor with Collapsible Sections</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .json-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .json-section h2 {
+            font-size: 1.5em;
+            margin: 0 0 10px 0;
+            cursor: pointer;
+            background: #f1f1f1;
+            padding: 5px;
+        }
+        .json-section label {
+            display: block;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .json-section input,
+        .json-section select {
+            width: calc(100% - 20px);
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .json-section-content {
+            display: none;
+        }
+        .json-section-content.show {
+            display: block;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .json-output {
+            white-space: pre-wrap;
+            background: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON Editor with Collapsible Sections</h1>
+        <form id="json-form"></form>
+        <button type="button" onclick="submitJson()">Submit</button>
+        <div class="json-output" id="json-output"></div>
+    </div>
+    <script>
+        // Example JSON data
+        const jsonData = {
+            "user": {
+                "id": "",
+                "name": "",
+                "email": "",
+                "profile": {
+                    "age": "",
+                    "gender": "male",
+                    "address": {
+                        "street": "",
+                        "city": "",
+                        "state": "",
+                        "zip": ""
+                    }
+                },
+                "preferences": {
+                    "notifications": true,
+                    "theme": "dark"
+                }
+            }
+        };
+
+        function renderJsonForm(data, container, parentKey = '') {
+            container.innerHTML = '';
+
+            for (const [key, value] of Object.entries(data)) {
+                const fullKey = parentKey ? `${parentKey}.${key}` : key;
+                const sectionContainer = document.createElement('div');
+                sectionContainer.classList.add('json-section');
+
+                const header = document.createElement('h2');
+                header.innerText = key;
+                header.addEventListener('click', () => {
+                    const content = sectionContainer.querySelector('.json-section-content');
+                    content.classList.toggle('show');
+                });
+                sectionContainer.appendChild(header);
+
+                const content = document.createElement('div');
+                content.classList.add('json-section-content');
+
+                if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+                    renderJsonForm(value, content, fullKey);
+                } else {
+                    let input;
+                    if (typeof value === 'boolean') {
+                        input = document.createElement('select');
+                        input.innerHTML = `
+                            <option value="true" ${value ? 'selected' : ''}>True</option>
+                            <option value="false" ${!value ? 'selected' : ''}>False</option>
+                        `;
+                    } else {
+                        input = document.createElement('input');
+                        input.type = typeof value === 'number' ? 'number' : 'text';
+                        input.value = value;
+                    }
+                    input.name = fullKey;
+                    content.appendChild(input);
+                }
+                sectionContainer.appendChild(content);
+                container.appendChild(sectionContainer);
+            }
+        }
+
+        function submitJson() {
+            const formData = new FormData(document.getElementById('json-form'));
+            const json = {};
+            formData.forEach((value, key) => {
+                const keys = key.split('.');
+                let obj = json;
+                keys.forEach((key, index) => {
+                    if (index === keys.length - 1) {
+                        obj[key] = value;
+                    } else {
+                        obj[key] = obj[key] || {};
+                        obj = obj[key];
+                    }
+                });
+            });
+            document.getElementById('json-output').textContent = JSON.stringify(json, null, 2);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const jsonForm = document.getElementById('json-form');
+            renderJsonForm(jsonData, jsonForm);
+        });
+    </script>
+</body>
+</html>

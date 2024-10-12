@@ -129,12 +129,12 @@ def import_customers_from_sepidar(extra_data):
         return
     extra_data = extra_data.copy()
     # import_provience_from_sepidar(extra_data)
-    import_customer_group_from_sepidar(extra_data)
-    import_senf_from_sepidar(extra_data, max_local_party_id)
-    import_sub_senf_from_sepidar(extra_data, max_local_party_id)
-    import_introduction_method_from_sepidar(extra_data, max_local_party_id)
-    import_introducer_from_sepidar(extra_data, max_local_party_id)
-    import_marketer_from_sepidar(extra_data, max_local_party_id)
+    # import_customer_group_from_sepidar(extra_data)
+    # import_senf_from_sepidar(extra_data, max_local_party_id)
+    # import_sub_senf_from_sepidar(extra_data, max_local_party_id)
+    # import_introduction_method_from_sepidar(extra_data, max_local_party_id)
+    # import_introducer_from_sepidar(extra_data, max_local_party_id)
+    # import_marketer_from_sepidar(extra_data, max_local_party_id)
 
     items = SepItem.get_all_customers(max_local_party_id)
     for item in items:

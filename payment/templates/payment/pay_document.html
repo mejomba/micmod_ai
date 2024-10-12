@@ -1,0 +1,64 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+<form action="{% if form.instance.pk %}{% url 'payment:local.payment.doc.update' form.instance.pk %}{% else %}{% url 'payment:local.payment.doc.create' %}{% endif %}" method="POST" id="pay-document-form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="row bg-white rounded border my-10 pt-10 position-relative shadow-sm mx-xl-10 ">
+        <h4 class="position-absolute" style="top: -10px">اسناد پرداخت (درخواست کننده)</h4>
+        {% render_field_by_order form form.payment_order form.doc_type form.file_1 label='on-border' margin_b=4 %}
+        <div class="col-12 bg-white rounded">
+            <div class="row">
+                {% render_field_by_order form form.total_amount form.from_date form.to_date label="on-border" %}
+            </div>
+        </div>
+        <div class="col-12 bg-white rounded">{% render_field_by_order form form.description label="on-border" %}</div>
+    </div>
+<input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
+</form>
+
+<script>
+    debugger
+    $('#pay-document-form').on('submit', function (e){
+        debugger
+        e.preventDefault()
+        var doc_type = $('#id_doc_type').val();
+        var description = $('#pay-document-form #id_description').val();
+        var payment_order = $('#id_payment_order').val();
+        var total_amount = $('#id_total_amount').val();
+        var from_date = $('#id_from_date').val();
+        var to_date = $('#id_to_date').val();
+        var files = $('#id_file_1')[0].files;
+        let form = new FormData();
+        form.append('doc_type', doc_type);
+        form.append('description', description);
+        form.append('payment_order', payment_order);
+        form.append('total_amount', total_amount);
+        form.append('from_date', from_date);
+        form.append('to_date', to_date);
+        for (var i = 0; i < files.length; i++) {
+            form.append("file_1", files[i]);
+        }
+        $.ajax({
+            url: $('#pay-document-form').attr('action'),
+            data: form,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            success:function(response) {
+                window.location.reload()
+            }
+        });
+        setInterval(function (){
+            $('#id_kt_empty_modal_lg').hide();
+        }, 500)
+    })
+
+</script>

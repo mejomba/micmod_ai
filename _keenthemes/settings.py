@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import datetime
 import os
+from datetime import timedelta
+
 from dotenv import load_dotenv
 from pathlib import Path
 from django.conf import settings
@@ -78,6 +80,8 @@ LOCAL_APPS = [
     'additions',
     'transportation',
     'payment',
+    'factor',
+    'order',
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -209,6 +213,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),
         'PORT': os.environ.get('PG_PORT'),
+        'BACKUP_PATH': os.environ.get('BACKUP_PATH')
         # 'HOST': '192.168.1.80',  # os.environ.get('PG_HOST'),
         # 'PORT': 5437,  # os.environ.get('PG_PORT'),
         # 'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server',}
@@ -417,7 +422,7 @@ AUTH_USER_MODEL = 'accounts.User'
 # ========== redis settings ==========
 REDIS_URL = 'redis' if os.environ.get('IS_DOCKER') == '1' else '127.0.0.1'
 # REDIS_URL = 'redis'
-print(REDIS_URL)
+# print(REDIS_URL)
 CACHES = {
     # … default cache config and others
     "default": {
@@ -455,10 +460,19 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 50
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1000),
+}
+
+
 SEND_SMS_URL = os.environ.get('SEND_SMS_URL')
+
 
 
 
@@ -689,3 +703,12 @@ KT_THEME_VENDORS = {
 }
 TAX_VALUE = 10
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+# AJAX DATATABLE SETTINGS
+AJAX_DATATABLE_MAX_COLUMNS = 36  # default 30
+AJAX_DATATABLE_TRACE_COLUMNDEFS = False  # default False
+AJAX_DATATABLE_TRACE_QUERYDICT = False  # default False
+AJAX_DATATABLE_TRACE_QUERYSET = False  # default False
+AJAX_DATATABLE_TEST_FILTERS = False  # default False
+AJAX_DATATABLE_DISABLE_QUERYSET_OPTIMIZATION = False  # default False
+AJAX_DATATABLE_STRIP_HTML_TAGS = True  # default True

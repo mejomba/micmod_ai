@@ -33,6 +33,8 @@ class Image(BaseAbsContentType):
     path = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path)
     alt = models.CharField(verbose_name=_('alt'), max_length=64, null=True, blank=True)
     group = models.SmallIntegerField(verbose_name=_('image group'), null=True, blank=True)
+    from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
+    to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()

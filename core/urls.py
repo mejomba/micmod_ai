@@ -7,6 +7,7 @@ app_name = 'core'
 urlpatterns = [
     path('excel/download/', views.download_excel, name='export_excel'),
     path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/', views.CommentsFormView.as_view(), name='comment.form'),
+    path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/<str:app_label_rel>/<str:model_name_rel>/<int:content_type_rel>/<int:object_id_rel>/', views.CommentsFormView.as_view(), name='comment.form.rel'),
 
     # path("ajax/<str:app_label>/<str:model_name>/list",views.BaseCustomListView.as_view(), name='ajax_objects_list'),
     # path("<str:app_label>/<str:model_name>/list",views.download_excel, name='objects_list'),

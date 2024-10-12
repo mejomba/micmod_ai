@@ -580,12 +580,13 @@ class TestAjaxDatatableView(AjaxDatatableView):
         {'name': 'customer_code', 'visible': True, 'className': 'py-1 border'},
         {'name': 'customer_name', 'visible': True, 'className': 'py-1 border', 'title': 'نام مشتری'},
         {'name': 'register_date', 'visible': True, 'className': 'py-1 border', 'title': 'تاریخ ثبت(میلادی)'},
-        {'name': 'jalali_register_date', 'visible': True, 'searchable': False, 'orderable': False,
-         'title': 'تاریخ ثبت(شمسی)', 'className': 'py-1 border'},
+        # {'name': 'jalali_register_date', 'visible': True, 'searchable': False, 'orderable': False,
+        #  'title': 'تاریخ ثبت(شمسی)', 'className': 'py-1 border'},
         # all invisible field must be end of config
         {'name': 'id', 'visible': True, },
     ]
-
+    from tools.utils import timer
+    @timer
     def get_initial_queryset(self, request=None):
         param = self.request.POST.get('q', 'submit').strip('/')
         qs = self.model.get_all(param)

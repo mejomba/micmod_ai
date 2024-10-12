@@ -3,9 +3,11 @@ from jalali_date.fields import JalaliDateTimeField, JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
-from payment.models import PaymentOrder
+from files.models import Image, File
+from payment.models import PaymentOrder, PaymentDocument
 
 from translator import get_text as _
+from django_select2 import forms as s2forms
 
 
 class PaymentOrderModelForm(CustomBaseModelForm):
@@ -14,7 +16,7 @@ class PaymentOrderModelForm(CustomBaseModelForm):
 
     class Meta:
         model = PaymentOrder
-        fields = '__all__'
+        exclude = ['group']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,6 +34,11 @@ class PaymentOrderModelForm(CustomBaseModelForm):
                 self.form_state = kwargs.get('constraint').get('form_state')
 
         if self.form_state is not None:
+            if self.form_state >= 1:
+                self.fields['accounting'].widget.attrs['required'] = 'required'
+                # self.fields['from_source'].widget.attrs['required'] = 'required'
+            if self.form_state == 0:
+                self.fields['from_source'].widget.attrs['readonly'] = 'readonly'
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
                 formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
@@ -64,3 +71,31 @@ class PaymentOrderModelForm(CustomBaseModelForm):
                     self.make_disable(self.fields)
                     self.enable = False
 
+
+class PaymentDocumentsFormPaymentWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "id__iexact",
+    ]
+
+
+class PaymentDocumentsForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
+
+    class Meta:
+        model = PaymentDocument
+        fields = '__all__'
+
+        widgets = {
+            'payment_order': PaymentDocumentsFormPaymentWidget,
+        }
+
+    def __init__(self, *args, **kwargs):
+        access = None
+        super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['from_date'] = JalaliDateField(
+            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
+        self.fields['to_date'] = JalaliDateField(
+            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
+        # self.fields['file_1'].widget.attrs['required'] = True

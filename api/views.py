@@ -2,13 +2,15 @@ import importlib
 
 from django.shortcuts import render
 from rest_framework import status, permissions
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.viewsets import ModelViewSet
 
-from api.serializers import TelBotUserRegisterSerializer, GeneralSerializer
+from api.serializers import TelBotUserRegisterSerializer, GeneralSerializer, CustomerSerializer
 from core.views import JsonTemplateResponseMixin
+from extra_data.models import Customer
 from tools.utils import show_error
 
 
@@ -34,9 +36,17 @@ class TelBotRegisterUserAPI(APIView):
         return Response(serializer_.data, status=status.HTTP_201_CREATED)
 
 
-class CustomerListAPI(APIView):
-    def get(self, request):
-        ...
+class CustomerListAPI(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+
+    def list(self, request, *args, **kwargs):
+        if limit_ := self.request.GET.get('limit'):
+            self.pagination_class.default_limit = limit_
+        else:
+            self.pagination_class = None
+        return super().list(request, *args, **kwargs)
 
 
 class AjaxCall(APIView):
