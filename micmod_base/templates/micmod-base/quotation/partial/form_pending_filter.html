@@ -4,6 +4,7 @@
 {#    {% render_field_group form_filter.choice form_filter.time form_filter.quotation form_filter.customer_code %}#}
     <div class="text-center">
             <div class="btn btn-sm btn-dark fw-bold" data-bs-toggle="modal" id="id_inquiry_report" data-bs-target="#id_kt_empty_modal">گزارش کار</div>
+            <div class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" id="id_repeated_goods_code" data-bs-target="#id_kt_empty_modal">کد های تکراری</div>
     </div>
     <div class="mx-3 p-3 bx-font-color">فیلتر </div>
     <div class="w-25 mb-3">{{ form_filter.choice }}</div>
@@ -15,6 +16,8 @@
     {{ form_filter.my_inquiry_not_started }}
     {{ form_filter.inquiry_not_assigned }}
     {{ form_filter.force_inquiry }}
+    {{ form_filter.search_part_number }}
+    {{ form_filter.customer_name }}
     <div class="d-flex">
         {{ form_filter.from_time }}
     {{ form_filter.to_time }}
@@ -43,6 +46,8 @@
     const time_range = document.querySelector('#id_time_range')
     const from_time = document.querySelector('#id_from_time')
     const to_time = document.querySelector('#id_to_time')
+    const customer_name = document.querySelector('#id_customer_name')
+    const search_part_number = document.querySelector('#id_search_part_number')
     // all
     {#const search_part_number = document.querySelector("#id_search_part_number")#}
     {#const search_customer_name = document.querySelector("#id_search_customer_name")#}
@@ -64,6 +69,8 @@
             inquiry_not_assigned.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === "customer_code") {
             customer_code.parentElement.classList.remove('d-none')
@@ -78,6 +85,8 @@
             inquiry_not_assigned.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === "my_quotations") {
             my_quotations.value = 1
@@ -92,6 +101,8 @@
             inquiry_not_assigned.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === "search_sku") {
             search_sku.parentElement.classList.remove('d-none')
@@ -106,6 +117,8 @@
             inquiry_not_assigned.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
 
         }
         else if (event.currentTarget.value === "all") {
@@ -116,6 +129,8 @@
             quotation.parentElement.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === 'my_inquiry_not_started'){
             my_inquiry_not_started.value = 2
@@ -133,6 +148,8 @@
             search_sku.parentElement.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === 'inquiry_not_assigned'){
             inquiry_not_assigned.value = 3
@@ -153,6 +170,10 @@
             search_sku.parentElement.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            customer_name.parentElement.classList.add('d-none')
+            search_part_number.parentElement.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === 'force_inquiry'){
             force_inquiry.value = 4
@@ -173,6 +194,10 @@
             search_sku.parentElement.classList.add('d-none')
             from_time.classList.add('d-none')
             to_time.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            customer_name.parentElement.classList.add('d-none')
+            search_part_number.parentElement.classList.add('d-none')
+            search_part_number.classList.add('d-none')
         }
         else if (event.currentTarget.value === 'time_range'){
             debugger
@@ -188,6 +213,45 @@
             my_quotations.classList.add('d-none')
             inquiry_not_assigned.classList.add('d-none')
             search_sku.classList.add('d-none')
+            customer_name.classList.add('d-none')
+            search_part_number.classList.add('d-none')
+        }
+        else if (event.currentTarget.value === 'customer_name'){
+            debugger
+            {#time_range.value = 5#}
+            btn.classList.remove('d-none')
+            customer_name.parentElement.classList.remove('d-none')
+            customer_name.classList.remove('d-none')
+
+            from_time.parentElement.classList.add('d-none')
+            from_time.classList.add('d-none')
+            to_time.classList.add('d-none')
+            customer_code.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
+            quotation.classList.add('d-none')
+            my_quotations.classList.add('d-none')
+            inquiry_not_assigned.classList.add('d-none')
+            search_sku.classList.add('d-none')
+            search_part_number.classList.add('d-none')
+        }
+        else if (event.currentTarget.value === 'search_part_number'){
+            debugger
+            {#time_range.value = 5#}
+            btn.classList.remove('d-none')
+            search_part_number.parentElement.classList.remove('d-none')
+            search_part_number.classList.remove('d-none')
+
+
+            from_time.parentElement.classList.add('d-none')
+            from_time.classList.add('d-none')
+            to_time.classList.add('d-none')
+            customer_code.classList.add('d-none')
+            my_inquiry_not_started.classList.add('d-none')
+            quotation.classList.add('d-none')
+            my_quotations.classList.add('d-none')
+            inquiry_not_assigned.classList.add('d-none')
+            search_sku.classList.add('d-none')
+            customer_name.classList.add('d-none')
         }
         else {
             quotation.classList.add('d-none')

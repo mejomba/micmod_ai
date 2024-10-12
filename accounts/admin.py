@@ -25,9 +25,11 @@ class AdminUser(UserAdmin):
                     "is_staff",
                     "is_superuser",
                     "is_customer",
+                    "is_bi_user",
                     "groups",
                     "user_permissions",
                     "head",
+                    "z_index"
                 ),
             },
         ),

@@ -68,6 +68,7 @@
         </table>
     </div>
     {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
 {% endblock form_content %}
 {% block extra_js %}
 
@@ -207,6 +208,10 @@
 
         });
 
+        function delete_inquiry(event){
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', event.currentTarget.dataset.url, modal_sm_body)
+        }
 
     </script>
 

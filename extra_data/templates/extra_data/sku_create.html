@@ -44,6 +44,7 @@
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.image_2 target='Image' crispy=True %}
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.file_1 target='File' crispy=True %}
             {% render_field_by_order form form.is_sea_default form.active_main_item label='on-border' margin_b=6 %}
+            {% render_field_by_order form form.hs label='on-border' margin_b=6 %}
         </div>
     </div>
 {% endblock form_content %}

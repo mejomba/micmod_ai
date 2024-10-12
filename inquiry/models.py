@@ -303,9 +303,12 @@ class PriceInquiryResult(BaseModel):
                 if self.sku.purchase_group.price_settings:
                     self.extra_data.price_reference = self.sku.purchase_group
                     self.extra_data.price_settings_ = self.sku.purchase_group.price_settings
-                elif self.sku.purchase_group.hs and self.sku.purchase_group.hs.price_settings:
-                    self.extra_data.price_reference = self.sku.purchase_group.hs
-                    self.extra_data.price_settings_ = self.sku.purchase_group.hs.price_settings
+                # elif self.sku.purchase_group.hs and self.sku.purchase_group.hs.price_settings:
+                elif self.sku.active_hs and self.sku.active_hs.price_settings:
+                    # self.extra_data.price_reference = self.sku.purchase_group.hs
+                    # self.extra_data.price_settings_ = self.sku.purchase_group.hs.price_settings
+                    self.extra_data.price_reference = self.sku.active_hs
+                    self.extra_data.price_settings_ = self.sku.active_hs.price_settings
         if not self.extra_data.price_settings_:
             self.extra_data.price_reference = None
             self.extra_data.price_settings_ = PriceSettings.setting()
@@ -359,7 +362,7 @@ class PriceInquiryResult(BaseModel):
 
     @queryable_property
     def transportations_cost(self):
-        if not self.sku or not self.sku.purchase_group or not self.sku.purchase_group.hs or not self.weight:
+        if not self.sku or not self.sku.purchase_group or not self.sku.active_hs or not self.weight:
             return
         cost_multiplier = 1/self.price_settings.free_rmb_rate if self.price_settings.calculation_method == CalculationMethod.Old else 1
         weight = self.weight
@@ -395,7 +398,8 @@ class PriceInquiryResult(BaseModel):
             customs_price = self.rmb_price
         else:
             customs_price = self.sku.get_customs_price if self.sku.get_customs_price > 0 else self.rmb_price
-        self.customs_rate = self.sku.purchase_group.hs.customs_rate
+        # self.customs_rate = self.sku.purchase_group.hs.customs_rate
+        self.customs_rate = self.sku.active_hs.customs_rate
         return 0.01 * (
                 settings.duty_on_value_percentage + self.customs_rate) * customs_price * customs_rmb_rate / free_rmb_rate
 

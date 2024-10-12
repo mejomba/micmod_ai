@@ -110,12 +110,12 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 
 @register.filter
 def model_name(obj):
-    return obj._meta.model_name
+    return obj._meta.model_name if obj else ""
 
 
 @register.filter
 def app_label(obj):
-    return obj._meta.app_label
+    return obj._meta.app_label if obj else ""
 
 @register.inclusion_tag('comment_tag.html')
 def get_comments(obj, comment_form=None, button_text=None, button_style=None, comment_type=None):
@@ -142,7 +142,7 @@ def get_comments(obj, comment_form=None, button_text=None, button_style=None, co
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
-def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
+def get_comment_user_list(form, current_user, cancel=None, comment_type=None, size=None, obj_rel=None):
     unseen_comment = list()
 
     comments_info = list()
@@ -185,6 +185,9 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None):
             comments_info.reverse()
 
     context = {'comments_info': comments_info,
+               'size': size,
+               # 'comment_rel': comment_rel,
+               'obj_rel': obj_rel,
                'obj': obj,
                'unseen_comment_count': unseen_comment_count,
                'cancel': cancel,
@@ -235,11 +238,16 @@ def get_inquiry_report():
     return {'quotationitem_filters': qi_filter}
 
 
+@register.inclusion_tag('micmod-base/quotation/partial/sale_user_report.html')
+def sale_user_report():
+    from micmod_base.models import Quotation
+    sale_user_report_call = Quotation.sale_user_report
+    return {'sale_user_report_call': sale_user_report_call}
+
 @register.simple_tag()
 def inquiry_not_started(user):
     from micmod_base.models import QuotationItem
     return QuotationItem.inquiry_not_started(user)
-
 
 
 @register.inclusion_tag('core/partial/render_field.html')
@@ -424,3 +432,11 @@ def get_quotation_item_all_prices(sku):
     context['all_trade_prices'] = all_trade_active_prices
     context['all_bazar_prices'] = all_bazar_active_prices
     return context
+
+
+@register.filter(is_safe=False)
+def default_if_falsy(value, arg):
+    """If value interpreted to False, use given default."""
+    if not bool(value):
+        return arg
+    return value

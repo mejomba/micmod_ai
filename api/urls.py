@@ -17,5 +17,6 @@ urlpatterns = [
 
     # my api
     path('telbot/customer_register', TelBotRegisterUserAPI.as_view(), name='telbot.customer.register'),
-    path('ajax/call/<str:app>/<str:model>/', AjaxInquiryResult.as_view(), name='ajax_call')
+    path('ajax/call/<str:app>/<str:model>/', AjaxInquiryResult.as_view(), name='ajax_call'),
+    path('customer/list/', CustomerListAPI.as_view(), name='customer.list')
 ]

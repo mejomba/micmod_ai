@@ -16,6 +16,7 @@ from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
+from tools.myjalali import Persian
 from tools.utils import show_error
 
 from translator import get_text as _
@@ -39,6 +40,12 @@ class QuotationItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.order_by('id')
+
+    def all_quotations_for_factor(self):
+        return self.get_queryset().order_by('is_over', 'id')
+
+    # def remaining_quotations_for_factor(self, exclude_qi):
+    #     return self.get_queryset().filter(quotation=self.quotation, pk__not_in=exclude_qi)
 
 
 class Month(AbsBaseModel):
@@ -88,6 +95,49 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+    @classmethod
+    def sale_user_report(cls, current_user, wf_states, from_date, to_date):
+        filter_by_time = Q()
+        if from_date and to_date:
+            f_date = Persian(from_date).gregorian_datetime()
+            t_date = Persian(to_date).gregorian_datetime()
+            filter_by_time = Q(created_date__range=(f_date, t_date))
+        sales_user = current_user.team.all().order_by('z_index')
+        res = dict()
+        inquiry_state = 'استعلام قیمت'
+        for sale_user in sales_user:
+            res[sale_user] = []
+            local_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                    Q(last_work_flow__current_state_name=inquiry_state) & \
+                                    Q(quotation__need_local_price_inquiry=True) & \
+                                    Q(quotation__is_deleted=False) & \
+                                    Q(cancel=False)
+
+            foreign_price_condition = Q(last_work_flow__to_user=sale_user) & \
+                                      Q(last_work_flow__current_state_name=inquiry_state) & \
+                                      Q(quotation__need_foreign_price_inquiry=True)& \
+                                      Q(quotation__is_deleted=False) & \
+                                      Q(cancel=False)
+            for wf_state in wf_states:
+                condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
+                wf = cls.objects.filter(filter_by_time & condition & Q(cancel=False)).count()
+                wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
+                res[sale_user].append((wf, wf_cancel))
+
+            local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
+            local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct()#.count()
+            foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
+            all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
+            # else:
+            #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
+            #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
+            res[sale_user].append((all_user_quotation,))
+            res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
+                                   local_price_inquiry_not_responded, foreign_price_inquiry_not_responded))
+
+        return res
 
     @property
     def total_discount(self):
@@ -282,7 +332,10 @@ class Quotation(SLSDoc):
     @property
     def tax_amount(self):
         try:
-            return sum(x.tax for x in self.quotation.all())
+            x = sum(x.tax for x in self.quotation.all())
+            return x
+            if x:
+                return round(x, 1)
         except Exception as e:
             show_error(e, __file__)
             return 0
@@ -427,9 +480,49 @@ class QuotationItem(BaseModel):
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
+    is_over = models.BooleanField(_('is_over'), default=False)
 
 
     objects = QuotationItemManager()
+
+    # @property
+    # def appearance_or_real_part_number(self):
+    #     try:
+    #         customer = self.quotation.customer_party_id
+    #         item = self.goods_code_fk
+    #         customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
+    #         if customer_part_number:
+    #             return customer_part_number.part_number_show
+    #         else:
+    #             return self.goods_code_fk.part_number
+    #     except Exception as e:
+    #         ...
+
+    # @property
+    # def appearance_or_real_part_number_(self):
+    #     try:
+    #         l = [("", "--------", "selected")]
+    #         for item in self.qi.all():
+    #             l.append((item.pk, item.part_number_show, ''))
+    #         return {'list': l}
+    #     except Exception as e:
+    #         ...
+
+    @property
+    def total_quantity_in_factor(self):
+        total_quantity = 0
+        all_factor_items = self.qi.all()
+        for f in all_factor_items:
+            total_quantity += f.quantity if f.quantity else 0
+        return total_quantity
+
+    @property
+    def remaining_quantity_in_factor(self):
+        remaining_quantity = self.quantity - self.total_quantity_in_factor
+        if remaining_quantity > 0:
+            return remaining_quantity
+        else:
+            return 0
 
     @classmethod
     def quotation_item_all_pending(cls, inquiry_type=None, path=None):
@@ -468,8 +561,8 @@ class QuotationItem(BaseModel):
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            # x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
             x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
@@ -684,7 +777,12 @@ class QuotationItem(BaseModel):
     def tax(self):
         try:
             if self.quotation.is_official:
-                return (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                if self.quotation.currency_ref.title_en == 'Rial':
+                    return int(x)
+                return x
+                if x:
+                    return round(x, 1)
             else:
                 return 0
         except Exception as e:
@@ -734,7 +832,7 @@ class QuotationItem(BaseModel):
 
                 my_inquiry_not_started_count = not_started.count()
                 item_in_china = cls.objects.filter(f, filter_condition_china).order_by('-quotation_id').count()
-                new_inquiry = cls.quotation_item_all_pending(inquiry_type='trade', path=None).count()
+                new_inquiry = cls.quotation_item_all_pending(inquiry_type=trade_user.base_group, path=None).count()
                 break
 
         filter_condition = (Q(need_foreign_price_inquiry=True) & Q(foreign_price_inquiry_done=False) &
@@ -749,4 +847,3 @@ class QuotationItem(BaseModel):
 
     class Meta:
         ordering = ['id']
-

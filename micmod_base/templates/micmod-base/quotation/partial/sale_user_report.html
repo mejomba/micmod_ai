@@ -1,0 +1,89 @@
+{% load more_tags %}
+{% if from_date and to_date %}
+    <div class="mb-3">
+<span class="bg-light-success px-3 rounded mb-2">
+    <span dir="rtl">{{ from_date }}</span>
+    <span class="mx-3">تا </span>
+    <span dir="rtl">{{ to_date }}</span>
+</span>
+    </div>
+{% endif %}
+
+<table class="table table-striped">
+  <thead class="mb-5 bg-light-info rounded">
+    <tr>
+        <th scope="col"><h6>کاربر</h6></th>
+        {% for wf_state in wf_states %}
+        <th scope="col" class="text-center"><h6>{{ wf_state }}</h6></th>
+        {% endfor %}
+        <th scope="col" class="text-center"><h6>کل ردیف ها</h6></th>
+        <th scope="col" class="text-center"><h6>تعداد استعلام</h6></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for user_, wf_count_list in sale_user_report_call.items %}
+    <tr>
+      <th scope="row">
+        <span>{{ user_.profile.avatar_symbol }}</span>
+        <span class="ms-3">{{ user_.profile }}</span>
+      </th>
+        {% for wf_count in wf_count_list %}
+            <td class="text-center">
+                {% if forloop.last %}
+                    <div class="d-flex flex-column">
+                        <div class="d-flex justify-content-around">
+                            <span class="d-none">خارجی</span>
+                            <span class="badge-info px-2 rounded mb-1 font-size-11">{{ wf_count.0}} </span>
+                            <span class="text-danger bg-light-danger mb-1 px-2 rounded font-size-11 bold cursor-pointer foreign_inquiry_not_responded scale-1-3" onclick="foreign_inquiry_not_responded(event)">{{ wf_count.3.count|default_if_falsy:0 }}</span>
+
+                            <div class="d-none quotation_foreign_inquiry_not_responded__" style="position: absolute; bottom: 10px; right: 25px;">
+                            <span class="bold me-5">نیاز به استعلام خارجی:
+                                <span class="bg-light-success px-3 rounded font-size-11">({{ user_.profile }})</span>
+                            </span>
+                            {% for foo in wf_count.3 %}
+                                <span class="badge-info mb-1 px-2 rounded font-size-11 s-1">{{ foo.id }}</span>
+                                {% empty %}
+                                <span class="badge-info mb-1 px-2 rounded font-size-11">---</span>
+                            {% endfor %}
+                            </div>
+
+                        </div>
+                        <div class="d-flex justify-content-around">
+                            <span class="d-none">داخلی</span>
+                            <span class="badge-success px-2 rounded font-size-11">{{ wf_count.1|default_if_falsy:"-" }} </span>
+                            <span class="text-danger bg-light-danger px-2 bold rounded font-size-11 cursor-pointer local_inquiry_not_responded scale-1-3" onclick="local_inquiry_not_responded(event)">{{ wf_count.2.count|default_if_falsy:0 }}</span>
+
+                            <div class="d-none quotation_local_inquiry_not_responded__" style="position: absolute; bottom: 10px; right: 25px;">
+                            <span class="bold me-5">نیاز به استعلام داخلی:
+                                <span class="bg-light-success px-3 rounded font-size-11">({{ user_.profile }})</span>
+                            </span>
+                            {% for foo in wf_count.2 %}
+                                <span class="badge-success mb-1 px-2 rounded font-size-11 s-1">{{ foo.id }}</span>
+                                {% empty %}
+                                <span class="badge-success bg-light-danger mb-1 px-2 rounded font-size-11">---</span>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                {% else %}
+                    {{ wf_count.0}}<br>
+                    <span class="font-size-10 text-danger">{{ wf_count.1|default_if_falsy:"-" }}</span>
+                 {% endif %}
+
+            </td>
+        {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="d-flex gap-8 mt-10">
+    <div class="d-flex gap-2">
+        <div class="bg-info rounded-circle" style="width: 20px; height: 20px"></div>
+        <div>استعلام خارجی</div>
+    </div>
+    <div class="d-flex gap-2">
+        <div class="bg-success rounded-circle" style="width: 20px; height: 20px"></div>
+        <div>استعلام داخلی</div>
+    </div>
+</div>

@@ -21,17 +21,78 @@
     .underline_dash_border:focus{
         outline: none;
     }
+    input::placeholder {
+      font-weight: 200;
+        color: darkgray;
+        font-size: 0.85rem;
+    }
+    @media print {
+        div, input {
+            font-size: 9px !important;
+        }
+        .underline_dash_border {
+            border-bottom: 1px dotted gray !important;
+        }
+      html, body {
+          font-size: 10px !important;
+          scale: 100%;
+          max-height: 100%;
+          width: 100vw;
+          margin-top: 0 !important;
+          display: flex;
+          justify-content: center;
+          align-content: center;
+          z-index: 5000;
+          overflow: hidden;
+          page-break-after: always;
+          background-repeat: no-repeat;
+          direction: rtl;
+      }
+
+}
     </style>
+
+    <script>
+        {#function printDiv() {#}
+        {#    var divContents = document.getElementById("DivToPrint").innerHTML;#}
+        {#    var a = window.open('', '', 'height=500, width=500');#}
+        {#    a.document.write('<html>');#}
+        {#    a.document.write('<body > <h1>Div contents are <br>');#}
+        {#    a.document.write(divContents);#}
+        {#    a.document.write('</body></html>');#}
+        {#    a.document.close();#}
+        {#    a.print();#}
+        //}
+
+        function printDiv() {
+            debugger
+             var printContents = document.getElementById('DivToPrint').innerHTML;
+             var originalContents = document.body.innerHTML;
+             document.body.innerHTML = printContents;
+             document.body.print()
+             {#window.print();#}
+             document.body.innerHTML = originalContents;
+        }
+    </script>
+
+
+
 {% endblock extra_css %}
 
 
 {% block form_content %}
 {% csrf_token %}
+    {% if object.amount > 50000000 %}
+        <div class="bg-light-danger rounded px-5 py-5 mb-3">
+        <span class="bold">مبلغ این درخواست بیش از سقف مجاز است</span>
+        </div>
+    {% endif %}
     <div class="mb-2">
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 <div class="container mt-10 persian-number mb-20 pb-20">
-    <div class="DivToPrint" id="DivToPrint">
+<a href="#" onclick="printDiv('DivToPrint')" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
+    <div class="DivToPrint A5" id="DivToPrint">
         <div class="row row-cols-3">
         <div class="col">
             <img src="{% static 'media/svg/brand-logos/mocromodern_dark.svg' %}" alt="" class="text-danger">
@@ -49,12 +110,12 @@
                 <div class="d-flex gap-5 align-items-center my-6" id="num_amount">
                     <span>لطفا مبلغ </span>
                     <div class="col mb-3">
-                        <input type="number" class="underline_dash_border s-1 text-center " id="id_toman_amount" {% if form.fields.amount.disabled %} disabled {% endif %} name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
+                        <input dir="rtl" onfocus="cursor_end(this)" type="text" class="underline_dash_border s-1 text-center bold comma-seperator" id="id_toman_amount" {% if form.fields.amount.disabled %} disabled {% endif %} name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
                         {{ form.amount.errors }}
                     </div>
                     <span>ریال بابت</span>
                     <div class="col mb-3">
-                        <input type="text" class="underline_dash_border text-center" {% if form.fields.behalf.disabled %} disabled {% endif %} name="{{ form.behalf.name }}" {% if form.behalf.value != None %}value="{{ form.behalf.value|stringformat:'s' }}"{% endif %}>
+                        <input type="text" class="underline_dash_border text-center bold" {% if form.fields.behalf.disabled %} disabled {% endif %} name="{{ form.behalf.name }}" {% if form.behalf.value != None %}value="{{ form.behalf.value|stringformat:'s' }}"{% endif %}>
                         {{ form.behalf.errors }}
                     </div>
                 </div>
@@ -63,13 +124,13 @@
                 <div class="d-flex gap-5 align-items-center my-6">
                     <span>در وجه</span>
                     <div class="col mb-3">
-                        <input type="text" class="underline_dash_border text-center" {% if form.fields.pay_to.disabled %} disabled {% endif %} name="{{ form.pay_to.name }}" {% if form.pay_to.value != None %}value="{{ form.pay_to.value|stringformat:'s' }}"{% endif %}>
+                        <input type="text" class="underline_dash_border text-center bold" {% if form.fields.pay_to.disabled %} disabled {% endif %} name="{{ form.pay_to.name }}" {% if form.pay_to.value != None %}value="{{ form.pay_to.value|stringformat:'s' }}"{% endif %}>
                         {{ form.pay_to.errors }}
                     </div>
                     <span>از محل</span>
                     <div class="col mb-3">
                         {% get_list form.from_source as items_list %}
-                        <input class="underline_dash_border text-center"
+                        <input class="underline_dash_border text-center bold"
                                name="{{ form.from_source|get_base_model }}__auto__{{ form.from_source.html_name }}" {% get_attrs_str form.from_source %} list="lst_{{ form.from_source.name }}"
                                value="{{ items_list.selected_str }}" autocomplete="off">
                     {{ form.from_source.errors }}
@@ -81,15 +142,17 @@
                             {% endfor %}
                         </datalist>
                     </div>
-{#                    <div class="col mb-3">#}
-{#                        <input type="text" class="underline_dash_border text-center" {% if form.fields.from_source.disabled %} disabled {% endif %} name="{{ form.from_source.name }}" {% if form.from_source.value != None %}value="{{ form.from_source.value|stringformat:'s' }}"{% endif %}>#}
-{#                        {{ form.from_source.errors }}#}
-{#                    </div>#}
+                    <div class="col-1">
+                        {% render_field_by_order form form.is_formal label='on-border'  margin_b=0 %}
+                    </div>
+                    <div class="col-2">
+                        {% render_field_by_order form form.need_pay_doc label='on-border'  margin_b=0 %}
+                    </div>
                 </div>
                 <div class="d-flex gap-5 align-items-center my-6">
                     <span>به شماره حساب/کارت</span>
                     <div class="col mb-3">
-                        <input type="text" class="underline_dash_border s-1 text-center" {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
+                        <input type="text" class="underline_dash_border s-1 text-center bold shomare-kart" {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
                         {{ form.to_account.errors }}
                     </div>
                     <span>پرداخت نمایید</span>
@@ -99,26 +162,38 @@
                 <div class="d-flex gap-10 align-items-center my-4 mt-20">
                     <span>در خواست کننده</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border text-center" {% if form.fields.applicant.disabled %} disabled {% endif %} name="{{ form.applicant.name }}" {% if form.applicant.value != None %}value="{{ form.applicant.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border text-center bold" placeholder="نام درخواست کننده" {% if form.fields.applicant.disabled %} disabled {% endif %} name="{{ form.applicant.name }}" {% if form.applicant.value != None %}value="{{ form.applicant.value|stringformat:'s' }}"{% endif %}>
                     {{ form.applicant.errors }}
                 </div>
 
                 <span>حسابداری</span>
                 <div class="col mb-3">
-                    <input type="text" class="underline_dash_border text-center" {% if form.fields.accounting.disabled %} disabled {% endif %} name="{{ form.accounting.name }}" {% if form.accounting.value != None %}value="{{ form.accounting.value|stringformat:'s' }}"{% endif %}>
+                    <input type="text" class="underline_dash_border text-center bold" placeholder="نام کارشناس حسابداری" {{ form.fields.accounting.widget.attrs.required }} {% if form.fields.accounting.disabled %} disabled {% endif %} name="{{ form.accounting.name }}" {% if form.accounting.value != None %}value="{{ form.accounting.value|stringformat:'s' }}"{% endif %}>
                     {{ form.accounting.errors }}
                 </div>
-
-    {#            <span>امضا مدیر عامل</span>#}
                 <div class="">
                     {% render_field_by_order form form.manager_confirmation label='in-line' margin_b=0 %}
                 </div>
-
-
+                <div class="">
+                    {% render_field_by_order form form.is_paid label='in-line' margin_b=0 %}
                 </div>
+                </div>
+            </div>
+            <div class="mt-20">
+
             </div>
         </div>
     </div>
+<div class="d-flex mt-5 justify-content-between">
+        {% if not object %}
+            <span class="text-info">برای آپلود اسناد ابتدا ذخیره پیشنویس کنید</span>
+        {% else %}
+            {% include 'payment/partial/upload_doc.html' with upload_file_modal=add_pay_doc obj=form.instance filter_str="{'doc_type':'A'}" text="آپلود اسناد مثبته (درخواست کننده)" btn_id="local-pay-doc"%}
+            {% include 'payment/partial/upload_doc.html' with upload_file_modal=add_pay_accounting_doc obj=form.instance filter_str="{'doc_type':'B'}" text="آپلود اسناد پرداخت (مالی)" btn_id="local-pay-accounting-doc"%}
+        {% endif %}
+        </div>
+{#<input type="button" value="click"#}
+{#                    onclick="printDiv()">#}
 </div>
     {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
@@ -128,20 +203,91 @@
 {% block extra_js %}
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
     <script>
+    const localPayDoc = document.querySelector('#local-pay-doc')
+    const localPayAccountingDoc = document.querySelector('#local-pay-accounting-doc')
+    const DeletePayDoc = document.querySelectorAll('.delete-pay-doc')
+    {#const DeletePayAccountingDoc = document.querySelectorAll('.delete-pay-accounting-doc')#}
+    localPayDoc && localPayDoc.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers(["id_from_date", "id_to_date"]);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    localPayAccountingDoc && localPayAccountingDoc.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers([["id_from_date", "id_to_date"]]);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    debugger
+    ajax_delete(DeletePayDoc)
+    {#ajax_delete(DeletePayAccountingDoc)#}
+
+
+    function cursor_end(el){
+        console.log('end')
+        const length = el.value.length;
+        el.focus();
+        el.setSelectionRange(0, 0);
+    }
      $(document).ready(function() {
-        $("#id_toman_amount").on("input", function() {
-            let amount = $(this).val();
-            $.ajax({
+         String.prototype.insert = function(index, string) {
+            if (index > 0) {
+                return this.substring(0, index) + string + this.substring(index, this.length);
+            }
+            return string + this;
+         };
+         String.prototype.reverse_string=function() {return this.split("").reverse().join("");}
+
+         addCommaSeperator(true)
+         shomare_kart(true)
+
+         $.ajax({
                 url: "{% url 'payment:toman.amount' %}",
                 type: "POST",
                 data: {
-                    'amount': amount,
+                    'amount': $("#id_toman_amount").val(),
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " تومان "
+                        let amountInWords = response.amount_in_words + " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
@@ -154,8 +300,50 @@
                     $("#toman").addClass('d-none')
                     console.log();
                 }
-            });
+            }); // ajax
+
+         $("#id_toman_amount").bind("input", function() {
+            let amount = $(this).val();
+            $.ajax({
+                url: "{% url 'payment:toman.amount' %}",
+                type: "POST",
+                data: {
+                    'amount': amount,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.amount_in_words) {
+                        let amountInWords = response.amount_in_words + " ریال "
+                        $("#num_amount").removeClass('my-6')
+                        $("#toman").removeClass('d-none')
+                        $("#id_toman_amount_text").val(amountInWords);
+                    }
+                    else {
+                        $("#toman").addClass('d-none')
+                    }
+                },
+                error: function() {
+                    $("#toman").addClass('d-none')
+                    console.log();
+                }
+            }); // ajax
         });
     });
+
+
+  function printDiv(divName) {
+         var printContents = document.getElementById(divName).innerHTML;
+         var originalContents = document.body.innerHTML;
+         document.body.style.height = '11in'
+         document.body.style.width = '8in'
+         document.body.innerHTML = printContents;
+         window.print();
+         document.body.innerHTML = originalContents;
+
+         document.body.style.height = '100%'
+         document.body.style.width = '100%'
+         window.location.reload()
+    }
+
     </script>
 {% endblock extra_js %}

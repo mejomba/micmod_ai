@@ -41,16 +41,20 @@ def get_customers(request):
     obj = {}
     count = 0
     if q:
-      for rep in reps:
-        q = q.replace(rep[1],rep[0])
+      # for rep in reps:
+      #   q = q.replace(rep[1],rep[0])
       Dls = Dl.get_list(q)
       obj['items']=[]
       for dl in Dls:
           item = {}
-          item['id'] = dl.code
-          item['text'] = dl.name
-          item['pid'] = dl.PartyId
-          item['sepidar_party_id'] = dl.PartyId
+          # item['id'] = dl.code
+          # item['text'] = dl.name
+          # item['pid'] = dl.PartyId
+          # item['sepidar_party_id'] = dl.PartyId
+          item['id'] = dl.sepidar_dl_code
+          item['text'] = dl.title
+          item['pid'] = dl.sepidar_party_id
+          item['sepidar_party_id'] = dl.sepidar_party_id
           obj['items'].append(item)
           count += 1
     obj['total_count'] = count

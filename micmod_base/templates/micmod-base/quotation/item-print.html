@@ -90,6 +90,11 @@
 {#        <div class="text-center bold bg-soft-primary text-darkblue font-size-11 persian-digit " name="-total_price">-</div>#}
 </td>
 
+<!-- TARGET PRICE -->
+<td class=" font-size-12 replace-digits">
+        <div class="price_target text-center persian-digit" name="price_target">{{ form.instance.price_target|default_if_none:"-"|floatformat:digit|intcomma}}</div>
+</td>
+
 {% if with_alt_code == '1' %}
 <!-- FINAL PRICE -->
     <td class=" font-size-12 replace-digits" style="text-align: right">
@@ -103,7 +108,9 @@
 <!-- FINAL PRICE -->
     <td class=" font-size-12 replace-digits">
         {% for comment in form.instance.comments.all %}
-            {{ comment.comment_content }} <br>
+            {% if comment.comment_title != 'Q' %}
+                {{ comment.comment_content }} <br>
+            {% endif %}
         {% endfor %}
     </td>
 {% endif %}

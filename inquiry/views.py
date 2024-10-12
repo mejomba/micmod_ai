@@ -3,6 +3,7 @@ import threading
 
 from django.core.cache import cache
 from django.conf import settings
+from django.db.models.lookups import LessThan
 from django.forms import inlineformset_factory
 from django.http import JsonResponse
 from django.template.loader import render_to_string
@@ -14,8 +15,8 @@ from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import Min, IntegerField, F, Q
-from django.db.models.functions import Cast
+from django.db.models import Min, IntegerField, F, Q, ExpressionWrapper, FloatField, When, Case, Subquery, Value
+from django.db.models.functions import Cast, Abs, Coalesce
 
 from micmod_base.models import QuotationItem
 from sepidar.models import Item as sepidar_item
@@ -199,48 +200,78 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(AjaxDatatableView):
     model = Item
     title = 'sku_list'
-    initial_order = [["created_date", "des"], ]
+    # initial_order = [["id", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     from translator import get_text as _
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        # {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1 border', 'defaultContent': '<a href"#">test</a>' },
+        {'name': 'id', 'visible': False, "orderable": True},
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
         {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
         {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        # {'name': 'quality', 'visible': True, 'title': _('quality'), 'className': 'py-1 '},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        # {'name': 'customs_group', 'visible': True, 'title': _('group_customs'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
         {'name': 'created_date', 'visible': True, },
-        {'name': 'id', 'visible': False, },
-        # {'name': 'technical_confirm', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True, 'searchable': False},
-        {'name': 'wh_last_weight', 'visible': True, 'searchable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False},
+        {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': True},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
+    def get_initial_order(self, request):
+        res = super().get_initial_order(request)
+        return []
+
     def get_initial_queryset(self, request=None):
+        from django.db.models import Avg, Count, Min, Sum
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
-        # qs = qs.annotate(trade_last_weight=1+2)
-        # qs = qs.annotate(wh_last_weight='wh_last_weight')
         q = self.request.POST.get('q')
-        # if q == 'update_from_sepidar':
-        #     set_items_sepidar_id_from_sepidar()
 
         if q == 'sales_user':
             qs = qs.filter(creator_user__groups__name=q)
         elif q == 'not_confirm':
             qs = qs.filter(technical_confirm=False)
+        elif q == 'weight_percentage':
+            self.initial_order = [["id", "des"], ]
+            qry = """
+            select distinct(WH.sku_id), WH.id, WH.sku_id sku from
+	(
+	SELECT  "extra_data_itemweight"."id", "extra_data_itemweight"."created_date", "extra_data_itemweight"."last_update_date", "extra_data_itemweight"."is_deleted",
+	"extra_data_itemweight"."creator_user_id", "extra_data_itemweight"."editor_user_id", "extra_data_itemweight"."sku_id", "extra_data_itemweight"."weight"
+	FROM "extra_data_itemweight" 
+	INNER JOIN "auth_user" ON ("extra_data_itemweight"."creator_user_id" = "auth_user"."id") 
+	INNER JOIN "auth_user_groups" ON ("auth_user"."id" = "auth_user_groups"."user_id") 
+	INNER JOIN "auth_group" ON ("auth_user_groups"."group_id" = "auth_group"."id") 
+	WHERE (NOT "extra_data_itemweight"."is_deleted" AND "extra_data_itemweight"."sku_id" in (select id from extra_data_item ) AND "extra_data_itemweight"."creator_user_id" IS NOT NULL AND "auth_group"."name" in ('trade_user', 'trade_admin') ) ORDER BY "extra_data_itemweight"."id" asc
+) TRADE,
+	(
+	SELECT  "extra_data_itemweight"."id", "extra_data_itemweight"."created_date", "extra_data_itemweight"."last_update_date", "extra_data_itemweight"."is_deleted",
+	"extra_data_itemweight"."creator_user_id", "extra_data_itemweight"."editor_user_id", "extra_data_itemweight"."sku_id", "extra_data_itemweight"."weight"
+	FROM "extra_data_itemweight" 
+	INNER JOIN "auth_user" ON ("extra_data_itemweight"."creator_user_id" = "auth_user"."id") 
+	INNER JOIN "auth_user_groups" ON ("auth_user"."id" = "auth_user_groups"."user_id") 
+	INNER JOIN "auth_group" ON ("auth_user_groups"."group_id" = "auth_group"."id") 
+	WHERE (NOT "extra_data_itemweight"."is_deleted" AND "extra_data_itemweight"."sku_id" in (select id from extra_data_item ) AND "extra_data_itemweight"."creator_user_id" IS NOT NULL AND "auth_group"."name" in ('wh_user', 'wh_admin')) ORDER BY "extra_data_itemweight"."id" asc
+	) WH
+	where TRADE.sku_id=WH.sku_id """
+
+            #"""and abs(((WH.weight-TRADE.weight)/Trade.weight)*100)::integer>10"""
+            raw = self.model.objects.raw(qry)
+            ids = [x.sku for x in raw]
+            qs = qs.filter(id__in=ids)
+            qs = sorted(qs, key=lambda x: x.weight_percentage, reverse=True)
+            qs = filter(lambda x: x.weight_percentage > 10, qs)
+            pk_list = [item.pk for item in qs]
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(pk_list)])
+            qs = self.model.objects.filter(pk__in=pk_list).order_by(preserved)
 
         return qs
 
@@ -501,7 +532,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
-            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False}
+            {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
+            {'name': 'delete', 'title': 'حذف', 'searchable': False, 'orderable': False}
         ]
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
@@ -526,6 +558,19 @@ class InquiryResultDataTableView(AjaxDatatableView):
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
+        delete_url = reverse('core:delete.confirm')
+        row['delete'] = f"""
+        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </a>
+                        """
         qi = obj.trade_quotation_rel.first()
         row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
                           f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
@@ -563,6 +608,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         return
     load_sepidar = request.GET.get('load_sepidar')
     dict_ = request.GET or request.POST
+    prev_value = dict_.get('prev_value')
     sku = dict_.get('sku_c')
     party_code = dict_.get('party_code')
     quantity = dict_.get('quantity') or 1
@@ -570,6 +616,10 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     currency = dict_.get('currency')
     payment_method = dict_.get('payment_method')
     grade = dict_.get('grade')
+    if prev_value.isdigit():
+        search_sku = True
+    else:
+        search_sku = False
     if request.GET.get('sku_c') == request.GET.get('sku'):
         target_trade_price = request.GET.get('all_trade_prices')
         target_bazar_price = request.GET.get('all_bazar_prices')
@@ -583,7 +633,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         dl_obj = Dl.get_dl(party_code)
         party_id = dl_obj[0].PartyId if len(dl_obj) else None
 
-    item_sku = Item.objects.filter(sku=sku).first()
+    sku_or_partnumber_filter = Q(sku=sku) | Q(part_number=sku)
+    item_sku = Item.objects.filter(sku_or_partnumber_filter).first()
+    # item_sku = Item.objects.filter(sku=sku).first()
     all_trade_active_prices = item_sku.all_trade_active_price_
     all_bazar_active_prices = item_sku.all_bazar_active_price_
 
@@ -604,11 +656,12 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
                                              'price_setting': price_setting_obj,
                                              'quantity': quantity or 1, 'party_code': party_code,
                                              'payment_method': payment_method, 'grade': grade,
-                                             'request': request,
+                                             'request': request, 'part_number': item_sku.part_number if item_sku else "",
                                              'trade_price': (price.pk, price.inquiry_type.title) if price else '',
                                              'bazar_price': (bazar_price.pk, bazar_price.inquiry_type.title) if bazar_price else '',
                                              'all_trade_active_prices': all_trade_active_prices,
-                                             'all_bazar_active_prices': all_bazar_active_prices
+                                             'all_bazar_active_prices': all_bazar_active_prices,
+                                             'search_sku': search_sku
                                              })
 
     payment_methods = get_tuple_value_list(final_price_settings.discount_based_payment_method, 'title')
@@ -857,7 +910,7 @@ def get_items(request):
     nested = None
     form_s = None
     q = request.GET.get('q', None)
-    party_id = request.GET.get('party_id', None)
+    party_id = request.GET.get('party_id', 0)
     id_currency_ref = request.GET.get('id_currency_ref', None)
     id_payment_method = request.GET.get('id_payment_method', None)
     id_payment_method = id_payment_method.split(',')[-1] if id_payment_method else None
@@ -1143,6 +1196,7 @@ class AjaxInquiryResultListData(View):
 
 
 def update_components_view(request, *args, **kwargs):
+    # update_components()
     if cache.get('update_components'):
         print('task is running')
         return JsonResponse({'result': f'task_is running'})
