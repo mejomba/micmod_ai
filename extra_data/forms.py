@@ -65,7 +65,7 @@ class CustomerForm(CustomBaseModelForm):
             widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
         )
 
-        self.fields['revival_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['revival_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
 
         self.fields['z_safte'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['z_cheque_s'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})

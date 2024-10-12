@@ -725,7 +725,7 @@ class Customer(AbsBaseModel):
     z_no = models.BooleanField(_('Z_no'), default=False)
     z_safte = models.PositiveBigIntegerField(_('Z_safte'), null=True, blank=True)
     z_cheque_s = models.PositiveBigIntegerField(_('Z_cheque_s'), null=True, blank=True)
-    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False, null=True, blank=True)
+    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=0, null=True, blank=True)
     z_max_credit_rafi = models.PositiveBigIntegerField(_('Z_max_credit_rafi'), null=True, blank=True)
     # مبلغ زمانت
     extra_credit = models.PositiveBigIntegerField(_('extra_credit'), null=True, blank=True)
