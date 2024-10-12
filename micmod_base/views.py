@@ -1102,6 +1102,38 @@ def duplicate_quotation(request, quotation_id):
             # Duplicate each related QuotationItem
             quotation_items = QuotationItem.objects.filter(quotation=quotation_id)
             for item in quotation_items:
+                # goods_price_market, goods_market_date, goods_avg_price, goods_min_price, goods_max_price, goods_avg_count,
+                # goods_code_alt, goods_name_alt, goods_last_sale, goods_last_price, goods_total_sales, goods_q_last_sale,
+                # goods_q_last_price, goods_q_total_sales, , , , ,
+                # quotation_id, is_deleted, , itemid, , ,
+                # , description, bazar_price_code_id, trade_price_code_id, lead_time, assigned_trade_user_id,
+                # , , , , , ,
+                # , , , , , , ,
+                # item_in_china, price_target, goods_code_fk_id, final_price_sh, discount_per_item, , is_over
+                item.need_foreign_price_inquiry = False
+                item.need_local_price_inquiry = False
+                item.foreign_price_inquiry_done = False
+                item.local_price_inquiry_done = False
+                item.assigned_trade_user = None
+                item.assigned_trade_user2 = None
+                item.assigned_trade_user_date = None
+                item.assigned_trade_user_date2 = None
+                item.task_start = False
+                item.task_start2 = False
+                item.task_start_date = None
+                item.task_start_date2 = None
+                item.item_editor_user = None
+                item.old_goods_code = None
+                item.old_goods_name = None
+                item.delay_reason = None
+                item.delay_time = None
+                item.has_delay = False
+                item.selected_price_code_id = None
+                item.creator_user = None
+                item.editor_user = None
+                item.price_method = 'last_sale'
+                item.final_price = None
+
                 item.pk = None  # Create a new record
                 item.quotation = quotation  # Assign the new quotation
                 item.extra_data.request = request
