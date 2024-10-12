@@ -49,7 +49,7 @@ class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
         fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
-                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf', 'active',
+                  'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'revival_date',
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
@@ -63,9 +63,8 @@ class CustomerForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
         )
-    #
-    #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
-    #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+
+        self.fields['revival_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
     #
     #     if not access:
     #         self.make_disable(fields=self.fields)
