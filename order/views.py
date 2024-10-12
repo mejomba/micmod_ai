@@ -67,7 +67,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'id', 'orderable': True, 'visible': False, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'status', 'orderable': True, 'visible': True, },
-        {'name': 'item', 'orderable': True, 'visible': True, },
+        {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'customer', 'orderable': True, 'visible': True, },
         {'name': 'transportation_method', 'orderable': True, 'visible': True, },
         {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
@@ -87,7 +87,26 @@ class OrderDataTableListView(AjaxDatatableView):
     ]
 
     def customize_row(self, row, obj):
-        row['id'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+        row['order_title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
             reverse('order:order.view', args=(obj.id,)),
-            obj.title if obj.title else '_'
+            obj.order_title if obj.order_title else 'بدون عنوان'
         )
+
+
+class OrderAction(ListView):
+    model = Order
+    template_name = 'order/order_action.html'
+    paginate_by = 50
+
+    def get_queryset(self):
+        x = Order.objects.filter(order_base_items__isnull=False).distinct()
+        return x
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['forms'] = []
+        for o in context['object_list']:
+            f = OrderForm(instance=o)
+            context['forms'].append(f)
+        context['form'] = True
+        return context

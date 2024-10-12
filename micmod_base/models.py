@@ -1,7 +1,7 @@
 import uuid
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
-
+from collections import Counter
 from django.db.models import F
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
@@ -532,6 +532,8 @@ class QuotationItem(BaseModel):
                            Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
 
+        assigned_trade = (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+
         if inquiry_type == 'trade':
             if path == past_path:
                 inquiry_type_filter = (Q(quotation__cancel=True) | Q(is_deleted=True) |
@@ -552,18 +554,30 @@ class QuotationItem(BaseModel):
                                        Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)) & \
                                       (Q(quotation__cancel=False) & Q(is_deleted=False))
 
+        # inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
+        #                            (
+        #                                 Q(quotation__last_work_flow__state='استعلام قیمت') &
+        #                                 Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
+        #                                 (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+        #                            )
+
+
         inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
                                    (
-                                        Q(quotation__last_work_flow__state='استعلام قیمت') &
-                                        Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
-                                        (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+                                      Q(quotation__last_work_flow__state='استعلام قیمت') &
+                                      Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
+                                      (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
                                    )
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            # x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
-            x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
-        return x
+            # x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
+            base_qs = QuotationItem.objects.full_queryset(inquiry_type_filter, quotation__workflows__current_state_name='استعلام قیمت').distinct()
+            y = base_qs.filter(inquiry_state_condition)
+            z = base_qs.filter(assigned_trade)
+            x = y | z
+        return x.order_by('-quotation_id')
 
     @classmethod
     def get_inquiry_report(cls):

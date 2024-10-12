@@ -7,5 +7,6 @@ urlpatterns = [
     path('view/', views.OrderView.as_view(), name='order.view'),
     path('view/<int:pk>/', views.OrderView.as_view(), name='order.view'),
     path('list/', views.OrderListView.as_view(), name='order.list'),
+    path('list/action/', views.OrderAction.as_view(), name='order.list.action'),
     path('list/datatable/', views.OrderDataTableListView.as_view(), name='order.list.datatable'),
 ]

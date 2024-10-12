@@ -160,7 +160,7 @@ class BaseView(UserPassesTestMixin,
                 if value:
                     obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
                     if not obj and model.insert_new:
-                        obj = model.objects.create(**{model.auto_complete: value})
+                        obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user, 'editor_user': self.request.user})
                         obj.extra_data.request = self.request
                         obj.auto_complete_func()
 
@@ -698,6 +698,8 @@ class BaseView(UserPassesTestMixin,
                         if hasattr(self.formset.forms[0], 'nested'):
                             fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                         else:
+                            for f in self.formset.forms:
+                                f.instance.extra_data.request = self.request
                             fo = self.formset.save()
                     else:
                         print(self.formset.errors)

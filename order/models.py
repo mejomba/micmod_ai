@@ -1,8 +1,13 @@
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from core.models import BaseModel, BaseModeWF
 from extra_data.models import Brand, Item, Customer, WH
-from micmod_base.models import Quotation
+# from factor.models import FactorItem
+from micmod_base.models import QuotationItem
 from translator import get_text as _
+from workflow.models import WorkFlow
+from tools import const
 
 
 class Order(BaseModeWF):
@@ -14,8 +19,8 @@ class Order(BaseModeWF):
     order_title = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
-    customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING,
-                                 to_field='sepidar_party_id', db_column='customer_party_id')
+    # customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING,
+    #                              to_field='sepidar_party_id', db_column='customer_party_id')
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
                                              default='sea')
@@ -29,32 +34,68 @@ class Order(BaseModeWF):
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
     cancel = models.BooleanField(_("cancel"), default=False)
     is_over = models.BooleanField(_('is_over'), default=False)
-    qi = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, null=True)
+    # qi = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, null=True)
+    qi = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, null=True, blank=True)
+    # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
+    local_sepidar_wh_code = models.IntegerField(_("local_sepidar_wh_code"), null=True, blank=True)
 
     order_m2m = models.ManyToManyField('self', through='OrderOrder', related_name='order_items',
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
+    def __str__(self):
+        return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
+
+    def __repr__(self):
+        return f'sss'
+    
     @classmethod
     def get_qs_count(cls, user):
         return 0
 
     @classmethod
-    def create_with_rel(cls, data, order_rel):
-        o = cls.objects.create(**data)
-        oo = OrderOrder.objects.create(order_base=o, order_rel=order_rel, quantity=o.quantity)
+    def create_with_rel(cls, data_base, o2=None):
+        o1 = cls.objects.create(**data_base)
+        flow_data = {
+            "wf_status": 5,
+            "action": 'ایجاد خودکار',
+            "flow_name": 'سفارش',
+            "state": const.WF__ORDER__FIRST_STATE,
+            "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
+            "belong_to_group": 'order_admin',
+            "object_id": o1.pk,
+            "content_type": ContentType.objects.get_for_model(o1),
+            "creator_user": data_base.get('creator_user'),
+            "editor_user": data_base.get('editor_user'),
+            "from_user": None,
+            "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
+            "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        o1.last_work_flow = wf
+        if o2 is not None:
+            o1.cancel = True
+            remaining_quantity = o2.remaining_quantity
+            if remaining_quantity >= o1.quantity:
+                oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=o1.quantity)
+            else:
+                oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=remaining_quantity)
+        o1.save()
+        return o1
 
     @property
     def remaining_quantity(self):
-        total_needed_count = 0
+        total_consumed_count = 0
         total_count = self.quantity
-        if self.cancel:
-            total_count = 0
-            for oo in self.order_m2m.all():
-                total_count += oo.quantity
+        # if self.cancel:
+        #     total_count = 0
+        #     for oo in self.order_m2m.all():
+        #         total_count += oo.quantity
 
         for fi in self.factor_items.all():
-            total_needed_count += fi.quantity
-        return total_count - total_needed_count
+            total_consumed_count += fi.quantity
+        for oo in self.order_rel_items.all():
+            total_consumed_count += oo.quantity
+        return total_count - total_consumed_count
 
 
 class OrderOrder(BaseModel):
@@ -64,4 +105,5 @@ class OrderOrder(BaseModel):
     order_base = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_base_items', null=True, blank=True)
     order_rel = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_rel_items', null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
-    local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
+    # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
+    fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)

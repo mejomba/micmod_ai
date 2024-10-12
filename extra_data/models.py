@@ -370,21 +370,24 @@ class Item(BaseModel):
     # base_fields = ['sku','part_number']
 
     @property
-    def supply_locations(self):
-        res = [(0, '-----------')]
+    def supply_locations_(self):
+        res = [('', '-----------')]
         stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
         for stock_qty in stock_qty_qry:
             if stock_qty.quantity:
-                wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
+                sepidar_wh_code = 1000
+                sepidar_wh_name = 'اسم انبار سپیدار'
+                # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                 if stock_qty.quantity.is_integer():
-                    res.append((wh.pk, f'{wh.front_name} {int(stock_qty.quantity)}'))
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {int(stock_qty.quantity)}'))
                 else:
-                    res.append((wh.pk, f'{wh.front_name} {stock_qty.quantity}'))
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty.quantity}'))
 
 
         # for o in self.orderitem_set.all():
-        for o in self.order_set.all():
-            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
+        for o in self.order_set.all().order_by('-quantity'):
+            if r := o.remaining_quantity:
+                res.append((o.pk, f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {r:0.20g})"))
 
         return res
 

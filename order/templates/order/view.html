@@ -5,8 +5,46 @@
 {% load core_tags %}
 
 {% block extra_css %}
+
+
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+
+    <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
+{#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">#}
+{#    <script src="{% static 'admin/js/theme.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/nav_sidebar.js' %}" type="text/javascript" ></script>#}
+{#    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">#}
+{##}
+{#    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/jquery.init.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/core.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/SelectBox.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/actions.js' %}" type="text/javascript" ></script>#}
+{#    <script src="{% static 'admin/js/SelectFilter2.js' %}" type="text/javascript" ></script>#}
+
+    <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">
+    <style>
+    .selector-available, .selector-chosen, #id_order_m2m_from, #id_order_m2m_to{
+        width: 300px;
+    }
+    #id_order_m2m_selected_input, #id_order_m2m_input {
+        width: 250px;
+        height: 30px !important;
+        font-size: 1rem;
+    }
+    .selector-chooser{
+        rotate: 180deg;
+    }
+    select, input{
+        height: 3.5rem !important;
+    }
+    label {
+        font-size: 1rem;
+    }
+    </style>
 {% endblock extra_css %}
 
 
@@ -18,26 +56,28 @@
     </div>
 
 
-     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
-        <div class="col">
-            <div class="row row-cols-6 align-items-baseline">
-                <h4 class="position-absolute" style="top: -10px">سفارش</h4>
-                {% render_field_by_order form form.order_title form.quantity form.status form.transportation_method label='on-border' %}
-                {% render_field_by_order form form.production_lead_time form.trade_commitment_date form.commitment_date_to_customer label='on-border' %}
-                {% render_field_by_order form form.order_type form.sales_admin_confirmation form.cancel form.is_over label='on-border' %}
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+        <div class="row">
+            <div class="col-7">
+                <div class="row">
+                    <div class="col-9">
+                        <div class="row row-cols-3">
+                            <div class="col-8"><div id="id_item_select2"></div></div>
+                            {% render_field_by_order form form.quantity label='on-border' %}
+                            {% render_field_by_order form form.order_title form.status form.transportation_method label='on-border' margin_b=5 %}
+                            {% render_field_by_order form form.production_lead_time form.trade_commitment_date form.commitment_date_to_customer label='on-border' %}
+                            {% render_field_by_order form form.order_type form.sales_admin_confirmation form.is_over form.cancel label='on-border' %}
 
-<div id="id_customer_select2"></div>
-<div id="id_item_select2"></div>
-                <div class="d-flex col-4">
-                    {% render_field_by_order form form.customer form.item label='on-border' %}
+{#                            <div id="id_customer_select2"></div>#}
+                            {% render_field_by_order form form.item form.qi label='on-border' %}
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        {% render_field_by_order form form.description_sale label='on-border' %}
+                    </div>
                 </div>
-
             </div>
-        </div>
-        <div class="col">
-            <div class="row">
-            {% render_field_by_order form form.description label='on-border' %}
-            </div>
+            <div class="col-5">{{ form.order_m2m }}</div>
         </div>
     </div>
 

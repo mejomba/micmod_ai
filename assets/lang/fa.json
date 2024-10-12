@@ -623,5 +623,9 @@
     "total-arrived": "کل بار سفارش آمده",
     "has-error": "اعلام خطا از سمت بازرگانی",
     "completed": "کامل شده",
-    "t-order": "سفارش"
+    "t-order": "سفارش",
+    "item": "کالا",
+    "trade_commitment_date": "تاریخ تعهد بازرگانی",
+    "commitment_date_to_customer": "تاریخ تعهد به مشتری",
+    "description_sale": "توضیحات فروش"
 }

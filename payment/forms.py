@@ -37,7 +37,7 @@ class PaymentOrderModelForm(CustomBaseModelForm):
             if self.form_state >= 1:
                 self.fields['accounting'].widget.attrs['required'] = 'required'
                 # self.fields['from_source'].widget.attrs['required'] = 'required'
-            if self.form_state == 0:
+            if self.form_state != 1:
                 self.fields['from_source'].widget.attrs['readonly'] = 'readonly'
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs

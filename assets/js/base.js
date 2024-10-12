@@ -443,6 +443,7 @@ function ajax_submit
 }
 
 function initializeDatepickers(elem_id=null) {
+    console.log(elem_id)
     if(elem_id){
         elem_id.forEach(function (id){
             console.log(elem_id, $(`#${id}`))

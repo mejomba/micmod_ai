@@ -49,11 +49,28 @@ class Factor(SLSDoc):
     def generate_order_per_factor_item(self):
         for fi in self.factoritem_set.all():
             order_rel = ''
-            data = {
+            data_base = {
                 "order_title": "خودکار توسط سیستم",
                 "status": "1",
                 "item": fi.qi.goods_code_fk,
-                "customer": fi.qi.quotation.customer_party_id,
+                # "customer": fi.qi.quotation.customer_party_id,
+                # "transportation_method": "",
+                "production_lead_time": fi.qi.lead_time,
+                # "trade_commitment_date": "",
+                # "commitment_date_to_customer": "",
+                "quantity": fi.quantity,
+                # "description_sale": "",
+                # "order_type": "",
+                # "sales_admin_confirmation": "",
+                "cancel": False,
+                "is_over": False,
+                "qi": fi.qi,
+            }
+            data_rel = {
+                "order_title": "خودکار توسط سیستم",
+                "status": "1",
+                "item": fi.qi.goods_code_fk,
+                # "customer": fi.qi.quotation.customer_party_id,
                 # "transportation_method": "",
                 "production_lead_time": fi.qi.lead_time,
                 # "trade_commitment_date": "",
@@ -68,7 +85,7 @@ class Factor(SLSDoc):
             }
             if fi.supply_locations.remaining_quantity >= fi.quantity:
                 ...
-            order_base = Order.create_with_rel(data=data, order_rel=order_rel)
+            order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
 
 
 class FactorItem(BaseModel):
@@ -84,6 +101,7 @@ class FactorItem(BaseModel):
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
+    supply_location = models.CharField(null=True, blank=True, verbose_name=_('supply_location'))
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
@@ -98,8 +116,60 @@ class FactorItem(BaseModel):
         else:
             if self.pk and self.quantity == 0:
                 self.is_deleted = True
-            if self.supply_locations and self.supply_locations < 0:
-                ...
+
+            if self.pk is None:
+                if str(self.supply_location).startswith('wh__'):
+                    # generate wh order
+                    data_base = {
+                        "order_title": "خودکار توسط سیستم",
+                        "status": "1",
+                        "item": self.qi.goods_code_fk,
+                        "production_lead_time": 10,  # self.qi.lead_time,
+                        "quantity": self.quantity,
+                        "cancel": False,
+                        "is_over": False,
+                        "qi": self.qi,
+                        "local_sepidar_wh_code": int(self.supply_location[4:]),
+                        "creator_user": self.extra_data.request.user,
+                        "editor_user": self.extra_data.request.user,
+                    }
+                    o1 = Order.create_with_rel(data_base)
+                    self.supply_locations = o1
+                elif self.supply_location:
+                    # generate order with rel
+                    data_base = {
+                        "order_title": "خودکار توسط سیستم",
+                        "status": "1",
+                        "item": self.qi.goods_code_fk,
+                        "production_lead_time": 5,  # self.qi.lead_time,
+                        "quantity": self.quantity,
+                        "cancel": False,
+                        "is_over": False,
+                        "qi": self.qi,
+                        "creator_user": self.extra_data.request.user,
+                        "editor_user": self.extra_data.request.user,
+                    }
+                    o2 = Order.objects.filter(pk=self.supply_location).first()
+
+                    o1 = Order.create_with_rel(data_base, o2)
+                    self.supply_locations = o1
+                elif not self.supply_location:
+                    # generate order independent
+                    data_base = {
+                        "order_title": "خودکار توسط سیستم",
+                        "status": "1",
+                        "item": self.qi.goods_code_fk,
+                        "production_lead_time": 5,  # self.qi.lead_time,
+                        "quantity": self.quantity,
+                        "cancel": False,
+                        "is_over": False,
+                        "qi": self.qi,
+                        "creator_user": self.extra_data.request.user,
+                        "editor_user": self.extra_data.request.user,
+                    }
+                    o1 = Order.create_with_rel(data_base)
+                    self.supply_locations = o1
+
             super().save(force_insert, force_update, using, update_fields)
             total_quantity = self.qi.total_quantity_in_factor
             if total_quantity >= self.qi.quantity:
