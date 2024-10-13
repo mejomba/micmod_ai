@@ -1122,17 +1122,17 @@ def duplicate_quotation(request, quotation_id):
                 item.task_start2 = False
                 item.task_start_date = None
                 item.task_start_date2 = None
-                item.item_editor_user = None
-                item.old_goods_code = None
-                item.old_goods_name = None
+                #item.item_editor_user = None
+                #item.old_goods_code = None
+                #item.old_goods_name = None
                 item.delay_reason = None
                 item.delay_time = None
                 item.has_delay = False
                 item.selected_price_code_id = None
                 item.creator_user = None
                 item.editor_user = None
-                item.price_method = 'last_sale'
-                item.final_price = None
+                #item.price_method = 'last_sale'
+                #item.final_price = None
 
                 item.pk = None  # Create a new record
                 item.quotation = quotation  # Assign the new quotation
