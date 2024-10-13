@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.db.models import Q
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from translator import get_text as _
@@ -19,13 +20,11 @@ class OrderForm(CustomBaseModelForm):
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        # self.select2(['item'])
-        # self.select2(['customer'])
         self.make_hidden(['item', 'qi'])
         self.fields['description_sale'].widget.attrs['rows'] = 10
 
         self.fields['order_m2m'] = forms.ModelMultipleChoiceField(
-            queryset=Order.objects.filter(item=self.instance.item),
+            queryset=Order.objects.filter(~Q(id=self.instance.pk), item=self.instance.item, cancel=False),
             required=False,
             widget=FilteredSelectMultiple(_("order_order"), is_stacked=False),
         )
