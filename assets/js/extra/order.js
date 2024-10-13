@@ -4,7 +4,20 @@ const item_select2_placeholder = document.querySelector('[name="item"]').value.t
 // select2_generate('#id_customer_select2', '#id_customer', '/sepidar/customers_list', customer_select2_placeholder, 'sepidar_party_id')
 select2_generate('#id_item_select2', '#id_item', '/inquiry/items_list', item_select2_placeholder)
 
-
+if (!$('#id_trade_commitment_date').data("datepicker")){
+    $('#id_trade_commitment_date').datepicker({
+        dateFormat: 'yy-mm-dd',
+        changeMonth: true,
+        changeYear: true,
+    });
+}
+if (!$('#id_commitment_date_to_customer').data("datepicker")){
+    $('#id_commitment_date_to_customer').datepicker({
+        dateFormat: 'yy-mm-dd',
+        changeMonth: true,
+        changeYear: true,
+    });
+}
 if (false){
 
     $('#id_customer_select2').select2({
