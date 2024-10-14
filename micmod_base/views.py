@@ -1106,10 +1106,10 @@ def duplicate_quotation(request, quotation_id):
                 # goods_code_alt, goods_name_alt, goods_last_sale, goods_last_price, goods_total_sales, goods_q_last_sale,
                 # goods_q_last_price, goods_q_total_sales, , , , ,
                 # quotation_id, is_deleted, , itemid, , ,
-                # , description, bazar_price_code_id, trade_price_code_id, lead_time, assigned_trade_user_id,
+                # , description, , , , ,
                 # , , , , , ,
                 # , , , , , , ,
-                # item_in_china, price_target, goods_code_fk_id, final_price_sh, discount_per_item, , is_over
+                # , price_target, goods_code_fk_id, final_price_sh, discount_per_item, , 
                 item.need_foreign_price_inquiry = False
                 item.need_local_price_inquiry = False
                 item.foreign_price_inquiry_done = False
@@ -1122,15 +1122,20 @@ def duplicate_quotation(request, quotation_id):
                 item.task_start2 = False
                 item.task_start_date = None
                 item.task_start_date2 = None
-                #item.item_editor_user = None
-                #item.old_goods_code = None
-                #item.old_goods_name = None
+                item.item_editor_user = None
+                item.old_goods_code = None
+                item.old_goods_name = None
                 item.delay_reason = None
                 item.delay_time = None
                 item.has_delay = False
                 item.selected_price_code_id = None
                 item.creator_user = None
                 item.editor_user = None
+                item.bazar_price_code = None
+                item.trade_price_code = None
+                item.lead_time = None
+                item.item_in_china = False
+                item.is_over = False
                 #item.price_method = 'last_sale'
                 #item.final_price = None
 
