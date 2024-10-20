@@ -741,24 +741,24 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     except Exception as e:
                         pass
                 obj.item_editor_user = self.request.user
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
-                obj.foreign_price_inquiry_done = False
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
+                # obj.foreign_price_inquiry_done = False
+                # obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
-                obj.local_price_inquiry_done = False
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
+                # obj.local_price_inquiry_done = False
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.user.base_group == 'trade':
                 data = {
@@ -771,14 +771,16 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 }
                 obj_for_update = obj_qs.first()
                 if obj_for_update:
-                    obj_for_update.lead_time = data['lead_time']
-                    obj_for_update.goods_code = data['goods_code']
-                    obj_for_update.goods_name = data['goods_name']
-                    obj_for_update.has_delay = data['has_delay']
-                    obj_for_update.delay_reason = data['delay_reason']
-                    obj_for_update.delay_time = data['delay_time']
-                    obj_for_update.extra_data.request = self.request
-                    obj_for_update.save()
+                    obj.lead_time = data['lead_time']
+                    obj.goods_code = data['goods_code']
+                    obj.goods_name = data['goods_name']
+                    obj.has_delay = data['has_delay']
+                    obj.delay_reason = data['delay_reason']
+                    obj.delay_time = data['delay_time']
+                    # obj_for_update.extra_data.request = self.request
+                    # obj_for_update.save()
+            obj.extra_data.request = self.request
+            obj.save()
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
