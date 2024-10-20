@@ -223,11 +223,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
                 # self.object.save()
                 if api_res[0] >= 400:
+                    from django.contrib import messages
+
+                    messages.add_message(self.request, messages.ERROR, api_res[1].get('Message'))
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
                                                               app_label=self.object._meta.app_label).first()
                     flow_object = self.flow_model.objects.filter(object_id=self.object.id,
-                                                                 content_type=content_type).last()
+                                                                 content_type=content_type).first()
                     if flow_object:
                         flow_object.is_deleted = True
                         flow_object.save()
