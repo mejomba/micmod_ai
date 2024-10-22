@@ -25,7 +25,7 @@ from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract
+    CustomerContract, ChangeCustomerGroup
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -573,7 +573,7 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
 
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
-    model = CustomerDocuments
+    model = ChangeCustomerGroup
     template_name = 'extra_data/customer_change_marketer.html'
     # success_url = reverse_lazy('extra_data:customer.list')
     success_message = '%(customer)s update'
