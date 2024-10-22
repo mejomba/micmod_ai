@@ -272,6 +272,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'bazar_price_code': forms.HiddenInput(),
             'trade_price_code': forms.HiddenInput(),
             'goods_code_fk': forms.HiddenInput(),
+            'index': forms.HiddenInput(),
             'quantity': forms.TextInput(attrs={'class': 'quantity comma-seperator  w-100',
                                                }),
         }
