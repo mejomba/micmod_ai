@@ -681,6 +681,14 @@ CustomerGrade = (
     ("0,B,4", _("B 4 Month")),
 )
 
+CustomerGrade = (
+    ("-3,Special", _("special")),
+    ("-2,A+", _("A+")),
+    ("-1,A", _("A")),
+    ("0,B", _("B")),
+    ("0,C", _("C")),
+)
+
 
 def uploaded_file_path(instance, filename: str):
     """generate file path for file"""

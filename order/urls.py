@@ -9,4 +9,5 @@ urlpatterns = [
     path('list/', views.OrderListView.as_view(), name='order.list'),
     path('list/action/', views.OrderAction.as_view(), name='order.list.action'),
     path('list/datatable/', views.OrderDataTableListView.as_view(), name='order.list.datatable'),
+    path('ajax/order_order/add/', views.ajax_order_order_add, name='order_order.add'),
 ]

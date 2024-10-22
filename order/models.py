@@ -44,9 +44,6 @@ class Order(BaseModeWF):
 
     def __str__(self):
         return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
-
-    def __repr__(self):
-        return f'sss'
     
     @classmethod
     def get_qs_count(cls, user):
@@ -70,6 +67,23 @@ class Order(BaseModeWF):
             "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
             "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
+        wf = WorkFlow.objects.create(**flow_data)
+        flow_data = {
+            "wf_status": 5,
+            "action": 'ایجاد خودکار',
+            "flow_name": 'سفارش',
+            "state": const.WF__ORDER__SECOND_STATE,
+            "wf_description": const.WF__ORDER__SECOND_WF_DESCRIPTION,
+            "belong_to_group": 'order_admin',
+            "object_id": o1.pk,
+            "content_type": ContentType.objects.get_for_model(o1),
+            "creator_user": data_base.get('creator_user'),
+            "editor_user": data_base.get('editor_user'),
+            "from_user": data_base.get('editor_user'),
+            "to_user": get_user_model().objects.filter(groups__name='trade_ceo').first(),
+            "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
+        }
+
         wf = WorkFlow.objects.create(**flow_data)
         o1.last_work_flow = wf
         if o2 is not None:
@@ -107,3 +121,12 @@ class OrderOrder(BaseModel):
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)
+
+
+from django.db.models.signals import m2m_changed
+
+def toppings_changed(sender, **kwargs):
+    # sender.objects.create(order_base=kwargs.get('instance'), order_rel_id=list(kwargs.get('pk_set'))[0], quantity=min(rel.remaining_quantity, div_quantity))
+    pass
+
+m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)

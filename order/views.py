@@ -2,7 +2,8 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView
 
@@ -10,7 +11,7 @@ from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
 # from order.models import OrderItem
 from .forms import OrderForm
-from .models import Order
+from .models import Order, OrderOrder
 
 
 # def factor_order_item(request, sku, quantity):
@@ -58,7 +59,7 @@ class OrderDataTableListView(AjaxDatatableView):
     model = Order
     title = 'order_list'
     initial_order = [["created_date", "des"], ]
-    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[10, 20, 50, -1], [10, 20, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
@@ -68,7 +69,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'status', 'orderable': True, 'visible': True, },
         {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
-        {'name': 'customer', 'orderable': True, 'visible': True, },
+        {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
         {'name': 'transportation_method', 'orderable': True, 'visible': True, },
         {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
         {'name': 'trade_commitment_date', 'orderable': True, 'visible': True, },
@@ -91,6 +92,7 @@ class OrderDataTableListView(AjaxDatatableView):
             reverse('order:order.view', args=(obj.id,)),
             obj.order_title if obj.order_title else 'بدون عنوان'
         )
+        row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
 
 
 class OrderAction(ListView):
@@ -110,3 +112,19 @@ class OrderAction(ListView):
             context['forms'].append(f)
         context['form'] = True
         return context
+
+
+def ajax_order_order_add(request):
+    import json
+    data = json.loads(request.body)
+    data['creator_user'] = request.user
+    data['editor_user'] = request.user
+    quantity = data.get('quantity')
+    obj, created = OrderOrder.objects.get_or_create(defaults=data, order_base_id=data.get('order_base_id'), order_rel_id=data.get('order_rel_id'))
+    if quantity and not created:
+        obj.quantity += quantity
+        obj.save()
+    form = OrderForm(instance=obj.order_base)
+    html = render_to_string('order/partial/order_order_report.html', context={'form': form})
+    return JsonResponse({'res': html})
+

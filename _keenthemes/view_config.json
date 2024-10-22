@@ -185,13 +185,13 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over"],
               "read": []
             },
             "formset_constraint": [
               {
                 "hide": [],
-                "read": ["sales_admin_confirmation"]
+                "read": []
               }
             ]
           },
@@ -212,7 +212,7 @@
           },
           {
             "state": "تایید مهندس",
-            "group": "total_admin",
+            "group": "trade_ceo",
             "deadline": 1,
             "form_constraint": {
               "hide": [],

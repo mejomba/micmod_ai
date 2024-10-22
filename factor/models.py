@@ -179,6 +179,13 @@ class FactorItem(BaseModel):
                 self.qi.is_over = False
                 self.qi.save()
 
+    def total_supply(self):
+        s = sum([x.quantity for x in self.supply_locations.order_base_items.all()])
+        quantity = self.quantity
+        div = quantity - s
+        status = True if s == quantity else False
+        return s, quantity, status, div
+
     class Meta:
         ordering = ['id']
 
