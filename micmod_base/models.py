@@ -571,13 +571,9 @@ class QuotationItem(BaseModel):
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            # x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
-            # x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
-            base_qs = QuotationItem.objects.full_queryset(inquiry_type_filter, quotation__workflows__current_state_name='استعلام قیمت').distinct()
-            y = base_qs.filter(inquiry_state_condition)
-            z = base_qs.filter(assigned_trade)
-            x = y | z
-        return x.order_by('-quotation_id')
+            x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
+        return x
 
     @classmethod
     def get_inquiry_report(cls):

@@ -627,5 +627,6 @@
     "item": "کالا",
     "trade_commitment_date": "تاریخ تعهد بازرگانی",
     "commitment_date_to_customer": "تاریخ تعهد به مشتری",
-    "description_sale": "توضیحات فروش"
+    "description_sale": "توضیحات فروش",
+    "revival_date": "زمان احیا"
 }

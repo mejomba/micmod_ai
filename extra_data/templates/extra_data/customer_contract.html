@@ -5,10 +5,10 @@
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 
     <!-- Include Jalali Datepicker CSS and JS -->
-    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
-    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
-    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc.js' %}"></script>
-    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc-fa.js' %}"></script>
+{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
+{#    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>#}
+{#    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc.js' %}"></script>#}
+{#    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc-fa.js' %}"></script>#}
 
 <form action="{% if form.instance.pk %}{% url 'extra_data:customer_contract.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_contract.create' %}{% endif %}" method="POST" id="customer-contract-form">
     {% csrf_token %}
@@ -42,18 +42,20 @@
 </script>
 <script>
         function initializeDatepickers() {
-            debugger
-            console.log('initial datepicker....')
-            $('#id_contract_date').datepicker({
-                dateFormat: 'yy-mm-dd',
-                changeMonth: true,
-                changeYear: true,
-            });
-            $('#id_contract_due_date').datepicker({
-                dateFormat: 'yy-mm-dd',
-                changeMonth: true,
-                changeYear: true,
-            });
+            if (!$('#id_contract_date').data("datepicker")){
+                $('#id_contract_date').datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    changeMonth: true,
+                    changeYear: true,
+                });
+            }
+            if (!$('#id_contract_due_date').data("datepicker")){
+                $('#id_contract_due_date').datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    changeMonth: true,
+                    changeYear: true,
+                });
+            }
         }
 
 
