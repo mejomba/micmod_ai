@@ -192,6 +192,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black'
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
+        self.make_required(['quantity'])
         user_groups = request.user.groups.values_list('name', flat=True) if request else None
         if request and not request.user.is_superuser:
             if 'trade_user' not in user_groups:

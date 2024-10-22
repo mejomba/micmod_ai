@@ -223,11 +223,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
                 # self.object.save()
                 if api_res[0] >= 400:
+                    from django.contrib import messages
+
+                    messages.add_message(self.request, messages.ERROR, api_res[1].get('Message'))
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
                                                               app_label=self.object._meta.app_label).first()
                     flow_object = self.flow_model.objects.filter(object_id=self.object.id,
-                                                                 content_type=content_type).last()
+                                                                 content_type=content_type).first()
                     if flow_object:
                         flow_object.is_deleted = True
                         flow_object.save()
@@ -738,24 +741,24 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     except Exception as e:
                         pass
                 obj.item_editor_user = self.request.user
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
-                obj.foreign_price_inquiry_done = False
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
+                # obj.foreign_price_inquiry_done = False
+                # obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
-                obj.local_price_inquiry_done = False
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
+                # obj.local_price_inquiry_done = False
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.user.base_group == 'trade':
                 data = {
@@ -768,14 +771,16 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 }
                 obj_for_update = obj_qs.first()
                 if obj_for_update:
-                    obj_for_update.lead_time = data['lead_time']
-                    obj_for_update.goods_code = data['goods_code']
-                    obj_for_update.goods_name = data['goods_name']
-                    obj_for_update.has_delay = data['has_delay']
-                    obj_for_update.delay_reason = data['delay_reason']
-                    obj_for_update.delay_time = data['delay_time']
-                    obj_for_update.extra_data.request = self.request
-                    obj_for_update.save()
+                    obj.lead_time = data['lead_time']
+                    obj.goods_code = data['goods_code']
+                    obj.goods_name = data['goods_name']
+                    obj.has_delay = data['has_delay']
+                    obj.delay_reason = data['delay_reason']
+                    obj.delay_time = data['delay_time']
+                    # obj_for_update.extra_data.request = self.request
+                    # obj_for_update.save()
+            obj.extra_data.request = self.request
+            obj.save()
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
@@ -1106,10 +1111,10 @@ def duplicate_quotation(request, quotation_id):
                 # goods_code_alt, goods_name_alt, goods_last_sale, goods_last_price, goods_total_sales, goods_q_last_sale,
                 # goods_q_last_price, goods_q_total_sales, , , , ,
                 # quotation_id, is_deleted, , itemid, , ,
-                # , description, bazar_price_code_id, trade_price_code_id, lead_time, assigned_trade_user_id,
+                # , description, , , , ,
                 # , , , , , ,
                 # , , , , , , ,
-                # item_in_china, price_target, goods_code_fk_id, final_price_sh, discount_per_item, , is_over
+                # , price_target, goods_code_fk_id, final_price_sh, discount_per_item, , 
                 item.need_foreign_price_inquiry = False
                 item.need_local_price_inquiry = False
                 item.foreign_price_inquiry_done = False
@@ -1131,8 +1136,13 @@ def duplicate_quotation(request, quotation_id):
                 item.selected_price_code_id = None
                 item.creator_user = None
                 item.editor_user = None
-                item.price_method = 'last_sale'
-                item.final_price = None
+                item.bazar_price_code = None
+                item.trade_price_code = None
+                item.lead_time = None
+                item.item_in_china = False
+                item.is_over = False
+                #item.price_method = 'last_sale'
+                #item.final_price = None
 
                 item.pk = None  # Create a new record
                 item.quotation = quotation  # Assign the new quotation
