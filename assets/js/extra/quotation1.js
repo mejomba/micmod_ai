@@ -671,6 +671,12 @@ function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
     for (let i = 0; i < items.length; i++) {
+        debugger
+        if (i === items.length - 1){
+            release_main_container()
+        } else if (i === 0){
+            block_main_container()
+        }
         setTimeout(function (){
             const code = items[i].querySelector('[id*="-goods_code"]').value
             const data = get_price_data(code, party_id, items[i])

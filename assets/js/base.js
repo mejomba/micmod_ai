@@ -153,6 +153,7 @@ const main_container = new KTBlockUI(document.querySelector('#main-content'), {
 });
 
 function get_main_container() {
+    debugger
     let block_container = document.querySelector('#block_container')
     if (!block_container) {
         block_container = document.querySelector('#main-content')
@@ -214,7 +215,11 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
         success: function (data) {
             if(element) {
                 html = data['res'];
-                element.html(html);
+                try {
+                    element.html(html);
+                } catch (e) {
+                    element.innerHTML = html
+                }
                 run_scripts(html);
             }
             if(reload_page){
@@ -522,4 +527,21 @@ function defaultFormatRepoDL(repo) {
 
 function defaultFormatRepoSelection(repo) {
     return repo.id || repo.text
+}
+
+function generate_drag_drop(container_id='sortable-container', draggable_items_selector='#sortable-container .sortable-item', index_field_id_selector='-index'){
+        var sortable = new Sortable(document.getElementById(container_id), {
+        animation: 400,
+        handle: '.handel-drop',
+        ghostClass: 'drag-drop',
+        onEnd: function (evt) {
+            var items = document.querySelectorAll(draggable_items_selector);
+            items.forEach(function(item, index) {
+                item.querySelector(`[id*=${index_field_id_selector}]`).value = index
+            });
+        },
+        onUpdate: function (evt) {
+            evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
+        }
+    });
 }
