@@ -23,6 +23,8 @@ from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
+from micmod_base.models import Quotation
+from order.models import Order
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import map_model_to_python_type, show_error, diff_time
 from workflow.forms import WorkFlowModelForm
@@ -521,8 +523,10 @@ class BaseView(UserPassesTestMixin,
                 self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
             if getattr(old_obj, 'cancel', None):
-                if old_obj.cancel:
+                if old_obj.cancel and isinstance(old_obj, Quotation):
                     return HttpResponseRedirect(reverse_lazy('micmod_base:quotations.view', kwargs={'pk': old_obj.pk}))
+                if old_obj.cancel and isinstance(old_obj, Order):
+                    pass
             if old_obj:
                 old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
