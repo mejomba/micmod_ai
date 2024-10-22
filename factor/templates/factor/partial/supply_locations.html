@@ -1,9 +1,30 @@
 <select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-100">
 {% for location in locations %}
-    <option value="{{ location.0 }}" class="font-size-12">{{ location.1 }}</option>
+    <option value="{{ location.0 }}" class="font-size-10">{{ location.1 }}</option>
+    {% if forloop.counter == 1 %}
+    {% with factor_item.supply_locations as selected_location %}
+    <option value="{{ factor_item.supply_locations.pk }}" class="font-size-10" selected="selected">
+        <span>سفارش</span>
+        <span>{{ selected_location.get_status_display }}</span>
+        <span class="me-1">{{ selected_location.pk }}</span>
+        <span class="">({{ selected_location.remaining_quantity|floatformat:"-2g" }}</span>
+        <span>از</span>
+        <span class="">{{ selected_location.quantity|floatformat:"-2g" }})</span>
+    </option>
+    {% endwith %}
+    {% endif %}
 {% endfor %}
 </select>
-<div class="font-size-11 position-absolute submit-new-order d-flex flex-row-reverse gap-3" style="left: 3%; transform: translate(0, 30%)">
-{#    <a href="" target="_blank" class="hover-link">ثبت سفارش</a>#}
-    <a href="" target="_blank" class="hover-link">123456</a>
+
+<div class="font-size-11 text-start d-flex flex-column mt-1">
+    {% if factor_item.supply_locations.cancel %}
+        {% for o in factor_item.supply_locations.order_base_items.all %}
+            <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
+                <span>از سفارش</span>
+                <span class="me-1">{{ o.order_rel.pk }}</span>
+                <span class="bg-light-info px-1 rounded">{{ o.quantity|floatformat:"-2g" }}</span>
+                <span>عدد</span>
+            </a>
+        {% endfor %}
+    {% endif %}
 </div>

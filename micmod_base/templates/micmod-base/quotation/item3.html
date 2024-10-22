@@ -5,7 +5,7 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-<div class="card item p-0 my-2" dir="rtl">
+<div class="card item p-0 my-2 {% if not forloop.last %} sortable-item bg-danger {% endif %}" dir="rtl">
 {% if form_s.errors %}
 <div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
 {% endif %}
@@ -390,4 +390,10 @@
 </div>
         </div>
     </div>
+{% if not forloop.last %}
+<i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x position-absolute text-info hover-drop-down-icon" style="top: 0; left: 0; height: 30px">
+     <span class="path1"></span>
+     <span class="path2"></span>
+    </i>
+{% endif %}
 </div>

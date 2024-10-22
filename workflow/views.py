@@ -39,7 +39,14 @@ class FlowBaseView(SingleObjectMixin):
 
     def get_flow_user(self, group: str):
         user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
-
+        try:
+            last_wf = self.form.instance.last_work_flow
+            if last_wf.current_state_name == 'استعلام قیمت':
+                for u in user_list:
+                    if last_wf.to_user in u.team.all():
+                        return u
+        except Exception as e:
+            pass
         """if only one user exist"""
         if len(user_list) == 1:
             return user_list.first()
