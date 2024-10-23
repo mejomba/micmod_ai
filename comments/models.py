@@ -28,6 +28,8 @@ class Comments(BaseContentType):
     )
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))
     comment_content = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('comment_content'))
+    for_customer = models.BooleanField(default=False, verbose_name=_('for_customer'))
+    for_sku = models.BooleanField(default=False, verbose_name=_('for_sku'))
 
 
 class CommentSeen(AbsBaseModel):
