@@ -1,4 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
+from django.utils import timezone
 from num2fawords import words
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
@@ -13,6 +15,8 @@ from payment.forms import PaymentOrderModelForm, PaymentDocumentsForm
 from payment.models import PaymentOrder, PaymentDocument
 from tools.utils import to_jalali_date
 from translator import get_text as _
+from workflow.models import WorkFlow
+from datetime import datetime
 
 
 class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
@@ -58,11 +62,22 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         return f'تغییرات دخیره شد'
 
     def form_valid(self, form):
+        if self.state_index == 2 and 'next' in self.request.POST and not form.cleaned_data.get('manager_confirmation') and form.cleaned_data.get('is_paid'):
+            form.errors.update({'manager_confirmation': 'بدون تایید امکان ارسال به مرحله نهایی وجود ندارد'})
+            return super().form_invalid(form)
         if self.state_index == 3 and 'next' in self.request.POST and not form.cleaned_data.get('manager_confirmation'):
             form.errors.update({'manager_confirmation': 'بدون تایید امکان ارسال به مرحله نهایی وجود ندارد'})
             return super().form_invalid(form)
         
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        if self.state_index == 2 and 'next' in self.request.POST and form.cleaned_data.get(
+                'manager_confirmation') and form.cleaned_data.get('is_paid'):
+            WorkFlow.objects.create(created_date=timezone.now(), last_update_date=timezone.now(), wf_status=3,
+                                    action='ایجاد', state='پرداخت', belong_to_group='accounting_user',
+                                    object_id=self.object.pk, content_type=ContentType.objects.get_for_model(PaymentOrder),
+                                    creator_user=self.request.user, editor_user=self.request.user, from_user=self.object.last_work_flow.to_user,
+                                    to_user=self.object.last_work_flow.to_user, current_state_name='مرحله نهایی')
+        return res
 
 
 class PaymentOrderListView(ListView):
@@ -88,7 +103,7 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'behalf', 'visible': True, 'orderable': True},
         {'name': 'pay_to', 'visible': True, 'orderable': True},
         {'name': 'from_source', 'visible': True, 'orderable': True,  'lookup_field': '__title__icontains'},
-        {'name': 'to_account', 'visible': True, 'orderable': True},
+        {'name': 'to_account', 'visible': True, 'orderable': True, 'title': '<div class="px-20">به حساب یا کارت</div>'},
         {'name': 'applicant', 'visible': True, 'orderable': True},
 
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},

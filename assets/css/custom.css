@@ -14,7 +14,15 @@ html body {
     font-family: Sahel;
     overflow-x: hidden;
 }
-
+.drag-drop{
+    background-color: #bfa7ff !important;
+    color: #6a1fff !important;
+    font-weight: bold;
+}
+.hover-drop-down-icon:hover{
+    background-color: #dcceff !important;
+    color: #6a1fff !important;
+}
 .bigdrop {
     width: 500px !important;
 }
