@@ -227,7 +227,7 @@
           },
           {
             "state": "ارسال به تامین کننده",
-            "group": "total_admin",
+            "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
