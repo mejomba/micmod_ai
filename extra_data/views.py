@@ -593,7 +593,10 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        next_step_from_marketer = customer.change_marketer_rel.all().order_by('id').last().to_marketer if customer else None
+        try:
+            next_step_from_marketer = customer.change_marketer_rel.all().order_by('id').last().to_marketer if customer else None
+        except Exception as e:
+            next_step_from_marketer = None
         if next_step_from_marketer:
             context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer, 'from_marketer': next_step_from_marketer}, instance=self.object)
         else:
