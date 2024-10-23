@@ -330,7 +330,7 @@
 
     <div class="bg-white row rounded border my-10 pt-10 position-relative shadow mb-20">
         <h4 class="position-absolute" style="top: -10px">تغییر کارشناس</h4>
-        <div class="row row-cols-1">
+        <div class="row row-cols-2">
         {% if form.instance.pk %}
             {% for change_customer in form.instance.change_marketer_rel.all %}
                 <div class="col d-flex my-3 gap-5">
@@ -352,6 +352,47 @@
                         <span>{{ change_customer.created_date|to_jalali:'%Y/%m/%d' }}</span>
                     </span>
                 </div>
+{#                <div class="col"></div>#}
+                <div class="col">
+                        <span>
+                        {% if request.user|has_group:"sales_admin" %}
+                        <a href="#" target="_blank" id="" class="me-3 edit-customer-expert tooltip_" data-url="{% url 'extra_data:customer_change_marketer.update' change_customer.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                            <span class="tooltiptext">ویرایش</span>
+                            <i class="ki-duotone ki-pencil fs-2 text-info">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                        </i>
+                        </a>
+                        {% endif %}
+                        {% if request.user.is_superuser %}
+                        <a href="#" target="_blank" class="me-2 delete-customer-expert text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ change_customer|model_name }}&object_id={{ change_customer.pk }}&app_label={{ change_customer|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                             <span class="path5"></span>
+                        </i>
+                        </a>
+                        {% endif %}
+                        <a class="mx-3 p-1 cursor-pointer tooltip_"
+                            data-bs-toggle="modal"
+                            data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ change_customer|model_name }}"
+                            data-object_id="{{ change_customer.pk }}"
+                            data-app_name="{{ change_customer|app_label }}"
+                            name="name_change_log">
+                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                            </i>
+                        </a>
+                    </span>
+                    </div>
             {% endfor %}
 
             <div class="d-flex">

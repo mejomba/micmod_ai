@@ -25,7 +25,7 @@ from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract
+    CustomerContract, ChangeCustomerGroup
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -573,7 +573,7 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
 
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
-    model = CustomerDocuments
+    model = ChangeCustomerGroup
     template_name = 'extra_data/customer_change_marketer.html'
     # success_url = reverse_lazy('extra_data:customer.list')
     success_message = '%(customer)s update'
@@ -593,7 +593,14 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
+        try:
+            next_step_from_marketer = customer.change_marketer_rel.all().order_by('id').last().to_marketer if customer else None
+        except Exception as e:
+            next_step_from_marketer = None
+        if next_step_from_marketer:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer, 'from_marketer': next_step_from_marketer}, instance=self.object)
+        else:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -606,6 +613,10 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
         # x = [requests.get('http://' + self.request.META.get('HTTP_HOST') + static(js)).text for js in jss]
 
         return JsonResponse({'res': res})
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
