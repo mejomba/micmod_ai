@@ -593,7 +593,11 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
+        next_step_from_marketer = customer.change_marketer_rel.all().order_by('id').last().to_marketer if customer else None
+        if next_step_from_marketer:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer, 'from_marketer': next_step_from_marketer}, instance=self.object)
+        else:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -606,6 +610,10 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
         # x = [requests.get('http://' + self.request.META.get('HTTP_HOST') + static(js)).text for js in jss]
 
         return JsonResponse({'res': res})
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
