@@ -63,25 +63,25 @@ class Order(BaseModeWF):
             "content_type": ContentType.objects.get_for_model(o1),
             "creator_user": data_base.get('creator_user'),
             "editor_user": data_base.get('editor_user'),
-            "from_user": None,
-            "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
+            "from_user": data_base.get('creator_user'),
+            "to_user": data_base.get('creator_user'), # get_user_model().objects.filter(groups__name='order_admin').first(),
             "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
         wf = WorkFlow.objects.create(**flow_data)
         flow_data = {
-            "wf_status": 5,
+            "wf_status": 3,
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
-            "state": const.WF__ORDER__SECOND_STATE,
-            "wf_description": const.WF__ORDER__SECOND_WF_DESCRIPTION,
+            "state": const.WF__ORDER__FIRST_STATE,
+            "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
             "belong_to_group": 'order_admin',
             "object_id": o1.pk,
             "content_type": ContentType.objects.get_for_model(o1),
             "creator_user": data_base.get('creator_user'),
             "editor_user": data_base.get('editor_user'),
             "from_user": data_base.get('editor_user'),
-            "to_user": get_user_model().objects.filter(groups__name='trade_ceo').first(),
-            "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
+            "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
+            "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
 
         wf = WorkFlow.objects.create(**flow_data)

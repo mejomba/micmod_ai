@@ -197,7 +197,7 @@
           },
           {
             "state": "تایید مدیر فروش",
-            "group": "sales_admin",
+            "group": "order_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -212,7 +212,7 @@
           },
           {
             "state": "تایید مهندس",
-            "group": "trade_ceo",
+            "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -231,7 +231,7 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["quantity"]
             },
             "formset_constraint": [
               {
@@ -246,7 +246,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["quantity"]
             },
             "formset_constraint": [
               {
@@ -261,7 +261,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["quantity"]
             },
             "formset_constraint": [
               {
@@ -271,42 +271,12 @@
             ]
           },
           {
-            "state": "تایید پرداخت",
-            "group": "accounting_admin",
+            "state": "پرداخت / PACKING / GIO",
+            "group": "order_confirm",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
-            "state": "تحویل در دفتر",
-            "group": "trade_user",
-            "deadline": 3,
-            "form_constraint": {
-              "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
-            "state": "بسته بندی",
-            "group": "trade_user",
-            "deadline": 3,
-            "form_constraint": {
-              "hide": [],
-              "read": []
+              "read": ["quantity"]
             },
             "formset_constraint": [
               {

@@ -385,9 +385,10 @@ class Item(BaseModel):
 
 
         # for o in self.orderitem_set.all():
-        for o in self.order_set.all().order_by('-quantity'):
-            if r := o.remaining_quantity:
-                res.append((o.pk, f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {r:0.20g})"))
+        for o in self.order_set.filter(cancel=False).order_by('-quantity'):
+            remaining_quantity = o.remaining_quantity
+            if remaining_quantity > 0:
+                res.append((o.pk, f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 

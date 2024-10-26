@@ -113,7 +113,7 @@
         {% endfor %}
         </div>
         {% endif %}
-
+    {% if not form.instance.cancel %}
     <div class="border rounded p-2 d-flex align-items-center gap-2 ribbon ribbon-top mt-5">
         <div class="ribbon-label bg-success">سفارش های تامین شده</div>
         <div class="mt-10">
@@ -134,16 +134,18 @@
             </span>
         </div>
     </div>
-
+    {% endif %}
     <div class="border rounded p-2 d-flex align-items-center gap-2 ribbon ribbon-top mt-5">
-        <div class="ribbon-label bg-success">فاکتورهایی که تامین میکند</div>
+        <div class="ribbon-label bg-success">فاکتورهای متصل</div>
         <div class="mt-10">
         {% for fi in form.instance.factor_items.all %}
             <a target="_blank" href="{% url 'factor:factor.view' fi.factor.pk %}" class="bg-light-info px-2 py-1 rounded me-2">
                 <span>فاکتور</span>
                 <span>{{ fi.factor.pk }}</span>
+                <span>ردیف</span>
+                <span>{{ fi.factor.index }}</span>
                 <span>به تعداد</span>
-                <span>{{ fi.quantity }}</span>
+                <span class="bold">{{ fi.quantity }}</span>
 {#                <i class="ki-duotone ki-black-left fs-1x mx-3"></i>#}
 {#                <span>ردیف</span>#}
 {#                <span>{{ fi.pk }} {{ fi.index }}</span>#}

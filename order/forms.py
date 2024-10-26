@@ -48,6 +48,9 @@ class OrderForm(CustomBaseModelForm):
         self.make_hidden(['item', 'qi'])
         self.fields['description_sale'].widget.attrs['rows'] = 10
 
+        if self.instance.cancel:
+            self.make_disable(['quantity'])
+
         # ~Q(id=self.instance.pk), item = self.instance.item, cancel = False
 
         # self.instance.order_base_items.all().values_list('order_rel', flat=True)

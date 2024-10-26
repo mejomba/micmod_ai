@@ -47,6 +47,7 @@ class OrderView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
         return context
 
 
