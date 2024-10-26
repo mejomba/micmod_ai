@@ -39,7 +39,7 @@ class QuotationManager(models.Manager):
 class QuotationItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.order_by('id')
+        return qs.order_by('index', 'id')
 
     def all_quotations_for_factor(self):
         return self.get_queryset().order_by('is_over', 'id')
