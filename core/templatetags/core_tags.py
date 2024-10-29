@@ -244,3 +244,13 @@ def filter_queryset(queryset, filter_str):
         return x
     except Exception as e:
         show_error(e, __file__)
+
+
+@register.filter
+def max_(a, b):
+    return max([a, int(b)])
+
+
+@register.filter
+def abs_(a):
+    return abs(a)

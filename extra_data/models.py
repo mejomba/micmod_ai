@@ -371,7 +371,8 @@ class Item(BaseModel):
 
     @property
     def supply_locations_(self):
-        res = [('', '-----------')]
+        # res = [('', '-----------')]
+        res = []
         stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
         for stock_qty in stock_qty_qry:
             if stock_qty.quantity:
@@ -388,7 +389,7 @@ class Item(BaseModel):
         for o in self.order_set.filter(cancel=False).order_by('-quantity'):
             remaining_quantity = o.remaining_quantity
             if remaining_quantity > 0:
-                res.append((o.pk, f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+                res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 

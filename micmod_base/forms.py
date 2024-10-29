@@ -220,6 +220,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         except Exception as e:
             pass
 
+
+
     class Meta:
         model = QuotationItem
         localized_fields = '__all__'

@@ -81,7 +81,7 @@ class FactorItemModelForm(CustomBaseModelForm):
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
-                      'part_number_show', 'price', 'supply_location',
+                      'part_number_show', 'price', 'supply_location', 'supply_locations'
                       ]
 
 FactorItemFormset = inlineformset_factory(

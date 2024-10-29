@@ -44,6 +44,23 @@ class Order(BaseModeWF):
 
     def __str__(self):
         return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
+
+    def description(self):
+        if self.cancel:
+            s = 0
+            for oo in self.order_base_items.all():
+                s += oo.quantity
+            x = s - self.quantity
+            if x < 0:
+                return f'نیاز به {abs(x)} عدد  برای تامین کامل'
+        return ''
+        return 'تامین کامل'
+
+        # remaining_quantity = self.remaining_quantity
+        # if remaining_quantity < 0:
+        #     return f'نیاز به {abs(remaining_quantity)} عدد برای تامین کامل'
+        # f'ظرفیت سفارش {self.quantity}'
+        # return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
     
     @classmethod
     def get_qs_count(cls, user):
