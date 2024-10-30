@@ -172,6 +172,7 @@ function release_main_container() {
 }
 
 function custom_ajax_post(form, url, element) {
+    debugger
     let formData = new FormData(form);
     $.ajax({
         type: 'POST',
@@ -465,4 +466,74 @@ function ajax_delete(elms) {
             })
         })
     }
+}
+
+
+function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
+                          formatRepoDL=null, formatRepoSelection=null){
+        debugger
+    // target_element => '#target_element'
+    $(select2_element).select2({
+        ajax: {
+            url: url,
+            dataType: "json",
+            type: "GET",
+            data: function (data) {
+                return {q: data.term, page: data.page}
+            },
+            processResults: function (data, params) {
+                params.page = params.page || 1;
+                return {
+                    results: data.items,
+                    pagination: {
+                        more: (params.page * 30) < data.total_count
+                    }
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: minimumInputLength || 1,
+        placeholder: {
+            text: '' || placeholder
+        },
+        allowClear: false,
+        templateResult: formatRepoDL || defaultFormatRepoDL,
+        templateSelection: formatRepoSelection || defaultFormatRepoSelection
+    });
+
+    $(select2_element).on("select2:select", function (e) {
+        debugger
+        const data = e.params.data;
+        const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
+        $(document).find(target_element).val(data[id_field])
+        document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+    })
+
+
+    $(select2_element).on("select2:open", function (e){
+        setTimeout(function(){
+            console.log(document.querySelector(".select2-search__field"))
+            document.querySelector("input.select2-search__field").style.display = "block";
+            document.querySelector("input.select2-search__field").disabled = false;
+            document.querySelector("input.select2-search__field").focus();
+            // document.querySelector("input.select2-search__field").value = '1122'
+        }, 2000)
+    })
+}
+
+function defaultFormatRepoDL(repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+    var $container = $(`
+        <div class='d-flex'>
+        <span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
+        <span>${repo.text}</span>
+        </div>
+    `);
+    return ($container)
+}
+
+function defaultFormatRepoSelection(repo) {
+    return repo.id || repo.text
 }
