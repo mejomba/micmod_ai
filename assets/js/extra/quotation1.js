@@ -1067,6 +1067,10 @@ function newFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
     }
+    debugger
+    if (repo.goods_price_market==4494){
+        debugger
+    }
 
     let repo_express;
     let repo_air;

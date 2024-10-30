@@ -504,7 +504,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting", "from_source", "is_formal", "is_paid"]
+              "read": ["manager_confirmation", "accounting", "from_source", "is_paid"]
             },
             "formset_constraint": [
               {
@@ -520,7 +520,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc", "is_formal2", "force"]
             },
             "formset_constraint": [
               {
@@ -536,7 +536,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc", "is_formal2", "force"]
             },
             "formset_constraint": [
               {
@@ -552,7 +552,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc", "is_formal2", "force"]
             },
             "formset_constraint": [
               {

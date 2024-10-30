@@ -52,6 +52,7 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         context['add_pay_accounting_doc'] = True if self.state_index >= 1 and self.request.user.base_group == 'accounting' else False
         context['show_pay_doc'] = True if self.state_index >= 1 else False
         context['show_pay_accounting_doc'] = True if self.state_index >= 1 else False
+        context['wf_access'] = self.wf_access
 
         return context
 
@@ -112,12 +113,15 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'last_work_flow', 'title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True,
          'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'is_paid', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
         q = request.POST.get('q')
         qs = self.model.objects.get_access_object(request.user, q=q)
         qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
+        if q == 'pay':
+            qs = qs.filter(is_paid=True)
         return qs
 
     def customize_row(self, row, obj):

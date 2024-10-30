@@ -13,6 +13,7 @@ def uploaded_file_path(instance, filename: str):
 
 class PaymentOrder(BaseModeWF):
     SOURCE_CHOICES = (('1','تنخواه مالی'), ('2', 'پرداخت مستقیم'))
+    FORMAL_CHOICE = (('1', 'غیر رسمی'), ('2', 'رسمی رسول رفیع'), ('3', 'رسمی رهاورد'))
     request_date = models.DateField(verbose_name=_('request_date'))
     payment_date = models.DateField(verbose_name=_('payment_date'), null=True, blank=True)
     # amount = models.PositiveBigIntegerField(verbose_name=_('amount'), default=1)
@@ -26,9 +27,12 @@ class PaymentOrder(BaseModeWF):
     manager_confirmation = models.BooleanField(verbose_name=_('manager_confirm'), default=False)
     group = models.IntegerField(null=True, blank=True)
     is_formal = models.BooleanField(verbose_name=_('is_formal'), default=False)
+    is_formal2 = models.CharField(verbose_name=_('payment_type'), choices=FORMAL_CHOICE, default='1')
     pay_doc = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     need_pay_doc = models.BooleanField(verbose_name=_('need_pay_doc'), default=False)
     is_paid = models.BooleanField(verbose_name=_('is_paid'), default=False)
+    force = models.BooleanField(_('force'), default=False)
+    description = models.TextField(_('description'), null=True, blank=True)
 
     def __str__(self):
         return f'دستور پرداخت ({self.id})'
