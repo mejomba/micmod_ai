@@ -262,6 +262,45 @@
       ]
     },
     {
+      "title": "t-pcba",
+      "icon": "discount",
+      "path_key": "pcba",
+      "section": "False",
+      "menus": [
+        {
+          "title": "contract",
+          "icon": "search-list",
+          "path_key": "",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "burger-menu",
+              "path_key": "contracts/",
+              "link": "pcba:contracts.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "contracts/list/",
+              "link": "pcba:contracts.list"
+            }
+          ]
+        },
+        {
+        "title": "customer item receipt",
+        "icon": "burger-menu",
+        "menus": [
+            {
+              "title": "create",
+              "icon": "burger-menu",
+              "path_key": "customer/item/receipt/",
+              "link": "pcba:customer.item.receipt.view"
+            }
+          ]
+          }
+      ]
+    },
+    {
       "title": "items",
       "icon": "barcode",
       "path_key": "sku",
