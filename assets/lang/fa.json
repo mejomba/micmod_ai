@@ -629,7 +629,7 @@
     "commitment_date_to_customer": "تاریخ تعهد به مشتری",
     "description_sale": "توضیحات فروش",
     "revival_date": "زمان احیا",
-    "revival_date": "زمان احیا",
     "for_customer": "همیشه برای این مشتری نمایش بده",
-    "for_sku": "همیشه برای این کالا نمایش بده"
+    "for_sku": "همیشه برای این کالا نمایش بده",
+    "payment_type": "نوع پرداخت"
 }

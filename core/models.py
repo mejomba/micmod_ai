@@ -76,9 +76,11 @@ class BaseManager(models.Manager):
         # direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
         direct_access = f'quotation_direct_access'
         user_groups_list = list(user.groups.values_list('name', flat=True))
-
+        model_name = self.model.__name__
         if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
+        # if model_name == 'PaymentOrder':
+        #     return self.model.objects.filter(creator_user__groups__name__icontains=user.base_group).distinct()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()
 
