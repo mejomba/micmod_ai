@@ -503,6 +503,11 @@
           "icon": "burger-menu",
           "title": "credit-card",
           "path_key": "local/credit_card",
+          "permission": {
+            "groups": [
+              "trade_user", "accounting_user"
+            ]
+          },
           "link": "payment:credit_card"
         }
       ]
