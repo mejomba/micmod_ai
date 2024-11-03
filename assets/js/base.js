@@ -99,22 +99,22 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator(on_load=null) {
+function addCommaSeperator(on_load=null, step=null, sep=',') {
     let inputNumberValue;
     let numberWithComma;
 
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.addEventListener('keyup', function (e) {
-            inputNumberValue = e.currentTarget.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = e.currentTarget.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             e.currentTarget.value = numberWithComma.reverse_string()
         })
         if (on_load){
-            inputNumberValue = item.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = item.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             item.value = numberWithComma.reverse_string()
         }
     })

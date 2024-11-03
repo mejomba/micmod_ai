@@ -4,7 +4,7 @@ from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
-from payment.models import PaymentOrder, PaymentDocument
+from payment.models import PaymentOrder, PaymentDocument, CreditCard
 
 from translator import get_text as _
 from django_select2 import forms as s2forms
@@ -99,4 +99,14 @@ class PaymentDocumentsForm(CustomBaseModelForm):
             widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['to_date'] = JalaliDateField(
             widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        # self.fields['file_1'].widget.attrs['required'] = True
+
+
+class CreditCardForm(CustomBaseModelForm):
+
+    class Meta:
+        model = CreditCard
+        exclude = ['group']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['credit_card_number'].widget.attrs['class'] = 'form-control comma-seperator ll'

@@ -516,11 +516,11 @@
           },
           {
             "state": "کنترل حسابداری",
-            "group": "accounting_user",
+            "group": "accounting_all_user",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc", "is_formal2", "force"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {
@@ -536,7 +536,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc", "is_formal2", "force"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {
@@ -552,7 +552,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc", "is_formal2", "force"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {

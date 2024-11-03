@@ -70,25 +70,21 @@ class BaseManager(models.Manager):
 
 
     def get_access_object(self, user, q="all", *args, **kwargs):
-        import time
         from workflow.models import WorkFlow
 
-        # direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
-        direct_access = f'quotation_direct_access'
+        direct_access = ''
         user_groups_list = list(user.groups.values_list('name', flat=True))
         model_name = self.model.__name__
+        if q == 'all' or q == 'pay':
+            direct_access = f'{model_name.lower()}_direct_access'
         if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
-        # if model_name == 'PaymentOrder':
-        #     return self.model.objects.filter(creator_user__groups__name__icontains=user.base_group).distinct()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()
 
-        # wfs = BaseManager.get_target_wf(user)
         wfs = user.get_target_wf()
         object_id_from_flow = wfs.filter(content_type=content_type).values_list('object_id', flat=True)
 
-        # user_list = user.get_target_users(user)
         user_list = user.get_target_users()
         objects_from_user = self.model.objects.filter(
             Q(creator_user__in=user_list) |
@@ -97,23 +93,13 @@ class BaseManager(models.Manager):
         objects_from_flow = self.model.objects.filter(pk__in=object_id_from_flow)
 
         qry = objects_from_user | objects_from_flow
-        quotations_record_lst = []
-        # obj = qry.first()
-        # user_team = user.team.all()
-        # if obj and q == 'active':
         if q == 'active':
-            # content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
             quotations_record_lst = qry.filter(last_work_flow__to_user=user) #filter(lambda x: x.last_work_flow.to_user == user, qry)
-            # for item in qry:
-            #     wf = item.last_work_flow #WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
-            #     if wf and (wf.to_user == user):
-            #         quotations_record_lst.append(item)
         else:
             quotations_record_lst = qry
 
         if kwargs.get('quotation') and q == 'active':
             return quotations_record_lst.filter(sepidar_number__isnull=True, cancel=False)
-            # return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
         else:
             return [x for x in quotations_record_lst if x]
 

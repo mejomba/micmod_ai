@@ -631,5 +631,9 @@
     "revival_date": "زمان احیا",
     "for_customer": "همیشه برای این مشتری نمایش بده",
     "for_sku": "همیشه برای این کالا نمایش بده",
-    "payment_type": "نوع پرداخت"
+    "payment_type": "نوع پرداخت",
+    "credit-card-number": "شماره کارت / حساب / شبا (بدون اسپیس، بدون خط فاصله)",
+    "value": "مقدار",
+    "jalali-jast-update-date": "آخرین زمان تغییر",
+    "credit-card": "کارت / حساب / شبا"
 }

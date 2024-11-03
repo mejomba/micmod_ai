@@ -498,6 +498,12 @@
           "title": "list",
           "path_key": "local/payment/list",
           "link": "payment:local.payment.list"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "credit-card",
+          "path_key": "local/credit_card",
+          "link": "payment:credit_card"
         }
       ]
     }

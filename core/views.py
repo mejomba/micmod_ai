@@ -166,6 +166,7 @@ class BaseView(UserPassesTestMixin,
                     if not obj and model.insert_new:
                         obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user, 'editor_user': self.request.user})
                         obj.extra_data.request = self.request
+                        obj.save()
                         obj.auto_complete_func()
 
                     value = getattr(obj, 'pk', -1)
@@ -1190,3 +1191,8 @@ def delete_ajax(request, *args, **kwargs):
         obj.save()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+class ImportCustomerFromSepidar(View):
+    def get(self, request, *args, **kwargs):
+        import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
