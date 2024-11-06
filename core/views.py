@@ -1201,6 +1201,8 @@ def delete_ajax(request, *args, **kwargs):
 class ImportCustomerFromSepidar(View):
     def get(self, request, *args, **kwargs):
         import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        res = import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        return JsonResponse(res or "مشتری جدیدی یافت نشد", safe=False)
 
 
 class CustomAjaxDataTable(AjaxDatatableView):

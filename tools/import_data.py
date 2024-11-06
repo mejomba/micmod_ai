@@ -165,6 +165,9 @@ def import_customers_from_sepidar(extra_data):
             # Customer.objects.create(**data)
         except Exception as e:
             print(str(e))
+            return str(e)
+        else:
+            return 'success'
 
 
 
