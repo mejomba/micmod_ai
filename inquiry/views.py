@@ -311,7 +311,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
         else:
             column = column[:16]
 
-        if request.user.is_superuser:
+        if request.user.groups.filter(name='CEO').exists():
             for row in self.column_defs:
                 if row.get('name') == 'part_number':
                     row.update({'lookup_field': '__icontains'})
