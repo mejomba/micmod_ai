@@ -731,3 +731,29 @@ class CustomerSepidarInsertView(View):
         else:
             return JsonResponse({'res': 'error'}, status=404)
         pass
+
+
+class ItemListUpdate(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            extra_avg = data.get('kala')
+            sea_avg = data.get('sea')
+            air_avg = data.get('air')
+            express_avg = data.get('express')
+            pk_values = data.get('pk_values')
+            items = Item.objects.filter(pk__in=pk_values)
+            for item in items:
+                item.extra_cost_percentage = extra_avg
+                item.express_extra_cost_percentage = express_avg
+                item.air_extra_cost_percentage=air_avg
+                item.sea_extra_cost_percentage = sea_avg
+                item.extra_data.request = request
+                item.save()
+            # items.update(express_extra_cost_percentage=express_avg,
+            #              air_extra_cost_percentage=air_avg,
+            #              sea_extra_cost_percentage=sea_avg,
+            #              editor_user=request.user)
+            return JsonResponse({'res': 'success'})
+        except Exception as e:
+            return JsonResponse({'res': 'fail'}, status=500)

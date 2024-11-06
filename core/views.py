@@ -1,6 +1,8 @@
 import datetime
 import json
-
+from django.db.models import Avg, Value
+from ajax_datatable import AjaxDatatableView
+from ajax_datatable.app_settings import DISABLE_QUERYSET_OPTIMIZATION
 from django.apps import apps
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
@@ -8,8 +10,11 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
+from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.db.models.functions import Coalesce
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -26,7 +31,7 @@ from comments.forms import CommentsForm
 from micmod_base.models import Quotation
 from order.models import Order
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import map_model_to_python_type, show_error, diff_time
+from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -1195,5 +1200,98 @@ def delete_ajax(request, *args, **kwargs):
 
 class ImportCustomerFromSepidar(View):
     def get(self, request, *args, **kwargs):
+        import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         res = import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return JsonResponse(res or "مشتری جدیدی یافت نشد", safe=False)
+
+
+class CustomAjaxDataTable(AjaxDatatableView):
+    def _filter_queryset(self, column_names, search_value, qs, global_filtering, not_search_value=None):
+        TEST_FILTERS = False
+        search_filters = Q()
+        for column_name in column_names:
+
+            column_obj = self.column_obj(column_name)
+            column_spec = self.column_spec_by_name(column_name)
+
+            # v4.0.2: we now accept multiple search values (to be ORed)
+            # Split search values;
+            # example: 'aaa + bbb' -> ['aaa ', ' bbb']
+            original_search_value = search_value
+            if self.search_values_separator and self.search_values_separator in search_value:
+                search_value = [t.strip() for t in search_value.split(self.search_values_separator)]
+            if self.not_search_values_separator and self.not_search_values_separator in search_value:
+                not_search_value = [t.strip() for t in search_value.split(self.not_search_values_separator)]
+
+            if not_search_value:
+                column_filter = build_column_filter(column_name, column_obj, column_spec, None, global_filtering, not_search_value)
+            else:
+                column_filter = build_column_filter(column_name, column_obj, column_spec, search_value, global_filtering)
+
+            if column_filter:
+                search_filters |= column_filter
+                # if TEST_FILTERS:
+                #     try:
+                #         qstest = qs.filter(column_filter)
+                #         trace('%8d/%8d records filtered over column "%s"' % (qstest.count(), qs.count(), column_name, ))
+                #     except Exception as e:
+                #         trace('ERROR filtering over column "%s": %s' % (column_name, str(e)))
+
+        # if TEST_FILTERS:
+        #     trace(search_filters)
+
+        return qs.filter(search_filters)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            is_ajax_request = request.accepts("application/json")
+        except AttributeError as e:
+            # Django < 4.0
+            is_ajax_request = request.is_ajax()
+
+        if not is_ajax_request:
+            return HttpResponseBadRequest()
+
+        try:
+            query_dict = request.REQUEST
+            params = self.read_parameters(query_dict)
+        except ValueError:
+            return HttpResponseBadRequest()
+
+        # Prepare the queryset and apply the search and order filters
+        qs = self.get_initial_queryset(request)
+        if not DISABLE_QUERYSET_OPTIMIZATION and not self.disable_queryset_optimization:
+            if (
+                    self.disable_queryset_optimization_select_related and
+                    self.disable_queryset_optimization_only and self.disable_queryset_optimization_prefetch_related
+            ):
+                pass
+            else:
+                qs = self.optimize_queryset(qs)
+        qs = self.prepare_queryset(params, qs)
+
+        if params['length'] == -1:
+            paginator = Paginator(qs, max(1, qs.count()))
+        else:
+            paginator = Paginator(qs, params['length'])
+        response_dict = self.get_response_dict(request, paginator, params['draw'], params['start'])
+        response_dict['footer_message'] = self.footer_message(qs, params)
+        response_dict['toolbar_message'] = self.toolbar_message(qs, params)
+
+        response_dict['avg'] = qs.aggregate(sea_avg=Avg(Coalesce('sea_extra_cost_percentage', Value(0.0))),
+                                            kala_avg=Avg(Coalesce('extra_cost_percentage', Value(0.0))),
+                                            air_avg=Avg(Coalesce('air_extra_cost_percentage', Value(0.0))),
+                                            express_avg=Avg(Coalesce('express_extra_cost_percentage', Value(0.0)))
+                                            )
+        response_dict['count'] = qs.count()
+        response_dict['pk_values'] = ','.join(map(str, qs.values_list('pk', flat=True)))
+
+        # Prepare response
+        response = HttpResponse(
+            json.dumps(
+                response_dict,
+                cls=DjangoJSONEncoder
+            ),
+            content_type="application/json")
+
+        return response

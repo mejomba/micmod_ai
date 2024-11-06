@@ -1,6 +1,7 @@
 import datetime
 import threading
 
+from tools.utils import build_column_filter
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models.lookups import LessThan
@@ -28,7 +29,7 @@ from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, Sal
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
 from extra_data.models import Item, PriceSettings, ItemWeight
-from core.views import BaseView, JsonTemplateResponseMixin, Base
+from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list, c_get
@@ -197,12 +198,13 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
         return context
 
 
-class SkuListDataTableView(AjaxDatatableView):
+class SkuListDataTableView(CustomAjaxDataTable):
     model = Item
     title = 'sku_list'
     # initial_order = [["id", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
+    not_search_values_separator = '|'
     render_row_details_template_name = 'sku_list_detail.html'
     from translator import get_text as _
     column_defs = [
@@ -210,12 +212,12 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'id', 'visible': False, "orderable": True},
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
-        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 '},
+        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 part_number_search'},
         {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
-        {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 '},
+        {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 sale_group_search', 'lookup_field': '__title__icontains'},
+        {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 purchase_group_search', 'lookup_field': '__title__icontains'},
+        {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 package_search'},
         {'name': 'created_date', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
@@ -225,13 +227,34 @@ class SkuListDataTableView(AjaxDatatableView):
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
+    def get(self, request, *args, **kwargs):
+        res = super().get(request, *args, **kwargs)
+        return res
+
     def get_initial_order(self, request):
         res = super().get_initial_order(request)
         return []
 
     def get_initial_queryset(self, request=None):
-        from django.db.models import Avg, Count, Min, Sum
+        import json
+        status_array = json.loads(self.request.POST.get('status_array'))
+        search_list = []
+        # if status_array:
+        #     part_number = self.request.POST.get('columns[3][search][value]') or None
+        #     sale_group = self.request.POST.get('columns[6][search][value]') or None
+        #     purchase_group = self.request.POST.get('columns[7][search][value]') or None
+        #     package = self.request.POST.get('columns[8][search][value]') or None
+        #     if part_number:
+        #         search_list.append(~Q(part_number__icontains=part_number)) if status_array[0] else search_list.append(Q(part_number__icontains=part_number))
+        #     if sale_group:
+        #         search_list.append(~Q(sale_group__title__icontains=sale_group)) if status_array[1] else search_list.append(Q(sale_group__title__icontains=sale_group))
+        #     if purchase_group:
+        #         search_list.append(~Q(purchase_group__title__icontains=purchase_group)) if status_array[2] else search_list.append(Q(purchase_group__title__icontains=purchase_group))
+        #     if package:
+        #         search_list.append(~Q(package__icontains=package)) if status_array[3] else search_list.append(Q(package__icontains=package))
+
         qs = self.model.objects.get_access_object(self.request.user)
+        qs = qs.filter(*search_list)
         qs = qs.annotate(sku_int=Cast('sku', IntegerField()))
         q = self.request.POST.get('q')
 
@@ -287,6 +310,17 @@ class SkuListDataTableView(AjaxDatatableView):
             pass
         else:
             column = column[:16]
+
+        if request.user.groups.filter(name='CEO').exists():
+            for row in self.column_defs:
+                if row.get('name') == 'part_number':
+                    row.update({'lookup_field': '__icontains'})
+                if row.get('name') == 'purchase_group':
+                    row.update({'lookup_field': '__title__iexact'})
+                if row.get('name') == 'sale_group':
+                    row.update({'lookup_field': '__title__iexact'})
+                if row.get('name') == 'package':
+                    row.update({'lookup_field': '__iexact'})
         return column
 
     def customize_row(self, row, obj):
