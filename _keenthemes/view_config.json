@@ -211,6 +211,21 @@
             ]
           },
           {
+            "state": "تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
             "state": "تایید مهندس",
             "group": "trade_user",
             "deadline": 1,
