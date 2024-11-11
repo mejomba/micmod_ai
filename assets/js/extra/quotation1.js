@@ -832,7 +832,7 @@ function set_price_data(data, elem, target) {
         } else {
             elem.querySelector('[name="box-alt-goods"]').classList.remove('d-none')
         }
-        // set_price(elem.querySelector('[name*="-goods_name"]'))
+        set_price(elem.querySelector('[name*="-goods_name"]'))
     }
 }
 
