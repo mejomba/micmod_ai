@@ -128,7 +128,11 @@
                 <span>عدد</span>
             </a>
             {% empty %}
-            <span class="text-success">هیچ سفارشی از این سفارش تامین نمیشود</span>
+            {% if form.instance.local_sepidar_wh_code %}
+                <span class="text-success bg-light-success px-1 rounded">رزرو شده از انبار</span>
+            {% else %}
+                <span class="text-success">هیچ سفارشی از این سفارش تامین نمیشود</span>
+            {% endif %}
         {% endfor %}
             <span class="bg-light-primary px-2 py-1 rounded ms-5">
                 <span>ظرفیت آزاد</span>

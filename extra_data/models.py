@@ -379,6 +379,7 @@ class Item(BaseModel):
                 sepidar_wh_code = 1000
                 sepidar_wh_name = 'اسم انبار سپیدار'
                 # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
+                # todo get wh__order from db, show reserve and stock_quantity
                 if stock_qty.quantity.is_integer():
                     res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {int(stock_qty.quantity)}'))
                 else:
@@ -389,7 +390,10 @@ class Item(BaseModel):
         for o in self.order_set.filter(cancel=False).order_by('-quantity'):
             remaining_quantity = o.remaining_quantity
             if remaining_quantity > 0:
-                res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+                if o.local_sepidar_wh_code:
+                    res.append(('wh__' + str(o.local_sepidar_wh_code), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
+                else:
+                    res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 
