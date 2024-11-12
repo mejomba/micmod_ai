@@ -635,5 +635,6 @@
     "credit-card-number": "شماره کارت / حساب / شبا (بدون اسپیس، بدون خط فاصله)",
     "value": "مقدار",
     "jalali-jast-update-date": "آخرین زمان تغییر",
-    "credit-card": "کارت / حساب / شبا"
+    "credit-card": "کارت / حساب / شبا",
+    "is_active": "فعال"
 }
