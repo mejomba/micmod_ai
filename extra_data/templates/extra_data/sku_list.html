@@ -79,7 +79,7 @@
             <span class="btn btn-light-primary">جستجو</span>
         </div>
 
-        <div class="input-group mt-3 gap-1 w-75 align-items-center">
+        <div class="input-group mt-3 gap-1 w-75 align-items-baseline">
             <span class="me-5">
                 تنظیم مقادیر
             <span id="count" class="bg-info px-1 rounded text-white"></span>
@@ -88,22 +88,28 @@
             <div class="on-border">
                 <label for="">کالا</label>
                 <input type="number" step="0.1" name="kala" id="kala" class="form-control" style="text-align: left; direction: ltr;">
+                <span id="kala_" class="d-flex px-3 bg-light-info" dir="ltr"></span>
             </div>
             <div class="on-border">
                 <label for="">دریایی</label>
                 <input type="number" step="0.1" name="sea" id="sea" class="form-control" style="text-align: left; direction: ltr;">
+                <span id="sea_" class="d-flex px-3 bg-light-info" dir="ltr"></span>
             </div>
             <div class="on-border">
                 <label for="">هوایی</label>
                 <input type="number" step="0.1" name="air" id="air" class="form-control" style="text-align: left; direction: ltr;">
+                <span id="air_" class="d-flex px-3 bg-light-info" dir="ltr"></span>
             </div>
             <div class="on-border">
                 <label for="">اکسپرس</label>
                 <input type="number" step="0.1" name="express" id="express" class="form-control" style="text-align: left; direction: ltr;">
+                <span id="express_" class="d-flex px-3 bg-light-info" dir="ltr"></span>
             </div>
+            <div>
             <span class="btn btn-light-primary input-group-text" onclick="change_all_value(event)">ثبت</span>
             <input type="hidden" name="pk_values" id="pk_values" value="">
             <span id="change_all_value_response" class="ms-5"></span>
+                </div>
         </div>
     </div>
     {% endif %}
@@ -246,10 +252,10 @@
             $('#search_load').html('search.....');
         });
         $('#sku_list').on('xhr.dt', function (e, settings, json, xhr) {
-            $('#kala').val(json.avg.kala_avg);
-            $('#sea').val(json.avg.sea_avg);
-            $('#air').val(json.avg.air_avg);
-            $('#express').val(json.avg.express_avg);
+            $('#kala_').text(json.avg.kala_avg);
+            $('#sea_').text(json.avg.sea_avg);
+            $('#air_').text(json.avg.air_avg);
+            $('#express_').text(json.avg.express_avg);
             $('#pk_values').val(json.pk_values);
             $('#count').html(json.count);
             $('#search_load').html('');
@@ -287,6 +293,7 @@
 
     <script>
     function change_all_value(event){
+        debugger
         event.preventDefault()
         const kala = document.querySelector("input[name='kala']")
         const sea = document.querySelector("input[name='sea']")

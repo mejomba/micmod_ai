@@ -744,12 +744,17 @@ class ItemListUpdate(View):
             pk_values = data.get('pk_values')
             items = Item.objects.filter(pk__in=pk_values)
             for item in items:
-                item.extra_cost_percentage = extra_avg
-                item.express_extra_cost_percentage = express_avg
-                item.air_extra_cost_percentage=air_avg
-                item.sea_extra_cost_percentage = sea_avg
-                item.extra_data.request = request
-                item.save()
+                if extra_avg:
+                    item.extra_cost_percentage = extra_avg
+                if express_avg:
+                    item.express_extra_cost_percentage = express_avg
+                if air_avg:
+                    item.air_extra_cost_percentage=air_avg
+                if sea_avg:
+                    item.sea_extra_cost_percentage = sea_avg
+                if extra_avg or express_avg or air_avg or sea_avg:
+                    item.extra_data.request = request
+                    item.save()
             # items.update(express_extra_cost_percentage=express_avg,
             #              air_extra_cost_percentage=air_avg,
             #              sea_extra_cost_percentage=sea_avg,
