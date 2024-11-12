@@ -149,7 +149,6 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None, si
         if model.__name__.lower() == 'quotationitem':
             customer = getattr(form.instance.quotation, 'customer_party_id', None)
             sku = getattr(form.instance, 'goods_code_fk', None)
-
         if model.__name__.lower() == 'quotation':
             customer = getattr(form.instance, 'customer_party_id', None)
             sku = None

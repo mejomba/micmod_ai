@@ -3,7 +3,7 @@
 
     {% endblock %}
 
-    <div class="d-flex position-fixed card-footer me-3 ms-0 p-0 rounded" style="bottom: 65px; width: -webkit-fill-available;">
+    <div class="d-flex position-fixed card-footer me-3 ms-0 p-0 rounded shadow-sm" style="bottom: 65px; width: -webkit-fill-available;">
         {% include 'partials/form_buttons.html' with form=form flow_state_index=flow_state_index flow_state_list=flow_state_list %}
 
         {% block form_footer_extra %}

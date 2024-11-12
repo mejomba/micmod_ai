@@ -722,7 +722,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         if obj_pk := self.request.POST.get('obj_pk'):
             obj_qs = QuotationItem.objects.full_queryset(pk=obj_pk)
             obj = obj_qs.first()
-            obj.save_comment(self.request)
+            obj.save_comment(self.request, CommentsForm)
 
             new_goods_code = self.request.POST.get('goods_code')
             if new_goods_code and new_goods_code != obj.goods_code:

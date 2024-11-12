@@ -676,7 +676,7 @@ class BaseView(UserPassesTestMixin,
 
                     """***NEW***"""
                     if form.has_comment:
-                        new_obj.save_comment(request=self.request)
+                        new_obj.save_comment(self.request, CommentsForm)
                     """***NEW***"""
 
                     """***NEW***"""
@@ -749,30 +749,31 @@ class BaseView(UserPassesTestMixin,
                         new_details = list(new_details.all())
 
                     for d in new_details:
+                        d.save_comment(self.request, CommentsForm)
                         # ToDo make dynamic
-                        app_label = d._meta.app_label
-                        model_name = d._meta.model_name
-                        ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
-                        object_id = d.pk
-                        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
-                        comment_form = CommentsForm(self.request.POST, prefix=prefix)
-                        if comment_form.is_valid():
-                            comment_form.instance.extra_data.request = self.request
-                            cmnt = comment_form.save()
-                            cmnt.save_image(
-                                request=self.request,
-                                image_groups=comment_form.image_groups,
-                                image_model=comment_form.image_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-image',
-                            )
-                            cmnt.save_file(
-                                request=self.request,
-                                file_groups=comment_form.file_groups,
-                                file_model=comment_form.file_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-file',
-                            )
+                        # app_label = d._meta.app_label
+                        # model_name = d._meta.model_name
+                        # ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
+                        # object_id = d.pk
+                        # prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+                        # comment_form = CommentsForm(self.request.POST, prefix=prefix)
+                        # if comment_form.is_valid():
+                        #     comment_form.instance.extra_data.request = self.request
+                        #     cmnt = comment_form.save()
+                        #     cmnt.save_image(
+                        #         request=self.request,
+                        #         image_groups=comment_form.image_groups,
+                        #         image_model=comment_form.image_model,
+                        #         obj=cmnt,
+                        #         input_prefix=f'{prefix}-image',
+                        #     )
+                        #     cmnt.save_file(
+                        #         request=self.request,
+                        #         file_groups=comment_form.file_groups,
+                        #         file_model=comment_form.file_model,
+                        #         obj=cmnt,
+                        #         input_prefix=f'{prefix}-file',
+                        #     )
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
@@ -955,31 +956,46 @@ class CommentsFormView(View):
             comments_rel = []
             pass
 
-        # image = kwargs.get('image')
-        # file = kwargs.get('file')
         comment_type = self.request.GET.get('comment_type')
         model = apps.get_model(app_label, model_name)
+        customer = sku = None
         if model.__name__.lower() == 'quotationitem':
             obj = model.objects.full_queryset(pk=object_id).first()
+            customer = getattr(obj.quotation, 'customer_party_id', None)
+            sku = getattr(obj, 'goods_code_fk', None)
         else:
             obj = model.objects.filter(pk=object_id).first()
+        if model.__name__.lower() == 'quotation':
+            customer = getattr(obj, 'customer_party_id', None)
+            sku = None
+        # if model.__name__.lower() == 'factor':
+        #     customer = getattr(obj.q, 'customer_party_id', None)
+        #     sku = None
+        # if model.__name__.lower() == 'factoritem':
+        #     customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+        #     sku = getattr(obj.qi, 'goods_code_fk', None)
+        for_sku = Q(sku=sku) & Q(for_sku=True)
+        for_customer = Q(customer=customer) & Q(for_customer=True)
         comments = Comments.objects.none()
         if comment_type == 'cancel':
             kwargs['submit_type'] = 'cancel'
-            # comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
-            # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'trade_inquiry':
             kwargs['submit_type'] = 'trade_inquiry'
             comments = obj.comments.all().order_by('-created_date')
+        comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')
+        kwargs['customer'] = customer
+        kwargs['sku'] = sku
 
         form = CommentsForm(prefix=prefix, initial=kwargs)
+        if model.__name__.lower() == 'quotation' or model.__name__.lower() == 'factor':
+            form.fields['for_sku'].widget.attrs['disabled'] = True
         image = None
         file = None
         if self.request.user.base_group != 'trade':
@@ -991,7 +1007,6 @@ class CommentsFormView(View):
                                                                     editor_user=request.user)
                 image = comment.files.content_type.image_set
                 file = comment.files.content_type.file_set
-                # comment_seen.save_user(self.request)
                 comment_seen.extra_data.request = self.request
                 comment_seen.save()
             except Exception:

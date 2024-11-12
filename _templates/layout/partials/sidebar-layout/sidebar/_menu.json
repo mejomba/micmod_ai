@@ -511,6 +511,20 @@
           "link": "payment:credit_card"
         }
       ]
+    },
+    {
+      "title": "comment",
+      "icon": "burger-menu",
+      "path_key": "comment/list",
+      "link": "comments:comment.list",
+      "permission": {
+        "groups": [
+          "comment_admin"
+        ],
+        "permissions": [
+          "comments.edit_comment"
+        ]
+      }
     }
   ]
 }

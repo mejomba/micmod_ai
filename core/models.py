@@ -306,6 +306,39 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     submit_copy = False
     objects = BaseManager()
 
+    def save_comment(self, request, COMMENT_FORM):
+        # ToDo make dynamic
+        app_label = self._meta.app_label
+        model_name = self._meta.model_name
+        ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
+        object_id = self.pk
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        title = request.POST.get(f'{prefix}-comment_title')
+        content = request.POST.get(f'{prefix}-comment_content')
+        if title in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'P'] and not content:
+            content = 'بدون توضیحات'
+        comment_form = COMMENT_FORM(request.POST, prefix=prefix, initial={'comment_content': content})
+
+        if comment_form.is_valid():
+            comment_form.instance.extra_data.request = request
+            cmnt = comment_form.save(commit=False)
+            if cmnt.for_sku or cmnt.for_customer:
+                cmnt.is_active = True
+            cmnt.save()
+            cmnt.save_image(
+                request=request,
+                image_groups=comment_form.image_groups,
+                image_model=comment_form.image_model,
+                obj=cmnt,
+                input_prefix=f'{prefix}-image',
+            )
+            cmnt.save_file(
+                request=request,
+                file_groups=comment_form.file_groups,
+                file_model=comment_form.file_model,
+                obj=cmnt,
+                input_prefix=f'{prefix}-file',
+            )
     def get_content_type_forms(self):
         self.content_type_forms = list()
         if self.has_workflow:
@@ -440,7 +473,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
 
     """***NEW***"""
 
-    def save_comment(self, request, idx=None):
+    def save_comment_(self, request, idx=None):
         from comments.models import Comments
         app_label = self._meta.app_label
         model_name = self._meta.model_name

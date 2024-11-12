@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from core.models import BaseContentType, AbsBaseModel
+from extra_data.models import Customer, Item
 from translator import get_text as _
 
 
@@ -29,7 +30,10 @@ class Comments(BaseContentType):
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))
     comment_content = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('comment_content'))
     for_customer = models.BooleanField(default=False, verbose_name=_('for_customer'))
+    customer = models.ForeignKey(Customer, null=True, blank=True, verbose_name=_('customer'), on_delete=models.DO_NOTHING)
     for_sku = models.BooleanField(default=False, verbose_name=_('for_sku'))
+    sku = models.ForeignKey(Item, null=True, blank=True, verbose_name=_('sku'), on_delete=models.DO_NOTHING)
+    is_active = models.BooleanField(default=True, verbose_name=_('is_active'))
 
 
 class CommentSeen(AbsBaseModel):

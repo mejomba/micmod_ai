@@ -1,0 +1,60 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}Quotation{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+    <style>
+
+    </style>
+{% endblock extra_css %}
+
+{% block form_content %}
+    {% csrf_token %}
+
+    {% render_field_by_order form form.comment_title form.comment_content form.sku form.customer form.content_type form.object_id %}
+    <div class="mt-5 mb-3">
+        <span class="me-5 bg-light-warning px-1">{{ form.instance.customer }}</span>
+        <span class="bg-light-danger px-1">{{ form.instance.sku.part_number }}</span>
+    </div>
+    {% render_field_by_order form form.is_active form.for_sku form.for_customer %}
+
+    <div class="d-flex gap-5">
+        {% render_field_by_order form form.image_1 form.file_1 %}
+    </div>
+
+    <div class="d-flex gap-5">
+        <div class="col">
+            {% for pic in form.instance.images.all %}
+
+            <a href="{{ pic.path.url }}" target="_blank" class="me-1"><img src="{{ pic.path.url }}"
+                                                                                       alt="pic" class="rounded-circle"
+                                                                                       width="22" height="22"></a>
+            {% endfor %}
+        </div>
+        <div class="col">
+            {% for file in form.instance.files.all %}
+            <a href="{{ file.path.url }}" target="_blank" class="me-1"><i
+                                class="fas fa-file-upload icon-lg"></i></a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+{% endblock extra_js %}
