@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 import os
 
@@ -380,9 +380,13 @@ class Item(BaseModel):
                 sepidar_wh_name = 'اسم انبار سپیدار'
                 # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                 # todo get wh__order from db, show reserve and stock_quantity
+                quantity_sum = self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                    total_sum=Sum('quantity'))['total_sum'] or 0
                 if stock_qty.quantity.is_integer():
-                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {int(stock_qty.quantity)}'))
+                    qty = int(stock_qty.quantity)
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {qty} / {qty - quantity_sum}'))
                 else:
+                    qty = stock_qty.quantity
                     res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty.quantity}'))
 
 
@@ -391,7 +395,7 @@ class Item(BaseModel):
             remaining_quantity = o.remaining_quantity
             if remaining_quantity > 0:
                 if o.local_sepidar_wh_code:
-                    res.append(('wh__' + str(o.local_sepidar_wh_code), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
+                    res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
                 else:
                     res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 

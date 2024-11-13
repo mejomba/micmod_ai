@@ -169,7 +169,12 @@ class FactorItem(BaseModel):
                     }
                     o1 = Order.create_with_rel(data_base)
                     self.supply_locations = o1
-
+            if self.supply_location and not self.supply_location.startswith('wh__'):
+                self.supply_locations_id = int(self.supply_location)
+            if self.supply_location and self.supply_location.startswith('wh__'):
+                _, supply_location, supply_locations = self.supply_location.split('__')
+                self.supply_location_id = int(supply_location)
+                self.supply_locations_id = int(supply_locations)
             super().save(force_insert, force_update, using, update_fields)
             total_quantity = self.qi.total_quantity_in_factor
             if total_quantity >= self.qi.quantity:

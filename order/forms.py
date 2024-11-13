@@ -54,7 +54,7 @@ class OrderForm(CustomBaseModelForm):
         # ~Q(id=self.instance.pk), item = self.instance.item, cancel = False
 
         # self.instance.order_base_items.all().values_list('order_rel', flat=True)
-        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity <= 0, Order.objects.filter(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True))))) if self.instance.pk else []
+        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity <= 0 or x.local_sepidar_wh_code is not None, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) | Q(local_sepidar_wh_code__isnull=False))))) if self.instance.pk else []
         ooqs = Order.objects.filter(~Q(id=self.instance.pk), item=self.instance.item, cancel=False).exclude(
             pk__in=illegal_order_ids) if self.instance.cancel else Order.objects.none()
         self.fields['order_m2m'] = forms.ModelMultipleChoiceField(
