@@ -62,7 +62,7 @@
             if(message['message_type'] !== 'success') {
                 {#console.log(message['message_type'] )#}
                 {#let audio = new Audio('{% static "alerts/blup.ogg" %}');#}
-                let audio = new Audio('{% static "alerts/snapy.mp3" %}');
+                let audio = new Audio('{% static "alerts/snapy.ogg" %}');
                 audio.play()
             }
         };
