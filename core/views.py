@@ -572,7 +572,8 @@ class BaseView(UserPassesTestMixin,
             elif 'canceled' in self.request.POST:
                 old_obj.cancel = True
                 old_obj.save()
-                old_obj.save_comment(request=self.request)
+                # old_obj.save_comment(self.request, CommentsForm)
+                old_obj.save_comment_(self.request)
                 self.object.cancel = True
                 self.object.extra_data.request = self.request
                 self.object.save()
@@ -581,7 +582,8 @@ class BaseView(UserPassesTestMixin,
             elif 'uncanceled' in self.request.POST:
                 old_obj.cancel = False
                 old_obj.save()
-                old_obj.save_comment(request=self.request)
+                # old_obj.save_comment(self.request, CommentsForm)
+                old_obj.save_comment_(self.request)
                 self.object.cancel = False
                 self.object.extra_data.request = self.request
                 self.object.save()
