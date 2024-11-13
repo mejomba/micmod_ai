@@ -305,6 +305,138 @@
       "attr1":2,
       "att":3
     },
+  "PackingView":
+          {
+      "workflow":
+      {
+      "name":"create packing",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس",
+            "group": "packing_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "DEP",
+            "group": "packing_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مهندس",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ارسال به تامین کننده",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید تامین کننده",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "پرداخت / PACKING / GIO",
+            "group": "order_confirm",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
   "SkuCreateView":
     {
       "workflow":

@@ -147,3 +147,24 @@ def toppings_changed(sender, **kwargs):
     pass
 
 m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)
+
+
+class Packing(BaseModeWF):
+    # PACKING_STATUS = [("1", _("ثبت اولیه")), ("2", _("dep")), ("3", _("arrive")), ("4", _("10%")),
+    #                   ("5", _("تحویل اسناد")), ("6", _("اضهار گمرک")), ("7", _("ترخیص گمرک")), ("8", _("تحویل انبار"))]
+    # status = models.CharField(choices=PACKING_STATUS)
+    TP_METHOD = [('1', 'air'), ('2', 'sea'), ('3', 'exp')]
+    sum_qty = models.FloatField(_('sum_qty'))
+    sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
+    tp_method = models.CharField(choices=TP_METHOD)
+    pack_date = models.DateField(_('pack_date'))
+    bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
+    sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
+
+
+class PackingItem(BaseModeWF):
+    packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order')
+    carton_qty = models.PositiveIntegerField(_('carton_qty'))
+    weight_kg = models.FloatField(_('weight_kg'))
+    # pack_date
