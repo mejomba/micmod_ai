@@ -1,6 +1,7 @@
 from tokenize import Comment
 
 from ajax_datatable import AjaxDatatableView
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -80,3 +81,6 @@ class CommentListDatatableView(AjaxDatatableView):
             reverse('comments:comment.update', args=(obj.id,)),
             obj.comment_content if obj.comment_content else '_'
         )
+
+    def get_initial_queryset(self, request=None):
+        return Comments.objects.filter(~Q(comment_title='Q'))
