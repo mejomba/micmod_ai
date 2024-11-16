@@ -1088,6 +1088,7 @@ def duplicate_quotation(request, quotation_id):
             quotation.guid = uuid.uuid4()
             quotation.sepidar_number = None
             quotation.sepidar_quotation_id = None
+            quotation.cancel = False
 
             wf_obj = wfform.save()
             wf_obj.from_user = request.user
