@@ -108,7 +108,9 @@
 <!-- FINAL PRICE -->
     <td class=" font-size-12 replace-digits">
         {% for comment in form.instance.comments.all %}
-            {{ comment.comment_content }} <br>
+            {% if comment.comment_title != 'Q' %}
+                {{ comment.comment_content }} <br>
+            {% endif %}
         {% endfor %}
     </td>
 {% endif %}

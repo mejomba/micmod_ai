@@ -634,5 +634,6 @@
     "tp_method": "روش حمل",
     "pack_date": "تاریخ بسته بندی",
     "bl_number": "شماره بارنامه",
-    "sales_manager_needed": "نیاز به تایید مدیر فروش"
+    "sales_manager_needed": "نیاز به تایید مدیر فروش",
+    "revival_date": "زمان احیا"
 }

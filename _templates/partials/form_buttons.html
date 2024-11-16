@@ -41,7 +41,11 @@
             <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>
         {% endif %}
         {% if duplicate %}
-            <a href="?duplicate=1" class="btn btn-bordered btn-outline-warning me-1 px-4">کپی</a>
+            <button type="submit" name="duplicate" class="" style="border: none; background-color: inherit">
+            <i class="ki-duotone ki-copy fs-3qx"></i>
+            </button>
+
+{#            <a href="?duplicate=1" class="btn btn-bordered btn-outline-warning me-1 px-4">کپی</a>#}
         {% endif %}
         {% else %}
             <input type="submit" class="btn btn-bordered btn-outline-success me-1 px-4" name="submit_duplicate" value="ذخیره"/>
