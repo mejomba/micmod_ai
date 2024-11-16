@@ -185,64 +185,19 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over"],
               "read": []
             },
             "formset_constraint": [
               {
                 "hide": [],
-                "read": ["sales_admin_confirmation"]
+                "read": []
               }
             ]
           },
           {
             "state": "تایید مدیر فروش",
-            "group": "sales_admin",
-            "deadline": 3,
-            "form_constraint": {
-              "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
-            "state": "تایید مهندس",
-            "group": "total_admin",
-            "deadline": 1,
-            "form_constraint": {
-              "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
-            "state": "ارسال به تامین کننده",
-            "group": "total_admin",
-            "deadline": 1,
-            "form_constraint": {
-              "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
-            "state": "تایید تامین کننده",
-            "group": "trade_user",
+            "group": "order_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -258,7 +213,7 @@
           {
             "state": "تایید بازرگانی",
             "group": "trade_user",
-            "deadline": 3,
+            "deadline": 1,
             "form_constraint": {
               "hide": [],
               "read": []
@@ -271,9 +226,9 @@
             ]
           },
           {
-            "state": "تایید پرداخت",
-            "group": "accounting_admin",
-            "deadline": 3,
+            "state": "تایید مهندس",
+            "group": "trade_user",
+            "deadline": 1,
             "form_constraint": {
               "hide": [],
               "read": []
@@ -286,11 +241,83 @@
             ]
           },
           {
-            "state": "تحویل در دفتر",
+            "state": "ارسال به تامین کننده",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید تامین کننده",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "پرداخت / PACKING / GIO",
+            "group": "order_confirm",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
+  "PackingView":
+          {
+      "workflow":
+      {
+      "name":"create packing",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس",
+            "group": "packing_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
               "read": []
             },
             "formset_constraint": [
@@ -301,12 +328,102 @@
             ]
           },
           {
-            "state": "بسته بندی",
-            "group": "trade_user",
+            "state": "DEP",
+            "group": "packing_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
               "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "arrive",
+            "group": "packing_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "10%",
+            "group": "packing_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تحویل اسناد",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "اضهار گمرکی",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ترخیص گمرک",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "انبار",
+            "group": "wh_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
             },
             "formset_constraint": [
               {

@@ -1,0 +1,32 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+<form action="{% if form.instance.pk %}{% url 'order:packing.update' form.instance.pk %}{% else %}{% url 'order:order.view' %}{% endif %}" method="POST" id="packing-item-form" enctype="multipart/form-data">
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+        {% csrf_token %}
+        <div class="row">
+        {% render_field_by_order form form.packing form.order label='on-border' %}
+            <div id="id_order_select2"></div>
+        {% render_field_by_order form form.carton_qty form.weight_kg label='on-border' %}
+        </div>
+    </div>
+<input type="submit" value="ثبت" id="submit-packing-item" class="btn btn-primary ms-10">
+</form>
+
+<script>
+    debugger
+    const order_select2_placeholder = document.querySelector('[name="order"]').value.toString() || "انتخاب سفارش"
+    select2_generate('#id_order_select2', '#id_order', '/order/order_list', order_select2_placeholder)
+    $('#packing-item-form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+        setInterval(function (){
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
+    })
+
+</script>

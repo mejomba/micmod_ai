@@ -45,8 +45,22 @@ class Order(BaseModeWF):
     def __str__(self):
         return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
 
-    def __repr__(self):
-        return f'sss'
+    def description(self):
+        if self.cancel:
+            s = 0
+            for oo in self.order_base_items.all():
+                s += oo.quantity
+            x = s - self.quantity
+            if x < 0:
+                return f'نیاز به {abs(x)} عدد  برای تامین کامل'
+        return ''
+        return 'تامین کامل'
+
+        # remaining_quantity = self.remaining_quantity
+        # if remaining_quantity < 0:
+        #     return f'نیاز به {abs(remaining_quantity)} عدد برای تامین کامل'
+        # f'ظرفیت سفارش {self.quantity}'
+        # return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
     
     @classmethod
     def get_qs_count(cls, user):
@@ -66,10 +80,27 @@ class Order(BaseModeWF):
             "content_type": ContentType.objects.get_for_model(o1),
             "creator_user": data_base.get('creator_user'),
             "editor_user": data_base.get('editor_user'),
-            "from_user": None,
+            "from_user": data_base.get('creator_user'),
+            "to_user": data_base.get('creator_user'), # get_user_model().objects.filter(groups__name='order_admin').first(),
+            "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        flow_data = {
+            "wf_status": 3,
+            "action": 'ایجاد خودکار',
+            "flow_name": 'سفارش',
+            "state": const.WF__ORDER__FIRST_STATE,
+            "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
+            "belong_to_group": 'order_admin',
+            "object_id": o1.pk,
+            "content_type": ContentType.objects.get_for_model(o1),
+            "creator_user": data_base.get('creator_user'),
+            "editor_user": data_base.get('editor_user'),
+            "from_user": data_base.get('editor_user'),
             "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
             "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
+
         wf = WorkFlow.objects.create(**flow_data)
         o1.last_work_flow = wf
         if o2 is not None:
@@ -107,3 +138,33 @@ class OrderOrder(BaseModel):
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)
+
+
+from django.db.models.signals import m2m_changed
+
+def toppings_changed(sender, **kwargs):
+    # sender.objects.create(order_base=kwargs.get('instance'), order_rel_id=list(kwargs.get('pk_set'))[0], quantity=min(rel.remaining_quantity, div_quantity))
+    pass
+
+m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)
+
+
+class Packing(BaseModeWF):
+    # PACKING_STATUS = [("1", _("ثبت اولیه")), ("2", _("dep")), ("3", _("arrive")), ("4", _("10%")),
+    #                   ("5", _("تحویل اسناد")), ("6", _("اضهار گمرک")), ("7", _("ترخیص گمرک")), ("8", _("تحویل انبار"))]
+    # status = models.CharField(choices=PACKING_STATUS)
+    TP_METHOD = [('1', 'air'), ('2', 'sea'), ('3', 'exp')]
+    sum_qty = models.FloatField(_('sum_qty'))
+    sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
+    tp_method = models.CharField(choices=TP_METHOD)
+    pack_date = models.DateField(_('pack_date'))
+    bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
+    sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
+
+
+class PackingItem(BaseModeWF):
+    packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order')
+    carton_qty = models.PositiveIntegerField(_('carton_qty'))
+    weight_kg = models.FloatField(_('weight_kg'))
+    # pack_date

@@ -46,46 +46,46 @@ class Factor(SLSDoc):
     def get_qs_count(cls, user):
         return len(cls.objects.get_access_object(user, q='active', quotation=False))
 
-    def generate_order_per_factor_item(self):
-        for fi in self.factoritem_set.all():
-            order_rel = ''
-            data_base = {
-                "order_title": "خودکار توسط سیستم",
-                "status": "1",
-                "item": fi.qi.goods_code_fk,
-                # "customer": fi.qi.quotation.customer_party_id,
-                # "transportation_method": "",
-                "production_lead_time": fi.qi.lead_time,
-                # "trade_commitment_date": "",
-                # "commitment_date_to_customer": "",
-                "quantity": fi.quantity,
-                # "description_sale": "",
-                # "order_type": "",
-                # "sales_admin_confirmation": "",
-                "cancel": False,
-                "is_over": False,
-                "qi": fi.qi,
-            }
-            data_rel = {
-                "order_title": "خودکار توسط سیستم",
-                "status": "1",
-                "item": fi.qi.goods_code_fk,
-                # "customer": fi.qi.quotation.customer_party_id,
-                # "transportation_method": "",
-                "production_lead_time": fi.qi.lead_time,
-                # "trade_commitment_date": "",
-                # "commitment_date_to_customer": "",
-                "quantity": fi.quantity,
-                # "description_sale": "",
-                # "order_type": "",
-                # "sales_admin_confirmation": "",
-                "cancel": False,
-                "is_over": False,
-                "qi": fi.qi,
-            }
-            if fi.supply_locations.remaining_quantity >= fi.quantity:
-                ...
-            order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
+    # def generate_order_per_factor_item(self):
+    #     for fi in self.factoritem_set.all():
+    #         order_rel = ''
+    #         data_base = {
+    #             "order_title": "خودکار توسط سیستم",
+    #             "status": "1",
+    #             "item": fi.qi.goods_code_fk,
+    #             # "customer": fi.qi.quotation.customer_party_id,
+    #             # "transportation_method": "",
+    #             "production_lead_time": fi.qi.lead_time,
+    #             # "trade_commitment_date": "",
+    #             # "commitment_date_to_customer": "",
+    #             "quantity": fi.quantity,
+    #             # "description_sale": "",
+    #             # "order_type": "",
+    #             # "sales_admin_confirmation": "",
+    #             "cancel": False,
+    #             "is_over": False,
+    #             "qi": fi.qi,
+    #         }
+    #         data_rel = {
+    #             "order_title": "خودکار توسط سیستم",
+    #             "status": "1",
+    #             "item": fi.qi.goods_code_fk,
+    #             # "customer": fi.qi.quotation.customer_party_id,
+    #             # "transportation_method": "",
+    #             "production_lead_time": fi.qi.lead_time,
+    #             # "trade_commitment_date": "",
+    #             # "commitment_date_to_customer": "",
+    #             "quantity": fi.quantity,
+    #             # "description_sale": "",
+    #             # "order_type": "",
+    #             # "sales_admin_confirmation": "",
+    #             "cancel": False,
+    #             "is_over": False,
+    #             "qi": fi.qi,
+    #         }
+    #         if fi.supply_locations.remaining_quantity >= fi.quantity:
+    #             ...
+    #         order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
 
 
 class FactorItem(BaseModel):
@@ -169,7 +169,12 @@ class FactorItem(BaseModel):
                     }
                     o1 = Order.create_with_rel(data_base)
                     self.supply_locations = o1
-
+            if self.supply_location and not self.supply_location.startswith('wh__'):
+                self.supply_locations_id = int(self.supply_location)
+            if self.supply_location and self.supply_location.startswith('wh__'):
+                _, supply_location, supply_locations = self.supply_location.split('__')
+                self.supply_location_id = int(supply_location)
+                self.supply_locations_id = int(supply_locations)
             super().save(force_insert, force_update, using, update_fields)
             total_quantity = self.qi.total_quantity_in_factor
             if total_quantity >= self.qi.quantity:
@@ -178,6 +183,13 @@ class FactorItem(BaseModel):
             else:
                 self.qi.is_over = False
                 self.qi.save()
+
+    def total_supply(self):
+        s = sum([x.quantity for x in self.supply_locations.order_base_items.all()])
+        quantity = self.quantity
+        div = quantity - s
+        status = True if s == quantity else False
+        return s, quantity, status, div
 
     class Meta:
         ordering = ['id']

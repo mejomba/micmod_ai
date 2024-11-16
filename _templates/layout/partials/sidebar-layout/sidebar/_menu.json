@@ -141,6 +141,30 @@
           ]
         },
         {
+          "title": "t-packing",
+          "icon": "cheque",
+          "path_key": "packing",
+          "permission": {
+            "permissions": [
+              "packing.view_packing"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "order/packing/view",
+              "link": "order:packing.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "order/packing/list",
+              "link": "order:packing.list"
+            }
+          ]
+        },
+        {
               "title": "pending_list",
               "icon": "burger-menu",
               "path_key": "quotationitem/list/pending/",

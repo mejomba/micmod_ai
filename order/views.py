@@ -2,16 +2,18 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView
 
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
+from tools.utils import is_ajax
 # from order.models import OrderItem
-from .forms import OrderForm
-from .models import Order
-
+from .forms import OrderForm, PackingForm, PackingItemForm
+from .models import Order, OrderOrder, Packing, PackingItem
+from translator import get_text as _
 
 # def factor_order_item(request, sku, quantity):
 #     items = get_object_or_404(QuotationItem, goods_code=sku)
@@ -46,6 +48,7 @@ class OrderView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
         return context
 
 
@@ -58,7 +61,7 @@ class OrderDataTableListView(AjaxDatatableView):
     model = Order
     title = 'order_list'
     initial_order = [["created_date", "des"], ]
-    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[10, 20, 50, -1], [10, 20, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
@@ -68,7 +71,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'status', 'orderable': True, 'visible': True, },
         {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
-        {'name': 'customer', 'orderable': True, 'visible': True, },
+        {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
         {'name': 'transportation_method', 'orderable': True, 'visible': True, },
         {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
         {'name': 'trade_commitment_date', 'orderable': True, 'visible': True, },
@@ -91,6 +94,7 @@ class OrderDataTableListView(AjaxDatatableView):
             reverse('order:order.view', args=(obj.id,)),
             obj.order_title if obj.order_title else 'بدون عنوان'
         )
+        row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
 
 
 class OrderAction(ListView):
@@ -110,3 +114,129 @@ class OrderAction(ListView):
             context['forms'].append(f)
         context['form'] = True
         return context
+
+
+def ajax_order_order_add(request):
+    import json
+    data = json.loads(request.body)
+    data['creator_user'] = request.user
+    data['editor_user'] = request.user
+    quantity = data.get('quantity')
+    obj, created = OrderOrder.objects.get_or_create(defaults=data, order_base_id=data.get('order_base_id'), order_rel_id=data.get('order_rel_id'))
+    if quantity and not created:
+        obj.quantity += quantity
+        obj.save()
+    form = OrderForm(instance=obj.order_base)
+    html = render_to_string('order/partial/order_order_report.html', context={'form': form})
+    return JsonResponse({'res': html})
+
+
+class PackingView(LoginRequiredMixin, BaseView):
+    template_name = 'order/packing_view.html'
+    form_class = PackingForm
+    model = Packing
+    wf_last_step_is_open = True
+    has_flow = True
+    form_struct = {
+        'form': PackingForm,
+        'childes': [
+            {
+                'form': PackingItemForm,
+                'childes': [{}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:packing.update', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class packing_list_form(LoginRequiredMixin, BaseView):
+    template_name = 'order/packing_item_form.html'
+    form_class = PackingItemForm
+    model = PackingItem
+    wf_last_step_is_open = True
+    has_flow = True
+    form_struct = {
+        'form': PackingItemForm,
+        'childes': [
+            {},
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:packing.view', kwargs={'pk': self.object.packing.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get(self, request, *args, **kwargs):
+        if is_ajax(request):
+            packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
+            form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
+            context = self.get_context_data()
+            context['form'] = form
+            res = render_to_string(self.template_name, context=context)
+            return JsonResponse({'res': res})
+        return JsonResponse({'res': 'only ajax request'})
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['app_name'] = self.request.resolver_match.app_name
+    #     return context
+
+
+class PackingListView(LoginRequiredMixin, ListView):
+    """
+    sku list view
+    """
+    model = Packing
+    template_name = 'order/packing_list.html'
+    context_object_name = 'items'
+
+
+class PackingDataTableListView(AjaxDatatableView):
+    model = Packing
+    title = 'packing'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'sum_qty', 'visible': True, 'title': _('sum_qty'), 'className': 'py-1',},
+        {'name': 'sum_arrived_qty', 'visible': True, 'title': _('sum_arrived_qty'), 'className': 'py-1', },
+        {'name': 'tp_method', 'title': _('tp_method'), 'className': 'py-1', },
+        {'name': 'pack_date', 'title': _('pack_date'), 'className': 'py-1', },
+        {'name': 'bl_number', 'title': _('bl_number'), 'className': 'py-1', },
+        {'name': 'sales_manager_needed', 'title': _('sales_manager_needed'), 'className': 'py-1', },
+        {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
+        {'name': 'created_date', 'orderable': True, 'visible': True, },
+    ]
+
+    def customize_row(self, row, obj):
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('order:packing.update', args=(obj.id,)),
+            obj.id if obj.id else 'بدون عنوان'
+        )

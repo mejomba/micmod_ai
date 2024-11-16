@@ -440,10 +440,14 @@ function ajax_submit
 (form, reload_=null, elem_for_load=null) {
         debugger
     $.ajax({ // create an AJAX call...
-        beforeSend: function (){
+        beforeSend: function (xhr){
             debugger
             if (elem_for_load){
                 console.log('load...')
+            }
+            if (!$(form).find('input[name="csrfmiddlewaretoken"]').length) {
+                const csrfToken = getCookie('csrftoken');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
             }
         },
         data: $(form).serialize(), // get the form data
@@ -564,19 +568,92 @@ function defaultFormatRepoSelection(repo) {
     return repo.id || repo.text
 }
 
+function addWindowHighlightSections(color = 'rgba(0, 128, 255, 0.3)') {
+    const topHighlight = document.createElement('div');
+    const  help_text = 'برای اسکرول خودکار ابتدا همه ردیف ها را بسته و ردیف مورد نظر را به اینجا بکشید'
+    topHighlight.innerText = help_text
+    topHighlight.id = 'topHighlight'
+    Object.assign(topHighlight.style, {
+        position: 'fixed',
+        top: '100px',
+        left: '0',
+        width: '90%',
+        height: '100px',
+        textAlign: 'center',
+        color: 'blue',
+        fontSize: '18px',
+        backgroundColor: color,
+        zIndex: '9999',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+    document.body.appendChild(topHighlight);
+
+    const bottomHighlight = document.createElement('div');
+    bottomHighlight.innerText = help_text
+    bottomHighlight.id = 'bottomHighlight'
+    Object.assign(bottomHighlight.style, {
+        position: 'fixed',
+        bottom: '100px',
+        left: '0',
+        width: '90%',
+        height: '100px',
+        textAlign: 'center',
+        color: 'blue',
+        fontSize: '18px',
+        backgroundColor: color,
+        zIndex: '9999',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+    document.body.appendChild(bottomHighlight);
+}
+    function removeWindowHighlightSections(){
+        const a = document.querySelector('#bottomHighlight');
+        const b = document.querySelector('#topHighlight');
+        if (a){a.remove()}
+        if (b){b.remove()}
+    }
+
 function generate_drag_drop(container_id='sortable-container', draggable_items_selector='#sortable-container .sortable-item', index_field_id_selector='-index'){
-        var sortable = new Sortable(document.getElementById(container_id), {
-        animation: 400,
+    var sortable = new Sortable(document.getElementById(container_id), {
+        animation: 200,
         handle: '.handel-drop',
         ghostClass: 'drag-drop',
+        onStart: function (evt){
+            addWindowHighlightSections('rgba(255, 0, 0, 0.2)');
+        },
         onEnd: function (evt) {
             var items = document.querySelectorAll(draggable_items_selector);
             items.forEach(function(item, index) {
                 item.querySelector(`[id*=${index_field_id_selector}]`).value = index
             });
+            removeWindowHighlightSections()
         },
         onUpdate: function (evt) {
             evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
+        },
+        onChange: function (evt) {
+            const threshold = 200; // فاصله از لبه صفحه برای شروع اسکرول
+            const scrollSpeed = 100; // سرعت اسکرول
+            const topHighlight = document.createElement('div');
+
+            // چک کردن موقعیت موس
+            const mouseY = evt.originalEvent.clientY;
+            console.log('mouseY= ', mouseY)
+
+            // اگر موس به بالای صفحه نزدیک شد، اسکرول به سمت بالا
+            if (mouseY < threshold) {
+                window.scrollBy(0, -scrollSpeed);
+            }
+            // اگر موس به پایین صفحه نزدیک شد، اسکرول به سمت پایین
+            else if ((window.innerHeight - mouseY) < threshold) {
+                window.scrollBy(0, scrollSpeed);
+            }
         }
     });
 }

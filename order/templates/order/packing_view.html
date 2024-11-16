@@ -1,0 +1,82 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+
+{% block extra_css %}
+
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <style>
+    </style>
+{% endblock extra_css %}
+
+
+{% block form_content %}
+{% csrf_token %}
+
+    <div class="mb-2">
+        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+    </div>
+
+
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+        <div class="row">
+        {% render_field_by_order form form.sum_qty form.sum_arrived_qty form.tp_method form.pack_date form.bl_number form.sales_manager_needed label='on-border' %}
+            {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packing_list.form' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+
+        {% if form.instance.pk %}
+            <div>
+                {% for packing_item in form.instance.packing_item_rel.all %}
+                {{ packing_item }}
+                {% endfor %}
+
+            </div>
+        {% endif %}
+        <div class="border" id="packing_item_container">
+        </div>
+        </div>
+    </div>
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+
+    <script>
+    const packing_item_container = document.querySelector('#packing_item_container')
+    const packing_item = document.querySelector('#packing_item')
+    packing_item && packing_item.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    </script>
+{% endblock extra_js %}

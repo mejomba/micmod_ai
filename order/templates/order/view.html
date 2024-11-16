@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load accounts_tag %}
 {% load core_tags %}
+{% load order_tags %}
 
 {% block extra_css %}
 
@@ -48,6 +49,12 @@
     label {
         font-size: 1rem;
     }
+    .rotate_90_animation {
+        transition: rotate 0.3s ease-in-out !important;
+    }
+    .rotate_90_animation:hover {
+      rotate: 90deg !important;
+    }
     </style>
 {% endblock extra_css %}
 
@@ -73,11 +80,12 @@
                             {% render_field_by_order form form.order_type label='on-border' %}
                             <div class="col-8 t">
                                 <div class="d-flex">
-                            {% render_field_by_order form form.sales_admin_confirmation form.is_over form.cancel label='on-border' %}
+                            {% render_field_by_order form form.sales_admin_confirmation form.is_over label='on-border' %}
+                                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">
+                                {% render_field_by_order form form.cancel label='on-border' %}
+                                    </div>
                                 </div>
                                 </div>
-
-{#                            <div id="id_customer_select2"></div>#}
                             {% render_field_by_order form form.item form.qi label='on-border' %}
                         </div>
                     </div>
@@ -86,8 +94,43 @@
                     </div>
                 </div>
             </div>
-            <div class="col-5">{{ form.order_m2m }}</div>
+                <div id="order_order_report_ajax" class="col-5">
+                {% include 'order/partial/order_order_report.html' with form=form %}
+                </div>
+{#            <div class="col-5">{{ form.order_m2m }}</div>#}
+            <div class="overflow-scroll">
+
+            </div>
         </div>
+        {% if form.instance.pk and 0 %}
+            {% with form.instance.remaining_quantity as rq %}
+            <span class="{% if rq > 0 %} bg-info {% else %} bg-danger {% endif %} px-3 py-1 rounded text-white">
+            تعداد باقی مانده:
+            <span>{{ rq|floatformat:"-3g" }}</span>
+            </span>
+            {% endwith %}
+            <div>
+            {% for f in form.instance.factor_items.all  %}
+                {% for o in f.supply_locations.order_base_items.all %}
+                <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
+                    <span>از سفارش</span>
+                    <span class="me-1">{{ o.order_rel.pk }}</span>
+                    <span class="bg-light-info px-1 rounded">{{ o.quantity|floatformat:"-2g" }}</span>
+                    <span>عدد</span>
+                </a>
+                {% endfor %}
+                <div>
+                <span>جمع</span>
+                <span>{% total_supply f %}</span>
+                <span>از</span>
+                <span>{{ form.instance.quantity }}</span>
+                </div>
+            {% endfor %}
+
+
+            </div>
+            <div>{{ form.instance.order_rel.all }}</div>
+        {% endif %}
     </div>
 
     {% include 'core/partial/empty_modal.html' %}
@@ -101,6 +144,98 @@
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'js/extra/order.js' %}"></script>
     <script>
+function order_add(event){
+    const order_form_container = event.currentTarget.parentElement.parentElement.nextElementSibling
 
+    if (order_form_container){
+        const order_base = order_form_container.querySelector('.order_base')
+        const order_rel = order_form_container.querySelector('.order_rel')
+        const row = event.currentTarget.parentElement.parentElement
+        let order_base_value;
+        let order_rel_value;
+
+        document.querySelectorAll('.order_form_container').forEach(function (item){
+            if (item !== order_form_container){
+                item.classList.add('d-none')
+            } else {
+                order_form_container.classList.toggle('d-none')
+            }
+        })
+
+        if (order_base && order_rel){
+            order_base_value = order_base.dataset.order_base
+            order_rel_value = row.querySelector('.available_order_rel').innerText
+            order_base.innerHTML = order_base_value
+            order_rel.innerHTML = order_rel_value
+        }
+
+    }
+}
+
+const need_quantity = document.querySelector('#need_quantity')
+function check_order_quantity(event){
+    debugger
+    event.currentTarget.style.outline = 0
+    event.currentTarget.style.border = "2px solid"
+    const order_quantity_message = event.currentTarget.parentElement.querySelector('.order_quantity_message')
+    const remaining_quantity = event.currentTarget.parentElement.parentElement.parentElement.previousElementSibling.querySelector('.remaining_quantity')
+    const order_order_submit = event.currentTarget.parentElement.querySelector('.order_order_submit')
+    const current_value = parseFloat(event.currentTarget.value)
+    if (need_quantity){
+        if ((current_value > parseFloat(need_quantity.innerText)) && (current_value > parseFloat(remaining_quantity.innerText))) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس و نیاز سفارش است'
+            order_order_submit.classList.add('d-none')
+        } else if (current_value > parseFloat(remaining_quantity.innerText)){
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس است!'
+            order_order_submit.classList.add('d-none')
+        } else if (current_value > parseFloat(need_quantity.innerText)) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از نیاز سفارش است'
+            order_order_submit.classList.add('d-none')
+        } else if (!current_value) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'مقدار نامعتبر'
+            order_order_submit.classList.add('d-none')
+        } else {
+            event.currentTarget.style.borderColor = 'green'
+            order_quantity_message.innerText = ''
+            order_order_submit.classList.remove('d-none')
+        }
+    } else {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'سفارش تامین شده'
+            order_order_submit.classList.add('d-none')
+        }
+
+}
+function submit_order_order(event){
+    event.preventDefault()
+    debugger
+    const order_quantity = event.currentTarget.parentElement.querySelector('.order_order_quantity')
+    if (order_quantity){
+        if (parseFloat(order_quantity.value) > parseFloat(need_quantity.innerText)){
+            console.log('confirm modal')
+        }
+    }
+    let post_data = JSON.stringify({
+        "order_base_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_base').innerText),
+        "order_rel_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_rel').innerText),
+        "quantity": parseFloat(order_quantity.value)
+    })
+    const url = '/order/ajax/order_order/add/'
+    const order_order_report_element = document.querySelector('#order_order_report_ajax')
+    custom_ajax_post_data(post_data, url, order_order_report_element, false)
+}
+
+const DeleteCustomerExpert = document.querySelectorAll('.delete-order-order')
+DeleteCustomerExpert.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
     </script>
 {% endblock extra_js %}

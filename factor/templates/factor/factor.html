@@ -187,5 +187,22 @@
             elem.classList.remove('text-danger')
         }
     }
+
+    function sync_supply_location(event){
+        debugger
+        const supply_locations = event.currentTarget.parentElement.querySelector('[id*="-supply_locations"]')
+        supply_locations.value = event.currentTarget.value
+    }
+    {#const factor_items = document.querySelectorAll('.factor_item')#}
+    {#if (factor_items){#}
+    {#    factor_items.forEach(function (fi){#}
+    {#        const id_supply_location = fi.querySelector('#id_supply_location')#}
+    {#        id_supply_location && id_supply_location.addEventListener('change', function (e){#}
+    {#            debugger#}
+    {#            const supply_locations = fi.querySelector('[id*="-supply_locations"]')#}
+    {#            supply_locations.value = e.currentTarget.value#}
+    {#        })#}
+    {#    })#}
+    //}
     </script>
 {% endblock extra_js %}
