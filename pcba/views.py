@@ -9,9 +9,9 @@ from django.views import View
 
 from core.views import BaseView, Base
 from micmod_base.forms import TimeForm
-from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm
-from pcba.models import Contract, CustomerItemReceipt, ProjectItemList
-from tools.utils import show_error
+from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm, ProductionDayActivitiesForm, ItemReceiptForm
+from pcba.models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
+from tools.utils import show_error, is_ajax
 from translator import get_text as _
 
 
@@ -101,6 +101,49 @@ class ContractView(LoginRequiredMixin, BaseView):
         return context
 
 
+
+class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
+    # template_name = 'pcba/items_in_customer_receipt.html'
+    ajax_template_name = 'pcba/partial/items_in_customer_receipt_ajax.html'
+    form_class = ItemReceiptForm
+    model = ItemsInCustomerReceipt
+    wf_last_step_is_open = True
+    # has_flow = True
+    form_struct = {
+        'form': ItemReceiptForm,
+        'childes': [
+            {},
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('pcba:item.in.customer.receipt.view', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        if is_ajax(self.request):
+            return JsonResponse({'res': 'ok'})
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        pk = self.request.GET.get('pk', None)
+        cir = CustomerItemReceipt.objects.filter(pk=pk).first()
+        context['form'] = ItemReceiptForm(initial={'customer_item_receipt': cir or self.object.customer_item_receipt}, instance=self.object)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            context = self.get_context_data()
+            res = render_to_string(self.ajax_template_name, context=context, request=self.request)
+            return JsonResponse({'res': res}, safe=False)
+        return super().get(request, *args, **kwargs)
+
+
 class CustomerItemReceiptView(LoginRequiredMixin, BaseView):
     template_name = 'pcba/customer_item_receipt.html'
     ajax_template_name = 'pcba/partial/customer_item_receipt_ajax.html'
@@ -123,6 +166,8 @@ class CustomerItemReceiptView(LoginRequiredMixin, BaseView):
 
     def form_valid(self, form):
         res = super().form_valid(form)
+        if is_ajax(self.request):
+            return JsonResponse({'res': 'ok'})
         return res
 
     def get_context_data(self, **kwargs):
@@ -131,13 +176,16 @@ class CustomerItemReceiptView(LoginRequiredMixin, BaseView):
         pk = self.request.GET.get('pk', None)
         if pk:
             contract = Contract.objects.filter(pk=pk).first()
-            context['form'] = CustomerItemReceiptForm(initial={'contract': contract or self.object.contract, }, instance=self.object)
+            # parent = CustomerItemReceipt.objects.filter(contract_id=contract, status=CustomerItemReceipt.INCOMPLETE)
+            context['form'] = CustomerItemReceiptForm(initial={'contract': contract or self.object.contract},
+                                                      instance=self.object, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            html = render_to_string(self.ajax_template_name, self.get_context_data(), self.request)
-            return JsonResponse({'res': html})
+            context = self.get_context_data()
+            res = render_to_string(self.ajax_template_name, context=context, request=self.request)
+            return JsonResponse({'res': res}, safe=False)
         return super().get(request, *args, **kwargs)
 
 
@@ -212,8 +260,8 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
         pk = self.request.GET.get('pk', None)
         if pk:
             contract = Contract.objects.filter(pk=pk).first()
-            goods_code_fk = contract.goods_code_fk
-            context['form'] = ProjectItemListForm(initial={'contract': contract or self.object.contract, 'goods_code_fk': goods_code_fk or self.object.contract.goods_code_fk}, instance=self.object)
+            # goods_code_fk = contract.goods_code_fk
+            context['form'] = ProjectItemListForm(initial={'contract': contract or self.object.contract}, instance=self.object)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -221,6 +269,57 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
             html = render_to_string(self.ajax_template_name, self.get_context_data(), self.request)
             return JsonResponse({'res': html})
         return super().get(request, *args, **kwargs)
+
+
+class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
+    ajax_template_name = 'pcba/partial/production_day_activities_ajax.html'
+    form_class = ProductionDayActivitiesForm
+    model = ProductionDayActivities
+    wf_last_step_is_open = True
+    # has_flow = True
+    form_struct = {
+        'form': ProductionDayActivitiesForm,
+        'childes': [
+            {},
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('pcba:production.day.activities.view', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        if is_ajax(self.request):
+            return JsonResponse({'res': 'ok'})
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        pk = self.request.GET.get('pk', None)
+        if pk:
+            contract = Contract.objects.filter(pk=pk).first()
+            goods_code_fk = contract.goods_code_fk
+            customer = contract.customer_party_id.pk
+            context['form'] = ProductionDayActivitiesForm(initial={'contract': contract or self.object.contract,
+                                                                   'goods_code_fk': goods_code_fk or self.object.contract.goods_code_fk,
+                                                                   'customer_party_id': customer or self.object.contract.customer_party_id.pk
+
+                                                               },
+                                                          instance=self.object)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            context = self.get_context_data()
+            res = render_to_string(self.ajax_template_name, context=context, request=self.request)
+            return JsonResponse({'res': res}, safe=False)
+        return super().get(request, *args, **kwargs)
+
+
 
 
 def get_contracts(request):
