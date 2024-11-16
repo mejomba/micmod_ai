@@ -285,19 +285,7 @@
               "link": "pcba:contracts.list"
             }
           ]
-        },
-        {
-        "title": "customer item receipt",
-        "icon": "burger-menu",
-        "menus": [
-            {
-              "title": "create",
-              "icon": "burger-menu",
-              "path_key": "customer/item/receipt/",
-              "link": "pcba:customer.item.receipt.view"
-            }
-          ]
-          }
+        }
       ]
     },
     {
