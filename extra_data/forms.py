@@ -145,6 +145,7 @@ class ChangeCustomerGroupForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
+        self.make_hidden(['from_marketer'])
 
 
 class CustomerExpertForm(CustomBaseModelForm):

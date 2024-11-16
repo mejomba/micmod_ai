@@ -9,13 +9,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
+from django.db.models.functions import Coalesce
 from django.forms import fields_for_model
 from django.utils import timezone
 
 # from comments.models import Comments
 # from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
-from django.db.models import Q
+from django.db.models import Q, Sum, Value, F
 from accounts.models import User
 from tools.utils import c_get as c_get
 from workflow.models import WorkFlow
@@ -70,23 +71,21 @@ class BaseManager(models.Manager):
 
 
     def get_access_object(self, user, q="all", *args, **kwargs):
-        import time
         from workflow.models import WorkFlow
 
-        # direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
-        direct_access = f'quotation_direct_access'
+        direct_access = ''
         user_groups_list = list(user.groups.values_list('name', flat=True))
-
+        model_name = self.model.__name__
+        if q == 'all' or q == 'pay':
+            direct_access = f'{model_name.lower()}_direct_access'
         if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()
 
-        # wfs = BaseManager.get_target_wf(user)
         wfs = user.get_target_wf()
         object_id_from_flow = wfs.filter(content_type=content_type).values_list('object_id', flat=True)
 
-        # user_list = user.get_target_users(user)
         user_list = user.get_target_users()
         objects_from_user = self.model.objects.filter(
             Q(creator_user__in=user_list) |
@@ -95,23 +94,21 @@ class BaseManager(models.Manager):
         objects_from_flow = self.model.objects.filter(pk__in=object_id_from_flow)
 
         qry = objects_from_user | objects_from_flow
-        quotations_record_lst = []
-        # obj = qry.first()
-        # user_team = user.team.all()
-        # if obj and q == 'active':
         if q == 'active':
-            # content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
             quotations_record_lst = qry.filter(last_work_flow__to_user=user) #filter(lambda x: x.last_work_flow.to_user == user, qry)
             # for item in qry:
             #     wf = item.last_work_flow #WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
             #     if wf and (wf.to_user == user):
             #         quotations_record_lst.append(item)
+        elif q == 'not_over':
+            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(factor_item_quantity=Coalesce(
+                Sum('quotation__qi__quantity'), Value(0)),qi_quantity=Coalesce(
+                Sum('quotation__quantity'), Value(0))).filter(qi_quantity__gt=F('factor_item_quantity'))
         else:
             quotations_record_lst = qry
 
         if kwargs.get('quotation') and q == 'active':
             return quotations_record_lst.filter(sepidar_number__isnull=True, cancel=False)
-            # return [x for x in quotations_record_lst if not x.sepidar_number and not x.cancel]
         else:
             return [x for x in quotations_record_lst if x]
 
@@ -318,6 +315,39 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     submit_copy = False
     objects = BaseManager()
 
+    def save_comment(self, request, COMMENT_FORM):
+        # ToDo make dynamic
+        app_label = self._meta.app_label
+        model_name = self._meta.model_name
+        ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
+        object_id = self.pk
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        title = request.POST.get(f'{prefix}-comment_title')
+        content = request.POST.get(f'{prefix}-comment_content')
+        if title in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'P'] and not content:
+            content = 'بدون توضیحات'
+        comment_form = COMMENT_FORM(request.POST, prefix=prefix, initial={'comment_content': content})
+
+        if comment_form.is_valid():
+            comment_form.instance.extra_data.request = request
+            cmnt = comment_form.save(commit=False)
+            if cmnt.for_sku or cmnt.for_customer:
+                cmnt.is_active = True
+            cmnt.save()
+            cmnt.save_image(
+                request=request,
+                image_groups=comment_form.image_groups,
+                image_model=comment_form.image_model,
+                obj=cmnt,
+                input_prefix=f'{prefix}-image',
+            )
+            cmnt.save_file(
+                request=request,
+                file_groups=comment_form.file_groups,
+                file_model=comment_form.file_model,
+                obj=cmnt,
+                input_prefix=f'{prefix}-file',
+            )
     def get_content_type_forms(self):
         self.content_type_forms = list()
         if self.has_workflow:
@@ -452,7 +482,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
 
     """***NEW***"""
 
-    def save_comment(self, request, idx=None):
+    def save_comment_(self, request, idx=None):
         from comments.models import Comments
         app_label = self._meta.app_label
         model_name = self._meta.model_name
@@ -676,3 +706,22 @@ class BaseAbsContentType(models.Model, BaseModelAuto):
 
     class Meta:
         abstract = True
+
+
+class LogError(AbsBaseModel):
+    error_message = models.TextField(verbose_name=_('error'), null=True, blank=True)
+    error_type = models.CharField(max_length=255, verbose_name=_('code'), null=True, blank=True)
+    file = models.TextField(verbose_name=_('file'))
+    line_number = models.CharField(max_length=10, verbose_name=_('line_number'), null=True, blank=True)
+
+    @classmethod
+    def save_db(cls, request, e, file):
+        data = {
+            'error_message': e.args[0],
+            'error_type': type(e).__name__,
+            'file': file,
+            'line_number': e.__traceback__.tb_lineno,
+            "creator_user": request.user,
+            "editor_user": request.user
+        }
+        cls.objects.create(**data)

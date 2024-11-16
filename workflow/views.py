@@ -40,8 +40,8 @@ class FlowBaseView(SingleObjectMixin):
     def get_flow_user(self, group: str):
         user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
         try:
-            last_wf = self.form.instance.last_work_flow
-            if last_wf.current_state_name == 'استعلام قیمت':
+            last_wf = self.object.last_work_flow
+            if last_wf.current_state_name == 'استعلام قیمت' or last_wf.current_state_name == 'تایید پیش فاکتور':
                 for u in user_list:
                     if last_wf.to_user in u.team.all():
                         return u

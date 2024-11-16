@@ -143,6 +143,17 @@ def get_comments(obj, comment_form=None, button_text=None, button_style=None, co
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
 def get_comment_user_list(form, current_user, cancel=None, comment_type=None, size=None, obj_rel=None):
+    customer = sku = None
+    model = form.instance._meta.model
+    if form.instance.pk:
+        if model.__name__.lower() == 'quotationitem':
+            customer = getattr(form.instance.quotation, 'customer_party_id', None)
+            sku = getattr(form.instance, 'goods_code_fk', None)
+        if model.__name__.lower() == 'quotation':
+            customer = getattr(form.instance, 'customer_party_id', None)
+            sku = None
+    for_sku = Q(sku=sku) & Q(for_sku=True)
+    for_customer = Q(customer=customer) & Q(for_customer=True)
     unseen_comment = list()
 
     comments_info = list()
@@ -160,7 +171,9 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None, si
         comments = None
     comment_seen = CommentSeen.objects.all()
     if comments is None:
+        return Comments.objects.filter(Q(for_sku | for_customer), is_active=True, is_deleted=False)
         return {}
+    comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
     for comment in comments:
         try:
             if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():

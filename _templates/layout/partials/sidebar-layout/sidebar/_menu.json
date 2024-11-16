@@ -312,6 +312,33 @@
       ]
     },
     {
+      "title": "t-pcba",
+      "icon": "discount",
+      "path_key": "pcba",
+      "section": "False",
+      "menus": [
+        {
+          "title": "contract",
+          "icon": "search-list",
+          "path_key": "",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "burger-menu",
+              "path_key": "contracts/",
+              "link": "pcba:contracts.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "contracts/list/",
+              "link": "pcba:contracts.list"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "items",
       "icon": "barcode",
       "path_key": "sku",
@@ -522,8 +549,33 @@
           "title": "list",
           "path_key": "local/payment/list",
           "link": "payment:local.payment.list"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "credit-card",
+          "path_key": "local/credit_card",
+          "permission": {
+            "groups": [
+              "trade_user", "accounting_user"
+            ]
+          },
+          "link": "payment:credit_card"
         }
       ]
+    },
+    {
+      "title": "comment",
+      "icon": "burger-menu",
+      "path_key": "comment/list",
+      "link": "comments:comment.list",
+      "permission": {
+        "groups": [
+          "comment_admin"
+        ],
+        "permissions": [
+          "comments.edit_comment"
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,78 @@
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+<style>
+    .select2-container--open{
+        z-index: 2000;
+        position: relative;
+    }
+    .select2-search__field{
+        z-index: 5000;
+    }
+    .select2-container--default{
+        width: 100% !important;
+    }
+</style>
+{% csrf_token %}
+<form method="POST" action="{% if form.instance.pk %}{% url "pcba:project.item.list" form.instance.pk %}{% else %}{% url "pcba:project.item.list" %}{% endif %}"  id="project-item-list-form">
+     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-1 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">لیست قطعات پروژه</h4>
+                <div class="col">
+                <div class="row">
+                    <div class="col on-border w-100 mb-3">
+                        <div id="id_goods_code_fk2_select2" class=""></div>
+                            <label for="">کد کالا</label>
+                        </div>
+                    </div>
+                    <div class="row row-cols-4">
+
+                      {% render_field_by_order form form.contract form.goods_code_fk form.part_number form.quantity form.description label='on-border' %}
+
+                    </div>
+                    <span class="d-none" id="goods_name_project_item_list">
+                            {% if form.instance.pk %}
+                                ({{ form.instance.goods_code_fk }}) -- {{ form.instance.goods_code_fk.part_number }}
+                            {% else %}کد کالا{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="submit" name="project_item_list" id="project_item_list" value="ثبت" class="btn btn-primary">
+{{ form.errors }}
+</form>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+
+    {#    $('#project-item-list-form').on('submit', function (e){#}
+    {#    e.preventDefault()#}
+    {#    ajax_submit(this, true, true)#}
+    {#    setInterval(function (){#}
+    {#        $("#id_kt_empty_modal_lg").hide()#}
+    {#    }, 500)#}
+    //})
+
+    </script>
+
+<script>
+    $('#project-item-list-form').on('submit', function (e){
+        e.preventDefault()
+        custom_ajax_post(this, this.action, null, true)
+    })
+</script>
+<script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+<script>
+    let goods_placeholder  = document.querySelector('#goods_name_project_item_list')
+        goods_placeholder = goods_placeholder.innerText || 'کد کالا'
+    select2_generate("#id_goods_code_fk2_select2", '#id_goods_code_fk2', '/inquiry/items_list/', goods_placeholder)
+</script>

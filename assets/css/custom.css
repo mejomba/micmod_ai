@@ -609,6 +609,13 @@ div[comma-value] input{
     bottom: 80px !important;
     background-color: red !important;
 }
+.mxw-50px {
+    max-width: 50px;
+}
+.ll {
+    direction: ltr !important;
+    text-align: left !important;
+}
 /*================== loadin on ajax request =================*/
 .overlay {
   height: 100%;

@@ -4,7 +4,7 @@ from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
-from payment.models import PaymentOrder, PaymentDocument
+from payment.models import PaymentOrder, PaymentDocument, CreditCard
 
 from translator import get_text as _
 from django_select2 import forms as s2forms
@@ -24,6 +24,7 @@ class PaymentOrderModelForm(CustomBaseModelForm):
             attrs={'class': 'jalali_date-date underline_dash_border', 'size': '10'}), required=True)
         self.fields['payment_date'] = JalaliDateField(widget=AdminJalaliDateWidget(
             attrs={'class': 'jalali_date-date underline_dash_border', 'size': '10'}), required=False)
+        self.fields['description'].widget.attrs['rows'] = 2
 
         self.fields['request_date'].initial = timezone.now()
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -98,4 +99,14 @@ class PaymentDocumentsForm(CustomBaseModelForm):
             widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['to_date'] = JalaliDateField(
             widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        # self.fields['file_1'].widget.attrs['required'] = True
+
+
+class CreditCardForm(CustomBaseModelForm):
+
+    class Meta:
+        model = CreditCard
+        exclude = ['group']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['credit_card_number'].widget.attrs['class'] = 'form-control comma-seperator ll'

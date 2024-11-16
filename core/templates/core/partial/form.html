@@ -5,6 +5,18 @@
     {{ form.comment_title }} <br>
     {{ form.comment_content.label_tag }}
     {{ form.comment_content }} <br>
+    <div class="mt-3 mb-5 p-1 d-non---">
+        <span class="">
+            {{ form.customer }}
+            {{ form.for_customer }}
+            <label for="{{ form.for_customer.id_for_label }}">{{ form.for_customer.label }}</label>
+        </span>
+        <span class="ms-4">
+            {{ form.sku }}
+            {{ form.for_sku }}
+            <label for="{{ form.for_sku.id_for_label }}">{{ form.for_sku.label }}</label>
+        </span>
+    </div>
     {{ form.object_id }}
     {{ form.content_type }}
 

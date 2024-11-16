@@ -628,6 +628,8 @@ class CustomerGroup(AbsBaseModel):
 
     auto_complete = 'title'
 
+    insert_new = False
+
 
 class Senf(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
