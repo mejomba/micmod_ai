@@ -4,13 +4,22 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
-
+<style>
+    .select2-dropdown--below{
+        transition: width 0.7s ease;
+    }
+</style>
 <form action="{% if form.instance.pk %}{% url 'order:packing.update' form.instance.pk %}{% else %}{% url 'order:order.view' %}{% endif %}" method="POST" id="packing-item-form" enctype="multipart/form-data">
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
         <div class="row">
+
+            <div id="id_order_select2" style="width: 50%"></div>
+
         {% render_field_by_order form form.packing form.order label='on-border' %}
-            <div id="id_order_select2"></div>
+
+
+
         {% render_field_by_order form form.carton_qty form.weight_kg label='on-border' %}
         </div>
     </div>
@@ -20,7 +29,7 @@
 <script>
     debugger
     const order_select2_placeholder = document.querySelector('[name="order"]').value.toString() || "انتخاب سفارش"
-    select2_generate('#id_order_select2', '#id_order', '/order/order_list', order_select2_placeholder)
+    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
     $('#packing-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit(this, true, true)

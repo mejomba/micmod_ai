@@ -491,6 +491,7 @@ function ajax_delete(elms) {
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null){
         debugger
+    let select2_container_width;
     // target_element => '#target_element'
     $(select2_element).select2({
         ajax: {
@@ -528,17 +529,14 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
     })
 
     $(select2_element).on("select2:open", function (e){
+        debugger
          $('#id_kt_empty_modal_lg').css({
                 'visibility': 'hidden',
                 'pointer-events': 'none',
          });
-         $('select2-selection').css({
-                'width': '100% !important',
-                'height': '100% !important',
-                'max-height': 'none !important',
-                'border-radius': '0 !important',
-                'z-index': '9999',
-         });
+        const select2_container = document.querySelector('.select2-container--below')
+        select2_container_width = select2_container.style.width
+        select2_container.style.width = '100%'
     })
 
     $(select2_element).on("select2:close", function () {
@@ -548,6 +546,7 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
             'visibility': 'visible',
             'pointer-events': 'auto'
         });
+        document.querySelector('.select2-container--below').style.width = select2_container_width
     })
 }
 

@@ -1318,3 +1318,48 @@ class CustomAjaxDataTable(AjaxDatatableView):
             content_type="application/json")
 
         return response
+
+
+class Select2BaseSearch_(View):
+    model = None
+    title = None
+    def get(self, request, *args, **kwargs):
+        if self.model is None or self.title is None:
+            raise ImproperlyConfigured('Select2BaseSearch "model" and "title" required')
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        if q:
+            qs = self.model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, self.title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+
+class Select2BaseSearch(View):
+    model = None
+    title = None
+    # "core/select2/<str:app_name>/<str:model_name>/<str:title>/"
+    def get(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        if q:
+            qs = model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
