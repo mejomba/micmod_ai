@@ -343,8 +343,8 @@
             ]
           },
           {
-            "state": "تایید بازرگانی",
-            "group": "trade_user",
+            "state": "arrive",
+            "group": "packing_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -358,8 +358,8 @@
             ]
           },
           {
-            "state": "تایید مهندس",
-            "group": "trade_user",
+            "state": "10%",
+            "group": "packing_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -373,7 +373,7 @@
             ]
           },
           {
-            "state": "ارسال به تامین کننده",
+            "state": "تحویل اسناد",
             "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
@@ -388,7 +388,7 @@
             ]
           },
           {
-            "state": "تایید تامین کننده",
+            "state": "اضهار گمرکی",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
@@ -403,7 +403,7 @@
             ]
           },
           {
-            "state": "تایید بازرگانی",
+            "state": "ترخیص گمرک",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
@@ -418,8 +418,8 @@
             ]
           },
           {
-            "state": "پرداخت / PACKING / GIO",
-            "group": "order_confirm",
+            "state": "انبار",
+            "group": "wh_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],

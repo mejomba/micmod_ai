@@ -1,0 +1,9 @@
+<div class="d-flex">
+    <a href="#" class="">
+        {% if obj.pk %}
+            <h1 class="border px-3 py-1 rounded" id={{ id_ }} data-url="{% url url_ %}?pk={{ obj.pk }}" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">+</h1>
+            {% else %}
+            <p>{{ help_text }}</p>
+        {% endif %}
+    </a>
+</div>

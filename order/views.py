@@ -9,9 +9,10 @@ from django.views.generic import ListView
 
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
+from tools.utils import is_ajax
 # from order.models import OrderItem
 from .forms import OrderForm, PackingForm, PackingItemForm
-from .models import Order, OrderOrder, Packing
+from .models import Order, OrderOrder, Packing, PackingItem
 from translator import get_text as _
 
 # def factor_order_item(request, sku, quantity):
@@ -131,9 +132,9 @@ def ajax_order_order_add(request):
 
 
 class PackingView(LoginRequiredMixin, BaseView):
-    template_name = 'order/view.html'
+    template_name = 'order/packing_view.html'
     form_class = PackingForm
-    model = Order
+    model = Packing
     wf_last_step_is_open = True
     has_flow = True
     form_struct = {
@@ -148,7 +149,7 @@ class PackingView(LoginRequiredMixin, BaseView):
     flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
 
     def get_success_url(self):
-        return reverse_lazy('order:packing.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('order:packing.update', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -163,12 +164,52 @@ class PackingView(LoginRequiredMixin, BaseView):
         return context
 
 
+class packing_list_form(LoginRequiredMixin, BaseView):
+    template_name = 'order/packing_item_form.html'
+    form_class = PackingItemForm
+    model = PackingItem
+    wf_last_step_is_open = True
+    has_flow = True
+    form_struct = {
+        'form': PackingItemForm,
+        'childes': [
+            {},
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:packing.view', kwargs={'pk': self.object.packing.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get(self, request, *args, **kwargs):
+        if is_ajax(request):
+            packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
+            form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
+            context = self.get_context_data()
+            context['form'] = form
+            res = render_to_string(self.template_name, context=context)
+            return JsonResponse({'res': res})
+        return JsonResponse({'res': 'only ajax request'})
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['app_name'] = self.request.resolver_match.app_name
+    #     return context
+
+
 class PackingListView(LoginRequiredMixin, ListView):
     """
     sku list view
     """
     model = Packing
-    template_name = 'extra_data/sku_list.html'
+    template_name = 'order/packing_list.html'
     context_object_name = 'items'
 
 
@@ -182,14 +223,20 @@ class PackingDataTableListView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'TP_METHOD', 'visible': True, 'title': _('TP_METHOD'), 'className': 'py-1 border sku-search',
-         'defaultContent': '<a href"#">test</a>', 'lookup_field': '__sku__iexact'},
-        {'name': 'sum_qty', 'visible': True, 'title': _('sum_qty'), 'className': 'py-1 border', 'searchable': False},
-        {'name': 'sum_arrived_qty', 'visible': True, 'title': _('sum_arrived_qty'), 'className': 'py-1 border', },
-        {'name': 'tp_method', 'visible': True, 'title': _('tp_method'), 'className': 'py-1 border', },
-        {'name': 'pack_date', 'visible': True, 'title': _('pack_date'), 'className': 'py-1 border', },
-        {'name': 'bl_number', 'visible': True, 'title': _('bl_number'), 'className': 'py-1 border', },
-        {'name': 'sales_manager_needed', 'visible': True, 'title': _('sales_manager_needed'), 'className': 'py-1 border', },
-        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', },
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'sum_qty', 'visible': True, 'title': _('sum_qty'), 'className': 'py-1',},
+        {'name': 'sum_arrived_qty', 'visible': True, 'title': _('sum_arrived_qty'), 'className': 'py-1', },
+        {'name': 'tp_method', 'title': _('tp_method'), 'className': 'py-1', },
+        {'name': 'pack_date', 'title': _('pack_date'), 'className': 'py-1', },
+        {'name': 'bl_number', 'title': _('bl_number'), 'className': 'py-1', },
+        {'name': 'sales_manager_needed', 'title': _('sales_manager_needed'), 'className': 'py-1', },
+        {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
+
+    def customize_row(self, row, obj):
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('order:packing.update', args=(obj.id,)),
+            obj.id if obj.id else 'بدون عنوان'
+        )

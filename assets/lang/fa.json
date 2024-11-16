@@ -627,5 +627,12 @@
     "item": "کالا",
     "trade_commitment_date": "تاریخ تعهد بازرگانی",
     "commitment_date_to_customer": "تاریخ تعهد به مشتری",
-    "description_sale": "توضیحات فروش"
+    "description_sale": "توضیحات فروش",
+    "t-packing": "پکینگ",
+    "sum_qty": "مجموع تعداد",
+    "sum_arrived_qty": "مجموع رسیده",
+    "tp_method": "روش حمل",
+    "pack_date": "تاریخ بسته بندی",
+    "bl_number": "شماره بارنامه",
+    "sales_manager_needed": "نیاز به تایید مدیر فروش"
 }

@@ -160,6 +160,9 @@ class PackingItemForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(PackingItemForm, self).__init__(*args, **kwargs)
+        self.make_hidden(['order'])
+        if packing := self.initial.get('packing'):
+            self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=packing.pk)
 
         if request and request.user.is_superuser:
             if form_constraint_hide:

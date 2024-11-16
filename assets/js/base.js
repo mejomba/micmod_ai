@@ -429,10 +429,14 @@ function ajax_submit
 (form, reload_=null, elem_for_load=null) {
         debugger
     $.ajax({ // create an AJAX call...
-        beforeSend: function (){
+        beforeSend: function (xhr){
             debugger
             if (elem_for_load){
                 console.log('load...')
+            }
+            if (!$(form).find('input[name="csrfmiddlewaretoken"]').length) {
+                const csrfToken = getCookie('csrftoken');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
             }
         },
         data: $(form).serialize(), // get the form data
