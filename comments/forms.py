@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.safestring import mark_safe
 
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
@@ -17,8 +18,12 @@ class CommentsForm(CustomBaseModelForm):
 
     class Meta:
         model = Comments
-        fields = ['comment_title', 'comment_content', 'object_id', 'content_type']
-        # fields = ['comment_title', 'comment_content']
+        fields = ['comment_title', 'comment_content', 'object_id', 'content_type',
+                  'for_customer', 'for_sku', 'sku', 'customer', 'is_active']
+        labels = {
+            'for_sku': f"""{mark_safe('همیشه برای این <span class="bg-light-danger px-1 cursor-pointer">کالا</span> نمایش داده شود')}""",
+            'for_customer': f"""{mark_safe('همیشه برای این <span class="bg-light-warning px-1 cursor-pointer">مشتری</span> نمایش داده شود')}""",
+        }
 
     def __init__(self, *args, **kwargs):
         super(CommentsForm, self).__init__(*args, **kwargs)
@@ -55,5 +60,5 @@ class CommentsForm(CustomBaseModelForm):
             )
             self.initial['comment_title'] = 'C'  # initial as cancel
 
-        self.make_hidden(['object_id', 'content_type'])
+        self.make_hidden(['object_id', 'content_type', 'sku', 'customer'])
         self.make_optional(['image_1', 'file_1'])

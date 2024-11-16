@@ -5,7 +5,7 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-<div class="card item p-0 my-2" dir="rtl">
+<div class="card item p-0 my-2 {% if not forloop.last %} sortable-item bg-danger {% endif %}" dir="rtl">
 {% if form_s.errors %}
 <div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
 {% endif %}
@@ -140,7 +140,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-none border-bottom px-1" name="box-alt-goods">
+                <div class="d-non border-bottom px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
                             {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
@@ -165,7 +165,10 @@
                 </div>
                 <div class="px-1 replace-digits">
                     <div class="w-100">
-                        <div class="card-text bold">آخرین فروش به مشتری</div>
+                        <div class="card-text bold">
+                            <span>آخرین فروش به مشتری</span>
+{#                            <span class="ms-3 text-primary fw-light" name="last__sale__goods__name"></span>#}
+                        </div>
                         <div class="d-flex" id="customer-last-sales">
                             <div class="w-30 mt-3">
                                 <div class="">فاکتور</div>
@@ -390,4 +393,10 @@
 </div>
         </div>
     </div>
+{% if not forloop.last %}
+<i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x position-absolute text-info hover-drop-down-icon" style="top: 0; left: 0; height: 30px">
+     <span class="path1"></span>
+     <span class="path2"></span>
+    </i>
+{% endif %}
 </div>

@@ -50,7 +50,7 @@ class CustomerForm(CustomBaseModelForm):
     class Meta:
         model = Customer
         fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',
-                  'customer_group', 'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'black_list',
+                  'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'revival_date', 'black_list',
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
@@ -64,14 +64,15 @@ class CustomerForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("customer field"), is_stacked=False),
         )
+
+        self.fields['revival_date'] = JalaliDateField(widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
+
         self.fields['z_safte'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['z_cheque_s'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['z_cheque_ns'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['z_max_credit_rafi'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['extra_credit'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
-    #
-    #     self.fields['revival_date'] = JalaliDateField(lable=_('revival_date'), widget=AdminJalaliDateWidget(
-    #                                   attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+
     #
     #     if not access:
     #         self.make_disable(fields=self.fields)
@@ -144,6 +145,7 @@ class ChangeCustomerGroupForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         access = None
         super().__init__(*args, **kwargs)
+        self.make_hidden(['from_marketer'])
 
 
 class CustomerExpertForm(CustomBaseModelForm):

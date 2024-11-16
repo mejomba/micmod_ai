@@ -12,8 +12,6 @@
                         {% if comment.creator_user.profile %}
                             <img src="{{ comment.creator_user.profile.get_user_image }}" alt="user_image__{{ comment.creator_user.firstname }}" class="rounded-circle" width="32" height="32">
                         {% endif %}
-
-
                     </div>
                     <p class="me-4 ms-2 fw-bold text-active-gray-800" >
                         {{ comment.creator_user }}
@@ -22,6 +20,7 @@
                         {{ comment.elapsed_time }}
                     </p>
                     <!--end::Author details-->
+                <u class="ms-5 text-muted font-size-12">ID: {{ comment.pk }}</u>
                 </div>
                 <!--end::Author-->
 
@@ -31,8 +30,22 @@
                     <p class="badge ms-auto {% if comment.comment_title == 'C' %} badge-light-danger {% else %} badge-light-info {% endif %}">
                         {{ comment.get_comment_title_display }}
                     </p>
+                {% if comment.for_customer %}
+                    <p class="badge badge-light-warning rounded font-size-11">برای مشتری</p>
+                {% endif %}
+                {% if comment.for_sku %}
+                    <p class="badge badge-light-danger rounded font-size-11">برای کالا</p>
+                {% endif %}
+
                     {% if comment.creator_user == request.user %}
-                        <p class="btn btn-light-danger ms-auto comment_delete py-0 px-5" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
+                        <p class="comment_delete text-danger tooltip_" data-comment_pk="{{ comment.pk }}" data-bs-toggle="tooltip" data-bs-original-title="حذف" data-bs-trigger="hover" data-bs-placement="top">
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
                         </p>
                     {% endif %}
 
@@ -106,8 +119,18 @@
                         {{ comment_rel.get_comment_title_display }}
                     </p>
                     {% if comment_rel.creator_user == request.user %}
-                        <p class="btn btn-light-danger ms-auto comment_delete py-0 px-5" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete
-                        </p>
+                        <a href="#" target="_blank" class="comment_delete text-danger tooltip_" data-comment_pk="{{ comment.pk }}">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </a>
+{#                        <p class="btn btn-light-danger ms-auto comment_delete py-0 px-5" data-comment_pk="{{ comment.pk }}" data-key="delete" >delete#}
+{#                        </p>#}
                     {% endif %}
                     <!--end::Date-->
                     <div class="d-flex">

@@ -25,7 +25,7 @@ from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract
+    CustomerContract, ChangeCustomerGroup
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -573,7 +573,7 @@ class CustomerDocumentView(LoginRequiredMixin, BaseView):
 
 
 class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
-    model = CustomerDocuments
+    model = ChangeCustomerGroup
     template_name = 'extra_data/customer_change_marketer.html'
     # success_url = reverse_lazy('extra_data:customer.list')
     success_message = '%(customer)s update'
@@ -593,7 +593,14 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
-        context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
+        try:
+            next_step_from_marketer = customer.change_marketer_rel.all().order_by('id').last().to_marketer if customer else None
+        except Exception as e:
+            next_step_from_marketer = None
+        if next_step_from_marketer:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer, 'from_marketer': next_step_from_marketer}, instance=self.object)
+        else:
+            context['form'] = ChangeCustomerGroupForm(initial={'customer': customer or self.object.customer}, instance=self.object)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -606,6 +613,10 @@ class CustomerChangeMarketerView(LoginRequiredMixin, BaseView):
         # x = [requests.get('http://' + self.request.META.get('HTTP_HOST') + static(js)).text for js in jss]
 
         return JsonResponse({'res': res})
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
 
 class CustomerExpertView(LoginRequiredMixin, BaseView):
     model = CustomerExpert
@@ -720,3 +731,34 @@ class CustomerSepidarInsertView(View):
         else:
             return JsonResponse({'res': 'error'}, status=404)
         pass
+
+
+class ItemListUpdate(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            extra_avg = data.get('kala')
+            sea_avg = data.get('sea')
+            air_avg = data.get('air')
+            express_avg = data.get('express')
+            pk_values = data.get('pk_values')
+            items = Item.objects.filter(pk__in=pk_values)
+            for item in items:
+                if extra_avg:
+                    item.extra_cost_percentage = extra_avg
+                if express_avg:
+                    item.express_extra_cost_percentage = express_avg
+                if air_avg:
+                    item.air_extra_cost_percentage=air_avg
+                if sea_avg:
+                    item.sea_extra_cost_percentage = sea_avg
+                if extra_avg or express_avg or air_avg or sea_avg:
+                    item.extra_data.request = request
+                    item.save()
+            # items.update(express_extra_cost_percentage=express_avg,
+            #              air_extra_cost_percentage=air_avg,
+            #              sea_extra_cost_percentage=sea_avg,
+            #              editor_user=request.user)
+            return JsonResponse({'res': 'success'})
+        except Exception as e:
+            return JsonResponse({'res': 'fail'}, status=500)

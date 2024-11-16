@@ -192,12 +192,15 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
         self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black'
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
+        self.make_required(['quantity'])
         user_groups = request.user.groups.values_list('name', flat=True) if request else None
         if request and not request.user.is_superuser:
             if 'trade_user' not in user_groups:
                 self.make_disable(['foreign_price_inquiry_done', 'lead_time']) # 'trade_price_code',
             if 'bazar_user' not in user_groups:
                 self.make_disable(['local_price_inquiry_done', ]) #'bazar_price_code'
+            # if get_user_model().objects.filter(pk=request.user.pk, groups__name='sales_admin').exists():
+                # self.fields['goods_code_alt'].disabled = False
         try:
             x = get_user_model().objects.filter(groups__name__in=['trade_user', 'trade_admin'])
             self.fields['assigned_trade_user'].queryset = x.distinct() if x else None
@@ -272,6 +275,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'bazar_price_code': forms.HiddenInput(),
             'trade_price_code': forms.HiddenInput(),
             'goods_code_fk': forms.HiddenInput(),
+            'index': forms.HiddenInput(),
             'quantity': forms.TextInput(attrs={'class': 'quantity comma-seperator  w-100',
                                                }),
         }

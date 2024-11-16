@@ -124,7 +124,7 @@ def search_factor_view(request, *args, **kwargs):
         if s == 'search_sepidar_id':
             q_filter |= Q(sepidar_number__icontains=q_int)
         if s == 'search_sku':
-            q_filter |= Q(quotation__goods_code_fk__sku__icontains=q_str)
+            q_filter |= Q(quotation__goods_code_fk__sku__iexact=q_str)
         if s == 'search_part_number':
             q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
@@ -143,7 +143,7 @@ def search_factor_view(request, *args, **kwargs):
         item['customer_party_id'] = q.customer_party_id.sepidar_dl_code if q.customer_party_id else '-'
         item['quotation_id'] = q.pk
         item['row_count'] = q.quotation.all().count()
-        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow else '-'
+        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow and q.last_work_flow.creator_user else '-'
         item['last_work_flow_state'] = q.last_work_flow.current_state_name if q.last_work_flow else '-'
         item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title

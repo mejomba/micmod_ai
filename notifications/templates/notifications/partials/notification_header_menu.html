@@ -60,8 +60,9 @@
                 message["body"]
                 , message["title"])
             if(message['message_type'] !== 'success') {
-                console.log(message['message_type'] )
-                let audio = new Audio('{% static "alerts/blup.ogg" %}');
+                {#console.log(message['message_type'] )#}
+                {#let audio = new Audio('{% static "alerts/blup.ogg" %}');#}
+                let audio = new Audio('{% static "alerts/Chaos_Notification.mp3" %}');
                 audio.play()
             }
         };

@@ -388,7 +388,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28)
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28,84)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN
@@ -446,7 +446,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28)
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28,84)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN

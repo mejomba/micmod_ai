@@ -115,6 +115,32 @@
           ]
         },
         {
+          "title": "t-order",
+          "icon": "cheque",
+          "path_key": "order",
+          "permission": {
+            "permissions": [
+              "order.view_order"
+            ]
+          },
+          "count": "order.order:get_qs_count",
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "order/view",
+              "link": "order:order.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "order/list",
+              "link": "order:order.list",
+              "count": "order.order:get_qs_count"
+            }
+          ]
+        },
+        {
               "title": "pending_list",
               "icon": "burger-menu",
               "path_key": "quotationitem/list/pending/",
@@ -499,8 +525,33 @@
           "title": "list",
           "path_key": "local/payment/list",
           "link": "payment:local.payment.list"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "credit-card",
+          "path_key": "local/credit_card",
+          "permission": {
+            "groups": [
+              "trade_user", "accounting_user"
+            ]
+          },
+          "link": "payment:credit_card"
         }
       ]
+    },
+    {
+      "title": "comment",
+      "icon": "burger-menu",
+      "path_key": "comment/list",
+      "link": "comments:comment.list",
+      "permission": {
+        "groups": [
+          "comment_admin"
+        ],
+        "permissions": [
+          "comments.edit_comment"
+        ]
+      }
     }
   ]
 }

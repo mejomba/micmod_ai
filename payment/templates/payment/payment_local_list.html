@@ -27,8 +27,9 @@
 
     <div class="border rounded mb-5 p-3">
         <span>استفاده از فیلتر</span>
-        <a href="{% url 'payment:local.payment.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-        <a href="{% url 'payment:local.payment.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <a href="{% url 'payment:local.payment.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
+        <a href="{% url 'payment:local.payment.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
+        <a href="{% url 'payment:local.payment.list' %}?q=pay" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'pay' %} bg-primary {% endif %}">پرداخت شده</a>
     </div>
 
         <!-- ============================================================== -->
