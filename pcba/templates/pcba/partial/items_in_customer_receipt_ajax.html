@@ -1,0 +1,72 @@
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+<style>
+    .select2-container--open{
+        z-index: 2000;
+        position: relative;
+    }
+    .select2-search__field{
+        z-index: 5000;
+    }
+    .select2-container--default{
+        width: 100% !important;
+    }
+</style>
+
+{% csrf_token %}
+
+<form method="POST" action="{% if form.instance.pk %}{% url "pcba:item.in.customer.receipt.view" form.instance.pk %}{% else %}{% url "pcba:item.in.customer.receipt.view" %}{% endif %}"  id="item-in-customer-receipt">
+{% csrf_token %}
+     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-1 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">کالا های رسید</h4>
+                <div class="col">
+                <div class="row">
+
+                    <div class="row row-cols-3">
+
+                      {% render_field_by_order form form.goods_code_fk form.customer_item_receipt form.quantity form.receipt_date label='on-border' %}
+
+                    </div>
+                <div class="col on-border w-100 mb-3">
+                        <div id="id_goods_code_fk3_select2" class=""></div>
+                            <label for="">کد کالا</label>
+                        </div>
+                    </div>
+                <div>
+                </div>
+                    <span class="d-none" id="goods_name_in_item">
+                            {% if form.instance.pk %}
+                                ({{ form.instance.goods_code_fk }}) -- {{ form.instance.goods_code_fk.part_number }}
+                            {% else %}کد کالا{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+<input type="submit" name="item_in_customer_receipt" id="item_in_customer_receipt" value="ثبت" class="btn btn-primary">
+{{ form.errors }}
+</form>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<script>
+    $('#item-in-customer-receipt').on('submit', function (e){
+        e.preventDefault()
+        custom_ajax_post(this, this.action, null, true)
+    })
+</script>
+<script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+<script>
+    debugger
+    let goods_placeholder_  = document.querySelector('#goods_name_in_item')
+        goods_placeholder_ = goods_placeholder_.innerText || 'کد کالا'
+    select2_generate("#id_goods_code_fk3_select2", '#id_goods_code_fk3', '/inquiry/items_list/', goods_placeholder_)
+</script>

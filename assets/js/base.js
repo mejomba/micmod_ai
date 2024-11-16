@@ -172,7 +172,8 @@ function release_main_container() {
     get_main_container().release();
 }
 
-function custom_ajax_post(form, url, element) {
+function custom_ajax_post(form, url, element, reload_=null) {
+    debugger
     let formData = new FormData(form);
     $.ajax({
         type: 'POST',
@@ -188,7 +189,17 @@ function custom_ajax_post(form, url, element) {
         beforeSend: block_main_container,
         success: function (data) {
             html = data['res'];
-            element.html(html);
+            if (element){
+                element.html(html);
+            }
+            if (reload_){
+                console.log('reload...')
+                setTimeout(function (){
+                    var loc = window.location;
+                    window.location = loc.protocol + '//' + loc.host + loc.pathname + loc.search;
+                    // location.reload()
+                }, 500)
+            }
             run_scripts(html);
         },
         error: function () {
@@ -475,6 +486,7 @@ function ajax_delete(elms) {
 
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null){
+        debugger
     // target_element => '#target_element'
     $(select2_element).select2({
         ajax: {
@@ -497,7 +509,7 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
         },
         minimumInputLength: minimumInputLength || 1,
         placeholder: {
-            text: placeholder
+            text: '' || placeholder
         },
         allowClear: false,
         templateResult: formatRepoDL || defaultFormatRepoDL,
@@ -509,6 +521,28 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
         const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
         $(document).find(target_element).val(data[id_field])
         document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+    })
+
+    $(select2_element).on("select2:open", function (e){
+         $('#id_kt_empty_modal_lg').css({
+                'visibility': 'hidden',
+                'pointer-events': 'none',
+         });
+         $('select2-selection').css({
+                'width': '100% !important',
+                'height': '100% !important',
+                'max-height': 'none !important',
+                'border-radius': '0 !important',
+                'z-index': '9999',
+         });
+
+}).on("select2:close", function () {
+    // Restore modal settings after closing select2
+    $('#id_kt_empty_modal_lg').css({
+        'opacity': '1',
+        'visibility': 'visible',
+        'pointer-events': 'auto'
+    });
     })
 }
 

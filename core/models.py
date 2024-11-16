@@ -9,13 +9,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
+from django.db.models.functions import Coalesce
 from django.forms import fields_for_model
 from django.utils import timezone
 
 # from comments.models import Comments
 # from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
-from django.db.models import Q
+from django.db.models import Q, Sum, Value, F
 from accounts.models import User
 from tools.utils import c_get as c_get
 from workflow.models import WorkFlow
@@ -95,6 +96,14 @@ class BaseManager(models.Manager):
         qry = objects_from_user | objects_from_flow
         if q == 'active':
             quotations_record_lst = qry.filter(last_work_flow__to_user=user) #filter(lambda x: x.last_work_flow.to_user == user, qry)
+            # for item in qry:
+            #     wf = item.last_work_flow #WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
+            #     if wf and (wf.to_user == user):
+            #         quotations_record_lst.append(item)
+        elif q == 'not_over':
+            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(factor_item_quantity=Coalesce(
+                Sum('quotation__qi__quantity'), Value(0)),qi_quantity=Coalesce(
+                Sum('quotation__quantity'), Value(0))).filter(qi_quantity__gt=F('factor_item_quantity'))
         else:
             quotations_record_lst = qry
 

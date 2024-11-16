@@ -1,0 +1,63 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{% endblock extra_css %}
+
+
+{% block form_content %}
+{% csrf_token %}
+
+{#<form method="POST" action="{% if form.instance.pk %}{% url "pcba:customer.item.receipt.view" form.instance.pk %}{% else %}{% url "pcba:customer.item.receipt.view" %}{% endif %}"  id="customer-item-receipt-form">#}
+     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-1 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">رسید کالای مشتری</h4>
+                <div class="col">
+                    <div class="row row-cols-6">
+                        <div id="id_parent_select2"></div><div id="id_contract_select2"></div>
+                        {% render_field_by_order form form.receipt_date form.status form.total_board_receipt_count label='on-border' %}
+                    <span class="d-none" id="contract_name">
+                        {% if form.instance.pk %}
+                            ({{ form.instance.contract.pk }}) -- {{ form.instance.contract.contract_title }}
+                        {% else %}قرارداد{% endif %}
+                    </span>
+                    <span class="d-none" id="parent_name">{% if form.instance.pk %}
+                        ({{ form.instance.parent.pk }}) -- {{ form.instance.parent.contract.customer_party_id.sepidar_dl_code }}
+                        {% else %}رسید مربوطه{% endif %}
+                    </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{#</form>#}
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        let parent_placeholder  = document.querySelector('#parent_name')
+        let contract_placeholder  = document.querySelector('#contract_name')
+        parent_placeholder = parent_placeholder.innerText
+        contract_placeholder = contract_placeholder.innerText
+
+        select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)
+        select2_generate("#id_parent_select2", '#id_parent', '/pcba/parent/select2/', parent_placeholder)
+
+
+
+    </script>
+{% endblock extra_js %}
