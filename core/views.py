@@ -43,6 +43,8 @@ import openpyxl
 
 from .models import ExtraData
 
+from .models import LogError
+
 
 class BaseView(UserPassesTestMixin,
                SingleObjectTemplateResponseMixin,
@@ -204,6 +206,7 @@ class BaseView(UserPassesTestMixin,
                     wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                                 content_type_model=self.model, current_user=self.request.user)
             except Exception as e:
+                LogError.save_db(self.request, e, __file__)
                 print('error ', __file__, e.__traceback__.tb_lineno, e)
                 wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                             content_type_model=self.model, current_user=self.request.user)
@@ -476,6 +479,7 @@ class BaseView(UserPassesTestMixin,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
         except Exception as e:
+            LogError.save_db(self.request, e, __file__)
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
 
             # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
@@ -688,6 +692,7 @@ class BaseView(UserPassesTestMixin,
                     """***NEW***"""
 
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     print('error: ', e.__traceback__.tb_lineno, e)
 
                 """save formset"""
@@ -798,6 +803,7 @@ class BaseView(UserPassesTestMixin,
                     new_obj.last_work_flow = wf_obj
                     new_obj.save()
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     show_error(e, __file__)
                 return super().form_valid(form)
             return super().form_valid(form)
