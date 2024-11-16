@@ -535,14 +535,15 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
                 'border-radius': '0 !important',
                 'z-index': '9999',
          });
+    })
 
-}).on("select2:close", function () {
-    // Restore modal settings after closing select2
-    $('#id_kt_empty_modal_lg').css({
-        'opacity': '1',
-        'visibility': 'visible',
-        'pointer-events': 'auto'
-    });
+    $(select2_element).on("select2:close", function () {
+        // Restore modal settings after closing select2
+        $('#id_kt_empty_modal_lg').css({
+            'opacity': '1',
+            'visibility': 'visible',
+            'pointer-events': 'auto'
+        });
     })
 }
 
