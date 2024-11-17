@@ -534,6 +534,7 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
                 'visibility': 'hidden',
                 'pointer-events': 'none',
          });
+        document.querySelector(`${select2_element}`).parentElement.classList.remove('col')
         const select2_container = document.querySelector('.select2-container--below')
         select2_container_width = select2_container.style.width
         select2_container.style.width = '100%'
@@ -547,6 +548,7 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
             'pointer-events': 'auto'
         });
         document.querySelector('.select2-container--below').style.width = select2_container_width
+        document.querySelector(`${select2_element}`).parentElement.classList.add('col')
     })
 }
 

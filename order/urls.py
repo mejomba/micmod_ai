@@ -15,4 +15,6 @@ urlpatterns = [
     path('packing/view/<int:pk>/', views.PackingView.as_view(), name='packing.update'),
     path('packing/list/', views.PackingListView.as_view(), name='packing.list'),
     path('packing/list/datatable/', views.PackingDataTableListView.as_view(), name='packing.list.datatable'),
+    path('packingitem/view/', views.packing_list_form.as_view(), name='packingitem.view'),
+    path('packingitem/view/<int:pk>/', views.packing_list_form.as_view(), name='packingitem.view'),
 ]

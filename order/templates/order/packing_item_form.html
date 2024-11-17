@@ -9,18 +9,21 @@
         transition: width 0.7s ease;
     }
 </style>
-<form action="{% if form.instance.pk %}{% url 'order:packing.update' form.instance.pk %}{% else %}{% url 'order:order.view' %}{% endif %}" method="POST" id="packing-item-form" enctype="multipart/form-data">
+<form action="{% if form.instance.pk %}{% url 'order:packing.update' form.instance.pk %}{% else %}{% url 'order:packingitem.view' %}{% endif %}" method="POST" id="packing-item-form" enctype="multipart/form-data">
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
         <div class="row">
+            <div class="d-none" name="order_placeholder">{{ form.instance.order }}</div>
 
-            <div id="id_order_select2" style="width: 50%"></div>
+{#            <div class="col on-border mb-3">#}
+{#                <div id="id_order_select2" class="" style="width: 100%">#}
+{#                </div>#}
+{#                <label for="" style="position: absolute; top: -15px">سفارش</label>#}
+{#            </div>#}
+            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
 
-        {% render_field_by_order form form.packing form.order label='on-border' %}
+            {% render_field_by_order form form.packing form.order form.carton_qty form.weight_kg label='on-border' %}
 
-
-
-        {% render_field_by_order form form.carton_qty form.weight_kg label='on-border' %}
         </div>
     </div>
 <input type="submit" value="ثبت" id="submit-packing-item" class="btn btn-primary ms-10">
@@ -28,7 +31,7 @@
 
 <script>
     debugger
-    const order_select2_placeholder = document.querySelector('[name="order"]').value.toString() || "انتخاب سفارش"
+    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
     select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
     $('#packing-item-form').on('submit', function (e){
         e.preventDefault()

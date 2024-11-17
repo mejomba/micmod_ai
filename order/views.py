@@ -137,6 +137,7 @@ class PackingView(LoginRequiredMixin, BaseView):
     model = Packing
     wf_last_step_is_open = True
     has_flow = True
+    success_message = 'با موفقیت ذخیره شد'
     form_struct = {
         'form': PackingForm,
         'childes': [
@@ -169,7 +170,7 @@ class packing_list_form(LoginRequiredMixin, BaseView):
     form_class = PackingItemForm
     model = PackingItem
     wf_last_step_is_open = True
-    has_flow = True
+    has_flow = False
     form_struct = {
         'form': PackingItemForm,
         'childes': [
@@ -179,7 +180,7 @@ class packing_list_form(LoginRequiredMixin, BaseView):
     flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
 
     def get_success_url(self):
-        return reverse_lazy('order:packing.view', kwargs={'pk': self.object.packing.pk})
+        return reverse_lazy('order:packingitem.view', kwargs={'pk': self.object.packing.pk})
 
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -188,11 +189,12 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         res = super().form_valid(form)
         return res
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, pk=None, *args, **kwargs):
         if is_ajax(request):
             packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
             form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
-            context = self.get_context_data()
+            # context = self.get_context_data()
+            context = {}
             context['form'] = form
             res = render_to_string(self.template_name, context=context)
             return JsonResponse({'res': res})

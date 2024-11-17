@@ -47,12 +47,12 @@ class CustomerItemReceipt(BaseModeWF):
         return f'{self.pk} - {self.title}'
 
 
-
 class ItemsInCustomerReceipt(BaseModeWF):
     goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='goods_code_item_customer_receipt', verbose_name='کالا')
     quantity = models.PositiveIntegerField(default=0, verbose_name='تعداد')
     receipt_date = models.DateField(verbose_name='تاریخ دریافت کالا')
     customer_item_receipt = models.ForeignKey(CustomerItemReceipt, related_name='items', on_delete=models.DO_NOTHING, verbose_name='رسید کالای مربوطه')
+
 
 class ProjectItemList(BaseModeWF):
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, verbose_name='قرارداد')
@@ -84,7 +84,7 @@ class ProductionDayActivities(BaseModeWF):
     ASSEMBLY_CHOICES = [(TIN_DOUGH, _('خمیر قلع')), (GLUE, _('چسب'))]
     ACTIVITY_CHOICES = [(COUNTING_AND_ITEM_LIST, _('شمارش و لیست قطعات')),
                         (DEVICE_FIRST_SETUP, _('ستاپ اولیه دستگاه')), (DEVICE_SECOND_SETUP, _('ستاپ ثانویه دستگاه')),
-                        (ASSEMBLY, _('مونتاژ')), (OVEN, _('آون')), (QS, _('ْQC')), (PACKING, _('بسته‌بندی')),
+                        (ASSEMBLY, _('مونتاژ')), (OVEN, _('آون')), (QS, _('QC')), (PACKING, _('بسته‌بندی')),
                         (DELIVERY, _('ارسال'))]
 
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, related_name='production_contract', verbose_name='قرارداد')
@@ -100,10 +100,3 @@ class ProductionDayActivities(BaseModeWF):
 
     def __str__(self):
         return f'{self.contract.contract_title}'
-
-
-
-
-
-
-

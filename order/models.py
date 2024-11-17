@@ -161,6 +161,9 @@ class Packing(BaseModeWF):
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
     sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
 
+    def __str__(self):
+        return f'{self.bl_number} -- {self.pack_date}'
+
 
 class PackingItem(BaseModeWF):
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
