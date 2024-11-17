@@ -211,7 +211,7 @@
             ]
           },
           {
-            "state": "تایید بازرگانی",
+            "state": "1تایید بازرگانی",
             "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
@@ -271,7 +271,7 @@
             ]
           },
           {
-            "state": "تایید بازرگانی",
+            "state": "2تایید بازرگانی",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
@@ -287,7 +287,7 @@
           },
           {
             "state": "پرداخت / PACKING / GIO",
-            "group": "order_confirm",
+            "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
