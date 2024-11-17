@@ -359,8 +359,6 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        # context['object_logs'] = ChangeLog.get_log(self.object)
-        # context['object_logs'] = []
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                       "constraint": {
@@ -375,7 +373,6 @@ class BaseView(UserPassesTestMixin,
             context['formset'] = self.formset
 
         context['allow_next'] = True
-        print(__file__, 'super class context', context.get('current_user_groups'))
         return context
 
     def get_form_kwargs(self):
