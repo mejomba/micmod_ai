@@ -63,7 +63,7 @@
                                     </div>
                                     <div class="col-2 py-1 ">
                                         <span>
-                                        <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{% url 'order:packingitem.view' packing_item.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                        <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{% url 'order:packingitem.update' packing_item.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
                                             <i class="ki-duotone ki-pencil fs-2 text-info">
                                                 <span class="path1"></span>
@@ -103,7 +103,7 @@
                             {% endwith %}
                         {% endif %}
                             <div class="mt-5">
-                            {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packing_list.form' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+                            {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packingitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
                             </div>
                     </div>
                 </div>
@@ -159,7 +159,7 @@
         const modal_lg_body = $('#id-empty-modal-body-lg')
             $.ajax({
             type: 'GET',
-            url: this.dataset.url,
+            url: element.dataset.url,
             dataType: 'json',
             cache: false,
             processData: false,

@@ -169,41 +169,49 @@ class packing_list_form(LoginRequiredMixin, BaseView):
     template_name = 'order/packing_item_form.html'
     form_class = PackingItemForm
     model = PackingItem
-    wf_last_step_is_open = True
-    has_flow = False
+    # wf_last_step_is_open = True
+    # has_flow = False
     form_struct = {
         'form': PackingItemForm,
         'childes': [
             {},
         ]
     }
-    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PackingView')
 
     def get_success_url(self):
-        return reverse_lazy('order:packingitem.view', kwargs={'pk': self.object.packing.pk})
+        return reverse_lazy('order:packingitem.update', kwargs={'pk': self.object.packing.pk})
 
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        x = super().post(request, *args, **kwargs)
+        if is_ajax(request):
+            return JsonResponse({'res': 'success'})
+        else:
+            return x
 
     def form_valid(self, form):
-        res = super().form_valid(form)
-        return res
+        x = super().form_valid(form)
+        return JsonResponse({'res': True})
 
     def get(self, request, pk=None, *args, **kwargs):
         if is_ajax(request):
-            packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
-            form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
+            # packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
+            # form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
             # context = self.get_context_data()
-            context = {}
-            context['form'] = form
-            res = render_to_string(self.template_name, context=context)
+            # context = {}
+            # context['form'] = form
+            res = render_to_string(self.template_name, context=self.get_context_data())
             return JsonResponse({'res': res})
         return JsonResponse({'res': 'only ajax request'})
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context['app_name'] = self.request.resolver_match.app_name
-    #     return context
+    def get_context_data(self, **kwargs):
+        context = {}
+        # context = super().get_context_data(**kwargs)
+        packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
+        form = PackingItemForm(initial={'packing': packing or self.object.packing}, instance=self.object)
+        context['app_name'] = self.request.resolver_match.app_name
+        context['form'] = form
+        return context
 
 
 class PackingListView(LoginRequiredMixin, ListView):
