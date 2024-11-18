@@ -23,12 +23,12 @@ urlpatterns = [
     path('packingitem/update/<int:pk>/', views.packing_list_form.as_view(), name='packingitem.update'),
 
     #  GIO
-    # path('gio/view/', views.GIOView.as_view(), name='packing.view'),
-    # path('gio/view/<int:pk>/', views.GIOView.as_view(), name='packing.update'),
-    # path('gio/list/', views.GIOListView.as_view(), name='packing.list'),
-    # path('gio/list/datatable/', views.GIODataTableListView.as_view(), name='packing.list.datatable'),
+    path('gio/view/', views.GIOView.as_view(), name='gio.view'),
+    path('gio/view/<int:pk>/', views.GIOView.as_view(), name='gio.update'),
+    path('gio/list/', views.GIOListView.as_view(), name='gio.list'),
+    path('gio/list/datatable/', views.GIODataTableListView.as_view(), name='gio.list.datatable'),
 
     #  gioitem
-    # path('gioitem/view/', views.gio_list_form.as_view(), name='packingitem.view'),
-    # path('gioitem/update/<int:pk>/', views.gio_list_form.as_view(), name='packingitem.update'),
+    path('gioitem/view/', views.GIOItemView.as_view(), name='gioitem.view'),
+    path('gioitem/update/<int:pk>/', views.GIOItemView.as_view(), name='gioitem.update'),
 ]

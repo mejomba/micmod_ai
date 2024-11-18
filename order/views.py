@@ -5,14 +5,15 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
+from django.views import View
 from django.views.generic import ListView
 
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
 from tools.utils import is_ajax
 # from order.models import OrderItem
-from .forms import OrderForm, PackingForm, PackingItemForm
-from .models import Order, OrderOrder, Packing, PackingItem
+from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm
+from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem
 from translator import get_text as _
 
 # def factor_order_item(request, sku, quantity):
@@ -248,5 +249,115 @@ class PackingDataTableListView(AjaxDatatableView):
     def customize_row(self, row, obj):
         row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
             reverse('order:packing.update', args=(obj.id,)),
+            obj.id if obj.id else 'بدون عنوان'
+        )
+
+
+class GIOView(LoginRequiredMixin, BaseView):
+    template_name = 'order/gio_view.html'
+    form_class = GIOForm
+    model = GIO
+    wf_last_step_is_open = True
+    has_flow = True
+    success_message = 'با موفقیت ذخیره شد'
+    form_struct = {
+        'form': GIOForm,
+        'childes': [
+            {},
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:gio.update', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class GIOItemView(LoginRequiredMixin, BaseView):
+    template_name = 'order/gio_item.html'
+    form_class = GIOItemForm
+    model = GIOItem
+    form_struct = {
+        'form': GIOItemForm,
+        'childes': [
+            {},
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('order:gio.update', kwargs={'pk': self.object.gio.pk})
+
+    def post(self, request, *args, **kwargs):
+        x = super().post(request, *args, **kwargs)
+        if is_ajax(request):
+            return JsonResponse({'res': 'success'})
+        else:
+            return x
+
+    def form_valid(self, form):
+        x = super().form_valid(form)
+        return JsonResponse({'res': True})
+
+    def get(self, request, pk=None, *args, **kwargs):
+        if is_ajax(request):
+            context = self.get_context_data()
+            res = render_to_string(self.template_name, context=context)
+            return JsonResponse({'res': res})
+        return JsonResponse({'res': 'only ajax request'})
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        gio = GIO.objects.filter(pk=self.request.GET.get('pk')).first()
+        form = self.form_class(initial={'gio': gio or self.object.gio}, instance=self.object)
+        context['app_name'] = self.request.resolver_match.app_name
+        context['form'] = form
+        return context
+
+
+class GIOListView(LoginRequiredMixin, View):
+    """
+    sku list view
+    """
+    # model = Packing
+    template_name = 'order/gio_list.html'
+    context_object_name = 'items'
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+        return render(request, self.template_name, context)
+
+
+class GIODataTableListView(AjaxDatatableView):
+    model = GIO
+    title = 'GIO'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'gio_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
+        {'name': 'total_quantity', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
+        {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
+        {'name': 'created_date', 'orderable': True, 'visible': True, },
+    ]
+
+    def customize_row(self, row, obj):
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('order:gio.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )

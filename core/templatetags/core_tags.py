@@ -2,6 +2,7 @@ import datetime
 import json
 import re
 
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django import template
 from _keenthemes.libs.theme import KTTheme
@@ -254,3 +255,54 @@ def max_(a, b):
 @register.filter
 def abs_(a):
     return abs(a)
+
+
+@register.inclusion_tag('core/partial/table_responsive.html')
+def table_responsive(objs, fields=None, title=None):
+    rows = dict()
+    fields = fields.split(',') if fields else None
+    if fields:
+        for idx, obj in enumerate(objs):
+            if rows.get(idx) is None:
+                rows[idx] = []
+            rows[idx] = {field.name: getattr(obj, field.name) for field in obj._meta.get_fields() if field.name in fields}
+            rows[idx].update({'action_': mark_safe(f"""
+                                            <span>
+                                            <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{reverse('order:packingitem.update', kwargs={'pk': obj.pk})}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                                <span class="tooltiptext">ویرایش</span>
+                                                <i class="ki-duotone ki-pencil fs-2 text-info">
+                                                    <span class="path1"></span>
+                                                    <span class="path2"></span>
+                                                </i>
+                                            </a>
+                                            <a href="#" target="_blank" class="me-3 delete-packing-item text-danger tooltip_" data-url="{reverse('core:delete.confirm')}?model={ obj._meta.model_name}&object_id={ obj.pk }&app_label={ obj._meta.app_label }" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                                                <span class="tooltiptext">حذف</span>
+                                                <i class="ki-duotone ki-trash fs-2 text-danger">
+                                                    <span class="path1"></span>
+                                                    <span class="path2"></span>
+                                                    <span class="path3"></span>
+                                                    <span class="path4"></span>
+                                                    <span class="path5"></span>
+                                                </i>
+                                            </a>
+                                            <a class="mx-4 tooltip_ cursor-pointer"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#id_kt_empty_modal_lg"
+                                                data-model_name="{ obj._meta.model_name }"
+                                                data-object_id="{ obj.pk }"
+                                                data-app_name="{ obj._meta.app_label }"
+                                                name="name_change_log">
+                                                <span class="tooltiptext">تاریخچه تغییرات</span>
+                                                <i class="ki-duotone ki-book-open fs-2 text-primary">
+                                                 <span class="path1"></span>
+                                                 <span class="path2"></span>
+                                                 <span class="path3"></span>
+                                                 <span class="path4"></span>
+                                                </i>
+                                            </a>
+                                        </span>""")})
+
+        context = dict()
+        context['rows'] = rows
+        context['title'] = title
+        return context

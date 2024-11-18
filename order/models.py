@@ -183,14 +183,18 @@ class PackingItem(BaseModeWF):
 
     carton_qty = models.PositiveIntegerField(_('carton_qty'), null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
-    grows_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+    gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+    description = models.TextField(_('description'), null=True, blank=True)
 
 
 class GIO(BaseModeWF):
     gio_date = models.DateField(_('gio_date'))
     total_quantity = models.FloatField(_('total_quantity'))
+    description = models.TextField(_('description'), null=True, blank=True)
 
 
 class GIOItem(BaseModeWF):
     quantity = models.FloatField(_('quantity'))
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'))
+    gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
+    description = models.TextField(_('description'), null=True, blank=True)
