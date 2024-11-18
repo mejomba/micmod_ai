@@ -95,7 +95,7 @@ def get_bi_menus(user):
                         ""
                     ],
                     "groups": [
-                        "base_user"
+                        "base_user", "base_user2"
                     ]
                 },
                 "title": f"{report.name}",
@@ -115,7 +115,7 @@ def get_bi_menus(user):
                 ""
             ],
             "groups": [
-                "base_user"
+                "base_user", "base_user2"
             ]
         },
         "menus": m

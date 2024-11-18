@@ -112,6 +112,7 @@ class PackingForm(CustomBaseModelForm):
         super(PackingForm, self).__init__(*args, **kwargs)
         self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
                                                    widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
             if form_constraint_hide:
@@ -136,5 +137,7 @@ class PackingItemForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super(PackingItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order'])
-        if self.instance.pk and (packing := self.initial.get('packing')):
+        # if self.instance.pk and (packing := self.initial.get('packing')):
+        packing = self.initial.get('packing')
+        if packing:
             self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=getattr(packing, 'pk', packing))

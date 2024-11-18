@@ -160,6 +160,7 @@ class Packing(BaseModeWF):
     pack_date = models.DateField(_('pack_date'))
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
     sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
+    description = models.TextField(_('description'), null=True, blank=True)
 
     def __str__(self):
         return f'{self.bl_number} -- {self.pack_date}'
@@ -167,7 +168,29 @@ class Packing(BaseModeWF):
 
 class PackingItem(BaseModeWF):
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
-    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order')
-    carton_qty = models.PositiveIntegerField(_('carton_qty'))
-    weight_kg = models.FloatField(_('weight_kg'))
-    # pack_date
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order', null=True, blank=True)
+    part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
+    brand = models.CharField(_('brand'), null=True, blank=True)
+    carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
+    quantity = models.FloatField(_('quantity'), null=True, blank=True)
+    size = models.CharField(_('size'), max_length=128, null=True, blank=True)
+    volume = models.FloatField(_('volume'), null=True, blank=True)
+    price = models.FloatField(_('price'), null=True, blank=True)
+    amount = models.FloatField(_('amount'), null=True, blank=True)
+    sales_conf = models.BooleanField(_('sales_conf'), default=False)
+    duty_date = models.DateField(_('duty_date'), null=True, blank=True)
+    item_weight = models.FloatField(_('item_weight'), null=True, blank=True)
+
+    carton_qty = models.PositiveIntegerField(_('carton_qty'), null=True, blank=True)
+    net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
+    grows_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+
+
+class GIO(BaseModeWF):
+    gio_date = models.DateField(_('gio_date'))
+    total_quantity = models.FloatField(_('total_quantity'))
+
+
+class GIOItem(BaseModeWF):
+    quantity = models.FloatField(_('quantity'))
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'))
