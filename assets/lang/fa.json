@@ -635,8 +635,5 @@
     "ruined_board_count": "تعداد برد خراب",
     "intact_board_count_not_assembly": "تعداد برد‌های سالم مونتاژ نشدده به علت کسری قطعات",
     "delivery_type": "نحوه ارسال",
-    "t-pcba":"PCBA",
-    "finish": "اتمام",
-    "factor_number": "شماره‌ی فاکتور",
-    "production_day_activities": "فعالیت‌های روز تولید"
+    "t-pcba":"PCBA"
 }

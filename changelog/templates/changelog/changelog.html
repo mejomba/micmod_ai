@@ -6,17 +6,17 @@
     <span class="text-center py-2">تاریخچه تغییرات</span>
 </div>
     <div class="row bg-soft-secondary py-2">
-        <div class="col-2" data-key="user">کاربر</div>
+        <div class="col-1" data-key="user">کاربر</div>
         <div class="col-2" data-key="date">تاریخ</div>
         <div class="col-1" data-key="action">عملیات</div>
-        <div class="col-7" data-key="detail">جزییات</div>
+        <div class="col-8" data-key="detail">جزییات</div>
     </div>
     {% for log in logs %}
         <div class="row bg-white mb-1 align-items-center">
-            <div class="col-2">{{ log.editor_user }}</div>
+            <div class="col-1">{{ log.editor_user }}</div>
             <div class="col-2">{{ log.created_date|to_jalali }}</div>
             <div class="col-1">{{ log.get_action_display }}</div>
-            <div class="col-7">
+            <div class="col-8">
                   <button data-key="show detail" class="btn btn-link" type="button" data-toggle="collapse" data-target="#id_{{ log.pk }}" aria-expanded="false" aria-controls="id_{{ log.pk }}">
                     نمایش جزییات
                   </button><span>↓</span>

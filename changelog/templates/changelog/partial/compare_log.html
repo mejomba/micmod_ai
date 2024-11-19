@@ -5,27 +5,27 @@
 
 <div class="row">
     {% if log.action == 1 %}
-        <div class="col-2 py-1 fw-bold bg-soft-dark border-bottom">field</div>
-        <div class="col-10 py-1 fw-bold bg-success border-bottom">new</div>
+        <div class="col-3 py-1 fw-bold bg-soft-dark border-bottom">field</div>
+        <div class="col-9 py-1 fw-bold bg-success border-bottom">new</div>
     {% else %}
-        <div class="col-2 py-1 fw-bold bg-soft-dark border-bottom">field</div>
-        <div class="col-5 py-1 fw-bold bg-success border-bottom">new</div>
+        <div class="col-3 py-1 fw-bold bg-soft-dark border-bottom">field</div>
+        <div class="col-4 py-1 fw-bold bg-success border-bottom">new</div>
         <div class="col-5 py-1 fw-bold bg-danger border-bottom">old</div>
     {% endif %}
     {% for key, val in log.diff_json.fields.items %}
         {% if log.action == 1 %}
-            <div class="col-2 py-1 bg-soft-secondary border-bottom" data-key="{{ key }}">{{ key }}</div>
+            <div class="col-3 py-1 bg-soft-secondary border-bottom" data-key="{{ key }}">{{ key }}</div>
 {#            {{ val.1 | classname }}#}
-            <div class="col-10 py-1 bg-soft-success border-bottom LTR-RTL">{{ val.1 }}</div>
+            <div class="col-9 py-1 bg-soft-success border-bottom LTR-RTL">{{ val.1 }}</div>
         {% else %}
-            <div class="col-2 py-1 bg-soft-secondary border-bottom" data-key="{{ key }}">{{ key }}</div>
-            <div class="col-5 py-1 bg-soft-success border-bottom LTR-RTL">{{ val.0 }}</div>
+            <div class="col-3 py-1 bg-soft-secondary border-bottom" data-key="{{ key }}">{{ key }}</div>
+            <div class="col-4 py-1 bg-soft-success border-bottom LTR-RTL">{{ val.0 }}</div>
             <div class="col-5 py-1 bg-soft-danger border-bottom LTR-RTL">{{ val.1 }}</div>
         {% endif %}
     {% endfor %}
 
-    <div class="col-2 py-1 bg-soft-secondary border-bottom" data-key="log date">log date</div>
-    <div class="col-10 py-1 bg-soft-secondary border-bottom LTR-RTL">{{ log.created_date|to_jalali:"%Y/%m/%d %H:%M" }}</div>
+    <div class="col-3 py-1 bg-soft-secondary border-bottom" data-key="log date">log date</div>
+    <div class="col-9 py-1 bg-soft-secondary border-bottom LTR-RTL">{{ log.created_date|to_jalali:"%Y/%m/%d %H:%M" }}</div>
 
 </div>
 

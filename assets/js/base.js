@@ -99,22 +99,22 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator(on_load=null) {
+function addCommaSeperator(on_load=null, step=null, sep=',') {
     let inputNumberValue;
     let numberWithComma;
 
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.addEventListener('keyup', function (e) {
-            inputNumberValue = e.currentTarget.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = e.currentTarget.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             e.currentTarget.value = numberWithComma.reverse_string()
         })
         if (on_load){
-            inputNumberValue = item.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = item.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             item.value = numberWithComma.reverse_string()
         }
     })
@@ -153,6 +153,7 @@ const main_container = new KTBlockUI(document.querySelector('#main-content'), {
 });
 
 function get_main_container() {
+    debugger
     let block_container = document.querySelector('#block_container')
     if (!block_container) {
         block_container = document.querySelector('#main-content')
@@ -225,7 +226,11 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
         success: function (data) {
             if(element) {
                 html = data['res'];
-                element.html(html);
+                try {
+                    element.html(html);
+                } catch (e) {
+                    element.innerHTML = html
+                }
                 run_scripts(html);
             }
             if(reload_page){
@@ -454,6 +459,7 @@ function ajax_submit
 }
 
 function initializeDatepickers(elem_id=null) {
+    console.log(elem_id)
     if(elem_id){
         elem_id.forEach(function (id){
             console.log(elem_id, $(`#${id}`))
@@ -477,7 +483,6 @@ function ajax_delete(elms) {
         })
     }
 }
-
 
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null){
@@ -512,13 +517,11 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
     });
 
     $(select2_element).on("select2:select", function (e) {
-        debugger
         const data = e.params.data;
         const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
         $(document).find(target_element).val(data[id_field])
         document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
     })
-
 
     $(select2_element).on("select2:open", function (e){
          $('#id_kt_empty_modal_lg').css({
@@ -558,4 +561,21 @@ function defaultFormatRepoDL(repo) {
 
 function defaultFormatRepoSelection(repo) {
     return repo.id || repo.text
+}
+
+function generate_drag_drop(container_id='sortable-container', draggable_items_selector='#sortable-container .sortable-item', index_field_id_selector='-index'){
+        var sortable = new Sortable(document.getElementById(container_id), {
+        animation: 400,
+        handle: '.handel-drop',
+        ghostClass: 'drag-drop',
+        onEnd: function (evt) {
+            var items = document.querySelectorAll(draggable_items_selector);
+            items.forEach(function(item, index) {
+                item.querySelector(`[id*=${index_field_id_selector}]`).value = index
+            });
+        },
+        onUpdate: function (evt) {
+            evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
+        }
+    });
 }

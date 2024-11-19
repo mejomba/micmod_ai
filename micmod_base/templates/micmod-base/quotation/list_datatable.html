@@ -15,8 +15,10 @@
     <!-- Responsive datatable examples -->
     <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
 
@@ -29,10 +31,9 @@
         <div class="d-flex justify-content-between">
         <span>
             <span class="mt-3 me-3">استفاده از فیلتر</span>
-            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
-            <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1">مستهلک نشده</a>
-
+            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
         </span>
         {% if request.user|has_group:"sales_admin" %}
         <span class="d-flex">
