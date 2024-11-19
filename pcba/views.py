@@ -13,6 +13,7 @@ from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListFor
 from pcba.models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
 from tools.utils import show_error, is_ajax
 from translator import get_text as _
+from transportation.models import Packing
 
 
 # Create your views here.
@@ -26,11 +27,12 @@ class ContractsList(LoginRequiredMixin,View):
         return render(request, 'pcba/partial/list_datatable.html', greeting)
 
 
+
 class ContractListDatatable(AjaxDatatableView):
     model = Contract
     title = 'contract_list'
     initial_order = [["pk", "desc"], ]
-    length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
@@ -51,8 +53,21 @@ class ContractListDatatable(AjaxDatatableView):
         {'name': 'pad_count', 'visible': True, 'orderable': True},
         {'name': 'ic_pad_count', 'visible': True, 'orderable': True},
         {'name': 'first_setup_cost', 'visible': True},
+        {'name': 'finish', 'visible': True, 'searchable': True, 'orderable': True},
+        {'name': 'factor_number', 'visible': True, 'searchable': True, 'orderable': True},
         {'name': 'second_setup_cost', 'visible': True}
     ]
+
+    def get_initial_queryset(self, request=None):
+        q = request.POST.get('q', None)
+        qs = super().get_initial_queryset(request)
+        if q == 'all':
+            qs = qs
+        elif q == 'active':
+            qs = qs.filter(finish=False)
+        elif q == 'finish':
+            qs = qs.filter(finish=True)
+        return qs
 
     def customize_row(self, row, obj):
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
@@ -99,7 +114,6 @@ class ContractView(LoginRequiredMixin, BaseView):
         # context['form_s'] = ProjectItemListFormset(instance=self.object)
         context['app_name'] = self.request.resolver_match.app_name
         return context
-
 
 
 class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
@@ -202,7 +216,7 @@ class CustomerItemReceiptListDatatable(AjaxDatatableView):
     model = CustomerItemReceipt
     title = 'customer_item_receipt_list'
     initial_order = [["pk", "desc"], ]
-    length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
@@ -269,6 +283,66 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
             html = render_to_string(self.ajax_template_name, self.get_context_data(), self.request)
             return JsonResponse({'res': html})
         return super().get(request, *args, **kwargs)
+
+
+
+class ProductionDayActivityList(LoginRequiredMixin,View):
+    def get(self, request):
+        q = self.request.GET.get('q')
+        greeting = {}
+        greeting['heading'] = _("production_day_activity")
+        greeting['pageview'] = _("pcba")
+        return render(request, 'pcba/partial/production_day_activities_datatable.html', greeting)
+    # def get_queryset(self):
+    #     q = self.request.GET.get('q')
+    #     qs = None
+    #     if q == 'packing':
+    #         field_name = 'activity'
+    #         qs = ProductionDayActivities.filter_qs(field_name, ProductionDayActivities.PACKING)
+    #     return qs
+
+
+
+class ProductionDayActivityListDatatable(AjaxDatatableView):
+    model = ProductionDayActivities
+    title = 'production_day_activity_list'
+    initial_order = [["production_date", "desc"], ["created_date", "desc"]]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, },
+        {'name': 'contract', 'visible': True, 'title': _('contract'), 'className': 'py-1 border', 'lookup_field': '__contract_title__icontains', 'searchable': True},
+        {'name': 'goods_code_fk', 'visible': True, 'title': _('goods_code'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__sku__icontains'},
+        {'name': 'customer_party_id','visible': True, 'title': _('customer'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
+        {'name': 'production_date', 'visible': True, 'className': 'py-1 border', 'orderable': True},
+        {'name': 'activity', 'visible': True, 'orderable': True,},
+        {'name': 'total_assembly_board_count', 'visible': True, 'orderable': True},
+        {'name': 'assembly_type', 'visible': True, 'orderable': True,},
+        {'name': 'ruined_board_count', 'visible': True, 'orderable': True,},
+        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'intact_board_count_not_assembly', 'visible': True, 'orderable': True,},
+        {'name': 'delivery_type', 'visible': True, 'orderable': True},
+        {'name': 'created_date', 'visible': True, 'orderable': True},
+
+    ]
+
+    def customize_row(self, row, obj):
+        row['contract'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+            reverse('pcba:contracts.view', args=(obj.contract.id,)),
+            obj.contract.pk if obj.contract.pk else '-'
+        )
+    def get_initial_queryset(self, request=None):
+        q = request.POST.get('q', None)
+        qs = super().get_initial_queryset(request)
+        if q == 'all':
+            qs = qs
+        elif q == 'packing':
+            qs = qs.filter(activity=ProductionDayActivities.PACKING)
+        return qs
 
 
 class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
