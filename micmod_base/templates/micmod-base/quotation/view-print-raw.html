@@ -70,7 +70,13 @@
     <div class="row">
 
         <div class="col">
-            <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">میکرومدرن</span>
+            <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">
+            {% if data.is_official  %}
+                رهاورد تجارت آینده
+            {% else %}
+            میکرومدرن
+        {% endif %}
+        </span>
             <p data-key="national_id">شناسه ملی: </p>
             <p data-key="address">نشانی: </p>
         </div>
