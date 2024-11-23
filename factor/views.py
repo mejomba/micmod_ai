@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.urls import reverse
@@ -339,3 +339,46 @@ class MostahlakNashodeQuotationListDatatable(AjaxDatatableView):
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
         else:
             row['cancel'] = '-'
+
+
+class DirectFactorView(View):
+    def get(self, request, *args, **kwargs):
+        url = reverse('micmod_base:quotations.create')
+        url += '?direct'
+        return redirect(url)
+
+    # template_name = 'factor/direct_factor.html'
+    # form_class = FactorModelForm
+    # model = Factor
+    # form_struct = {
+    #     'form': FactorModelForm,
+    #     'childes': [
+    #         {
+    #             'form': FactorItemFormset,
+    #             'childes': [{}]
+    #         },
+    #     ]
+    # }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
+    # has_flow = True
+    # has_formset = True
+    # formset_form = FactorItemFormset
+    # formset_model = FactorItem
+    # formset_fk_field = 'factoritem_set'
+    # related_name_fk = 'factoritem_set'
+    #
+    # def get_success_url(self):
+    #     return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
+    #
+    # def post(self, request, *args, **kwargs):
+    #     return super().post(request, *args, **kwargs)
+    #
+    # def form_valid(self, form):
+    #     if self.object is None:
+    #         pass
+    #     res = super().form_valid(form)
+    #     return res
+    #
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     return context

@@ -108,12 +108,35 @@ class FactorItem(BaseModel):
 
     objects = FactorItemManager()
 
-    def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
-    ):
+    @property
+    def is_wh(self):
+        return True if self.supply_locations.local_sepidar_wh_code else False
+
+    @property
+    def is_order(self):
+        return True if not self.supply_locations.local_sepidar_wh_code else False
+
+    @property
+    def select_wh(self):
+        return self.supply_location and self.supply_location.startswith('wh__')
+
+    @property
+    def select_order(self):
+        return self.supply_location and not self.supply_location.startswith('wh__')
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if self.quantity == 0 and not self.pk:
             return
         else:
+            condition1 = self.is_order and self.select_order
+            # condition2 = self.is_wh and (self.supply_location and not self.supply_location.startswith('wh__'))
+            condition3 = self.is_wh and self.select_wh
+            # condition4 = ''
+            condition5 = self.is_order and self.select_wh
+            condition6 = self.is_wh and self.select_order
+            condition7 = self.is_order and self.select_order
+            condition8 = self.is_wh and self.select_wh
+            # condition9 = ''
             if self.pk and self.quantity == 0:
                 self.is_deleted = True
 
@@ -169,9 +192,31 @@ class FactorItem(BaseModel):
                     }
                     o1 = Order.create_with_rel(data_base)
                     self.supply_locations = o1
-            if self.supply_location and not self.supply_location.startswith('wh__'):
+
+            if condition1:
                 self.supply_locations_id = int(self.supply_location)
-            if self.supply_location and self.supply_location.startswith('wh__'):
+
+            if (self.supply_location and self.supply_location.startswith('wh__')) and self.is_order:
+                data_base = {
+                    "order_title": "خودکار توسط سیستم",
+                    "status": "1",
+                    "item": self.qi.goods_code_fk,
+                    "production_lead_time": 5,  # self.qi.lead_time,
+                    "quantity": self.quantity,
+                    "cancel": False,
+                    "is_over": False,
+                    "qi": self.qi,
+                    "local_sepidar_wh_code": self.supply_location[4:],
+                    "creator_user": self.extra_data.request.user,
+                    "editor_user": self.extra_data.request.user,
+                }
+                o = Order.create_with_rel(data_base)
+                self.supply_locations = o
+
+            elif (self.supply_location and not self.supply_location.startswith('wh__')) and self.is_wh:
+                self.supply_locations_id = int(self.supply_location)
+
+            elif (self.supply_location and self.supply_location.startswith('wh__')) and self.is_wh:
                 _, supply_location, supply_locations = self.supply_location.split('__')
                 self.supply_location_id = int(supply_location)
                 self.supply_locations_id = int(supply_locations)

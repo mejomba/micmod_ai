@@ -8,6 +8,8 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
 from extra_data.models import Item
+from factor.forms import FactorItemModelForm, FactorModelForm
+from order.models import Order
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -26,6 +28,7 @@ from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
 from sepidar.models import Dl
+from tools import const
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
@@ -36,9 +39,81 @@ from core.views import BaseView, Base
 from django.contrib.contenttypes.models import ContentType
 
 from workflow.forms import WorkFlowModelForm
+from workflow.models import WorkFlow
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
+
+
+def generate_direct_factor(request, quotation: Quotation):
+    factor_data = {
+        'q': quotation,
+        'delivery_time': quotation.delivery_time,
+        'description': 'فاکتور مستقیم',
+        'guid': uuid.uuid4(),
+        'sepidar_number': quotation.sepidar_number,
+        'is_official': quotation.is_official,
+        'official_value': quotation.official_value,
+        'sale_type': quotation.sale_type,
+        'self_discount': quotation.self_discount,
+        "creator_user": request.user,
+        "editor_user": request.user,
+    }
+    factor_form = FactorModelForm(data=factor_data)
+    if factor_form.is_valid():
+        factor = factor_form.save()
+        flow_data = {
+            "wf_status": 5,
+            "action": 'فاکتور مستقیم',
+            "flow_name": 'فاکتور',
+            "state": const.WF__FACTOR__FIRST_STATE,
+            "wf_description": 'فاکتور مستقیم',
+            "belong_to_group": 'sales_user',
+            "object_id": factor.pk,
+            "content_type": ContentType.objects.get_for_model(factor),
+            "creator_user": request.user,
+            "editor_user": request.user,
+            "from_user": request.user,
+            "to_user": request.user,
+            "current_state_name": const.WF__FACTOR__FIRST_STATE,
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        factor.last_work_flow = wf
+        factor.save()
+
+        for qi in quotation.quotation.all():
+            # generate order independent
+            # data_base = {
+            #     "order_title": "خودکار توسط سیستم",
+            #     "status": "1",
+            #     "item": qi.goods_code_fk,
+            #     "production_lead_time": 5,  # self.qi.lead_time,
+            #     "quantity": qi.quantity,
+            #     "cancel": False,
+            #     "is_over": False,
+            #     "qi": qi,
+            #     "creator_user": request.user,
+            #     "editor_user": request.user,
+            # }
+            # order = Order.create_with_rel(data_base)
+            factor_item_data = {
+                'factor': factor,
+                'qi': qi,
+                'goods_code': qi.goods_code_fk,
+                'part_number_show': qi.goods_code_fk.part_number,
+                'price': qi.price,
+                'quantity': qi.quantity,
+                'delivery_time': qi.delivery_time,
+                # 'supply_locations': order,
+                "creator_user": request.user,
+                "editor_user": request.user,
+                # 'supply_location': '',
+            }
+            factor_item_form = FactorItemModelForm(data=factor_item_data)
+            if factor_item_form.is_valid():
+                factor_item_form.instance.extra_data.request = request
+                factor_item = factor_item_form.save()
+
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
@@ -93,6 +168,8 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
+        if 'direct' in self.request.GET:
+            return generate_direct_factor(self.request, self.object)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
         if not self.object.is_official and not self.request.POST.get('official_value'):

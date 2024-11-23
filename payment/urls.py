@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (LocalPaymentOrderView, PaymentOrderListView, PaymentOrderDatatableView, num_to_fa_words,
-                    LocalPaymentDoc, CreditCardView, CreditCardDatatableView, CreditCardAjax)
+                    LocalPaymentDoc, CreditCardView, CreditCardDatatableView, CreditCardAjax, PaymentView,
+                    PaymentListView, PaymentDataTableListView, PaymentItemView)
 
 app_name = 'payment'
 
@@ -19,4 +20,14 @@ urlpatterns = [
     path('local/crdit_card/<int:pk>/', CreditCardView.as_view(), name='credit_card.update'),
     path('local/crdit_card/datatable/', CreditCardDatatableView.as_view(), name='credit_card.datatable'),
     path('local/crdit_card/ajax/', CreditCardAjax.as_view(), name='credit_card.ajax'),
+
+    #  payment
+    path('payment/view/', PaymentView.as_view(), name='payment.view'),
+    path('payment/view/<int:pk>/', PaymentView.as_view(), name='payment.update'),
+    path('payment/list/', PaymentListView.as_view(), name='payment.list'),
+    path('payment/list/datatable/', PaymentDataTableListView.as_view(), name='payment.list.datatable'),
+
+    #  paymentitem
+    path('paymentitem/view/', PaymentItemView.as_view(), name='paymentitem.view'),
+    path('paymentitem/update/<int:pk>/',PaymentItemView.as_view(), name='paymentitem.update'),
 ]

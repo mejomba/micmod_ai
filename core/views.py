@@ -108,6 +108,9 @@ class BaseView(UserPassesTestMixin,
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
 
+        self.object = self.get_object()
+        self.formset_form = self.get_formset_from_struct()
+
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
@@ -116,9 +119,7 @@ class BaseView(UserPassesTestMixin,
             self.flow_config['flow_deadline'].append(0)
             self.flow_config['append_last_step'] = True
 
-        self.object = self.get_object()
-        self.formset_form = self.get_formset_from_struct()
-        self.state_index = self.get_flow_index(self.object)
+            self.state_index = self.get_flow_index(self.object)
 
         # if request.method == 'GET':
         self.formset = self.get_formset_from_struct()

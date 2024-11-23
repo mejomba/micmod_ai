@@ -198,3 +198,18 @@ class GIOItem(BaseModeWF):
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'))
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
     description = models.TextField(_('description'), null=True, blank=True)
+
+
+class OrderPayment(BaseModeWF):
+    from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
+    to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
+    total_amount = models.FloatField(_('total_amount'))
+    description = models.TextField(_('description'), null=True, blank=True)
+
+
+class OrderPaymentItem(BaseModeWF):
+    payment = models.ForeignKey(OrderPayment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
+    from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
+    to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
+    total_amount = models.FloatField(_('total_amount'))
+    description = models.TextField(_('description'), null=True, blank=True)

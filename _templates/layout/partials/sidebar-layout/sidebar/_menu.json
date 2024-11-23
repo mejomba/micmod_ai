@@ -189,6 +189,30 @@
           ]
         },
         {
+          "title": "t-payment",
+          "icon": "cheque",
+          "path_key": "payment",
+          "permission": {
+            "permissions": [
+              "payment.view_payment"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "payment/payment/view",
+              "link": "payment:payment.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "payment/payment/list",
+              "link": "payment:payment.list"
+            }
+          ]
+        },
+        {
               "title": "pending_list",
               "icon": "burger-menu",
               "path_key": "quotationitem/list/pending/",

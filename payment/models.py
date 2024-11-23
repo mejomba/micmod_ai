@@ -3,6 +3,8 @@ import os
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.http import JsonResponse
+
 from core.models import AbsBaseModel, BaseModeWF
 from translator import get_text as _
 
@@ -69,11 +71,32 @@ class PaymentDocument(AbsBaseModel):
     payment_order = models.ForeignKey(PaymentOrder, verbose_name=_('payment'), on_delete=models.DO_NOTHING)
 
 
-class GenericPayment(BaseModeWF):
+class Payment(BaseModeWF):
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
+    total_amount = models.FloatField(_('total_amount'))
+    description = models.TextField(_('description'), null=True, blank=True)
+
+
+class GenericPaymentItem(BaseModeWF):
+    # payment = models.ForeignKey(Payment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
+    g_from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
+    g_to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING, related_name='payment_content_type',
                                      null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
+    description = models.TextField(_('description'), null=True, blank=True)
+
+    def get_related_model(self):
+        try:
+            if self.content_type:
+                related_model_name = self.content_type.model
+                related_object = self.content_object  # خود آبجکت مرتبط
+                return related_model_name, related_object
+            else:
+                return 'not found'
+        except GenericPaymentItem.DoesNotExist:
+            return 'not found'
+

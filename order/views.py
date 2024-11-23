@@ -50,6 +50,9 @@ class OrderView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        if self.state_index == 7:
+            context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
+            context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
         return context
 
 
@@ -257,8 +260,8 @@ class GIOView(LoginRequiredMixin, BaseView):
     template_name = 'order/gio_view.html'
     form_class = GIOForm
     model = GIO
-    wf_last_step_is_open = True
-    has_flow = True
+    # wf_last_step_is_open = True
+    # has_flow = True
     success_message = 'با موفقیت ذخیره شد'
     form_struct = {
         'form': GIOForm,
@@ -266,7 +269,7 @@ class GIOView(LoginRequiredMixin, BaseView):
             {},
         ]
     }
-    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
 
     def get_success_url(self):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.pk})

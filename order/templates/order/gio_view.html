@@ -20,9 +20,9 @@
 {% block form_content %}
 {% csrf_token %}
 
-    <div class="mb-2">
-        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
-    </div>
+{#    <div class="mb-2">#}
+{#        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}#}
+{#    </div>#}
 
 
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
@@ -64,14 +64,14 @@
                                     </div>
                                     <div class="col-2 py-1 ">
                                         <span>
-                                        <a href="#" target="_blank" class="me-3 edit-gio-item tooltip_" data-url="{% url 'order:gio.update' gio.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                        <a href="#" target="_blank" class="me-3 edit-gio-item tooltip_" data-url="{% url 'order:gioitem.update' gio.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
                                             <i class="ki-duotone ki-pencil fs-2 text-info">
                                                 <span class="path1"></span>
                                                 <span class="path2"></span>
                                             </i>
                                         </a>
-                                        <a href="#" target="_blank" class="me-3 delete-gio-item text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ giogio|model_name }}&object_id={{ giogio.pk }}&app_label={{ giogio|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                                        <a href="#" target="_blank" class="me-3 delete-gio-item text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ gio|model_name }}&object_id={{ gio.pk }}&app_label={{ gio|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
                                             <span class="tooltiptext">حذف</span>
                                             <i class="ki-duotone ki-trash fs-2 text-danger">
                                                 <span class="path1"></span>

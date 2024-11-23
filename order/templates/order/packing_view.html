@@ -162,7 +162,7 @@
 
     const EditPackingItem = document.querySelectorAll('.edit-packing-item')
     const DeletePackingItem = document.querySelectorAll('.delete-packing-item')
-    EditPackingItem.forEach((element) => {
+    EditPackingItem && EditPackingItem.forEach((element) => {
         element.addEventListener('click', function (e){
         e.preventDefault()
         const modal_lg_body = $('#id-empty-modal-body-lg')
@@ -187,7 +187,7 @@
         }); //end ajax
     })
     })
-    DeletePackingItem.forEach((element) => {
+    DeletePackingItem && DeletePackingItem.forEach((element) => {
         element.addEventListener('click', function (e){
             e.preventDefault()
             const modal_sm_body = $('#id-empty-modal-body-sm')
