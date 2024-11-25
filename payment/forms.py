@@ -8,6 +8,7 @@ from payment.models import PaymentOrder, PaymentDocument, CreditCard, GenericPay
 
 from translator import get_text as _
 from django_select2 import forms as s2forms
+from django import forms
 
 
 
@@ -102,6 +103,9 @@ class PaymentDocumentsForm(CustomBaseModelForm):
         access = None
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['total_amount'] = forms.CharField(label='مجموع مبلغ')
+        self.fields['total_amount'].widget.attrs['class'] = "form-control comma-seperator"
+        self.fields['total_amount'].widget.attrs['dir'] = "ltr"
         self.fields['from_date'] = JalaliDateField(
             widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['to_date'] = JalaliDateField(
