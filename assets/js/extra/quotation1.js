@@ -814,14 +814,14 @@ function set_price_data(data, elem, target) {
         set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
         set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
-        //if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
+        if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
             set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
             set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
             set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
             set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
             set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
             set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
-        //}
+        }
         set_values(elem.querySelectorAll('[name$="-goods_code"]'), data.id,)
         const select = elem.querySelector('[id*="select2-goods_code"][id*="container"]')
         if (select) {
