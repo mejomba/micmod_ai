@@ -716,6 +716,7 @@ class BaseView(UserPassesTestMixin,
                             fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                         else:
                             for f in self.formset.forms:
+                                pass
                                 f.instance.extra_data.request = self.request
                             fo = self.formset.save()
                     else:
@@ -724,8 +725,8 @@ class BaseView(UserPassesTestMixin,
 
                     if fo:
                         for idx, fs_obj in enumerate(fo):
-                            fs_obj.extra_data.request = self.request
-                            fs_obj.save()
+                            # fs_obj.extra_data.request = self.request
+                            # fs_obj.save()
                             # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
                             if self.formset.form.image_model and self.formset.form.image_groups:
