@@ -67,7 +67,20 @@ class Order(BaseModeWF):
         return 0
 
     @classmethod
-    def create_with_rel(cls, data_base, o2=None):
+    def create_with_rel(cls, data_base=None, o2=None, factor_item=None):
+        if not data_base:
+            data_base = {
+                "order_title": "خودکار توسط سیستم",
+                "status": "1",
+                "item": factor_item.qi.goods_code_fk,
+                "production_lead_time": 5,  # self.qi.lead_time,
+                "quantity": factor_item.quantity,
+                "cancel": False,
+                "is_over": False,
+                "qi": factor_item.qi,
+                "creator_user": factor_item.extra_data.request.user,
+                "editor_user": factor_item.extra_data.request.user,
+            }
         o1 = cls.objects.create(**data_base)
         flow_data = {
             "wf_status": 5,
