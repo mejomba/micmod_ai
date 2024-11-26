@@ -81,7 +81,12 @@
             <p data-key="address">نشانی: </p>
         </div>
         <div class="col">
-            <p data-key="economical_number">شماره اقتصادی:</p>
+            <span data-key="economical_number">شماره اقتصادی:</span>
+            <span class="ms-5">
+            {% if data.is_official  %}
+                411563971988
+            {% endif %}
+            </span>
             <p data-key="postal_code">کد پستی:</p>
         </div>
         <div class="col">
