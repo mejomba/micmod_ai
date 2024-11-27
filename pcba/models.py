@@ -25,7 +25,8 @@ class Contract(BaseModeWF):
     pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     ic_pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     total_cost = models.PositiveBigIntegerField(default=0, null=True, blank=True)
-
+    factor_number = models.PositiveIntegerField(null=True, blank=True)
+    finish = models.BooleanField(default=False)
     def __str__(self):
         return self.contract_title
 

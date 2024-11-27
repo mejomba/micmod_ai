@@ -419,6 +419,19 @@
               "link": "pcba:contracts.list"
             }
           ]
+        },
+        {
+          "title": "production_day_activities",
+          "icon": "search-list",
+          "path_key": "",
+          "menus": [
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "production/day/activities/list/",
+              "link": "pcba:production.day.activities.list"
+            }
+          ]
         }
       ]
     },

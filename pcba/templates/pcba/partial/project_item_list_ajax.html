@@ -76,7 +76,7 @@
 </script>
 <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
 <script>
-    let goods_placeholder  = document.querySelector('#goods_name_project_item_list')
-        goods_placeholder = goods_placeholder.innerText || 'کد کالا'
-    select2_generate("#id_goods_code_fk2_select2", '#id_goods_code_fk2', '/inquiry/items_list/', goods_placeholder)
+    let goods_placeholder_pil  = document.querySelector('#goods_name_project_item_list')
+        goods_placeholder_pil = goods_placeholder_pil.innerText || 'کد کالا'
+    select2_generate("#id_goods_code_fk2_select2", '#id_goods_code_fk2', '/inquiry/items_list/', goods_placeholder_pil)
 </script>
