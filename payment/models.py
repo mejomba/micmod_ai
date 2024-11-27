@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.http import JsonResponse
 
-from core.models import AbsBaseModel, BaseModeWF
+from core.models import AbsBaseModel, BaseModeWF, BaseContentType
 from translator import get_text as _
 
 

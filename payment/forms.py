@@ -178,27 +178,31 @@ class PaymentForm(CustomBaseModelForm):
                 self.enable = False
 
 
-class PaymentItemForm(CustomBaseModelForm):
+class GenericPaymentForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
     class Meta:
         model = GenericPaymentItem
         exclude = ['group']
 
-        widgets = {
-            'payment': PaymentItemFormPaymentWidget,
-        }
+        # widgets = {
+        #     'payment': PaymentItemFormPaymentWidget,
+        # }
 
     def __init__(self, *args, **kwargs):
-        super(PaymentItemForm, self).__init__(*args, **kwargs)
+        super(GenericPaymentForm, self).__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 3
-        self.fields['g_from_date'] = JalaliDateField(label=_('g_from_date'),
+        self.fields['g_from_date'] = JalaliDateField(label="از تاریخ",
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
-                                                   required=True)
-        self.fields['g_to_date'] = JalaliDateField(label=_('g_to_date'),
+                                                   required=False)
+        self.fields['g_to_date'] = JalaliDateField(label="تا تاریخ",
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
-                                                   required=True)
+                                                   required=False)
 
-        payment = self.initial.get('packing')
-        if payment:
-            self.fields['payment'].queryset = self.fields['payment'].queryset.filter(id=getattr(payment, 'pk', payment))
+        self.make_hidden(['object_id', 'content_type'])
+
+        # payment = self.initial.get('packing')
+        # if payment:
+        #     self.fields['payment'].queryset = self.fields['payment'].queryset.filter(id=getattr(payment, 'pk', payment))

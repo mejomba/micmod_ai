@@ -30,6 +30,7 @@ from changelog.models import ChangeLog
 from comments.forms import CommentsForm
 from micmod_base.models import Quotation
 from order.models import Order
+from payment.forms import GenericPaymentForm
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter
 from workflow.forms import WorkFlowModelForm
@@ -677,6 +678,7 @@ class BaseView(UserPassesTestMixin,
                                           obj=new_obj,
                                           input_prefix='file'
                                           )
+                    new_obj.save_payment(self.request)
 
                     """***NEW***"""
                     if form.has_comment:
@@ -756,6 +758,7 @@ class BaseView(UserPassesTestMixin,
 
                     for d in new_details:
                         d.save_comment(self.request, CommentsForm)
+                        d.save_payment(self.request)
                         # ToDo make dynamic
                         # app_label = d._meta.app_label
                         # model_name = d._meta.model_name
@@ -1036,6 +1039,52 @@ class CommentsFormView(View):
         return JsonResponse({'res': x})
 
 
+class PaymentFormView(View):
+    def get(self, request, *args, **kwargs):
+        from django.apps import apps
+        from comments.models import CommentSeen
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get('model_name')
+        ctt_id = kwargs.get('content_type')
+        object_id = kwargs.get('object_id')
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotationitem':
+        #     obj = model.objects.full_queryset(pk=object_id).first()
+        #     customer = getattr(obj.quotation, 'customer_party_id', None)
+        #     sku = getattr(obj, 'goods_code_fk', None)
+        # else:
+        #     obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotation':
+        #     customer = getattr(obj, 'customer_party_id', None)
+        #     sku = None
+
+        payments = obj.payments.all().order_by('-created_date')
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        kwargs['g_from_date'] = self.request.GET.get('g_from_date', '')
+        kwargs['g_to_date'] = self.request.GET.get('g_to_date', '')
+        kwargs['total_amount'] = self.request.GET.get('total_amount', '')
+        kwargs['description'] = self.request.GET.get('description', '')
+
+
+        form = GenericPaymentForm(prefix=prefix, initial=kwargs)
+        file = None
+
+        for payment in payments:
+            try:
+                file = payment.files.content_type.file_set
+            except Exception:
+                continue
+
+        context = {'form': form,
+                   'object_id': object_id,
+                   'ctt_id': ctt_id,
+                   'payments': payments,
+                   'file': file,
+                   'request': request}
+        x = render_to_string('core/partial/generic_payment_form.html', context)
+
+        return JsonResponse({'res': x})
 ############ new ##############hajinezhad###############
 
 class BaseCustomView():

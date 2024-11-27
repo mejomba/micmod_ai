@@ -3,6 +3,8 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.db.models import Q
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
+
+from files.models import File
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm
@@ -266,6 +268,9 @@ class OrderPaymentForm(CustomBaseModelForm):
 
 
 class OrderPaymentItemForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
+
     class Meta:
         model = OrderPaymentItem
         exclude = ['group']
@@ -277,13 +282,13 @@ class OrderPaymentItemForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 3
-        self.fields['g_from_date'] = JalaliDateField(label=_('g_from_date'),
+        self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
-                                                       attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
+                                                       attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_from_date'}),
                                                    required=True)
-        self.fields['g_to_date'] = JalaliDateField(label=_('g_to_date'),
+        self.fields['to_date'] = JalaliDateField(label=_('to_date'),
                                                    widget=AdminJalaliDateWidget(
-                                                       attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
+                                                       attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_to_date'}),
                                                    required=True)
 
         payment = self.initial.get('packing')

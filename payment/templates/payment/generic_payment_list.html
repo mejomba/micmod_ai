@@ -25,12 +25,12 @@
 
 {% block content %}
 
-    <div class="border rounded mb-5 p-3">
-        <span>استفاده از فیلتر</span>
-        <a href="{% url 'payment:local.payment.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
-        <a href="{% url 'payment:local.payment.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
-        <a href="{% url 'payment:local.payment.list' %}?q=pay" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'pay' %} bg-primary {% endif %}">پرداخت شده</a>
-    </div>
+{#    <div class="border rounded mb-5 p-3">#}
+{#        <span>استفاده از فیلتر</span>#}
+{#        <a href="{% url 'order:order.payment.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>#}
+{#        <a href="{% url 'order:order.payment.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>#}
+{#        <a href="{% url 'order:order.payment.list' %}?q=pay" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'pay' %} bg-primary {% endif %}">پرداخت شده</a>#}
+{#    </div>#}
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
@@ -42,7 +42,7 @@
                             <div class="col-12">
                                 <div class="container-fluid">
                                     <div class="table-responsive p-2">
-                                        <table id="payment_list" width="100%" class="m-table table-striped table-bordered w-100">
+                                        <table id="generic_payment_list" width="100%" class="m-table table-striped table-bordered w-100">
 
                                         </table>
                                     </div>
@@ -65,8 +65,8 @@
         const url = new URL(window.location);
         const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
-            $('#payment_list'),
-            "{% url 'payment:payment.list.datatable' %}",
+            $('#generic_payment_list'),
+            "{% url 'payment:generic.payment.list.datatable' %}",
             {
                 processing: true,
                 autoWidth: false,

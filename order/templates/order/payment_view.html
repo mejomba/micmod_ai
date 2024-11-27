@@ -56,9 +56,9 @@
                                     <div class="col-2 py-2">
                                         <span class="me-3"><b>{{ forloop.counter }})  </b></span>
                                         <span class="">
-                                            <span>{{ payment.g_from_date|to_jalali:"%Y-%m-%d" }}</span>
-                                            <span class="mx-2">تا</span>
-                                            <span>{{ payment.g_to_date|to_jalali:"%Y-%m-%d" }}</span>
+                                            <span class="text-right">{{ payment.from_date|to_jalali:"%Y-%m-%d" }}</span>
+                                            <span class="mx-2 text-right">تا</span>
+                                            <span class="" dir="ltr">{{ payment.to_date|to_jalali:"%Y-%m-%d" }}</span>
                                         </span>
                                     </div>
                                     <div class="col-1 py-2 s-05">
@@ -68,11 +68,15 @@
                                         <span>{{ payment.description|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-2 py-2 ">
-                                        <span>{{ payment.get_related_model }}</span>
+                                        {% for file in payment.files.all %}
+                                        <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                                        {% empty %}
+                                            <span>-</span>
+                                        {% endfor %}
                                     </div>
                                     <div class="col-2 py-1 ">
                                         <span>
-                                        <a href="#" target="_blank" class="me-3 edit-payment-item tooltip_" data-url="{% url 'payment:paymentitem.update' payment.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                        <a href="#" target="_blank" class="me-3 edit-payment-item tooltip_" data-url="{% url 'order:order.paymentitem.update' payment.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
                                             <i class="ki-duotone ki-pencil fs-2 text-info">
                                                 <span class="path1"></span>
@@ -112,7 +116,7 @@
                             {% endwith %}
                         {% endif %}
                             <div class="mt-5">
-                            {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='payment:paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+                            {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
                             </div>
                     </div>
                 </div>

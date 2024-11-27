@@ -9,6 +9,8 @@ urlpatterns = [
     path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/', views.CommentsFormView.as_view(), name='comment.form'),
     path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/<str:app_label_rel>/<str:model_name_rel>/<int:content_type_rel>/<int:object_id_rel>/', views.CommentsFormView.as_view(), name='comment.form.rel'),
 
+    path('generic_payment/<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/', views.PaymentFormView.as_view(), name='generic_payment.form'),
+
     # path("ajax/<str:app_label>/<str:model_name>/list",views.BaseCustomListView.as_view(), name='ajax_objects_list'),
     # path("<str:app_label>/<str:model_name>/list",views.download_excel, name='objects_list'),
     # path("ajax/<str:app_label>/<str:model_name>/create",views.download_excel, name='ajax_object_create'),

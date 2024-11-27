@@ -1,3 +1,10 @@
+function findAncestor(el, cls) {
+    if (el.classList.contains(cls)) {
+        return el
+    }
+    while ((el = el.parentElement) && !el.classList.contains(cls)) ;
+    return el;
+}
 const baseUrl = window.origin
 const footerToggle = document.querySelector('.footer-toggle');
 const formFooterContainer = document.getElementById('form-footer-container')
@@ -153,7 +160,6 @@ const main_container = new KTBlockUI(document.querySelector('#main-content'), {
 });
 
 function get_main_container() {
-    debugger
     let block_container = document.querySelector('#block_container')
     if (!block_container) {
         block_container = document.querySelector('#main-content')
@@ -173,7 +179,6 @@ function release_main_container() {
 }
 
 function custom_ajax_post(form, url, element, reload_=null) {
-    debugger
     let formData = new FormData(form);
     $.ajax({
         type: 'POST',
@@ -210,7 +215,6 @@ function custom_ajax_post(form, url, element, reload_=null) {
 }
 
 function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
-    debugger
     $.ajax({
         type: 'POST',
         url: url,
@@ -378,7 +382,6 @@ function copyToClipboard(elem) {
             const modelName = item.dataset.model_name
             const objectId = item.dataset.object_id
             const appName = item.dataset.app_name
-            debugger
         let new_url = `/core/ajax/changelog/${appName}/${modelName}/${objectId}/`
         $.ajax({
             type: 'GET',
@@ -389,7 +392,6 @@ function copyToClipboard(elem) {
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 document.querySelector('#id-empty-modal-body-lg').innerHTML = html
             },
@@ -438,10 +440,8 @@ function copyToClipboard(elem) {
 
 function ajax_submit
 (form, reload_=null, elem_for_load=null) {
-        debugger
     $.ajax({ // create an AJAX call...
         beforeSend: function (xhr){
-            debugger
             if (elem_for_load){
                 console.log('load...')
             }
@@ -454,10 +454,36 @@ function ajax_submit
         type: $(form).attr('method'), // GET or POST
         url: $(form).attr('action'), // the file to call
         success: function (data){
-            debugger
             if (reload_){
                 window.location.reload()
             }
+        }
+    });
+}
+
+function ajax_submit_with_file(form, reload_=null, elem_for_load=null) {
+    $.ajax({
+        beforeSend: function (xhr) {
+            if (elem_for_load) {
+                console.log('load...');
+            }
+            if (!$(form).find('input[name="csrfmiddlewaretoken"]').length) {
+                const csrfToken = getCookie('csrftoken');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            }
+        },
+        data: new FormData(form), // استفاده از FormData
+        type: $(form).attr('method'), // GET یا POST
+        url: $(form).attr('action'), // آدرس سرور
+        processData: false, // غیرفعال کردن پردازش داده‌ها
+        contentType: false, // تنظیم خودکار content type
+        success: function (data) {
+            if (reload_) {
+                window.location.reload();
+            }
+        },
+        error: function (error) {
+            console.error("Error:", error);
         }
     });
 }
@@ -490,7 +516,6 @@ function ajax_delete(elms) {
 
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null){
-        debugger
     let select2_container_width;
     // target_element => '#target_element'
     $(select2_element).select2({
@@ -529,7 +554,6 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
     })
 
     $(select2_element).on("select2:open", function (e){
-        debugger
          $('#id_kt_empty_modal_lg').css({
                 'visibility': 'hidden',
                 'pointer-events': 'none',
@@ -658,3 +682,45 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         }
     });
 }
+
+        const submitGenericPaymentBtns = document.querySelectorAll('[id*="id_payment__"]')
+    submitGenericPaymentBtns.forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            let generic_payment_url = item.dataset.form_url;
+            const pk = item.dataset.pk;
+            const comment_type = item.dataset.comment_type
+            const comment_input_id = generic_payment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const generic_payment_element = $('#id-empty-modal-body')
+            // const commentFormForCopy = document.getElementById(`id_generic_payment_form_for_copy__${pk}`)
+            const GenericPaymentFormGroup = document.querySelector(`[id*="generic-payment-form-group__${pk}"]`)
+            const g_from_date = GenericPaymentFormGroup.querySelector('[id*="g_from_date"]')
+            const g_to_date = GenericPaymentFormGroup.querySelector('[id*="g_to_date"]')
+            const total_amount = GenericPaymentFormGroup.querySelector('[id*="total_amount"]')
+            const description = GenericPaymentFormGroup.querySelector('[id*="description"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            if (father){
+                const images = father.querySelectorAll('img')
+                images.forEach(function (img){
+                    img.classList.remove('border')
+                    commentCounter.innerHTML = '0'
+                })
+            }
+
+            if (g_from_date && g_to_date && total_amount) {generic_payment_url += `?g_from_date=${g_from_date.value}&g_to_date=${g_to_date.value}&total_amount=${total_amount.value}&description=${description.value}`}
+            custom_ajax_get(comment_form, generic_payment_url, generic_payment_element)
+            // [`${g_to_date.getAttribute('id')}, ${g_from_date.getAttribute('id')}`]
+        }) // end eventListener
+    }) // end forEach
+    function addGenericPaymentInput(){
+        const pkElement = document.querySelector('[id*="payment_object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const GenericPaymentFormGroup = document.querySelector(`[id*="generic-payment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_generic_payment_form_for_copy__${pk}`)
+        GenericPaymentFormGroup.innerHTML = ''
+        GenericPaymentFormGroup.appendChild(commentFormForCopy)
+    }
