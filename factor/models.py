@@ -87,6 +87,18 @@ class Factor(SLSDoc):
                 ...
             order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
 
+    @property
+    def sum_prices(self):
+        fis = self.factor.all()
+        sum_price = 0
+        row_price = 0
+        for fi in fis:
+            price = fi.price
+            quantity = fi.quantity
+            row_price = price * quantity
+        sum_price += row_price
+        return sum_price, row_price
+
 
 class FactorItem(BaseModel):
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))
