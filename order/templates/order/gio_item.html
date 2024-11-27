@@ -1,0 +1,37 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+<style>
+    .select2-dropdown--below{
+        transition: width 0.7s ease;
+    }
+</style>
+<form action="{% if form.instance.pk %}{% url 'order:gioitem.update' form.instance.pk %}{% else %}{% url 'order:gioitem.view' %}{% endif %}" method="POST" id="gio-item-form" enctype="multipart/form-data">
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+        {% csrf_token %}
+        <div class="row">
+            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
+            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
+            {% render_field_by_order form form.gio form.order form.carton_quantity form.item_quantity form.description label='on-border' %}
+            <div></div>
+        </div>
+    </div>
+<input type="submit" value="ثبت" class="btn btn-primary ms-10">
+</form>
+
+<script>
+    debugger
+    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    $('#gio-item-form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+        setInterval(function (){
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
+    })
+
+</script>

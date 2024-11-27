@@ -74,6 +74,8 @@ class CommentListDatatableView(AjaxDatatableView):
         {'name': 'comment_content', 'title': _('متن'), 'visible': True, 'searchable': True, },
         {'name': 'customer', 'visible': True, 'title': _('customer'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'sku', 'visible': True, 'title': _('sku'), 'className': 'py-1', 'lookup_field': '__sku__icontains'},
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1', 'lookup_field': '__username__icontains'},
+        {'name': 'editor_user', 'visible': True, 'title': _('editor_user'), 'className': 'py-1', 'lookup_field': '__username__icontains'},
     ]
 
     def customize_row(self, row, obj):
@@ -83,4 +85,18 @@ class CommentListDatatableView(AjaxDatatableView):
         )
 
     def get_initial_queryset(self, request=None):
-        return Comments.objects.filter(~Q(comment_title='Q'))
+        if request.user.has_perm('comments.change_comments'):
+            condition = None
+            q = request.POST.get('q')
+            if q == 'for_sku':
+                condition = Q(for_sku=True, for_customer=False, is_active=True)
+            elif q == 'for_customer':
+                condition = Q(for_sku=False, for_customer=True, is_active=True)
+            elif q == 'sku_customer':
+                condition = Q(for_customer=True, for_sku=True, is_active=True)
+
+            if condition:
+                return Comments.objects.filter(~Q(comment_title='Q'), condition)
+            else:
+                return Comments.objects.filter(~Q(comment_title='Q'))
+        return Comments.objects.none()

@@ -941,8 +941,6 @@ def get_item(request):
 
 
 def get_items(request):
-    nested = None
-    form_s = None
     q = request.GET.get('q', None)
     party_id = request.GET.get('party_id', 0)
     id_currency_ref = request.GET.get('id_currency_ref', None)

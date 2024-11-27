@@ -78,10 +78,11 @@ class FactorItemModelForm(CustomBaseModelForm):
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
+        self.make_hidden(['index'])
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
-                      'part_number_show', 'price', 'supply_location',
+                      'part_number_show', 'price', 'supply_location', 'supply_locations'
                       ]
 
 FactorItemFormset = inlineformset_factory(
