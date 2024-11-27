@@ -1,0 +1,304 @@
+{% load humanize %}
+{% load jalali_tags %}
+{% load static %}
+{#{% load crispy_forms_tags %}#}
+{#{% load humanize %}#}
+{#{% load quotation_tag %}#}
+{% load more_tags %}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+<link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/css/style.bundle.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/custom_libs/toastr/toastr.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/custom_libs/toastr/toastr.min.rtl.css" rel="stylesheet" type="text/css">
+<link href="{% static 'css/icons.min.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'css/custom.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+<link href="{% static 'css/print/print.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+<link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
+<link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>
+<link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
+<link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+<style>
+        @media print {
+
+           .noprint {
+              visibility: hidden;
+           }
+           .button {
+               display: block;
+           }
+        }
+    </style>
+
+<div class="container" dir="rtl">
+    <div>
+    <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+        </div>
+    <div class="row">
+        <div class="col">
+        </div>
+        <div class="col text-center">
+            <h1>صورت‌ حساب فروش کالا و خدمات</h1>
+        </div>
+        <div class="col text-end">
+            <span data-key="serial_number">شماره سریال : </span>
+            <span>
+                P{{ data.id }}
+                {% if data.sepidar_number %}
+                    | S{{ data.sepidar_number }}
+                {% endif %}
+            </span><br>
+            <span data-key="date">تاریخ: </span><span dir="rtl" >{{ data.q.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span><br>
+            <span data-key="validity_date">تاریخ اعتبار: </span><span dir="rtl">{{ data.q.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span>
+        </div>
+    </div>
+    <div class="row border border-dark" style="background-color: #f7fafc">
+        <div class="col"></div>
+        <div class="col">
+            <h6 data-key="seller_info" class="text-center">مشخصات فروشنده</h6>
+        </div>
+        <div class="col"></div>
+    </div>
+</div>
+
+<div class="container border border-dark" dir="rtl">
+    <div class="row">
+
+        <div class="col">
+            <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">
+            {% if data.q.is_official  %}
+                رهاورد تجارت آینده
+            {% else %}
+            میکرومدرن
+        {% endif %}
+        </span>
+            <p data-key="national_id">شناسه ملی: </p>
+            <p data-key="address">نشانی: </p>
+        </div>
+        <div class="col">
+            <span data-key="economical_number">شماره اقتصادی:</span>
+            <span class="ms-5">
+            {% if data.q.is_official  %}
+                411563971988
+            {% endif %}
+            </span>
+            <p data-key="postal_code">کد پستی:</p>
+        </div>
+        <div class="col">
+            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="fax">فکس: </p>
+            <p data-key="phone">تلفن: </p>
+        </div>
+    </div>
+</div>
+
+<div class="container" dir="rtl" style="background-color: #f7fafc">
+    <div class="row border border-dark">
+        <div class="col"></div>
+        <div class="col">
+            <h6 data-key="buyer_info" class="text-center">مشخصات خریدار</h6>
+        </div>
+        <div class="col"></div>
+    </div>
+</div>
+
+<div class="container border border-dark" dir="rtl">
+    <div class="row">
+        <div class="col-5">
+            <div class="d-flex gap-3">
+                <div class="">
+                    <p data-key="buyer_name">نام خریدار : </p>
+                    <p data-key="address">نشانی: </p>
+                </div>
+                <div class="">
+                    <p class="">{{ data.q.customer_party_id.title|default_if_none:"-" }}</p>
+                    <p class="">{{ data.q.customer_party_id.address|default_if_none:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="d-flex gap-3">
+                <div class="">
+                    <p data-key="economical_number">شماره اقتصادی:</p>
+                    <p data-key="phone">تلفن:</p>
+                </div>
+                <div class="">
+                    <p class="">{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
+                    <p class="">{{ data.q.customer_party_id.phone|default_if_none:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+        <div class="d-flex gap-3">
+        <div class="">
+            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+            <p data-key="postal_code">کد پستی: </p>
+
+        </div>
+        <div class="">
+            <p data-key="national_number">{{ data.q.customer_party_id.national_code|default_if_none:"-" }} </p>
+            <p data-key="postal_code">-</p>
+
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container" dir="rtl" style="background-color: #f7fafc">
+    <div class="row border border-dark">
+        <div class="col"></div>
+        <div class="col">
+            <h6 data-key="buyer_info" class="text-center">مشخصات کالا یا خدمات مورد معامله</h6>
+        </div>
+        <div class="col"></div>
+    </div>
+</div>
+
+<div class="container" dir="rtl">
+    <div class="row">
+        <table class="table table-bordered border-dark mb-0">
+            <thead>
+            <tr>
+                <th scope="col">ردیف</th>
+                <th scope="col">کد کالا</th>
+                <th scope="col" >شرح کالا/ خدمت</th>
+                <th scope="col">تعداد/ مقدار</th>
+{#                <th scope="col">واحد</th>#}
+                <th scope="col">مبلغ واحد</th>
+                <th scope="col">مبلغ کل</th>
+            </tr>
+            </thead>
+            {% for form_ in formset %}
+            <tbody class="border border-dark">
+            <tr>
+                {% if form.instance.q.currency_ref.id == 1 %}
+                    {% include "factor/factor_item_print.html" with form=form_ digit=0 %}
+                {% else %}
+                    {% include "factor/factor_item_print.html" with form=form_ digit=4 %}
+                {% endif %}
+            </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="container" dir="rtl">
+    <div class="row row-cols-3">
+        <div class="col">
+            <p class="mt-10">{% num_to_fa_words data.sum_prices.0 %} ریال</p>
+        </div>
+        <div class="col"></div>
+        <div class="col border border-dark">
+            <div class="row row-cols-2 border-bottom border-dark">
+                <div class="col p-0 border-right border-dark text-right" style="border-left: 1px solid black;">
+                    <p class="border-bottom border-dark my-1 ps-1">جمع کل</p>
+                    <p class="border-bottom border-dark my-1 ps-1">اضافات</p>
+                    <p class="border-bottom border-dark my-1 ps-1">تخفیف</p>
+                    <p class="border-bottom border-dark my-1 ps-1">مالیات و عوارض</p>
+                    <p class=" my-1 ps-1">مبلغ پرداختی</p>
+
+                </div>
+                <div class="col m-0 p-0 text-center">
+                {% with data.q.payment as payment %}
+{#                    <p class="border-bottom border-dark my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
+{#                    <p class="border-bottom border-dark my-1">{{ data.addition|default_if_none:0 }}</p>#}
+{#                    <p class="border-bottom border-dark my-1">{{ data.self_discount|default_if_none:0 }}</p>#}
+{#                    <p class="border-bottom border-dark my-1" >{{ data.tax_amount|default_if_none:0|floatformat:0|intcomma }}</p>#}
+{#                    {% if data.addition %}#}
+{#                    	<p class=" my-1" >{{ data.sum_prices|add:data.addition|intcomma }}</p>#}
+{#                        {% else %}#}
+{#                        <p class=" my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
+{#                    {% endif %}#}
+
+                    <p class="border-bottom border-dark my-1" >{{ data.sum_prices.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
+                    <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>
+                    <p class="border-bottom border-dark my-1" >{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class=" my-1" >{{ data.sum_prices.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container" dir="rtl">
+    <div class="row row-cols-2">
+
+        <div class="col mt-6" style="border: 2px solid black;">
+            <div class="row row-cols-3">
+                <div class="col">شرایط و نحوه ی سفارش</div>
+                <div class="col d-flex">
+                    <div class="d-flex">
+                        <p class="px-3 mt-1"> نقدی</p>
+                        <div class="border border-dark mt-1" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="d-flex">
+                        <p class="px-3 mt-1">غیر نقدی</p>
+                        <div class="border border-dark mt-1" style="width: 20px; height: 20px;"></div>
+                    </div>
+{#                    <div class="form-check">#}
+{#                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" checked>#}
+{#                        <label class="form-check-label" for="flexCheckDefault" >#}
+{#                            نقدی#}
+{#                        </label>#}
+{#                    </div>#}
+{#                    <div class="form-check">#}
+{#                        <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">#}
+{#                        <label class="form-check-label" for="flexCheckChecked">#}
+{#                            غیر نقدی#}
+{#                        </label>#}
+{#                    </div>#}
+                </div>
+            </div>
+        </div>
+        <div class="col"></div>
+
+    </div>
+</div>
+<div class="container" dir="rtl">
+    <div class="row row-cols-2 border border-dark">
+        <div class="col-1 col-md-1 mt-2">
+            <p>
+                توضیحات:
+            </p>
+        </div>
+        <div class="col-11 col-md-11">
+            <p class="mb-10 mt-2">
+                {{ data.description|default_if_none:"-"|linebreaks }}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="container" dir="rtl">
+    <div class="row row-cols-2 border border-dark">
+        <div class="col mb-10">
+            <p class="mt-2">
+                مهر و امضاء فروشنده
+            </p>
+        </div>
+        <div class="col border border-right border-dark">
+            <p class="mt-2">
+              مهر و امضاء خریدار
+            </p>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<br>
+{% block extra_js %}
+    <script src="{% static 'js/base.js' %}"></script>
+{% endblock extra_js %}
