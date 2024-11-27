@@ -312,6 +312,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
     images = GenericRelation('files.Image', related_query_name="parent_object_no")
     files = GenericRelation('files.File', related_query_name="parent_object_no")
+    payments = GenericRelation('payment.GenericPaymentItem', related_query_name="payment_objects")
     submit_copy = False
     objects = BaseManager()
 
@@ -481,6 +482,38 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
                 image_model.objects.create(path=image, content_object=obj, group=i + 1, alt=alt[idx])
 
     """***NEW***"""
+    def save_payment(self, request, *args, **kwargs):
+        from payment.models import GenericPaymentItem
+        app_label = self._meta.app_label
+        model_name = self._meta.model_name
+        ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
+        obj_id = self.pk
+        total_amount = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-total_amount')
+
+        if total_amount:
+            g_from_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_from_date')
+            g_to_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_to_date')
+            description = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-description')
+            file_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file'
+            content_type = ContentType.objects.get_for_model(self._meta.model)
+            payment = GenericPaymentItem.objects.create(
+                g_from_date=g_from_date or None,
+                g_to_date=g_to_date or None,
+                description=description,
+                total_amount=total_amount,
+                content_type=content_type,
+                object_id=self.pk,
+                creator_user=request.user,
+                editor_user=request.user,
+            )
+
+            payment.save_file(
+                request=request,
+                file_groups=1,
+                file_model=payment.files.model,
+                obj=payment,
+                input_prefix=file_prefix,
+            )
 
     def save_comment_(self, request, idx=None):
         from comments.models import Comments

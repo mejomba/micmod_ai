@@ -1,4 +1,5 @@
 import math
+import uuid
 from typing import List, Dict
 import pandas
 import pytz
@@ -10,6 +11,10 @@ from django.db import models
 from django.db.models import Q
 
 from _keenthemes.settings import TIME_ZONE
+# from factor.forms import FactorModelForm, FactorItemModelForm
+# from factor.models import Factor, FactorItem
+# from micmod_base.models import Quotation
+# from order.models import Order
 from . import myjalali
 import datetime
 # from workflow.models import FlowAdminGroup, WorkFlow
@@ -300,3 +305,49 @@ def build_column_filter(column_name, column_obj, column_spec, search_value=None,
             search_filter = Q(**{query_param_name + lookup_field: search_value})
 
     return search_filter
+
+
+# def generate_direct_factor(request, quotation: Quotation):
+#     factor_data = {
+#         'q': quotation,
+#         'delivery_time': quotation.delivery_time,
+#         'description': 'فاکتور مستقیم',
+#         'guid': uuid.uuid4(),
+#         'sepidar_number': quotation.sepidar_number,
+#         'is_official': quotation.is_official,
+#         'official_value': quotation.official_value,
+#         'sale_type': quotation.sale_type,
+#     }
+#     factor_form = FactorModelForm(data=factor_data)
+#     if factor_form.is_valid():
+#         factor = factor_form.save()
+#
+#         for qi in quotation.quotation.all():
+#             # generate order independent
+#             data_base = {
+#                 "order_title": "خودکار توسط سیستم",
+#                 "status": "1",
+#                 "item": qi.goods_code_fk,
+#                 "production_lead_time": 5,  # self.qi.lead_time,
+#                 "quantity": qi.quantity,
+#                 "cancel": False,
+#                 "is_over": False,
+#                 "qi": qi,
+#                 "creator_user": qi.extra_data.request.user,
+#                 "editor_user": qi.extra_data.request.user,
+#             }
+#             order = Order.create_with_rel(data_base)
+#             factor_item_data = {
+#                 'factor': factor,
+#                 'qi': qi,
+#                 'goods_code': qi.goods_code_fk,
+#                 'part_number_show': qi.goods_code_fk.part_number,
+#                 'price': qi.price,
+#                 'quantity': qi.quantity,
+#                 'delivery_time': qi.delivery_time,
+#                 'supply_locations': order,
+#                 # 'supply_location': '',
+#             }
+#             factor_item_form = FactorItemModelForm(data=factor_item_data)
+#             if factor_item_form.is_valid():
+#                 factor_item = factor_item_form.save()

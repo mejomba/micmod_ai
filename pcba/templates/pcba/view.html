@@ -35,14 +35,16 @@
                 <div class="col">
                     <div class="row row-cols-4">
                         {% render_field_by_order form form.contract_title form.goods_code_fk form.project_name_en form.customer_party_id label='on-border' %}
-                        <div class="col on-border">
-                            <div id="id_customer_party_id_select2"></div>
-                            <label for=""> مشتری</label>
-                        </div>
-                        <div class="col on-border">
-                            <div id="id_goods_code_fk_select2"></div>
-                            <label for="">کد کالا</label>
-                        </div>
+{#                        <div class="col on-border">#}
+{#                            <div id="id_customer_party_id_select2"></div>#}
+{#                            <label for=""> مشتری</label>#}
+{#                        </div>#}
+                        {% include 'core/partial/select2_field.html' with id="id_customer_party_id_select2" lable="مشتری" %}
+                        {% include 'core/partial/select2_field.html' with id="id_goods_code_fk_select2" lable="کد کالا" %}
+{#                        <div class="col on-border">#}
+{#                            <div id="id_goods_code_fk_select2"></div>#}
+{#                            <label for="">کد کالا</label>#}
+{#                        </div>#}
 
                     </div>
                 </div>

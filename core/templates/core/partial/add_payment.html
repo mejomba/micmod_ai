@@ -1,0 +1,18 @@
+{% load more_tags %}
+
+<div class="symbol-group symbol-hover flex-nowrap">
+    {% for payment_info in payments_info %}
+        {% if forloop.counter <= 5 %}
+            <div id="id_payment_list" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="tooltip" data-bs-original-title="{{ payment_info.1.username }}: {{ payment_info.0.comment_content|truncatechars:45 }}" data-bs-original-title="{{ payment_info.1.username }}" data-kt-initialized="1">
+                    <img alt="Pic" class="{% if not payment_info.0.seen %}border border-success border-3{% endif %}" src="{{ payment_info.2 }}" data-bs-target="#id_kt_empty_modal" data-pk="{{ obj.pk }}" data-form_url="/core/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.payments.content_type.pk }}/{{ obj.pk }}">
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    <div href="#" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal" id="id_payment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/generic_payment/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.payments.content_type.pk }}/{{ obj.pk }}/">
+        <span class="symbol-label bg-dark text-gray-400 fs-8 fw-bold">$</span>
+    </div>
+    <span class="badge badge-light-success mx-3 text-wrap fw-bolder">
+        {{ unseen_payment_count }}
+    </span>
+</div>

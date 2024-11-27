@@ -19,10 +19,11 @@
     </div>
 <input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
 </form>
-
+<script src="{% static 'js/base_define.js' %}"></script>
 <script>
     $('#pay-accounting-document-form').on('submit', function (e){
         debugger
+        removeCommaSeperator()
         e.preventDefault()
         var doc_type = $('#id_doc_type').val();
         var description = $('#pay-accounting-document-form #id_description').val();
@@ -59,5 +60,5 @@
             $('#id_kt_empty_modal_lg').hide();
         }, 500)
     })
-
+addCommaSeperator(true)
 </script>

@@ -42,6 +42,7 @@ class CustomBaseModelForm(forms.ModelForm):
     file_model = None
     has_comment = None
     has_addition = None
+    has_payment = None
     crispy = None
     action = None
     enable = True
