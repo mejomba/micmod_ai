@@ -1,5 +1,4 @@
 from ajax_datatable import AjaxDatatableView
-from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -7,16 +6,12 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import View
 
-from core.views import BaseView, Base
-from micmod_base.forms import TimeForm
+from core.views import BaseView
 from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm, ProductionDayActivitiesForm, ItemReceiptForm
 from pcba.models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
 from tools.utils import show_error, is_ajax
 from translator import get_text as _
-from transportation.models import Packing
 
-
-# Create your views here.
 
 class ContractsList(LoginRequiredMixin,View):
     def get(self, request):
@@ -25,7 +20,6 @@ class ContractsList(LoginRequiredMixin,View):
         greeting['heading'] = _("contract")
         greeting['pageview'] = _("pcba")
         return render(request, 'pcba/partial/list_datatable.html', greeting)
-
 
 
 class ContractListDatatable(AjaxDatatableView):
@@ -48,7 +42,6 @@ class ContractListDatatable(AjaxDatatableView):
         {'name': 'customer_board_count', 'visible': True, 'orderable': True},
         {'name': 'customer_total_board_count', 'visible': True, 'orderable': True,},
         {'name': 'first_setup_time', 'visible': True, 'orderable': True,},
-        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'second_setup_time', 'visible': True, 'orderable': True,},
         {'name': 'pad_count', 'visible': True, 'orderable': True},
         {'name': 'ic_pad_count', 'visible': True, 'orderable': True},
@@ -117,12 +110,10 @@ class ContractView(LoginRequiredMixin, BaseView):
 
 
 class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
-    # template_name = 'pcba/items_in_customer_receipt.html'
     ajax_template_name = 'pcba/partial/items_in_customer_receipt_ajax.html'
     form_class = ItemReceiptForm
     model = ItemsInCustomerReceipt
     wf_last_step_is_open = True
-    # has_flow = True
     form_struct = {
         'form': ItemReceiptForm,
         'childes': [
@@ -151,7 +142,7 @@ class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
         return context
 
     def get(self, request, *args, **kwargs):
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if is_ajax(self.request):  # request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             context = self.get_context_data()
             res = render_to_string(self.ajax_template_name, context=context, request=self.request)
             return JsonResponse({'res': res}, safe=False)
@@ -164,7 +155,6 @@ class CustomerItemReceiptView(LoginRequiredMixin, BaseView):
     form_class = CustomerItemReceiptForm
     model = CustomerItemReceipt
     wf_last_step_is_open = True
-    # has_flow = True
     form_struct = {
         'form': CustomerItemReceiptForm,
         'childes': [
@@ -190,13 +180,12 @@ class CustomerItemReceiptView(LoginRequiredMixin, BaseView):
         pk = self.request.GET.get('pk', None)
         if pk:
             contract = Contract.objects.filter(pk=pk).first()
-            # parent = CustomerItemReceipt.objects.filter(contract_id=contract, status=CustomerItemReceipt.INCOMPLETE)
             context['form'] = CustomerItemReceiptForm(initial={'contract': contract or self.object.contract},
                                                       instance=self.object, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if is_ajax(self.request):  # request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             context = self.get_context_data()
             res = render_to_string(self.ajax_template_name, context=context, request=self.request)
             return JsonResponse({'res': res}, safe=False)
@@ -250,7 +239,6 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
     form_class = ProjectItemListForm
     model = ProjectItemList
     wf_last_step_is_open = True
-    # has_flow = True
     form_struct = {
         'form': ProjectItemListForm,
         'childes': [
@@ -274,7 +262,6 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
         pk = self.request.GET.get('pk', None)
         if pk:
             contract = Contract.objects.filter(pk=pk).first()
-            # goods_code_fk = contract.goods_code_fk
             context['form'] = ProjectItemListForm(initial={'contract': contract or self.object.contract}, instance=self.object)
         return context
 
@@ -285,7 +272,6 @@ class ProjectItemListView(LoginRequiredMixin, BaseView):
         return super().get(request, *args, **kwargs)
 
 
-
 class ProductionDayActivityList(LoginRequiredMixin,View):
     def get(self, request):
         q = self.request.GET.get('q')
@@ -293,14 +279,6 @@ class ProductionDayActivityList(LoginRequiredMixin,View):
         greeting['heading'] = _("production_day_activity")
         greeting['pageview'] = _("pcba")
         return render(request, 'pcba/partial/production_day_activities_datatable.html', greeting)
-    # def get_queryset(self):
-    #     q = self.request.GET.get('q')
-    #     qs = None
-    #     if q == 'packing':
-    #         field_name = 'activity'
-    #         qs = ProductionDayActivities.filter_qs(field_name, ProductionDayActivities.PACKING)
-    #     return qs
-
 
 
 class ProductionDayActivityListDatatable(AjaxDatatableView):
@@ -335,6 +313,7 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
             reverse('pcba:contracts.view', args=(obj.contract.id,)),
             obj.contract.pk if obj.contract.pk else '-'
         )
+
     def get_initial_queryset(self, request=None):
         q = request.POST.get('q', None)
         qs = super().get_initial_queryset(request)
@@ -394,11 +373,8 @@ class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
         return super().get(request, *args, **kwargs)
 
 
-
-
 def get_contracts(request):
     q = request.GET.get('q', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
     obj = {}
     count = 0
     if q:
@@ -410,10 +386,6 @@ def get_contracts(request):
             item['text'] = cir.contract_title
             obj['items'].append(item)
             count += 1
-            # try:
-            #     contract = Contract.objects.filter(pk=cir).first()
-            # except Exception as e:
-            #     show_error(e, __file__)
 
     obj['total_count'] = count
     return JsonResponse(obj,safe=False)
@@ -421,7 +393,6 @@ def get_contracts(request):
 
 def get_parents(request):
     q = request.GET.get('q', None)
-    reps = [["ي", "ی"], ["ك", "ک"]]
     obj = {}
     count = 0
     if q:
@@ -433,10 +404,6 @@ def get_parents(request):
             item['text'] = cir.contract.customer_party_id.title
             obj['items'].append(item)
             count += 1
-            # try:
-            #     customer_item_receipt = CustomerItemReceipt.objects.filter(pk=cir).first()
-            # except Exception as e:
-            #     show_error(e, __file__)
 
     obj['total_count'] = count
     return JsonResponse(obj,safe=False)
