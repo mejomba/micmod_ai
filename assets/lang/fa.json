@@ -636,6 +636,8 @@
     "intact_board_count_not_assembly": "تعداد برد‌های سالم مونتاژ نشدده به علت کسری قطعات",
     "delivery_type": "نحوه ارسال",
     "t-pcba":"PCBA",
+    "finish": "اتمام",
+    "factor_number": "شماره فاکتور",
     "order_title": "عنوان",
     "sales_admin_confirmation": "تایید مسئول فروش",
     "production_lead_time": "لید تایم تولید (روز)",

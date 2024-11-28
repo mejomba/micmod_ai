@@ -3,6 +3,7 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.forms import inlineformset_factory
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
@@ -10,13 +11,15 @@ from django.urls import reverse_lazy
 from django.urls import reverse
 from django.views import View
 from jalali_date import datetime2jalali
+from jalali_date.templatetags.jalali_tags import to_jalali
+
 from translator import get_text as _
 
 from core.views import BaseView, Base
-from factor.forms import FactorModelForm, FactorItemFormset
+from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm
 from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation, QuotationItem
-from tools.utils import to_jalali_date
+from tools.utils import to_jalali_date, show_error
 import json
 
 
@@ -64,7 +67,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
         qis = self.object.q.quotation.all() if self.object else None
-        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
+        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factor.count() if self.object else 0
         context['form_s'] = FactorItemFormset(instance=self.object)
 
         exclude_qi = set()
@@ -254,6 +257,33 @@ class FactorListDatatable(AjaxDatatableView):
             obj.pk if obj.pk else '-'
         )
 
+def print_view(request,id=-1):
+
+    template_name = 'factor/factor_print.html'
+
+    formset = inlineformset_factory(Factor, FactorItem, form=FactorItemModelForm, extra=0, )
+    greeting = {}
+    greeting['alt_code_html'] = []
+    greeting['heading'] = _("create")
+    greeting['pageview'] = _("quotation")
+    factor = Factor.objects.filter(id=id).first()
+    greeting['form'] = FactorModelForm(instance=factor)
+    greeting['formset'] = formset(instance=factor,
+                                  form_kwargs={
+                                      "constraint": {
+                                          "wf_access": True,
+                                          'form_state': 0,
+                                          'request': request,
+
+                                      }
+                                  }
+                                  )
+
+    if factor:
+        factor.created_date = datetime2jalali(factor.created_date).strftime('%y/%m/%d-%H:%M')
+        factor.last_update_date = datetime2jalali(factor.last_update_date).strftime('%y/%m/%d-%H:%M')
+    greeting['data'] = factor
+    return render(request, template_name, greeting)
 
 class MostahlakNashodeQuotationListDatatable(AjaxDatatableView):
     model = Quotation

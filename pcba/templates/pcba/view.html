@@ -131,8 +131,8 @@
 
                     </div>
                 {% endif %}
-            <div class="row align-items-center mb-5">
             {% for cir in cirs %}
+                <div class="row align-items-center mb-5 {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                     <div class="col-2 py-2 ">
                         <span class="me-3">
                             <b>{{ forloop.counter }})</b>
@@ -209,6 +209,7 @@
                 </div>
 
 
+            </div>
 
             {% endfor %}
             {% endwith %}
@@ -224,7 +225,6 @@
         {% else %}
             <span class="mx-3">پس از ثبت قرارداد امکان ثبت رسید کالای مشتری وجود دارد :)</span>
         {% endif %}
-        </div>
         </div>
 			</div>
 			<div class="tab-pane fade" id="kt_tab_pane_2_4" role="tabpanel" aria-labelledby="kt_tab_pane_2_4">
@@ -245,8 +245,8 @@
 
                     </div>
                 {% endif %}
-            <div class="row align-items-center">
             {% for pil in pils %}
+                <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                     <div class="col-2 mb-3">
                         <span class="me-3"><b>{{ forloop.counter }})  </b></span>
                         <span>{{ pil.contract }}</span>
@@ -301,7 +301,7 @@
                     </div>
                 <div class="col-2"></div>
                 {{ form.errors }}
-
+        </div>
             {% endfor %}
             {% endwith %}
             <div class="mt-3">
@@ -320,7 +320,6 @@
         {% else %}
             <span class="mx-3">پس از ثبت قرارداد امکان ثبت لیست قطعات پروژه وجود دارد :)</span>
         {% endif %}
-        </div>
     </div>
 			</div>
 			<div class="tab-pane fade" id="kt_tab_pane_3_4" role="tabpanel" aria-labelledby="kt_tab_pane_3_4">
@@ -751,6 +750,28 @@
         })
 
     })
+
+
+    document.querySelector('#select2-id_goods_code_fk_select2-container').addEventListener('change', function() {
+        debugger
+        const goodsCode = this.value;
+        if (goodsCode) {
+            fetch(`/pcba/goods/customer/?goods_code=${goodsCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        document.getElementById('id_customer_sheet_count').value = data.data.customer_sheet_count;
+                        document.getElementById('id_ic_pad_count').value = data.data.ic_pad_count;
+                        document.getElementById('id_pad_count').value = data.data.pad_count;
+                    } else if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('No record found for this goods code.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
     {#const navs = document.querySelectorAll('.nav-link')#}
     {#navs.forEach((nav) => {#}
     {#    if(nav.classList.contains('active')){#}
