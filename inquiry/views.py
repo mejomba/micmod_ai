@@ -462,6 +462,7 @@ class InquiryResultListView(BaseView):
             if iqr_form.is_valid():
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = qi_obj
+                iqr_obj.extra_data.request = self.request
                 iqr_obj.save()
 
         return res
@@ -941,8 +942,6 @@ def get_item(request):
 
 
 def get_items(request):
-    nested = None
-    form_s = None
     q = request.GET.get('q', None)
     party_id = request.GET.get('party_id', 0)
     id_currency_ref = request.GET.get('id_currency_ref', None)

@@ -1,0 +1,28 @@
+<style>
+    table caption {
+        caption-side: top;
+    }
+</style>
+<div class="table-responsive">
+    <table class="table table-rounded table-row-bordered border gy-7 gs-7">
+    <caption>{{ title }}</caption>
+        <thead>
+            <tr class="fw-bold fs-6 text-gray-800 border-bottom-2 border-gray-200">
+                <th data-key="row">ردیف</th>
+                {% for th in rows.0.keys %}
+                    <th data-key="{{ th }}">{{ th }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for tr in rows.items %}
+                <tr class="{% if forloop.counter0|divisibleby:'2' %} table-active {% endif %}">
+                    <td class="text-start">{{ forloop.counter }}</td>
+                    {% for td in tr.1.values %}
+                        <td class="text-start">{{ td }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

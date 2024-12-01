@@ -49,7 +49,6 @@ if (false){
 });
 
 $('#id_customer_select2').on("select2:select", function (e) {
-    debugger
     const data = e.params.data;
     document.querySelector('[name="customer"]').value = data.id
     document.querySelector('[id*="select2-id_customer_select2-container"]').querySelector('span').innerHTML = data.id + " " + data.text

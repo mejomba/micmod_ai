@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 import os
 
@@ -371,23 +371,33 @@ class Item(BaseModel):
 
     @property
     def supply_locations_(self):
-        res = [('', '-----------')]
+        # res = [('', '-----------')]
+        res = []
         stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
         for stock_qty in stock_qty_qry:
             if stock_qty.quantity:
                 sepidar_wh_code = 1000
                 sepidar_wh_name = 'اسم انبار سپیدار'
                 # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
+                # todo get wh__order from db, show reserve and stock_quantity
+                quantity_sum = self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                    total_sum=Sum('quantity'))['total_sum'] or 0
                 if stock_qty.quantity.is_integer():
-                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {int(stock_qty.quantity)}'))
+                    qty = int(stock_qty.quantity)
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {qty} / {qty - quantity_sum}'))
                 else:
+                    qty = stock_qty.quantity
                     res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty.quantity}'))
 
 
         # for o in self.orderitem_set.all():
-        for o in self.order_set.all().order_by('-quantity'):
-            if r := o.remaining_quantity:
-                res.append((o.pk, f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {r:0.20g})"))
+        for o in self.order_set.filter(cancel=False).order_by('-quantity'):
+            remaining_quantity = o.remaining_quantity
+            if remaining_quantity > 0:
+                if o.local_sepidar_wh_code:
+                    res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
+                else:
+                    res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 
@@ -682,6 +692,14 @@ CustomerGrade = (
     ("-1,A,4", _("A 4 Month")),
     ("0,B,4", _("B 4 Month")),
 )
+CustomerGrade = (
+    ("-3,Special", _("special")),
+    ("-2,A+", _("A+")),
+    ("-1,A", _("A")),
+    ("0,B", _("B")),
+    ("0,C", _("C")),
+)
+
 CustomerGrade = (
     ("-3,Special", _("special")),
     ("-2,A+", _("A+")),
