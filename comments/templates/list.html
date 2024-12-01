@@ -22,13 +22,7 @@
 {% endblock %}
 
 {% block content %}
-{% if request.user|has_group:'technical_admin' %}
-{#    <div class="border rounded p-3">#}
-{#        <span>استفاده از فیلتر</span>#}
-{#        <a href="{% url 'extra_data:sku.list' %}?q=sales_user" class="btn btn-primary mx-1">کارشناس فروش</a>#}
-{#        <a href="{% url 'extra_data:sku.list' %}?q=not_confirm" class="btn btn-secondary mx-1">تائید نشده ها</a>#}
-{#    </div>#}
-    {% endif %}
+
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
@@ -36,16 +30,27 @@
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
-                    <div><a href="{% url 'extra_data:hs.create' %}" class="btn btn-primary">ایجاد</a></div>
-                            <div class="col-12">
-                                <div class="container-fluid">
-                                    <div class="table-responsive p-2">
-                                        <table id="hs_list" width="100%" class="m-table table-striped table-bordered w-100">
-
-                                        </table>
+                    <div class="col-12">
+                        <div class="container-fluid">
+                            {% if request.user|has_group:'technical_admin' %}
+                                <div class="border rounded p-3 d-flex justify-content-between mb-3">
+                                    <div>
+                                        <span>استفاده از فیلتر</span>
+                                        <a href="{% url 'comments:comment.list' %}" class="btn btn-bordered btn-outline-primary mx-1 {% if not request.GET.q %} bg-primary text-white {% endif %}">همه</a>
+                                        <a href="{% url 'comments:comment.list' %}?q=for_sku" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'for_sku' %} bg-primary text-white {% endif %}">کالا</a>
+                                        <a href="{% url 'comments:comment.list' %}?q=for_customer" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'for_customer' %} bg-primary text-white {% endif %}">مشتری</a>
+                                        <a href="{% url 'comments:comment.list' %}?q=sku_customer" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sku_customer' %} bg-primary text-white {% endif %}">کالا/مشتری</a>
                                     </div>
+                                    <a href="{% url 'extra_data:hs.create' %}" class="btn btn-primary">+</a>
                                 </div>
+                            {% endif %}
+                            <div class="table-responsive p-2">
+                                <table id="hs_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                </table>
                             </div>
+                        </div>
+                    </div>
                 </div>
                     
                 </div> <!-- container-fluid -->

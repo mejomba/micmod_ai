@@ -1,0 +1,107 @@
+{% load more_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+
+{% csrf_token %}
+{% for payment in payments %}
+        <div data-kt-inbox-message="message_wrapper"  class="payment_body mb-10 border-right-1 pt-2 ps-3" style="border-right: 4px solid var(--bs-gray-200)">
+            <!--begin::Message header-->
+            <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
+                 data-kt-inbox-message="header">
+                <!--begin::Author-->
+                <div class="d-flex align-items-baseline">
+                    <!--begin::Author details-->
+                    <div>
+                        {% if payment.creator_user.profile %}
+                            <img src="{{ payment.creator_user.profile.get_user_image }}" alt="user_image__{{ payment.creator_user.firstname }}" class="rounded-circle" width="32" height="32">
+                        {% endif %}
+                    </div>
+                    <p class="me-4 ms-2 fw-bold text-active-gray-800" >
+                        {{ payment.creator_user }}
+                    </p>
+                    <p class="font-size-10 font-italic text-muted text-end" style="font-style: italic">
+                        {{ payment.elapsed_time }}
+                    </p>
+                    <!--end::Author details-->
+                <u class="ms-5 text-muted font-size-12">ID: {{ payment.pk }}</u>
+                </div>
+                <!--end::Author-->
+
+                <!--begin::Actions-->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!--begin::Date-->
+
+                    {% if payment.creator_user == request.user %}
+                        <p class="payment_delete text-danger tooltip_" data-payment_pk="{{ payment.pk }}" data-bs-toggle="tooltip" data-bs-original-title="حذف" data-bs-trigger="hover" data-bs-placement="top">
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </p>
+                    {% endif %}
+
+                    <!--end::Date-->
+                    <div class="d-flex">
+                    </div>
+                </div>
+                <!--end::Actions-->
+            </div>
+            <!--end::Message header-->
+
+            <!--begin::Message content-->
+            <div class="d-flex flex-column justify-content-start">
+                <div class="d-flex gap-1">
+                    <span>{{ payment.g_from_date|default_if_falsy:"-"|to_jalali:'%Y/%m/%d' }}</span>
+{#                    <span></span>#}
+                    <span class="ms-5">{{ payment.g_to_date|default_if_falsy:"-"|to_jalali:'%Y/%m/%d' }}</span>
+                    <span class="ms-10 s-05 bg-light-info rounded px-2">{{ payment.total_amount|intcomma }}</span>
+                    <span>ریال</span>
+                    <span class="ms-5">
+                    {% for file in payment.files.all %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1"><i
+                                class="fas fa-file-upload icon-lg"></i></a>
+
+                    {% endfor %}
+                    </span>
+                </div>
+                <div class="mt-3">{{ payment.description|default_if_falsy:"-" }}</div>
+            </div>
+        </div>
+    {% endfor %}
+<script>
+
+    if (typeof csrftoken !== 'undefined' && typeof btns !== 'undefined'){
+        let csrftoken;
+        let btns;
+    }
+
+    csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    btns = document.querySelectorAll(".payment_delete")
+    btns.forEach(function (btn){
+        btn.addEventListener("click", function (){
+            const url_var = window.location.origin
+            const pk = btn.dataset.payment_pk
+            $.ajax({
+                url: `${url_var}/payments/ajax/payment_delete/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                dataType: "json",
+                type: "POST",
+                async: false,
+                data: {pk: pk},
+                cache: true,
+                success: function (data) {
+                    dnone_payment = findAncestor(btn, "payment_body")
+                    dnone_payment.classList.add('d-none')
+                    result = data;
+                    },
+                error: function (res){
+                    alert("خطا")
+                }
+                }); // end ajax
+        })// end eventListener
+    })
+</script>

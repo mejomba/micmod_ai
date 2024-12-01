@@ -12,9 +12,9 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView
 
 from core.views import BaseView, Base
-from payment.forms import PaymentOrderModelForm, PaymentDocumentsForm, CreditCardForm
-from payment.models import PaymentOrder, PaymentDocument, CreditCard
-from tools.utils import to_jalali_date
+from payment.forms import PaymentOrderModelForm, PaymentDocumentsForm, CreditCardForm, GenericPaymentForm
+from payment.models import PaymentOrder, PaymentDocument, CreditCard, GenericPaymentItem
+from tools.utils import to_jalali_date, is_ajax
 from translator import get_text as _
 from workflow.models import WorkFlow
 from datetime import datetime
@@ -284,3 +284,117 @@ class CreditCardAjax(View):
             return JsonResponse({'res': credit_card.credit_card_number})
         else:
             return JsonResponse({'res': 'حسابی پیدا نشد. حساب ایجاد کنید یا به صورت دستی مقدار را وارد کنید'})
+
+
+class GenericPaymentView(LoginRequiredMixin, BaseView):
+    template_name = 'payment/generic_payment_view.html'
+    form_class = GenericPaymentForm
+    model = GenericPaymentItem
+    # wf_last_step_is_open = True
+#     # has_flow = True
+    success_message = 'با موفقیت ذخیره شد'
+    form_struct = {
+        'form': form_class,
+        'childes': [
+            {},
+        ]
+    }
+#     # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
+#
+    def get_success_url(self):
+        return reverse_lazy('payment:generic.payment.update', kwargs={'pk': self.object.pk})
+#
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+#
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+#
+    def get_context_data(self, **kwargs):
+        context = {}
+        form = self.form_class(instance=self.object)
+        context['app_name'] = self.request.resolver_match.app_name
+        context['form'] = form
+        return context
+
+
+# class PaymentItemView(LoginRequiredMixin, BaseView):
+#     template_name = 'payment/payment_item_view.html'
+#     form_class = PaymentItemForm
+#     model = GenericPaymentItem
+#     form_struct = {
+#         'form': PaymentItemForm,
+#         'childes': [
+#             {},
+#         ]
+#     }
+#
+#     def get_success_url(self):
+#         return reverse_lazy('payment:paymentitem.update', kwargs={'pk': self.object.payment.pk})
+#
+#     def post(self, request, *args, **kwargs):
+#         x = super().post(request, *args, **kwargs)
+#         if is_ajax(request):
+#             return JsonResponse({'res': 'success'})
+#         else:
+#             return x
+#
+#     def form_valid(self, form):
+#         x = super().form_valid(form)
+#         return JsonResponse({'res': True})
+#
+#     def get(self, request, pk=None, *args, **kwargs):
+#         if is_ajax(request):
+#             context = self.get_context_data()
+#             res = render_to_string(self.template_name, context=context)
+#             return JsonResponse({'res': res})
+#         return JsonResponse({'res': 'only ajax request'})
+#
+#     def get_context_data(self, **kwargs):
+#         context = {}
+#         payment = Payment.objects.filter(pk=self.request.GET.get('pk')).first()
+#         form = self.form_class(initial={'payment': payment or self.object.payment}, instance=self.object)
+#         context['app_name'] = self.request.resolver_match.app_name
+#         context['form'] = form
+#         return context
+
+
+class GenericPaymentListView(LoginRequiredMixin, View):
+    """
+    sku list view
+    """
+    template_name = 'payment/generic_payment_list.html'
+    context_object_name = 'xxx'
+#
+    def get(self, request, *args, **kwargs):
+        context = {}
+        return render(request, self.template_name, context)
+
+
+class GenericPaymentDataTableListView(AjaxDatatableView):
+    model = GenericPaymentItem
+    title = 'Payment'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'g_from_date', 'visible': True, 'title': _('from_date'), 'className': 'py-1',},
+        {'name': 'g_to_date', 'visible': True, 'title': _('to_date'), 'className': 'py-1', },
+        {'name': 'total_amount', 'title': _('total_amount'), 'className': 'py-1', },
+        {'name': 'description', 'orderable': True, 'visible': True, },
+        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user')},
+        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user')},
+        {'name': 'created_date', 'orderable': True, 'visible': True, },
+    ]
+
+    def customize_row(self, row, obj):
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('payment:generic.payment.update', args=(obj.id,)),
+            obj.id if obj.id else 'بدون عنوان'
+        )

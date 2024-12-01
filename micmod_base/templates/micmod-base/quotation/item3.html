@@ -80,6 +80,7 @@
                     {% render_field_by_order form_s form_s.price_target label='on-border' %}
                 </div>
                 {% get_comment_user_list form_s request.user %}
+{#                {% get_payment_list form_s request.user %}#}
             </div>
             <div class="col-lg-3 p-0 border-top border-bottom border-end">
                 <div class="d-flex border-bottom px-1 align-items-start">
@@ -390,6 +391,7 @@
             {% endif %}
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
+<div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
 </div>
         </div>
     </div>

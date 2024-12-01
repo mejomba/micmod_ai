@@ -670,12 +670,16 @@ function t_replaceDigits(m_text) {
 function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
+    const price_updating = document.querySelector('#price-updating')
+    const price_updated = document.querySelector('#price-updated')
     for (let i = 0; i < items.length; i++) {
         debugger
         if (i === items.length - 1){
-            release_main_container()
+            // price_updating.classList.add('d-none')
+            // price_updated.classList.remove('d-none')
         } else if (i === 0){
-            block_main_container()
+            // price_updating.classList.remove('d-none')
+            // price_updated.classList.add('d-none')
         }
         setTimeout(function (){
             const code = items[i].querySelector('[id*="-goods_code"]').value

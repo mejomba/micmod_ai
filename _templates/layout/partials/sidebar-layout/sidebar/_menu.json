@@ -137,6 +137,102 @@
               "path_key": "order/list",
               "link": "order:order.list",
               "count": "order.order:get_qs_count"
+            },
+            {
+          "title": "t-payment",
+          "icon": "dollar",
+          "path_key": "order",
+          "permission": {
+            "permissions": [
+              "order.view_payment"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "order/payment/view",
+              "link": "order:order.payment.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "order/payment/list",
+              "link": "order:order.payment.list"
+            }
+          ]
+        }
+          ]
+        },
+        {
+          "title": "t-packing",
+          "icon": "cheque",
+          "path_key": "packing",
+          "permission": {
+            "permissions": [
+              "packing.view_packing"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "order/packing/view",
+              "link": "order:packing.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "order/packing/list",
+              "link": "order:packing.list"
+            }
+          ]
+        },
+        {
+          "title": "t-gio",
+          "icon": "cheque",
+          "path_key": "gio",
+          "permission": {
+            "permissions": [
+              "gio.view_gio"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "order/gio/view",
+              "link": "order:gio.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "order/gio/list",
+              "link": "order:gio.list"
+            }
+          ]
+        },
+        {
+          "title": "generic-payment",
+          "icon": "dollar",
+          "path_key": "payment",
+          "permission": {
+            "permissions": [
+              "payment.view_genericpaymentitem"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "create",
+              "path_key": "payment/payment/view",
+              "link": "payment:generic.payment.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "payment/payment/list",
+              "link": "payment:generic.payment.list"
             }
           ]
         },
@@ -284,6 +380,58 @@
           "title": "accounting",
           "path_key": "accounting",
           "link": "sepidar:dl.accounting"
+        }
+      ]
+    },
+    {
+      "title": "t-pcba",
+      "icon": "discount",
+      "path_key": "pcba",
+      "section": "False",
+      "permission": {
+            "groups": [
+              "pcba_user",
+              "pcba_admin"
+            ]
+          },
+      "menus": [
+        {
+          "permission": {
+            "groups": [
+              "pcba_user",
+              "pcba_admin"
+            ]
+          },
+          "title": "contract",
+          "icon": "search-list",
+          "path_key": "",
+          "menus": [
+            {
+              "title": "create",
+              "icon": "burger-menu",
+              "path_key": "contracts/",
+              "link": "pcba:contracts.view"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "contracts/list/",
+              "link": "pcba:contracts.list"
+            }
+          ]
+        },
+        {
+          "title": "production_day_activities",
+          "icon": "search-list",
+          "path_key": "",
+          "menus": [
+            {
+              "icon": "burger-menu",
+              "title": "list",
+              "path_key": "production/day/activities/list/",
+              "link": "pcba:production.day.activities.list"
+            }
+          ]
         }
       ]
     },
@@ -522,7 +670,7 @@
           "comment_admin"
         ],
         "permissions": [
-          "comments.edit_comment"
+          "comments.change_comments"
         ]
       }
     }

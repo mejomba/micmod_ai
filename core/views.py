@@ -30,6 +30,7 @@ from changelog.models import ChangeLog
 from comments.forms import CommentsForm
 from micmod_base.models import Quotation
 from order.models import Order
+from payment.forms import GenericPaymentForm
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter
 from workflow.forms import WorkFlowModelForm
@@ -42,6 +43,8 @@ from tools.form_tools import get_function
 import openpyxl
 
 from .models import ExtraData
+
+from .models import LogError
 
 
 class BaseView(UserPassesTestMixin,
@@ -106,6 +109,9 @@ class BaseView(UserPassesTestMixin,
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
 
+        self.object = self.get_object()
+        self.formset_form = self.get_formset_from_struct()
+
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
@@ -114,9 +120,7 @@ class BaseView(UserPassesTestMixin,
             self.flow_config['flow_deadline'].append(0)
             self.flow_config['append_last_step'] = True
 
-        self.object = self.get_object()
-        self.formset_form = self.get_formset_from_struct()
-        self.state_index = self.get_flow_index(self.object)
+            self.state_index = self.get_flow_index(self.object)
 
         # if request.method == 'GET':
         self.formset = self.get_formset_from_struct()
@@ -204,6 +208,7 @@ class BaseView(UserPassesTestMixin,
                     wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                                 content_type_model=self.model, current_user=self.request.user)
             except Exception as e:
+                LogError.save_db(self.request, e, __file__)
                 print('error ', __file__, e.__traceback__.tb_lineno, e)
                 wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                             content_type_model=self.model, current_user=self.request.user)
@@ -356,8 +361,6 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        # context['object_logs'] = ChangeLog.get_log(self.object)
-        # context['object_logs'] = []
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                       "constraint": {
@@ -372,7 +375,6 @@ class BaseView(UserPassesTestMixin,
             context['formset'] = self.formset
 
         context['allow_next'] = True
-        print(__file__, 'super class context', context.get('current_user_groups'))
         return context
 
     def get_form_kwargs(self):
@@ -476,6 +478,7 @@ class BaseView(UserPassesTestMixin,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
         except Exception as e:
+            LogError.save_db(self.request, e, __file__)
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
 
             # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
@@ -675,6 +678,7 @@ class BaseView(UserPassesTestMixin,
                                           obj=new_obj,
                                           input_prefix='file'
                                           )
+                    new_obj.save_payment(self.request)
 
                     """***NEW***"""
                     if form.has_comment:
@@ -688,6 +692,7 @@ class BaseView(UserPassesTestMixin,
                     """***NEW***"""
 
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     print('error: ', e.__traceback__.tb_lineno, e)
 
                 """save formset"""
@@ -713,6 +718,7 @@ class BaseView(UserPassesTestMixin,
                             fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                         else:
                             for f in self.formset.forms:
+                                pass
                                 f.instance.extra_data.request = self.request
                             fo = self.formset.save()
                     else:
@@ -721,8 +727,8 @@ class BaseView(UserPassesTestMixin,
 
                     if fo:
                         for idx, fs_obj in enumerate(fo):
-                            fs_obj.extra_data.request = self.request
-                            fs_obj.save()
+                            # fs_obj.extra_data.request = self.request
+                            # fs_obj.save()
                             # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
                             if self.formset.form.image_model and self.formset.form.image_groups:
@@ -752,6 +758,7 @@ class BaseView(UserPassesTestMixin,
 
                     for d in new_details:
                         d.save_comment(self.request, CommentsForm)
+                        d.save_payment(self.request)
                         # ToDo make dynamic
                         # app_label = d._meta.app_label
                         # model_name = d._meta.model_name
@@ -798,6 +805,7 @@ class BaseView(UserPassesTestMixin,
                     new_obj.last_work_flow = wf_obj
                     new_obj.save()
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     show_error(e, __file__)
                 return super().form_valid(form)
             return super().form_valid(form)
@@ -1031,6 +1039,52 @@ class CommentsFormView(View):
         return JsonResponse({'res': x})
 
 
+class PaymentFormView(View):
+    def get(self, request, *args, **kwargs):
+        from django.apps import apps
+        from comments.models import CommentSeen
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get('model_name')
+        ctt_id = kwargs.get('content_type')
+        object_id = kwargs.get('object_id')
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotationitem':
+        #     obj = model.objects.full_queryset(pk=object_id).first()
+        #     customer = getattr(obj.quotation, 'customer_party_id', None)
+        #     sku = getattr(obj, 'goods_code_fk', None)
+        # else:
+        #     obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotation':
+        #     customer = getattr(obj, 'customer_party_id', None)
+        #     sku = None
+
+        payments = obj.payments.all().order_by('-created_date')
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        kwargs['g_from_date'] = self.request.GET.get('g_from_date', '')
+        kwargs['g_to_date'] = self.request.GET.get('g_to_date', '')
+        kwargs['total_amount'] = self.request.GET.get('total_amount', '')
+        kwargs['description'] = self.request.GET.get('description', '')
+
+
+        form = GenericPaymentForm(prefix=prefix, initial=kwargs)
+        file = None
+
+        for payment in payments:
+            try:
+                file = payment.files.content_type.file_set
+            except Exception:
+                continue
+
+        context = {'form': form,
+                   'object_id': object_id,
+                   'ctt_id': ctt_id,
+                   'payments': payments,
+                   'file': file,
+                   'request': request}
+        x = render_to_string('core/partial/generic_payment_form.html', context)
+
+        return JsonResponse({'res': x})
 ############ new ##############hajinezhad###############
 
 class BaseCustomView():
@@ -1312,3 +1366,48 @@ class CustomAjaxDataTable(AjaxDatatableView):
             content_type="application/json")
 
         return response
+
+
+class Select2BaseSearch_(View):
+    model = None
+    title = None
+    def get(self, request, *args, **kwargs):
+        if self.model is None or self.title is None:
+            raise ImproperlyConfigured('Select2BaseSearch "model" and "title" required')
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        if q:
+            qs = self.model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, self.title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+
+class Select2BaseSearch(View):
+    model = None
+    title = None
+    # "core/select2/<str:app_name>/<str:model_name>/<str:title>/"
+    def get(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        if q:
+            qs = model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)

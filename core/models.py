@@ -9,13 +9,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 import json
 
+from django.db.models.functions import Coalesce
 from django.forms import fields_for_model
 from django.utils import timezone
 
 # from comments.models import Comments
 # from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
-from django.db.models import Q
+from django.db.models import Q, Sum, Value, F
 from accounts.models import User
 from tools.utils import c_get as c_get
 from workflow.models import WorkFlow
@@ -95,6 +96,14 @@ class BaseManager(models.Manager):
         qry = objects_from_user | objects_from_flow
         if q == 'active':
             quotations_record_lst = qry.filter(last_work_flow__to_user=user) #filter(lambda x: x.last_work_flow.to_user == user, qry)
+            # for item in qry:
+            #     wf = item.last_work_flow #WorkFlow.objects.filter(object_id=item.id, content_type=content_type).order_by('id').last()
+            #     if wf and (wf.to_user == user):
+            #         quotations_record_lst.append(item)
+        elif q == 'not_over':
+            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(factor_item_quantity=Coalesce(
+                Sum('quotation__qi__quantity'), Value(0)),qi_quantity=Coalesce(
+                Sum('quotation__quantity'), Value(0))).filter(qi_quantity__gt=F('factor_item_quantity'))
         else:
             quotations_record_lst = qry
 
@@ -303,6 +312,7 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     comments = GenericRelation('comments.Comments', related_query_name="parent_object_no")
     images = GenericRelation('files.Image', related_query_name="parent_object_no")
     files = GenericRelation('files.File', related_query_name="parent_object_no")
+    payments = GenericRelation('payment.GenericPaymentItem', related_query_name="payment_objects")
     submit_copy = False
     objects = BaseManager()
 
@@ -472,6 +482,38 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
                 image_model.objects.create(path=image, content_object=obj, group=i + 1, alt=alt[idx])
 
     """***NEW***"""
+    def save_payment(self, request, *args, **kwargs):
+        from payment.models import GenericPaymentItem
+        app_label = self._meta.app_label
+        model_name = self._meta.model_name
+        ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
+        obj_id = self.pk
+        total_amount = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-total_amount')
+
+        if total_amount:
+            g_from_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_from_date')
+            g_to_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_to_date')
+            description = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-description')
+            file_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file'
+            content_type = ContentType.objects.get_for_model(self._meta.model)
+            payment = GenericPaymentItem.objects.create(
+                g_from_date=g_from_date or None,
+                g_to_date=g_to_date or None,
+                description=description,
+                total_amount=total_amount,
+                content_type=content_type,
+                object_id=self.pk,
+                creator_user=request.user,
+                editor_user=request.user,
+            )
+
+            payment.save_file(
+                request=request,
+                file_groups=1,
+                file_model=payment.files.model,
+                obj=payment,
+                input_prefix=file_prefix,
+            )
 
     def save_comment_(self, request, idx=None):
         from comments.models import Comments
@@ -697,3 +739,22 @@ class BaseAbsContentType(models.Model, BaseModelAuto):
 
     class Meta:
         abstract = True
+
+
+class LogError(AbsBaseModel):
+    error_message = models.TextField(verbose_name=_('error'), null=True, blank=True)
+    error_type = models.CharField(max_length=255, verbose_name=_('code'), null=True, blank=True)
+    file = models.TextField(verbose_name=_('file'))
+    line_number = models.CharField(max_length=10, verbose_name=_('line_number'), null=True, blank=True)
+
+    @classmethod
+    def save_db(cls, request, e, file):
+        data = {
+            'error_message': e.args[0],
+            'error_type': type(e).__name__,
+            'file': file,
+            'line_number': e.__traceback__.tb_lineno,
+            "creator_user": request.user,
+            "editor_user": request.user
+        }
+        cls.objects.create(**data)
