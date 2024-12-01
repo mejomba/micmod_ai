@@ -47,6 +47,7 @@ class SkuCreateView(LoginRequiredMixin,
     #     'flow_deadline': [0, 2, 3],
     # }
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'SkuCreateView')
+    form_class = SkuCreateForm
     form_struct = {
         'form': SkuCreateForm,
         'childes': [
