@@ -209,7 +209,7 @@ DATABASES = {
     # },
     'default': {
         'ENGINE': os.environ.get('PG_ENGIN'),
-        'NAME': os.environ.get('PG_NAME'),
+        'NAME': 'm' ,# os.environ.get('PG_NAME'),
         'USER': os.environ.get('PG_USER'),
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),
