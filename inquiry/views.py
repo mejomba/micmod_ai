@@ -462,6 +462,7 @@ class InquiryResultListView(BaseView):
             if iqr_form.is_valid():
                 iqr_obj = iqr_form.save()
                 iqr_obj.quotation_item = qi_obj
+                iqr_obj.extra_data.request = self.request
                 iqr_obj.save()
 
         return res

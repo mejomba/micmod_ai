@@ -1,10 +1,11 @@
 {% load more_tags %}
+{% load accounts_tag %}
 <form method="get">
     <div class="d-flex mx-2">
 {#    {% render_field_group form_filter.choice form_filter.time form_filter.quotation form_filter.customer_code %}#}
     <div class="text-center">
-            <div class="btn btn-sm btn-dark fw-bold" data-bs-toggle="modal" id="id_inquiry_report" data-bs-target="#id_kt_empty_modal">گزارش کار</div>
-            <div class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" id="id_repeated_goods_code" data-bs-target="#id_kt_empty_modal">کد های تکراری</div>
+            <div class="btn btn-sm btn-dark fw-bold {% if not request.user|has_group:"trade_user" %} d-none {% endif %}" data-bs-toggle="modal" id="id_inquiry_report" data-bs-target="#id_kt_empty_modal">گزارش کار</div>
+            <div class="btn btn-sm btn-primary fw-bold {% if not request.user|has_group:"trade_user" %} d-none {% endif %} " data-bs-toggle="modal" id="id_repeated_goods_code" data-bs-target="#id_kt_empty_modal">کد های تکراری</div>
     </div>
     <div class="mx-3 p-3 bx-font-color">فیلتر </div>
     <div class="w-25 mb-3">{{ form_filter.choice }}</div>

@@ -317,5 +317,14 @@
 <script src="{% static 'js/local/sortable.min.js' %}"></script>
 <script>
 generate_drag_drop()
+
+document.querySelectorAll('input').forEach(function (item){
+    item.addEventListener('keydown', function (e){
+        if (e.key === 'Enter'){
+            e.preventDefault()
+            alert('استفاده از کلید Enter مجاز نیست')
+        }
+    })
+})
 </script>
 {% endblock extra_js %}
