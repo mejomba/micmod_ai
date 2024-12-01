@@ -27,6 +27,7 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
     has_flow = True
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json',
                                        'LocalPaymentOrderView')
+    form_class = PaymentOrderModelForm
     form_struct = {
         'form': PaymentOrderModelForm,
         'childes': [{}]
