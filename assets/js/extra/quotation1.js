@@ -818,12 +818,21 @@ function set_price_data(data, elem, target) {
         set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
         set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
-        set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
-        set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
-        set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
-        set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
-        set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
-        set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
+        if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
+            set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
+            set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
+            set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
+            set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
+            set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
+            set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
+        } else {
+            set_values(elem.querySelectorAll('input[name*="goods_last_price"]'), elem.querySelector('label[name*="goods_last_price"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="goods_total_sales"]'), elem.querySelector('label[name*="goods_total_sales"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="goods_last_sale"]'), elem.querySelector('label[name*="goods_last_sale"]').innerText, true)
+            set_values(elem.querySelectorAll('input[name*="q_last_price"]'), elem.querySelector('label[name*="q_last_price"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="q_total_sales"]'), elem.querySelector('label[name*="q_total_sales"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="q_last_sale"]'), elem.querySelector('label[name*="q_last_sale"]').innerText, true)
+        }
         set_values(elem.querySelectorAll('[name$="-goods_code"]'), data.id,)
         const select = elem.querySelector('[id*="select2-goods_code"][id*="container"]')
         if (select) {
