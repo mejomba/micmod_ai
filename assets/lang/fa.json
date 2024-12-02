@@ -677,5 +677,6 @@
     "comment": "کامنت",
     "t-gio": "تحویل در دفتر چین",
     "t-payment": "پرداخت",
-    "generic-payment": "پرداخت عمومی"
+    "generic-payment": "پرداخت عمومی",
+    "production_day_activities": "فعالیت های روز تولید"
 }
