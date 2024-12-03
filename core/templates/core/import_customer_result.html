@@ -1,0 +1,73 @@
+{#{% extends 'partials/base.html' %}#}
+{#{% load static %}#}
+{#{% load quotation_tag %}#}
+{#{% load jalali_tags %}#}
+{#{% load accounts_tag %}#}
+
+{% block title %}
+    <h3>نتیجه وارد کردن مشتری از سپیدار</h3>
+{% endblock title %}
+{% block extra_css %}
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content mt-20">
+            <div class="page-content">
+                <div class="container-fluid">
+                <div class="row">
+                            <div class="col-12">
+                                <div class="container-fluid">
+                                    <div class="table-responsive p-5">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                            <tr>
+                                                <th scope="col" style="text-align: center !important;">ردیف</th>
+                                                <th scope="col" style="text-align: center !important;">مشتری</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody class="border border-dark">
+                                            {% for c in res %}
+                                            <tr class="text-right">
+                                            <!-- COUNTER -->
+                                                <td class="">
+                                                    {{ forloop.counter }}
+                                                </td>
+                                            <!-- CUSTOMER -->
+                                                <td class="">
+                                                    <div class="text-success bold">{{ c|default_if_none:"" }}</div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                </div>
+
+                    <a href="{% url 'extra_data:customer.list' %}" class="btn btn-block btn-primary">بازگشت به لیست مشتری ها</a>
+                </div> <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+        </div>
+        <!-- end main content-->
+{% endblock content %}
+
+
+{% block extra_js %}
+{% endblock extra_js %}

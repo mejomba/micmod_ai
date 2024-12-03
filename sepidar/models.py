@@ -1,4 +1,5 @@
 import datetime
+from typing import Tuple
 
 from django.db import models, connections, connection
 from django.db.models import Q
@@ -343,6 +344,11 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
     def get_all_customers(max_sepidar_party_id):
         return Item.objects.raw(
             f"{Item.customer_qry} and p.PartyId > {max_sepidar_party_id}",using="sepidar")
+
+    @staticmethod
+    def get_all_customers_in_range(max_sepidar_parties: Tuple):
+        return Item.objects.raw(
+            f"{Item.customer_qry} and p.PartyId IN ({max_sepidar_parties})", using="sepidar")
 
     @staticmethod
     def get_all_items(from_id):

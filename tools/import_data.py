@@ -120,14 +120,22 @@ def import_marketer_from_sepidar(extra_data, max_sepidar_party_id=0):
             print(str(e))
 
 
-def import_customers_from_sepidar(extra_data):
-    return
+def get_customers(max_local_party_id, for_range=None):
+    if for_range is None:
+        return SepItem.get_all_customers(max_local_party_id)
+    else:
+        return SepItem.get_all_customers_in_range(for_range)
+
+
+def import_customers_from_sepidar(extra_data, for_range=None):
+    # return
     max_sepidar_party_id = int(select_cquery("select max(PartyId) as max_id from GNR.Party where IsCustomer=1","sepidar")['max_id'][0])
     max_local_party = Customer.objects.all().order_by("-sepidar_party_id").first()
     max_local_party_id = max_local_party.sepidar_party_id if max_local_party else 0
-    if max_local_party_id >= max_sepidar_party_id:
+    if max_local_party_id >= max_sepidar_party_id and for_range is None:
         return
     extra_data = extra_data.copy()
+    res_list = []
     # import_provience_from_sepidar(extra_data)
     # import_customer_group_from_sepidar(extra_data)
     # import_senf_from_sepidar(extra_data, max_local_party_id)
@@ -136,7 +144,7 @@ def import_customers_from_sepidar(extra_data):
     # import_introducer_from_sepidar(extra_data, max_local_party_id)
     # import_marketer_from_sepidar(extra_data, max_local_party_id)
 
-    items = SepItem.get_all_customers(max_local_party_id)
+    items = get_customers(max_local_party_id, for_range=for_range)
     for item in items:
         try:
             data = extra_data
@@ -160,14 +168,16 @@ def import_customers_from_sepidar(extra_data):
             data['revival_date'] = item.revival_date
             # data['max_credit'] = item.max_credit
             data['credit_with_doc'] = item.credit_with_doc
-            Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
+            c = Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
+            res_list.append(c[0].title)
             # data['sepidar_dl_id'] = item.sepidar_dl_id
             # Customer.objects.create(**data)
+
         except Exception as e:
             print(str(e))
             return str(e)
     else:
-        return 'success'
+        return res_list
 
 
 
