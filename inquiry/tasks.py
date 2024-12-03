@@ -123,13 +123,16 @@ def create_essentials():
     db_password = db_config['PASSWORD']
     db_host = db_config['HOST']
     db_port = db_config['PORT']
-    backup_path = db_config["BACKUP_PATH"] or ''
+    backup_path = db_config["BACKUP_PATH"] or 'db_backup'
     filename = f'db_backup__'
-    filename = filename + time.strftime("%Y%m%d__%H:%M:%S") + ".backup"
+    filename = filename + time.strftime("%Y_%m_%d__%H_%M_%S") + ".sql"
     command_str = str(db_host) + " -p " + str(db_port) + " -d " + db_name + " -U " + db_user
+    import os
+    os.environ["PGPASSWORD"] = db_password
     return command_str, backup_path, filename
 
 
+@shared_task
 def db_backup(table_names=None):
     command_str, backup_path, filename = create_essentials()
     command_str = "pg_dump -h " + command_str
@@ -138,13 +141,25 @@ def db_backup(table_names=None):
         for x in table_names:
             command_str = command_str + " -t " + x
 
-    command_str = command_str + " -F c -b -v -f " + backup_path + filename
     try:
-        os.system(command_str)
+        with open(f'{backup_path}/{filename}', "x") as file:
+            pass
+        print("Backup File created successfully!")
+    except FileExistsError:
+        print("Backup File already exists.")
+
+    sep = '\\' if 'nt' in os.name.lower() else '/'
+    command_str1 = command_str + " -F t -b -v -f " + '"' + os.getcwd() + sep + backup_path + sep + filename + '"'
+    command_str2 = command_str + " -F c -b -v -f " + '"' + os.getcwd() + sep + backup_path + sep + filename + '.tar' + '"'
+    try:
+        os.system(command_str1)
+        os.system(command_str2)
         print("Backup completed")
+        return 'OK'
     except Exception as e:
         print("!!Problem occured!!")
         print(e)
+        return str(e)
 
 
 def restore_database(table_names=None):
