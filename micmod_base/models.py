@@ -580,7 +580,7 @@ class QuotationItem(BaseModel):
 
     @classmethod
     def get_inquiry_report(cls):
-        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()#.order_by('username')
+        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct().order_by('z_index')
 
         from pytz import timezone as ptz
         tz = ptz("UTC")
