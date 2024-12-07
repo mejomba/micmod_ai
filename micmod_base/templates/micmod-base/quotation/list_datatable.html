@@ -35,13 +35,13 @@
             <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
             <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
         </span>
-        {% if request.user|has_group:"sales_admin" %}
+{#        {% if request.user|has_group:"sales_admin" %}#}
         <span class="d-flex">
             <a href="{% url 'micmod_base:sale_user_report' %}" class="btn btn-dark mx-1 ms-20 me-3" target="_blank" data-bs-toggle="modal" id="id_sale_user_report" data-bs-target="#id_kt_empty_modal_lg">گزارش کار</a>
             <span>{{ time_form.from_time }}</span>
             <span>{{ time_form.to_time }}</span>
         </span>
-        {% endif %}
+{#        {% endif %}#}
         </div>
 
 
