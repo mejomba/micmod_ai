@@ -106,7 +106,12 @@ class Quotation(SLSDoc):
             f_date = Persian(from_date).gregorian_datetime()
             t_date = Persian(to_date).gregorian_datetime()
             filter_by_time = Q(created_date__range=(f_date, t_date))
-        sales_user = current_user.team.all().order_by('z_index')
+        is_sales_admin = current_user.groups.filter(name='sales_admin').exists()
+        if is_sales_admin:
+            sales_user = current_user.team.all().order_by('z_index')
+        else:
+            sales_user = [current_user]
+
         res = dict()
         inquiry_state = 'استعلام قیمت'
         for sale_user in sales_user:
@@ -617,7 +622,7 @@ class QuotationItem(BaseModel):
             #                                    quotation__cancel=False, quotation__last_work_flow__current_state_name='استعلام قیمت').count() #all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
 
-            d[user.username] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
+            d[user] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
         return d
 
     def pre_process_on_post_method(self, data=None):
