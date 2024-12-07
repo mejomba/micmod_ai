@@ -367,6 +367,8 @@ def print_view(request,id=-1):
     with_comments = '1'
     with_alt_code = '0'
     alt_code = '1'
+    with_customer_goods_code = '0'
+    customer_goods_code_url_param = '1'
     if request.GET.get('comments_url_params') == '1':
         with_comments = '1'
         comments_url_params = '0'
@@ -379,6 +381,12 @@ def print_view(request,id=-1):
     elif request.GET.get('alt_code') == '0':
         with_alt_code = '0'
         alt_code = '1'
+    if request.GET.get('customer_goods_code_url_param') == '1':
+        with_customer_goods_code = '1'
+        customer_goods_code_url_param = '0'
+    elif request.GET.get('customer_goods_code_url_param') == '0':
+        with_customer_goods_code = '0'
+        customer_goods_code_url_param = '1'
 
     formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm2, extra=0, )
     greeting = {}
@@ -389,6 +397,8 @@ def print_view(request,id=-1):
     greeting['comments_url_params'] = comments_url_params
     greeting['with_alt_code'] = with_alt_code
     greeting['alt_code'] = alt_code
+    greeting['customer_goods_code_url_param'] = customer_goods_code_url_param
+    greeting['with_customer_goods_code'] = with_customer_goods_code
     quotation = Quotation.objects.filter(id=id).first()
     greeting['form'] = QuotationForm(instance=quotation)
     greeting['formset'] = formset(instance=quotation,
