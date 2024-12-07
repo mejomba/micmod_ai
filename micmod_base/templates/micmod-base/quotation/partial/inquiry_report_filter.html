@@ -1,7 +1,7 @@
 {% load more_tags %}
 
-<table class="table table-bordered">
-  <thead>
+<table class="table table-striped ">
+  <thead class="p-10 bg-light-info rounded bold">
     <tr>
         <th scope="col" class="text-center">کاربران</th>
         <th scope="col" class="text-center">
@@ -31,7 +31,10 @@
 
     {% for users, quotations in quotationitem_filters.items %}
       <tr>
-      <th scope="row">{{ users }}</th>
+      <th scope="row">
+        <span>{{ users.profile.avatar_symbol }}</span>
+        <span class="ms-3">{{ users.username }}</span>
+      </th>
       <td>{{ quotations.0 }}</td>
       <td>{{ quotations.1 }}</td>
       <td>{{ quotations.2 }}</td>
