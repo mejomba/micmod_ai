@@ -14,6 +14,7 @@ from django.conf import settings
 
 @shared_task
 def update_components():
+    import pandas as pd
     if cache.get('update_components'):
         print('task is running')
         return
@@ -40,8 +41,15 @@ def update_components():
             component_['hs'] = component.active_hs.code if component.active_hs else None
             # print(component_)
             components_lst.append(component_)
+
         print('update_components validate')
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+
+        df = pd.DataFrame(components_lst)
+        excel_file_path = "components_list.xlsx"
+        df.to_excel(excel_file_path, index=False, sheet_name="Portal_list")
+        print(f"Data written to {excel_file_path}")
+
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
         g_sheet.clear_rows('Portal_list')
         g_sheet.update_rows('Portal_list', components_lst, 2)

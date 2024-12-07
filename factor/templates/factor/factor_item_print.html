@@ -35,7 +35,7 @@
 <!-- FEE -->
     <td class="font-size-10 replace-digits">
         <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
-        <div class="fee_en " name="fee">{{ form.instance.factor.sum_prices.1|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
+        <div class="fee_en " name="fee">{{ form.instance.factoritem_set.sum_prices.1|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
     </td>
 
 </tr>

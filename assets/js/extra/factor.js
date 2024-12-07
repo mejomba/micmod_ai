@@ -117,7 +117,7 @@ $(document).ready(function () {
         },
         dropdownAutoWidth: true,
         dropdownCssClass: 'quotation_to_factor_select2',
-        minimumInputLength: 3,
+        minimumInputLength: 2,
         placeholder: 'جستجوی پیش فاکتور با [شناسه پیش فاکتور، شماره سپیدار پیش فاکتور، نام مشتری، شناسه مشتری، کد کالا، پارت نامبر، ...]',
         templateResult: selectQuotationForFactorRepoItem,
         templateSelection: formatRepoSelection,

@@ -2,6 +2,7 @@
 {% load core_tags %}
 {% load accounts_tag %}
 {% load jalali_tags %}
+{% load humanize %}
 <style>
     .hover-scale-13:hover{
     scale: 1.4;
@@ -149,9 +150,9 @@
                 <span>فاکتور</span>
                 <span>{{ fi.factor.pk }}</span>
                 <span>ردیف</span>
-                <span>{{ fi.factor.index }}</span>
+                <span>{{ fi.index|add:'1' }}</span>
                 <span>به تعداد</span>
-                <span class="bold">{{ fi.quantity }}</span>
+                <span class="bold">{{ fi.quantity|intcomma }}</span>
             </a>
             {% if forloop.last %}
             {% if not form.instance.cancel and remaining_quantity < 0 %}

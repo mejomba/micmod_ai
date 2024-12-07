@@ -19,6 +19,7 @@ from . import myjalali
 import datetime
 # from workflow.models import FlowAdminGroup, WorkFlow
 from forbiddenfruit import curse
+from requests.structures import LookupDict
 
 
 def c_get(obj, attrs_str, default_value=None):
@@ -67,20 +68,52 @@ def elapsed_time(m_datetime):
     delta = datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)) - m_datetime
     relative_delta = relativedelta(datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)), m_datetime)
     m_str = ""
-    if delta.seconds < 60:
-        return f"تقریبا هم اکنون"
-    elif delta.seconds < 2592000:  # day&hour&minute
-        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
-        m_str += " و " if m_str else ""
-        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
-        m_str += " و " if m_str and relative_delta.hours else ""
-        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
-    else:# year&month&day
+
+    if relative_delta.years:
         m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
-        m_str += " و " if m_str else ""
+        m_str += ' و '
         m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
-        m_str += " و " if m_str and relative_delta.months else ""
+        m_str += ' و '
         m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    elif relative_delta.months:
+        m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+    elif relative_delta.days:
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.hours:
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.minutes:
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.seconds} ثانیه' if relative_delta.seconds else ''
+    elif relative_delta.seconds:
+        return f"تقریبا هم اکنون"
+
+    # if delta.seconds < 60:
+    #     return f"تقریبا هم اکنون"
+    # else:
+
+    # if delta.seconds < 2592000:  # day&hour&minute
+    #     m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    #     m_str += " و " if m_str else ""
+    #     m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+    #     m_str += " و " if m_str and relative_delta.hours else ""
+    #     m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    # else:# year&month&day
+    #     m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
+    #     m_str += " و " if m_str else ""
+    #     m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+    #     m_str += " و " if m_str and relative_delta.months else ""
+    #     m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
     return f'{m_str} قبل'
 
 
@@ -307,47 +340,78 @@ def build_column_filter(column_name, column_obj, column_spec, search_value=None,
     return search_filter
 
 
-# def generate_direct_factor(request, quotation: Quotation):
-#     factor_data = {
-#         'q': quotation,
-#         'delivery_time': quotation.delivery_time,
-#         'description': 'فاکتور مستقیم',
-#         'guid': uuid.uuid4(),
-#         'sepidar_number': quotation.sepidar_number,
-#         'is_official': quotation.is_official,
-#         'official_value': quotation.official_value,
-#         'sale_type': quotation.sale_type,
-#     }
-#     factor_form = FactorModelForm(data=factor_data)
-#     if factor_form.is_valid():
-#         factor = factor_form.save()
-#
-#         for qi in quotation.quotation.all():
-#             # generate order independent
-#             data_base = {
-#                 "order_title": "خودکار توسط سیستم",
-#                 "status": "1",
-#                 "item": qi.goods_code_fk,
-#                 "production_lead_time": 5,  # self.qi.lead_time,
-#                 "quantity": qi.quantity,
-#                 "cancel": False,
-#                 "is_over": False,
-#                 "qi": qi,
-#                 "creator_user": qi.extra_data.request.user,
-#                 "editor_user": qi.extra_data.request.user,
-#             }
-#             order = Order.create_with_rel(data_base)
-#             factor_item_data = {
-#                 'factor': factor,
-#                 'qi': qi,
-#                 'goods_code': qi.goods_code_fk,
-#                 'part_number_show': qi.goods_code_fk.part_number,
-#                 'price': qi.price,
-#                 'quantity': qi.quantity,
-#                 'delivery_time': qi.delivery_time,
-#                 'supply_locations': order,
-#                 # 'supply_location': '',
-#             }
-#             factor_item_form = FactorItemModelForm(data=factor_item_data)
-#             if factor_item_form.is_valid():
-#                 factor_item = factor_item_form.save()
+_senf = {
+    "پزشکی": ("تجهیزات پزشکی", "پزشکی"),
+
+    "کنترل رله و درب پارکینگ": ("کنترل رله و درب اتوماتیک", "کنترل رله و درب پارکینگ"),
+
+    "مخابراتی": ("امنیتی", "مخابراتی"),
+
+    "محافظ برق": ("محافظ برق", "تولید برد محافظ - تولید آژیر اعلام خطر", "محافظ", "تولید محافظ برق", "استابلایزر", ),
+
+    "لوازم خانگی": ("لوازم خانگی", "هود-تستر", "لوازم و دستگاه های خانگی", "تولید نمایشگر وزن", "لوازم خانگی-جاروبرقی",
+                    "برد الکترونیکی تهویه مطبوع و لوازم خانگی", "تولید بردهای الکترونیکی- لوازم خانگی","ترازو",
+                    "تولید برد لوازم خانگی", "لوازم خانگی -پنکه", "تایمر اجاق گاز-لوازم خانگی", "تولید برد لوازم خانگی و نورپردازی",
+                    "تولید لوازم خانگی", "تولید شومینه برقی", "لوازم خانگی ( پنکه)", "بردهای صنعتی، آسانسور، لوازم خانگی"),
+
+    "طراح / مونتاژ / تعمیرکار": ("فروشنده", "طراح", "تجهیز قطار های بین شهری", "تولید بردهای الکترونیک", "شهرک صنعتی",
+                                 "الکترونیک مخابرات", "الکترونیک-طراحی و ساخت", "طراح سیم کارتل","طراح / مونتاژ / تعمیرکار",
+                                 "کنترل دور موتور", "الکترونیک و مخابرات", "روباتیک", "برد الکترونیکی", "قطعات سنسور",
+                                 "پروژه ای-الان تایمر", "طراحی برد", "تجهیزات الکترونیکی", "انرژی", "مونتاژ کار و همکار",
+                                 "تولید مدار الکترونیکی", "تعمیرکار", "لوازم الکتریکی", "فروشگاه", "فروش قطعات",
+                                 "تامین کننده قطعات", "سیستم های اطلاع رسانی", "شخصی", "الکترونیک", "طراح / مونتاژ / تعمیر کار",
+                                 "رباتیک" ,"مونتاژکار","مونتاژ کار"),
+
+    "سوخت شده": ("سوخت شده", ),
+
+    "روشنایی": ("روشنایی", "فلاشر ال ای دی", "فلاشر", "تولید روشنایی", "روشنایی دیجیتال", "روشنایی  دیجیتال", "روشنایی تبلیغاتی"),
+
+    "ردیاب": ("ردیاب", "ترکر", "دزدگیر و ردیاب", "دزدگیر ردیاب"),
+
+    "دزدگیر": ("دزدگیر", "دزدگیر-ریموت", "چشمی(دزدگیر)", "ریموت", "سنسور راه پله", "سنسور", "دزدگیر و ردیاب",
+               "تولید دزگیر", "تولید سیستم های امنیتی", "UPS", "ریموت و تگ", "دستگاه کنترل از راه دور سیم کارتی",
+               "دوربین مداربسته", "دزدگیر و چشمی", "کنترل", "چشمی", "حفاظتی", "سیستم های حفاظتی", "دزدگیر ردیاب",),
+
+    "خودرو": ("خودرو", "خودرویی", "چراغ سقفی", "خودرو+محافظ", "هوشمند سازی خودرو", "خودرویی(چراغ خودرو)", "کلید سوخت",
+              "خودرو-روشنایی", "لامپ های خودرویی", "بالابرخودرو",),
+
+    "بازار": ("بازار", "بازار -فروشنده"),
+
+    "اعلام حریق": ("اعلام حریق", "دتکتور", "اعلام و اطفای حریق", "آلارم"),
+
+    "اتوماسیون صنعتی": ("اتوماسیون صنعتی", "نظامی", "plc", "تولید دستگاه کنترل فاز", "اتوماسیون - امنیتی",
+                        "سیستم های تست و شارژ باتری های توان بالا", "اتوماسیون", "سنسور اندازه گیری", "ابزار دقیق", "سیستم های مانیتورینگ و اتوماسیون صنعتی",),
+
+    "آسانسور": ("آسانسور", "آسانسوری", "درایو آسانسور", "تولیدکننده شاسی داخل کابین و خارج کابین آسانسور",
+                "آژیر آسانسور", "بردهای صنعتی، آسانسور، لوازم خانگی",),
+
+    "IOT": ("IOT", "شهر هوشمند", "کنتور", "اینترنت اشیا", "کنتور آب", "تولیدکننده کنتور های هوشمند آب", "ویرا تراشه"
+            "تولید ست کنترل پمپ های آب خانگی", "تله متری", "سیستم های تله متری", "ماژول گیرنده های رادیویی",),
+
+    "GPS": ("GPS", "GPS-دستکاه اندازه گیری گازوئیل"),
+    "منبع تغذیه": ("منبع تغذیه",),
+
+    "BMS": ("bms", "BMS", "گرمایشی", "تولید کلیدهای لمسی", "تولید ترموستات", "ترموستات", "آینه هوشمند",
+            "تولید تجهیزات کنترلر دما و رطوبت خانگی و صنعتی", "تولید آینه های هوشمند", "BMS(قلاده هوشمند)",
+            "شرکت آینه های هوشمند mirror smart tech", "محصولات هوشمند سازی استان اصفهان", "قفل هوشمند", "تهویه مطبوع",
+            "هوشمند سازی", "ساعت دیجیتال"),
+}
+
+senf_map = LookupDict(name='valid_senf')
+
+
+def senf_init():
+    for senf, titles in _senf.items():
+        for title in titles:
+            setattr(senf_map, title, senf)
+            if not title.startswith(('\\', '/')):
+                setattr(senf_map, title.upper(), senf)
+
+    def doc(senf):
+        names = ', '.join('``%s``' % n for n in _senf[senf])
+        return '* %d: %s' % (senf, names)
+
+    global __doc__
+    __doc__ = (__doc__ + '\n' +
+               '\n'.join(doc(senf) for senf in sorted(_senf))
+               if __doc__ is not None else None)
