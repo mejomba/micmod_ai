@@ -6,7 +6,7 @@ from translator import get_text as _
 
 
 class Contract(BaseModeWF):
-    contract_title = models.CharField(max_length=100, unique=True)
+    # contract_title = models.CharField(max_length=100, unique=True)
     goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING)
     project_name_en = models.CharField(max_length=250)
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
@@ -29,6 +29,10 @@ class Contract(BaseModeWF):
     finish = models.BooleanField(default=False)
     def __str__(self):
         return self.contract_title
+
+    @property
+    def contract_title(self):
+        return f'PCBA_{self.pk}'
 
 
 class CustomerItemReceipt(BaseModeWF):

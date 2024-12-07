@@ -11,14 +11,12 @@ from .models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDa
 
 class CustomerItemReceiptFormContractWidget(s2forms.ModelSelect2Widget):
     search_fields = [
-        "contract_title__icontains",
         "id__iexact",
     ]
 
 
 class ProjectItemListFormContractWidget(s2forms.ModelSelect2Widget):
     search_fields = [
-        "contract_title__icontains",
         "id__iexact",
     ]
 
@@ -41,7 +39,7 @@ class ContractForm(CustomBaseModelForm):
 
     class Meta:
         model = Contract
-        fields = ['contract_title', 'customer_party_id', 'goods_code_fk', 'project_name_en', 'customer_board_count',
+        fields = ['customer_party_id', 'goods_code_fk', 'project_name_en', 'customer_board_count',
                   'customer_sheet_count', 'customer_total_board_count', 'first_setup_time', 'second_setup_time',
                   'pad_count', 'ic_pad_count', 'first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost',
                   'total_cost', 'not_assembly_pad_count', 'finish', 'factor_number'
