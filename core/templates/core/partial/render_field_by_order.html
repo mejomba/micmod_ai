@@ -5,10 +5,8 @@
     {% for field in fields %}
         {{ field.get_field_name_display }}
         {% if not field.field.widget.input_type == 'hidden' or field.field.select2 %}
-
             {% if crispy %}
-                <div class="col {% if margin_b is not None %}
-                mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                <div class="col {% if margin_b is not None %} mb-{{ margin_b }}{% else %} mb-3 {% endif %}{% if field.errors %} field-error {% endif %}">
                 {% include 'core/partial/auto_complete_field.html' with field=field|as_crispy_field %}
                 <div class="text-danger">{{ field.errors }}</div>
 
@@ -24,9 +22,7 @@
 
             {% elif label %}
 
-                <div class="col
-                        {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %}
-                        mb-{{ margin_b }}{% else %}mb-3{% endif %}{% if field.errors %} field-error {% endif %}">
+                <div class="col {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %} mb-{{ margin_b }}{% else %} mb-3 {% endif %}{% if field.errors %} field-error {% endif %}">
                 {% include 'core/partial/auto_complete_field.html' with field=field %}
                 <label data-key="{{ field|get_field_name }}"
                        id={{ id }} class="{{ css }}">{% if label_text %}
@@ -42,8 +38,7 @@
                     {% if css == 'no_label' %}
 
                     {% else %}
-                        <label class="text-center w-100  card-title-desc h-25 {{ css }}"
-                               id={{ id }} name="{{ field|get_field_name }}"></label>
+                        <label class="text-center w-100  card-title-desc h-25 {{ css }}" id={{ id }} name="{{ field|get_field_name }}"></label>
                     {% endif %}
                     {{ field.help_text }}
                     <div class="text-danger">{{ field.errors }}</div>
@@ -62,5 +57,3 @@
             {% endif %}
         {% endif %}
     {% endfor %}
-
-

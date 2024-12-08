@@ -4,7 +4,6 @@
 {% load humanize %}
 {% load more_tags %}
 {% load accounts_tag %}
-
 <div class="card item p-0 my-2 {% if not forloop.last %} sortable-item bg-danger {% endif %}" dir="rtl">
 {% if form_s.errors %}
 <div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
@@ -12,18 +11,14 @@
 {% if nested.errors %}
 <div class="bg-secondary"><span>row ({{ forloop.counter }})</span> {{ nested.errors }}</div>
 {% endif %}
-
     {% for hidden in form_s.hidden_fields %}
         {{ hidden }}
     {% endfor %}
-
 {{ nested_manage.management_form }}
 {{ nested_manage.non_form_errors }}
-
     {% for h in nested.hidden_fields %}
         {{ h }}
     {% endfor %}
-
     <div class="card-body p-0">
         <div class="row-counter rounded d-flex align-items-center question-btn active-form">
             <span class="counter">{{ forloop.counter }}</span>
@@ -114,7 +109,6 @@
                             </div>
                         </div>
                         <div class="col on-border">
-
                             <label>نام کالا</label>
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
@@ -159,7 +153,6 @@
                             <div class="col on-border">
                                 <label>نام کالا</label>
                                 <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
-
                             </div>
                         </div>
                     </div>
@@ -168,7 +161,6 @@
                     <div class="w-100">
                         <div class="card-text bold">
                             <span>آخرین فروش به مشتری</span>
-{#                            <span class="ms-3 text-primary fw-light" name="last__sale__goods__name"></span>#}
                         </div>
                         <div class="d-flex" id="customer-last-sales">
                             <div class="w-30 mt-3">
@@ -194,19 +186,6 @@
                     </div>
                 </div>
             </div>
-{#            <div class="col-lg-1 border-top border-bottom replace-digits">#}
-{#                <div class="w-100 h-100" id="sixty-days-sales">#}
-{#                    <div class="card-text text-center h-40 bold">قیمت فروش شصت روز اخیر</div>#}
-{#                    <div class="d-flex h-20">#}
-{#                        <div class="w-45 card-title-desc">بیشترین</div>#}
-{#                        {% render_field_by_order nested nested.goods_max_price no_input=True %}#}
-{#                    </div>#}
-{#                    <div class="d-flex h-20">#}
-{#                        <div class="w-40 card-title-desc">میانگین</div>#}
-{#                        {% render_field_by_order nested nested.goods_avg_price no_input=True %}#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
             <div class="col-lg-4 border p-0 replace-digits">
                 <div class="px-2 h-40">
                     <div class="card-text bold">استعلام قیمت </div>
@@ -236,19 +215,6 @@
                         </div>
                     </div>
                 </div>
-{#                <div class="h-30 px-2">#}
-{#                    <div class="card-text bold">استعلام قیمت از بازار</div>#}
-{#                    <div class="d-flex">#}
-{#                        <div class="w-50">#}
-{#                            <div class="card-title-desc text-center">تاریخ</div>#}
-{#                            {% render_field_by_order nested nested.goods_market_date no_input=True %}#}
-{#                        </div>#}
-{#                        <div class="w-50">#}
-{#                            <div class="card-title-desc text-center">قیمت</div>#}
-{#                            {% render_field_by_order nested nested.goods_price_market no_input=True %}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
                 <div class="h-30 border-top all_pricess mt-2">
                     <div class="d-flex">
                         <div class="p-0 w-100">
@@ -260,24 +226,6 @@
                             <div class="d-none" id="selected_price_code_data" data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
                             <div class="select2 selected_price_code" name="selected_price_code"></div>
                         </div>
-{#                        <div class="p-0 w-50">#}
-{#                            <div class="text-center bold bg-light-info">قیمت های خارجی#}
-{#                                <span id="trade_price_count">#}
-{#                                    ({{ form_s.instance.goods_code_fk.inquiry_count.0 }})#}
-{#                                </span>#}
-{#                            </div>#}
-{#                            <div class="d-none" id="trade_selected_price_code_data" data-trade_selected_price_code_inquiry_type="{{ form_s.instance.trade_selected_price_code.inquiry_type }}"></div>#}
-{#                            <div class="select2 trade_selected_price_code" name="trade_selected_price_code"></div>#}
-{#                        </div>#}
-{#                        <div class="p-0 w-50">#}
-{#                            <div class="text-center bold bg-light-info">قیمت های داخلی#}
-{#                                <span id="bazar_price_count">#}
-{#                                    ({{ form_s.instance.goods_code_fk.inquiry_count.1 }})#}
-{#                                </span>#}
-{#                            </div>#}
-{#                            <div class="d-none" id="bazar_selected_price_code_data" data-bazar_selected_price_code_inquiry_type="{{ form_s.instance.bazar_selected_price_code.inquiry_type }}"></div>#}
-{#                            <div class="select2 bazar_selected_price_code" name="bazar_selected_price_code"></div>#}
-{#                        </div>#}
                     </div>
                 </div>
             </div>
@@ -285,7 +233,6 @@
                 <div class="row h-100 border-bottom">
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
-{#                            <div class="card-text text-center bold">قیمت نهایی</div>#}
                             <div class="d-flex mt-2 ">
                                 <div class="text-center w-100">{% render_field_by_order form_s form_s.price_method label='on-border' %}</div>
                             </div>
@@ -381,7 +328,6 @@
         <div class="d-flex align-items-center gap-8 py-2 ms-20">
             <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
-
             <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
             <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
             {% if form_s.instance.task_start or form_s.instance.task_start2 %}
