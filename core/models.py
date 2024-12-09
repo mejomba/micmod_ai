@@ -69,8 +69,7 @@ class BaseManager(models.Manager):
             # print('================ private', self.model.objects)
         return qs.order_by('-last_update_date')
 
-
-    def get_access_object(self, user, q="all", *args, **kwargs):
+    def get_access_object(self, user, q="all", lst=True, *args, **kwargs):
         from workflow.models import WorkFlow
 
         direct_access = ''
@@ -109,8 +108,10 @@ class BaseManager(models.Manager):
 
         if kwargs.get('quotation') and q == 'active':
             return quotations_record_lst.filter(sepidar_number__isnull=True, cancel=False)
-        else:
+        elif lst:
             return [x for x in quotations_record_lst if x]
+        else:
+            return quotations_record_lst
 
         return quotations_record_lst
 

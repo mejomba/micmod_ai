@@ -1,12 +1,14 @@
 import datetime
 import threading
 
+from django.shortcuts import render
+
 from tools.utils import build_column_filter
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models.lookups import LessThan
 from django.forms import inlineformset_factory
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic
@@ -34,7 +36,7 @@ from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list, c_get
 from tools.form_tools import get_choice_field, get_obj_from_dict
-from .tasks import update_price_list, update_components
+from .tasks import update_price_list, update_components, db_backup
 
 from tools.utils import round_price
 
@@ -1413,3 +1415,9 @@ def inquiry_count(request):
         item = Item.objects.filter(pk=sku).first()
         count = item.inquiry_count
     return JsonResponse({'res': count})
+
+
+def pg_backup(request, *args, **kwargs):
+    if request.user.is_superuser:
+        res = db_backup()
+        return HttpResponse(res)

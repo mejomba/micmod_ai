@@ -18,7 +18,7 @@
 </div>
 <div class="bg-white rounded border p-5 pb-20 mb-20">
     <!-- factor header -->
-    <div class="mb-8 pb-2 bg-white mt-3 sticky-top" style="top: 10px">
+    <div class="mb-8 pb-2 bg-white mt-3 sticky-top" style="top: 10px; z-index: 100">
         <div class="row row-cols-3 bg-white">
             <div class="col">
                 <div class="d-flex flex-column gap-2">
@@ -81,7 +81,7 @@
     </div>
 
     <!-- items header -->
-    <div class="sticky-top text-center" style="top: 110px;">
+    <div class="sticky-top text-center" style="top: 110px; z-index: 100;">
         <div class="row">
             <!--quotation item header-->
             <div class="col-4 py-2 bg-light-info rounded-right">
@@ -129,10 +129,6 @@
     <div id="sortable-container">
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
     <div class="sortable-item">
-        <i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x position-abolute text-info hover-drop-down-icon" style="top: 0; left: 0; height: 30px">
-     <span class="path1"></span>
-     <span class="path2"></span>
-    </i>
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         {% if factor_item.instance.pk %}
                 <div class="hidden-section">
@@ -145,7 +141,12 @@
             <div class="col-4 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
-                        <span class=" cursor-pointer">{{ qi.pk }}</span>
+                        <i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x text-info hover-drop-down-icon" style="top: -10px; left: 3px; height: 25px">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                            <span class="font-size-11 text-danger">{{ forloop.counter }}</span>
+                        </i>
+                        <span class=" cursor-pointer" style="position: relative; top: -10px; left: 3px;">{{ qi.pk }}</span>
                     </span>
                     <span class="col-7">
                         <div class="d-flex flex-column">
@@ -219,7 +220,7 @@
                         <div class="font-size-11 text-start">
                             <a href="{% url 'order:order.view' factor_item.instance.supply_locations.pk %}" class="text-danger hover-link" target="_blank">{{ factor_item.instance.supply_locations.description }}</a>
                         </div>
-                        {% include 'core/partial/components/edit_delete_log.html' with edit_url='' obj=factor_item.instance %}
+                        {% include 'core/partial/components/edit_delete_log.html' with edit_url='' obj=factor_item.instance exclude='edit,delete' %}
                     </div>
                 </div>
             </div>

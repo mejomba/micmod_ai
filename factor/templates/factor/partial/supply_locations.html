@@ -1,6 +1,8 @@
 {% load more_tags %}
 <select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-100" onchange="sync_supply_location(event)">
+{% if not factor_item.pk %}
 <option value="" class="font-size-10">----------</option>
+{% endif %}
 {% for location in locations %}
     {% if not location.0 == factor_item.supply_location %}
         <option value="{{ location.0 }}" {% if location.0 == factor_item.supply_location %} selected="selected" {% endif %} class="font-size-10">{{ location.1 }}</option>

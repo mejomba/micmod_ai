@@ -397,7 +397,7 @@ class Item(BaseModel):
                 if o.local_sepidar_wh_code:
                     res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
                 else:
-                    res.append((str(o.pk), f"سفارش در راه {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+                    res.append((str(o.pk), f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 

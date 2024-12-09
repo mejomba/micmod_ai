@@ -81,21 +81,8 @@ def generate_direct_factor(request, quotation: Quotation):
         factor.last_work_flow = wf
         factor.save()
 
+        count = 0
         for qi in quotation.quotation.all():
-            # generate order independent
-            # data_base = {
-            #     "order_title": "خودکار توسط سیستم",
-            #     "status": "1",
-            #     "item": qi.goods_code_fk,
-            #     "production_lead_time": 5,  # self.qi.lead_time,
-            #     "quantity": qi.quantity,
-            #     "cancel": False,
-            #     "is_over": False,
-            #     "qi": qi,
-            #     "creator_user": request.user,
-            #     "editor_user": request.user,
-            # }
-            # order = Order.create_with_rel(data_base)
             factor_item_data = {
                 'factor': factor,
                 'qi': qi,
@@ -108,11 +95,14 @@ def generate_direct_factor(request, quotation: Quotation):
                 "creator_user": request.user,
                 "editor_user": request.user,
                 # 'supply_location': '',
+                'index': count
             }
+            count += 1
             factor_item_form = FactorItemModelForm(data=factor_item_data)
             if factor_item_form.is_valid():
                 factor_item_form.instance.extra_data.request = request
                 factor_item = factor_item_form.save()
+        return redirect(reverse('factor:factor.view', kwargs={'pk': factor.pk}))
 
 
 class QuotationsList(LoginRequiredMixin,View):
@@ -158,14 +148,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             obj = duplicate_quotation(self.request, self.object.pk)
             if obj:
                 return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        # if self.object is None:
+        #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         """ run import customer from sepidar before object create"""
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        # if self.object is None:
+        #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
         if 'direct' in self.request.GET:
