@@ -28,18 +28,13 @@
                 <h4 class="position-absolute" style="top: -10px">کالا های رسید</h4>
                 <div class="col">
                 <div class="row">
-
-                    <div class="row row-cols-3">
-
-                      {% render_field_by_order form form.goods_code_fk form.customer_item_receipt form.quantity form.receipt_date label='on-border' %}
-
+                    <div class="row row-cols-5">
+                      {% render_field_by_order form form.goods_code_fk form.customer_item_receipt form.quantity form.receipt_date form.part_number form.file_1 label='on-border' %}
                     </div>
                 <div class="col on-border w-100 mb-3">
                         <div id="id_goods_code_fk3_select2" class=""></div>
                             <label for="">کد کالا</label>
                         </div>
-                    </div>
-                <div>
                 </div>
                     <span class="d-none" id="goods_name_in_item">
                             {% if form.instance.pk %}
