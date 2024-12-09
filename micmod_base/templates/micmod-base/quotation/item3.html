@@ -228,6 +228,9 @@
                         </div>
                     </div>
                 </div>
+                <div>
+                    <div class="sepidar_stock_info_result"></div>
+                </div>
             </div>
             <div class="col-lg-3 border-top">
                 <div class="row h-100 border-bottom">
@@ -330,6 +333,7 @@
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
             <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
             <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+            <span class="sepidar_stock_info cursor-pointer text-primary d-none" onclick="get_sepidar_stock_info(event)">اطلاعات انبارها</span>
             {% if form_s.instance.task_start or form_s.instance.task_start2 %}
                 {% if not form_s.instance.foreign_price_inquiry_done %}
                     <span class="text-danger">فرایند استعلام این ردیف آغاز شده است، برای هرگونه تغییر در اطلاعات ردیف با کارشناس بازرگانی هماهنگ کنید</span>

@@ -1,0 +1,14 @@
+<div class="row row-cols-2 font-size-11 p-1">
+
+        {% for name, quoantity in res.items %}
+            <div class="tooltip_" {% if forloop.counter > 0 %} style="border-left: 1px solid #595959" {% endif %}>
+                <span class="me-5 hover-link">{{ name|truncatechars:"32" }}
+                <span class="tooltiptext">{{ name }}</span>
+                </span>
+                <span class="bg-light-info px-1 rounded">{{ quoantity }}</span>
+            </div>
+            {% empty %}
+            <div class="text-danger">موردی یافت نشد</div>
+        {% endfor %}
+
+</div>
