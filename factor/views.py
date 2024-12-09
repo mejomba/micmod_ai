@@ -117,20 +117,20 @@ def search_factor_view(request, *args, **kwargs):
         q_int = int(q)
     q_str = q
     q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس')
-    q_required = {}#{'cancel': False, "is_deleted": False, "last_work_flow__current_state_name": 'مرحله نهایی'}
+    q_required = {'cancel': False, "is_deleted": False}
     for s in search_by:
         if s == 'search_customer':
-            q_filter |= Q(customer_party_id__title__icontains=q_str)
+            q_filter &= Q(customer_party_id__title__icontains=q_str)
         if s == 'search_id':
-            q_filter |= Q(pk=q_int)
+            q_filter &= Q(pk=q_int)
         if s == 'search_marketer':
-            q_filter |= Q(last_work_flow__creator_user__username__icontains=q_str)
+            q_filter &= Q(last_work_flow__creator_user__username__icontains=q_str)
         if s == 'search_sepidar_id':
-            q_filter |= Q(sepidar_number__icontains=q_int)
+            q_filter &= Q(sepidar_number__icontains=q_int)
         if s == 'search_sku':
-            q_filter |= Q(quotation__goods_code_fk__sku__iexact=q_str)
+            q_filter &= Q(quotation__goods_code_fk__sku__iexact=q_str)
         if s == 'search_part_number':
-            q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
+            q_filter &= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
         q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس') & \
                    (Q(customer_party_id__title__icontains=q_str) | \
@@ -194,7 +194,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
         initial={
                     'wf_access': True,
                     'from_user': None,
-                    'to_user': request.user._meta.model.objects.get(pk=21),
+                    'to_user': request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
                     'state': 'فاکتور اولیه',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',

@@ -219,7 +219,7 @@ class PriceSettings(AbsBaseModel):
     def get_discount_based_payment_method(self, payment_method, currency):
         for line in self.discount_based_payment_method:
             if payment_method == line['title']:
-                return line.get(currency.title_en.lower(),line.get('rial_percentage'))
+                return line.get(currency.title_en.lower(), line.get('rial_percentage'))
         return 0
 
     def __str__(self):

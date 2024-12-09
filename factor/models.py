@@ -148,88 +148,48 @@ class FactorItem(BaseModel):
         return self.supply_location and not str(self.supply_location).startswith('wh__')
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if self.quantity == 0 and not self.pk:
-            return
-        else:
-            condition1 = self.is_order and self.select_wh_sepidar
-            # condition2 = self.is_wh and (self.supply_location and not self.supply_location.startswith('wh__'))
-            condition3 = self.is_wh and self.select_wh_sepidar
-            # condition4 = ''
-            # condition5 = self.is_order and self.select_wh_reserve
-            condition6 = self.is_wh and self.select_order
-            condition7 = self.is_order and self.select_order
-            # condition8 = self.is_wh and self.select_wh_reserve
-            # condition9 = ''
-            condition10 = self.pk is None and not self.select_wh_sepidar and not self.select_order
-            condition11 = self.pk is None and self.select_wh_sepidar
-            # condition12 = self.pk is None and self.select_order # condition7
-            condition_list = [condition1, condition3, condition6, condition7, condition10, condition11]
-            if self.pk and self.quantity == 0:
-                self.is_deleted = True
+        condition1 = self.is_order and self.select_wh_sepidar
+        condition3 = self.is_wh and self.select_wh_sepidar
+        condition6 = self.is_wh and self.select_order
+        condition7 = self.is_order and self.select_order
+        condition10 = self.pk is None and not self.select_wh_sepidar and not self.select_order
+        condition11 = self.pk is None and self.select_wh_sepidar
+        condition12 = self.pk is None and self.select_order
+        condition_list = [condition1, condition3, condition6, condition7, condition10, condition11, condition12]
+        old = self.__class__.objects.filter(pk=self.pk).first()
 
-
-            # if self.pk is None:
-            #     if self.select_wh_sepidar: # str(self.supply_location).startswith('wh__'):
-            #         # generate wh order
-            #         data_base = {
-            #             "order_title": "خودکار توسط سیستم",
-            #             "status": "1",
-            #             "item": self.qi.goods_code_fk,
-            #             "production_lead_time": 10,  # self.qi.lead_time,
-            #             "quantity": self.quantity,
-            #             "cancel": False,
-            #             "is_over": False,
-            #             "qi": self.qi,
-            #             "local_sepidar_wh_code": int(self.supply_location[4:]),
-            #             "creator_user": self.extra_data.request.user,
-            #             "editor_user": self.extra_data.request.user,
-            #         }
-            #         o1 = Order.create_with_rel(data_base)
-            #         self.supply_locations = o1
-            #         self.supply_location = o1.pk
-            #     elif self.supply_location:
-            #         # generate order with rel
-            #         data_base = {
-            #             "order_title": "خودکار توسط سیستم",
-            #             "status": "1",
-            #             "item": self.qi.goods_code_fk,
-            #             "production_lead_time": 5,  # self.qi.lead_time,
-            #             "quantity": self.quantity,
-            #             "cancel": False,
-            #             "is_over": False,
-            #             "qi": self.qi,
-            #             "creator_user": self.extra_data.request.user,
-            #             "editor_user": self.extra_data.request.user,
-            #         }
-            #         o2 = Order.objects.filter(pk=self.supply_location).first()
-            #
-            #         o1 = Order.create_with_rel(data_base, o2)
-            #         self.supply_locations = o1
-            #     elif not self.supply_location:
-            #         # generate order independent
-            #         data_base = {
-            #             "order_title": "خودکار توسط سیستم",
-            #             "status": "1",
-            #             "item": self.qi.goods_code_fk,
-            #             "production_lead_time": 5,  # self.qi.lead_time,
-            #             "quantity": self.quantity,
-            #             "cancel": False,
-            #             "is_over": False,
-            #             "qi": self.qi,
-            #             "creator_user": self.extra_data.request.user,
-            #             "editor_user": self.extra_data.request.user,
-            #         }
-            #         o1 = Order.create_with_rel(data_base)
-            #         self.supply_locations = o1
-            if self.pk:
-                old = self.__class__.objects.filter(pk=self.pk).first()
+        if not any(condition_list):
+            if self.supply_locations_id == self.supply_location:
+                pass
             else:
-                old = None
+                self.supply_locations_id = self.supply_location.split('__')[-1]
 
+        if not self.pk:
+            if self.quantity == 0:
+                return
             if condition10:
                 o1 = Order.create_with_rel(factor_item=self)
                 self.supply_locations = o1
                 self.supply_location = o1.pk
+            if condition12:
+                # generate order with rel
+                data_base = {
+                    "order_title": "خودکار توسط سیستم",
+                    "status": "1",
+                    "item": self.qi.goods_code_fk,
+                    "production_lead_time": 5,  # self.qi.lead_time,
+                    "quantity": self.quantity,
+                    "cancel": False,
+                    "is_over": False,
+                    "qi": self.qi,
+                    "creator_user": self.extra_data.request.user,
+                    "editor_user": self.extra_data.request.user,
+                }
+                o2 = Order.objects.filter(pk=self.supply_location).first()
+
+                o1 = Order.create_with_rel(data_base, o2)
+                self.supply_locations = o1
+
             elif condition11:
                 # generate wh order
                 data_base = {
@@ -248,8 +208,12 @@ class FactorItem(BaseModel):
                 o1 = Order.create_with_rel(data_base)
                 self.supply_locations = o1
                 self.supply_location = o1.pk
-            # elif condition12:
-            #     self.supply_locations_id = self.supply_location
+
+        else:
+            if self.quantity == 0:
+                self.is_deleted = True
+                super().save(force_insert, force_update, using, update_fields)
+                return
 
             elif condition1 or condition3:
                 # generate wh order
@@ -278,22 +242,147 @@ class FactorItem(BaseModel):
                 if old:
                     old.supply_locations.is_deleted = True
                     old.supply_locations.save()
+
             elif condition7:
                 self.supply_locations_id = self.supply_location
-            elif not any(condition_list):
-                if self.supply_locations_id == self.supply_location:
-                    pass
-                else:
-                    self.supply_locations_id = self.supply_location.split('__')[-1]
 
-            super().save(force_insert, force_update, using, update_fields)
-            total_quantity = self.qi.total_quantity_in_factor
-            if total_quantity >= self.qi.quantity:
-                self.qi.is_over = True
-                self.qi.save()
+        if not any(condition_list):
+            if self.supply_locations_id == self.supply_location:
+                pass
             else:
-                self.qi.is_over = False
-                self.qi.save()
+                self.supply_locations_id = self.supply_location.split('__')[-1]
+
+        super().save(force_insert, force_update, using, update_fields)
+        total_quantity = self.qi.total_quantity_in_factor
+        if total_quantity >= self.qi.quantity:
+            self.qi.is_over = True
+            self.qi.save()
+        else:
+            self.qi.is_over = False
+            self.qi.save()
+
+
+        # if self.pk is None:
+        #     if self.select_wh_sepidar: # str(self.supply_location).startswith('wh__'):
+        #         # generate wh order
+        #         data_base = {
+        #             "order_title": "خودکار توسط سیستم",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 10,  # self.qi.lead_time,
+        #             "quantity": self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "local_sepidar_wh_code": int(self.supply_location[4:]),
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #         }
+        #         o1 = Order.create_with_rel(data_base)
+        #         self.supply_locations = o1
+        #         self.supply_location = o1.pk
+        #     elif self.supply_location:
+        #         # generate order with rel
+        #         data_base = {
+        #             "order_title": "خودکار توسط سیستم",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 5,  # self.qi.lead_time,
+        #             "quantity": self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #         }
+        #         o2 = Order.objects.filter(pk=self.supply_location).first()
+        #
+        #         o1 = Order.create_with_rel(data_base, o2)
+        #         self.supply_locations = o1
+        #     elif not self.supply_location:
+        #         # generate order independent
+        #         data_base = {
+        #             "order_title": "خودکار توسط سیستم",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 5,  # self.qi.lead_time,
+        #             "quantity": self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #         }
+        #         o1 = Order.create_with_rel(data_base)
+        #         self.supply_locations = o1
+
+
+        # if condition10:
+        #     o1 = Order.create_with_rel(factor_item=self)
+        #     self.supply_locations = o1
+        #     self.supply_location = o1.pk
+        # elif condition11:
+        #     # generate wh order
+        #     data_base = {
+        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
+        #         "status": "1",
+        #         "item": self.qi.goods_code_fk,
+        #         "production_lead_time": 10,  # self.qi.lead_time,
+        #         "quantity": self.quantity,
+        #         "cancel": False,
+        #         "is_over": False,
+        #         "qi": self.qi,
+        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
+        #         "creator_user": self.extra_data.request.user,
+        #         "editor_user": self.extra_data.request.user,
+        #     }
+        #     o1 = Order.create_with_rel(data_base)
+        #     self.supply_locations = o1
+        #     self.supply_location = o1.pk
+        #
+        # elif condition1 or condition3:
+        #     # generate wh order
+        #     data_base = {
+        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
+        #         "status": "1",
+        #         "item": self.qi.goods_code_fk,
+        #         "production_lead_time": 10,  # self.qi.lead_time,
+        #         "quantity": self.quantity,
+        #         "cancel": False,
+        #         "is_over": False,
+        #         "qi": self.qi,
+        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
+        #         "creator_user": self.extra_data.request.user,
+        #         "editor_user": self.extra_data.request.user,
+        #     }
+        #     o1 = Order.create_with_rel(data_base)
+        #     if old and old.supply_locations.local_sepidar_wh_code:
+        #         old.supply_locations.is_deleted = True
+        #         old.supply_locations.save()
+        #     self.supply_locations = o1
+        #     self.supply_location = o1.pk
+        #
+        # elif condition6:
+        #     self.supply_locations_id = self.supply_location
+        #     if old:
+        #         old.supply_locations.is_deleted = True
+        #         old.supply_locations.save()
+        # elif condition7:
+        #     self.supply_locations_id = self.supply_location
+        # elif not any(condition_list):
+        #     if self.supply_locations_id == self.supply_location:
+        #         pass
+        #     else:
+        #         self.supply_locations_id = self.supply_location.split('__')[-1]
+        #
+        # super().save(force_insert, force_update, using, update_fields)
+        # total_quantity = self.qi.total_quantity_in_factor
+        # if total_quantity >= self.qi.quantity:
+        #     self.qi.is_over = True
+        #     self.qi.save()
+        # else:
+        #     self.qi.is_over = False
+        #     self.qi.save()
 
     def total_supply(self):
         s = sum([x.quantity for x in self.supply_locations.order_base_items.all()])
