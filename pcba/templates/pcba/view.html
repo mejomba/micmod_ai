@@ -5,6 +5,7 @@
 {% load core_tags %}
 {% load jalali_tags %}
 
+{% block title %}قرارداد{% endblock title %}
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -125,7 +126,7 @@
                         <div class="col-1">قرارداد</div>
                         <div class="col-1">وضعیت</div>
                         <div class="col-1">تاریخ رسید</div>
-                        <div class="col-2">تعداد کل برد های دریافتی</div>
+                        <div class="col-2">تعداد کل اقلام دریافتی</div>
                         <div class="col-2">عملیات</div>
                         <div class="col-1"></div>
 
