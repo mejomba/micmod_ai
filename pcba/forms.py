@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from django_select2 import forms as s2forms
+from files.models import File
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm
@@ -78,14 +79,14 @@ class ContractForm(CustomBaseModelForm):
 
         request = kwargs.get('initial').get('constraint').get('request')
         user_groups = request.user.groups.values_list('name', flat=True)
-        if request and not request.user.is_superuser:
-            if 'pcba_user' in user_groups:
-                self.make_hidden(
-                    ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                     'factor_number'])
-                self.make_disable(
-                    ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                     'factor_number'])
+        if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
+            # if 'pcba_user' in user_groups:
+            self.make_hidden(
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
+                 'factor_number'])
+            self.make_disable(
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
+                 'factor_number'])
 
 
 class ItemReceiptForm(CustomBaseModelForm):
