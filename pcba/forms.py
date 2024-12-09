@@ -160,8 +160,11 @@ class ProductionDayActivitiesForm(CustomBaseModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        contract = kwargs.pop('contract', None)
         super(ProductionDayActivitiesForm, self).__init__(*args, **kwargs)
         self.fields['production_date'] = JalaliDateField(label=_('production_date'), widget=AdminJalaliDateWidget,
                                                       required=False)
         self.fields['production_date'].widget.attrs.update(
             {'class': 'jalali_date-date form-control', 'placeholder': _('production_date'), 'required': False})
+        if contract:
+            self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter(contract_id=contract)
