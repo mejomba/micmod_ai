@@ -90,6 +90,9 @@ class ContractForm(CustomBaseModelForm):
 
 
 class ItemReceiptForm(CustomBaseModelForm):
+    file_groups = 1
+    file_model = File
+    has_file = True
 
     def __init__(self, *args, **kwargs):
         super(ItemReceiptForm, self).__init__(*args, **kwargs)
@@ -99,6 +102,7 @@ class ItemReceiptForm(CustomBaseModelForm):
         # self.make_hidden(['parent', 'contract'])
         self.make_hidden(['goods_code_fk'])
         self.fields['goods_code_fk'].widget.attrs['id'] = 'id_goods_code_fk3'
+        self.fields['part_number'].widget.attrs['id'] = 'id_part_number2'
         # self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter()
 
     class Meta:
