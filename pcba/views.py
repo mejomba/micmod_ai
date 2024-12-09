@@ -360,9 +360,8 @@ class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
             context['form'] = ProductionDayActivitiesForm(initial={'contract': contract or self.object.contract,
                                                                    'goods_code_fk': goods_code_fk or self.object.contract.goods_code_fk,
                                                                    'customer_party_id': customer or self.object.contract.customer_party_id.pk
-
                                                                },
-                                                          instance=self.object)
+                                                          instance=self.object, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
