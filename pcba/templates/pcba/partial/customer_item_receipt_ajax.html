@@ -60,12 +60,12 @@
 
     </script>
 
-<script>
-    $('#customer-item-receipt-form').on('submit', function (e){
-        e.preventDefault()
-        custom_ajax_post(this, this.action, null, true)
-    })
-</script>
+{#<script>#}
+{#    $('#customer-item-receipt-form').on('submit', function (e){#}
+{#        e.preventDefault()#}
+{#        custom_ajax_post(this, this.action, null, true)#}
+{#    })#}
+{#</script>#}
 <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
 <script>
     {#select2_generate('#id_goods_code_fk3_select2', '#id_goods_code_fk3', '/inquiry/items_list/', 'goods_code')#}
