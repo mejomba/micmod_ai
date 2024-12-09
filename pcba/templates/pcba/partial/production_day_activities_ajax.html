@@ -21,8 +21,10 @@
             <div class="row row-cols-1 align-items-baseline">
                 <h4 class="position-absolute" style="top: -10px">فعالیت های روز تولید</h4>
                 <div class="col">
+                    <div class="row row-cols-6">
+                        {% render_field_by_order form form.contract form.goods_code_fk form.customer_party_id form.production_date form.customer_item_receipt form.activity label='on-border' %}
+                    </div>
                     <div class="row row-cols-5">
-                        {% render_field_by_order form form.contract form.goods_code_fk form.customer_party_id form.production_date form.activity label='on-border' %}
                         {% render_field_by_order form form.total_assembly_board_count form.assembly_type form.ruined_board_count form.intact_board_count_not_assembly form.delivery_type label='on-border' %}
                     </div>
                     <span class="d-none" id="goods_name">
