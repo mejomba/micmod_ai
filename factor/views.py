@@ -238,15 +238,15 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
          'orderable': True, 'lookup_field': '__title__icontains'},
-        {'name': 'delivery_time', 'visible': True, 'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
+        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         # {'name': 'workflows', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         # {'name': 'factor_self', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': False, 'orderable': True},
-        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True},
-        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'description', 'visible': True, 'orderable': False, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True},
+        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains'},
 
     ]
 
