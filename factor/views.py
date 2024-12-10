@@ -63,11 +63,12 @@ class FactorView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         if not self.object:
             return context
+        context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
         qis = self.object.q.quotation.all() if self.object else None
-        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factor.count() if self.object else 0
+        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
         context['form_s'] = FactorItemFormset(instance=self.object)
 
         exclude_qi = set()
@@ -115,7 +116,7 @@ def search_factor_view(request, *args, **kwargs):
     if q.isdigit():
         q_int = int(q)
     q_str = q
-    q_filter = Q()
+    q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس')
     q_required = {}#{'cancel': False, "is_deleted": False, "last_work_flow__current_state_name": 'مرحله نهایی'}
     for s in search_by:
         if s == 'search_customer':
@@ -131,11 +132,13 @@ def search_factor_view(request, *args, **kwargs):
         if s == 'search_part_number':
             q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
-        q_filter = Q(customer_party_id__title__icontains=q_str) | Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
+        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس') & \
+                   (Q(customer_party_id__title__icontains=q_str) | \
+                   Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
-                   Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str)
-    quotations = Quotation.objects.filter(q_filter, **q_required).order_by('-id').distinct()
+                   Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
+    quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
@@ -257,6 +260,7 @@ class FactorListDatatable(AjaxDatatableView):
             obj.pk if obj.pk else '-'
         )
 
+
 def print_view(request,id=-1):
 
     template_name = 'factor/factor_print.html'
@@ -285,130 +289,9 @@ def print_view(request,id=-1):
     greeting['data'] = factor
     return render(request, template_name, greeting)
 
-class MostahlakNashodeQuotationListDatatable(AjaxDatatableView):
-    model = Quotation
-    title = 'currency_list'
-    initial_order = [["pk", "desc"], ]
-    length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
-    search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
-
-    column_defs = [
-        AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
-        {'name': 'id', 'visible': False, },
-        {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
-        {'name': 'customer_party_id', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
-        {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
-        {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-        {'name': 'sepidar_number', 'visible': True, 'orderable': True},
-        {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False}
-    ]
-
-    def get_initial_queryset(self, request=None):
-        qs = Quotation.objects.filter(cancel=False, is_deleted=False, last_work_flow__current_state_name='تایید کارشناس')
-        qs.filter(quotation__qi__quantity=...)
-        if request.user.base_group == 'trade':
-            qs = Quotation.objects.filter(cancel=True, is_deleted=False,
-                                          quotation__need_foreign_price_inquiry=True,
-                                          quotation__foreign_price_inquiry_done=True)
-        else:
-            qs = Quotation.get_qs(request)
-        qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
-        return qs
-
-    # @timer
-    def customize_row(self, row, obj):
-        qi_comments = [x.comments.all() for x in obj.quotation.all()]
-        c = 0
-        for qs in qi_comments:
-            for comment in qs:
-                if not comment.commentseen_set.all():
-                    c += 1
-        for comment in obj.comments.all():
-            if not comment.commentseen_set.all():
-                c += 1
-        if c > 0:
-            row['comment'] = f'<span class="bg-success rounded px-2">{c} کامنت جدید</span>'
-        else:
-            row['comment'] = f'{c} کامنت جدید'
-
-        row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
-        row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.id,)),
-            obj.customer_party_id.title if obj.customer_party_id else '-'
-        )
-
-        counter = obj.get_inquiry_result_count
-
-        local_color_condition = counter[1] == counter[2] and counter[1] != 0
-        foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
-        out = f'''<span> کل: {counter[0]} </span > <br>''' \
-              + f'''<p {'class="bg-success rounded mb-1"' if local_color_condition else 'class="mb-1"'}>
-              داخلی
-              {counter[1]} /  {counter[2]} </p>''' \
-              + f''' <p {'class="bg-success rounded mb-1"' if foreign_color_condition else 'class="mb-1"'}>
-              خارجی
-              {counter[3]} / {counter[4]} </p> '''
-        row['inquiry_status'] = out
-
-        row['title'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.id,)),
-            obj.title if obj.title else '_'
-        )
-        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
-        row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
-        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
-        if obj.cancel:
-            row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
-        else:
-            row['cancel'] = '-'
-
 
 class DirectFactorView(View):
     def get(self, request, *args, **kwargs):
         url = reverse('micmod_base:quotations.create')
         url += '?direct'
         return redirect(url)
-
-    # template_name = 'factor/direct_factor.html'
-    # form_class = FactorModelForm
-    # model = Factor
-    # form_struct = {
-    #     'form': FactorModelForm,
-    #     'childes': [
-    #         {
-    #             'form': FactorItemFormset,
-    #             'childes': [{}]
-    #         },
-    #     ]
-    # }
-    # flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
-    # has_flow = True
-    # has_formset = True
-    # formset_form = FactorItemFormset
-    # formset_model = FactorItem
-    # formset_fk_field = 'factoritem_set'
-    # related_name_fk = 'factoritem_set'
-    #
-    # def get_success_url(self):
-    #     return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
-    #
-    # def post(self, request, *args, **kwargs):
-    #     return super().post(request, *args, **kwargs)
-    #
-    # def form_valid(self, form):
-    #     if self.object is None:
-    #         pass
-    #     res = super().form_valid(form)
-    #     return res
-    #
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     return context

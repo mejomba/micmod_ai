@@ -1,6 +1,7 @@
 {% load more_tags %}
 <div class="col-3">
     <span>
+        {% if not 'edit' in exclude %}
         <a href="#" target="_blank" id="" class="me-3 edit-customer-expert tooltip_" data-url={{ edit_url }} data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
             <span class="tooltiptext">ویرایش</span>
             <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -8,6 +9,8 @@
              <span class="path2"></span>
         </i>
         </a>
+        {% endif %}
+        {% if not 'delete' in exclude %}
         <a href="#" target="_blank" class="me-2 delete-customer-expert text-danger tooltip_" data-url=/core/delete/?model={{ obj|model_name }}&object_id={{ obj.pk }}&app_label={{ obj|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
             <span class="tooltiptext">حذف</span>
             <i class="ki-duotone ki-trash fs-2 text-danger">
@@ -18,6 +21,8 @@
                 <span class="path5"></span>
             </i>
         </a>
+        {% endif %}
+        {% if not 'log' in exclude %}
         <a class="mx-3 p-1 cursor-pointer tooltip_"
             data-bs-toggle="modal"
             data-bs-target="#id_kt_empty_modal_lg"
@@ -33,5 +38,6 @@
                 <span class="path4"></span>
             </i>
         </a>
+        {% endif %}
     </span>
 </div>

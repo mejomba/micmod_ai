@@ -90,7 +90,7 @@ class Factor(SLSDoc):
 
     @property
     def sum_prices(self):
-        fis = self.factor.all()
+        fis = self.factoritem_set.all()
         sum_price = 0
         row_price = 0
         for fi in fis:
@@ -281,7 +281,10 @@ class FactorItem(BaseModel):
             elif condition7:
                 self.supply_locations_id = self.supply_location
             elif not any(condition_list):
-                self.supply_locations_id = self.supply_location
+                if self.supply_locations_id == self.supply_location:
+                    pass
+                else:
+                    self.supply_locations_id = self.supply_location.split('__')[-1]
 
             super().save(force_insert, force_update, using, update_fields)
             total_quantity = self.qi.total_quantity_in_factor

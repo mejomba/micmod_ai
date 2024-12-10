@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 import math
 
+import requests
 from django.db import models
 from tools.form_tools import select_cquery
 # Create your tests here.
@@ -19,7 +20,7 @@ from inquiry.models import PriceInquiryResult
 from micmod_base.base import Currency
 from sepidar.models import APILogs, Item as SepItem
 from sepidar.scripts.sepidar_classes import Urls
-
+from tools.utils import senf_map, senf_init
 
 
 
@@ -32,6 +33,15 @@ def valid_title(title_string):
     except Exception as e:
         return title_string
         print(e, title_string)
+
+senf_diff = []
+def valid_senf(senf, id_):
+    senf_init()
+    s = valid_title(title_string=senf)
+    x = getattr(senf_map, str(s), None)
+    if s != x and not x:
+        senf_diff.append((s, x, id_))
+    return x
 
 
 def import_provience_from_sepidar(extra_data):
@@ -157,10 +167,10 @@ def import_customers_from_sepidar(extra_data, for_range=None):
             data['email'] = item.email
             data['phone'] = item.phone
             data['customer_group'] = CustomerGroup.objects.filter(sepidar_group_id=item.customer_group).first()
-            data['province'] = Province.objects.filter(title=item.province).first()
-            data['location'] = Province.objects.filter(title=item.location).first()
+            data['province'] = Province.objects.filter(title=item.province or item.location).first()
+            data['location'] = Province.objects.filter(title=item.location or item.province).first()
             data['address'] = valid_title(item.address)
-            data['senf'] = Senf.objects.filter(title=valid_title(item.senf)).first()
+            data['senf'] = Senf.objects.filter(title__iexact=valid_senf(item.senf, item.sepidar_dl_code)).first()
             data['sub_senf'] = SubSenf.objects.filter(title=valid_title(item.sub_senf)).first()
             data['introduction_method'] = IntroductionMethod.objects.filter(title=valid_title(item.introduction_method)).first()
             data['introducer'] = Introducer.objects.filter(title=valid_title(item.introducer)).first()
@@ -168,6 +178,8 @@ def import_customers_from_sepidar(extra_data, for_range=None):
             data['revival_date'] = item.revival_date
             # data['max_credit'] = item.max_credit
             data['credit_with_doc'] = item.credit_with_doc
+            data['creator_user_id'] = 1
+            data['editor_user_id'] = 1
             c = Customer.objects.update_or_create(sepidar_dl_id=item.sepidar_dl_id, defaults=data)
             res_list.append(c[0].title)
             # data['sepidar_dl_id'] = item.sepidar_dl_id
@@ -177,6 +189,7 @@ def import_customers_from_sepidar(extra_data, for_range=None):
             print(str(e))
             return str(e)
     else:
+        print(senf_diff)
         return res_list
 
 
@@ -466,6 +479,3 @@ if __name__ == '__main__':
     print('import_sales_groups_from_sepidar')
     import_items_from_sepidar(extra_data)
     print('import_items_from_sepidar')
-
-
-

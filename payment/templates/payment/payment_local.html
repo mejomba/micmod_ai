@@ -391,5 +391,11 @@
             }
         });
 
+    document.querySelectorAll('input[type="submit"]').forEach(function (item){
+        item.addEventListener('click', function (e){
+            item.classList.add('disabled')
+            {#setTimeout(function (item){item.classList.add('bg-danger')}, 100)#}
+        })
+    })
     </script>
 {% endblock extra_js %}
