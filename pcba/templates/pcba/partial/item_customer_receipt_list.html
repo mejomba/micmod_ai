@@ -1,7 +1,7 @@
 {% load jalali_tags %}
 {% load more_tags %}
 
-<div class="bg-white row rounded border my-5 py-5 position-relative ">
+<div class="bg-white row rounded border my-5 py-5 position-relative {% if not forloop.counter|divisibleby:'2' %} border-white border-3 {% endif %}">
 <div class="col-12">
     {% if form.instance.pk %}
         {% if items %}

@@ -319,8 +319,8 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
         qs = super().get_initial_queryset(request)
         if q == 'all':
             qs = qs
-        elif q == 'packing':
-            qs = qs.filter(activity=ProductionDayActivities.PACKING)
+        elif q == 'delivery':
+            qs = qs.filter(activity=ProductionDayActivities.DELIVERY)
         return qs
 
 
