@@ -1,6 +1,7 @@
 import datetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms import inlineformset_factory
@@ -177,24 +178,25 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     context['flow_state_index'] = 0
     context['flow_state_list'] = flow_config.get('flow_state_list')
     context['flow_state_list'].append('مرحله نهایی')
-    x = {
-            'wf_access': True,
-            'from_user': None,
-            'to_user': request.user,
-            'state': 'فاکتور اولیه',
-            'state_index': 0,
-            'belong_to_group': 'sales_user',
-            'action': 'ایجاد',
-            'deadline': datetime.datetime(2024, 9, 23, 17, 8, 27, 437724),
-            'flow_config': flow_config,
-            'create': True
-    }
+    """if flow object don't exist select user from group (normally for create step)"""
+    group = flow_config.get('flow_users_groups')[1]
+    flow_belong_to_group = WorkFlowModelForm._meta.model.objects.filter(belong_to_group=group)
+    user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
+    if flow_belong_to_group:
+        last_wf_user = flow_belong_to_group.order_by('id').last().from_user
+        next_users = user_list.filter(id__gt=last_wf_user.id).order_by('id')
+        if next_users:
+            to_user = next_users.first()
+        else:
+            to_user = user_list.first()
+    else:
+        to_user = user_list.first()
     context['workflow_form'] = WorkFlowModelForm(
         content_type_model=Factor,
         initial={
                     'wf_access': True,
                     'from_user': None,
-                    'to_user': request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
+                    'to_user': to_user, #self.get_flow_user(flow_user_groups[self.state_index + 1]), #request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
                     'state': 'فاکتور اولیه',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',

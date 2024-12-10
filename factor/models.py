@@ -13,6 +13,7 @@ from order.models import Order
 from tools.utils import show_error
 
 from translator import get_text as _
+from datetime import datetime
 
 
 class FactorItemManager(BaseManager):
@@ -213,6 +214,8 @@ class FactorItem(BaseModel):
             if self.quantity == 0:
                 self.is_deleted = True
                 super().save(force_insert, force_update, using, update_fields)
+                self.qi.is_over = False
+                self.qi.save()
                 return
 
             elif condition1 or condition3:
@@ -257,10 +260,6 @@ class FactorItem(BaseModel):
         if total_quantity >= self.qi.quantity:
             self.qi.is_over = True
             self.qi.save()
-        else:
-            self.qi.is_over = False
-            self.qi.save()
-
 
         # if self.pk is None:
         #     if self.select_wh_sepidar: # str(self.supply_location).startswith('wh__'):

@@ -143,6 +143,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
+    def get(self, request, *args, **kwargs):
+        if 'direct' in request.GET:
+            self.template_name = 'factor/direct_factor.html'
+        return super().get(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         if 'duplicate' in self.request.POST:
             obj = duplicate_quotation(self.request, self.object.pk)
