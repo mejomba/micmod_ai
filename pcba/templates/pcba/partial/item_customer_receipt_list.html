@@ -1,16 +1,18 @@
 {% load jalali_tags %}
 {% load more_tags %}
 
-<div class="bg-white row rounded border my-5 py-5 position-relative ">
+<div class="bg-white row rounded border my-5 py-5 position-relative {% if not forloop.counter|divisibleby:'2' %} border-white border-3 {% endif %}">
 <div class="col-12">
     {% if form.instance.pk %}
         {% if items %}
-            <div class="row align-items-center pb-3 bold border-bottom">
+            <div class="row align-items-center pb-3 bold">
                 <div class="col-2 "><span class="ms-7">تعداد </span></div>
                 <div class="col-2">کالا</div>
+                <div class="col-2">پارت نامبر</div>
                 <div class="col-1">تاریخ دریافت کالا</div>
+                <div class="col-1">فایل</div>
                 <div class="col-2">عملیات</div>
-                <div class="col-5"></div>
+                <div class="col-2"></div>
 
             </div>
         {% endif %}
@@ -26,10 +28,19 @@
             <div class="col-2 py-2">
                 <span id="id_customer_contract">{{ item.goods_code_fk|default_if_none:"-" }}</span>
             </div>
+            <div class="col-2 py-2">
+                <span id="id_customer_contract">{% if item.part_number %}{{ item.part_number|default_if_none:"-" }}{% else %}{{ item.goods_code_fk.part_number }}{% endif %}</span>
+            </div>
             <div class="col-1 py-2">
                 <span id="id_customer_contract">{{ item.receipt_date|to_jalali:"%Y-%m-%d" }}</span>
             </div>
-
+            <div class="col-1 py-2">
+            {% for file in item.files.all %}
+                {% if file.path %}
+                    	<a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg "></i></a>
+                    {% endif %}
+            {% endfor %}
+            </div>
             <div class="col-2 py-2">
                         <span>
                         <a href="#" target="_blank" class="me-3 edit-item-in-customer-receipt tooltip_"
@@ -70,7 +81,7 @@
                         </a>
                     </span>
             </div>
-            <div class="col-5"></div>
+            <div class="col-2"></div>
             </div>
             {% empty %}
         <span class="mx-3 bold">کالایی یافت نشد :(</span>

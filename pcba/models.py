@@ -53,10 +53,11 @@ class CustomerItemReceipt(BaseModeWF):
 
 
 class ItemsInCustomerReceipt(BaseModeWF):
-    goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='goods_code_item_customer_receipt', verbose_name='کالا')
+    goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='goods_code_item_customer_receipt', verbose_name='کالا', null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0, verbose_name='تعداد')
-    receipt_date = models.DateField(verbose_name='تاریخ دریافت کالا')
+    receipt_date = models.DateField(verbose_name='تاریخ دریافت کالا', null=True, blank=True)
     customer_item_receipt = models.ForeignKey(CustomerItemReceipt, related_name='items', on_delete=models.DO_NOTHING, verbose_name='رسید کالای مربوطه')
+    part_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='پارت نامبر')
 
 
 class ProjectItemList(BaseModeWF):
@@ -102,6 +103,7 @@ class ProductionDayActivities(BaseModeWF):
     ruined_board_count = models.IntegerField(null=True, blank=True, default=0, verbose_name='تعداد برد خراب')
     intact_board_count_not_assembly = models.IntegerField(null=True, blank=True, default=0, verbose_name='برد‌های مونتاژ نشده(کسری قطعات)')
     delivery_type = models.CharField(max_length=255, null=True, blank=True, verbose_name='نحوه ارسال')
+    customer_item_receipt = models.ForeignKey(CustomerItemReceipt, on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name='فعالیت‌های روز تولید')
 
     def __str__(self):
         return f'{self.contract.contract_title}'

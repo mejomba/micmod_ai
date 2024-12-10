@@ -3,7 +3,7 @@
 {% load jalali_tags %}
 {% load accounts_tag %}
 
-{% block title %}Production Day Activities{% endblock title %}
+{% block title %}فعالیت های روز تولید{% endblock title %}
 {% block extra_css %}
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -28,7 +28,7 @@
         <span>
             <span class="mt-3 me-3">استفاده از فیلتر</span>
             <a href="{% url 'pcba:production.day.activities.list' %}?q=all" class="btn btn-primary mx-1">همه</a>
-            <a href="{% url 'pcba:production.day.activities.list' %}?q=packing" class="btn border border-primary btn-outline-primary mx-1">بسته بندی</a>
+            <a href="{% url 'pcba:production.day.activities.list' %}?q=delivery" class="btn border border-primary btn-outline-primary mx-1">ارسال</a>
 
         </span>
         </div>

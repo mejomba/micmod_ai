@@ -319,8 +319,8 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
         qs = super().get_initial_queryset(request)
         if q == 'all':
             qs = qs
-        elif q == 'packing':
-            qs = qs.filter(activity=ProductionDayActivities.PACKING)
+        elif q == 'delivery':
+            qs = qs.filter(activity=ProductionDayActivities.DELIVERY)
         return qs
 
 
@@ -360,9 +360,8 @@ class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
             context['form'] = ProductionDayActivitiesForm(initial={'contract': contract or self.object.contract,
                                                                    'goods_code_fk': goods_code_fk or self.object.contract.goods_code_fk,
                                                                    'customer_party_id': customer or self.object.contract.customer_party_id.pk
-
                                                                },
-                                                          instance=self.object)
+                                                          instance=self.object, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
