@@ -9,6 +9,7 @@ import time
 
 from django.db import models
 from django.db.models import Q
+from django.utils.timezone import make_aware
 
 from _keenthemes.settings import TIME_ZONE
 # from factor.forms import FactorModelForm, FactorItemModelForm
@@ -118,27 +119,43 @@ def elapsed_time(m_datetime):
 
 
 def diff_time(first_time, second_time):
-    first_time , second_time = second_time, first_time
+    first_time, second_time = second_time, first_time
+    first_time = make_aware(first_time)
     if not first_time and not second_time:
         return None
     delta = first_time - second_time
     relative_delta = relativedelta(first_time, second_time)
     m_str = ""
-    if delta.seconds < 60:
-        return f'بلافاصله'
-    elif delta.seconds < 2592000:  # day&hour&minute
-        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
-        m_str += " و " if m_str else ""
-        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
-        m_str += " و " if m_str and relative_delta.hours else ""
-        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
-    else:# year&month&day
+    if relative_delta.years:
         m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
-        m_str += " و " if m_str else ""
+        m_str += ' و '
         m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
-        m_str += " و " if m_str and relative_delta.months else ""
+        m_str += ' و '
         m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
-    return f'{m_str} '
+    elif relative_delta.months:
+        m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+    elif relative_delta.days:
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.hours:
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.minutes:
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.seconds} ثانیه' if relative_delta.seconds else ''
+    elif relative_delta.seconds:
+        return f"تقریبا هم اکنون"
+
+    return f'{m_str} قبل'
 
 
 def to_persian_number(mystr):
