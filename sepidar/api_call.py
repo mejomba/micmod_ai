@@ -42,3 +42,7 @@ class SepidarApiCall:
             out['res'] = r
 
         return out
+
+    @classmethod
+    def create_dl(cls):
+        pass
