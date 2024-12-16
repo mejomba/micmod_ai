@@ -236,6 +236,7 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
+        {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'className': 'py-1 border', 'lookup_field': '__title__icontains', 'searchable': True},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
          'orderable': True, 'lookup_field': '__title__icontains'},
         {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
@@ -252,13 +253,14 @@ class FactorListDatatable(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.q.id,)),
             obj.q.id if obj.q else '-'
         )
         row['pk'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('factor:factor.view', args=(obj.id,)),
             obj.pk if obj.pk else '-'
         )
+        row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
 
 
 def print_view(request,id=-1):

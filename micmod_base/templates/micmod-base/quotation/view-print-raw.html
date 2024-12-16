@@ -34,19 +34,19 @@
         }
     </style>
 
-<div class="container" dir="rtl">
-    <div>
+<div class="position-absolute" style="right: 0">
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
     <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
     <a href="{% url "micmod_base:print_customer" id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}"
        class="noprint btn btn-primary btn-bordered mb-5 mt-5">
         {% if customer_goods_code_url_param == '0' %}
-        	بدون کد کالای مشتری
+            بدون کد کالای مشتری
         {% elif customer_goods_code_url_param == '1' %}
         با کد کالای مشتری
         {% endif %}
     </a>
-        </div>
+</div>
+<div class="container mt-1" dir="rtl">
     <div class="row">
         <div class="col">
         </div>

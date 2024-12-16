@@ -23,6 +23,8 @@ from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
+from rest_framework.views import APIView
+
 from _keenthemes import KTLayout
 from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
@@ -1416,3 +1418,29 @@ class Select2BaseSearch(View):
                 count += 1
         obj['total_count'] = count
         return JsonResponse(obj, safe=False)
+
+
+class GenericApiCall(View):
+
+    def get(self, request, app_name, model_name, function, *args, **kwargs):
+        from django.utils.module_loading import import_string
+
+        model = import_string(f'{app_name}.api_call.{model_name}')
+        GET = self.request.GET
+
+        f = getattr(model, function, None)
+        if f:
+            res = f(**GET)
+
+            template = self.get_template(GET.get('template_name'))
+            if template:
+                html = render_to_string(template, res)
+                return JsonResponse({'res': html})
+            else:
+                return res
+
+    def get_template(self, template_name):
+        if template_name is None:
+            return 'default_template.html'
+        else:
+            return f'core/partial/sepidar_api_call/{template_name}.html'

@@ -13,13 +13,9 @@
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
 
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
-    <style>
-
-    </style>
 {% endblock extra_css %}
 
 {% block form_content %}
-
             {% csrf_token %}
                     {% for hidden in form.hidden_fields %}
                         {{ hidden }}
@@ -41,8 +37,8 @@
                                             <h3 class="card-title pb-3" data-key="quotation-information">Quotation
                                                 Information
                                             </h3>
-                                            <div class="row">
-                                                <div class="">
+{#                                            <div class="row">#}
+{#                                                <div class="">#}
                                                     <div class="row">
                                                         <div class="col-sm-4 m-0">
                                                             {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
@@ -54,23 +50,20 @@
                                                         <div class="col-sm-4 ms-lg-auto">
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
                                                         </div>
-
                                                         <div class="col-sm-12">
                                                             {% render_field_group form.addition form.tax form.sale_type label_type='on-border '%}
                                                         </div>
-
                                                     </div>
-                                                </div>
-                                            </div>
+{#                                                </div>#}
+{#                                            </div>#}
                                         </div>
                                     </div>
                                     <div class="col-sm-5 ms-lg-auto">
                                         <div class="p-2">
                                             <h3 class="card-title pb-3" data-key="customer-information">Customer Information
                                             </h3>
-
-                                            <div class="row">                                                <div class="">
-
+                                            <div class="row">
+                                                <div class="">
                                                     <div class="row">
                                                         <div class="col-sm-6">
                                                             {% render_field_by_order form form.customer_code form.customer_grade form.description form.cancel label='on-border' margin_b=3 %}
@@ -78,18 +71,16 @@
                                                         </div>
                                                         <div class="col-sm-6 ms-sm-auto rounded">
                                                             {% get_customer form.instance.customer_code as customer %}
-                                                            {% if  customer %}
-                                                            <div class="p-2 pb-3 rounded bg-success" id="customer_card">
-                                                            {% else %}
-                                                            <div class="d-none p-2 pb-3 rounded bg-success" id="customer_card">
-                                                            {% endif %}
-                                                                <div data-key="customer_title" class="rounded">customer title</div>
-                                                                <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
-                                                                <div data-key="party_id">party id</div>
-                                                                <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
-
-                                                            </div>
-
+                                                                {% if  customer %}
+                                                                    <div class="p-2 pb-3 rounded bg-success" id="customer_card">
+                                                                {% else %}
+                                                                    <div class="d-none p-2 pb-3 rounded bg-success" id="customer_card">
+                                                                {% endif %}
+                                                                    <div data-key="customer_title" class="rounded">customer title</div>
+                                                                    <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
+                                                                    <div data-key="party_id">party id</div>
+                                                                    <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -99,17 +90,13 @@
                                     </div>
                             </div>
                         </div>
-
                         <!--list start-->
                         {{ formset.management_form }}
                         {{ formset.non_form_errors }}
-
-
                         <div class="card">
                             <template
                                     id="id_formset_empty_form">{% include "micmod-base/quotation/item3.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
                             </div>
-
                             <div class="card-body p-0" id="id_formset_container">
                             <div class="d-flex justify-content-start align-items-end gap-4 mt-10">
                                 {% include 'partials/formset_header_buttons.html' %}
@@ -133,8 +120,6 @@
             {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
             {% include 'core/partial/empty_modal_sm.html' %}
-
-
 <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}">
                 {# this tag maybe need to close #}
                         </div>
@@ -146,14 +131,12 @@
 {% include "core/partial/add_formset_button.html" %}
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
-{#        {% include "micmod-base/base/create_info_bar.html" %}#}
     </div>
         {% if form.instance.quotation_rel.all.last.id %}
             <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
             {% elif form.instance.quotation_self.id %}
             <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
         {% endif %}
-
         <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
             <div><label class="col-form-label">استعلام سریع</label></div>
             <div>
@@ -163,10 +146,8 @@
                         <span></span>
                     </label>
                 </span>
-
             </div>
         </div>
-
     <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
          m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
          onclick="do_print({{ data }})" name="do_print">
@@ -176,7 +157,6 @@
         <div class="px-2 mx-auto">
         </div>
     {% endif %}
-
         <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
             <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
                  data-key="refresh" onclick="refresh_prices()">
@@ -196,17 +176,14 @@
 <div class="position-fixed bg-light-success w-75 p-5 rounded d-none" id="price-updated" style="top: 50%; right: 50%; transform: translate(50%, 50%);">قیمت ها بروز شدند</div>
 {% endblock form_footer_extra %}
 
-
 {% block extra_js %}
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
-
     <script>
     $('._x').on('hidden.bs.modal', function (e) {
           if (formFooterContainer) {
               formFooterContainer.classList.add('position-fixed')
           }
       });
-
     $('*[id*=_x]').on('hide.bs.modal', function (e) {
             console.log('hide')
           if (formFooterContainer) {
@@ -214,12 +191,10 @@
           }
       });
     </script>
-
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'js/extra/quotation1.js' %}"></script>
     <script src="{% static 'js/extra/formset.js' %}"></script>
-
     <script>
     document.addEventListener('DOMContentLoaded', function (e) {
         closeAllFormset({
@@ -230,7 +205,6 @@
             'total-price_h': ['name', '-total_price', 'lbl']
         })
     })
-
     const isOfficial = document.getElementById('id_is_official');
     const officialValue = document.getElementById('id_official_value');
     isOfficialCheck()
@@ -242,7 +216,6 @@
             officialValue.disabled = true
         }
     }
-
     const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
     submitCommentBtns.forEach(function (item){
         item.addEventListener('click', function (e){
