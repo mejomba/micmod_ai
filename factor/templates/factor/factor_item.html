@@ -137,7 +137,7 @@
                     <span class="col-2 bold">
                         <span data-key="lead_time">lead_time <span class="font-size-11 text-danger ms-1">(روز به عدد)</span> </span>
                         <div class="border-top border-gray-500"></div>
-                        <span>قیمت کل ردیف</span>
+                        <span>تخفیف ردیف | قیمت کل ردیف</span>
                     </span>
                     <span class="col-2 bold">
                         <span data-key="">محل تامین</span>
@@ -149,12 +149,14 @@
             </div>
         </div>
     </div>
+
     <!-- row per item -->
     <div id="sortable-container">
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
     <div class="sortable-item">
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
-        <input type="hidden" value="{{ forloop.counter }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
+        <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
+        <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">
         <!-- update factor item -->
         {% if factor_item.instance.pk %}
                 <div class="hidden-section">
@@ -163,6 +165,7 @@
                 {% endfor %}
                 </div>
         	<div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" style="height: fit-content">
+
             <!--quotation item information-->
             <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
@@ -196,8 +199,9 @@
                     </span>
                 </div>
             </div>
+
             <!--factor item information and input-->
-            <div class="col-9 text-center hover_light_primary d-flex flex-column justify-content-center" style="height: fit-content; min-height: 70px;">
+            <div class="col-9 text-center hover_light_primary d-flex flex-column justify-content-center factor_item_self" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
                         <span class=" cursor-pointer">
@@ -231,16 +235,17 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-0">
-                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
-                        <input type="text" onkeyup="check_price(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center">
                         <div class="d-flex flex-column">
                             <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
-                            <span class="d-flex gap-4 justify-content-center">
-                                <span class="row-total-price pt-1 text-success">123456</span>
-                                    |
-                                <span class="row-discount pt-1 text-success">88888</span>
+                            <span class="d-flex gap-1 justify-content-center mt-1">
+                                <span class="row-discount pt-1 text-success"></span>
+                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-row-discount" class="LTR-RTL w-100 rounded font-size-11 text-center">
+                                |
+                                <span class="row-total-price pt-1 text-info"></span>
                             </span>
                             <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
                         </div>
@@ -249,6 +254,9 @@
                         {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 factor_item.instance %}
                         <div class="font-size-11 text-start">
                             <a href="{% url 'order:order.view' factor_item.instance.supply_locations.pk %}" class="text-danger hover-link" target="_blank">{{ factor_item.instance.supply_locations.description }}</a>
+{#                            <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >#}
+{#                            <label for="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar">بازار</label>#}
+                            {% render_field_by_order factor_item factor_item.is_bazar label='in-line' %}
                         </div>
                     </div>
                     <div class="col-2">
@@ -304,7 +312,7 @@
                 </div>
             </div>
             <!--factor item information and input-->
-            <div class="col-9 text-center d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_primary {% endif %}" style="height: fit-content; min-height: 70px;">
+            <div class="col-9 text-center d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_primary {% endif %} factor_item_self" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 text-center px-1">
                         <span class=" cursor-pointer">
@@ -336,15 +344,31 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-1">
-                        <input type="text" onkeyup="check_quantity(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
-                        <input type="text" onkeyup="check_price(event)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+                        <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center px-1">
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+{#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
+                        <div class="d-flex flex-column">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                            <span class="d-flex gap-1 justify-content-center mt-1">
+                                <span class="row-discount pt-1 text-success"></span>
+                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-row-discount" class="LTR-RTL w-100 rounded font-size-11 text-center">
+                                |
+                                <span class="row-total-price pt-1 text-info"></span>
+                            </span>
+                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+                        </div>
                     </span>
-                    <div class="col-2 px-0">
-                        {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
-                        <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+                    <div class="col-2 px-0 d-flex">
+                        <span class="w-75">
+                            {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
+                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+                        </span>
+                        <span class="w-25">
+                            <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >
+                            <label for="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar">بازار</label>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -445,103 +469,103 @@
     }
 
 
-{#function factor_calculate_price(target) {#}
-{#    const elem = findAncestor(target, "item")#}
-{#    const final_price = elem.querySelector('input[id$="-price"]')#}
-{#    const total_price = elem.querySelector('[class*="row-total-price"]')#}
-{#    const quantity = elem.querySelector('input[id$="-quantity"]')#}
-{#    const selfDiscount = document.querySelector('input[name$="self_discount"]')#}
-{#    const isOfficial =  document.querySelector('#id_is_official')#}
-{#    const isOfficialValue = document.querySelector('input[name$="official_value"]')#}
-{#    let isOfficialValue_number = 0#}
-{#    let tax = 0;#}
-{#    let taxValue = 0#}
-{#    let row_discount = 0#}
-{#    let row_discount_amount = 0#}
-{#    let tax_discount = 0#}
-{#    let row_discount_base_percentage = 0#}
-{#    let totalDiscount = 0#}
-{#    let net_price = 0#}
-{#    let net_price_after_tax_discount = 0#}
-{#    let calculated_price = 0#}
-{#    // qty#}
-{#    let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))#}
-{#    if (isNaN(qty)) {#}
-{#        qty = quantity.value.replaceAll(',', '')#}
-{#    }#}
-{##}
-{#    // price#}
-{#    let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))#}
-{#    if (isNaN(price)) {#}
-{#        price = final_price.value#}
-{#    }#}
-{#    row_discount_amount = parseFloat(elem.querySelector('[class*="row-discount"]').innerText.replaceAll(',', ''))#}
-{#    row_discount = row_discount_amount * qty#}
-{#    // net_price = (price - row_discount_amount) * qty#}
-{#    net_price = price * qty#}
-{#    net_price_after_tax_discount = net_price#}
-{##}
-{#    if (isOfficial && isOfficial.checked){#}
-{#        tax = 10#}
-{#        if (isOfficialValue){#}
-{#            isOfficialValue_number = parseFloat(isOfficialValue.value);#}
-{#            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (#}
-{#                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))#}
-{#            // tax_discount = net_price * (isOfficialValue_number / 100)#}
-{#        }#}
-{#        net_price_after_tax_discount = net_price - tax_discount#}
-{#    }#}
-{##}
-{##}
-{#    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))#}
-{#    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)#}
-{##}
-{#    totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)#}
-{#    if (tax){#}
-{#        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)#}
-{#        taxValue = (net_price - totalDiscount) * (tax/100)#}
-{#    } else {#}
-{#        taxValue = 0#}
-{#    }#}
-{##}
-{#    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)#}
-{#    if (currency_ref == 1){#}
-{#        net_price_after_tax_discount = parseInt(net_price_after_tax_discount)#}
-{#        taxValue = parseInt(taxValue)#}
-{#        totalDiscount = parseInt(totalDiscount)#}
-{#        elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
-{#        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
-{#        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
-{#        // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)#}
-{#        total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)#}
-{#    } else {#}
-{#        elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
-{#        elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
-{#        elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
-{#        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)#}
-{#    }#}
-{#    calculated_price = net_price - totalDiscount + tax#}
-{##}
-{#    var items = document.querySelectorAll('[name="-total_price"]')#}
-{#    let m_sum = 0#}
-{#    for (let i = 0; i < items.length; i++) {#}
-{#        val = parseFloat(items[i].innerHTML.replaceAll(',', ''))#}
-{#        if (!isNaN(val)) {#}
-{#            m_sum += val#}
-{#        }#}
-{#    }#}
-{#    if (!m_sum) {#}
-{#        m_sum = 0#}
-{#    }#}
-{#    const t_prices = $(document).find('.quotation_total_price')#}
-{#    const additionElm = document.querySelector('#id_addition')#}
-{#    const taxElm = document.querySelector('#id_tax')#}
-{#    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0#}
-{#    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0#}
-{#    for (let i = 0; i < t_prices.length; i++) {#}
-{#        t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()#}
-{#    }#}
+function factor_calculate_price(target) {
+        debugger
+    const elem = findAncestor(target, "factor_item_self")
+    const final_price = elem.querySelector('input[name$="-price"]')
+    const total_price = elem.querySelector('[class*="row-total-price"]')
+    const quantity = elem.querySelector('input[name$="-quantity"]')
+    const selfDiscount = document.querySelector('input[name$="self_discount"]') // تخفیف روی همه
+    const isOfficial =  document.querySelector('#id_is_official')
+    const isOfficialValue = document.querySelector('input[name$="official_value"]')
+    let isOfficialValue_number = 0
+    let tax = 0;
+    let taxValue = 0
+    let row_discount = 0
+    let row_discount_amount = 0
+    let tax_discount = 0
+    let row_discount_base_percentage = 0
+    let totalDiscount = 0
+    let net_price = 0
+    let net_price_after_tax_discount = 0
+    let calculated_price = 0
+    // qty
+    let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
+    if (isNaN(qty)) {
+        qty = quantity.value.replaceAll(',', '')
+    }
 
-//}
+    // price
+    let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
+    if (isNaN(price)) {
+        price = final_price.value
+    }
+    row_discount_amount = parseFloat(elem.querySelector('input[name$="-row-discount"]').value.replaceAll(',', '')) || 0
+    row_discount = row_discount_amount * qty
+    // net_price = (price - row_discount_amount) * qty
+    net_price = price * qty
+    net_price_after_tax_discount = net_price
+
+    if (isOfficial && isOfficial.checked){
+        tax = 10
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue.value);
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
+            // tax_discount = net_price * (isOfficialValue_number / 100)
+        }
+        net_price_after_tax_discount = net_price - tax_discount
+    }
+
+
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
+
+    totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
+    if (tax){
+        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
+        taxValue = (net_price - totalDiscount) * (tax/100)
+    } else {
+        taxValue = 0
+    }
+    debugger
+    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency_ref == 1){
+        net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
+        taxValue = parseInt(taxValue)
+        totalDiscount = parseInt(totalDiscount)
+        {#elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
+        {#elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
+        {#elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
+        total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)
+    } else {
+        {#elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
+        {#elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
+        {#elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
+        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+    }
+    calculated_price = net_price - totalDiscount + tax
+
+    var items = document.querySelectorAll('[name="-total_price"]')
+    let m_sum = 0
+    for (let i = 0; i < items.length; i++) {
+        val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
+        if (!isNaN(val)) {
+            m_sum += val
+        }
+    }
+    if (!m_sum) {
+        m_sum = 0
+    }
+    const t_prices = $(document).find('.quotation_total_price')
+    const additionElm = document.querySelector('#id_addition')
+    const taxElm = document.querySelector('#id_tax')
+    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
+    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
+    for (let i = 0; i < t_prices.length; i++) {
+        t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    }
+
+}
 
 </script>

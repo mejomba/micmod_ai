@@ -119,6 +119,7 @@ class FactorItem(BaseModel):
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
+    is_bazar = models.BooleanField(_('is_bazar'), default=False)
 
     objects = FactorItemManager()
 
@@ -185,6 +186,7 @@ class FactorItem(BaseModel):
                     "qi": self.qi,
                     "creator_user": self.extra_data.request.user,
                     "editor_user": self.extra_data.request.user,
+                    "is_bazar": self.is_bazar
                 }
                 o2 = Order.objects.filter(pk=self.supply_location).first()
 

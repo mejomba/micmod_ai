@@ -48,6 +48,7 @@ class FactorItemModelForm(CustomBaseModelForm):
         model = FactorItem
         exclude = ['group']
     supply_location = forms.CharField(required=False)
+
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
         if self.form_state is None:
@@ -82,7 +83,7 @@ class FactorItemModelForm(CustomBaseModelForm):
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
-                      'part_number_show', 'price', 'supply_location', 'supply_locations'
+                      'part_number_show', 'price', 'supply_location', 'supply_locations', 'is_bazar',
                       ]
 
 FactorItemFormset = inlineformset_factory(

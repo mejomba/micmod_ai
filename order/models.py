@@ -81,6 +81,7 @@ class Order(BaseModeWF):
                 "qi": factor_item.qi,
                 "creator_user": factor_item.extra_data.request.user,
                 "editor_user": factor_item.extra_data.request.user,
+                'is_bazar': factor_item.is_bazar,
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {
