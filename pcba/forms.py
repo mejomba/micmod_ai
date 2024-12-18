@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from django_select2 import forms as s2forms
+from files.models import File
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm
@@ -76,17 +77,20 @@ class ContractForm(CustomBaseModelForm):
 
         request = kwargs.get('initial').get('constraint').get('request')
         user_groups = request.user.groups.values_list('name', flat=True)
-        if request and not request.user.is_superuser:
-            if 'pcba_user' in user_groups:
-                self.make_hidden(
-                    ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                     'factor_number'])
-                self.make_disable(
-                    ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                     'factor_number'])
+        if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
+            # if 'pcba_user' in user_groups:
+            self.make_hidden(
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
+                 'factor_number'])
+            self.make_disable(
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
+                 'factor_number'])
 
 
 class ItemReceiptForm(CustomBaseModelForm):
+    file_groups = 1
+    file_model = File
+    has_file = True
 
     def __init__(self, *args, **kwargs):
         super(ItemReceiptForm, self).__init__(*args, **kwargs)
@@ -96,6 +100,7 @@ class ItemReceiptForm(CustomBaseModelForm):
         # self.make_hidden(['parent', 'contract'])
         self.make_hidden(['goods_code_fk'])
         self.fields['goods_code_fk'].widget.attrs['id'] = 'id_goods_code_fk3'
+        self.fields['part_number'].widget.attrs['id'] = 'id_part_number2'
         # self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter()
 
     class Meta:
@@ -153,8 +158,11 @@ class ProductionDayActivitiesForm(CustomBaseModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        contract = kwargs.pop('contract', None)
         super(ProductionDayActivitiesForm, self).__init__(*args, **kwargs)
         self.fields['production_date'] = JalaliDateField(label=_('production_date'), widget=AdminJalaliDateWidget,
                                                       required=False)
         self.fields['production_date'].widget.attrs.update(
             {'class': 'jalali_date-date form-control', 'placeholder': _('production_date'), 'required': False})
+        if contract:
+            self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter(contract_id=contract)

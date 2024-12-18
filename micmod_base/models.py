@@ -2,7 +2,7 @@ import uuid
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
 from collections import Counter
-from django.db.models import F
+from django.db.models import F, Sum
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
 from django.db.models import Q
@@ -17,7 +17,7 @@ from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
 from tools.myjalali import Persian
-from tools.utils import show_error
+from tools.utils import show_error, diff_time
 
 from translator import get_text as _
 from workflow.models import WorkFlow
@@ -115,6 +115,10 @@ class Quotation(SLSDoc):
         res = dict()
         inquiry_state = 'استعلام قیمت'
         for sale_user in sales_user:
+
+            how_long_in_local_inquiry = []
+            how_long_in_foreign_inquiry = []
+
             res[sale_user] = []
             local_price_condition = Q(last_work_flow__to_user=sale_user) & \
                                     Q(last_work_flow__current_state_name=inquiry_state) & \
@@ -127,6 +131,26 @@ class Quotation(SLSDoc):
                                       Q(quotation__need_foreign_price_inquiry=True)& \
                                       Q(quotation__is_deleted=False) & \
                                       Q(cancel=False)
+            foreign_inquiry_states_obj = cls.objects.filter(Q(last_work_flow__to_user=sale_user) &
+                                                            Q(last_work_flow__current_state_name=inquiry_state) &
+                                                            (Q(quotation__need_foreign_price_inquiry=True) &
+                                                             Q(quotation__foreign_price_inquiry_done=False)) &
+                                                            Q(quotation__is_deleted=False) & Q(cancel=False)).distinct()
+
+            local_inquiry_states_obj = cls.objects.filter(Q(last_work_flow__to_user=sale_user) &
+                                                          Q(last_work_flow__current_state_name=inquiry_state) &
+                                                          (Q(quotation__need_local_price_inquiry=True) &
+                                                           Q(quotation__local_price_inquiry_done=False)) &
+                                                          Q(quotation__is_deleted=False) & Q(cancel=False)).distinct()
+
+            if foreign_inquiry_states_obj or local_inquiry_states_obj:
+                for local_inquiry_state_obj in local_inquiry_states_obj:
+                    how_long_local_inquiry = diff_time(local_inquiry_state_obj.last_update_date, datetime.datetime.now())
+                    how_long_in_local_inquiry.append(how_long_local_inquiry)
+                for foreign_inquiry_state_obj in foreign_inquiry_states_obj:
+                    how_long_foreign_inquiry = diff_time(foreign_inquiry_state_obj.last_update_date, datetime.datetime.now())
+                    how_long_in_foreign_inquiry.append(how_long_foreign_inquiry)
+
             for wf_state in wf_states:
                 condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
                 wf = cls.objects.filter(filter_by_time & condition & Q(cancel=False)).count()
@@ -141,9 +165,10 @@ class Quotation(SLSDoc):
             # else:
             #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
             #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
-            res[sale_user].append((all_user_quotation,))
+            res[sale_user].append(all_user_quotation)
             res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
-                                   local_price_inquiry_not_responded, foreign_price_inquiry_not_responded))
+                                   local_price_inquiry_not_responded, foreign_price_inquiry_not_responded,
+                                   how_long_in_local_inquiry, how_long_in_foreign_inquiry))
 
         return res
 
@@ -374,6 +399,32 @@ class Quotation(SLSDoc):
             return all_count, local_inquiry_count, local_inquiry_done_count, foreign_inquiry_count, foreign_inquiry_done_count
         else:
             return
+
+    @property
+    def not_over(self):
+        factored_count = 0
+        not_factored_count = 0
+        wh_count = 0
+        order_count = 0
+        if self.pk:
+            qis = self.quotation.all()
+            for item in qis:
+                factor_items = item.qi.all()
+                factor_item = item.qi.aggregate(total=Sum('quantity'))['total'] or 0
+                for fi in factor_items:
+                    supply_locations = fi.supply_locations.local_sepidar_wh_code
+                    if supply_locations:
+                        wh_count += 1
+                    else:
+                        order_count += 1
+                if factor_item > 0:
+                    not_over = factor_item < item.quantity
+                    is_over = factor_item >= item.quantity
+                    if not_over:
+                        not_factored_count += 1
+                    elif not not_over:
+                        factored_count += 1
+        return factored_count, not_factored_count, wh_count, order_count
 
     @property
     def sum_prices(self):
