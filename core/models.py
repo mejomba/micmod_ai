@@ -16,7 +16,7 @@ from django.utils import timezone
 # from comments.models import Comments
 # from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
-from django.db.models import Q, Sum, Value, F
+from django.db.models import Q, Sum, Value, F, Count
 from accounts.models import User
 from tools.utils import c_get as c_get
 from workflow.models import WorkFlow
@@ -100,9 +100,24 @@ class BaseManager(models.Manager):
             #     if wf and (wf.to_user == user):
             #         quotations_record_lst.append(item)
         elif q == 'not_over':
-            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(factor_item_quantity=Coalesce(
+            # q = []
+            # qry = qry.filter(last_work_flow__current_state_name='تایید کارشناس')
+            # qry = qry.prefetch_related('quotation__qi')
+            # for quotation in qry:
+            #     quotation_item = quotation.quotation.all()
+            #     for item in quotation_item:
+            #         factor_item = item.qi.aggregate(total=Sum('quantity'))['total'] or 0
+            #         if factor_item > 0:
+            #             not_over = factor_item != item.quantity
+            #             if not_over:
+            #                 q.append(quotation)
+            #                 break
+            # return q
+            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(
+                factor_item_count=Count('quotation__qi'),  factor_item_quantity=Coalesce(
                 Sum('quotation__qi__quantity'), Value(0)),qi_quantity=Coalesce(
-                Sum('quotation__quantity'), Value(0))).filter(qi_quantity__gt=F('factor_item_quantity'))
+                Sum('quotation__quantity'), Value(0))).filter(factor_item_count__gt=0,
+                                                              qi_quantity__gt=F('factor_item_quantity'))
         else:
             quotations_record_lst = qry
 
