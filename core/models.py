@@ -113,11 +113,10 @@ class BaseManager(models.Manager):
             #                 q.append(quotation)
             #                 break
             # return q
-            quotations_record_lst = qry.filter(last_work_flow__current_state_name='تایید کارشناس').annotate(
-                factor_item_count=Count('quotation__qi'),  factor_item_quantity=Coalesce(
-                Sum('quotation__qi__quantity'), Value(0)),qi_quantity=Coalesce(
-                Sum('quotation__quantity'), Value(0))).filter(factor_item_count__gt=0,
-                                                              qi_quantity__gt=F('factor_item_quantity'))
+            quotations_record_lst = qry.filter(Q(last_work_flow__current_state_name='تایید کارشناس') | Q(last_work_flow__current_state_name='مرحله نهایی')).annotate(
+                factor_item_quantity=Coalesce(Sum('quotation__qi__quantity'), Value(0)),
+                qi_quantity=Coalesce(Sum('quotation__quantity'), Value(0)))\
+                .filter(qi_quantity__gt=F('factor_item_quantity'))
         else:
             quotations_record_lst = qry
 

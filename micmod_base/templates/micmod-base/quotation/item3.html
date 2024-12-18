@@ -5,7 +5,7 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-<div class="card item p-0 my-2 {% if not forloop.last %} sortable-item bg-danger {% endif %}" dir="rtl">
+<div class="card item p-0 my-2 {% if not forloop.last %} sortable-item {% endif %}" dir="rtl">
 {% if form_s.errors %}
 <div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
 {% endif %}
@@ -25,9 +25,15 @@
     {% endfor %}
 
     <div class="card-body p-0">
-        <div class="row-counter rounded d-flex align-items-center question-btn active-form">
+<div class="ribbon ribbon-start ribbon-clip" style="top: 10px">
+                        <div class="ribbon-label">
+                            Ribbon x y z
+                            <span class="ribbon-inner bg-success"></span>
+                        </div>
+                    </div>
+        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 12rem">
             <span class="counter">{{ forloop.counter }}</span>
-            <div class="col ms-4">
+            <div class="col-1 ms-4">
                 <span class="me-2">کد کالا:</span>
                 <span class="code_h" name="code_h">{{ form_s.instance.goods_code }}</span>
             </div>
@@ -35,22 +41,22 @@
                 <span class="me-2">نام کالا:</span>
                 <span name="name_h">{{ form_s.instance.goods_name }}</span>
             </div>
-            <div class="col">
+            <div class="col-1">
                 <span class="me-2">تعداد:</span>
                 <span name="quantity_h">{{ form_s.instance.quantity }}</span>
             </div>
-            <div class="col">
+            <div class="col-2">
                 <span class="me-2">قیمت واحد:</span>
                 <span name="unit-price_h">{{ form_s.instance.goods_q_last_price }}</span>
             </div>
-            <div class="col">
+            <div class="col-2">
                 <span class="me-2">قیمت کل:</span>
                 {% if form_s %}
                     <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>
                 {% endif %}
             </div>
             {% if form_s.has_alt_code %}
-                <span class="bg-info text-white px-2 py-1 rounded position-absolute font-size-12" style="left: 0">آیتم مشابه دارد</span>
+                <span class="bg-info text-white px-2 py-1 rounded position-absolute font-size-12 me-8" style="left: 0">آیتم مشابه دارد</span>
             {% endif %}
         </div>
         <div class="row answer m-0">
