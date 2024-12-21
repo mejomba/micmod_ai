@@ -1080,13 +1080,40 @@ class QuotationListDatatable(AjaxDatatableView):
         <span class="font-size-10 pt-2">انبار</span>
         <span class="badge badge-warning rounded font-size-10">30</span>
          </span>'''
-        res = (f'''<span 'class="mb-5">
-              فاکتور
-              {over[0]} /  {over[1]} </span><br>
-              ''' + f''' <span> انبار
-                    {over[2]} / {over[3]}
-              </span>
-              ''')
+
+        res = f'''
+        <div class="d-flex flex-column">
+            <div class="d-flex justify-content-between">
+                <span>
+                    <i class="ki-duotone ki-cross text-danger">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                    </i>
+                </span>
+                <span class="">
+                    <i class="ki-duotone ki-information-5 text-warning">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                    </i>
+                </span>
+                <span>
+                    <i class="ki-duotone ki-check text-success"></i>
+                </span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>{over[5]}</span>
+                <span>{over[1]}</span>
+                <span>{over[0]}</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between">
+                <span>{over[2]}</span>
+                <span>{over[3]}</span>
+                <span>{over[4]}</span>
+            </div>
+        </div>
+        '''
         row['not_over'] = res
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:

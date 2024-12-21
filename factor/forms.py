@@ -41,6 +41,7 @@ class FactorModelForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
+        self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
 
 
 class FactorItemModelForm(CustomBaseModelForm):

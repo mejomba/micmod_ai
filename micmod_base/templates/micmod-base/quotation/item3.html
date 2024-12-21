@@ -25,31 +25,55 @@
     {% endfor %}
 
     <div class="card-body p-0">
-<div class="ribbon ribbon-start ribbon-clip" style="top: 10px">
-                        <div class="ribbon-label">
-                            Ribbon x y z
-                            <span class="ribbon-inner bg-success"></span>
-                        </div>
-                    </div>
-        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 12rem">
+        <div class="ribbon ribbon-start ribbon-clip" style="top: 13px">
+            <div class="ribbon-label text-black px-6" style="padding-bottom: 2px; padding-top: 2px;">
+            {% with form_s.instance.not_over as not_over %}
+                {% if not_over.0 %}
+                    قطعی
+                {% elif not_over.1 %}
+                    انبار ناقص
+                {% elif not_over.2 %}
+                    سفارش کامل
+                {% elif not_over.3 %}
+                    سفارش ناقص
+                {% elif not_over.4 %}
+                    بدون فاکتور
+                {% endif %}
+                <span class="ribbon-inner
+                {% if not_over.0 %}
+                bg-success
+                {% elif not_over.1 %}
+                bg-light-success
+                {% elif not_over.2 %}
+                bg-light-warning
+                {% elif not_over.3 %}
+                bg-warning
+                {% elif not_over.4 %}
+                bg-white
+                {% endif %}">
+                </span>
+            {% endwith %}
+            </div>
+        </div>
+        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 9rem">
             <span class="counter">{{ forloop.counter }}</span>
-            <div class="col-1 ms-4">
+            <div class="col-1 col ms-4">
                 <span class="me-2">کد کالا:</span>
                 <span class="code_h" name="code_h">{{ form_s.instance.goods_code }}</span>
             </div>
-            <div class="col">
+            <div class="col-5 col">
                 <span class="me-2">نام کالا:</span>
                 <span name="name_h">{{ form_s.instance.goods_name }}</span>
             </div>
-            <div class="col-1">
+            <div class="col-1 col">
                 <span class="me-2">تعداد:</span>
                 <span name="quantity_h">{{ form_s.instance.quantity }}</span>
             </div>
-            <div class="col-2">
+            <div class="col-2 col">
                 <span class="me-2">قیمت واحد:</span>
                 <span name="unit-price_h">{{ form_s.instance.goods_q_last_price }}</span>
             </div>
-            <div class="col-2">
+            <div class="col-3 col">
                 <span class="me-2">قیمت کل:</span>
                 {% if form_s %}
                     <span name="total-price_h">{{ form_s.instance.goods_q_last_price|mul:form_s.instance.quantity|intcomma }} </span>

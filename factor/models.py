@@ -258,7 +258,7 @@ class FactorItem(BaseModel):
                 self.supply_locations_id = self.supply_location.split('__')[-1]
 
         super().save(force_insert, force_update, using, update_fields)
-        total_quantity = self.qi.total_quantity_in_factor
+        total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
         if total_quantity >= self.qi.quantity:
             self.qi.is_over = True
             self.qi.save()

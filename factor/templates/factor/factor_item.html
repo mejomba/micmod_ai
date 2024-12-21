@@ -10,11 +10,18 @@
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
 <div class="mt-10 mb-5 badge bg-light-warning py-2 px-3 rounded font-size-15">
-    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در
+<span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
     <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>
-    آمده است به رنگ
+<span>    آمده است به رنگ</span>
     <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>
-    در انتهای لیست نمایش داده میشوند
+<span>    در انتهای لیست نمایش داده میشوند</span>
+</div>
+<div class="d-flex my-3">
+    {% for factor in quotation.q.all %}
+        {% if form.instance.pk != factor.pk %}
+            <a class="mx-3 text-primary badge pb-1 badge-light-primary border border-primary font-size-12" href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
+        {% endif %}
+    {% endfor %}
 </div>
 <div class="bg-white rounded border p-5 pb-20 mb-20">
     <!-- factor header -->
@@ -85,11 +92,11 @@
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-35">تخفیف نوع ۱</span>
-                        <input class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">
+                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-35">درصد تخفیف روی همه</span>
-                        <input class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">
+                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">
                     </span>
 
                 </div>
@@ -186,9 +193,13 @@
                             <span class=" cursor-pointer">
                                 <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
                                 <b>|</b>
-                                <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
+                            {% with qi.fee as qi_fee %}
+                            <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi_fee }}">{{ qi_fee }}</span>
+                            {% endwith %}
                                 <br>
-                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
+                                {% with qi.total_quantity_in_factor as tqif %}
+                                <span class="font-size-11 text-success"> فاکتور شده: </span> <span>({{ tqif.0|intcomma }}, <span class="text-success">{{ tqif.1|intcomma }}</span>)</span>
+                                {% endwith %}
                                 <b>|</b>
                                  <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>
                             </span>
@@ -247,7 +258,7 @@
                                 |
                                 <span class="row-total-price pt-1 text-info"></span>
                             </span>
-                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </div>
                     </span>
                     <div class="col-2 px-1">
@@ -296,7 +307,9 @@
                             <span class=" cursor-pointer">
                                 <span class="font-size-11 text-info"> تعداد: </span> <span class="qi_quantity" data-quantity="{{ qi.quantity }}">{{ qi.quantity|intcomma }}</span>
                                 <b>|</b>
-                                <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi.fee }}">{{ qi.fee }}</span>
+                                {% with qi.fee as qi_fee %}
+                                <span class="font-size-11 text-danger"> قیمت: </span> <span class="qi_price" data-price="{{ qi_fee }}">{{ qi_fee }}</span>
+                                {% endwith %}
                                 <br>
                                 <b>|</b>
                                 <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
@@ -357,13 +370,13 @@
                                 |
                                 <span class="row-total-price pt-1 text-info"></span>
                             </span>
-                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </div>
                     </span>
                     <div class="col-2 px-0 d-flex">
                         <span class="w-75">
                             {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
-                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </span>
                         <span class="w-25">
                             <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >
@@ -468,10 +481,21 @@
         commentFormGroup.appendChild(commentFormForCopy)
     }
 
+    function factor_calculate_price_all_rows(){
+        const fis = document.querySelectorAll('.factor_item_self')
+        fis && fis.forEach(function (factor_row){
+            factor_calculate_price(null, factor_row)
+        })
+    }
 
-function factor_calculate_price(target) {
+function factor_calculate_price(target, direct_target=null) {
         debugger
-    const elem = findAncestor(target, "factor_item_self")
+    let elem;
+    if (!direct_target) {
+        elem = findAncestor(target, "factor_item_self")
+    } else {
+        elem = direct_target
+    }
     const final_price = elem.querySelector('input[name$="-price"]')
     const total_price = elem.querySelector('[class*="row-total-price"]')
     const quantity = elem.querySelector('input[name$="-quantity"]')
@@ -557,14 +581,15 @@ function factor_calculate_price(target) {
     if (!m_sum) {
         m_sum = 0
     }
-    const t_prices = $(document).find('.quotation_total_price')
+    const t_prices = document.querySelector('.factor_total_price')
     const additionElm = document.querySelector('#id_addition')
     const taxElm = document.querySelector('#id_tax')
-    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
-    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
-    for (let i = 0; i < t_prices.length; i++) {
-        t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
-    }
+    const additionValue = 0 //additionElm.value ? parseFloat(additionElm.value) : 0
+    const topTaxValue = 0 //taxElm.value ? parseFloat(taxElm.value) : 0
+    t_prices.innerText = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    //for (let i = 0; i < t_prices.length; i++) {
+        //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    //}
 
 }
 
