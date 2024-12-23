@@ -6,18 +6,8 @@
 
 {% block title %}استعلام قیمت{% endblock title %}
 {% block extra_css %}
-    <!-- Responsive Table css -->
-    {#<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />#}
-    <!-- DataTables -->
-    {#    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />#}
-    {#    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />#}
 
-    <!-- Responsive datatable examples -->
-    {#    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />#}
-
-{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css"/>#}
     <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css"/>
-{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet"#}
     <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css"/>
 
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
@@ -31,10 +21,6 @@
 {% endblock %}
 
 {% block content %}
-    <!-- ============================================================== -->
-    <!-- Start right Content here -->
-    <!-- ============================================================== -->
-
 {% endblock content %}
 {% block form_content %}
     {% csrf_token %}
@@ -53,6 +39,10 @@
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
                 {% render_field_by_order form form.submit_for_qi form.active_main_item label='on-border' margin_b=5 %}
+                <span class="d-none">{{ form.variants_json }}</span>
+
+                {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
+
             </div>
         </div>
         <div class="col-2">
@@ -258,21 +248,14 @@
         })
     </script>
 
-    {#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
-{#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>#}
     <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
-{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>#}
     <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
-
-{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
-
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
     <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
     <script src="{% static 'js/local/jszip.min.js' %}"></script>
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
+
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
     {{ form.media.js }}
 

@@ -241,6 +241,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
                 pass
             print('err cons')
         super(PriceInquiryResult2CreateForm, self).__init__(*args, **kwargs)
+        # self.fields['variants_json'] = forms.HiddenInput()
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
