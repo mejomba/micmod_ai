@@ -34,16 +34,24 @@
         }
     </style>
 
-<div class="container" dir="rtl">
-    <div>
+<div class="position-absolute" style="right: 0">
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
     <a href="{% url "micmod_base:quotations.print-view" id=data.id %}" class="noprint btn btn-primary btn-bordered mb-5 mt-5"> پرینت پیش فاکتور کارشناس</a>
-        </div>
+    <a href="{% url "micmod_base:print_customer" id=data.id %}?customer_goods_code_url_param={{ customer_goods_code_url_param }}"
+       class="noprint btn btn-primary btn-bordered mb-5 mt-5">
+        {% if customer_goods_code_url_param == '0' %}
+            بدون کد کالای مشتری
+        {% elif customer_goods_code_url_param == '1' %}
+        با کد کالای مشتری
+        {% endif %}
+    </a>
+</div>
+<div class="container mt-10" dir="rtl">
     <div class="row">
         <div class="col">
         </div>
         <div class="col text-center">
-            <h1>پیش فاکتور فروش کالا و خدمت</h1>
+            <h2>پیش فاکتور فروش کالا و خدمت</h2>
         </div>
         <div class="col text-end">
             <span data-key="serial_number">شماره سریال : </span>
@@ -70,12 +78,23 @@
     <div class="row">
 
         <div class="col">
-            <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">میکرومدرن</span>
+            <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">
+            {% if data.is_official  %}
+                رهاورد تجارت آینده
+            {% else %}
+            میکرومدرن
+        {% endif %}
+        </span>
             <p data-key="national_id">شناسه ملی: </p>
             <p data-key="address">نشانی: </p>
         </div>
         <div class="col">
-            <p data-key="economical_number">شماره اقتصادی:</p>
+            <span data-key="economical_number">شماره اقتصادی:</span>
+            <span class="ms-5">
+            {% if data.is_official  %}
+                411563971988
+            {% endif %}
+            </span>
             <p data-key="postal_code">کد پستی:</p>
         </div>
         <div class="col">
@@ -153,27 +172,30 @@
     <div class="row">
         <table class="table table-bordered border-dark mb-0">
             <thead>
-            <tr>
-                <th scope="col">ردیف</th>
-                <th scope="col">کد کالا</th>
-                <th scope="col" >شرح کالا/ خدمت</th>
-                <th scope="col">تعداد/ مقدار</th>
+            <tr class="text-center">
+                <th scope="col" class="text-center">ردیف</th>
+                <th scope="col" class="text-center">کد کالا</th>
+                <th scope="col" class="text-center" >شرح کالا/ خدمت</th>
+                {% if with_customer_goods_code == '1' %}
+                    <th scope="col" class="text-center">کد کالای مشتری</th>
+                {% endif %}
+                <th scope="col" class="text-center">تعداد/ مقدار</th>
 {#                <th scope="col">واحد</th>#}
-                <th scope="col">مبلغ واحد</th>
-                <th scope="col">مبلغ کل</th>
+                <th scope="col" class="text-center">مبلغ واحد</th>
+                <th scope="col" class="text-center">مبلغ کل</th>
             </tr>
             </thead>
-            {% for form_ in formset %}
             <tbody class="border border-dark">
+            {% for form_ in formset %}
             <tr>
                 {% if form.currency_ref.value == 1 %}
-                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=0 with_comments=with_comments %}
+                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=0 with_customer_goods_code=with_customer_goods_code %}
                 {% else %}
-                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=4 with_comments=with_comments %}
+                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=4 with_customer_goods_code=with_customer_goods_code %}
                 {% endif %}
             </tr>
-            </tbody>
             {% endfor %}
+            </tbody>
         </table>
     </div>
 </div>
@@ -210,7 +232,7 @@
                     <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1" >{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
-                    <p class=" my-1" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class=" my-1 bold" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
                 {% endwith %}
                 </div>
             </div>
@@ -223,7 +245,7 @@
 
         <div class="col mt-6" style="border: 2px solid black;">
             <div class="row row-cols-3">
-                <div class="col">شرایط و نحوه ی سفارش</div>
+                <div class="col font-size-10">شرایط و نحوه‌ فروش</div>
                 <div class="col d-flex">
                     <div class="d-flex">
                         <p class="px-3 mt-1"> نقدی</p>

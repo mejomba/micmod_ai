@@ -1,3 +1,10 @@
+function findAncestor(el, cls) {
+    if (el.classList.contains(cls)) {
+        return el
+    }
+    while ((el = el.parentElement) && !el.classList.contains(cls)) ;
+    return el;
+}
 const baseUrl = window.origin
 const footerToggle = document.querySelector('.footer-toggle');
 const formFooterContainer = document.getElementById('form-footer-container')
@@ -99,22 +106,22 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator(on_load=null) {
+function addCommaSeperator(on_load=null, step=null, sep=',') {
     let inputNumberValue;
     let numberWithComma;
 
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.addEventListener('keyup', function (e) {
-            inputNumberValue = e.currentTarget.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = e.currentTarget.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             e.currentTarget.value = numberWithComma.reverse_string()
         })
         if (on_load){
-            inputNumberValue = item.value.replaceAll(',', '').reverse_string();
+            inputNumberValue = item.value.replaceAll(sep, '').reverse_string();
             numberWithComma = inputNumberValue;
-            numberWithComma = commaSeperator(inputNumberValue)
+            numberWithComma = commaSeperator(inputNumberValue, step, sep)
             item.value = numberWithComma.reverse_string()
         }
     })
@@ -171,7 +178,7 @@ function release_main_container() {
     get_main_container().release();
 }
 
-function custom_ajax_post(form, url, element) {
+function custom_ajax_post(form, url, element, reload_=null) {
     let formData = new FormData(form);
     $.ajax({
         type: 'POST',
@@ -187,7 +194,17 @@ function custom_ajax_post(form, url, element) {
         beforeSend: block_main_container,
         success: function (data) {
             html = data['res'];
-            element.html(html);
+            if (element){
+                element.html(html);
+            }
+            if (reload_){
+                console.log('reload...')
+                setTimeout(function (){
+                    var loc = window.location;
+                    window.location = loc.protocol + '//' + loc.host + loc.pathname + loc.search;
+                    // location.reload()
+                }, 500)
+            }
             run_scripts(html);
         },
         error: function () {
@@ -198,7 +215,6 @@ function custom_ajax_post(form, url, element) {
 }
 
 function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
-    debugger
     $.ajax({
         type: 'POST',
         url: url,
@@ -214,7 +230,11 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
         success: function (data) {
             if(element) {
                 html = data['res'];
-                element.html(html);
+                try {
+                    element.html(html);
+                } catch (e) {
+                    element.innerHTML = html
+                }
                 run_scripts(html);
             }
             if(reload_page){
@@ -362,7 +382,6 @@ function copyToClipboard(elem) {
             const modelName = item.dataset.model_name
             const objectId = item.dataset.object_id
             const appName = item.dataset.app_name
-            debugger
         let new_url = `/core/ajax/changelog/${appName}/${modelName}/${objectId}/`
         $.ajax({
             type: 'GET',
@@ -373,7 +392,6 @@ function copyToClipboard(elem) {
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 document.querySelector('#id-empty-modal-body-lg').innerHTML = html
             },
@@ -422,19 +440,20 @@ function copyToClipboard(elem) {
 
 function ajax_submit
 (form, reload_=null, elem_for_load=null) {
-        debugger
     $.ajax({ // create an AJAX call...
-        beforeSend: function (){
-            debugger
+        beforeSend: function (xhr){
             if (elem_for_load){
                 console.log('load...')
+            }
+            if (!$(form).find('input[name="csrfmiddlewaretoken"]').length) {
+                const csrfToken = getCookie('csrftoken');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
             }
         },
         data: $(form).serialize(), // get the form data
         type: $(form).attr('method'), // GET or POST
         url: $(form).attr('action'), // the file to call
         success: function (data){
-            debugger
             if (reload_){
                 window.location.reload()
             }
@@ -442,7 +461,35 @@ function ajax_submit
     });
 }
 
+function ajax_submit_with_file(form, reload_=null, elem_for_load=null) {
+    $.ajax({
+        beforeSend: function (xhr) {
+            if (elem_for_load) {
+                console.log('load...');
+            }
+            if (!$(form).find('input[name="csrfmiddlewaretoken"]').length) {
+                const csrfToken = getCookie('csrftoken');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            }
+        },
+        data: new FormData(form), // استفاده از FormData
+        type: $(form).attr('method'), // GET یا POST
+        url: $(form).attr('action'), // آدرس سرور
+        processData: false, // غیرفعال کردن پردازش داده‌ها
+        contentType: false, // تنظیم خودکار content type
+        success: function (data) {
+            if (reload_) {
+                window.location.reload();
+            }
+        },
+        error: function (error) {
+            console.error("Error:", error);
+        }
+    });
+}
+
 function initializeDatepickers(elem_id=null) {
+    console.log("======  initialize Datepickers  =====", elem_id)
     if(elem_id){
         elem_id.forEach(function (id){
             console.log(elem_id, $(`#${id}`))
@@ -466,3 +513,214 @@ function ajax_delete(elms) {
         })
     }
 }
+
+function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
+                          formatRepoDL=null, formatRepoSelection=null){
+    let select2_container_width;
+    // target_element => '#target_element'
+    $(select2_element).select2({
+        ajax: {
+            url: url,
+            dataType: "json",
+            type: "GET",
+            data: function (data) {
+                return {q: data.term, page: data.page}
+            },
+            processResults: function (data, params) {
+                params.page = params.page || 1;
+                return {
+                    results: data.items,
+                    pagination: {
+                        more: (params.page * 30) < data.total_count
+                    }
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: minimumInputLength || 1,
+        placeholder: {
+            text: '' || placeholder
+        },
+        allowClear: false,
+        templateResult: formatRepoDL || defaultFormatRepoDL,
+        templateSelection: formatRepoSelection || defaultFormatRepoSelection
+    });
+
+    $(select2_element).on("select2:select", function (e) {
+        const data = e.params.data;
+        const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
+        $(document).find(target_element).val(data[id_field])
+        document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+    })
+
+    $(select2_element).on("select2:open", function (e){
+         $('#id_kt_empty_modal_lg').css({
+                'visibility': 'hidden',
+                'pointer-events': 'none',
+         });
+        document.querySelector(`${select2_element}`).parentElement.classList.remove('col')
+        const select2_container = document.querySelector('.select2-container--below')
+        select2_container_width = select2_container.style.width
+        select2_container.style.width = '100%'
+    })
+
+    $(select2_element).on("select2:close", function () {
+        // Restore modal settings after closing select2
+        $('#id_kt_empty_modal_lg').css({
+            'opacity': '1',
+            'visibility': 'visible',
+            'pointer-events': 'auto'
+        });
+        document.querySelector('.select2-container--below').style.width = select2_container_width
+        document.querySelector(`${select2_element}`).parentElement.classList.add('col')
+    })
+}
+
+function defaultFormatRepoDL(repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+    var $container = $(`
+        <div class='d-flex'>
+        <span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
+        <span>${repo.text}</span>
+        </div>
+    `);
+    return ($container)
+}
+
+function defaultFormatRepoSelection(repo) {
+    return repo.id || repo.text
+}
+
+function addWindowHighlightSections(color = 'rgba(0, 128, 255, 0.3)') {
+    const topHighlight = document.createElement('div');
+    const  help_text = 'برای اسکرول خودکار ابتدا همه ردیف ها را بسته و ردیف مورد نظر را به اینجا بکشید'
+    topHighlight.innerText = help_text
+    topHighlight.id = 'topHighlight'
+    Object.assign(topHighlight.style, {
+        position: 'fixed',
+        top: '100px',
+        left: '0',
+        width: '90%',
+        height: '100px',
+        textAlign: 'center',
+        color: 'blue',
+        fontSize: '18px',
+        backgroundColor: color,
+        zIndex: '9999',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+    document.body.appendChild(topHighlight);
+
+    const bottomHighlight = document.createElement('div');
+    bottomHighlight.innerText = help_text
+    bottomHighlight.id = 'bottomHighlight'
+    Object.assign(bottomHighlight.style, {
+        position: 'fixed',
+        bottom: '100px',
+        left: '0',
+        width: '90%',
+        height: '100px',
+        textAlign: 'center',
+        color: 'blue',
+        fontSize: '18px',
+        backgroundColor: color,
+        zIndex: '9999',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+    document.body.appendChild(bottomHighlight);
+}
+    function removeWindowHighlightSections(){
+        const a = document.querySelector('#bottomHighlight');
+        const b = document.querySelector('#topHighlight');
+        if (a){a.remove()}
+        if (b){b.remove()}
+    }
+
+function generate_drag_drop(container_id='sortable-container', draggable_items_selector='#sortable-container .sortable-item', index_field_id_selector='-index'){
+    var sortable = new Sortable(document.getElementById(container_id), {
+        animation: 200,
+        handle: '.handel-drop',
+        ghostClass: 'drag-drop',
+        onStart: function (evt){
+            addWindowHighlightSections('rgba(255, 0, 0, 0.2)');
+        },
+        onEnd: function (evt) {
+            var items = document.querySelectorAll(draggable_items_selector);
+            items.forEach(function(item, index) {
+                item.querySelector(`[id*=${index_field_id_selector}]`).value = index
+            });
+            removeWindowHighlightSections()
+        },
+        onUpdate: function (evt) {
+            evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
+        },
+        onChange: function (evt) {
+            const threshold = 200; // فاصله از لبه صفحه برای شروع اسکرول
+            const scrollSpeed = 100; // سرعت اسکرول
+            const topHighlight = document.createElement('div');
+
+            // چک کردن موقعیت موس
+            const mouseY = evt.originalEvent.clientY;
+            console.log('mouseY= ', mouseY)
+
+            // اگر موس به بالای صفحه نزدیک شد، اسکرول به سمت بالا
+            if (mouseY < threshold) {
+                window.scrollBy(0, -scrollSpeed);
+            }
+            // اگر موس به پایین صفحه نزدیک شد، اسکرول به سمت پایین
+            else if ((window.innerHeight - mouseY) < threshold) {
+                window.scrollBy(0, scrollSpeed);
+            }
+        }
+    });
+}
+
+        const submitGenericPaymentBtns = document.querySelectorAll('[id*="id_payment__"]')
+    submitGenericPaymentBtns.forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            let generic_payment_url = item.dataset.form_url;
+            const pk = item.dataset.pk;
+            const comment_type = item.dataset.comment_type
+            const comment_input_id = generic_payment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const generic_payment_element = $('#id-empty-modal-body')
+            // const commentFormForCopy = document.getElementById(`id_generic_payment_form_for_copy__${pk}`)
+            const GenericPaymentFormGroup = document.querySelector(`[id*="generic-payment-form-group__${pk}"]`)
+            const g_from_date = GenericPaymentFormGroup.querySelector('[id*="g_from_date"]')
+            const g_to_date = GenericPaymentFormGroup.querySelector('[id*="g_to_date"]')
+            const total_amount = GenericPaymentFormGroup.querySelector('[id*="total_amount"]')
+            const description = GenericPaymentFormGroup.querySelector('[id*="description"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            if (father){
+                const images = father.querySelectorAll('img')
+                images.forEach(function (img){
+                    img.classList.remove('border')
+                    commentCounter.innerHTML = '0'
+                })
+            }
+
+            if (g_from_date && g_to_date && total_amount) {generic_payment_url += `?g_from_date=${g_from_date.value}&g_to_date=${g_to_date.value}&total_amount=${total_amount.value}&description=${description.value}`}
+            custom_ajax_get(comment_form, generic_payment_url, generic_payment_element)
+            // [`${g_to_date.getAttribute('id')}, ${g_from_date.getAttribute('id')}`]
+        }) // end eventListener
+    }) // end forEach
+    function addGenericPaymentInput(){
+        const pkElement = document.querySelector('[id*="payment_object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const GenericPaymentFormGroup = document.querySelector(`[id*="generic-payment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_generic_payment_form_for_copy__${pk}`)
+        GenericPaymentFormGroup.innerHTML = ''
+        GenericPaymentFormGroup.appendChild(commentFormForCopy)
+    }

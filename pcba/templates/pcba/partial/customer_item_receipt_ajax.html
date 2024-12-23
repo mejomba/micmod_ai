@@ -1,0 +1,93 @@
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+
+<style>
+    .select2-container--default{
+        width: 100% !important;
+    }
+</style>
+
+{% csrf_token %}
+
+<form method="POST" action="
+        {% if form.instance.pk %}{% url "pcba:customer.item.receipt.view" form.instance.pk %}{% else %}{% url "pcba:customer.item.receipt.view" %}{% endif %}"
+      id="customer-item-receipt-form">
+    <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow">
+        <div class="col">
+            <div class="row row-cols-1 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">رسید کالای مشتری</h4>
+                <div class="col">
+                    <div class="row row-cols-8">
+                        {% render_field_by_order form form.title form.contract form.parent form.receipt_date form.status form.total_board_receipt_count label='on-border' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+{#        {% include 'pcba/partial/items_in_customer_receipt_ajax.html' %}#}
+
+
+    </div>
+    <input type="submit" name="customer_item_receipt" id="customer_item_receipt" value="ثبت" class="btn btn-primary">
+</form>
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        {#let parent_placeholder  = document.querySelector('#parent_name')#}
+        {#let contract_placeholder  = document.querySelector('#contract_name')#}
+        {#parent_placeholder = parent_placeholder.innerText#}
+        {#contract_placeholder = contract_placeholder.innerText#}
+
+        {#select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)#}
+        {#select2_generate("#id_parent_select2", '#id_parent', '/pcba/parent/select2/', parent_placeholder)#}
+
+        $('#customer-item-receipt-form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+        setInterval(function (){
+            $("#id_kt_empty_modal_lg").hide()
+        }, 500)
+    })
+
+    </script>
+<script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+<script>
+    {#select2_generate('#id_goods_code_fk3_select2', '#id_goods_code_fk3', '/inquiry/items_list/', 'goods_code')#}
+</script>
+
+<script>
+    const CustomerItemReceipt = document.querySelector('#item_in_customer_receipt')
+    CustomerItemReceipt && CustomerItemReceipt.addEventListener('click', function (e){
+        e.preventDefault()
+        debugger
+        const item_form = $('#id_form_item')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                item_form.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+</script>

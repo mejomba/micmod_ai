@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 
-<form action="{% if form.instance.pk %}{% url 'extra_data:customer_document.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_document.create' %}{% endif %}" method="POST" id="pay-accounting-document-form" enctype="multipart/form-data">
+<form action="{% if form.instance.pk %}{% url 'payment:local.payment.doc.update' form.instance.pk %}{% else %}{% url 'payment:local.payment.doc.create' %}{% endif %}" method="POST" id="pay-accounting-document-form" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="row row-cols bg-white rounded border my-10 pt-10 position-relative shadow-sm mx-xl-10 ">
         <h4 class="position-absolute" style="top: -10px">اسناد پرداخت (مالی)</h4>
@@ -19,10 +19,11 @@
     </div>
 <input type="submit" value="ثبت" id="submit-customer-contract" class="btn btn-primary ms-10">
 </form>
-
+<script src="{% static 'js/base_define.js' %}"></script>
 <script>
     $('#pay-accounting-document-form').on('submit', function (e){
         debugger
+        removeCommaSeperator()
         e.preventDefault()
         var doc_type = $('#id_doc_type').val();
         var description = $('#pay-accounting-document-form #id_description').val();
@@ -59,5 +60,5 @@
             $('#id_kt_empty_modal_lg').hide();
         }, 500)
     })
-
+addCommaSeperator(true)
 </script>

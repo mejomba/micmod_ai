@@ -4,7 +4,7 @@
 {% load jalali_tags %}
 {% load accounts_tag %}
 
-{% block title %}Orders{% endblock title %}
+{% block title %}لیست مشتری{% endblock title %}
 {% block extra_css %}
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -15,8 +15,10 @@
     <!-- Responsive datatable examples -->
     <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
 
@@ -34,12 +36,13 @@
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-        <div class="main-content">
+        <div class="main-content" id="main-content">
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
                     <div>
                         <a href="{% url 'extra_data:customer.create' %}" class="btn btn-primary" target="_blank">ایجاد</a>
+                        <div href="{% url 'core:import_customer_from_sepidar' %}" data-url="{% url 'core:import_customer_from_sepidar' %}" class="btn btn-secondary cursor-pointer" onclick="import_customer_from_sepidar(event)">وارد کردن مشتری از سپیدار</div>
 {#                        <a href="{% url 'extra_data:customer_document.create' %}" class="btn btn-primary" target="_blank">داکیومنت ها</a>#}
                     </div>
                             <div class="col-12">
@@ -90,14 +93,24 @@
             },
         );
     });
+
+    function import_customer_from_sepidar(event){
+        custom_ajax_get(null, event.currentTarget.dataset.url, $('.page-content'))
+    }
     </script>
 
-    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
+{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
 {% endblock extra_js %}

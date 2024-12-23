@@ -7,7 +7,7 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-{% block title %}Factor{% endblock title %} {"title": ""})
+{% block title %}فاکتور{% endblock title %} {"title": ""})
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -44,7 +44,9 @@
 
 
     {% if obj %}
+        <div>
         {% include 'factor/factor_item.html' with form_s=form_s quotation=quotation %}
+        </div>
     {% else %}
         <!-- search quotation-->
         <div class="mb-4 limit_query">
@@ -73,6 +75,9 @@
           <input class="form-check-input" type="checkbox" id="inlineCheckbox6" value="search_part_number" name="search_part_number">
           <label class="form-check-label" for="inlineCheckbox6">پارت نامبر</label>
         </div>
+        <div class="form-check form-check-inline">
+            <a href="{% url 'factor:factor.direct' %}" class="btn btn-primary">فاکتور مستقیم</a>
+        </div>
     </div>
         <div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div>
 
@@ -89,32 +94,12 @@
 {% include "core/partial/add_formset_button.html" %}
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
-{#        {% include "micmod-base/base/create_info_bar.html" %}#}
     </div>
-        {% if form.instance.quotation_rel.all.last.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
-            {% elif form.instance.quotation_self.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
-        {% endif %}
 
-        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
-            <div><label class="col-form-label">استعلام سریع</label></div>
-            <div>
-                <span class="switch switch-brand">
-                    <label>
-                        {{ form.force_inquiry }}
-                        <span></span>
-                    </label>
-                </span>
-
-            </div>
-        </div>
-
-    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
-         m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
-         onclick="do_print({{ data }})" name="do_print">
-        پرینت پیش فاکتور
-    </div>
+    <a class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
+         href="{% url 'factor:factor.print' form.instance.id %}" target="_blank">
+        پرینت فاکتور
+    </a>
     {% else %}
         <div class="px-2 mx-auto">
         </div>
@@ -135,6 +120,10 @@
         </div>
     </div>
     </div>
+
+    {% include 'core/partial/empty_modal_sm.html' %}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
 
 {% endblock form_footer_extra %}
 
@@ -187,5 +176,26 @@
             elem.classList.remove('text-danger')
         }
     }
+
+    function sync_supply_location(event){
+        debugger
+        const supply_locations = event.currentTarget.parentElement.querySelector('[id*="-supply_locations"]')
+        supply_locations.value = event.currentTarget.value
+    }
+    {#const factor_items = document.querySelectorAll('.factor_item')#}
+    {#if (factor_items){#}
+    {#    factor_items.forEach(function (fi){#}
+    {#        const id_supply_location = fi.querySelector('#id_supply_location')#}
+    {#        id_supply_location && id_supply_location.addEventListener('change', function (e){#}
+    {#            debugger#}
+    {#            const supply_locations = fi.querySelector('[id*="-supply_locations"]')#}
+    {#            supply_locations.value = e.currentTarget.value#}
+    {#        })#}
+    {#    })#}
+    //}
     </script>
+    <script src="{% static 'js/local/sortable.min.js' %}"></script>
+<script>
+generate_drag_drop()
+</script>
 {% endblock extra_js %}

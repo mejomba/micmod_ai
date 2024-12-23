@@ -1,7 +1,7 @@
 import uuid
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
-
+from collections import Counter
 from django.db.models import F
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
@@ -39,7 +39,10 @@ class QuotationManager(models.Manager):
 class QuotationItemManager(BaseManager):
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.order_by('id')
+        return qs.order_by('index', 'id')
+      
+    def get_query_set_order_by_index(self):
+        return super().get_queryset().order_by('index', 'id')
 
     def all_quotations_for_factor(self):
         return self.get_queryset().order_by('is_over', 'id')
@@ -103,7 +106,12 @@ class Quotation(SLSDoc):
             f_date = Persian(from_date).gregorian_datetime()
             t_date = Persian(to_date).gregorian_datetime()
             filter_by_time = Q(created_date__range=(f_date, t_date))
-        sales_user = current_user.team.all().order_by('z_index')
+        is_sales_admin = current_user.groups.filter(name='sales_admin').exists()
+        if is_sales_admin:
+            sales_user = current_user.team.all().order_by('z_index')
+        else:
+            sales_user = [current_user]
+
         res = dict()
         inquiry_state = 'استعلام قیمت'
         for sale_user in sales_user:
@@ -121,26 +129,21 @@ class Quotation(SLSDoc):
                                       Q(cancel=False)
             for wf_state in wf_states:
                 condition = Q(last_work_flow__to_user=sale_user) & Q(last_work_flow__current_state_name=wf_state)
-                # if filter_by_time:
-                wf = cls.objects.filter(filter_by_time & condition).count()
+                wf = cls.objects.filter(filter_by_time & condition & Q(cancel=False)).count()
                 wf_cancel = cls.objects.filter(filter_by_time & condition & Q(cancel=True)).count()
-                # else:
-                #     wf = cls.objects.filter(condition).count()
-                #     wf_cancel = cls.objects.filter(condition & Q(cancel=True)).count()
                 res[sale_user].append((wf, wf_cancel))
 
-            # if from_date and to_date:
-            #     f_date = Persian(from_date).gregorian_datetime()
-            #     t_date = Persian(to_date).gregorian_datetime()
-            #     filter_by_time = Q(created_date__range=(f_date, t_date))
             local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
+            local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct()#.count()
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
+            foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
             all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
             # else:
             #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
             #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
             res[sale_user].append((all_user_quotation,))
-            res[sale_user].append((foreign_price_inquiry, local_price_inquiry))
+            res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
+                                   local_price_inquiry_not_responded, foreign_price_inquiry_not_responded))
 
         return res
 
@@ -424,8 +427,8 @@ class QuotationItem(BaseModel):
     goods_code_fk = models.ForeignKey('extra_data.Item', on_delete=models.DO_NOTHING, related_name='quotation_item_rel', null=True, blank=True)
     itemid = models.BigIntegerField(null=True, blank=True, verbose_name=_("itemid"))
     goods_name = models.CharField(null=True, blank=True, verbose_name=_("goods_name"), max_length=200)
-    stock_amount = models.BigIntegerField(null=True, blank=True, verbose_name=_("stock_amount"))
-    stock_amount_res = models.BigIntegerField(null=True, blank=True, verbose_name=_("stock_amount_res"))
+    stock_amount = models.FloatField(null=True, blank=True, verbose_name=_("stock_amount"))
+    stock_amount_res = models.FloatField(null=True, blank=True, verbose_name=_("stock_amount_res"))
     stock_json = models.JSONField(null=True, blank=True, verbose_name=_("stock_json"))
     goods_sheet_date = models.DateField(null=True, blank=True, verbose_name=_("goods_sheet_date"))
     goods_price_sheet1 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
@@ -537,6 +540,8 @@ class QuotationItem(BaseModel):
                            Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
                            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
 
+        assigned_trade = (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+
         if inquiry_type == 'trade':
             if path == past_path:
                 inquiry_type_filter = (Q(quotation__cancel=True) | Q(is_deleted=True) |
@@ -557,22 +562,30 @@ class QuotationItem(BaseModel):
                                        Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)) & \
                                       (Q(quotation__cancel=False) & Q(is_deleted=False))
 
+        # inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
+        #                            (
+        #                                 Q(quotation__last_work_flow__state='استعلام قیمت') &
+        #                                 Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
+        #                                 (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+        #                            )
+
+
         inquiry_state_condition = Q(quotation__last_work_flow__current_state_name='استعلام قیمت') | \
                                    (
-                                        Q(quotation__last_work_flow__state='استعلام قیمت') &
-                                        Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
-                                        (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
+                                      Q(quotation__last_work_flow__state='استعلام قیمت') &
+                                      Q(quotation__last_work_flow__current_state_name='پیش فاکتور اولیه') &
+                                      (Q(task_start=True) | Q(task_start2=True) | Q(assigned_trade_user__isnull=False) | Q(assigned_trade_user2__isnull=False))
                                    )
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
-            # x = cls.objects.full_queryset(inquiry_type_filter, quotation__last_work_flow__current_state_name='استعلام قیمت', is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
             x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
+            # x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
         return x
 
     @classmethod
     def get_inquiry_report(cls):
-        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct()#.order_by('username')
+        trade_user = User.objects.filter(groups__name__in=['trade_user', 'trade_admin']).distinct().order_by('z_index')
 
         from pytz import timezone as ptz
         tz = ptz("UTC")
@@ -609,7 +622,7 @@ class QuotationItem(BaseModel):
             #                                    quotation__cancel=False, quotation__last_work_flow__current_state_name='استعلام قیمت').count() #all_tasks_qs.filter(time_filter).count() - all_price_inquiry_done
 
 
-            d[user.username] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
+            d[user] = today_assigned, today_task_start, today_all_price_inquiry_done, reminder_task, all_tasks, task_not_start_filter
         return d
 
     def pre_process_on_post_method(self, data=None):

@@ -1,15 +1,25 @@
 import math
+import uuid
 from typing import List, Dict
 import pandas
 import pytz
+from ajax_datatable.utils import parse_date
 from dateutil.relativedelta import relativedelta
 import time
 
+from django.db import models
+from django.db.models import Q
+
 from _keenthemes.settings import TIME_ZONE
+# from factor.forms import FactorModelForm, FactorItemModelForm
+# from factor.models import Factor, FactorItem
+# from micmod_base.models import Quotation
+# from order.models import Order
 from . import myjalali
 import datetime
 # from workflow.models import FlowAdminGroup, WorkFlow
 from forbiddenfruit import curse
+from requests.structures import LookupDict
 
 
 def c_get(obj, attrs_str, default_value=None):
@@ -58,20 +68,52 @@ def elapsed_time(m_datetime):
     delta = datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)) - m_datetime
     relative_delta = relativedelta(datetime.datetime.now(tz=pytz.timezone(TIME_ZONE)), m_datetime)
     m_str = ""
-    if delta.seconds < 60:
-        return f"تقریبا هم اکنون"
-    elif delta.seconds < 2592000:  # day&hour&minute
-        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
-        m_str += " و " if m_str else ""
-        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
-        m_str += " و " if m_str and relative_delta.hours else ""
-        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
-    else:# year&month&day
+
+    if relative_delta.years:
         m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
-        m_str += " و " if m_str else ""
+        m_str += ' و '
         m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
-        m_str += " و " if m_str and relative_delta.months else ""
+        m_str += ' و '
         m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    elif relative_delta.months:
+        m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+    elif relative_delta.days:
+        m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.hours:
+        m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    elif relative_delta.minutes:
+        m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+        m_str += ' و '
+        m_str += f'{relative_delta.seconds} ثانیه' if relative_delta.seconds else ''
+    elif relative_delta.seconds:
+        return f"تقریبا هم اکنون"
+
+    # if delta.seconds < 60:
+    #     return f"تقریبا هم اکنون"
+    # else:
+
+    # if delta.seconds < 2592000:  # day&hour&minute
+    #     m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
+    #     m_str += " و " if m_str else ""
+    #     m_str += f'{relative_delta.hours} ساعت' if relative_delta.hours else ''
+    #     m_str += " و " if m_str and relative_delta.hours else ""
+    #     m_str += f'{relative_delta.minutes} دقیقه' if relative_delta.minutes else ''
+    # else:# year&month&day
+    #     m_str += f'{relative_delta.years} سال' if relative_delta.years else ''
+    #     m_str += " و " if m_str else ""
+    #     m_str += f'{relative_delta.months} ماه' if relative_delta.months else ''
+    #     m_str += " و " if m_str and relative_delta.months else ""
+    #     m_str += f'{relative_delta.days} روز' if relative_delta.days else ''
     return f'{m_str} قبل'
 
 
@@ -233,3 +275,143 @@ def round_rial(x, currency_ref=None):
             x = int(x)
     return x
 
+
+def build_column_filter(column_name, column_obj, column_spec, search_value=None, global_filtering=None, not_search_value=None):
+    search_filter = None
+
+    # v4.0.2: we now accept multiple search values (to be ORed),
+    # now implemented for text search: "aaa+bbb" --> Q("aaa") | Q("bbb")
+    # TODO: check what happens with "choices"
+
+    if column_obj.has_choices_available:
+
+        choices = column_spec['choices']
+        if choices and not global_filtering:
+            # Since we're using choices (we provided a select box)
+            # just use the selected key
+            values = [search_value, ]
+        else:
+            values = column_obj.search_in_choices(search_value)
+
+        search_filter = Q(**{column_obj.get_field_search_path() + '__in': values})
+
+    elif isinstance(column_obj.model_field, (models.DateTimeField, models.DateField)):
+
+        try:
+            parsed_date = parse_date(search_value)
+        except ValueError:
+            # when the value entered so far is not a valid date,
+            # let's clear the table content to give a feedback to the user
+            parsed_date = datetime.date(1,1,1)
+        date_range = [parsed_date.isoformat(), parsed_date.isoformat()]
+        query_param_name = column_obj.get_field_search_path()
+        if isinstance(column_obj.model_field, models.DateTimeField):
+            search_filter = Q(**{query_param_name + '__date__range': date_range})
+        else:
+            search_filter = Q(**{query_param_name + '__range': date_range})
+
+
+    # elif isinstance(column_obj.model_field, models.ManyToManyField):
+    #     # query_param_name = column_obj.get_field_search_path()
+    #     # search_filter = Q(**{query_param_name + '__in': [search_value, ]})
+    #     raise Exception('Searching not supported for ManyToManyFields (yet)')
+    #     pass
+    else:
+        query_param_name = column_obj.get_field_search_path()
+
+        lookup_field = column_spec['lookup_field']
+        # #search_filters |= Q(**{query_param_name + '__istartswith': search_value})
+        # search_filter = Q(**{query_param_name + '__icontains': search_value})
+
+        # See: "How do I do an OR filter in a Django query?"
+        # https://stackoverflow.com/questions/739776/how-do-i-do-an-or-filter-in-a-django-query
+        if type(search_value) == list:
+            search_filter = Q()
+            for item in search_value:
+                search_filter |= Q(**{query_param_name + lookup_field: item})
+        elif type(not_search_value) == list:
+            search_filter = Q()
+            for item in not_search_value:
+                if item:
+                    search_filter |= ~Q(**{query_param_name + lookup_field: item})
+        else:
+            search_filter = Q(**{query_param_name + lookup_field: search_value})
+
+    return search_filter
+
+
+_senf = {
+    "پزشکی": ("تجهیزات پزشکی", "پزشکی"),
+
+    "کنترل رله و درب پارکینگ": ("کنترل رله و درب اتوماتیک", "کنترل رله و درب پارکینگ"),
+
+    "مخابراتی": ("امنیتی", "مخابراتی"),
+
+    "محافظ برق": ("محافظ برق", "تولید برد محافظ - تولید آژیر اعلام خطر", "محافظ", "تولید محافظ برق", "استابلایزر", ),
+
+    "لوازم خانگی": ("لوازم خانگی", "هود-تستر", "لوازم و دستگاه های خانگی", "تولید نمایشگر وزن", "لوازم خانگی-جاروبرقی",
+                    "برد الکترونیکی تهویه مطبوع و لوازم خانگی", "تولید بردهای الکترونیکی- لوازم خانگی","ترازو",
+                    "تولید برد لوازم خانگی", "لوازم خانگی -پنکه", "تایمر اجاق گاز-لوازم خانگی", "تولید برد لوازم خانگی و نورپردازی",
+                    "تولید لوازم خانگی", "تولید شومینه برقی", "لوازم خانگی ( پنکه)", "بردهای صنعتی، آسانسور، لوازم خانگی"),
+
+    "طراح / مونتاژ / تعمیرکار": ("فروشنده", "طراح", "تجهیز قطار های بین شهری", "تولید بردهای الکترونیک", "شهرک صنعتی",
+                                 "الکترونیک مخابرات", "الکترونیک-طراحی و ساخت", "طراح سیم کارتل","طراح / مونتاژ / تعمیرکار",
+                                 "کنترل دور موتور", "الکترونیک و مخابرات", "روباتیک", "برد الکترونیکی", "قطعات سنسور",
+                                 "پروژه ای-الان تایمر", "طراحی برد", "تجهیزات الکترونیکی", "انرژی", "مونتاژ کار و همکار",
+                                 "تولید مدار الکترونیکی", "تعمیرکار", "لوازم الکتریکی", "فروشگاه", "فروش قطعات",
+                                 "تامین کننده قطعات", "سیستم های اطلاع رسانی", "شخصی", "الکترونیک", "طراح / مونتاژ / تعمیر کار",
+                                 "رباتیک" ,"مونتاژکار","مونتاژ کار"),
+
+    "سوخت شده": ("سوخت شده", ),
+
+    "روشنایی": ("روشنایی", "فلاشر ال ای دی", "فلاشر", "تولید روشنایی", "روشنایی دیجیتال", "روشنایی  دیجیتال", "روشنایی تبلیغاتی"),
+
+    "ردیاب": ("ردیاب", "ترکر", "دزدگیر و ردیاب", "دزدگیر ردیاب"),
+
+    "دزدگیر": ("دزدگیر", "دزدگیر-ریموت", "چشمی(دزدگیر)", "ریموت", "سنسور راه پله", "سنسور", "دزدگیر و ردیاب",
+               "تولید دزگیر", "تولید سیستم های امنیتی", "UPS", "ریموت و تگ", "دستگاه کنترل از راه دور سیم کارتی",
+               "دوربین مداربسته", "دزدگیر و چشمی", "کنترل", "چشمی", "حفاظتی", "سیستم های حفاظتی", "دزدگیر ردیاب",),
+
+    "خودرو": ("خودرو", "خودرویی", "چراغ سقفی", "خودرو+محافظ", "هوشمند سازی خودرو", "خودرویی(چراغ خودرو)", "کلید سوخت",
+              "خودرو-روشنایی", "لامپ های خودرویی", "بالابرخودرو",),
+
+    "بازار": ("بازار", "بازار -فروشنده"),
+
+    "اعلام حریق": ("اعلام حریق", "دتکتور", "اعلام و اطفای حریق", "آلارم"),
+
+    "اتوماسیون صنعتی": ("اتوماسیون صنعتی", "نظامی", "plc", "تولید دستگاه کنترل فاز", "اتوماسیون - امنیتی",
+                        "سیستم های تست و شارژ باتری های توان بالا", "اتوماسیون", "سنسور اندازه گیری", "ابزار دقیق", "سیستم های مانیتورینگ و اتوماسیون صنعتی",),
+
+    "آسانسور": ("آسانسور", "آسانسوری", "درایو آسانسور", "تولیدکننده شاسی داخل کابین و خارج کابین آسانسور",
+                "آژیر آسانسور", "بردهای صنعتی، آسانسور، لوازم خانگی",),
+
+    "IOT": ("IOT", "شهر هوشمند", "کنتور", "اینترنت اشیا", "کنتور آب", "تولیدکننده کنتور های هوشمند آب", "ویرا تراشه"
+            "تولید ست کنترل پمپ های آب خانگی", "تله متری", "سیستم های تله متری", "ماژول گیرنده های رادیویی",),
+
+    "GPS": ("GPS", "GPS-دستکاه اندازه گیری گازوئیل"),
+    "منبع تغذیه": ("منبع تغذیه",),
+
+    "BMS": ("bms", "BMS", "گرمایشی", "تولید کلیدهای لمسی", "تولید ترموستات", "ترموستات", "آینه هوشمند",
+            "تولید تجهیزات کنترلر دما و رطوبت خانگی و صنعتی", "تولید آینه های هوشمند", "BMS(قلاده هوشمند)",
+            "شرکت آینه های هوشمند mirror smart tech", "محصولات هوشمند سازی استان اصفهان", "قفل هوشمند", "تهویه مطبوع",
+            "هوشمند سازی", "ساعت دیجیتال"),
+}
+
+senf_map = LookupDict(name='valid_senf')
+
+
+def senf_init():
+    for senf, titles in _senf.items():
+        for title in titles:
+            setattr(senf_map, title, senf)
+            if not title.startswith(('\\', '/')):
+                setattr(senf_map, title.upper(), senf)
+
+    def doc(senf):
+        names = ', '.join('``%s``' % n for n in _senf[senf])
+        return '* %d: %s' % (senf, names)
+
+    global __doc__
+    __doc__ = (__doc__ + '\n' +
+               '\n'.join(doc(senf) for senf in sorted(_senf))
+               if __doc__ is not None else None)

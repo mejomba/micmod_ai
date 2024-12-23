@@ -117,32 +117,43 @@ def model_name(obj):
 def app_label(obj):
     return obj._meta.app_label if obj else ""
 
-@register.inclusion_tag('comment_tag.html')
-def get_comments(obj, comment_form=None, button_text=None, button_style=None, comment_type=None):
-
-    if button_text is None:
-        button_text = 'نظر کاربران'
-    if button_style is None:
-        button_style = "btn btn-primary"
-    if comment_type is None:
-        comment_type = 'نظرات'
-        comment_type_filter = 'O'
-    else:
-        comment_type_filter = 'C'
-
-    comments = Comments.objects.none()
-    if hasattr(obj, '_meta'):
-        comments = Comments.objects.filter(object_id=obj.pk,
-                                           content_type=ContentType.objects.get_for_model(obj._meta.model),
-                                           comment_title=comment_type_filter)
-
-    return {'comments': comments, 'button_text': button_text, 'comment_type': comment_type,
-            'button_style': button_style, 'comment_form': comment_form, 'obj': obj}
+# @register.inclusion_tag('comment_tag.html')
+# def get_comments(obj, comment_form=None, button_text=None, button_style=None, comment_type=None):
+#
+#     if button_text is None:
+#         button_text = 'نظر کاربران'
+#     if button_style is None:
+#         button_style = "btn btn-primary"
+#     if comment_type is None:
+#         comment_type = 'نظرات'
+#         comment_type_filter = 'O'
+#     else:
+#         comment_type_filter = 'C'
+#
+#     comments = Comments.objects.none()
+#     if hasattr(obj, '_meta'):
+#         comments = Comments.objects.filter(object_id=obj.pk,
+#                                            content_type=ContentType.objects.get_for_model(obj._meta.model),
+#                                            comment_title=comment_type_filter)
+#
+#     return {'comments': comments, 'button_text': button_text, 'comment_type': comment_type,
+#             'button_style': button_style, 'comment_form': comment_form, 'obj': obj}
     # return {'comments': new_comments}
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
 def get_comment_user_list(form, current_user, cancel=None, comment_type=None, size=None, obj_rel=None):
+    customer = sku = None
+    model = form.instance._meta.model
+    if form.instance.pk:
+        if model.__name__.lower() == 'quotationitem':
+            customer = getattr(form.instance.quotation, 'customer_party_id', None)
+            sku = getattr(form.instance, 'goods_code_fk', None)
+        if model.__name__.lower() == 'quotation':
+            customer = getattr(form.instance, 'customer_party_id', None)
+            sku = None
+    for_sku = Q(sku=sku) & Q(for_sku=True)
+    for_customer = Q(customer=customer) & Q(for_customer=True)
     unseen_comment = list()
 
     comments_info = list()
@@ -160,7 +171,9 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None, si
         comments = None
     comment_seen = CommentSeen.objects.all()
     if comments is None:
+        return Comments.objects.filter(Q(for_sku | for_customer), is_active=True, is_deleted=False)
         return {}
+    comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
     for comment in comments:
         try:
             if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
@@ -440,3 +453,40 @@ def default_if_falsy(value, arg):
     if not bool(value):
         return arg
     return value
+
+
+@register.inclusion_tag('core/partial/add_payment.html')
+def get_payment_list(form, current_user, size=None, obj_rel=None):
+    unseen_comment = list()
+    payments_info = list()
+    unseen_comment_count = 0
+    creator_users = dict()
+
+    if form:
+        obj = form.instance
+        payments = obj.payments.all() if obj else None
+    else:
+        obj = None
+        payments = None
+
+    for payment in payments:
+        try:
+            creator_users[payment.creator_user] = payment.creator_user.profile.get_user_image
+            payments_info.append([payment,
+                                 payment.creator_user,
+                                 payment.creator_user.profile.get_user_image])
+
+        except Exception as e:
+            creator_users[payment.creator_user] = '/assets/media/auth/no_image.png'
+
+        if payments_info:
+            payments_info.reverse()
+
+    context = {'payments_info': payments_info,
+               'size': size,
+               'obj_rel': obj_rel,
+               'obj': obj,
+               # 'unseen_comment_count': unseen_comment_count,
+               'user': current_user,
+               }
+    return context

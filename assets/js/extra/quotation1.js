@@ -569,19 +569,19 @@ function set_item_classes(item) {
     // }
     copy_values(item, '-goods_name_alt')
     const box = item.querySelector('[name="box-alt-goods"]')
-    try {
-        if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
-        if (box) {
-            box.classList.remove('d-none')
-            }
-        } else {
-            if (box) {
-                box.classList.add('d-none')
-            }
-        }
-    } catch (e) {
-        console.log('[[this error catch....]] ', e)
-    }
+    // try {
+    //     if (item.querySelector('[name*="-goods_code"]') && (item.querySelector('[name*="-goods_code"]').value != item.querySelector('[name*="-goods_code_alt"]').value)) {
+    //     if (box) {
+    //         box.classList.remove('d-none')
+    //         }
+    //     } else {
+    //         if (box) {
+    //             box.classList.add('d-none')
+    //         }
+    //     }
+    // } catch (e) {
+    //     console.log('[[this error catch....]] ', e)
+    // }
 
     // const item = item.querySelector('[class*="final_price"]')
     set_price(item)
@@ -670,7 +670,17 @@ function t_replaceDigits(m_text) {
 function refresh_prices() {
     const items = $(document).find(".item")
     const party_id = document.getElementById('customer_pid').textContent || -1;
+    const price_updating = document.querySelector('#price-updating')
+    const price_updated = document.querySelector('#price-updated')
     for (let i = 0; i < items.length; i++) {
+        debugger
+        if (i === items.length - 1){
+            // price_updating.classList.add('d-none')
+            // price_updated.classList.remove('d-none')
+        } else if (i === 0){
+            // price_updating.classList.remove('d-none')
+            // price_updated.classList.add('d-none')
+        }
         setTimeout(function (){
             const code = items[i].querySelector('[id*="-goods_code"]').value
             const data = get_price_data(code, party_id, items[i])
@@ -746,7 +756,9 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 
 function set_price_data(data, elem, target) {
     if (data){
-        set_values(elem.querySelectorAll('[name*="-goods_name"]'), data.text)
+        // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
+        set_values(elem.querySelectorAll('[name$="-goods_name"]'), data.text)
+        set_values(elem.querySelectorAll('[name$="-goods_name_lbl"]'), data.text)
         set_values(elem.querySelectorAll('[name*="stock_amount"]'), data.stock_qty)
         set_values(elem.querySelectorAll('[name*="stock_amount_res"]'), data.stock_qty_res)
         set_values(elem.querySelectorAll('[name*="max_price"]'), data.max_price)
@@ -806,13 +818,22 @@ function set_price_data(data, elem, target) {
         set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
         set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
-        set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
-        set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
-        set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
-        set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
-        set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
-        set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
-        set_values(elem.querySelectorAll('[name*="-goods_code"]'), data.id,)
+        if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
+            set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
+            set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
+            set_values(elem.querySelectorAll('[name*="last_sale"]'), data.f_date_cust, true)
+            set_values(elem.querySelectorAll('[name*="q_last_price"]'), data.q_fee_cust)
+            set_values(elem.querySelectorAll('[name*="q_total_sales"]'), data.q_qty_cust)
+            set_values(elem.querySelectorAll('[name*="q_last_sale"]'), data.q_date_cust, true)
+        } else {
+            set_values(elem.querySelectorAll('input[name*="goods_last_price"]'), elem.querySelector('label[name*="goods_last_price"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="goods_total_sales"]'), elem.querySelector('label[name*="goods_total_sales"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="goods_last_sale"]'), elem.querySelector('label[name*="goods_last_sale"]').innerText, true)
+            set_values(elem.querySelectorAll('input[name*="q_last_price"]'), elem.querySelector('label[name*="q_last_price"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="q_total_sales"]'), elem.querySelector('label[name*="q_total_sales"]').innerText.replaceAll(',', ''))
+            set_values(elem.querySelectorAll('input[name*="q_last_sale"]'), elem.querySelector('label[name*="q_last_sale"]').innerText, true)
+        }
+        set_values(elem.querySelectorAll('[name$="-goods_code"]'), data.id,)
         const select = elem.querySelector('[id*="select2-goods_code"][id*="container"]')
         if (select) {
             select.innerHTML = data.id
@@ -822,7 +843,7 @@ function set_price_data(data, elem, target) {
             set_values(elem.querySelectorAll('[name*="-goods_name_alt"]'), '',)
             set_values(elem.querySelectorAll('[name*="-goods_code_alt"]'), '',)
         } else {
-            elem.querySelector('[name="box-alt-goods"]').classList.add('d-none')
+            elem.querySelector('[name="box-alt-goods"]').classList.remove('d-none')
         }
         set_price(elem.querySelector('[name*="-goods_name"]'))
     }
@@ -830,6 +851,7 @@ function set_price_data(data, elem, target) {
 
 function set_alt_price_data(data, elem) {
     if (data.f_fee_cust != '') {
+        // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
         set_values(elem.querySelectorAll('[name*="-goods_name_alt"]'), data.text)
         set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
         set_values(elem.querySelectorAll('[name*="total_sales"]'), data.f_qty_cust)
@@ -1060,6 +1082,10 @@ function formatRepoItem(repo) {
 function newFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
+    }
+    debugger
+    if (repo.goods_price_market==4494){
+        debugger
     }
 
     let repo_express;

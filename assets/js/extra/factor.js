@@ -22,7 +22,6 @@ function copy_values(elem, name, is_date = false) {
 }
 
 function set_values(items, value, is_date = false) {
-    debugger
     let value_str = value
     if (!isNaN(parseInt(value)) && !is_date) {
         value = parseFloat(value.toString().replaceAll(',', ''))
@@ -61,7 +60,6 @@ $(document).ready(function () {
             dataType: "json",
             type: "GET",
             data: function (data) {
-                debugger
                 const search_by = document.querySelectorAll('.limit_query input[type="checkbox"]')
                 const search_by_list = []
                 if (search_by){
@@ -77,7 +75,6 @@ $(document).ready(function () {
                 }
             },
             processResults: function (data, params) {
-                debugger
                 params.page = params.page || 1;
                 return {
                     results: data.items,
@@ -120,7 +117,7 @@ $(document).ready(function () {
         },
         dropdownAutoWidth: true,
         dropdownCssClass: 'quotation_to_factor_select2',
-        minimumInputLength: 3,
+        minimumInputLength: 2,
         placeholder: 'جستجوی پیش فاکتور با [شناسه پیش فاکتور، شماره سپیدار پیش فاکتور، نام مشتری، شناسه مشتری، کد کالا، پارت نامبر، ...]',
         templateResult: selectQuotationForFactorRepoItem,
         templateSelection: formatRepoSelection,

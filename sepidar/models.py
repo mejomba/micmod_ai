@@ -1,4 +1,5 @@
 import datetime
+from typing import Tuple
 
 from django.db import models, connections, connection
 from django.db.models import Q
@@ -345,6 +346,11 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
             f"{Item.customer_qry} and p.PartyId > {max_sepidar_party_id}",using="sepidar")
 
     @staticmethod
+    def get_all_customers_in_range(max_sepidar_parties: Tuple):
+        return Item.objects.raw(
+            f"{Item.customer_qry} and p.PartyId IN {max_sepidar_parties}", using="sepidar")
+
+    @staticmethod
     def get_all_items(from_id):
         qry = f"select Code as code, * from inv.item where itemid > {from_id}"
         res = Item.objects.raw(qry, using='sepidar')
@@ -388,7 +394,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28)
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28,84)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN
@@ -446,7 +452,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28)
+                                   WHERE        (FiscalYearRef = 44) and StockRef in (50,51,53,54,60,28,84)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN

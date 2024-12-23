@@ -18,18 +18,8 @@
             </div>
         {% elif field.field.widget.input_type == 'select' and field.field.disabled %}
             {{ field }}
-{#            <select name="{{ field.html_name }}" class="w-100 d-none" id="{{ field.auto_id }}"></select>#}
-{#            <input type="text" name="{{ field.html_name }}" {% if field.data %}value="{{ field.data }}{% endif %}">#}
-{#            {{ field.data|default:'' }}#}
         {% else %}
             {{ field }}
-{#            <select class="{{ field.field.widget.attrs.class }} border-warning selectize-select"#}
-{#                    name="{{ field.name }}" {% get_attrs_str field %}>#}
-{#                {% for item in items_list.list %}#}
-{#                    <option value="{{ item.0 }}" {{ item.2 }}>{{ item.1 }}</option>#}
-{#                {% endfor %}#}
-{#            </select>#}
-
         {% endif %}
     </div>
 {% else %}

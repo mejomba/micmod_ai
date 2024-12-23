@@ -1,0 +1,181 @@
+{% load more_tags %}
+{% load core_tags %}
+{% load accounts_tag %}
+{% load jalali_tags %}
+{% load humanize %}
+<style>
+    .hover-scale-13:hover{
+    scale: 1.4;
+}
+</style>
+<div class="">
+    <table class="table caption-top border" dir="ltr">
+        <caption class="bg-light-primary px-2 py-1 bold">لیست سفارش های قابل استفاده</caption>
+      <thead>
+        <tr class="border-bottom bg-light-primary" style="font-weight: 600">
+          <th scope="col" class="text-end">شماره</th>
+          <th scope="col" class="text-end">عنوان</th>
+          <th scope="col" class="text-end">موجودی کل</th>
+          <th scope="col" class="text-end">موجودی در دسترس</th>
+          <th scope="col" class="text-end">عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for foo in form.fields.order_m2m.queryset %}
+        <tr class="border-bottom text-right">
+          <th scope="row" class="text-end available_order_rel">{{ foo.id }}</th>
+          <td class="text-end">{{ foo.order_title }}</td>
+          <td class="text-end">{{ foo.quantity }}</td>
+          <td class="text-end remaining_quantity">{{ foo.remaining_quantity }}</td>
+          <td class="text-end">
+              <i class="ki-duotone ki-entrance-left fs-1 text-primary p-0 cursor-pointer rotate_90_animation" onclick="order_add(event)" data-bs-toggle="tooltip" data-bs-original-title="تخصیص به سفارش {{ form.instance.pk }}">
+                 <span class="path1"></span>
+                 <span class="path2"></span>
+              </i>
+          </td>
+        </tr>
+          <tr class="d-none order_form_container bg-light-info" dir="rtl">
+              <td colspan="5">
+                  <div class=" border rounded d-flex align-items-center px-2 py-3 " >
+                    <span>از سفارش</span>
+                    <span class="ms-1 bold order_rel"></span>
+
+                    <i class="ki-duotone ki-black-left fs-2x mx-3">
+                    </i>
+
+                    <span>به سفارش</span>
+                    <span class="ms-1 bold order_base" data-order_base="{{ form.instance.pk }}">{{ form.instance }}</span>
+
+                    <input type="number" min="0" name="order_order_quantity" class="mx-5 order_order_quantity" placeholder="تعداد" onkeyup="check_order_quantity(event)" style="height: 25px !important;">
+                    <span class="px-3 d-none py-1 bg-success text-white rounded cursor-pointer order_order_submit" onclick="submit_order_order(event)">ثبت</span>
+                    <span class="font-size-12 text-danger order_quantity_message"></span>
+                </div>
+              </td>
+          </tr>
+          {% empty %}
+          <tr class="border-bottom text-right">
+          <td colspan="5" class="text-danger">موردی یافت نشد</td>
+          </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+{% if form.instance.pk  %}
+    {% with form.instance.remaining_quantity as remaining_quantity %}
+    {% if form.instance.cancel %}
+        {% for f in form.instance.factor_items.all  %}
+            {% if forloop.counter == 1 %}
+            <div class="border p-1 rounded position-relative mt-2" style="min-height: 60px">
+            {% endif %}
+            {% for o in f.supply_locations.order_base_items.all %}
+                <span class="me-10">
+                <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black bg-light-primary px-2 mb-3 rounded-right">
+                    <span>از سفارش</span>
+                    <span class="me-2">{{ o.order_rel.pk }}</span>
+                    <span class="text-success px-1 rounded bold">{{ o.quantity|floatformat:"-2g" }}</span>
+                    <span>عدد</span>
+                </a>
+
+                    <a href="#" target="_blank" class="me-3 delete-order-order text-danger position-absolute hover-scale-13 tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ o|model_name }}&object_id={{ o.pk }}&app_label={{ o|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-cross-square fs-2 text-danger ">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                            </i>
+                        </a>
+                </span>
+
+
+
+            {% endfor %}
+            {% with f.total_supply as supply %}
+                <div class="ribbon ribbon-triangle ribbon-top-end {% if supply.2 %} border-success {% else %} border-danger {% endif %}">
+                <div class="position-absolute" style="rotate: -45deg; top: -18px; left: -28px">
+                    <span class="text-white">وضعیت</span>
+                </div>
+            </div>
+                <div class="mt-2 px-1 rounded">
+                    <span class="bg-light-secondary">
+                        <span>تامین</span>
+                        <span>{{ supply.0|floatformat:'-3g' }}</span>
+                        <span>از</span>
+                        <span>{{ supply.1|floatformat:'-3g' }}</span>
+                        {% if supply.2 %}
+                            <span class="ms-10 ">
+                            <span class="text-success bg-light-success">تامین کامل</span>
+                            </span>
+                        {% else %}
+                            <span class="ms-10 px-1 text-danger bg-light-danger">
+                            <span>نیاز به</span>
+                            <span class="mx-1 bold" id="need_quantity">{{ supply.3|floatformat:'-3g' }}</span>
+                            </span>
+                         {% endif %}
+                    </span>
+                </div>
+            {% endwith %}
+        {% endfor %}
+        </div>
+        {% endif %}
+    {% if not form.instance.cancel %}
+    <div class="border rounded p-2 d-flex align-items-center gap-2 ribbon ribbon-top mt-5">
+        <div class="ribbon-label bg-success">سفارش های تامین شده</div>
+        <div class="mt-10">
+        {% for rel in form.instance.order_rel_items.all %}
+            <a target="_blank" href="{% url 'order:order.view' rel.order_base.pk %}" class="bg-light-info px-2 py-1 rounded me-2">
+                <span>به سفارش</span>
+                <span>{{ rel.order_base.pk }}</span>
+                <i class="ki-duotone ki-black-left fs-1x mx-3"></i>
+                <span>{{ rel.quantity }}</span>
+                <span>عدد</span>
+            </a>
+            {% empty %}
+            {% if form.instance.local_sepidar_wh_code %}
+                <span class="text-success bg-light-success px-1 rounded">رزرو شده از انبار</span>
+            {% else %}
+                <span class="text-success">هیچ سفارشی از این سفارش تامین نمیشود</span>
+            {% endif %}
+        {% endfor %}
+            <span class="bg-light-primary px-2 py-1 rounded ms-5">
+                <span>ظرفیت آزاد</span>
+                <span>{{ remaining_quantity|max_:0 }}</span>
+            </span>
+        </div>
+    </div>
+    {% endif %}
+    <div class="border rounded p-2 d-flex align-items-center gap-2 ribbon ribbon-top mt-5">
+        <div class="ribbon-label bg-success">ردیف فاکتورهای متصل</div>
+        <div class="mt-10">
+        {% for fi in form.instance.factor_items.all %}
+            <a target="_blank" href="{% url 'factor:factor.view' fi.factor.pk %}" class="bg-light-info px-2 py-1 rounded me-2">
+                <span>فاکتور</span>
+                <span>{{ fi.factor.pk }}</span>
+                <span>ردیف</span>
+                <span>{{ fi.index|add:'1' }}</span>
+                <span>به تعداد</span>
+                <span class="bold">{{ fi.quantity|intcomma }}</span>
+            </a>
+            {% if forloop.last %}
+            {% if not form.instance.cancel and remaining_quantity < 0 %}
+                <div class="text-danger mt-3">
+                <span>سفارش فعلی تعداد </span>
+                <span class="badge badge-danger">{{ remaining_quantity|abs_ }}</span>
+                <span>عدد برای تامین ردیف فاکتور(های) متصل نیاز دارد</span>
+                </div>
+                <div class="mt-3">
+                    <ol>
+                        <li>.اگر سفارش در مراحل اولیه است میتوانید تعداد را تغییر دهید</li>
+                        <li>سفارش فعلی را کنسل کنید تا لیست سفارش های قابل استفاده نمایش داده شود. سپس تعداد مورد نظر را از دیگر سفارش ها تامین کنید</li>
+                    </ol>
+                </div>
+            {% endif %}
+            {% endif %}
+            {% empty %}
+                <span class="text-success">هیچ فاکتوری از این سفارش</span>
+                <span class="badge-success rounded mx-1 px-1">به صورت مستقیم</span>
+                <span class="text-success">تامین نمیشود</span>
+        {% endfor %}
+        </div>
+    </div>
+    {% endwith %}
+{% endif %}
+</div>

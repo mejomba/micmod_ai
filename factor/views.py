@@ -1,27 +1,25 @@
 import datetime
-from itertools import islice
-
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.forms import inlineformset_factory
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.urls import reverse
 from django.views import View
 from jalali_date import datetime2jalali
+from jalali_date.templatetags.jalali_tags import to_jalali
+
 from translator import get_text as _
 
-from comments.forms import CommentsForm
 from core.views import BaseView, Base
-from extra_data.models import Customer
-from factor.forms import FactorModelForm, FactorItemFormset
+from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm
 from factor.models import Factor, FactorItem
 from micmod_base.models import Quotation, QuotationItem
-from tools.import_data import import_customers_from_sepidar
-from tools.utils import to_jalali_date
+from tools.utils import to_jalali_date, show_error
 import json
 
 
@@ -29,8 +27,6 @@ class FactorView(LoginRequiredMixin, BaseView):
     template_name = 'factor/factor.html'
     form_class = FactorModelForm
     model = Factor
-    # wf_last_step_is_open = True
-    # has_flow = True
     form_struct = {
         'form': FactorModelForm,
         'childes': [
@@ -58,27 +54,16 @@ class FactorView(LoginRequiredMixin, BaseView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # if 'submit_duplicate' in self.request.POST:
-        #     return self.duplicate(self.object, [], ['quotation'])
-        """ run import customer from sepidar before object create"""
         if self.object is None:
             pass
-            # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-
         res = super().form_valid(form)
-
-        # customer_part_number_list = (CustomerPartNumber(item=fi.goods_code, customer=self.object.q.customer_party_id, part_number=fi.part_number_show) for fi in self.object.factoritem_set.all())
-        # while True:
-        #     batch = list(islice(customer_part_number_list, 10))
-        #     if not batch:
-        #         break
-        #     CustomerPartNumber.objects.bulk_create(batch, 10)
         return res
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if not self.object:
             return context
+        context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
@@ -109,7 +94,6 @@ class FactorView(LoginRequiredMixin, BaseView):
                                                              )
                         break
         exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
-        # empty_pair = [(x, context['form_s'][-1], True if idx == 0 else False) for idx, x in enumerate(exclude_qi_qs)]
         empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
                        qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
                        qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(exclude_qi_qs)]
@@ -132,7 +116,7 @@ def search_factor_view(request, *args, **kwargs):
     if q.isdigit():
         q_int = int(q)
     q_str = q
-    q_filter = Q()
+    q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس')
     q_required = {}#{'cancel': False, "is_deleted": False, "last_work_flow__current_state_name": 'مرحله نهایی'}
     for s in search_by:
         if s == 'search_customer':
@@ -144,15 +128,17 @@ def search_factor_view(request, *args, **kwargs):
         if s == 'search_sepidar_id':
             q_filter |= Q(sepidar_number__icontains=q_int)
         if s == 'search_sku':
-            q_filter |= Q(quotation__goods_code_fk__sku__icontains=q_str)
+            q_filter |= Q(quotation__goods_code_fk__sku__iexact=q_str)
         if s == 'search_part_number':
             q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
-        q_filter = Q(customer_party_id__title__icontains=q_str) | Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
+        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس') & \
+                   (Q(customer_party_id__title__icontains=q_str) | \
+                   Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
-                   Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str)
-    quotations = Quotation.objects.filter(q_filter, **q_required).order_by('-id').distinct()
+                   Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
+    quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
@@ -163,7 +149,7 @@ def search_factor_view(request, *args, **kwargs):
         item['customer_party_id'] = q.customer_party_id.sepidar_dl_code if q.customer_party_id else '-'
         item['quotation_id'] = q.pk
         item['row_count'] = q.quotation.all().count()
-        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow else '-'
+        item['last_work_flow_user'] = q.last_work_flow.creator_user.username if q.last_work_flow and q.last_work_flow.creator_user else '-'
         item['last_work_flow_state'] = q.last_work_flow.current_state_name if q.last_work_flow else '-'
         item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title
@@ -250,27 +236,64 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
+        {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'className': 'py-1 border', 'lookup_field': '__title__icontains', 'searchable': True},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
          'orderable': True, 'lookup_field': '__title__icontains'},
-        {'name': 'delivery_time', 'visible': True, 'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
+        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         # {'name': 'workflows', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         # {'name': 'factor_self', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': False, 'orderable': True},
-        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True},
-        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'description', 'visible': True, 'orderable': False, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True},
+        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains'},
 
     ]
 
     def customize_row(self, row, obj):
         row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.id,)),
+            reverse('micmod_base:quotations.view', args=(obj.q.id,)),
             obj.q.id if obj.q else '-'
         )
         row['pk'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('factor:factor.view', args=(obj.id,)),
             obj.pk if obj.pk else '-'
         )
+        row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
 
+
+def print_view(request,id=-1):
+
+    template_name = 'factor/factor_print.html'
+
+    formset = inlineformset_factory(Factor, FactorItem, form=FactorItemModelForm, extra=0, )
+    greeting = {}
+    greeting['alt_code_html'] = []
+    greeting['heading'] = _("create")
+    greeting['pageview'] = _("quotation")
+    factor = Factor.objects.filter(id=id).first()
+    greeting['form'] = FactorModelForm(instance=factor)
+    greeting['formset'] = formset(instance=factor,
+                                  form_kwargs={
+                                      "constraint": {
+                                          "wf_access": True,
+                                          'form_state': 0,
+                                          'request': request,
+
+                                      }
+                                  }
+                                  )
+
+    if factor:
+        factor.created_date = datetime2jalali(factor.created_date).strftime('%y/%m/%d-%H:%M')
+        factor.last_update_date = datetime2jalali(factor.last_update_date).strftime('%y/%m/%d-%H:%M')
+    greeting['data'] = factor
+    return render(request, template_name, greeting)
+
+
+class DirectFactorView(View):
+    def get(self, request, *args, **kwargs):
+        url = reverse('micmod_base:quotations.create')
+        url += '?direct'
+        return redirect(url)

@@ -1,9 +1,46 @@
-<select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-100">
+{% load more_tags %}
+<select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-100" onchange="sync_supply_location(event)">
+{% if not factor_item.pk %}
+<option value="" class="font-size-10">----------</option>
+{% endif %}
 {% for location in locations %}
-    <option value="{{ location.0 }}" class="font-size-12">{{ location.1 }}</option>
+    {% if not location.0 == factor_item.supply_location %}
+        <option value="{{ location.0 }}" {% if location.0 == factor_item.supply_location %} selected="selected" {% endif %} class="font-size-10">{{ location.1 }}</option>
+    {% endif %}
+
+    {% if forloop.counter == 1 %}
+        {% if factor_item.supply_locations %}
+            {% if factor_item.supply_locations.local_sepidar_wh_code %}
+                <option value="wh__{{ factor_item.supply_locations.local_sepidar_wh_code }}__{{ factor_item.supply_locations.pk }}" selected="selected" class="font-size-10">رزرو انبار {{ factor_item.supply_locations.pk }} ({{ factor_item.supply_locations.quantity|floatformat:"-2g" }})</option>
+            {% else %}
+                <option value="{{ factor_item.supply_location|default_if_falsy:factor_item.supply_locations.pk }}" selected="selected" class="font-size-10">{{ factor_item.supply_locations }}</option>
+            {% endif %}
+        {% elif factor_item.supply_location %}
+            <option value="{{ factor_item.supply_location }}" selected="selected" class="font-size-10">{{ factor_item.supply_location }}</option>
+        {% endif %}
+    {% endif %}
+    {% empty %}
+    {% if factor_item.supply_locations %}
+        {% if factor_item.supply_locations.local_sepidar_wh_code %}
+            <option value="wh__{{ factor_item.supply_locations.local_sepidar_wh_code }}__{{ factor_item.supply_locations.pk }}" selected="selected" class="font-size-10">رزرو انبار {{ factor_item.supply_locations.pk }} ({{ factor_item.supply_locations.quantity|floatformat:"-2g" }})</option>
+        {% else %}
+            <option value="{{ factor_item.supply_location|default_if_falsy:factor_item.supply_locations.pk }}" selected="selected" class="font-size-10">{{ factor_item.supply_locations }}</option>
+        {% endif %}
+    {% elif factor_item.supply_location %}
+        <option value="{{ factor_item.supply_location }}" selected="selected" class="font-size-10">{{ factor_item.supply_location }}</option>
+    {% endif %}
 {% endfor %}
 </select>
-<div class="font-size-11 position-absolute submit-new-order d-flex flex-row-reverse gap-3" style="left: 3%; transform: translate(0, 30%)">
-{#    <a href="" target="_blank" class="hover-link">ثبت سفارش</a>#}
-    <a href="" target="_blank" class="hover-link">123456</a>
+
+<div class="font-size-11 text-start d-flex flex-column mt-1">
+    {% if factor_item.supply_locations.cancel %}
+        {% for o in factor_item.supply_locations.order_base_items.all %}
+            <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
+                <span>از سفارش</span>
+                <span class="me-1">{{ o.order_rel.pk }}</span>
+                <span class="bg-light-info px-1 rounded">{{ o.quantity|floatformat:"-2g" }}</span>
+                <span>عدد</span>
+            </a>
+        {% endfor %}
+    {% endif %}
 </div>

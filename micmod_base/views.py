@@ -3,12 +3,13 @@ import json
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
-
 from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
 from extra_data.models import Item
+from factor.forms import FactorItemModelForm, FactorModelForm
+from order.models import Order
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -16,7 +17,7 @@ import uuid
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -27,6 +28,7 @@ from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
 from sepidar.models import Dl
+from tools import const
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date
 from translator import get_text as _
@@ -35,9 +37,73 @@ from django.views import View
 from micmod_base.models import Quotation, QuotationItem
 from core.views import BaseView, Base
 from django.contrib.contenttypes.models import ContentType
+
+from workflow.forms import WorkFlowModelForm
+from workflow.models import WorkFlow
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
+
+
+def generate_direct_factor(request, quotation: Quotation):
+    factor_data = {
+        'q': quotation,
+        'delivery_time': quotation.delivery_time,
+        'description': 'فاکتور مستقیم',
+        'guid': uuid.uuid4(),
+        'sepidar_number': quotation.sepidar_number,
+        'is_official': quotation.is_official,
+        'official_value': quotation.official_value,
+        'sale_type': quotation.sale_type,
+        'self_discount': quotation.self_discount,
+        "creator_user": request.user,
+        "editor_user": request.user,
+    }
+    factor_form = FactorModelForm(data=factor_data)
+    if factor_form.is_valid():
+        factor = factor_form.save()
+        flow_data = {
+            "wf_status": 5,
+            "action": 'فاکتور مستقیم',
+            "flow_name": 'فاکتور',
+            "state": const.WF__FACTOR__FIRST_STATE,
+            "wf_description": 'فاکتور مستقیم',
+            "belong_to_group": 'sales_user',
+            "object_id": factor.pk,
+            "content_type": ContentType.objects.get_for_model(factor),
+            "creator_user": request.user,
+            "editor_user": request.user,
+            "from_user": request.user,
+            "to_user": request.user,
+            "current_state_name": const.WF__FACTOR__FIRST_STATE,
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        factor.last_work_flow = wf
+        factor.save()
+
+        count = 0
+        for qi in quotation.quotation.all():
+            factor_item_data = {
+                'factor': factor,
+                'qi': qi,
+                'goods_code': qi.goods_code_fk,
+                'part_number_show': qi.goods_code_fk.part_number,
+                'price': qi.price,
+                'quantity': qi.quantity,
+                'delivery_time': qi.delivery_time,
+                # 'supply_locations': order,
+                "creator_user": request.user,
+                "editor_user": request.user,
+                # 'supply_location': '',
+                'index': count
+            }
+            count += 1
+            factor_item_form = FactorItemModelForm(data=factor_item_data)
+            if factor_item_form.is_valid():
+                factor_item_form.instance.extra_data.request = request
+                factor_item = factor_item_form.save()
+        return redirect(reverse('factor:factor.view', kwargs={'pk': factor.pk}))
+
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
@@ -78,16 +144,22 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        if 'duplicate' in self.request.POST:
+            obj = duplicate_quotation(self.request, self.object.pk)
+            if obj:
+                return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
+        # if self.object is None:
+        #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         """ run import customer from sepidar before object create"""
-        if self.object is None:
-            import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        # if self.object is None:
+        #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
         res = super().form_valid(form)
+        if 'direct' in self.request.GET:
+            return generate_direct_factor(self.request, self.object)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
             return res
         if not self.object.is_official and not self.request.POST.get('official_value'):
@@ -218,11 +290,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
                 # self.object.save()
                 if api_res[0] >= 400:
+                    from django.contrib import messages
+
+                    messages.add_message(self.request, messages.ERROR, api_res[1].get('Message'))
                     print('rol back .... for status 400')
                     content_type = ContentType.objects.filter(model=self.object._meta.model_name,
                                                               app_label=self.object._meta.app_label).first()
                     flow_object = self.flow_model.objects.filter(object_id=self.object.id,
-                                                                 content_type=content_type).last()
+                                                                 content_type=content_type).first()
                     if flow_object:
                         flow_object.is_deleted = True
                         flow_object.save()
@@ -249,6 +324,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
+        context['duplicate'] = True
 
         if self.object:
             qis = self.object.quotation.all()
@@ -281,6 +357,8 @@ def print_view(request,id=-1):
     with_comments = '1'
     with_alt_code = '0'
     alt_code = '1'
+    with_customer_goods_code = '0'
+    customer_goods_code_url_param = '1'
     if request.GET.get('comments_url_params') == '1':
         with_comments = '1'
         comments_url_params = '0'
@@ -293,6 +371,12 @@ def print_view(request,id=-1):
     elif request.GET.get('alt_code') == '0':
         with_alt_code = '0'
         alt_code = '1'
+    if request.GET.get('customer_goods_code_url_param') == '1':
+        with_customer_goods_code = '1'
+        customer_goods_code_url_param = '0'
+    elif request.GET.get('customer_goods_code_url_param') == '0':
+        with_customer_goods_code = '0'
+        customer_goods_code_url_param = '1'
 
     formset = inlineformset_factory(Quotation, QuotationItem, form=QuotationItemForm2, extra=0, )
     greeting = {}
@@ -303,6 +387,8 @@ def print_view(request,id=-1):
     greeting['comments_url_params'] = comments_url_params
     greeting['with_alt_code'] = with_alt_code
     greeting['alt_code'] = alt_code
+    greeting['customer_goods_code_url_param'] = customer_goods_code_url_param
+    greeting['with_customer_goods_code'] = with_customer_goods_code
     quotation = Quotation.objects.filter(id=id).first()
     greeting['form'] = QuotationForm(instance=quotation)
     greeting['formset'] = formset(instance=quotation,
@@ -713,7 +799,8 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         if obj_pk := self.request.POST.get('obj_pk'):
             obj_qs = QuotationItem.objects.full_queryset(pk=obj_pk)
             obj = obj_qs.first()
-            obj.save_comment(self.request)
+            # obj.save_comment(self.request, CommentsForm)
+            obj.save_comment_(self.request)
 
             new_goods_code = self.request.POST.get('goods_code')
             if new_goods_code and new_goods_code != obj.goods_code:
@@ -732,24 +819,24 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                     except Exception as e:
                         pass
                 obj.item_editor_user = self.request.user
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
-                obj.foreign_price_inquiry_done = False
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
+                # obj.foreign_price_inquiry_done = False
+                # obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
-                obj.extra_data.request = self.request
-                obj.save()
-            elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
-                obj.local_price_inquiry_done = False
-                obj.extra_data.request = self.request
-                obj.save()
+                # obj.extra_data.request = self.request
+                # obj.save()
+            # elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
+                # obj.local_price_inquiry_done = False
+                # obj.extra_data.request = self.request
+                # obj.save()
 
             if self.request.user.base_group == 'trade':
                 data = {
@@ -762,14 +849,16 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 }
                 obj_for_update = obj_qs.first()
                 if obj_for_update:
-                    obj_for_update.lead_time = data['lead_time']
-                    obj_for_update.goods_code = data['goods_code']
-                    obj_for_update.goods_name = data['goods_name']
-                    obj_for_update.has_delay = data['has_delay']
-                    obj_for_update.delay_reason = data['delay_reason']
-                    obj_for_update.delay_time = data['delay_time']
-                    obj_for_update.extra_data.request = self.request
-                    obj_for_update.save()
+                    obj.lead_time = data['lead_time']
+                    obj.goods_code = data['goods_code']
+                    obj.goods_name = data['goods_name']
+                    obj.has_delay = data['has_delay']
+                    obj.delay_reason = data['delay_reason']
+                    obj.delay_time = data['delay_time']
+                    # obj_for_update.extra_data.request = self.request
+                    # obj_for_update.save()
+            obj.extra_data.request = self.request
+            obj.save()
 
             iqr_obj = obj.quotation_item_rel.first()
             iqr_form = InquiryResultForm(self.request.POST, instance=iqr_obj)
@@ -921,7 +1010,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True, 'searchable': False}
+        {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -990,12 +1079,15 @@ def inquiry_report(request):
 
 
 def repeated_goods_code_view(request):
+    from collections import Counter
     base_group = request.user.base_group
     qi = QuotationItem.quotation_item_all_pending(base_group)
-    repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
-        goods_code_count__gt=1)
-    repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
-    repeated_codes = list(repeated_goods_code)
+
+    # repeated_goods_code_qi = qi.order_by('goods_code_fk_id').values('goods_code').annotate(goods_code_count=Count('goods_code')).filter(
+    #     goods_code_count__gt=1)
+    # repeated_goods_code = repeated_goods_code_qi.values_list('goods_code', 'goods_code_count')
+    # repeated_codes = list(repeated_goods_code)
+    repeated_codes = filter(lambda x: x[1] > 1, Counter([i.goods_code_fk.sku for i in qi]).items())
     res = render_to_string('micmod-base/quotation/partial/repeated_goods_code.html',
                            context={'repeated_goods_code': repeated_codes})
     return JsonResponse({'res': res}, safe=False)
@@ -1044,3 +1136,99 @@ def inquiry_not_started(request):
            }
 
     return JsonResponse(res)
+
+
+from django.db import transaction
+
+
+def duplicate_quotation(request, quotation_id):
+    with transaction.atomic():
+        # Get the original quotation
+        quotation = Quotation.objects.get(pk=quotation_id)
+
+        wf_initial = {
+            'wf_access': True,
+            'from_user': None,
+            'to_user': request.user,
+            'state': 'پیش فاکتور اولیه',
+            'state_index': 0,
+            'belong_to_group': 'sales_user',
+            'action': 'create',
+            'deadline': None,
+            'flow_config': Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView'),
+            'create': True
+        }
+        wfform = WorkFlowModelForm(data=request.POST, initial=wf_initial, content_type_model=Quotation,
+                                   current_user=request.user)
+        if wfform.is_valid():
+            quotation.pk = None
+            quotation.guid = uuid.uuid4()
+            quotation.sepidar_number = None
+            quotation.sepidar_quotation_id = None
+            quotation.cancel = False
+
+            wf_obj = wfform.save()
+            wf_obj.from_user = request.user
+            wf_obj.to_user = request.user
+
+            wf_obj.content_type = ContentType.objects.filter(app_label=quotation._meta.app_label,
+                                                             model=quotation._meta.model_name).first()
+            wf_obj.wf_status = 5  # first draft
+            wf_obj.extra_data.request = request
+            wf_obj.current_state_name = 'پیش فاکتور اولیه'
+            wf_obj.save()
+
+            # Duplicate the quotation
+            quotation.last_work_flow = wf_obj
+
+            quotation.extra_data.request = request
+            quotation.save()
+            wf_obj.object_id = quotation.pk
+            wf_obj.save()
+
+            # Duplicate each related QuotationItem
+            quotation_items = QuotationItem.objects.filter(quotation=quotation_id)
+            for item in quotation_items:
+                # goods_price_market, goods_market_date, goods_avg_price, goods_min_price, goods_max_price, goods_avg_count,
+                # goods_code_alt, goods_name_alt, goods_last_sale, goods_last_price, goods_total_sales, goods_q_last_sale,
+                # goods_q_last_price, goods_q_total_sales, , , , ,
+                # quotation_id, is_deleted, , itemid, , ,
+                # , description, , , , ,
+                # , , , , , ,
+                # , , , , , , ,
+                # , price_target, goods_code_fk_id, final_price_sh, discount_per_item, , 
+                item.need_foreign_price_inquiry = False
+                item.need_local_price_inquiry = False
+                item.foreign_price_inquiry_done = False
+                item.local_price_inquiry_done = False
+                item.assigned_trade_user = None
+                item.assigned_trade_user2 = None
+                item.assigned_trade_user_date = None
+                item.assigned_trade_user_date2 = None
+                item.task_start = False
+                item.task_start2 = False
+                item.task_start_date = None
+                item.task_start_date2 = None
+                item.item_editor_user = None
+                item.old_goods_code = None
+                item.old_goods_name = None
+                item.delay_reason = None
+                item.delay_time = None
+                item.has_delay = False
+                item.selected_price_code_id = None
+                item.creator_user = None
+                item.editor_user = None
+                item.bazar_price_code = None
+                item.trade_price_code = None
+                item.lead_time = None
+                item.item_in_china = False
+                item.is_over = False
+                #item.price_method = 'last_sale'
+                #item.final_price = None
+
+                item.pk = None  # Create a new record
+                item.quotation = quotation  # Assign the new quotation
+                item.extra_data.request = request
+                item.save()
+
+        return quotation

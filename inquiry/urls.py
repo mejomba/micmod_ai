@@ -49,4 +49,5 @@ urlpatterns = [
     path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult'),
     path('ajax/count/', views.inquiry_count, name='inquiry.count'),
     path('variant/title/', views.get_inquiry_title, name='inquiry.count'),
+    path('pg_backup/', views.pg_backup, name='pg_backup')
 ]

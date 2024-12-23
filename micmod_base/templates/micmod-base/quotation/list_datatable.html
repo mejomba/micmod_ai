@@ -4,7 +4,7 @@
 {% load jalali_tags %}
 {% load accounts_tag %}
 
-{% block title %}Orders{% endblock title %}
+{% block title %}لیست پیش فاکتور{% endblock title %}
 {% block extra_css %}
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -15,8 +15,10 @@
     <!-- Responsive datatable examples -->
     <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
 
@@ -29,16 +31,17 @@
         <div class="d-flex justify-content-between">
         <span>
             <span class="mt-3 me-3">استفاده از فیلتر</span>
-            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
-            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
+            <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
         </span>
-        {% if request.user|has_group:"sales_admin" %}
+{#        {% if request.user|has_group:"sales_admin" %}#}
         <span class="d-flex">
             <a href="{% url 'micmod_base:sale_user_report' %}" class="btn btn-dark mx-1 ms-20 me-3" target="_blank" data-bs-toggle="modal" id="id_sale_user_report" data-bs-target="#id_kt_empty_modal_lg">گزارش کار</a>
             <span>{{ time_form.from_time }}</span>
             <span>{{ time_form.to_time }}</span>
         </span>
-        {% endif %}
+{#        {% endif %}#}
         </div>
 
 
@@ -117,10 +120,6 @@
             },
             dataType: 'json',
             cache: false,
-            {#processData: false,#}
-            {#headers: { "X-CSRFToken": getCookie('csrftoken') },#}
-            {#contentType: false,#}
-            {#beforeSend: block_main_container,#}
             success: function (data) {
                 debugger
                 html = data['res'];
@@ -135,18 +134,34 @@
      })
     }
 
+    function foreign_inquiry_not_responded(event){
+        debugger
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
+
+    function local_inquiry_not_responded(event){
+        debugger
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
     </script>
 
 
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
-
-{#    <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>#}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>#}
-{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>#}
-{#    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>#}
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>

@@ -1,0 +1,105 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load jalali_tags %}
+{% load accounts_tag %}
+
+{% block title %}فعالیت های روز تولید{% endblock title %}
+{% block extra_css %}
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+        <span>
+            <span class="mt-3 me-3">استفاده از فیلتر</span>
+            <a href="{% url 'pcba:production.day.activities.list' %}?q=all" class="btn btn-primary mx-1">همه</a>
+            <a href="{% url 'pcba:production.day.activities.list' %}?q=delivery" class="btn border border-primary btn-outline-primary mx-1">ارسال</a>
+
+        </span>
+        </div>
+    </div>
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                <div class="row">
+                            <div class="col-12">
+                                <div class="container-fluid">
+                                    <div class="table-responsive p-2">
+                                        <table id="quotation_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                </div>
+
+                </div> <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+{% include 'core/partial/empty_modal_lg.html' %}
+        </div>
+        <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+
+    <script language="javascript">
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
+        AjaxDatatableViewUtils.initialize_table(
+            $('#quotation_list'),
+            "{% url 'pcba:production.day.activities.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+                q:q
+            },
+        );
+    });
+    </script>
+
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+{% endblock extra_js %}

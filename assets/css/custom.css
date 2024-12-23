@@ -14,7 +14,15 @@ html body {
     font-family: Sahel;
     overflow-x: hidden;
 }
-
+.drag-drop{
+    background-color: #bfa7ff !important;
+    color: #6a1fff !important;
+    font-weight: bold;
+}
+.hover-drop-down-icon:hover{
+    background-color: #dcceff !important;
+    color: #6a1fff !important;
+}
 .bigdrop {
     width: 500px !important;
 }
@@ -605,6 +613,13 @@ div[comma-value] input{
     bottom: 80px !important;
     background-color: red !important;
 }
+.mxw-50px {
+    max-width: 50px;
+}
+.ll {
+    direction: ltr !important;
+    text-align: left !important;
+}
 /*================== loadin on ajax request =================*/
 .overlay {
   height: 100%;
@@ -888,6 +903,9 @@ span .select2-selection{
 
 .s-0 {
     letter-spacing: 0.05rem;
+}
+.s-05 {
+    letter-spacing: 0.07rem;
 }
 .s-1 {
     letter-spacing: 0.1rem;

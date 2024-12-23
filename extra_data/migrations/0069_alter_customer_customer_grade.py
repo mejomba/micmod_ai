@@ -1,0 +1,16 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('extra_data', '0068_alter_customer_revival_date'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='customer',
+            name='customer_grade',
+            field=models.CharField(blank=True, choices=[('-3,Special', 'ویژه'), ('-2,A+', 'A+'), ('-1,A', 'A'), ('0,B', 'B'), ('0,C', 'C')], default='-1,A', max_length=10, null=True, verbose_name='رتبه مشتری'),
+        ),
+    ]

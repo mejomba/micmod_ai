@@ -52,5 +52,9 @@ class BIView(View):
     def get(self, request, pk):
         # bi_pk = request.GET.get('report_url')
         bi_obj = BIReport.objects.filter(pk=pk).first()
-        context = {'url': bi_obj.url if bi_obj else ''}
+        url = bi_obj.url if bi_obj else ''
+        host = request.META.get('HTTP_HOST')
+        if host.split(':')[0] == '94.182.194.120':
+            url = url.replace('192.168.1.80', '94.182.194.120:4040')
+        context = {'url': url}
         return render(request, 'dashboards/bi_report.html', context)

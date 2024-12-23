@@ -3,37 +3,44 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load quotation_tag %}
+{% load more_tags %}
 <tr class=" item">
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}
 <!-- COUNTER -->
-    <td class=" font-size-11 text-center align-middle replace-digits ">
+    <td class=" font-size-12 bold text-center align-middle replace-digits ">
         {{ forloop.counter }}
     </td>
 <!-- GOODS CODE -->
     <td class="">
-        <div class="font-size-10 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
+        <div class="font-size-12 replace-digits">{{ form.instance.goods_code|default_if_none:"-" }}</div>
     </td>
 <!-- GOODS NAME -->
     <td class="">
-        <div class="font-size-12">{{ form.instance.goods_code_fk.part_number|default_if_none:"" }}</div>
+        <div class="font-size-12">{{ form.instance.goods_code_fk.part_number|default_if_none:"-" }}</div>
     </td>
+<!-- CUSTOMER GOODS CODE -->
+    {% if with_customer_goods_code == '1' %}
+        <td class="">
+            <div class="font-size-12">{{ form.instance.customer_goods_code|default_if_falsy:"-" }}</div>
+        </td>
+    {% endif %}
 <!-- QUANTITY -->
-    <td class="font-size-10 replace-digits">
-        <div class="bold text-center font-size-10" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+    <td class="font-size-12 replace-digits">
+        <div class=" text-center font-size-12" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
         <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
     </td>
 {#    <td class="font-size-10 replace-digits">#}
 {#        <div class="bold text-center font-size-10" name="unit" >عدد</div>#}
 {#    </td>#}
 <!-- GOODS LAST PRICE -->
-    <td class="font-size-10 replace-digits">
+    <td class="font-size-12 replace-digits">
 {#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}
-        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.sepidar_fee|default_if_none:0|floatformat:digit|intcomma }}</div>
+        <div class="total_count text-center font-size-12" name="unit_price" >{{ form.instance.sepidar_fee|default_if_none:0|floatformat:digit|intcomma }}</div>
     </td>
 <!-- FEE -->
-    <td class="font-size-10 replace-digits">
+    <td class="font-size-12 bold replace-digits">
         <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
         <div class="fee_en " name="fee">{{ form.instance.row_price|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
     </td>

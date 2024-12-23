@@ -1,6 +1,8 @@
 import datetime
 import json
-
+from django.db.models import Avg, Value
+from ajax_datatable import AjaxDatatableView
+from ajax_datatable.app_settings import DISABLE_QUERYSET_OPTIMIZATION
 from django.apps import apps
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
@@ -8,8 +10,11 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ImproperlyConfigured
+from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.db.models.functions import Coalesce
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -18,13 +23,18 @@ from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ProcessFormView, ModelFormMixin
+from rest_framework.views import APIView
+
 from _keenthemes import KTLayout
 from accounts.extra_models import Profile
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from comments.forms import CommentsForm
+from micmod_base.models import Quotation
+from order.models import Order
+from payment.forms import GenericPaymentForm
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import map_model_to_python_type, show_error, diff_time
+from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -35,6 +45,8 @@ from tools.form_tools import get_function
 import openpyxl
 
 from .models import ExtraData
+
+from .models import LogError
 
 
 class BaseView(UserPassesTestMixin,
@@ -99,6 +111,9 @@ class BaseView(UserPassesTestMixin,
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
 
+        self.object = self.get_object()
+        self.formset_form = self.get_formset_from_struct()
+
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
@@ -107,9 +122,7 @@ class BaseView(UserPassesTestMixin,
             self.flow_config['flow_deadline'].append(0)
             self.flow_config['append_last_step'] = True
 
-        self.object = self.get_object()
-        self.formset_form = self.get_formset_from_struct()
-        self.state_index = self.get_flow_index(self.object)
+            self.state_index = self.get_flow_index(self.object)
 
         # if request.method == 'GET':
         self.formset = self.get_formset_from_struct()
@@ -149,6 +162,8 @@ class BaseView(UserPassesTestMixin,
         return self.form_class
 
     def post(self, request, *args, **kwargs):
+        if 'duplicate' in self.request.POST:
+            return super().post(request, *args, **kwargs)
         self.form_class = self.get_form_class()
 
         self.request.POST._mutable = True
@@ -160,8 +175,9 @@ class BaseView(UserPassesTestMixin,
                 if value:
                     obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
                     if not obj and model.insert_new:
-                        obj = model.objects.create(**{model.auto_complete: value})
+                        obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user, 'editor_user': self.request.user})
                         obj.extra_data.request = self.request
+                        obj.save()
                         obj.auto_complete_func()
 
                     value = getattr(obj, 'pk', -1)
@@ -194,6 +210,7 @@ class BaseView(UserPassesTestMixin,
                     wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                                 content_type_model=self.model, current_user=self.request.user)
             except Exception as e:
+                LogError.save_db(self.request, e, __file__)
                 print('error ', __file__, e.__traceback__.tb_lineno, e)
                 wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                             content_type_model=self.model, current_user=self.request.user)
@@ -346,8 +363,6 @@ class BaseView(UserPassesTestMixin,
                 current_user=self.request.user,
             )
 
-        # context['object_logs'] = ChangeLog.get_log(self.object)
-        # context['object_logs'] = []
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
                                                       "constraint": {
@@ -362,7 +377,6 @@ class BaseView(UserPassesTestMixin,
             context['formset'] = self.formset
 
         context['allow_next'] = True
-        print(__file__, 'super class context', context.get('current_user_groups'))
         return context
 
     def get_form_kwargs(self):
@@ -466,6 +480,7 @@ class BaseView(UserPassesTestMixin,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
         except Exception as e:
+            LogError.save_db(self.request, e, __file__)
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
 
             # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
@@ -521,8 +536,10 @@ class BaseView(UserPassesTestMixin,
                 self.object.save()
                 return HttpResponseRedirect(self.get_success_url())
             if getattr(old_obj, 'cancel', None):
-                if old_obj.cancel:
+                if old_obj.cancel and isinstance(old_obj, Quotation):
                     return HttpResponseRedirect(reverse_lazy('micmod_base:quotations.view', kwargs={'pk': old_obj.pk}))
+                if old_obj.cancel and isinstance(old_obj, Order):
+                    pass
             if old_obj:
                 old_obj.attach_image_file(old_obj)
                 last_flow_obj = self.get_flow(old_obj)
@@ -560,7 +577,8 @@ class BaseView(UserPassesTestMixin,
             elif 'canceled' in self.request.POST:
                 old_obj.cancel = True
                 old_obj.save()
-                old_obj.save_comment(request=self.request)
+                # old_obj.save_comment(self.request, CommentsForm)
+                old_obj.save_comment_(self.request)
                 self.object.cancel = True
                 self.object.extra_data.request = self.request
                 self.object.save()
@@ -569,7 +587,8 @@ class BaseView(UserPassesTestMixin,
             elif 'uncanceled' in self.request.POST:
                 old_obj.cancel = False
                 old_obj.save()
-                old_obj.save_comment(request=self.request)
+                # old_obj.save_comment(self.request, CommentsForm)
+                old_obj.save_comment_(self.request)
                 self.object.cancel = False
                 self.object.extra_data.request = self.request
                 self.object.save()
@@ -661,10 +680,11 @@ class BaseView(UserPassesTestMixin,
                                           obj=new_obj,
                                           input_prefix='file'
                                           )
+                    new_obj.save_payment(self.request)
 
                     """***NEW***"""
                     if form.has_comment:
-                        new_obj.save_comment(request=self.request)
+                        new_obj.save_comment(self.request, CommentsForm)
                     """***NEW***"""
 
                     """***NEW***"""
@@ -674,6 +694,7 @@ class BaseView(UserPassesTestMixin,
                     """***NEW***"""
 
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     print('error: ', e.__traceback__.tb_lineno, e)
 
                 """save formset"""
@@ -698,6 +719,9 @@ class BaseView(UserPassesTestMixin,
                         if hasattr(self.formset.forms[0], 'nested'):
                             fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                         else:
+                            for f in self.formset.forms:
+                                pass
+                                f.instance.extra_data.request = self.request
                             fo = self.formset.save()
                     else:
                         print(self.formset.errors)
@@ -705,8 +729,8 @@ class BaseView(UserPassesTestMixin,
 
                     if fo:
                         for idx, fs_obj in enumerate(fo):
-                            fs_obj.extra_data.request = self.request
-                            fs_obj.save()
+                            # fs_obj.extra_data.request = self.request
+                            # fs_obj.save()
                             # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
                             if self.formset.form.image_model and self.formset.form.image_groups:
@@ -735,30 +759,32 @@ class BaseView(UserPassesTestMixin,
                         new_details = list(new_details.all())
 
                     for d in new_details:
+                        d.save_comment(self.request, CommentsForm)
+                        d.save_payment(self.request)
                         # ToDo make dynamic
-                        app_label = d._meta.app_label
-                        model_name = d._meta.model_name
-                        ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
-                        object_id = d.pk
-                        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
-                        comment_form = CommentsForm(self.request.POST, prefix=prefix)
-                        if comment_form.is_valid():
-                            comment_form.instance.extra_data.request = self.request
-                            cmnt = comment_form.save()
-                            cmnt.save_image(
-                                request=self.request,
-                                image_groups=comment_form.image_groups,
-                                image_model=comment_form.image_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-image',
-                            )
-                            cmnt.save_file(
-                                request=self.request,
-                                file_groups=comment_form.file_groups,
-                                file_model=comment_form.file_model,
-                                obj=cmnt,
-                                input_prefix=f'{prefix}-file',
-                            )
+                        # app_label = d._meta.app_label
+                        # model_name = d._meta.model_name
+                        # ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
+                        # object_id = d.pk
+                        # prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+                        # comment_form = CommentsForm(self.request.POST, prefix=prefix)
+                        # if comment_form.is_valid():
+                        #     comment_form.instance.extra_data.request = self.request
+                        #     cmnt = comment_form.save()
+                        #     cmnt.save_image(
+                        #         request=self.request,
+                        #         image_groups=comment_form.image_groups,
+                        #         image_model=comment_form.image_model,
+                        #         obj=cmnt,
+                        #         input_prefix=f'{prefix}-image',
+                        #     )
+                        #     cmnt.save_file(
+                        #         request=self.request,
+                        #         file_groups=comment_form.file_groups,
+                        #         file_model=comment_form.file_model,
+                        #         obj=cmnt,
+                        #         input_prefix=f'{prefix}-file',
+                        #     )
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
@@ -781,6 +807,7 @@ class BaseView(UserPassesTestMixin,
                     new_obj.last_work_flow = wf_obj
                     new_obj.save()
                 except Exception as e:
+                    LogError.save_db(self.request, e, __file__)
                     show_error(e, __file__)
                 return super().form_valid(form)
             return super().form_valid(form)
@@ -941,31 +968,46 @@ class CommentsFormView(View):
             comments_rel = []
             pass
 
-        # image = kwargs.get('image')
-        # file = kwargs.get('file')
         comment_type = self.request.GET.get('comment_type')
         model = apps.get_model(app_label, model_name)
+        customer = sku = None
         if model.__name__.lower() == 'quotationitem':
             obj = model.objects.full_queryset(pk=object_id).first()
+            customer = getattr(obj.quotation, 'customer_party_id', None)
+            sku = getattr(obj, 'goods_code_fk', None)
         else:
             obj = model.objects.filter(pk=object_id).first()
+        if model.__name__.lower() == 'quotation':
+            customer = getattr(obj, 'customer_party_id', None)
+            sku = None
+        # if model.__name__.lower() == 'factor':
+        #     customer = getattr(obj.q, 'customer_party_id', None)
+        #     sku = None
+        # if model.__name__.lower() == 'factoritem':
+        #     customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+        #     sku = getattr(obj.qi, 'goods_code_fk', None)
+        for_sku = Q(sku=sku) & Q(for_sku=True)
+        for_customer = Q(customer=customer) & Q(for_customer=True)
         comments = Comments.objects.none()
         if comment_type == 'cancel':
             kwargs['submit_type'] = 'cancel'
-            # comments = obj.comments.all().filter(comment_title="C").order_by('-created_date')
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'comment':
             kwargs['submit_type'] = 'save_comment'
-            # comments = obj.comments.all().filter(~Q(comment_title="C")).order_by('-created_date')
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'trade_inquiry':
             kwargs['submit_type'] = 'trade_inquiry'
             comments = obj.comments.all().order_by('-created_date')
+        comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
         kwargs['comment_content'] = self.request.GET.get('comment_content', '')
+        kwargs['customer'] = customer
+        kwargs['sku'] = sku
 
         form = CommentsForm(prefix=prefix, initial=kwargs)
+        if model.__name__.lower() == 'quotation' or model.__name__.lower() == 'factor':
+            form.fields['for_sku'].widget.attrs['disabled'] = True
         image = None
         file = None
         if self.request.user.base_group != 'trade':
@@ -977,7 +1019,6 @@ class CommentsFormView(View):
                                                                     editor_user=request.user)
                 image = comment.files.content_type.image_set
                 file = comment.files.content_type.file_set
-                # comment_seen.save_user(self.request)
                 comment_seen.extra_data.request = self.request
                 comment_seen.save()
             except Exception:
@@ -1000,6 +1041,52 @@ class CommentsFormView(View):
         return JsonResponse({'res': x})
 
 
+class PaymentFormView(View):
+    def get(self, request, *args, **kwargs):
+        from django.apps import apps
+        from comments.models import CommentSeen
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get('model_name')
+        ctt_id = kwargs.get('content_type')
+        object_id = kwargs.get('object_id')
+        model = apps.get_model(app_label, model_name)
+        obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotationitem':
+        #     obj = model.objects.full_queryset(pk=object_id).first()
+        #     customer = getattr(obj.quotation, 'customer_party_id', None)
+        #     sku = getattr(obj, 'goods_code_fk', None)
+        # else:
+        #     obj = model.objects.filter(pk=object_id).first()
+        # if model.__name__.lower() == 'quotation':
+        #     customer = getattr(obj, 'customer_party_id', None)
+        #     sku = None
+
+        payments = obj.payments.all().order_by('-created_date')
+        prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
+        kwargs['g_from_date'] = self.request.GET.get('g_from_date', '')
+        kwargs['g_to_date'] = self.request.GET.get('g_to_date', '')
+        kwargs['total_amount'] = self.request.GET.get('total_amount', '')
+        kwargs['description'] = self.request.GET.get('description', '')
+
+
+        form = GenericPaymentForm(prefix=prefix, initial=kwargs)
+        file = None
+
+        for payment in payments:
+            try:
+                file = payment.files.content_type.file_set
+            except Exception:
+                continue
+
+        context = {'form': form,
+                   'object_id': object_id,
+                   'ctt_id': ctt_id,
+                   'payments': payments,
+                   'file': file,
+                   'request': request}
+        x = render_to_string('core/partial/generic_payment_form.html', context)
+
+        return JsonResponse({'res': x})
 ############ new ##############hajinezhad###############
 
 class BaseCustomView():
@@ -1182,3 +1269,178 @@ def delete_ajax(request, *args, **kwargs):
         obj.save()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+class ImportCustomerFromSepidar(View):
+    def get(self, request, *args, **kwargs):
+        res = import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        dict_result = {'res': []}
+        if isinstance(res, list):
+            dict_result['res'] = res
+        else:
+            dict_result['res'].append(res or "مشتری جدیدی یافت نشد")
+        rslt = render_to_string('core/import_customer_result.html', context=dict_result)
+        return JsonResponse({'res': rslt}, safe=False)
+
+
+class CustomAjaxDataTable(AjaxDatatableView):
+    def _filter_queryset(self, column_names, search_value, qs, global_filtering, not_search_value=None):
+        TEST_FILTERS = False
+        search_filters = Q()
+        for column_name in column_names:
+
+            column_obj = self.column_obj(column_name)
+            column_spec = self.column_spec_by_name(column_name)
+
+            # v4.0.2: we now accept multiple search values (to be ORed)
+            # Split search values;
+            # example: 'aaa + bbb' -> ['aaa ', ' bbb']
+            original_search_value = search_value
+            if self.search_values_separator and self.search_values_separator in search_value:
+                search_value = [t.strip() for t in search_value.split(self.search_values_separator)]
+            if self.not_search_values_separator and self.not_search_values_separator in search_value:
+                not_search_value = [t.strip() for t in search_value.split(self.not_search_values_separator)]
+
+            if not_search_value:
+                column_filter = build_column_filter(column_name, column_obj, column_spec, None, global_filtering, not_search_value)
+            else:
+                column_filter = build_column_filter(column_name, column_obj, column_spec, search_value, global_filtering)
+
+            if column_filter:
+                search_filters |= column_filter
+                # if TEST_FILTERS:
+                #     try:
+                #         qstest = qs.filter(column_filter)
+                #         trace('%8d/%8d records filtered over column "%s"' % (qstest.count(), qs.count(), column_name, ))
+                #     except Exception as e:
+                #         trace('ERROR filtering over column "%s": %s' % (column_name, str(e)))
+
+        # if TEST_FILTERS:
+        #     trace(search_filters)
+
+        return qs.filter(search_filters)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            is_ajax_request = request.accepts("application/json")
+        except AttributeError as e:
+            # Django < 4.0
+            is_ajax_request = request.is_ajax()
+
+        if not is_ajax_request:
+            return HttpResponseBadRequest()
+
+        try:
+            query_dict = request.REQUEST
+            params = self.read_parameters(query_dict)
+        except ValueError:
+            return HttpResponseBadRequest()
+
+        # Prepare the queryset and apply the search and order filters
+        qs = self.get_initial_queryset(request)
+        if not DISABLE_QUERYSET_OPTIMIZATION and not self.disable_queryset_optimization:
+            if (
+                    self.disable_queryset_optimization_select_related and
+                    self.disable_queryset_optimization_only and self.disable_queryset_optimization_prefetch_related
+            ):
+                pass
+            else:
+                qs = self.optimize_queryset(qs)
+        qs = self.prepare_queryset(params, qs)
+
+        if params['length'] == -1:
+            paginator = Paginator(qs, max(1, qs.count()))
+        else:
+            paginator = Paginator(qs, params['length'])
+        response_dict = self.get_response_dict(request, paginator, params['draw'], params['start'])
+        response_dict['footer_message'] = self.footer_message(qs, params)
+        response_dict['toolbar_message'] = self.toolbar_message(qs, params)
+
+        response_dict['avg'] = qs.aggregate(sea_avg=Avg(Coalesce('sea_extra_cost_percentage', Value(0.0))),
+                                            kala_avg=Avg(Coalesce('extra_cost_percentage', Value(0.0))),
+                                            air_avg=Avg(Coalesce('air_extra_cost_percentage', Value(0.0))),
+                                            express_avg=Avg(Coalesce('express_extra_cost_percentage', Value(0.0)))
+                                            )
+        response_dict['count'] = qs.count()
+        response_dict['pk_values'] = ','.join(map(str, qs.values_list('pk', flat=True)))
+
+        # Prepare response
+        response = HttpResponse(
+            json.dumps(
+                response_dict,
+                cls=DjangoJSONEncoder
+            ),
+            content_type="application/json")
+
+        return response
+
+
+class Select2BaseSearch_(View):
+    model = None
+    title = None
+    def get(self, request, *args, **kwargs):
+        if self.model is None or self.title is None:
+            raise ImproperlyConfigured('Select2BaseSearch "model" and "title" required')
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        if q:
+            qs = self.model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, self.title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+
+class Select2BaseSearch(View):
+    model = None
+    title = None
+    # "core/select2/<str:app_name>/<str:model_name>/<str:title>/"
+    def get(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        if q:
+            qs = model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr(x, title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+
+class GenericApiCall(View):
+
+    def get(self, request, app_name, model_name, function, *args, **kwargs):
+        from django.utils.module_loading import import_string
+
+        model = import_string(f'{app_name}.api_call.{model_name}')
+        GET = self.request.GET
+
+        f = getattr(model, function, None)
+        if f:
+            res = f(**GET)
+
+            template = self.get_template(GET.get('template_name'))
+            if template:
+                html = render_to_string(template, res)
+                return JsonResponse({'res': html})
+            else:
+                return res
+
+    def get_template(self, template_name):
+        if template_name is None:
+            return 'default_template.html'
+        else:
+            return f'core/partial/sepidar_api_call/{template_name}.html'

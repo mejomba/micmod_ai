@@ -42,6 +42,7 @@ class CustomBaseModelForm(forms.ModelForm):
     file_model = None
     has_comment = None
     has_addition = None
+    has_payment = None
     crispy = None
     action = None
     enable = True
@@ -85,6 +86,10 @@ class CustomBaseModelForm(forms.ModelForm):
     def make_optional(self, fields: List):
         for f in fields:
             self.fields[f].required = False
+
+    def make_required(self, fields: List):
+        for f in fields:
+            self.fields[f].required = True
 
     def make_disable(self, fields: List):
         for field_name, field in self.fields.items():

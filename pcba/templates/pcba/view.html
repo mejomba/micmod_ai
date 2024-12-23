@@ -1,0 +1,786 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load jalali_tags %}
+
+{% block title %}قرارداد{% endblock title %}
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <style>
+        .item_customer_receipt_list{
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link.active,
+        .nav-pills .show > .nav-link{
+            background-color: #061b66 !important;
+        }
+
+    </style>
+{% endblock extra_css %}
+
+{% if obj %}
+        <div class="border border-danger">{% include 'pcba/project_item_list.html' with form_s=form_s %}</div>
+    {% endif %}
+{% block form_content %}
+{% csrf_token %}
+
+
+
+     <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow-sm">
+        <div class="col">
+            <div class="row row-cols-1 align-items-baseline">
+                <h4 class="position-absolute" style="top: -10px">قرارداد</h4>
+                <div class="col">
+                    <div class="row row-cols-3">
+                        {% render_field_by_order form form.goods_code_fk form.project_name_en form.customer_party_id label='on-border' %}
+{#                        <div class="col on-border">#}
+{#                            <div id="id_customer_party_id_select2"></div>#}
+{#                            <label for=""> مشتری</label>#}
+{#                        </div>#}
+                        {% include 'core/partial/select2_field.html' with id="id_customer_party_id_select2" lable="مشتری" %}
+                        {% include 'core/partial/select2_field.html' with id="id_goods_code_fk_select2" lable="کد کالا" %}
+{#                        <div class="col on-border">#}
+{#                            <div id="id_goods_code_fk_select2"></div>#}
+{#                            <label for="">کد کالا</label>#}
+{#                        </div>#}
+
+                    </div>
+                </div>
+                <div class="col mt-3">
+                    <div class="row row-cols-5">
+                        {% render_field_by_order form form.customer_sheet_count form.customer_board_count form.customer_total_board_count form.pad_count form.ic_pad_count label='on-border' %}
+                    </div>
+                </div>
+
+
+                <div class="col mt-3">
+                    <div class="row row-cols-7">
+                        {% render_field_by_order form form.not_assembly_pad_count form.first_setup_time form.second_setup_time form.first_setup_cost form.second_setup_cost label='on-border' %}
+                    </div>
+                </div>
+
+                <div class="col mt-3">
+                    <div class="row row-cols-5">
+                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.factor_number form.finish label='on-border' %}
+                    </div>
+                </div>
+                {{ form.errors }}
+
+
+
+{#    BEGIN MULTI TAB#}
+
+    <div class="card card-custom mt-20 mb-10 shadow-sm">
+	<div class="card-header card-header-tabs-line">
+		<div class="card-toolbar">
+			<ul class="nav rounded nav-light-danger nav-bold font-size-15 nav-pills">
+				<li class="nav-item rounded">
+					<a class="nav-link active" data-toggle="tab" href="#kt_tab_pane_1_4">
+                        <i class="ki-duotone ki-book fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                        </i>
+					<span class="nav-text">رسید کالای مشتری</span>
+					</a>
+				</li>
+				<li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_2_4">
+                        <i class="ki-duotone ki-wrench fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+					<span class="nav-text">لیست قطعات پروژه</span>
+					</a>
+				</li>
+				<li class="nav-item rounded">
+					<a class="nav-link" data-toggle="tab" href="#kt_tab_pane_3_4">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+					<span class="nav-text">فعالیت‌های روز تولید</span>
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="card-body py-0 px-4">
+		<div class="tab-content">
+			<div class="tab-pane fade show active" id="kt_tab_pane_1_4" role="tabpanel" aria-labelledby="kt_tab_pane_1_4">
+				<div class="bg-white row rounded pt-10 position-relative ">
+{#        <h4 class="position-absolute" style="top: -10px">رسید کالای مشتری</h4>#}
+        {% if form.instance.pk %}
+            {% with form.instance.customer_contract.all as cirs %}
+                {% if cirs %}
+                    <div class="row align-items-center mb-7 bold">
+                        <div class="col-2 "><span class="ms-7">عنوان </span></div>
+                        <div class="col-2">رسید مربوطه</div>
+                        <div class="col-1">قرارداد</div>
+                        <div class="col-1">وضعیت</div>
+                        <div class="col-1">تاریخ رسید</div>
+                        <div class="col-2">تعداد کل اقلام دریافتی</div>
+                        <div class="col-2">عملیات</div>
+                        <div class="col-1"></div>
+
+                    </div>
+                {% endif %}
+            {% for cir in cirs %}
+                <div class="row align-items-center mb-5 {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                    <div class="col-2 py-2 ">
+                        <span class="me-3">
+                            <b>{{ forloop.counter }})</b>
+                        </span>
+                        <span>{{ cir.title|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-2 py-2">
+                        <span id="id_customer_contract">{{ cir.parent|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1 py-2">
+                        <span id="id_customer_contract">{{ cir.contract|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1 py-2">
+                        <span>{{ cir.get_status_display|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-1 py-2">
+                        <span>{{ cir.receipt_date|to_jalali:"%Y-%m-%d" }}</span>
+                    </div>
+                    <div class="col-2 py-2">
+                        <span>{{ cir.total_board_receipt_count|intcomma|default_if_none:"-"  }}</span>
+                    </div>
+
+                    <div class="col-2 py-2">
+                        <span>
+                        <a href="#" class="d-inline-block tooltip_ cursor-pointer item_in_customer_receipt" target="_blank" data-url="{% url 'pcba:item.in.customer.receipt.view' %}?pk={{ cir.pk }}"
+                                data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                            <span class="px-3 py-1 rounded">
+                                <span class="tooltiptext"> افزودن کالا</span>
+                                <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
+                            </span>
+                        </a>
+                        <a href="#" target="_blank" class="me-3 edit-customer-item-receipt tooltip_" data-url="{% url 'pcba:customer.item.receipt.view' cir.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                            <span class="tooltiptext">ویرایش</span>
+                            <i class="ki-duotone ki-pencil fs-2 text-info">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                            </i>
+                        </a>
+                        <a href="#" target="_blank" class="me-3 delete-customer-item-receipt text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ cir|model_name }}&object_id={{ cir.pk }}&app_label={{ cir|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </a>
+                        <a class="mx-4 tooltip_ cursor-pointer"
+                            data-bs-toggle="modal"
+                            data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ cir|model_name }}"
+                            data-object_id="{{ cir.pk }}"
+                            data-app_name="{{ cir|app_label }}"
+                            name="name_change_log">
+                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                            </i>
+                        </a>
+
+                        <span class="bg-warning rounded px-1 position-absolute item-container cursor-pointer">
+                             نمایش کالاها
+                            <i class="ki-duotone ki-down"></i>
+                        </span>
+                    </span>
+                    </div>
+                <div class="col-1"></div>
+                <div class="ps-16 item_customer_receipt_list" style="overflow: hidden; height: 0">
+                    {% include 'pcba/partial/item_customer_receipt_list.html' with items=cir.items.all %}
+                </div>
+
+
+            </div>
+
+            {% endfor %}
+            {% endwith %}
+            <div class="mt-3">
+
+                    <a href="#" class="d-inline-block" target="_blank">
+                        <h1 class="border px-3 py-1 rounded" id="customer_item_receipt"
+                            data-url="{% url 'pcba:customer.item.receipt.view' %}?pk={{ form.instance.pk }}"
+                            data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
+                    </a>
+
+            </div>
+        {% else %}
+            <span class="mx-3">پس از ثبت قرارداد امکان ثبت رسید کالای مشتری وجود دارد :)</span>
+        {% endif %}
+        </div>
+			</div>
+			<div class="tab-pane fade" id="kt_tab_pane_2_4" role="tabpanel" aria-labelledby="kt_tab_pane_2_4">
+
+<div class="bg-white row rounded position-relative pt-10">
+{#    <h4 class="position-absolute" style="top: -10px">لیست قطعات پروژه</h4>#}
+        {% if form.instance.pk %}
+            {% with form.instance.projectitemlist_set.all as pils %}
+                {% if pils %}
+                    <div class="row align-items-center mb-7 bold">
+                        <div class="col-2 "><span class="ms-7">قرارداد </span></div>
+                        <div class="col-1">کالا</div>
+                        <div class="col-2">پارت نامبر</div>
+                        <div class="col-1">تعداد</div>
+                        <div class="col-2">توضیحات</div>
+                        <div class="col-2">عملیات</div>
+                        <div class="col-2"></div>
+
+                    </div>
+                {% endif %}
+            {% for pil in pils %}
+                <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                    <div class="col-2 mb-3">
+                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                        <span>{{ pil.contract }}</span>
+                    </div>
+                    <div class="col-1 mb-3">
+                        <span id="id_project_item_list">{{ pil.goods_code_fk|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-2 mb-3">
+                        <span>{% if pil.part_number %}{{ pil.part_number|default_if_none:"-" }}{% else %}{{ pil.goods_code_fk.part_number }}{% endif %}</span>
+                    </div>
+                    <div class="col-1 mb-3">
+                        <span>{{ pil.quantity|intcomma|default_if_none:"-" }}</span>
+                    </div>
+                    <div class="col-2 mb-3">
+                        <span>{{ pil.description|default_if_falsy:"-"  }}</span>
+                    </div>
+                    <div class="col-2 mb-3">
+                        <span>
+                        <a href="#" target="_blank" class="me-3 edit-project-item-list tooltip_" data-url="{% url 'pcba:project.item.list' pil.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                            <span class="tooltiptext">ویرایش</span>
+                            <i class="ki-duotone ki-pencil fs-2 text-info">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                            </i>
+                        </a>
+                        <a href="#" target="_blank" class="me-3 delete-project-item-list text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ pil|model_name }}&object_id={{ pil.pk }}&app_label={{ pil|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </a>
+                        <a class="mx-4 tooltip_ cursor-pointer"
+                            data-bs-toggle="modal"
+                            data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ pil|model_name }}"
+                            data-object_id="{{ pil.pk }}"
+                            data-app_name="{{ pil|app_label }}"
+                            name="name_change_log">
+                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                            </i>
+                        </a>
+                    </span>
+                    </div>
+                <div class="col-2"></div>
+                {{ form.errors }}
+        </div>
+            {% endfor %}
+            {% endwith %}
+            <div class="mt-3">
+
+{#            <a href="#" class="d-inline-block" target="_blank">#}
+{#                <h1 class="border px-3 py-1 rounded" id="project_item_list"#}
+{#                    data-url="{% url 'pcba:project.item.list' %}?pk={{ form.instance.pk }}" data-bs-target="id-project-item-list-form">+</h1>#}
+{#            </a>#}
+{#            <div id="id-project-item-list-form" class=" d-none">{% include 'pcba/partial/project_item_list_ajax.html' %}</div>#}
+            <a href="#" class="d-inline-block" target="_blank">
+                <h1 class="border px-3 py-1 rounded" id="project_item_list"
+                    data-url="{% url 'pcba:project.item.list' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
+            </a>
+
+            </div>
+        {% else %}
+            <span class="mx-3">پس از ثبت قرارداد امکان ثبت لیست قطعات پروژه وجود دارد :)</span>
+        {% endif %}
+    </div>
+			</div>
+			<div class="tab-pane fade" id="kt_tab_pane_3_4" role="tabpanel" aria-labelledby="kt_tab_pane_3_4">
+				<div class="bg-white row rounded pt-10 position-relative ">
+        <div class="col-12">
+{#            <h4 class="position-absolute" style="top: -10px">فعالیت های روز تولید</h4>#}
+            {% if form.instance.pk %}
+                {% with form.instance.production_contract.all as pdas %}
+                    {% if pdas %}
+                        <div class="row align-items-center mb-7 bold">
+                            <div class="col-1 "><span class="ms-7">تاریخ </span></div>
+                            <div class="col-2">فعالیت</div>
+                            <div class="col-1">نوع مونتاژ</div>
+                            <div class="col-1">تعداد برد های خراب</div>
+                            <div class="col-2">تعداد برد‌های سالم مونتاژ نشده</div>
+                            <div class="col-2">تعداد کل برد مونتاژ شده</div>
+                            <div class="col-1">نحوه ارسال</div>
+                            <div class="col-2">عملیات</div>
+                            <div class=""></div>
+
+                        </div>
+                    {% endif %}
+
+                {% for pda in pdas %}
+                    <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                        <div class="col-1 py-2">
+                            <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                            <span>{{ pda.production_date|to_jalali:"%Y-%m-%d" }}</span>
+                        </div>
+                        <div class="col-2 py-2 ">
+                            <span>{{ pda.get_activity_display|default_if_none:"-" }}</span>
+                        </div>
+                        <div class="col-1 py-2 ">
+                            <span>{{ pda.get_assembly_type_display|intcomma|default_if_none:"-" }}</span>
+                        </div>
+                        <div class="col-1 py-2 ">
+                            <span>{{ pda.ruined_board_count|intcomma|default_if_none:"-"  }}</span>
+                        </div>
+                        <div class="col-2 py-2 ">
+                                <span>{{ pda.intact_board_count_not_assembly|intcomma|default_if_none:"-"  }}</span>
+                        </div>
+                        <div class="col-2 py-2 ">
+                            <span>{{ pda.total_assembly_board_count|intcomma|default_if_none:"-" }}</span>
+                        </div>
+                        <div class="col-1 py-2 ">
+                                <span>{{ pda.delivery_type|default_if_none:"-"  }}</span>
+                            </div>
+                        <div class="col-2 py-1 ">
+                            <span>
+                            <a href="#" target="_blank" class="me-3 edit-production-day-activities tooltip_" data-url="{% url 'pcba:production.day.activities.view' pda.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                <span class="tooltiptext">ویرایش</span>
+                                <i class="ki-duotone ki-pencil fs-2 text-info">
+                                    <span class="path1"></span>
+                                    <span class="path2"></span>
+                                </i>
+                            </a>
+                            <a href="#" target="_blank" class="me-3 delete-production-day-activities text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ pda|model_name }}&object_id={{ pda.pk }}&app_label={{ pda|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                                <span class="tooltiptext">حذف</span>
+                                <i class="ki-duotone ki-trash fs-2 text-danger">
+                                    <span class="path1"></span>
+                                    <span class="path2"></span>
+                                    <span class="path3"></span>
+                                    <span class="path4"></span>
+                                    <span class="path5"></span>
+                                </i>
+                            </a>
+                            <a class="mx-4 tooltip_ cursor-pointer"
+                                data-bs-toggle="modal"
+                                data-bs-target="#id_kt_empty_modal_lg"
+                                data-model_name="{{ pda|model_name }}"
+                                data-object_id="{{ pda.pk }}"
+                                data-app_name="{{ pda|app_label }}"
+                                name="name_change_log">
+                                <span class="tooltiptext">تاریخچه تغییرات</span>
+                                <i class="ki-duotone ki-book-open fs-2 text-primary">
+                                 <span class="path1"></span>
+                                 <span class="path2"></span>
+                                 <span class="path3"></span>
+                                 <span class="path4"></span>
+                                </i>
+                            </a>
+                        </span>
+                        </div>
+                        <div class="col-"></div>
+                    </div>
+                {% endfor %}
+                {% endwith %}
+                <div class="mt-3">
+                    <a href="#" class="d-inline-block" target="_blank">
+                        <h1 class="border px-3 py-1 rounded" id="production_day_activities"
+                            data-url="{% url 'pcba:production.day.activities.view' %}?pk={{ form.instance.pk }}"
+                            data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">+</h1>
+                    </a>
+                </div>
+            {% else %}
+                <span class="mx-3">پس از ثبت قرارداد امکان ثبت فعالیت های روز تولید وجود دارد :)</span>
+            {% endif %}
+            </div>
+            </div>
+            </div>
+        </div>
+    </div>
+<span class="d-none" id="customer_name">
+    {% if form.instance.pk %}
+	    ({{ form.instance.customer_party_id.sepidar_dl_code }}) -- {{ form.instance.customer_party_id.title }}
+    {% else %}مشتری{% endif %}
+</span>
+<span class="d-none" id="goods_name">{% if form.instance.pk %}
+	({{ form.instance.goods_code_fk }}) -- {{ form.instance.goods_code_fk.part_number }}
+    {% else %}کد کالا{% endif %}
+</span>
+        <div class="col">
+            <div class="row">
+            {% render_field_by_order form form.description label='on-border' %}
+            </div>
+        </div>
+    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+{#    END MULTI TAB#}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        let customer_placeholder  = document.querySelector('#customer_name')
+        let goods_placeholder  = document.querySelector('#goods_name')
+        customer_placeholder = customer_placeholder.innerText || 'مشتری'
+        goods_placeholder = goods_placeholder.innerText || 'کد کالا'
+
+        select2_generate("#id_customer_party_id_select2", '#id_customer_party_id', '/sepidar/customers_list', customer_placeholder, 'sepidar_party_id')
+        select2_generate("#id_goods_code_fk_select2", '#id_goods_code_fk', '/inquiry/items_list/', goods_placeholder)
+    </script>
+
+    <script>
+    document.getElementById('id_kt_empty_modal_lg').addEventListener('hidden.bs.modal', function (e) {
+        $('#ui-datepicker-div').remove()
+    })
+    const CustomerItemReceipt = document.querySelector('#customer_item_receipt')
+    CustomerItemReceipt && CustomerItemReceipt.addEventListener('click', function (e){
+        e.preventDefault()
+        debugger
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditCustomerItemReceipt = document.querySelectorAll('.edit-customer-item-receipt')
+    const DeleteCustomerItemReceipt = document.querySelectorAll('.delete-customer-item-receipt')
+    EditCustomerItemReceipt.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteCustomerItemReceipt.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+
+    const ProjectItemList = document.querySelector('#project_item_list')
+    ProjectItemList && ProjectItemList.addEventListener('click', function (e){
+        e.preventDefault()
+        debugger
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        {#const projectForm = $('#id-project-item-list-form')#}
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                {#document.getElementById('id-project-item-list-form').classList.remove('d-none')#}
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditProjectItemList = document.querySelectorAll('.edit-project-item-list')
+    const DeleteProjectItemList = document.querySelectorAll('.delete-project-item-list')
+    EditProjectItemList.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteProjectItemList.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+
+
+    const ProductionDayActivities = document.querySelector('#production_day_activities')
+    ProductionDayActivities && ProductionDayActivities.addEventListener('click', function (e){
+        e.preventDefault()
+        debugger
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+        {#custom_ajax_get('', this.dataset.url, modal_lg_body, false)#}
+    })
+
+    const EditProductionDayActivities = document.querySelectorAll('.edit-production-day-activities')
+    const DeleteProductionDayActivities = document.querySelectorAll('.delete-production-day-activities')
+    EditProductionDayActivities.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteProductionDayActivities.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+    const customer_sheet_count = document.getElementById('id_customer_sheet_count')
+    const customer_board_count = document.getElementById('id_customer_board_count')
+    const total_board_count = document.getElementById('id_customer_total_board_count')
+    function calculateBoardCount() {
+        customer_sheet_count_val = parseFloat(customer_sheet_count.value) || 0
+        customer_board_count_val = parseFloat(customer_board_count.value) || 0
+
+        total_board_count.value = customer_board_count_val * customer_sheet_count_val
+    }
+    customer_sheet_count.addEventListener('input', calculateBoardCount);
+    customer_board_count.addEventListener('input', calculateBoardCount)
+
+
+
+    const ItemCustomerReceipts = document.querySelectorAll('.item_in_customer_receipt')
+    ItemCustomerReceipts.forEach((ItemCustomerReceipt) =>{
+        ItemCustomerReceipt.addEventListener('click', function (e){
+        e.preventDefault()
+        debugger
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        {#const projectForm = $('#id-project-item-list-form')#}
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+    })
+
+     const EditItemInCustomerReceipt = document.querySelectorAll('.edit-item-in-customer-receipt')
+    const DeleteItemInCustomerReceipt = document.querySelectorAll('.delete-item-in-customer-receipt')
+    EditItemInCustomerReceipt.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteItemInCustomerReceipt.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+
+
+
+    const items = document.querySelectorAll('.item_customer_receipt_list')
+    const items_btn = document.querySelectorAll('.item-container')
+    items_btn.forEach((btn, idx) => {
+
+        btn.addEventListener("click", function (){
+            debugger
+            if (items[idx].style.height === "0px" || items[idx].style.height === "") {
+            items[idx].style.height = `${items[idx].scrollHeight}px`;
+            } else {
+                items[idx].style.height = 0;
+            }
+        })
+
+    })
+
+
+    document.querySelector('#select2-id_goods_code_fk_select2-container').addEventListener('change', function() {
+        debugger
+        const goodsCode = this.value;
+        if (goodsCode) {
+            fetch(`/pcba/goods/customer/?goods_code=${goodsCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        document.getElementById('id_customer_sheet_count').value = data.data.customer_sheet_count;
+                        document.getElementById('id_ic_pad_count').value = data.data.ic_pad_count;
+                        document.getElementById('id_pad_count').value = data.data.pad_count;
+                    } else if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('No record found for this goods code.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+    {#const navs = document.querySelectorAll('.nav-link')#}
+    {#navs.forEach((nav) => {#}
+    {#    if(nav.classList.contains('active')){#}
+    {#        nav.classList.add('bg-light-info')#}
+    {#    }#}
+    //})
+
+    {#setTimeout(addCommaSeperator, 500, true)#}
+    {#document.querySelector('#main-form').addEventListener('submit', removeCommaSeperator)#}
+    </script>
+{% endblock extra_js %}

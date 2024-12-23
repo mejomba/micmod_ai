@@ -23,7 +23,7 @@
           },
           {
             "state": "استعلام قیمت",
-            "group": "sales_admin",
+            "group": "sales_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -173,7 +173,270 @@
       "attr1":2,
       "att":3
     },
-
+  "OrderView":
+    {
+      "workflow":
+      {
+      "name":"create order",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس",
+            "group": "sales_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over"],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مدیر فروش",
+            "group": "order_admin",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "1تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید مهندس",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ارسال به تامین کننده",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید تامین کننده",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "2تایید بازرگانی",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "پرداخت / PACKING / GIO",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
+  "PackingView":
+          {
+      "workflow":
+      {
+      "name":"create packing",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس",
+            "group": "packing_user",
+            "deadline": 0,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "DEP",
+            "group": "packing_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "arrive",
+            "group": "packing_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "10%",
+            "group": "packing_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تحویل اسناد",
+            "group": "trade_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "اضهار گمرکی",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ترخیص گمرک",
+            "group": "trade_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "انبار",
+            "group": "wh_user",
+            "deadline": 3,
+            "form_constraint": {
+              "hide": [],
+              "read": ["quantity"]
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
   "SkuCreateView":
     {
       "workflow":
@@ -358,7 +621,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting", "from_source", "is_formal", "is_paid"]
+              "read": ["manager_confirmation", "accounting", "from_source", "is_paid"]
             },
             "formset_constraint": [
               {
@@ -370,11 +633,11 @@
           },
           {
             "state": "کنترل حسابداری",
-            "group": "accounting_user",
+            "group": "accounting_all_user",
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","manager_confirmation", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {
@@ -390,7 +653,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","from_source","to_account","applicant","accounting", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {
@@ -406,7 +669,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc"]
+              "read": ["request_date","payment_date","amount","behalf","pay_to","to_account","applicant","accounting", "is_formal", "need_pay_doc", "is_formal2", "force", "description"]
             },
             "formset_constraint": [
               {

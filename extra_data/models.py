@@ -1,7 +1,7 @@
 import uuid
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 import os
 
@@ -370,19 +370,34 @@ class Item(BaseModel):
     # base_fields = ['sku','part_number']
 
     @property
-    def supply_locations(self):
-        res = [(1, 'سفارش جدید داخلی'), (2, 'سفارش جدید خارج')]
+    def supply_locations_(self):
+        # res = [('', '-----------')]
+        res = []
         stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
         for stock_qty in stock_qty_qry:
             if stock_qty.quantity:
+                sepidar_wh_code = 1000
+                sepidar_wh_name = 'اسم انبار سپیدار'
+                # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
+                # todo get wh__order from db, show reserve and stock_quantity
+                quantity_sum = self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                    total_sum=Sum('quantity'))['total_sum'] or 0
                 if stock_qty.quantity.is_integer():
-                    res.append((0, f'موجودی انبار {int(stock_qty.quantity)}'))
+                    qty = int(stock_qty.quantity)
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {qty} / {qty - quantity_sum}'))
                 else:
-                    res.append((0, f'موجودی انبار {stock_qty.quantity}'))
+                    qty = stock_qty.quantity
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty.quantity}'))
 
 
-        for o in self.orderitem_set.all():
-            res.append((o.pk, f"سفارش در راه {o.pk} ام"))
+        # for o in self.orderitem_set.all():
+        for o in self.order_set.filter(cancel=False).order_by('-quantity'):
+            remaining_quantity = o.remaining_quantity
+            if remaining_quantity > 0:
+                if o.local_sepidar_wh_code:
+                    res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
+                else:
+                    res.append((str(o.pk), f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 
@@ -613,6 +628,8 @@ class CustomerGroup(AbsBaseModel):
 
     auto_complete = 'title'
 
+    insert_new = False
+
 
 class Senf(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
@@ -675,6 +692,21 @@ CustomerGrade = (
     ("-1,A,4", _("A 4 Month")),
     ("0,B,4", _("B 4 Month")),
 )
+CustomerGrade = (
+    ("-3,Special", _("special")),
+    ("-2,A+", _("A+")),
+    ("-1,A", _("A")),
+    ("0,B", _("B")),
+    ("0,C", _("C")),
+)
+
+CustomerGrade = (
+    ("-3,Special", _("special")),
+    ("-2,A+", _("A+")),
+    ("-1,A", _("A")),
+    ("0,B", _("B")),
+    ("0,C", _("C")),
+)
 
 
 def uploaded_file_path(instance, filename: str):
@@ -724,7 +756,7 @@ class Customer(AbsBaseModel):
     z_no = models.BooleanField(_('Z_no'), default=False)
     z_safte = models.PositiveBigIntegerField(_('Z_safte'), null=True, blank=True)
     z_cheque_s = models.PositiveBigIntegerField(_('Z_cheque_s'), null=True, blank=True)
-    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=False, null=True, blank=True)
+    z_cheque_ns = models.PositiveBigIntegerField(_('Z_cheque_ns'), default=0, null=True, blank=True)
     z_max_credit_rafi = models.PositiveBigIntegerField(_('Z_max_credit_rafi'), null=True, blank=True)
     # مبلغ زمانت
     extra_credit = models.PositiveBigIntegerField(_('extra_credit'), null=True, blank=True)
@@ -829,3 +861,12 @@ class ChangeCustomerGroup(AbsBaseModel):
 #     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='part_number_appearance', null=True, blank=True)
 #     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='customer_part_number', null=True, blank=True)
 #     part_number = models.CharField(max_length=255, verbose_name=_('customer_part_number'))
+
+
+class WH(BaseModel):
+    backend_name = models.CharField(max_length=128, unique=True)
+    front_name = models.CharField(max_length=255, unique=True)
+    sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'))
+
+    def __str__(self):
+        return f'{self.sepidar_wh_code} : {self.backend_name} : {self.front_name}'
