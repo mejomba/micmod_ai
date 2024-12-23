@@ -26,7 +26,7 @@ from sepidar.models import Item as SepidarItem, Dl
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry
 from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base
 from translator import get_text as _
@@ -530,6 +530,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'id', 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
+            'variants_json',
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
             {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
@@ -1299,6 +1300,7 @@ def trade_all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1335,6 +1337,7 @@ def bazar_all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1369,6 +1372,7 @@ def all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1380,3 +1384,11 @@ def inquiry_count(request):
         item = Item.objects.filter(pk=sku).first()
         count = item.inquiry_count
     return JsonResponse({'res': count})
+
+
+def get_inquiry_title(request, *args, **kwargs):
+    allowed_inquiry = AllowedInquiry.objects.all()
+    res = dict()
+    for idx, item in enumerate(allowed_inquiry):
+        res[f'title_{idx}'] = item.title
+    return JsonResponse(res)

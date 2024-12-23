@@ -47,5 +47,6 @@ urlpatterns = [
     path('supplier/list/', views.SupplierListView.as_view(), name='supplier.list'),
     path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable'),
     path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult'),
-    path('ajax/count/', views.inquiry_count, name='inquiry.count')
+    path('ajax/count/', views.inquiry_count, name='inquiry.count'),
+    path('variant/title/', views.get_inquiry_title, name='inquiry.count'),
 ]

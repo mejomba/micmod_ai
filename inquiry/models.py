@@ -408,6 +408,7 @@ class PriceInquiryResult(BaseModel):
         ordering = 'created_date',
 
     def deactivate_other(self):
+        condition = None
         if p := self.price_inquiry_file:
             sku = p.item
             result = [pif.inquery_result.all() for pif in sku.sku_const.all()]
@@ -415,7 +416,8 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type:
+                condition = self.variants_json == res.variants_json
+                if (self.active and self != res and self.inquiry_type == res.inquiry_type) and condition:
                     res.active = False
                     res.save()
         else:
@@ -425,7 +427,8 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type and res.active:
+                condition = self.variants_json == res.variants_json
+                if (self.active and self != res and self.inquiry_type == res.inquiry_type and res.active) and condition:
                     res.active = False
                     res.save()
 
@@ -538,3 +541,10 @@ class InquiryResultVariant(AbsBaseModel):
 
     def __str__(self):
         return f'{self.value}'
+
+
+class AllowedInquiry(BaseModel):
+    title = models.CharField(max_length=255, verbose_name=_('title'))
+
+    def __str__(self):
+        return f'{self.title}'

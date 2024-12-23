@@ -1429,14 +1429,18 @@ function AllPriceFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
     }
-
-    // debugger
+    let variant = ''
+    for (let key in repo.variants_json){
+        variant += `<span class="badge">${repo.variants_json[key]}</span><span>${key}</span>`
+    }
+    debugger
     var $container = $(
         `<div class="row flex-row-reverse text-center">
             <div class="col-2">
                 <span class="me-3">${repo.sku}</span>
             </div>
             <div class="col-5">
+                <span class="me-3">${variant}</span>
                 <span class="me-3">${repo.inquiry_type}</span>
             </div>
             <div class="col-2">
