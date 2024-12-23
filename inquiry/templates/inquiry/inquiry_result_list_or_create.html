@@ -3,6 +3,7 @@
 {% load quotation_tag %}
 {% load jalali_tags %}
 {% load more_tags %}
+{% load accounts_tag %}
 
 {% block title %}استعلام قیمت{% endblock title %}
 {% block extra_css %}
@@ -41,7 +42,9 @@
                 {% render_field_by_order form form.submit_for_qi form.active_main_item label='on-border' margin_b=5 %}
                 <span class="d-none">{{ form.variants_json }}</span>
 
-                {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
+                {% if request.user|has_group:"trade_user" %}
+                    {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
+                {% endif %}
 
             </div>
         </div>
