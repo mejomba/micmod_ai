@@ -587,6 +587,16 @@ class InquiryResultDataTableView(AjaxDatatableView):
         if obj.active:
             row['active'] = """<b class="text-success">Yes</b>"""
 
+        html = '<div class="d-flex flex-column">'
+        for k, v in obj.variants_json.items() if obj.variants_json else []:
+            html += f'''<span class="d-flex justify-content-start">
+                            <span class="me-1 px-1">{k}</span>
+                            <span>{v}</span>
+                        </span>'''
+        else:
+            html += '</div>'
+        row['variants_json'] = html
+
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
     model = SalesPriceInqueryLog

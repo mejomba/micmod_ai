@@ -40,7 +40,7 @@
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
                 {% render_field_by_order form form.submit_for_qi form.active_main_item label='on-border' margin_b=5 %}
-                <span class="d-noe">{{ form.variants_json }}</span>
+                <span class="d-none">{{ form.variants_json }}</span>
 
                 {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
 

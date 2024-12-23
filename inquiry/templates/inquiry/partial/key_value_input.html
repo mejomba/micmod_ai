@@ -1,21 +1,14 @@
-<div id="{{ id }}" class="">
+<div id="{{ id }}">
 
     <div id="id_variants_json_container">
-        <div class="d-flex ">
+        <div class="d-flex d-none" id="id_variant_json_title">
             <span>عنوان</span>
             <span class="mx-auto">مقدار</span>
         </div>
-{#        <div class="d-flex align-items-center variants_json gap-1">#}
-{#            <input type="text" name="key__variant_json" list="list_variant" class="form-control py-1 px-2" onkeydown="return false;">#}
-{#            <input type="text" name="val__variant_json" class="me-2 form-control py-1 px-2">#}
-{#            <i class="ki-duotone ki-cross-circle text-danger fs-1 cursor-pointer scale-1-3" onclick="remove_variants_json(event)">#}
-{#                <span class="path1"></span>#}
-{#                <span class="path2"></span>#}
-{#            </i>#}
-{#        </div>#}
     </div>
 
     <div class="float-end">
+        ورینت های استعلام
         <i class="ki-duotone ki-plus-circle text-primary fs-1 cursor-pointer scale-1-3" onclick="add_variants_json(event)">
              <span class="path1"></span>
              <span class="path2"></span>
@@ -37,6 +30,8 @@
     }
 
     function add_variants_json(event){
+        const variant_json_title = document.querySelector('#id_variant_json_title')
+        if (variant_json_title){variant_json_title.classList.remove('d-none')}
         const uuid = generateUUID()
         const element = `
             <input type="text" name="key__variant_json" list="list_variant__${uuid}" class="form-control py-1 px-2" onkeydown="return false;">
@@ -72,7 +67,7 @@
                 let html = `
                 <datalist id="list_variant__${uuid}">`
                 for (const d in data) {
-                    html += `<option>${d}</option>`
+                    html += `<option>${data[d]}</option>`
                 }
                 html += `</datalist>`
                 const item = document.querySelector(`input[list="list_variant__${uuid}"]`)
@@ -87,16 +82,23 @@
     }
 
     function to_json() {
+        debugger
         const variant_jsons = document.querySelectorAll('.variants_json')
         const real_variant_jsons = document.querySelector("textarea[name='variants_json']")
         const jsonObj = {}
         variant_jsons && variant_jsons.forEach(function (item) {
             const key = item.querySelector('input[name="key__variant_json"]').value
             const val = item.querySelector('input[name="val__variant_json"]').value
-            jsonObj[key] = val
+            if (key && val){
+                jsonObj[key] = val
+            }
         })
         if (jsonObj && real_variant_jsons) {
-            real_variant_jsons.value = JSON.stringify(jsonObj)
+            if (Object.keys(jsonObj).length === 0){
+                real_variant_jsons.value = null
+            } else {
+                real_variant_jsons.value = JSON.stringify(jsonObj)
+            }
         }
     }
 </script>
