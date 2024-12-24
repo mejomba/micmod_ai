@@ -28,5 +28,6 @@ urlpatterns = [
     path('delete/confirm/', views.delete_confirm, name="delete.confirm"),
     path('delete/', views.delete_ajax, name="delete"),
     path('import_customer_from_sepidar/', views.ImportCustomerFromSepidar.as_view(), name='import_customer_from_sepidar'),
-    path('select2/<str:app_name>/<str:model_name>/<str:title>/', views.Select2BaseSearch.as_view(), name='select2.base.search')
+    path('select2/<str:app_name>/<str:model_name>/<str:title>/', views.Select2BaseSearch.as_view(), name='select2.base.search'),
+    path('api_call/<str:app_name>/<str:model_name>/<str:function>/', views.GenericApiCall.as_view(), name='generic.api.call'),
 ]
