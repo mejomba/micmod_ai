@@ -12,6 +12,7 @@ from micmod_base.base import BaseModel
 from core.models import BaseManager, AbsBaseModel
 from django.apps import apps
 
+from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
 from translator import get_text as _

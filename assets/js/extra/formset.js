@@ -281,3 +281,18 @@ function showQuotationFormsetHeader(el){
         item.style.display = 'block'
     })
 }
+
+function get_sepidar_stock_info(event){
+    debugger
+    const qi_row = findAncestor(event.currentTarget, 'item')
+    let sku = qi_row.querySelector('input[type="hidden"][name$="-itemid"]')
+    const sepidar_stock_info_result = $(qi_row).find('.sepidar_stock_info_result')
+    try {
+        sku = sku.value
+        if (sku){
+            custom_ajax_get(null, `/core/api_call/sepidar/SepidarApiCall/get_stock_quantity/?itemref=${sku}&template_name=stock_in_quotation`, sepidar_stock_info_result)
+        }
+    } catch (e) {
+        console.log(e)
+    }
+}
