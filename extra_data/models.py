@@ -219,7 +219,7 @@ class PriceSettings(AbsBaseModel):
     def get_discount_based_payment_method(self, payment_method, currency):
         for line in self.discount_based_payment_method:
             if payment_method == line['title']:
-                return line.get(currency.title_en.lower(),line.get('rial_percentage'))
+                return line.get(currency.title_en.lower(), line.get('rial_percentage'))
         return 0
 
     def __str__(self):
@@ -371,23 +371,30 @@ class Item(BaseModel):
 
     @property
     def supply_locations_(self):
-        # res = [('', '-----------')]
+        import re
         res = []
-        stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
-        for stock_qty in stock_qty_qry:
-            if stock_qty.quantity:
-                sepidar_wh_code = 1000
-                sepidar_wh_name = 'اسم انبار سپیدار'
+        # stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
+        stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], '1403')
+        api_res = stock_qty_api.get('res')
+        if api_res:
+            for k, v in api_res.items():
+                code, qty = k, v
+                code = re.search(r'(code: (\d+))', code).group(2)
+        for code, stock_qty in api_res.items():
+            if stock_qty:
+                sepidar_wh_code = re.search(r'(code: (\d+))', code).group(2)
+                sepidar_wh_name = re.search(r'(.*)\(code.*\)', code).group(1)
                 # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                 # todo get wh__order from db, show reserve and stock_quantity
-                quantity_sum = self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                quantity_sum = \
+                self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
                     total_sum=Sum('quantity'))['total_sum'] or 0
-                if stock_qty.quantity.is_integer():
-                    qty = int(stock_qty.quantity)
+                if stock_qty.is_integer():
+                    qty = int(stock_qty)
                     res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {qty} / {qty - quantity_sum}'))
                 else:
-                    qty = stock_qty.quantity
-                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty.quantity}'))
+                    qty = stock_qty
+                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty}'))
 
 
         # for o in self.orderitem_set.all():

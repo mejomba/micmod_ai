@@ -490,3 +490,8 @@ def get_payment_list(form, current_user, size=None, obj_rel=None):
                'user': current_user,
                }
     return context
+
+
+@register.filter
+def zip_(a, b):
+    return zip(a, b)

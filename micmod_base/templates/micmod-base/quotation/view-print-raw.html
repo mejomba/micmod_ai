@@ -51,7 +51,7 @@
         <div class="col">
         </div>
         <div class="col text-center">
-            <h1>پیش فاکتور فروش کالا و خدمت</h1>
+            <h2>پیش فاکتور فروش کالا و خدمت</h2>
         </div>
         <div class="col text-end">
             <span data-key="serial_number">شماره سریال : </span>
@@ -172,17 +172,17 @@
     <div class="row">
         <table class="table table-bordered border-dark mb-0">
             <thead>
-            <tr>
-                <th scope="col">ردیف</th>
-                <th scope="col">کد کالا</th>
-                <th scope="col" >شرح کالا/ خدمت</th>
+            <tr class="text-center">
+                <th scope="col" class="text-center">ردیف</th>
+                <th scope="col" class="text-center">کد کالا</th>
+                <th scope="col" class="text-center" >شرح کالا/ خدمت</th>
                 {% if with_customer_goods_code == '1' %}
-                    <th scope="col">کد کالای مشتری</th>
+                    <th scope="col" class="text-center">کد کالای مشتری</th>
                 {% endif %}
-                <th scope="col">تعداد/ مقدار</th>
+                <th scope="col" class="text-center">تعداد/ مقدار</th>
 {#                <th scope="col">واحد</th>#}
-                <th scope="col">مبلغ واحد</th>
-                <th scope="col">مبلغ کل</th>
+                <th scope="col" class="text-center">مبلغ واحد</th>
+                <th scope="col" class="text-center">مبلغ کل</th>
             </tr>
             </thead>
             <tbody class="border border-dark">
@@ -232,7 +232,7 @@
                     <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1" >{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
-                    <p class=" my-1" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class=" my-1 bold" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
                 {% endwith %}
                 </div>
             </div>
@@ -245,7 +245,7 @@
 
         <div class="col mt-6" style="border: 2px solid black;">
             <div class="row row-cols-3">
-                <div class="col">شرایط و نحوه ی سفارش</div>
+                <div class="col font-size-10">شرایط و نحوه‌ فروش</div>
                 <div class="col d-flex">
                     <div class="d-flex">
                         <p class="px-3 mt-1"> نقدی</p>

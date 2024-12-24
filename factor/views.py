@@ -1,6 +1,7 @@
 import datetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms import inlineformset_factory
@@ -117,20 +118,20 @@ def search_factor_view(request, *args, **kwargs):
         q_int = int(q)
     q_str = q
     q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس')
-    q_required = {}#{'cancel': False, "is_deleted": False, "last_work_flow__current_state_name": 'مرحله نهایی'}
+    q_required = {'cancel': False, "is_deleted": False}
     for s in search_by:
         if s == 'search_customer':
-            q_filter |= Q(customer_party_id__title__icontains=q_str)
+            q_filter &= Q(customer_party_id__title__icontains=q_str)
         if s == 'search_id':
-            q_filter |= Q(pk=q_int)
+            q_filter &= Q(pk=q_int)
         if s == 'search_marketer':
-            q_filter |= Q(last_work_flow__creator_user__username__icontains=q_str)
+            q_filter &= Q(last_work_flow__creator_user__username__icontains=q_str)
         if s == 'search_sepidar_id':
-            q_filter |= Q(sepidar_number__icontains=q_int)
+            q_filter &= Q(sepidar_number__icontains=q_int)
         if s == 'search_sku':
-            q_filter |= Q(quotation__goods_code_fk__sku__iexact=q_str)
+            q_filter &= Q(quotation__goods_code_fk__sku__iexact=q_str)
         if s == 'search_part_number':
-            q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
+            q_filter &= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
         q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس') & \
                    (Q(customer_party_id__title__icontains=q_str) | \
@@ -177,24 +178,25 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     context['flow_state_index'] = 0
     context['flow_state_list'] = flow_config.get('flow_state_list')
     context['flow_state_list'].append('مرحله نهایی')
-    x = {
-            'wf_access': True,
-            'from_user': None,
-            'to_user': request.user,
-            'state': 'فاکتور اولیه',
-            'state_index': 0,
-            'belong_to_group': 'sales_user',
-            'action': 'ایجاد',
-            'deadline': datetime.datetime(2024, 9, 23, 17, 8, 27, 437724),
-            'flow_config': flow_config,
-            'create': True
-    }
+    """if flow object don't exist select user from group (normally for create step)"""
+    group = flow_config.get('flow_users_groups')[1]
+    flow_belong_to_group = WorkFlowModelForm._meta.model.objects.filter(belong_to_group=group)
+    user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
+    if flow_belong_to_group:
+        last_wf_user = flow_belong_to_group.order_by('id').last().from_user
+        next_users = user_list.filter(id__gt=last_wf_user.id).order_by('id')
+        if next_users:
+            to_user = next_users.first()
+        else:
+            to_user = user_list.first()
+    else:
+        to_user = user_list.first()
     context['workflow_form'] = WorkFlowModelForm(
         content_type_model=Factor,
         initial={
                     'wf_access': True,
                     'from_user': None,
-                    'to_user': request.user._meta.model.objects.get(pk=21),
+                    'to_user': to_user, #self.get_flow_user(flow_user_groups[self.state_index + 1]), #request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
                     'state': 'فاکتور اولیه',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',
@@ -239,15 +241,15 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'className': 'py-1 border', 'lookup_field': '__title__icontains', 'searchable': True},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
          'orderable': True, 'lookup_field': '__title__icontains'},
-        {'name': 'delivery_time', 'visible': True, 'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
+        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         # {'name': 'workflows', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         # {'name': 'factor_self', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': False, 'orderable': True},
-        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True},
-        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'description', 'visible': True, 'orderable': False, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True},
+        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains'},
 
     ]
 

@@ -7,7 +7,10 @@
 {% load more_tags %}
 {% load accounts_tag %}
 
-{% block title %}Quotation{% endblock title %} {"title": ""})
+{% block title %}
+    {{ form.instance.pk }}
+    پیش‌‌فاکتور
+{% endblock title %} {"title": ""})
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -22,6 +25,7 @@
                     {% endfor %}
                     <div class="row">
                         <div class="col-sm-12">
+    {{ form.instance.fee_quotation }}
     {% if form.instance.pk and form.instance.cancel %}
         <h3 class="p-5 bg-light-danger text-danger bold text-center">
         این پیش فاکتور کنسل شده است

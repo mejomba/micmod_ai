@@ -41,6 +41,7 @@ class FactorModelForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
+        self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
 
 
 class FactorItemModelForm(CustomBaseModelForm):
@@ -48,6 +49,7 @@ class FactorItemModelForm(CustomBaseModelForm):
         model = FactorItem
         exclude = ['group']
     supply_location = forms.CharField(required=False)
+
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
         if self.form_state is None:
@@ -78,11 +80,11 @@ class FactorItemModelForm(CustomBaseModelForm):
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
-        self.make_hidden(['index'])
+        # self.make_hidden(['index'])
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
-                      'part_number_show', 'price', 'supply_location', 'supply_locations'
+                      'part_number_show', 'price', 'supply_location', 'supply_locations', 'is_bazar',
                       ]
 
 FactorItemFormset = inlineformset_factory(

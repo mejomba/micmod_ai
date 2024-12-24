@@ -1243,6 +1243,7 @@ def update_components_view(request, *args, **kwargs):
 
 
 def get_price_list(request, *args, **kwargs):
+    update_price_list()
     if cache.get('task_is_running'):
         print('task is running')
         return JsonResponse({'result': f'task_is running'})

@@ -415,6 +415,8 @@ class BaseView(UserPassesTestMixin,
             try:
                 """work flow last step to_user should be to current user"""
                 if flow_user_groups:
+                    # if self.request.POST.get('draft'):
+                    #     to_user = self.request.user
                     if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
                         to_user = self.request.user
                     elif self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
