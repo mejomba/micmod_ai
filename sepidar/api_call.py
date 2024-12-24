@@ -1,26 +1,49 @@
 from typing import Optional
 import jdatetime
 import requests
+from django.conf import settings
 
 
-# f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary?itemref=5550&fiscalyearref__title=1403'
 class SepidarApiCall:
-    protocol = 'http'
-    host = '192.168.1.80'
-    port = '3030'
-    token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM0NTMxOTA5LCJpYXQiOjE3MzM2Njc5MDksImp0aSI6IjFlODI2ZWM0ZDRiMTRhNTE4YTBlYmFmZDU1YzA5OGJhIiwidXNlcl9pZCI6MSwidXNlcm5hbWUiOiJhbGkifQ.Vl1zCHSXem_lkYomG8ObovrqiDO8dS9sdIwkD6eg6jI'
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
+    protocol = settings.SEPIDAR_CUSTOM_API_PROTOCOL  # http
+    host = settings.SEPIDAR_CUSTOM_API_HOST  # '192.168.1.80'
+    port = settings.SEPIDAR_CUSTOM_API_PORT  # '3030'
+    token = ''
+    headers = {}
     endpoints = {
         'login': f'{protocol}://{host}:{port}/api_log/token/',
         'stock_quantity': f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary/',
     }
 
     @classmethod
+    def setup(cls):
+        cls.set_token()
+        cls.set_header()
+
+    @classmethod
     def get_token(cls):
+        res = cls.login()
+        return res.get('access')
+
+    @classmethod
+    def set_token(cls):
+        cls.token = cls.get_token()
+
+    @classmethod
+    def get_header(cls):
+        headers = {
+            "Authorization": f"Bearer {cls.token}"
+        }
+        return headers
+
+    @classmethod
+    def set_header(cls):
+        cls.headers = cls.get_header()
+
+    @classmethod
+    def login(cls, username='ali', password='123456'):
         url = cls.endpoints.get('login')
-        data = {'username': 'ali', 'password': '123456'}
+        data = {'username': username, 'password': password}
         res = requests.post(url, data=data)
         if res.ok:
             res = res.json()
@@ -30,6 +53,7 @@ class SepidarApiCall:
 
     @classmethod
     def get_stock_quantity(cls, itemref, year: Optional[str] = None, *args, **kwargs):
+        cls.setup()
         if year is None:
             year = jdatetime.date.today().year
         endpoint = cls.endpoints.get('stock_quantity')
