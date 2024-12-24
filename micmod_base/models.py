@@ -82,7 +82,7 @@ class Quotation(SLSDoc):
                                       verbose_name=_('payment_method'), default="6,2 Month")
     market_grade = models.CharField(choices=MarketGrade, max_length=10, null=True, blank=True,
                                     verbose_name=_('market_grade'), default="5,A")
-    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
+    description = models.TextField(max_length=2000, null=True, blank=True, verbose_name=_('description'))
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
     sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
