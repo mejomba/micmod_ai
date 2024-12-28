@@ -73,6 +73,7 @@ class OrderDataTableListView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'orderable': True, 'visible': False, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
+        {'name': 'is_bazar', 'orderable': True, 'visible': True, },
         {'name': 'status', 'orderable': True, 'visible': True, },
         {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
@@ -92,6 +93,19 @@ class OrderDataTableListView(AjaxDatatableView):
         # {'name': 'title', 'title': '<div class="px-15">عنوان</div>', 'orderable': True, 'visible': True,
         #  'className': 'text-center'},
     ]
+
+    def get_initial_queryset(self, request=None):
+        qs = super().get_initial_queryset(request)
+        q = request.POST.get('q')
+        if q == 'sales_admin':
+            return qs.filter(cancel=True)
+        elif q == 'bazar_user':
+            return qs.filter(is_bazar=True)
+        elif q == 'all':
+            return qs
+        else:
+            return qs
+        return qs
 
     def customize_row(self, row, obj):
         row['order_title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (

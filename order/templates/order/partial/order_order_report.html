@@ -22,18 +22,22 @@
       </thead>
       <tbody>
       {% for foo in form.fields.order_m2m.queryset %}
-        <tr class="border-bottom text-right">
-          <th scope="row" class="text-end available_order_rel">{{ foo.id }}</th>
-          <td class="text-end">{{ foo.order_title }}</td>
-          <td class="text-end">{{ foo.quantity }}</td>
-          <td class="text-end remaining_quantity">{{ foo.remaining_quantity }}</td>
-          <td class="text-end">
-              <i class="ki-duotone ki-entrance-left fs-1 text-primary p-0 cursor-pointer rotate_90_animation" onclick="order_add(event)" data-bs-toggle="tooltip" data-bs-original-title="تخصیص به سفارش {{ form.instance.pk }}">
-                 <span class="path1"></span>
-                 <span class="path2"></span>
-              </i>
-          </td>
-        </tr>
+          {% with foo.remaining_quantity as remaining_quantity %}
+              {% if remaining_quantity > 0 %}
+                <tr class="border-bottom text-right">
+                  <th scope="row" class="text-end available_order_rel">{{ foo.id }}</th>
+                  <td class="text-end">{{ foo.order_title }}</td>
+                  <td class="text-end">{{ foo.quantity }}</td>
+                  <td class="text-end remaining_quantity">{{ remaining_quantity }}</td>
+                  <td class="text-end">
+                      <i class="ki-duotone ki-entrance-left fs-1 text-primary p-0 cursor-pointer rotate_90_animation" onclick="order_add(event)" data-bs-toggle="tooltip" data-bs-original-title="تخصیص به سفارش {{ form.instance.pk }}">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                      </i>
+                  </td>
+                </tr>
+              {% endif %}
+          {% endwith %}
           <tr class="d-none order_form_container bg-light-info" dir="rtl">
               <td colspan="5">
                   <div class=" border rounded d-flex align-items-center px-2 py-3 " >

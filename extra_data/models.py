@@ -378,24 +378,24 @@ class Item(BaseModel):
         stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], '1403')
         api_res = stock_qty_api.get('res')
         if api_res:
-            for k, v in api_res.items():
-                code, qty = k, v
-                code = re.search(r'(code: (\d+))', code).group(2)
-        for code, stock_qty in api_res.items():
-            if stock_qty:
-                sepidar_wh_code = re.search(r'(code: (\d+))', code).group(2)
-                sepidar_wh_name = re.search(r'(.*)\(code.*\)', code).group(1)
-                # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
-                # todo get wh__order from db, show reserve and stock_quantity
-                quantity_sum = \
-                self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
-                    total_sum=Sum('quantity'))['total_sum'] or 0
-                if stock_qty.is_integer():
-                    qty = int(stock_qty)
-                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {qty} / {qty - quantity_sum}'))
-                else:
-                    qty = stock_qty
-                    res.append((f'wh__{sepidar_wh_code}', f'{sepidar_wh_name} {stock_qty}'))
+            # for k, v in api_res.items():
+                # code, qty = k, v
+                # code = re.search(r'(code: (\d+))', code).group(2)
+            for code, stock_qty in api_res.items():
+                if stock_qty:
+                    sepidar_wh_code = re.search(r'(code: (\d+))', code).group(2)
+                    sepidar_wh_name = re.search(r'(.*)\(code.*\)', code).group(1)
+                    # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
+                    # todo get wh__order from db, show reserve and stock_quantity
+                    quantity_sum = \
+                    self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                        total_sum=Sum('quantity'))['total_sum'] or 0
+                    if stock_qty.is_integer():
+                        qty = int(stock_qty)
+                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {qty} / {qty - quantity_sum}'))
+                    else:
+                        qty = stock_qty
+                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}'))
 
 
         # for o in self.orderitem_set.all():

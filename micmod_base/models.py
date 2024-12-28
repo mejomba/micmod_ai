@@ -605,28 +605,62 @@ class QuotationItem(BaseModel):
         is_wh_incomplete = False
         is_order_complete = False
         is_order_incomplete = False
+        is_order_wh_complete = False
+        is_order_wh_incomplete = False
+
+        q_wh = 0
+        q_order = 0
+
         nothing = False
         if self.pk:
             factor_items = self.qi.all()
             factor_item_quantity = self.qi.aggregate(total=Sum('quantity'))['total'] or 0
             if factor_item_quantity > 0:
+                x = []
                 # not_over = factor_item_quantity < self.quantity
                 is_over = factor_item_quantity >= self.quantity  # کامل مستهلک شده
                 for fi in factor_items:
                     wh_supply_location = fi.supply_locations.local_sepidar_wh_code
-                    if wh_supply_location and is_over:
-                        is_wh_complete = True  # فاکتور قطعی
-                    elif wh_supply_location and not is_over:
-                        is_wh_incomplete = True  # فاکتور ناقص
-                    elif not wh_supply_location and is_over:
-                        is_order_complete = True
-                    elif not wh_supply_location and not is_over:
-                        is_order_incomplete = True
+                    if fi.supply_locations.local_sepidar_wh_code:
+                        q_wh += fi.supply_locations.quantity
+                    elif not fi.supply_locations.local_sepidar_wh_code:
+                        if fi.supply_locations.cancel:
+                            for oo in fi.supply_locations.order_base_items.all():
+                                q_order += oo.quantity
+                        elif not fi.supply_locations.cancel:
+                            q_order += fi.supply_locations.quantity
+
+                    # if wh_supply_location and is_over:
+                    #     is_wh_complete = True  # فاکتور قطعی
+                    # elif wh_supply_location and not is_over:
+                    #     is_wh_incomplete = True  # فاکتور ناقص
+                    # elif not wh_supply_location and is_over:
+                    #     is_order_complete = True
+                    # elif not wh_supply_location and not is_over:
+                    #     is_order_incomplete = True
+                sum_quantity = sum([q_wh, q_order])
+                if q_wh and q_order and sum_quantity >= self.quantity:
+                    is_order_wh_complete = True
+                elif q_wh and q_order and sum_quantity < self.quantity:
+                    is_order_wh_incomplete = True
+                elif q_wh and sum_quantity >= self.quantity:
+                    is_wh_complete = True
+                elif q_wh and sum_quantity < self.quantity:
+                    is_wh_incomplete = True
+                elif q_order and sum_quantity >= self.quantity:
+                    is_order_complete = True
+                elif q_order and sum_quantity < self.quantity:
+                    is_order_incomplete = True
+
             else:
                 nothing = True
             # all([fi.supply_locations.local_sepidar_wh_code for fi in factor_items True if factor_items else False])
 
-        return is_wh_complete, is_wh_incomplete, is_order_complete, is_order_incomplete, nothing
+        return (
+            is_wh_complete, is_order_complete, is_order_wh_complete,
+            is_wh_incomplete, is_order_incomplete, is_order_wh_incomplete,
+            nothing
+                )
 
 
     @property

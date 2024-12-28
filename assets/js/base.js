@@ -663,12 +663,14 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         },
         onEnd: function (evt) {
             var items = document.querySelectorAll(draggable_items_selector);
+            debugger
             items.forEach(function(item, index) {
                 item.querySelector(`[id*=${index_field_id_selector}]`).value = index
             });
             removeWindowHighlightSections()
         },
         onUpdate: function (evt) {
+            debugger
             evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
         },
         onChange: function (evt) {

@@ -44,7 +44,7 @@ class Order(BaseModeWF):
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
     def __str__(self):
-        return f'{self.pk} -- {self.order_title} -- {self.quantity} / {self.remaining_quantity}'
+        return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
     def description(self):
         if self.cancel:
