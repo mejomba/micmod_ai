@@ -37,7 +37,7 @@
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-        <div class="main-content">
+        <div class="main-content" id="main-content">
             <div class="page-content">
                 <div class="container-fluid">
                 <div class="row">
@@ -89,6 +89,30 @@
             },
         );
     });
+
+    function editSingleProductionDayActivities(item){
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: item.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            {#beforeSend: block_main_container,#}
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                {#initializeDatepickers();#}
+            },
+            error: function () {
+
+            },
+            {#complete: release_main_container#}
+        }); //end ajax
+}
+
     </script>
 
 
