@@ -229,3 +229,4 @@ class OrderPaymentItem(BaseModeWF):
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
     description = models.TextField(_('description'), null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)

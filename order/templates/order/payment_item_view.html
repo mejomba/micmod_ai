@@ -15,7 +15,7 @@
         <div class="row">
 {#            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>#}
 {#            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}#}
-            {% render_field_by_order form form.payment form.from_date form.to_date form.total_amount form.file_1 label='on-border' %}
+            {% render_field_by_order form form.payment form.order form.from_date form.to_date form.total_amount form.file_1 label='on-border' %}
             <div class="col-12">
                 <div class="row">
                     {% render_field_by_order form form.description label='on-border' %}

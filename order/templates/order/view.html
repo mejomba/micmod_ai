@@ -4,6 +4,7 @@
 {% load accounts_tag %}
 {% load core_tags %}
 {% load order_tags %}
+{% load jalali_tags %}
 
 {% block extra_css %}
 
@@ -69,7 +70,6 @@
     <div class="mb-2">
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
-<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
 
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
@@ -112,6 +112,8 @@
                 </div>
 {#            <div class="col-5">{{ form.order_m2m }}</div>#}
             <div class="overflow-scroll">
+                {% get_comment_user_list form request.user %}
+                <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
             </div>
         </div>
@@ -145,7 +147,8 @@
             <div>{{ form.instance.order_rel.all }}</div>
         {% endif %}
     </div>
-
+    <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
     {% if flow_state_index == 7 %}
     <div class="card card-custom mb-20">
         <div class="card-header">
@@ -197,7 +200,42 @@
             <div class="tab-content">
             <!-- PAYMENT -->
                 <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel" aria-labelledby="kt_tab_pane_1">
-                    ...
+                    {% if payment_items %}
+                        <div class="row align-items-center pb-2 mb-3 bold">
+                            <div class="col-3 "><span class="ms-6">تاریخ</span></div>
+                            <div class="col-2 ">مبلغ</div>
+                            <div class="col-3">توضیحات</div>
+                            <div class="col-2">فایل ها</div>
+{#                            <div class="col-5">سفارش</div>#}
+{#                            <div class="col-2"></div>#}
+                            <div class="col-6"></div>
+                        </div>
+                    {% endif %}
+
+                    {% for payment_item in payment_items %}
+                        <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                            <div class="col-3 py-2">
+                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                <span>{{ payment_item.from_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                <span class="mx-1">تا</span>
+                                <span>{{ payment_item.to_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-2 py-2 s-05">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-3 py-2 s-05">
+                                <span>{{ payment_item.descriptoin|intcomma|default_if_falsy:"-" }}</span>
+                            </div>
+                            <div class="col-2 py-2 ">
+                                {% for file in payment.files.all %}
+                                <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                                {% empty %}
+                                    <span>-</span>
+                                {% endfor %}
+                            </div>
+                            <div class="col-6"></div>
+                        </div>
+                    {% endfor %}
                 </div>
             <!-- GIO -->
                 <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel" aria-labelledby="kt_tab_pane_2">
@@ -234,9 +272,9 @@
                             <div class="col-1 ">تعداد کارتن </div>
                             <div class="col-2">وزن (کیلوگرم)</div>
                             <div class="col-2">پکینگ</div>
-                            <div class="col-2">سفارش</div>
-                            <div class="col-2"></div>
-                            <div class="col-3"></div>
+{#                            <div class="col-5">سفارش</div>#}
+{#                            <div class="col-2"></div>#}
+                            <div class="col-5"></div>
                         </div>
                     {% endif %}
 
@@ -253,12 +291,17 @@
                                 <span>{{ packing_item.weight_kg|intcomma|default_if_falsy:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 ">
+                                <span class="me-5">{{ packing_item.pk|default_if_none:"-" }}</span>
                                 <span>{{ packing_item.packing|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2 py-2 ">
-                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>
-                            </div>
-                            <div class="col-3"></div>
+{#                            <div class="col-5 py-2" direction="rtl">#}
+{#                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.pk|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.title|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.last_work_flow.current_state_name|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.quantity|default_if_none:"-"  }}</span>#}
+{#                            </div>#}
+                            <div class="col-5"></div>
                         </div>
                     {% endfor %}
                 </div>
@@ -494,4 +537,5 @@ const packing_item = document.querySelector('#packing_item')
         })
     })
     </script>
+    <script src="{% static 'js/comment.js' %}"></script>
 {% endblock extra_js %}

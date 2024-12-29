@@ -12,6 +12,8 @@ from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, 
 
 
 class OrderForm(CustomBaseModelForm):
+    has_comment = True
+
     class Meta:
         model = Order
         exclude = ['group', 'last_work_flow']

@@ -53,6 +53,7 @@ class OrderView(LoginRequiredMixin, BaseView):
         if self.state_index == 7:
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
+            context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
         return context
 
 
