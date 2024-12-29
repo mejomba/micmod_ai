@@ -153,15 +153,16 @@ class OrderOrder(BaseModel):
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)
+    # sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'), null=True, blank=True)
 
 
-from django.db.models.signals import m2m_changed
+# from django.db.models.signals import m2m_changed
 
-def toppings_changed(sender, **kwargs):
-    # sender.objects.create(order_base=kwargs.get('instance'), order_rel_id=list(kwargs.get('pk_set'))[0], quantity=min(rel.remaining_quantity, div_quantity))
-    pass
+# def toppings_changed(sender, **kwargs):
+    ## sender.objects.create(order_base=kwargs.get('instance'), order_rel_id=list(kwargs.get('pk_set'))[0], quantity=min(rel.remaining_quantity, div_quantity))
+    # pass
 
-m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)
+# m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)
 
 
 class Packing(BaseModeWF):

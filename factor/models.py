@@ -312,7 +312,6 @@ class FactorItem(BaseModel):
 
                 o1 = Order.create_with_rel(data_base, o2)
                 self.supply_locations = o1
-                # self.supply_locations_id = self.supply_location
 
         if not any(condition_list):
             if self.supply_locations_id == self.supply_location:
@@ -325,128 +324,6 @@ class FactorItem(BaseModel):
         if total_quantity >= self.qi.quantity:
             self.qi.is_over = True
             self.qi.save()
-
-        # if self.pk is None:
-        #     if self.select_wh_sepidar: # str(self.supply_location).startswith('wh__'):
-        #         # generate wh order
-        #         data_base = {
-        #             "order_title": "خودکار توسط سیستم",
-        #             "status": "1",
-        #             "item": self.qi.goods_code_fk,
-        #             "production_lead_time": 10,  # self.qi.lead_time,
-        #             "quantity": self.quantity,
-        #             "cancel": False,
-        #             "is_over": False,
-        #             "qi": self.qi,
-        #             "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #             "creator_user": self.extra_data.request.user,
-        #             "editor_user": self.extra_data.request.user,
-        #         }
-        #         o1 = Order.create_with_rel(data_base)
-        #         self.supply_locations = o1
-        #         self.supply_location = o1.pk
-        #     elif self.supply_location:
-        #         # generate order with rel
-        #         data_base = {
-        #             "order_title": "خودکار توسط سیستم",
-        #             "status": "1",
-        #             "item": self.qi.goods_code_fk,
-        #             "production_lead_time": 5,  # self.qi.lead_time,
-        #             "quantity": self.quantity,
-        #             "cancel": False,
-        #             "is_over": False,
-        #             "qi": self.qi,
-        #             "creator_user": self.extra_data.request.user,
-        #             "editor_user": self.extra_data.request.user,
-        #         }
-        #         o2 = Order.objects.filter(pk=self.supply_location).first()
-        #
-        #         o1 = Order.create_with_rel(data_base, o2)
-        #         self.supply_locations = o1
-        #     elif not self.supply_location:
-        #         # generate order independent
-        #         data_base = {
-        #             "order_title": "خودکار توسط سیستم",
-        #             "status": "1",
-        #             "item": self.qi.goods_code_fk,
-        #             "production_lead_time": 5,  # self.qi.lead_time,
-        #             "quantity": self.quantity,
-        #             "cancel": False,
-        #             "is_over": False,
-        #             "qi": self.qi,
-        #             "creator_user": self.extra_data.request.user,
-        #             "editor_user": self.extra_data.request.user,
-        #         }
-        #         o1 = Order.create_with_rel(data_base)
-        #         self.supply_locations = o1
-
-
-        # if condition10:
-        #     o1 = Order.create_with_rel(factor_item=self)
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
-        # elif condition11:
-        #     # generate wh order
-        #     data_base = {
-        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
-        #         "status": "1",
-        #         "item": self.qi.goods_code_fk,
-        #         "production_lead_time": 10,  # self.qi.lead_time,
-        #         "quantity": self.quantity,
-        #         "cancel": False,
-        #         "is_over": False,
-        #         "qi": self.qi,
-        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #         "creator_user": self.extra_data.request.user,
-        #         "editor_user": self.extra_data.request.user,
-        #     }
-        #     o1 = Order.create_with_rel(data_base)
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
-        #
-        # elif condition1 or condition3:
-        #     # generate wh order
-        #     data_base = {
-        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
-        #         "status": "1",
-        #         "item": self.qi.goods_code_fk,
-        #         "production_lead_time": 10,  # self.qi.lead_time,
-        #         "quantity": self.quantity,
-        #         "cancel": False,
-        #         "is_over": False,
-        #         "qi": self.qi,
-        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #         "creator_user": self.extra_data.request.user,
-        #         "editor_user": self.extra_data.request.user,
-        #     }
-        #     o1 = Order.create_with_rel(data_base)
-        #     if old and old.supply_locations.local_sepidar_wh_code:
-        #         old.supply_locations.is_deleted = True
-        #         old.supply_locations.save()
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
-        #
-        # elif condition6:
-        #     self.supply_locations_id = self.supply_location
-        #     if old:
-        #         old.supply_locations.is_deleted = True
-        #         old.supply_locations.save()
-        # elif condition7:
-        #     self.supply_locations_id = self.supply_location
-        # elif not any(condition_list):
-        #     if self.supply_locations_id == self.supply_location:
-        #         pass
-        #     else:
-        #         self.supply_locations_id = self.supply_location.split('__')[-1]
-        #
-        # super().save(force_insert, force_update, using, update_fields)
-        # total_quantity = self.qi.total_quantity_in_factor
-        # if total_quantity >= self.qi.quantity:
-        #     self.qi.is_over = True
-        #     self.qi.save()
-        # else:
-        #     self.qi.is_over = False
-        #     self.qi.save()
 
     def total_supply(self):
         s = sum([x.quantity for x in self.supply_locations.order_base_items.all()])
