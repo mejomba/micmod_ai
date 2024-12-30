@@ -32,27 +32,25 @@
                             <div class="row row-cols-4">
                                 <div class="col p-0">
                                     <input class="form-control mx-2" type="text" name="customer_code"
-                                   value="{{ customer_code }}" placeholder="Insert customer code or title">
+                                   value="{{ customer_code }}" placeholder="کد مشتری / عنوان مشتری">
                                 </div>
                                 <div class="col p-0">
                                     <input class="form-control mx-2" type="text" name="item_code" value="{{ item_code }}"
-                                   placeholder="Insert item code or title">
+                                   placeholder="کد کالا / پارت نامبر">
                                 </div>
                                 <div class="col ps-0 pe-5">
                                     <input class="form-control mx-2" type="text" name="g_p" value="{{ g_p }}"
-                                   placeholder="Insert purchase group">
+                                   placeholder="گروه خرید">
                                 </div>
                                 <div class="col">
                                     <div class="row">
                                         <div class="col-4 p-0">
                                             <input type="radio" name="doc_type" value="invoice" id='doc_type_invoice'>
-                                            <label for="doc_type_invoice" class="col-form-label text-center mx-2">Just
-                                                Invoices</label>
+                                            <label for="doc_type_invoice" class="col-form-label text-center mx-2">فقط فاکتور</label>
                                         </div>
                                         <div class="col-5 p-0">
                                             <input type="radio" name="doc_type" value="quotation" id='doc_type_quotation'>
-                                            <label for="doc_type_quotation" class="col-form-label text-center mx-2">Just
-                                                Quotations</label>
+                                            <label for="doc_type_quotation" class="col-form-label text-center mx-2">فقط پیش فاکتور</label>
                                         </div>
                                             <div class="col-2 p-0">
                                                 <input class="btn btn-primary px-5" type="submit" value="Filter">

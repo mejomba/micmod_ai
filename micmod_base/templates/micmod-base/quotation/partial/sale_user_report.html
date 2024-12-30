@@ -40,13 +40,17 @@
                             <span class="bold me-5">نیاز به استعلام خارجی:
                                 <span class="bg-light-success px-3 rounded font-size-11">({{ user_.profile }})</span>
                             </span>
-                            {% for foo in wf_count.3 %}
-                                <span class="badge-info mb-1 px-2 rounded font-size-11 s-1 cursor-pointer"><a href="{% url 'micmod_base:quotations.view' foo.id %}" class="badge-info" target="_blank">{{ foo.id }}</a></span>
-                                {% empty %}
+                            {% for foo, time in wf_count.3|zip_:wf_count.5 %}
+                                <span class="badge-info mb-1 px-2 rounded font-size-11 s-1 cursor-pointer mx-1">
+                                    <a href="{% url 'micmod_base:quotations.view' foo.id %}" class="badge-info tooltip_" target="_blank">
+                                        <span class="tooltiptext s-0 px-1">{{ time }}</span>
+                                        {{ foo.id }}
+                                    </a>
+                                </span>
+                            {% empty %}
                                 <span class="badge-info mb-1 px-2 rounded font-size-11">---</span>
                             {% endfor %}
                             </div>
-
                         </div>
                         <div class="d-flex justify-content-around">
                             <span class="d-none">داخلی</span>
@@ -57,10 +61,15 @@
                             <span class="bold me-5">نیاز به استعلام داخلی:
                                 <span class="bg-light-success px-3 rounded font-size-11">({{ user_.profile }})</span>
                             </span>
-                            {% for foo in wf_count.2 %}
-                                <span class="badge-success mb-1 px-2 rounded font-size-11 s-1 cursor-pointer"><a href="{% url 'micmod_base:quotations.view' foo.id %}" class="badge-success" target="_blank">{{ foo.id }}</a></span>
-                                {% empty %}
-                                <span class="badge-success bg-light-danger mb-1 px-2 rounded font-size-11">---</span>
+                            {% for foo, time in wf_count.2|zip_:wf_count.4 %}
+                                <span class="badge-success mb-1 mx-1 px-2 rounded font-size-11 s-1 cursor-pointer">
+                                    <a href="{% url 'micmod_base:quotations.view' foo.id %}" class="badge-success tooltip_" target="_blank">
+                                        <span class="tooltiptext s-0 px-1">{{ time }}</span>
+                                        {{ foo.id }}
+                                    </a>
+                                </span>
+                            {% empty %}
+                                <span class="badge-success mb-1 px-2 rounded font-size-11">---</span>
                             {% endfor %}
                             </div>
                         </div>

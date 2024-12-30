@@ -308,15 +308,16 @@ function check_order_quantity(event){
     const order_order_submit = event.currentTarget.parentElement.querySelector('.order_order_submit')
     const current_value = parseFloat(event.currentTarget.value)
     if (need_quantity){
-        if ((current_value > parseFloat(need_quantity.innerText)) && (current_value > parseFloat(remaining_quantity.innerText))) {
+        debugger
+        if ((current_value > parseFloat(removeCommaSeperator(need_quantity.innerText))) && (current_value > parseFloat(removeCommaSeperator(remaining_quantity.innerText)))) {
             event.currentTarget.style.borderColor = 'red'
             order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس و نیاز سفارش است'
             order_order_submit.classList.add('d-none')
-        } else if (current_value > parseFloat(remaining_quantity.innerText)){
+        } else if (current_value > parseFloat(removeCommaSeperator(remaining_quantity.innerText))){
             event.currentTarget.style.borderColor = 'red'
             order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس است!'
             order_order_submit.classList.add('d-none')
-        } else if (current_value > parseFloat(need_quantity.innerText)) {
+        } else if (current_value > parseFloat(removeCommaSeperator(need_quantity.innerText))) {
             event.currentTarget.style.borderColor = 'red'
             order_quantity_message.innerText = 'تعداد بیش از نیاز سفارش است'
             order_order_submit.classList.add('d-none')
@@ -341,14 +342,14 @@ function submit_order_order(event){
     debugger
     const order_quantity = event.currentTarget.parentElement.querySelector('.order_order_quantity')
     if (order_quantity){
-        if (parseFloat(order_quantity.value) > parseFloat(need_quantity.innerText)){
+        if (parseFloat(removeCommaSeperator(order_quantity.value)) > parseFloat(removeCommaSeperator(need_quantity.innerText))){
             console.log('confirm modal')
         }
     }
     let post_data = JSON.stringify({
         "order_base_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_base').innerText),
         "order_rel_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_rel').innerText),
-        "quantity": parseFloat(order_quantity.value)
+        "quantity": parseFloat(removeCommaSeperator(order_quantity.value))
     })
     const url = '/order/ajax/order_order/add/'
     const order_order_report_element = document.querySelector('#order_order_report_ajax')
