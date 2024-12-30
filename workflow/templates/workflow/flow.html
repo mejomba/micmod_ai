@@ -88,10 +88,42 @@
     </div>
 </div>
 
+<div class="mt-5 d-flex justify-content-center">
+    <ul class="breadcrumbx">
+        {% for flow_state in flow_state_list %}
+            {% if forloop.counter0 == flow_state_index %}
+                <li class="active-flow">
+                    <a href="#">{{ flow_state }}</a>
+                    {% for f in flow %}
+                        {% if f.state == flow_state %}
+                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </li>
+            {% else %}
+                <li class="disable-flow">
+                    <a href="#">{{ flow_state }}</a>
+                    {% for f in flow %}
+                        {% if f.state == flow_state %}
+                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </li>
+
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
 <style>
+    .flow_last_update {
+        position: absolute;
+        top: -15px;
+        left: 70px;
+    }
     .breadcrumbx {
         list-style: none;
-        overflow: hidden;
+        {#overflow: hidden;#}
         font-size: 1rem;
         margin-top: 50px;
     }
@@ -103,7 +135,7 @@
     .breadcrumbx li a {
         color: white;
         text-decoration: none;
-        padding: 10px 55px 10px 20px;
+        padding: 10px 25px 10px 25px;
         position: relative;
         display: block;
         float: right;
@@ -140,6 +172,7 @@
 
     .active-flow {
         background-color: var(--bs-primary);
+        position: relative;
     }
 
     .active-flow a:after {
@@ -148,27 +181,13 @@
 
     .disable-flow {
         background-color: var(--bs-gray);
+        position: relative;
     }
 
     .disable-flow a:after {
         border-right: 30px solid var(--bs-gray) !important;
     }
 </style>
-
-
-<div class="mt-5 d-flex justify-content-center">
-    <ul class="breadcrumbx">
-        {% for flow_state in flow_state_list %}
-            {% if forloop.counter0 == flow_state_index %}
-                <li class="active-flow"><a href="#">{{ flow_state }}</a></li>
-            {% else %}
-                <li class="disable-flow"><a href="#">{{ flow_state }}</a></li>
-            {% endif %}
-        {% endfor %}
-    </ul>
-</div>
-
-
 <script>
     const changeUserBtn = document.getElementById('change-user');
     const toUser = document.getElementById('id_to_current_group_user');
