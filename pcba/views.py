@@ -1,5 +1,6 @@
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -47,7 +48,6 @@ class ContractListDatatable(AjaxDatatableView):
         {'name': 'ic_pad_count', 'visible': True, 'orderable': True},
         {'name': 'first_setup_cost', 'visible': True},
         {'name': 'finish', 'visible': True, 'searchable': True, 'orderable': True},
-        {'name': 'factor_number', 'visible': True, 'searchable': True, 'orderable': True},
         {'name': 'second_setup_cost', 'visible': True}
     ]
 
@@ -108,6 +108,9 @@ class ContractView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         return context
 
+    def get_success_message(self, cleaned_data):
+        return f'{self.object.contract_title} save'
+
 
 class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
     ajax_template_name = 'pcba/partial/items_in_customer_receipt_ajax.html'
@@ -138,7 +141,10 @@ class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         pk = self.request.GET.get('pk', None)
         cir = CustomerItemReceipt.objects.filter(pk=pk).first()
-        context['form'] = ItemReceiptForm(initial={'customer_item_receipt': cir or self.object.customer_item_receipt}, instance=self.object)
+        contract = cir.contract.pk
+        # part_number = cir.customer_contract.projectitemlist_set.part_number
+        context['form'] = ItemReceiptForm(initial={'customer_item_receipt': cir or self.object.customer_item_receipt},
+                                          instance=self.object, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -292,7 +298,8 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
-        {'name': 'id', 'visible': False, },
+        {'name': 'id', 'visible': False,  'orderable': False, 'searchable': True},
+        {'name': 'factor_number', 'visible': True, },
         {'name': 'contract', 'visible': True, 'title': _('contract'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
         {'name': 'goods_code_fk', 'visible': True, 'title': _('goods_code'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__sku__icontains'},
         {'name': 'customer_party_id','visible': True, 'title': _('customer'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
@@ -313,14 +320,15 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
             reverse('pcba:contracts.view', args=(obj.contract.id,)),
             obj.contract.pk if obj.contract.pk else '-'
         )
+        row['pk'] = f'''<span href="#" target="_blank" class="me-3 cursor-pointer edit-production-day-activities tooltip_" onclick="editSingleProductionDayActivities(this)" data-url="{reverse('pcba:production.day.activities.view', args=(obj.id,))}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">{obj.id}</span>'''
 
     def get_initial_queryset(self, request=None):
         q = request.POST.get('q', None)
         qs = super().get_initial_queryset(request)
         if q == 'all':
             qs = qs
-        elif q == 'packing':
-            qs = qs.filter(activity=ProductionDayActivities.PACKING)
+        elif q == 'delivery':
+            qs = qs.filter(Q(activity=ProductionDayActivities.DELIVERY) & Q(factor_number=None))
         return qs
 
 
@@ -359,7 +367,8 @@ class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
             customer = contract.customer_party_id.pk
             context['form'] = ProductionDayActivitiesForm(initial={'contract': contract or self.object.contract,
                                                                    'goods_code_fk': goods_code_fk or self.object.contract.goods_code_fk,
-                                                                   'customer_party_id': customer or self.object.contract.customer_party_id.pk
+                                                                   'customer_party_id': customer or self.object.contract.customer_party_id.pk,
+                                                                   'constraint': {'request': self.request}
                                                                },
                                                           instance=self.object, contract=contract)
         return context

@@ -597,7 +597,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def customize_row(self, row, obj):
         delete_url = reverse('core:delete.confirm')
         row['delete'] = f"""
-        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_ py-3" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
                             <span class="tooltiptext">حذف</span>
                             <i class="ki-duotone ki-trash fs-2 text-danger">
                                 <span class="path1"></span>

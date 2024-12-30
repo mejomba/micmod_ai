@@ -8,7 +8,7 @@ from translator import get_text as _
 class Contract(BaseModeWF):
     # contract_title = models.CharField(max_length=100, unique=True)
     goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING)
-    project_name_en = models.CharField(max_length=250)
+    project_name_en = models.CharField(max_length=250, null=True, blank=True)
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
                                           db_column='customer_party_id')
@@ -25,7 +25,6 @@ class Contract(BaseModeWF):
     pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     ic_pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     total_cost = models.PositiveBigIntegerField(default=0, null=True, blank=True)
-    factor_number = models.PositiveIntegerField(null=True, blank=True)
     finish = models.BooleanField(default=False)
     def __str__(self):
         return self.contract_title
@@ -42,7 +41,7 @@ class CustomerItemReceipt(BaseModeWF):
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, related_name='customer_contract')
     receipt_date = models.DateField(null=True, blank=True, verbose_name='تاربخ دریافت')
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default=INCOMPLETE, verbose_name='وضعیت دریافت کالا')
-    total_board_receipt_count = models.PositiveIntegerField(default=0, verbose_name='تعداد کل برد دریافتی')
+    total_board_receipt_count = models.PositiveIntegerField(default=0, verbose_name='تعداد کل برد دریافتی', null=True, blank=True)
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name='رسید مربوطه')
     # items = models.ForeignKey(ItemsInCustomerReceipt, on_delete=models.DO_NOTHING, verbose_name='کالا', null=True, blank=True)
     # goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='goods_code_customer_receipt')
@@ -62,7 +61,7 @@ class ItemsInCustomerReceipt(BaseModeWF):
 
 class ProjectItemList(BaseModeWF):
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, verbose_name='قرارداد')
-    goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, verbose_name='کد کالا')
+    goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, verbose_name='کد کالا', null=True, blank=True)
     part_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='پارت نامبر')
     quantity = models.PositiveIntegerField(default=0, verbose_name='تعداد')
     description = models.TextField(null=True, blank=True, verbose_name='توضیحات')
@@ -104,6 +103,12 @@ class ProductionDayActivities(BaseModeWF):
     intact_board_count_not_assembly = models.IntegerField(null=True, blank=True, default=0, verbose_name='برد‌های مونتاژ نشده(کسری قطعات)')
     delivery_type = models.CharField(max_length=255, null=True, blank=True, verbose_name='نحوه ارسال')
     customer_item_receipt = models.ForeignKey(CustomerItemReceipt, on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name='فعالیت‌های روز تولید')
+    factor_number = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.contract.contract_title}'
+
+    @classmethod
+    def get_pda_count(cls, user):
+
+        return len(cls.objects.get_access_object(user, q='delivery', lst=False).filter(factor_number=None))

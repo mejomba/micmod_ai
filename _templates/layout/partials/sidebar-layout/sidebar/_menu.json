@@ -429,7 +429,8 @@
               "icon": "burger-menu",
               "title": "list",
               "path_key": "production/day/activities/list/",
-              "link": "pcba:production.day.activities.list"
+              "link": "pcba:production.day.activities.list",
+              "count": "pcba.productiondayactivities:get_pda_count"
             }
           ]
         }

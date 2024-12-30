@@ -32,7 +32,7 @@
      <div class="row row-cols-1 bg-white rounded border my-10 pt-10 position-relative shadow-sm">
         <div class="col">
             <div class="row row-cols-1 align-items-baseline">
-                <h4 class="position-absolute" style="top: -10px">قرارداد</h4>
+                <h4 class="position-absolute" style="top: -10px">  قرارداد {% if form.instance.pk %}{{ form.instance.pk }}{% endif %}</h4>
                 <div class="col">
                     <div class="row row-cols-3">
                         {% render_field_by_order form form.goods_code_fk form.project_name_en form.customer_party_id label='on-border' %}
@@ -64,7 +64,7 @@
 
                 <div class="col mt-3">
                     <div class="row row-cols-5">
-                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.factor_number form.finish label='on-border' %}
+                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.finish label='on-border' %}
                     </div>
                 </div>
                 {{ form.errors }}
@@ -332,12 +332,13 @@
                     {% if pdas %}
                         <div class="row align-items-center mb-7 bold">
                             <div class="col-1 "><span class="ms-7">تاریخ </span></div>
-                            <div class="col-2">فعالیت</div>
+                            <div class="col-1">فعالیت</div>
                             <div class="col-1">نوع مونتاژ</div>
                             <div class="col-1">تعداد برد های خراب</div>
                             <div class="col-2">تعداد برد‌های سالم مونتاژ نشده</div>
                             <div class="col-2">تعداد کل برد مونتاژ شده</div>
                             <div class="col-1">نحوه ارسال</div>
+                            <div class="col-1">شماره فاکتور</div>
                             <div class="col-2">عملیات</div>
                             <div class=""></div>
 
@@ -350,7 +351,7 @@
                             <span class="me-3"><b>{{ forloop.counter }})  </b></span>
                             <span>{{ pda.production_date|to_jalali:"%Y-%m-%d" }}</span>
                         </div>
-                        <div class="col-2 py-2 ">
+                        <div class="col-1 py-2 ">
                             <span>{{ pda.get_activity_display|default_if_none:"-" }}</span>
                         </div>
                         <div class="col-1 py-2 ">
@@ -367,7 +368,10 @@
                         </div>
                         <div class="col-1 py-2 ">
                                 <span>{{ pda.delivery_type|default_if_none:"-"  }}</span>
-                            </div>
+                        </div>
+                        <div class="col-1 py-2 ">
+                                <span>{{ pda.factor_number|default_if_none:"-"  }}</span>
+                        </div>
                         <div class="col-2 py-1 ">
                             <span>
                             <a href="#" target="_blank" class="me-3 edit-production-day-activities tooltip_" data-url="{% url 'pcba:production.day.activities.view' pda.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
