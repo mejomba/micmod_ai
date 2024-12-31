@@ -15,6 +15,7 @@ class SepidarApiCall:
         'stock_quantity': f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary/',
     }
 
+    @classmethod
     def setup(cls):
         cls.set_token()
         cls.set_header()
