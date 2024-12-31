@@ -58,6 +58,16 @@ class ItemsInCustomerReceipt(BaseModeWF):
     customer_item_receipt = models.ForeignKey(CustomerItemReceipt, related_name='items', on_delete=models.DO_NOTHING, verbose_name='رسید کالای مربوطه')
     part_number = models.CharField(max_length=255, null=True, blank=True, verbose_name='پارت نامبر')
 
+    def part_number_list(self, contract_id):
+        try:
+            part_numbers = ProjectItemList.objects.filter(contract_id=contract_id)
+            l = [("", "--------", "selected")]
+            for item in part_numbers:
+                l.append((item.pk, item.part_number, ''))
+            return {'list': l}
+        except Exception as e:
+            ...
+
 
 class ProjectItemList(BaseModeWF):
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, verbose_name='قرارداد')
@@ -110,5 +120,6 @@ class ProductionDayActivities(BaseModeWF):
 
     @classmethod
     def get_pda_count(cls, user):
-
-        return len(cls.objects.get_access_object(user, q='delivery', lst=False).filter(factor_number=None))
+        count = (cls.objects.get_access_object(user, q='delivery', lst=False).filter
+                 (factor_number=None, activity=cls.DELIVERY)).count()
+        return count

@@ -680,14 +680,21 @@
         e.preventDefault()
         debugger
         const modal_lg_body = $('#id-empty-modal-body-lg')
+        let contract_id = document.querySelector("button[data-model_name='contract']")
+        if (contract_id){
+            contract_id = contract_id.dataset.object_id;
+        }
         {#const projectForm = $('#id-project-item-list-form')#}
         $.ajax({
             type: 'GET',
             url: this.dataset.url,
             dataType: 'json',
             cache: false,
-            processData: false,
-            contentType: false,
+            {#processData: false,#}
+            {#contentType: false,#}
+            data: {
+                "contract_id": contract_id,
+            },
             beforeSend: block_main_container,
             success: function (data) {
                 debugger
