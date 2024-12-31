@@ -148,11 +148,20 @@ function shomare_kart(on_load=null) {
     })
 }
 
-function removeCommaSeperator() {
-    const textInput = document.querySelectorAll('.comma-seperator')
-    textInput.forEach(function (item) {
-        item.value = item.value.replaceAll(',', '')
-    })
+function removeCommaSeperator(str=null) {
+    debugger
+    if (str !== null){
+        try {
+            return str.replaceAll(',', '')
+        } catch (e) {
+            return ''
+        }
+    } else {
+        const textInput = document.querySelectorAll('.comma-seperator')
+        textInput.forEach(function (item) {
+            item.value = item.value.replaceAll(',', '')
+        })
+    }
 }
 
 const main_container = new KTBlockUI(document.querySelector('#main-content'), {
