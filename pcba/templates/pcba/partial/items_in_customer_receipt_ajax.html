@@ -2,6 +2,7 @@
 {% load humanize %}
 {% load accounts_tag %}
 {% load core_tags %}
+{% load pcba_tags %}
 
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -31,7 +32,18 @@
                     <div class="row row-cols-5">
                       {% render_field_by_order form form.goods_code_fk form.customer_item_receipt form.quantity form.receipt_date form.part_number form.file_1 label='on-border' %}
                     </div>
-                <div class="col on-border w-100 mb-3">
+
+                {% with form.instance|get_part_number_list:contract_id as items_list %}
+                    <datalist id="lst_part_number">
+                        {% for item in items_list.list %}
+                            {% if item.0 %}
+                            <option>{{ item.1 }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </datalist>
+                {% endwith %}
+
+                    <div class="col on-border w-100 mb-3">
                         <div id="id_goods_code_fk3_select2" class=""></div>
                             <label for="">کد کالا</label>
                         </div>
