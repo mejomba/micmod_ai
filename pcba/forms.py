@@ -89,11 +89,15 @@ class ItemReceiptForm(CustomBaseModelForm):
     file_groups = 1
     file_model = File
     has_file = True
-    part_number = forms.ChoiceField(choices=[], widget=forms.Select())
+    # part_number = forms.ChoiceField(choices=[], widget=forms.Select())
 
     class Meta:
         model = ItemsInCustomerReceipt
         exclude = ['group']
+
+        widgets = {
+            'customer_item_receipt': CustomerItemReceiptFormContractWidget,
+        }
 
     def __init__(self, *args, **kwargs):
         contract = kwargs.pop('contract', None)
@@ -105,13 +109,25 @@ class ItemReceiptForm(CustomBaseModelForm):
         self.make_hidden(['goods_code_fk'])
         self.fields['goods_code_fk'].widget.attrs['id'] = 'id_goods_code_fk3'
         self.fields['part_number'].widget.attrs['id'] = 'id_part_number2'
+        self.fields['part_number'].widget.attrs['list'] ="lst_part_number"
         # self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter()
-        if contract:
-            part_number = ProjectItemList.objects.filter(contract_id=contract)
-            self.fields['part_number'].choices = ([('', '----------')] +
-                                                  [(item.part_number, item.part_number) for item in part_number])
-        else:
-            self.fields['part_number'].choices = [('', '----------')]
+
+        # if self.instance.pk is not None:
+        #     self.fields['part_number'].widge.attrs['data-url'] = f'core/xxx/yyy/{self.instance.customer_item_receipt.pk}'
+        #
+        # if contract:
+        #     part_number = ProjectItemList.objects.filter(contract_id=contract)
+        #     self.fields['part_number'].choices = ([('', '----------')] +
+        #                                           [(item.part_number, item.part_number) for item in part_number])
+        # else:
+        #     try:
+        #         cir = kwargs.get('initial').get('constraint').get('request').POST.get('customer_item_receipt')
+        #         contract = CustomerItemReceipt.objects.filter(pk=cir).first().contract.pk
+        #         part_number = ProjectItemList.objects.filter(contract_id=contract)
+        #         self.fields['part_number'].choices = ([('', '----------')] +
+        #                                               [(item.part_number, item.part_number) for item in part_number])
+        #     except:
+        #         pass
 
 
 class CustomerItemReceiptForm(CustomBaseModelForm):
