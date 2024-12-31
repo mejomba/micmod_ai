@@ -10,7 +10,7 @@ from django.views import View
 from core.views import BaseView
 from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm, ProductionDayActivitiesForm, ItemReceiptForm
 from pcba.models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
-from tools.utils import show_error, is_ajax
+from tools.utils import show_error, is_ajax, to_jalali_date
 from translator import get_text as _
 
 
@@ -139,12 +139,13 @@ class ItemInCustomerReceiptView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        context['contract_id'] = self.request.GET.get('contract_id')
         pk = self.request.GET.get('pk', None)
         cir = CustomerItemReceipt.objects.filter(pk=pk).first()
-        contract = cir.contract.pk
+        # contract = cir.contract.pk
         # part_number = cir.customer_contract.projectitemlist_set.part_number
         context['form'] = ItemReceiptForm(initial={'customer_item_receipt': cir or self.object.customer_item_receipt},
-                                          instance=self.object, contract=contract)
+                                          instance=self.object) #, contract=contract)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -321,6 +322,8 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
             obj.contract.pk if obj.contract.pk else '-'
         )
         row['pk'] = f'''<span href="#" target="_blank" class="me-3 cursor-pointer edit-production-day-activities tooltip_" onclick="editSingleProductionDayActivities(this)" data-url="{reverse('pcba:production.day.activities.view', args=(obj.id,))}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">{obj.id}</span>'''
+        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
+        row['production_date'] = '%s' % to_jalali_date(obj.created_date)
 
     def get_initial_queryset(self, request=None):
         q = request.POST.get('q', None)
