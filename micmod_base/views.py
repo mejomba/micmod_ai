@@ -143,6 +143,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
+    def get(self, request, *args, **kwargs):
+        if 'direct' in request.GET:
+            self.template_name = 'factor/direct_factor.html'
+        return super().get(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         if 'duplicate' in self.request.POST:
             obj = duplicate_quotation(self.request, self.object.pk)
@@ -1006,7 +1011,7 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
-        # {'name': 'quotation_state', 'visible': True, 'orderable': False, 'searchable': False},
+        {'name': 'not_over', 'title': 'وضعیت استهلاک','visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
@@ -1046,6 +1051,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
 
         counter = obj.get_inquiry_result_count
+        over = obj.not_over
 
         local_color_condition = counter[1] == counter[2] and counter[1] != 0
         foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
@@ -1064,6 +1070,51 @@ class QuotationListDatatable(AjaxDatatableView):
         )
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
+        result = f'''<span class="mb-1">
+        <span class="font-size-10">فاکتور شده</span>
+        <span class="badge badge-success rounded font-size-10">{over[0]}</span><br>
+        <span class="font-size-10">مستهلک شده</span>
+        <span class="badge badge-warning rounded font-size-10">{over[1]}</span>
+        <span class="font-size-10 pt-2">سفارش</span>
+        <span class="badge badge-info rounded font-size-10">10</span><br>
+        <span class="font-size-10 pt-2">انبار</span>
+        <span class="badge badge-warning rounded font-size-10">30</span>
+         </span>'''
+
+        res = f'''
+        <div class="d-flex flex-column">
+            <div class="d-flex justify-content-between">
+                <span>
+                    <i class="ki-duotone ki-cross text-danger">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                    </i>
+                </span>
+                <span class="">
+                    <i class="ki-duotone ki-information-5 text-warning">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                    </i>
+                </span>
+                <span>
+                    <i class="ki-duotone ki-check text-success"></i>
+                </span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>{over[5]}</span>
+                <span>{over[1]}</span>
+                <span>{over[0]}</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between">
+                <span>{over[2]}</span>
+                <span>{over[3]}</span>
+                <span>{over[4]}</span>
+            </div>
+        </div>
+        '''
+        row['not_over'] = res
         cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''

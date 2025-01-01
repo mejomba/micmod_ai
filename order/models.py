@@ -15,6 +15,7 @@ class Order(BaseModeWF):
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
     TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
+    is_bazar = models.BooleanField(_('is_bazar'), default=False)
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
     order_title = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
@@ -80,6 +81,7 @@ class Order(BaseModeWF):
                 "qi": factor_item.qi,
                 "creator_user": factor_item.extra_data.request.user,
                 "editor_user": factor_item.extra_data.request.user,
+                'is_bazar': factor_item.is_bazar,
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {

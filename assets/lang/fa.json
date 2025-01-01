@@ -679,5 +679,6 @@
     "t-gio": "تحویل در دفتر چین",
     "t-payment": "پرداخت",
     "generic-payment": "پرداخت عمومی",
-    "production_day_activities": "فعالیت های روز تولید"
+    "production_day_activities": "فعالیت های روز تولید",
+    "is_bazar": "بازار"
 }

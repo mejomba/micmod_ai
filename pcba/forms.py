@@ -43,7 +43,7 @@ class ContractForm(CustomBaseModelForm):
         fields = ['customer_party_id', 'goods_code_fk', 'project_name_en', 'customer_board_count',
                   'customer_sheet_count', 'customer_total_board_count', 'first_setup_time', 'second_setup_time',
                   'pad_count', 'ic_pad_count', 'first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost',
-                  'total_cost', 'not_assembly_pad_count', 'finish', 'factor_number'
+                  'total_cost', 'not_assembly_pad_count', 'finish'
                   ]
 
     def __init__(self, *args, **kwargs):
@@ -80,19 +80,27 @@ class ContractForm(CustomBaseModelForm):
         if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
             # if 'pcba_user' in user_groups:
             self.make_hidden(
-                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                 'factor_number'])
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish'])
             self.make_disable(
-                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish',
-                 'factor_number'])
+                ['first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost', 'total_cost', 'finish'])
 
 
 class ItemReceiptForm(CustomBaseModelForm):
     file_groups = 1
     file_model = File
     has_file = True
+    # part_number = forms.ChoiceField(choices=[], widget=forms.Select())
+
+    class Meta:
+        model = ItemsInCustomerReceipt
+        exclude = ['group']
+
+        widgets = {
+            'customer_item_receipt': CustomerItemReceiptFormContractWidget,
+        }
 
     def __init__(self, *args, **kwargs):
+        contract = kwargs.pop('contract', None)
         super(ItemReceiptForm, self).__init__(*args, **kwargs)
         self.fields['receipt_date'] = JalaliDateField(label=_('receipt_date'), widget=AdminJalaliDateWidget, required=False)
         self.fields['receipt_date'].widget.attrs.update(
@@ -101,11 +109,26 @@ class ItemReceiptForm(CustomBaseModelForm):
         self.make_hidden(['goods_code_fk'])
         self.fields['goods_code_fk'].widget.attrs['id'] = 'id_goods_code_fk3'
         self.fields['part_number'].widget.attrs['id'] = 'id_part_number2'
+        self.fields['part_number'].widget.attrs['list'] = "lst_part_number"
+        self.fields['part_number'].widget.attrs['autocomplete'] = "off"
         # self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter()
 
-    class Meta:
-        model = ItemsInCustomerReceipt
-        exclude = ['group']
+        # if self.instance.pk is not None:
+        #     self.fields['part_number'].widge.attrs['data-url'] = f'core/xxx/yyy/{self.instance.customer_item_receipt.pk}'
+        #
+        # if contract:
+        #     part_number = ProjectItemList.objects.filter(contract_id=contract)
+        #     self.fields['part_number'].choices = ([('', '----------')] +
+        #                                           [(item.part_number, item.part_number) for item in part_number])
+        # else:
+        #     try:
+        #         cir = kwargs.get('initial').get('constraint').get('request').POST.get('customer_item_receipt')
+        #         contract = CustomerItemReceipt.objects.filter(pk=cir).first().contract.pk
+        #         part_number = ProjectItemList.objects.filter(contract_id=contract)
+        #         self.fields['part_number'].choices = ([('', '----------')] +
+        #                                               [(item.part_number, item.part_number) for item in part_number])
+        #     except:
+        #         pass
 
 
 class CustomerItemReceiptForm(CustomBaseModelForm):
@@ -166,3 +189,9 @@ class ProductionDayActivitiesForm(CustomBaseModelForm):
             {'class': 'jalali_date-date form-control', 'placeholder': _('production_date'), 'required': False})
         if contract:
             self.fields['customer_item_receipt'].queryset = CustomerItemReceipt.objects.filter(contract_id=contract)
+
+        request = kwargs.get('initial').get('constraint').get('request')
+        user_groups = request.user.groups.values_list('name', flat=True)
+        if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
+            self.make_hidden(['factor_number'])
+            self.make_disable(['factor_number'])

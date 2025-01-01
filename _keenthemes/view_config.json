@@ -109,21 +109,6 @@
             ]
           },
           {
-            "state": "تایید مدیر",
-            "group": "sales_admin",
-            "deadline": 3,
-            "form_constraint": {
-              "hide": [],
-              "read": []
-            },
-            "formset_constraint": [
-              {
-                "hide": [],
-                "read": []
-              }
-            ]
-          },
-          {
             "state": "تایید مالی",
             "group": "accounting_user",
             "deadline": 1,

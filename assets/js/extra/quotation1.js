@@ -241,7 +241,6 @@ $(document).ready(function () {
         });
     }
     // $('#customer_code').on('select2:open',function (e){
-    //     //debugger
     //     const elem = $('.select2-results')[0]
     //     const ul = $('#select2-customer_code-results')[0]
     //     let ch = document.createTextNode("Hi there and greetings!");
@@ -269,7 +268,6 @@ $(document).ready(function () {
 });
 
 function set_item_classes(item) {
-    // debugger
     if(item.getElementsByClassName('goods_code')) {
         $(item).find('.goods_code').on("select2:select", function (e) {
             const elem = findAncestor(e.target, "item")
@@ -515,7 +513,6 @@ function set_item_classes(item) {
     });
     // $(item).find('.quantity').on('change keydown paste input', function (e) {
     $(item).find('input[id$="quantity"]').on('change keydown paste input', function (e) {
-        // debugger
         calculate_price(e.target);
     });
     $(item).find('[id$="price_method"]').on('change', function (e) {
@@ -673,7 +670,6 @@ function refresh_prices() {
     const price_updating = document.querySelector('#price-updating')
     const price_updated = document.querySelector('#price-updated')
     for (let i = 0; i < items.length; i++) {
-        debugger
         if (i === items.length - 1){
             // price_updating.classList.add('d-none')
             // price_updated.classList.remove('d-none')
@@ -719,7 +715,6 @@ function get_price_data(code, party_id, item) {
 }
 
 function get_all_price_data(code, party_id, item, selected_price_code=null, price_type=null) {
-    debugger
     let trade_price_code;
     let bazar_price_code;
     if (price_type == 1){
@@ -873,6 +868,16 @@ function set_price(target) {
     const elem = findAncestor(target, "item")
     const price_method = elem.querySelector('[name*="price_method"]')
     const final_price = elem.querySelector('[name*="-final_price"]')
+    let stock_amount;
+    let stock_amount_res;
+    try {
+        stock_amount = Number(removeCommaSeperator(elem.querySelector('[name="stock_amount"]').innerText))
+        stock_amount_res = Number(removeCommaSeperator(elem.querySelector('[name="stock_amount_res"]').innerText))
+    } catch (e) {
+        stock_amount = 0
+        stock_amount_res = 0
+        console.log(e)
+    }
     // const final_price_div = elem.querySelector('[name*="-final_price_div"]')
     // const final_price_label = elem.querySelector('label[name*="final_price"]')
     final_price.disabled = true;
@@ -886,6 +891,7 @@ function set_price(target) {
     if (!p_m) {
         p_m = price_method ? price_method.value : null
     }
+    debugger
     switch (p_m) {
         case
             'last_sale':
@@ -920,11 +926,11 @@ function set_price(target) {
             cost2 = elem.querySelector('[name*="express_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="express_transportation_cost_3"]')
 
-            if (cost1 && !cost1.classList.contains('d-none')) {
+            if (cost1 && (stock_amount || stock_amount_res) && !cost1.classList.contains('d-none')) {
                 final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
-            } else if (cost2 && !cost2.classList.contains('d-none')) {
+            } else if (cost2 && !stock_amount && !stock_amount_res && !cost2.classList.contains('d-none')) {
                 final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
@@ -942,11 +948,11 @@ function set_price(target) {
             cost2 = elem.querySelector('[name*="air_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="air_transportation_cost_3"]')
 
-            if (cost1 && !cost1.classList.contains('d-none')) {
+            if (cost1 && (stock_amount || stock_amount_res) && !cost1.classList.contains('d-none')) {
                 final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
-            } else if (cost2 && !cost2.classList.contains('d-none')) {
+            } else if (cost2 && !stock_amount && !stock_amount_res && !cost2.classList.contains('d-none')) {
                 final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
@@ -964,11 +970,11 @@ function set_price(target) {
             cost2 = elem.querySelector('[name*="sea_transportation_cost_2"]')
             cost3 = elem.querySelector('[name*="sea_transportation_cost_3"]')
 
-            if (cost1 && !cost1.classList.contains('d-none')) {
+            if (cost1 && (stock_amount || stock_amount_res) && !cost1.classList.contains('d-none')) {
                 final_price.value = round_rial(cost1.value);
                 final_price.innerHTML = numberWithCommas(cost1.value);
                 // final_price_div.innerHTML = numberWithCommas(cost1.value);
-            } else if (cost2 && !cost2.classList.contains('d-none')) {
+            } else if (cost2 && !stock_amount && !stock_amount_res && !cost2.classList.contains('d-none')) {
                 final_price.value = round_rial(cost2.value);
                 final_price.innerHTML = numberWithCommas(cost2.value);
                 // final_price_div.innerHTML = numberWithCommas(cost2.value);
@@ -1083,9 +1089,8 @@ function newFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
     }
-    debugger
     if (repo.goods_price_market==4494){
-        debugger
+        console.log('')
     }
 
     let repo_express;
@@ -1113,7 +1118,7 @@ function newFormatRepoItem(repo) {
     if (repo.parent_sku){
         parent_code = "<div class='bold text-info d-flex align-items-center'>کد مادر " + repo.parent_sku + "<span class='font-size-12 mx-1'>(" +repo.parent_part_number +")</span>" + "</div>"
     }
-    // debugger
+
     var $container = $(
         "<div class='w-100 replace-digits' dir='rtl' style='font-family: BYekan'>" +
         "<div class='d-flex border'>" +
@@ -1455,11 +1460,11 @@ function AllPriceFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
     }
+
     let variant = ''
     for (let key in repo.variants_json){
         variant += `<span class="badge" style="text-align: right">${key} ${repo.variants_json[key]}</span>`
     }
-    debugger
     var $container = $(
         `<div class="row flex-row-reverse text-center">
             <div class="col-2">
