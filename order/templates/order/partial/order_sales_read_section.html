@@ -1,0 +1,46 @@
+{% load jalali_tags %}
+
+<div class="mt-5 w-20">
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger rounded {% endif %}">
+            <div class="ms-2 me-auto">
+                کنسل
+            </div>
+            <span class="badge rounded-pill {% if form.instance.cancel %} bg-danger text-white {% else %} bg-light-info {% endif %}">{{ form.instance.cancel|yesno|default_if_none:"-" }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                پیش فاکتور
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.factor_items.instance.qi.quotation_id|default_if_none:"-" }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تاریخ درخواست
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.created_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تامین از بازار
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.is_bazar|yesno }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                لید تایم روز تولید
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.production_lead_time|default_if_none:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تاریخ تعهد بازرگانی
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.trade_commitment_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
+        </li>
+
+    </ul>
+</div>

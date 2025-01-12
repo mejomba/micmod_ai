@@ -71,82 +71,41 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 
+
+{% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+
+{% with request.user.base_group as user_group %}
+
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
-            <div class="col-7">
-                <div class="row">
-                    <div class="col-9">
-                        <div class="row row-cols-3 align-items-baseline">
-                        <div class="d-none">
-                            {{ form.local_sepidar_wh_code }}
-                            {{ form.order_m2m }}
-                        </div>
-                            <div class="col-8"><div id="id_item_select2"></div></div>
-                            {% render_field_by_order form form.quantity label='on-border' %}
-                            {% render_field_by_order form form.order_title form.status form.transportation_method label='on-border' margin_b=5 %}
-                            {% render_field_by_order form form.production_lead_time form.trade_commitment_date form.commitment_date_to_customer label='on-border' %}
-                            {% render_field_by_order form form.order_type label='on-border' %}
-                            <div class="col-8 t">
-                                <div class="d-flex">
-                            {% render_field_by_order form form.sales_admin_confirmation form.is_over label='on-border' %}
-                                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">
-                                {% render_field_by_order form form.cancel label='on-border' %}
-                                    </div>
-                                </div>
-                                </div>
-                            {% render_field_by_order form form.item form.qi label='on-border' %}
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        {% render_field_by_order form form.description_sale label='on-border' %}
-                    </div>
-                {% if form.instance.local_sepidar_wh_code %}
-                    <div class="">
-                        <span class="py-2 px-3 bg-light-danger">سفارش از نوع رزرو انبار امکان تغییر تعداد ندارد</span>
-                    </div>
-                {% endif %}
-                </div>
-            </div>
-                <div id="order_order_report_ajax" class="col-5">
-                {% include 'order/partial/order_order_report.html' with form=form %}
-                </div>
-{#            <div class="col-5">{{ form.order_m2m }}</div>#}
+            <div class="col-7 xzx">
+            {% if request.user|has_group:'sales_user' %}
+                {% include 'order/partial/order_sales_edit_section.html' with form=form %}
+                {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
+                {% include 'order/partial/order_sales_read_section.html' with form=form %}
+            {% elif request.user|has_group:'trade_user' %}
+                {% include 'order/partial/order_trade_edit_section.html' with form=form %}
+                {% include 'order/partial/order_trade_read_section.html' with form=form %}
+            {% elif request.user|has_group:'mac' %}
+                {% include 'order/partial/mac_edit_section.html' with form=form %}
+                {% include 'order/partial/mac_read_section.html' with form=form %}
+            {% endif %}
+
             <div class="overflow-scroll">
                 {% get_comment_user_list form request.user %}
                 <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
             </div>
+
         </div>
-        {% if form.instance.pk and 0 %}
-            {% with form.instance.remaining_quantity as rq %}
-            <span class="{% if rq > 0 %} bg-info {% else %} bg-danger {% endif %} px-3 py-1 rounded text-white">
-            تعداد باقی مانده:
-            <span>{{ rq|floatformat:"-3g" }}</span>
-            </span>
-            {% endwith %}
-            <div>
-            {% for f in form.instance.factor_items.all  %}
-                {% for o in f.supply_locations.order_base_items.all %}
-                <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
-                    <span>از سفارش</span>
-                    <span class="me-1">{{ o.order_rel.pk }}</span>
-                    <span class="bg-light-info px-1 rounded">{{ o.quantity|floatformat:"-2g" }}</span>
-                    <span>عدد</span>
-                </a>
-                {% endfor %}
-                <div>
-                <span>جمع</span>
-                <span>{% total_supply f %}</span>
-                <span>از</span>
-                <span>{{ form.instance.quantity }}</span>
-                </div>
-            {% endfor %}
 
-
-            </div>
-            <div>{{ form.instance.order_rel.all }}</div>
-        {% endif %}
     </div>
+
+
+
+{% endwith %}
     <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
     {% if flow_state_index == 7 %}
@@ -227,7 +186,7 @@
                                 <span>{{ payment_item.descriptoin|intcomma|default_if_falsy:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 ">
-                                {% for file in payment.files.all %}
+                                {% for file in payment_item.files.all %}
                                 <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
                                 {% empty %}
                                     <span>-</span>
@@ -252,7 +211,7 @@
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                             <div class="col-2 py-2">
                                 <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
+                                <span>{{ gio.item_quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-3 py-2 s-05">
                                 <span>{{ gio.order|default_if_none:"-" }}</span>
@@ -288,7 +247,7 @@
                                 <span>{{ packing_item.carton_qty|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 s-05">
-                                <span>{{ packing_item.weight_kg|intcomma|default_if_falsy:"-" }}</span>
+                                <span>{{ packing_item.net_weight_kg|intcomma|default_if_falsy:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 ">
                                 <span class="me-5">{{ packing_item.pk|default_if_none:"-" }}</span>

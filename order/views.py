@@ -1,16 +1,21 @@
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
+from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
 
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
 from tools.utils import is_ajax
+from workflow.models import WorkFlow
 # from order.models import OrderItem
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, OrderPaymentItemForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
@@ -44,7 +49,29 @@ class OrderView(LoginRequiredMixin, BaseView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        from tools import const
         res = super().form_valid(form)
+        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'back' not in self.request.POST:
+            flow_data = {
+                "wf_status": 3, # next
+                "action": 'ایجاد خودکار',
+                "flow_name": 'سفارش',
+                "state": const.WF__ORDER__4_STATE,
+                "wf_description": "بدون نیاز به تایید مهندس",
+                "belong_to_group": 'order_admin',
+                "object_id": self.object.pk,
+                "content_type": ContentType.objects.get_for_model(self.object),
+                "creator_user": self.request.user,
+                "editor_user": self.request.user,
+                "from_user": self.request.user,
+                "to_user": self.request.user,  # get_user_model().objects.filter(groups__name='order_admin').first(),
+                "current_state_name": const.WF__ORDER__3_CURRENT_STATE_NAME,
+            }
+
+            wf = WorkFlow.objects.create(**flow_data)
+            self.object.last_work_flow = wf
+            self.object.extra_data.request = self.request
+            self.object.save()
         return res
 
     def get_context_data(self, **kwargs):
@@ -72,10 +99,11 @@ class OrderDataTableListView(AjaxDatatableView):
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'orderable': True, 'visible': False, },
+        {'name': 'id', 'orderable': True, 'visible': True, },
+        # {'name': 'edit', 'orderable': False, 'visible': True, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'is_bazar', 'orderable': True, 'visible': True, },
-        {'name': 'status', 'orderable': True, 'visible': True, },
+        # {'name': 'status', 'orderable': True, 'visible': True, },
         {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
         {'name': 'transportation_method', 'orderable': True, 'visible': True, },
@@ -104,6 +132,18 @@ class OrderDataTableListView(AjaxDatatableView):
             return qs.filter(is_bazar=True)
         elif q == 'all':
             return qs
+        elif q == 'not_complete':
+            not_complete_order = Q()
+            qs = qs.filter(cancel=True)
+            for order in qs:
+                not_complete = 0
+                for item in order.order_base_items.all():
+                    not_complete += item.quantity
+                res = not_complete - order.quantity
+                if res < 0:
+                    not_complete_order |= Q(id=order.id)
+            return Order.objects.filter(not_complete_order) if not_complete_order else Order.objects.none()
+
         else:
             return qs
         return qs
@@ -114,6 +154,14 @@ class OrderDataTableListView(AjaxDatatableView):
             obj.order_title if obj.order_title else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        # row['edit'] = mark_safe(f"""
+        # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+        #     <i class="ki-duotone ki-pencil fs-2 text-info">
+        #         <span class="path1"></span>
+        #         <span class="path2"></span>
+        #     </i>
+        # </a>
+        # """)
 
 
 class OrderAction(ListView):

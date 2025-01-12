@@ -29,12 +29,13 @@
         <span>
             <span class="mt-3 me-3">استفاده از فیلتر</span>
             <a href="{% url 'order:order.list' %}?q=sales_admin" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_admin' %} bg-primary {% endif %}">نیاز به بررسی مدیر فروش</a>
+            <a href="{% url 'order:order.list' %}?q=not_complete" class="btn btn-bordered btn-outline-danger mx-1 {% if request.GET.q == 'not_complete' %} bg-danger {% endif %}">تکمیل نشده‌ها</a>
             <a href="{% url 'order:order.list' %}?q=bazar_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'bazar_user' %} bg-primary {% endif %}">بازار</a>
             <a href="{% url 'order:order.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
         </span>
         </div>
 
-{#    </div>#}
+    </div>
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">

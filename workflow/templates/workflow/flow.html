@@ -94,20 +94,20 @@
             {% if forloop.counter0 == flow_state_index %}
                 <li class="active-flow">
                     <a href="#">{{ flow_state }}</a>
-                    {% for f in flow %}
-                        {% if f.state == flow_state %}
-                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>
-                        {% endif %}
-                    {% endfor %}
+{#                    {% for f in flow %}#}
+{#                        {% if f.state == flow_state %}#}
+{#                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>#}
+{#                        {% endif %}#}
+{#                    {% endfor %}#}
                 </li>
             {% else %}
                 <li class="disable-flow">
                     <a href="#">{{ flow_state }}</a>
-                    {% for f in flow %}
-                        {% if f.state == flow_state %}
-                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>
-                        {% endif %}
-                    {% endfor %}
+{#                    {% for f in flow %}#}
+{#                        {% if f.state == flow_state %}#}
+{#                            <span class="flow_last_update">{{ f.last_update_date|to_jalali:"%Y-%m-%d" }}</span>#}
+{#                        {% endif %}#}
+{#                    {% endfor %}#}
                 </li>
 
             {% endif %}

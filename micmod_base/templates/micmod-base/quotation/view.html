@@ -31,6 +31,17 @@
         این پیش فاکتور کنسل شده است
         </h3>
     {% endif %}
+
+    <div class="bg-light-danger {% if factors %} p-3 {% endif %}">
+    {% for factor in factors %}
+    {% if forloop.first %}
+        <div class="text-danger bold mb-4">امکان تغییر در پیش فاکتوری که برای آن فاکتور صادر شده است وجود ندارد</div>
+        <span class="bold">فاکتور های مرتبط</span>
+    {% endif %}
+        <a href="{% url 'factor:factor.view' factor.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12 ms-2" target="_blank" style="letter-spacing: 1.5px">{{ factor.pk }}</a>
+    {% endfor %}
+    </div>
+
                         <div class="mt-5 mb-2">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
                         </div>

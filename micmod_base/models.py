@@ -416,7 +416,7 @@ class Quotation(SLSDoc):
 
                 factor_item = item.qi.aggregate(total=Sum('quantity'))['total'] or 0
                 for fi in factor_items:
-                    supply_locations = fi.supply_locations.local_sepidar_wh_code
+                    supply_locations = fi.supply_locations.is_wh
                     if supply_locations:
                         wh_count += 1
                     else:
@@ -620,15 +620,23 @@ class QuotationItem(BaseModel):
                 # not_over = factor_item_quantity < self.quantity
                 is_over = factor_item_quantity >= self.quantity  # کامل مستهلک شده
                 for fi in factor_items:
-                    wh_supply_location = fi.supply_locations.local_sepidar_wh_code
-                    if fi.supply_locations.local_sepidar_wh_code:
-                        q_wh += fi.supply_locations.quantity
-                    elif not fi.supply_locations.local_sepidar_wh_code:
-                        if fi.supply_locations.cancel:
-                            for oo in fi.supply_locations.order_base_items.all():
+                    # wh_supply_location = fi.supply_locations.local_sepidar_wh_code
+                    if fi.supply_locations.cancel:
+                        for oo in fi.supply_locations.order_base_items.all():
+                            if oo.sepidar_wh_code:
+                                q_wh += oo.quantity
+                            else:
                                 q_order += oo.quantity
-                        elif not fi.supply_locations.cancel:
-                            q_order += fi.supply_locations.quantity
+                    else:
+                        q_order += fi.supply_locations.quantity
+                    # if fi.supply_locations.is_wh:
+                    #     q_wh += fi.supply_locations.quantity
+                    # elif not fi.supply_locations.is_wh:
+                    #     if fi.supply_locations.cancel:
+                    #         for oo in fi.supply_locations.order_base_items.all():
+                    #             q_order += oo.quantity
+                    #     elif not fi.supply_locations.cancel:
+                    #         q_order += fi.supply_locations.quantity
 
                     # if wh_supply_location and is_over:
                     #     is_wh_complete = True  # فاکتور قطعی
@@ -669,9 +677,17 @@ class QuotationItem(BaseModel):
         total_quantity_wh = 0
         all_factor_items = self.qi.all()
         for f in all_factor_items:
-            if f.supply_locations.local_sepidar_wh_code:
-                total_quantity_wh += f.quantity if f.quantity else 0
-            total_quantity += f.quantity if f.quantity else 0
+            if f.supply_locations.order_base_items.all().exists():
+                for item in f.supply_locations.order_base_items.all():
+                    if item.sepidar_wh_code:
+                        total_quantity_wh += item.quantity
+                        total_quantity += item.quantity
+                    else:
+                        total_quantity += item.quantity
+            # if f.supply_locations.local_sepidar_wh_code:
+            #     total_quantity_wh += f.quantity if f.quantity else 0
+            else:
+                total_quantity += f.quantity if f.quantity else 0
         return total_quantity, total_quantity_wh
 
     @property

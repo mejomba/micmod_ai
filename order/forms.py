@@ -49,18 +49,19 @@ class OrderForm(CustomBaseModelForm):
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        self.make_hidden(['item', 'qi'])
-        self.fields['description_sale'].widget.attrs['rows'] = 10
+        self.make_hidden(['item', 'qi', 'item_trade'])
+        self.fields['description_sale'].widget.attrs['rows'] = 6
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
-        if self.instance.local_sepidar_wh_code:
-            self.make_disable(['quantity'])
+        # if self.instance.local_sepidar_wh_code:
+        #     self.make_disable(['quantity'])
 
         # ~Q(id=self.instance.pk), item = self.instance.item, cancel = False
 
         # self.instance.order_base_items.all().values_list('order_rel', flat=True)
-        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0 or x.local_sepidar_wh_code is not None, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) | Q(local_sepidar_wh_code__isnull=False))))) if self.instance.pk else []
+        # illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0 or x.local_sepidar_wh_code is not None, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) | Q(local_sepidar_wh_code__isnull=False))))) if self.instance.pk else []
+        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) )))) if self.instance.pk else []
         ooqs = Order.objects.filter(~Q(id=self.instance.pk), item=self.instance.item, cancel=False).exclude(
             pk__in=illegal_order_ids) if self.instance.cancel else Order.objects.none()
         self.fields['order_m2m'] = forms.ModelMultipleChoiceField(
@@ -68,12 +69,15 @@ class OrderForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("order_order"), is_stacked=False),
         )
+        self.make_disable(['cancel'])
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
                 self.make_disable(form_constraint_read)
+                if 'supplier_trade' in form_constraint_read:
+                    self.fields['supplier_trade'].widget.attrs['disabled'] = "disabled"
             if formset_constraint_hide:
                 self.make_hidden(formset_constraint_hide)
             if formset_constraint_read:

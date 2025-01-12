@@ -108,14 +108,19 @@
                     <div class="w-75">
                         <div class="d-flex justify-content-end">
                             {% render_field_by_order form_s form_s.goods_name %}
-                                                        <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>
+{#                                                        <div class="card-text bold w-75 rounded" data-key="goods_name"> نام کالا</div>#}
+                            <a href="/extra_data/item/create/" target="_blank">
+                                    <i class="fas fa-plus-square text-success icon-xl me-2 tooltip_" style="font-size: 1.5rem">
+                                        <span class="tooltiptext">کالای جدید</span>
+                                    </i>
+                                </a>
                             <div class="w-25 bg-light-danger text-center" onclick="hide_show_goods_alt(this)"
                                  data-key="show_alt">مشابه
                             </div>
                         </div>
                         <div class="col on-border">
 
-                            <label>نام کالا</label>
+{#                            <label>نام کالا</label>#}
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
                                 <div class="sepidar_id_warning">
@@ -133,9 +138,9 @@
                                     <small class="bg-light-info">{{ parent_code.part_number }}</small>
                                 {% endif %}
                             </span>
-                                <a href="/extra_data/item/create/" target="_blank">
-                                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>
-                                </a>
+{#                                <a href="/extra_data/item/create/" target="_blank">#}
+{#                                    <i class="fas fa-plus-square text-success icon-xl" style="font-size: 1.5rem"></i>#}
+{#                                </a>#}
                             </div>
                             {% endif %}
                         </div>
@@ -157,7 +162,7 @@
                         </div>
                         <div class="w-75">
                             <div class="col on-border">
-                                <label>نام کالا</label>
+{#                                <label>نام کالا</label>#}
                                 <textarea class="w-100 form-control bg-white bold text-black" name="-goods_name_alt_lbl" rows="1" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
 
                             </div>

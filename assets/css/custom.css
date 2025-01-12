@@ -989,11 +989,55 @@ span .select2-selection{
   border-style: solid;
   border-color: #555 transparent transparent transparent;
 }
-
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip_:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
+}
+
+/* Tooltip text 300px */
+.tooltip_ .tooltiptext-fit {
+  visibility: hidden;
+  width: fit-content;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+    transform: translateX(-50%);
+  /*margin-left: -60px;*/
+
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Tooltip arrow */
+.tooltip_ .tooltiptext-fit::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip_:hover .tooltiptext-fit {
+  visibility: visible;
+  opacity: 1;
+}
+
+.factor_item{
+    height: 170px;
+    transition: height 0.3s ease;
 }
 
 .quotation_to_factor_select2{
@@ -1005,7 +1049,7 @@ span .select2-selection{
     background-color: #d6ecff;
 }
 .hover_light_primary:hover{
-    background-color: #f3fbff !important;
+    background-color: #e9f6fd !important;
 }
 .hover_light_success:hover{
     background-color: #d5ffd1 !important;

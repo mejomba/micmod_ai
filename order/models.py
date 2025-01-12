@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Sum, ExpressionWrapper, F, FloatField
+
 from core.models import BaseModel, BaseModeWF
 from extra_data.models import Brand, Item, Customer, WH
+from inquiry.models import Supplier
 # from factor.models import FactorItem
 from micmod_base.models import QuotationItem
 from translator import get_text as _
@@ -16,10 +19,12 @@ class Order(BaseModeWF):
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
     TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
+    is_wh = models.BooleanField(_('is_wh'), default=False)
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
     order_title = models.CharField(max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
+    # status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
+    sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
     # customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING,
     #                              to_field='sepidar_party_id', db_column='customer_party_id')
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
@@ -28,29 +33,73 @@ class Order(BaseModeWF):
     production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
     trade_commitment_date = models.DateField(_('trade_commitment_date'), null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
+
     quantity = models.FloatField(_('quantity'), default=0)
+
+
     description_sale = models.TextField(_('description_sale'), null=True, blank=True)
     order_type = models.CharField(_('order_type'), max_length=64, choices=ORDER_TYPE_CHOICE, default='china',
                                   null=True, blank=True)
+    price = models.FloatField(_("price"), null=True, blank=True)
+
+    # trade
+    item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
+                                   blank=True)  # Todo autocomplete with select2 search
+    quantity_trade = models.FloatField(_('quantity_trade'), null=True, blank=True)
+    po_number_trade = models.CharField(_("po_number_trade"), max_length=255, null=True, blank=True)
+    supplier_trade = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
+                                       on_delete=models.DO_NOTHING, related_name='supplier_trade_set')
+    price_trade = models.FloatField(_("price_trade"), null=True, blank=True)
+
+    # mac
+    supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
+                                     on_delete=models.DO_NOTHING, related_name='supplier_mac_set')
+    price_mac = models.FloatField(_("price_mac"), null=True, blank=True)
+    part_number_mac = models.CharField(_("part_number_mac"), null=True, blank=True)
+    po_number_mac = models.CharField(_("po_number_mac"), max_length=255, null=True, blank=True)
+    quantity_mac = models.FloatField(_('quantity_mac'), default=0, null=True, blank=True)
+
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
+    mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
     cancel = models.BooleanField(_("cancel"), default=False)
     is_over = models.BooleanField(_('is_over'), default=False)
     # qi = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, null=True)
     qi = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
-    local_sepidar_wh_code = models.IntegerField(_("local_sepidar_wh_code"), null=True, blank=True)
+    # local_sepidar_wh_code = models.IntegerField(_("local_sepidar_wh_code"), null=True, blank=True)
 
     order_m2m = models.ManyToManyField('self', through='OrderOrder', related_name='order_items',
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
     def __str__(self):
+        return f'{self.pk}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
+    @property
+    def total_price(self):
+        return 1
+
+    @property
+    def total_paid(self):
+        return 2
+
+    @property
+    def payment_info(self):
+        return 3
+
     def description(self):
+        sepidar_wh = None
+        order = None
         if self.cancel:
             s = 0
+            # supplied_quantity = self.order_base_items.all().annotate(
+            #     s=Sum('quantity'), calculated_difference=ExpressionWrapper(F('s') - self.quantity, output_field=FloatField()))
             for oo in self.order_base_items.all():
                 s += oo.quantity
+                if oo.sepidar_wh_code:
+                    sepidar_wh = True
+                else:
+                    order = True
             x = s - self.quantity
             if x < 0:
                 return f'نیاز به {abs(x)} عدد  برای تامین کامل'
@@ -68,20 +117,21 @@ class Order(BaseModeWF):
         return 0
 
     @classmethod
-    def create_with_rel(cls, data_base=None, o2=None, factor_item=None):
+    def create_with_rel(cls, data_base=None, o2=None, factor_item=None, sepidar_wh_code=None):
         if not data_base:
             data_base = {
                 "order_title": "خودکار توسط سیستم",
-                "status": "1",
+                # "status": "1",
                 "item": factor_item.qi.goods_code_fk,
                 "production_lead_time": 5,  # self.qi.lead_time,
                 "quantity": factor_item.quantity,
-                "cancel": False,
+                "cancel": True if o2 else False,
                 "is_over": False,
                 "qi": factor_item.qi,
                 "creator_user": factor_item.extra_data.request.user,
                 "editor_user": factor_item.extra_data.request.user,
                 'is_bazar': factor_item.is_bazar,
+                'is_wh': False,
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {
@@ -119,12 +169,15 @@ class Order(BaseModeWF):
         wf = WorkFlow.objects.create(**flow_data)
         o1.last_work_flow = wf
         if o2 is not None:
-            o1.cancel = True
+            factor_item.supply_locations = o1
+            # o1.cancel = True
             remaining_quantity = o2.remaining_quantity
-            if remaining_quantity >= o1.quantity:
-                oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=o1.quantity)
-            else:
-                oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=remaining_quantity)
+            oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=min(o1.quantity, remaining_quantity),
+                                           sepidar_wh_code=sepidar_wh_code)
+            # if remaining_quantity >= o1.quantity:
+            #     oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=o1.quantity, sepidar_wh_code=sepidar_wh_code)
+            # else:
+            #     oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=remaining_quantity, sepidar_wh_code=sepidar_wh_code)
         o1.save()
         return o1
 
@@ -143,6 +196,11 @@ class Order(BaseModeWF):
             total_consumed_count += oo.quantity
         return total_count - total_consumed_count
 
+    @property
+    def arrive_at(self):
+        from django.utils import safestring
+        return "34 روز"
+
 
 class OrderOrder(BaseModel):
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),
@@ -153,7 +211,14 @@ class OrderOrder(BaseModel):
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)
-    # sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'), null=True, blank=True)
+    sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'), null=True, blank=True)
+
+    @property
+    def get_wh_name(self):
+        if self.sepidar_wh_code == 1:
+            return 'مرکزی'
+        else:
+            return 'رسالت'
 
 
 # from django.db.models.signals import m2m_changed
@@ -228,6 +293,6 @@ class OrderPaymentItem(BaseModeWF):
     payment = models.ForeignKey(OrderPayment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
-    total_amount = models.FloatField(_('total_amount'))
     description = models.TextField(_('description'), null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
+    total_amount = models.FloatField(_('total_amount'))

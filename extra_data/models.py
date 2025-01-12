@@ -400,12 +400,29 @@ class Item(BaseModel):
 
         # for o in self.orderitem_set.all():
         for o in self.order_set.filter(cancel=False).order_by('-quantity'):
-            remaining_quantity = o.remaining_quantity
-            if remaining_quantity > 0:
-                if o.local_sepidar_wh_code:
-                    res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({o.quantity:0.20g})"))
-                else:
-                    res.append((str(o.pk), f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+        # for o in self.order_set.filter().order_by('-quantity'):
+            if o.cancel:
+                for oo in o.order_base_items.all():
+                    if oo.sepidar_wh_code:
+                        res.append(
+                            ((f'wh__{oo.sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({oo.quantity:0.20g})"))
+                    else:
+                        remaining_quantity = o.remaining_quantity
+                        if remaining_quantity > 0:
+                            res.append((str(o.pk),
+                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+            else:
+                remaining_quantity = o.remaining_quantity
+                if remaining_quantity > 0:
+                    res.append((str(o.pk),
+                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g}) [ {o.arrive_at} ]"))
+
+            # remaining_quantity = o.remaining_quantity
+            # if remaining_quantity > 0:
+            #     if o.local_sepidar_wh_code:
+            #         res.append(((f'wh__{o.local_sepidar_wh_code}__{o.pk}'), f"رزرو {o.pk} ام ({o.quantity:0.20g})"))
+            #     else:
+            #         res.append((str(o.pk), f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
 
         return res
 

@@ -679,5 +679,8 @@
     "t-payment": "پرداخت",
     "generic-payment": "پرداخت عمومی",
     "production_day_activities": "فعالیت های روز تولید",
-    "is_bazar": "بازار"
+    "is_bazar": "بازار",
+    "sales_admin_cancel": "کنسل مدیرفروش",
+    "mohandes_confirmation": "نیاز به تایید مهندس",
+    "quantity_trade": "تعداد (بازرگانی)"
 }
