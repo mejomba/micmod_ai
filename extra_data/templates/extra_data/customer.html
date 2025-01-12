@@ -615,6 +615,8 @@
     })
 
     setTimeout(addCommaSeperator, 500, true)
-    document.querySelector('#main-form').addEventListener('submit', removeCommaSeperator)
+    document.querySelector('#main-form').addEventListener('submit', function() {
+        removeCommaSeperator()
+    })
     </script>
 {% endblock extra_js %}
