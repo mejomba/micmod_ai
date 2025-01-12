@@ -75,7 +75,7 @@ class BaseManager(models.Manager):
         direct_access = ''
         user_groups_list = list(user.groups.values_list('name', flat=True))
         model_name = self.model.__name__
-        if q == 'all' or q == 'pay' or q == 'sales_user':
+        if q == 'all' or q == 'pay' or q == 'sales_user' or q == 'delivery':
             direct_access = f'{model_name.lower()}_direct_access'
         if user.is_superuser or self.is_public or direct_access in user_groups_list:
             return self.model.objects.all()
