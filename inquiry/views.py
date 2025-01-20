@@ -853,7 +853,7 @@ def get_item(request):
                     # if trade_price_code or bazar_price_code:
                     price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                         pk=trade_price_code).first() if (trade_price_code) else item_obj.price
-                    price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                    price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.valid_bazar_inquiry().filter(
                         pk=bazar_price_code).first() if (bazar_price_code) else old_item_obj.bazar_price
                     # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
@@ -873,7 +873,7 @@ def get_item(request):
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -906,7 +906,7 @@ def get_item(request):
                         item_obj: Item = item_
                         price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                             pk=trade_price_code).first() if (trade_price_code) else item_obj.price
-                        price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
+                        price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.valid_bazar_inquiry().filter(
                             pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
                         # price_inquiry_result: PriceInquiryResult = item_obj.price
                         if price_inquiry_result:
@@ -926,7 +926,7 @@ def get_item(request):
                                 item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                             item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
-                        if price_inquiry_result_bazar:
+                        if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                             price_setting = price_inquiry_result_bazar.price_settings
                             price_inquiry_result_bazar.set_discount_params(
                                 quantity=quantity,
@@ -1018,7 +1018,7 @@ def get_items(request):
                         item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -1029,6 +1029,7 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+			item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1084,7 +1085,7 @@ def get_items(request):
                         item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -1095,6 +1096,7 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+			item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1359,19 +1361,19 @@ def bazar_all_prices(request):
             return JsonResponse({'items': [{'invalid': 'item'}]})
         if q := request.GET.get('q'):
             try:
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                     Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
             except Exception as e:
                 print('exception')
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
         else:
-            bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+            bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                 sku=sku,
                                                                 active=True,
                                                                 is_deleted=False)
