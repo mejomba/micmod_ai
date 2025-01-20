@@ -20,6 +20,7 @@ from tools.form_tools import get_dif_percentage
 from tools.utils import elapsed_time
 
 from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
+from django.utils import timezone
 
 
 class Supplier(BaseModel):
@@ -79,6 +80,23 @@ class PriceInquiryResult(BaseModel):
             'payment_method_': None,
             'currency_': None,
         }
+
+    @property
+    def is_valid_time(self):
+        from django.utils import timezone
+        now = timezone.now()
+        try:
+            return ((now - self.last_update_date).total_seconds() / 3600) < 72
+        except Exception as e:
+            return
+
+    @classmethod
+    def valid_bazar_inquiry(cls):
+        now = timezone.now()
+        last_72_hour = (now - timezone.timedelta(hours=72), now)
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        qs = cls.objects.filter(bazar_filter, active=True, last_update_date__range=last_72_hour)
+        return qs
 
     @property
     def item_sku(self):
