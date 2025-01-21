@@ -44,7 +44,7 @@ class Order(BaseModeWF):
                                   null=True, blank=True)
     price = models.FloatField(_("price"), null=True, blank=True)
 
-    # TRADE
+    # TRADE #######################################
     item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
                                    blank=True)  # Todo autocomplete with select2 search
     quantity_trade = models.FloatField(_('quantity_trade'), null=True, blank=True)
@@ -53,8 +53,9 @@ class Order(BaseModeWF):
                                        on_delete=models.DO_NOTHING, related_name='supplier_trade_set')
     price_trade = models.FloatField(_("price_trade"), null=True, blank=True)
     description_trade = models.TextField(_('description_trade'), null=True, blank=True)
+    apply_mac = models.BooleanField(_('apply_mac'), default=False)
 
-    # MAC
+    # MAC #######################################
     supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                      on_delete=models.DO_NOTHING, related_name='supplier_mac_set')
     price_mac = models.FloatField(_("price_mac"), null=True, blank=True)
@@ -62,7 +63,6 @@ class Order(BaseModeWF):
     po_number_mac = models.CharField(_("po_number_mac"), max_length=255, null=True, blank=True)
     quantity_mac = models.FloatField(_('quantity_mac'), default=0, null=True, blank=True)
     description_mac = models.TextField(_('description_trade'), null=True, blank=True)
-    apply_mac = models.BooleanField(_('apply_mac'), default=False)
 
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
     mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
