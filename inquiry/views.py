@@ -887,7 +887,7 @@ def get_item(request):
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
-                        item["goods_market_date"] = 'تاریخ نامعتبر'
+                        item["goods_market_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
