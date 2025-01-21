@@ -609,7 +609,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
                             </i>
                         </a>
                         """
-        qi = obj.trade_quotation_rel.first()
+        qi = obj.trade_quotation_rel.first() or obj.bazar_quotation_rel.first()
         row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
                           f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
@@ -853,7 +853,7 @@ def get_item(request):
                     # if trade_price_code or bazar_price_code:
                     price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                         pk=trade_price_code).first() if (trade_price_code) else item_obj.price
-                    price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.valid_bazar_inquiry().filter(
+                    price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
                         pk=bazar_price_code).first() if (bazar_price_code) else old_item_obj.bazar_price
                     # price_inquiry_result: PriceInquiryResult = item_obj.price
                     if price_inquiry_result:
@@ -887,7 +887,7 @@ def get_item(request):
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
-                        item["goods_market_date"] = None
+                        item["goods_market_date"] = 'تاریخ نامعتبر'
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
@@ -906,7 +906,7 @@ def get_item(request):
                         item_obj: Item = item_
                         price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                             pk=trade_price_code).first() if (trade_price_code) else item_obj.price
-                        price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.valid_bazar_inquiry().filter(
+                        price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
                             pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
                         # price_inquiry_result: PriceInquiryResult = item_obj.price
                         if price_inquiry_result:
@@ -1029,7 +1029,7 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
-			item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1096,7 +1096,7 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
-			item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
@@ -1398,19 +1398,21 @@ def all_prices(request):
             return JsonResponse({'items': [{'invalid': 'item'}]})
         if q := request.GET.get('q'):
             try:
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
             except Exception as e:
                 print('exception')
-                bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
         else:
             bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
                                                                 active=True,
-                                                                is_deleted=False)
+                                                                is_deleted=False,
+                                                                inquiry_type__title__icontains='خارج')
+            bazar_all_price |= PriceInquiryResult.valid_bazar_inquiry().filter(active=True, is_deleted=False)
 
         data = list()
         for item in bazar_all_price:
