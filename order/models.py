@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField
 
+from micmod_base.base import Currency
 from core.models import BaseModel, BaseModeWF
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier
@@ -22,6 +23,7 @@ class Order(BaseModeWF):
     is_wh = models.BooleanField(_('is_wh'), default=False)
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
     order_title = models.CharField(max_length=255, blank=True, null=True)
+    order_number = models.CharField(max_length=255, blank=True, null=True)
     # status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
@@ -42,7 +44,7 @@ class Order(BaseModeWF):
                                   null=True, blank=True)
     price = models.FloatField(_("price"), null=True, blank=True)
 
-    # trade
+    # TRADE
     item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
                                    blank=True)  # Todo autocomplete with select2 search
     quantity_trade = models.FloatField(_('quantity_trade'), null=True, blank=True)
@@ -50,14 +52,17 @@ class Order(BaseModeWF):
     supplier_trade = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                        on_delete=models.DO_NOTHING, related_name='supplier_trade_set')
     price_trade = models.FloatField(_("price_trade"), null=True, blank=True)
+    description_trade = models.TextField(_('description_trade'), null=True, blank=True)
 
-    # mac
+    # MAC
     supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                      on_delete=models.DO_NOTHING, related_name='supplier_mac_set')
     price_mac = models.FloatField(_("price_mac"), null=True, blank=True)
     part_number_mac = models.CharField(_("part_number_mac"), null=True, blank=True)
     po_number_mac = models.CharField(_("po_number_mac"), max_length=255, null=True, blank=True)
     quantity_mac = models.FloatField(_('quantity_mac'), default=0, null=True, blank=True)
+    description_mac = models.TextField(_('description_trade'), null=True, blank=True)
+    apply_mac = models.BooleanField(_('apply_mac'), default=False)
 
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
     mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
@@ -67,7 +72,7 @@ class Order(BaseModeWF):
     qi = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, null=True, blank=True)
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     # local_sepidar_wh_code = models.IntegerField(_("local_sepidar_wh_code"), null=True, blank=True)
-
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='currency_ref', null=True, blank=True)
     order_m2m = models.ManyToManyField('self', through='OrderOrder', related_name='order_items',
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
@@ -199,7 +204,7 @@ class Order(BaseModeWF):
     @property
     def arrive_at(self):
         from django.utils import safestring
-        return "34 روز"
+        return "1404/02/10"
 
 
 class OrderOrder(BaseModel):
@@ -296,3 +301,15 @@ class OrderPaymentItem(BaseModeWF):
     description = models.TextField(_('description'), null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
+    bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
+    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING)
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+
+
+class ACNT(BaseModeWF):
+    info_bank = models.CharField(_('info_Bank'), max_length=120)
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING)
+    first_amount = models.FloatField(default=0.0)
+    is_blocked = models.BooleanField(default=False)
+    block_date = models.DateField(null=True, blank=True)
+    description = models.TextField(_('description'), null=True, blank=True)

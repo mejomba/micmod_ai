@@ -5,7 +5,7 @@
 
 // const customer_select2_placeholder = document.querySelector('[name="customer"]').value.toString() || "مشتری"
 
-const item_select2_placeholder = document.querySelector('[name="item"]').value.toString() || "کد کالا"
+const item_select2_placeholder = document.querySelector('[name="item_placeholder"]').innerText.toString() || "کد کالا"
 // select2_generate('#id_customer_select2', '#id_customer', '/sepidar/customers_list', customer_select2_placeholder, 'sepidar_party_id')
 select2_generate('#id_item_select2', '#id_item', '/inquiry/items_list', item_select2_placeholder)
 select2_generate('#id_item_trade_select2', '#id_item_trade', '/inquiry/items_list', item_select2_placeholder)

@@ -170,7 +170,7 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
               "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
             },
             "formset_constraint": [
@@ -185,7 +185,7 @@
             "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
               "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
             },
             "formset_constraint": [
@@ -200,7 +200,7 @@
             "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity", "apply_mac"],
               "read": []
             },
             "formset_constraint": [
@@ -212,11 +212,11 @@
           },
           {
             "state": "تایید مهندس",
-            "group": "trade_user",
+            "group": "order_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity"],
-              "read": []
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity", "apply_mac"],
+              "read": ["mohandes_confirmation"]
             },
             "formset_constraint": [
               {
@@ -231,7 +231,7 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation"]
             },
             "formset_constraint": [
               {
@@ -246,7 +246,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
             },
             "formset_constraint": [
               {
@@ -261,7 +261,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
             },
             "formset_constraint": [
               {
@@ -276,7 +276,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
             },
             "formset_constraint": [
               {

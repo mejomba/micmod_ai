@@ -572,6 +572,25 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
+    @property
+    def lead_time_day(self):
+        import re
+        pattern = r'(\d)+-(\d)+.*\b(days|week|month)\b'
+        b = ''
+        if self.lead_time:
+            try:
+                matches = re.findall(pattern, self.lead_time)
+                a, b, c = matches[0]
+                if c == 'days':
+                    pass
+                if c == 'weeks':
+                    b *= 7
+                if c == 'months':
+                    b *= 30
+            except Exception as e:
+                b = ''
+        return b
+
     # @property
     # def appearance_or_real_part_number(self):
     #     try:

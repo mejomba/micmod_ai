@@ -495,8 +495,8 @@
         })
     })
 
-    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
-    submitCommentBtns.forEach(function (item){
+    //const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]');
+    document.querySelectorAll('[id*="id_comment__"]') && document.querySelectorAll('[id*="id_comment__"]').forEach(function (item){
         item.addEventListener('click', function (e){
             e.preventDefault()
             let comment_url = item.dataset.form_url;

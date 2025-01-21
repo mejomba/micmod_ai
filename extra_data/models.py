@@ -489,7 +489,9 @@ class Item(BaseModel):
 
     @property
     def bazar_price(self):
-        bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5)
+        now = timezone.now()
+        last_72_hour = (now - timezone.timedelta(hours=72), now)
+        bazar_filter = Q(inquiry_type_id=4) | Q(inquiry_type_id=5) & Q(last_update_date__range=last_72_hour)
         if not self.extra_data.bazar_price:
             self.extra_data.bazar_price = self.items.filter(sku=self).filter(bazar_filter, active=True).first()
         return self.extra_data.bazar_price
@@ -512,7 +514,8 @@ class Item(BaseModel):
     @property
     def inquiry_count(self):
         bazar_filter = Q(inquiry_type__title__icontains='داخل')
-        bazar_inquiry_count = self.items.filter(bazar_filter, active=True).count()
+        bazar_inquiry_count = self.items.filter(bazar_filter, active=True,
+                          last_update_date__range=(timezone.now() - timezone.timedelta(days=3), timezone.now())).count()
 
         trade_filter = Q(inquiry_type__title__icontains='خارج')
         trade_inquiry_count = self.items.filter(trade_filter, active=True).count()

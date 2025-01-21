@@ -682,5 +682,6 @@
     "is_bazar": "بازار",
     "sales_admin_cancel": "کنسل مدیرفروش",
     "mohandes_confirmation": "نیاز به تایید مهندس",
-    "quantity_trade": "تعداد (بازرگانی)"
+    "quantity_trade": "تعداد (بازرگانی)",
+    "apply_mac": "MAC"
 }

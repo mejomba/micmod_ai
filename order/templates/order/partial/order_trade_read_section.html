@@ -1,41 +1,43 @@
 {% load more_tags %}
+{% load jalali_tags %}
+
 <div class="col-5">
     <div class="d-flex gap-4">
-        <div class="w-35">
+        <div class="w-40">
             <span>اطلاعات قیمت</span>
             <div class="">
                 <ul class="list-group list-group-flush">
+                    {% for trade_price in trade_price_list %}
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                            1403/11/14
+                            {{ trade_price.created_date|date }}
                         </div>
                         <span class="badge bg-light-info rounded-pill">
-                            180
-                            <span>یوان</span>
+                            <span class="mx-1">{{ trade_price.currency_type.title_en }}</span>
+                            <span>{{ trade_price.price }}</span>
                         </span>
+                        <span class="ms-2">{{ trade_price.supplier }}</span>
                     </li>
-
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                            1403/10/09
-                        </div>
-                        <span class="badge bg-light-info rounded-pill">
-                            12.6
-                            <span>دلار</span>
-                        </span>
-                    </li>
+                    {% endfor %}
 
                 </ul>
             </div>
         </div>
-        <div class="w-65 p-1" style="border-right: 2px solid grey">
+        <div class="w-60 p-1" style="border-right: 2px solid grey">
 
             <div class="">
                 <ul class="list-group list-group-flush">
-
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                            تعداد فروش
+                            تاریخ درخواست
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.created_date|to_jalali:"%Y-%m-%d" }} | {{ form.instance.created_date|date }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            تعداد درخواست
                         </div>
                         <span class="badge">
                             {{ form.instance.quantity|default_if_falsy:'بدون تعداد' }}
@@ -51,10 +53,27 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                            تاریخ درخواست
+                            پیش فاکتور
                         </div>
                         <span class="badge">
-                            1403/10/09
+                            {{ form.instance.qi.quotation|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            لید تایم تولید
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.qi.lead_time|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            روش حمل
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.transportation_method }}
                         </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -69,8 +88,8 @@
                         <div class=" me-auto">
                             توضیحات فروش
                         </div>
-                        <span class="p-1">
-                            {{ form.instance.description_sale|default_if_falsy:'ه تمام و دشواری موجود در ارائه راهکارها، و شرایط سخت تایپ به پایان رسد و زمان مورد نیاز شامل حروفچینی دستاوردهای اصلی، و جوابگور گیرد.' }}
+                        <span class="w-75 p-1">
+                            {{ form.instance.description_sale|default_if_falsy:'-' }}
                         </span>
                     </li>
                 </ul>

@@ -81,6 +81,7 @@
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
             <div class="col-7 xzx">
+            <span name="item_placeholder" class="d-none">{{ form.instance.item.sku }} - {{ form.instance.item.part_number }}</span>
             {% if request.user|has_group:'sales_user' %}
                 {% include 'order/partial/order_sales_edit_section.html' with form=form %}
                 {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
@@ -101,6 +102,7 @@
 
         </div>
 
+    </div>
     </div>
 
 

@@ -51,7 +51,7 @@ class OrderView(LoginRequiredMixin, BaseView):
     def form_valid(self, form):
         from tools import const
         res = super().form_valid(form)
-        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'back' not in self.request.POST:
+        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'change_user' not in self.request.POST and 'back' not in self.request.POST:
             flow_data = {
                 "wf_status": 3, # next
                 "action": 'ایجاد خودکار',
@@ -77,6 +77,7 @@ class OrderView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
         if self.state_index == 7:
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
@@ -99,24 +100,45 @@ class OrderDataTableListView(AjaxDatatableView):
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'orderable': True, 'visible': True, },
-        # {'name': 'edit', 'orderable': False, 'visible': True, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
-        {'name': 'is_bazar', 'orderable': True, 'visible': True, },
-        # {'name': 'status', 'orderable': True, 'visible': True, },
-        {'name': 'item', 'orderable': True, 'visible': True, 'lookup_field': '__sku__icontains'},
-        {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
-        {'name': 'transportation_method', 'orderable': True, 'visible': True, },
-        {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
-        {'name': 'trade_commitment_date', 'orderable': True, 'visible': True, },
-        {'name': 'commitment_date_to_customer', 'orderable': True, 'visible': True, },
-        {'name': 'quantity', 'orderable': True, 'visible': True, },
-        {'name': 'description_sale', 'orderable': True, 'visible': True, },
-        {'name': 'order_type', 'orderable': True, 'visible': True, },
-        {'name': 'sales_admin_confirmation', 'orderable': True, 'visible': True, },
-        {'name': 'cancel', 'orderable': True, 'visible': True, },
-        {'name': 'is_over', 'orderable': True, 'visible': True, },
+        {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
+         'lookup_field': '__current_state_name__icontains'},
+        {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+        {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
+        {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+        {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
+        {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, },
+        {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
+        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
+        {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
+        {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
+        {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+
+        # {'name': 'id', 'orderable': True, 'visible': True, },
+        # # {'name': 'edit', 'orderable': False, 'visible': True, },
+        # {'name': 'last_work_flow','title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+        # {'name': 'order_number', 'orderable': True, 'visible': True, },
+        # {'name': 'order_title', 'orderable': True, 'visible': True, },
+        # {'name': 'is_bazar', 'orderable': True, 'visible': True, },
+        # # {'name': 'status', 'orderable': True, 'visible': True, },
+        # {'name': 'item', 'orderable': True, 'title': 'sku' , 'visible': True, 'lookup_field': '__sku__icontains'},
+        # {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
+        # {'name': 'transportation_method', 'orderable': True, 'visible': True, },
+        # {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
+        # {'name': 'trade_commitment_date', 'orderable': True, 'visible': True, },
+        # {'name': 'commitment_date_to_customer', 'orderable': True, 'visible': True, },
+        # {'name': 'quantity', 'orderable': True, 'visible': True, },
+        # {'name': 'description_sale', 'orderable': True, 'visible': True, },
+        # {'name': 'order_type', 'orderable': True, 'visible': True, },
+        # {'name': 'sales_admin_confirmation', 'orderable': True, 'visible': True, },
+        # {'name': 'cancel', 'orderable': True, 'visible': True, },
+        # {'name': 'is_over', 'orderable': True, 'visible': True, },
+        # {'name': 'created_date', 'orderable': True, 'visible': True, },
+        # {'name': 'qi__quotation', 'orderable': True, 'visible': True, 'lookup_field': '__id__icontains', 'title': "پیش فاکتور"},
 
         # {'name': 'sepidar_dl_code', 'orderable': True, 'visible': True, 'width': 600, },
         # {'name': 'title', 'title': '<div class="px-15">عنوان</div>', 'orderable': True, 'visible': True,
@@ -149,11 +171,19 @@ class OrderDataTableListView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
+        row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+        row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
+        row['item_trade__part_number'] = f'<span>{obj.item_trade.part_number}</span>' if obj.item_trade else ""
+        o = obj.workflows.filter(current_state_name='تایید مهندس').first()
+        row['co_conf'] = f'<span>{o.created_date}</span>' if o else ""
+
         row['order_title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
             reverse('order:order.view', args=(obj.id,)),
             obj.order_title if obj.order_title else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">

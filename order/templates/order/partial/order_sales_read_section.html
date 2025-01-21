@@ -1,19 +1,33 @@
 {% load jalali_tags %}
+{% load more_tags %}
 
-<div class="mt-5 w-20">
+<div class="mt-5 w-20" style="position: relative; top: -90px;">
     <ul class="list-group list-group-flush">
         <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger rounded {% endif %}">
             <div class="ms-2 me-auto">
-                کنسل
+                سفارش مستقل
             </div>
-            <span class="badge rounded-pill {% if form.instance.cancel %} bg-danger text-white {% else %} bg-light-info {% endif %}">{{ form.instance.cancel|yesno|default_if_none:"-" }}</span>
+            <span class="badge rounded-pill {% if form.instance.cancel %} bg-danger text-white {% else %} bg-light-info {% endif %}">{{ form.instance.cancel|yesno:"no,yes"|default_if_none:"-" }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                مشتری
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.qi.quotation.customer_party_id|default_if_falsy:"-" }}</span>
         </li>
 
         <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="ms-2 me-auto">
                 پیش فاکتور
             </div>
-            <span class="badge bg-light-info rounded-pill">{{ form.instance.factor_items.instance.qi.quotation_id|default_if_none:"-" }}</span>
+            <span class="badge bg-light-info rounded-pill">
+                {% if form.instance.qi.quotation_id %}
+                <a href="{% url 'micmod_base:quotations.view' form.instance.qi.quotation_id %}">{{ form.instance.qi.quotation_id|default_if_none:"-" }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </span>
         </li>
 
         <li class="list-group-item d-flex justify-content-between align-items-start">

@@ -4,17 +4,21 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
     <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+
+{#<link href="assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>#}
+{#<script src="assets/plugins/global/plugins.bundle.js"></script>#}
 <style>
     .select2-dropdown--below{
         transition: width 0.7s ease;
     }
 </style>
 <form action="{% if form.instance.pk %}{% url 'order:order.paymentitem.update' form.instance.pk %}{% else %}{% url 'order:order.paymentitem.view' %}{% endif %}" method="POST" id="payment-item-form" enctype="multipart/form-data">
+    <h5>ردیف پرداخت به ازای هر سفارش</h5>
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
         <div class="row">
-{#            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>#}
-{#            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}#}
+            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
+            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
             {% render_field_by_order form form.payment form.order form.from_date form.to_date form.total_amount form.file_1 label='on-border' %}
             <div class="col-12">
                 <div class="row">
@@ -28,8 +32,8 @@
 
 <script>
     debugger
-    {#const order_select2_placeholder = document.querySelector('[name="payment_placeholder"]').innerText || "انتخاب سفارش"#}
-    {#select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)#}
+    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
     $('#payment-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit_with_file(this, true, true)

@@ -189,22 +189,26 @@
     }
 </style>
 <script>
-    const changeUserBtn = document.getElementById('change-user');
-    const toUser = document.getElementById('id_to_current_group_user');
-    const fromUser = document.getElementById('id_from_user');
-    const toUserInitValue = fromUser.value;
-    const mainForm2 = document.getElementById('main_form');
-    console.log(mainForm2)
-    toUser.addEventListener('change', function (e) {
-        if (toUser.value && toUser.value !== toUserInitValue) {
-            changeUserBtn.classList.remove('d-none');
-        } else {
-            changeUserBtn.classList.add('d-none');
-        }
-    })
-    changeUserBtn.addEventListener('click', function (e) {
-        {#e.preventDefault();#}
-        removeCommaSeperator()
-        console.log('submit change user')
-    })
+    function flow(){
+        const changeUserBtn = document.getElementById('change-user');
+        const toUser = document.getElementById('id_to_current_group_user');
+        const fromUser = document.getElementById('id_from_user');
+        const toUserInitValue = fromUser.value;
+        const mainForm2 = document.getElementById('main_form');
+        console.log(mainForm2)
+        toUser.addEventListener('change', function (e) {
+            if (toUser.value && toUser.value !== toUserInitValue) {
+                changeUserBtn.classList.remove('d-none');
+            } else {
+                changeUserBtn.classList.add('d-none');
+            }
+        })
+        changeUserBtn.addEventListener('click', function (e) {
+            {#e.preventDefault();#}
+            removeCommaSeperator()
+            console.log('submit change user')
+        })
+    }
+
+    flow()
 </script>

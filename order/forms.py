@@ -51,6 +51,7 @@ class OrderForm(CustomBaseModelForm):
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.make_hidden(['item', 'qi', 'item_trade'])
         self.fields['description_sale'].widget.attrs['rows'] = 6
+        self.fields['description_trade'].widget.attrs['rows'] = 3
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
@@ -70,6 +71,9 @@ class OrderForm(CustomBaseModelForm):
             widget=FilteredSelectMultiple(_("order_order"), is_stacked=False),
         )
         self.make_disable(['cancel'])
+        if self.instance and self.instance.qi and not self.instance.production_lead_time:
+            self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
+            # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
         if request and not request.user.is_superuser:
             if form_constraint_hide:
@@ -289,6 +293,7 @@ class OrderPaymentItemForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
+        self.make_hidden(['order'])
         self.fields['description'].widget.attrs['rows'] = 3
         self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
