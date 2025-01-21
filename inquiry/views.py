@@ -1412,7 +1412,7 @@ def all_prices(request):
                                                                 active=True,
                                                                 is_deleted=False,
                                                                 inquiry_type__title__icontains='خارج')
-            bazar_all_price |= PriceInquiryResult.valid_bazar_inquiry().filter(active=True, is_deleted=False)
+            bazar_all_price |= PriceInquiryResult.valid_bazar_inquiry().filter(active=True, is_deleted=False, sku=sku)
 
         data = list()
         for item in bazar_all_price:
