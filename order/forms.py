@@ -293,8 +293,8 @@ class OrderPaymentItemForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
-        self.make_hidden(['order'])
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.make_hidden(['order', 'payment'])
+        self.fields['description'].widget.attrs['rows'] = 6
         self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_from_date'}),
