@@ -32,8 +32,6 @@ class Order(BaseModeWF):
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
                                              default='sea')
-    production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
-    trade_commitment_date = models.DateField(_('trade_commitment_date'), null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
 
     quantity = models.FloatField(_('quantity'), default=0)
@@ -54,6 +52,9 @@ class Order(BaseModeWF):
     price_trade = models.FloatField(_("price_trade"), null=True, blank=True)
     description_trade = models.TextField(_('description_trade'), null=True, blank=True)
     apply_mac = models.BooleanField(_('apply_mac'), default=False)
+    mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
+    trade_commitment_date = models.DateField(_('trade_commitment_date'), null=True, blank=True)
+    production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
 
     # MAC #######################################
     supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
@@ -65,7 +66,6 @@ class Order(BaseModeWF):
     description_mac = models.TextField(_('description_trade'), null=True, blank=True)
 
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
-    mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
     cancel = models.BooleanField(_("cancel"), default=False)
     is_over = models.BooleanField(_('is_over'), default=False)
     # qi = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, null=True)
@@ -82,7 +82,10 @@ class Order(BaseModeWF):
 
     @property
     def total_price(self):
-        return 1
+        if self.price_mac:
+            return self.quantity * self.price_mac
+        if self.price_trade:
+            return self.quantity * self.price_trade
 
     @property
     def total_paid(self):
@@ -295,15 +298,18 @@ class OrderPayment(BaseModeWF):
 
 
 class OrderPaymentItem(BaseModeWF):
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
     payment = models.ForeignKey(OrderPayment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
-    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
-    total_amount = models.FloatField(_('total_amount'))
+    quantity = models.FloatField(verbose_name='payment_quantity', null=True, blank=True)
+
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
-    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING)
+    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='destination_currency')
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='base_currency')
     exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    total_amount = models.FloatField(_('total_amount'))
 
 
 class ACNT(BaseModeWF):
