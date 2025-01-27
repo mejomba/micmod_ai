@@ -82,6 +82,7 @@ class OrderView(LoginRequiredMixin, BaseView):
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
             context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
+            # context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).annotate(Sum(')).order_by('-id')
         return context
 
 
@@ -114,7 +115,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
         {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
         {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
-        {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
+        # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
         {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
         {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
 
@@ -570,3 +571,143 @@ class PaymentDataTableListView(AjaxDatatableView):
             reverse('order:order.payment.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
+
+
+class PaymentItemListView(LoginRequiredMixin, View):
+    """
+    sku list view
+    """
+    model = OrderPaymentItem
+    template_name = 'order/payment_item_list.html'
+    context_object_name = 'items'
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+        return render(request, self.template_name, context)
+
+
+class PaymentItemDataTableListView(AjaxDatatableView):
+    model = OrderPaymentItem
+    title = 'PaymentItem'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': '', },
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': '', },
+        {'name': 'order__order_number', 'visible': True, 'title': 'Order-NO', 'className': '', },
+        {'name': 'created_date', 'visible': True, 'title': 'Date', 'className': '', },
+        {'name': 'order__supplier_trade', 'visible': True, 'title': 'Supplier', 'className': '', 'lookup_field': '__title__icontains', },
+        {'name': 'order__po_number_trade', 'visible': True, 'title': 'PO NO.', 'lookup_field': '__icontains', 'searchable': True},
+        {'name': 'order__transportation_method', 'visible': True, 'title': 'EXP', },
+        {'name': 'order__item', 'visible': True, 'title': 'Part NO.', 'lookup_field': '__part_number__icontains'},
+        {'name': 'order__quantity_trade', 'visible': True, 'title': 'QTY', 'className': '', },
+        {'name': 'order__price_trade', 'visible': True, 'title': 'Price', 'className': '', },
+        {'name': 'order_total_price', 'visible': True, 'title': 'Total', 'className': '', },
+
+        {'name': 'destination_currency', 'visible': True, 'title': 'Destination Currency', 'className': '', },
+        {'name': 'order__currency', 'visible': True, 'title': 'Currency', 'className': '', 'lookup_field': '__title__icontains', },
+        {'name': 'exchange_rate', 'visible': True, 'title': 'Rate', 'className': '', },
+        {'name': 'total_amount', 'visible': True, 'title': 'Amount', 'className': '', },
+        {'name': 'from_date', 'visible': True, 'title': 'Pay Date', 'className': '', },
+        {'name': 'bank', 'visible': True, 'title': 'Bank Info', 'className': '', },
+        {'name': 'paid_amount', 'visible': True, 'title': '<div class="px-8">Paid Amount</div>', 'className': '', },
+        {'name': 'reference', 'visible': True, 'title': 'Reference', 'className': '', },
+        {'name': 'attachment', 'visible': True, 'title': '<div class="px-6">Files</div>', 'className': '', },
+        {'name': 'action', 'visible': True, 'title': '<div class="px-8">Action</div>', 'className': '', },
+    ]
+
+    def get_initial_queryset(self, request=None):
+        payment_pk = self.request.POST.get('q')
+        qs = self.model.objects.filter(payment=payment_pk)
+        return qs
+
+    def customize_row(self, row, obj):
+        # row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+        #     reverse('order:order.paymentitem.update', args=(obj.id,)),
+        #     obj.id if obj.id else 'بدون عنوان'
+        # )
+        row['order__order_number'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.order_number if obj.order else '_'
+        )
+        row['order__supplier_trade'] = f'{obj.order.supplier_trade}' if obj.order.supplier_trade else '_'
+
+        row['order__po_number_trade'] = f'{obj.order.po_number_trade}' if obj.order.po_number_trade else '_'
+
+        row['order__transportation_method'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.transportation_method if obj.order else '_'
+        )
+
+        row['order__item'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.item.part_number if obj.order.item else '_'
+        )
+
+        row['order__quantity_trade'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.quantity_trade if obj.order else '_'
+        )
+
+        row['order__price_trade'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.price_trade if obj.order else '_'
+        )
+
+        row['order_total_price'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.total_price if obj.order else '_'
+        )
+
+        row['order__currency'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('order:order.paymentitem.update', args=(obj.id,)),
+            obj.order.currency if obj.order else '_'
+        )
+
+        row['paid_amount'] = f'{obj.total_amount/obj.exchange_rate:0.5f}'
+        row['reference'] = '111'
+
+        row['attachment'] = ""
+        for file in obj.files.all():
+            row['attachment'] += f"""<a href="{file.path.url}" class="me-2" target="_blank"><i class="fas fa-file-upload icon-lg fs-4"></i></a>"""
+
+        row['action'] = f"""
+            <span>
+                <a href="#" target="_blank" class="edit-payment-item tooltip_" onclick="edit_with_modal(this)" data-url="{ reverse('order:order.paymentitem.update', kwargs={'pk': obj.pk})}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                    <span class="tooltiptext">ویرایش</span>
+                    <i class="ki-duotone ki-pencil fs-3 text-info">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </a>
+                <a class="tooltip_ cursor-pointer" onclick="change_log_with_modal(this)"
+                    data-bs-toggle="modal"
+                    data-bs-target="#id_kt_empty_modal_lg"
+                    data-model_name="{self.model.__name__}"
+                    data-object_id="{obj.pk}"
+                    data-app_name="{self.request.resolver_match.app_name}"
+                    name="name_change_log">
+                    <span class="tooltiptext">تاریخچه تغییرات</span>
+                    <i class="ki-duotone ki-book-open fs-3 text-primary">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                     <span class="path4"></span>
+                    </i>
+                </a>
+                <a href="#" target="_blank" class="me-3 delete-payment-item text-danger tooltip_" onclick="delete_with_modal(this)" data-url="{reverse('core:delete.confirm')}?model={self.model.__name__}&object_id={obj.pk}&app_label={self.request.resolver_match.app_name}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                    <span class="tooltiptext">حذف</span>
+                    <i class="ki-duotone ki-trash fs-3 text-danger">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                        <span class="path3"></span>
+                        <span class="path4"></span>
+                        <span class="path5"></span>
+                    </i>
+                </a>
+            </span>
+        """

@@ -12,6 +12,17 @@
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
 
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
     <style>
     </style>
 {% endblock extra_css %}
@@ -33,94 +44,16 @@
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
         </div>
-{#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
-            <div class="border" id="payment_item_container">
-                <div class="bg-white row rounded border my-10 pt-10 mt-20 mx-2 position-relative shadow-sm">
-                    <div class="col-12">
-                        <h4 class="position-absolute" style="top: -10px">ردیف های پرداخت</h4>
-                        {% if form.instance.pk %}
-                            {% with form.instance.payment_item.all as payments %}
-                                {% if payments %}
-                                    <div class="row align-items-center pb-2 mb-3 bold">
-                                        <div class="col-2 "><span class="ms-6">تاریخ </span></div>
-                                        <div class="col-1 ">مبلغ</div>
-                                        <div class="col-3 ">توضیحات</div>
-                                        <div class="col-2">متعلق به</div>
-                                        <div class="col-2">عملیات</div>
-                                        <div class="col-2"></div>
-                                    </div>
-                                {% endif %}
+            <div class="table-responsive p-2" dir="ltr">
+                <table id="payment_item_list" width="100%" class="m-table table-striped table-bordered w-100">
+                    <caption class="caption-top font-size-20 bold text-black">ردیف های پرداخت</caption>
 
-                            {% for payment in payments %}
-                                <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
-                                    <div class="col-2 py-2">
-                                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                        <span class="">
-                                            <span class="text-right">{{ payment.from_date|to_jalali:"%Y-%m-%d" }}</span>
-                                            <span class="mx-2 text-right">تا</span>
-                                            <span class="" dir="ltr">{{ payment.to_date|to_jalali:"%Y-%m-%d" }}</span>
-                                        </span>
-                                    </div>
-                                    <div class="col-1 py-2 s-05">
-                                        <span>{{ payment.total_amount|default_if_falsy:"-" }}</span>
-                                    </div>
-                                    <div class="col-3 py-2 ">
-                                        <span>{{ payment.description|default_if_none:"-" }}</span>
-                                    </div>
-                                    <div class="col-2 py-2 ">
-                                        {% for file in payment.files.all %}
-                                        <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
-                                        {% empty %}
-                                            <span>-</span>
-                                        {% endfor %}
-                                    </div>
-                                    <div class="col-2 py-1 ">
-                                        <span>
-                                        <a href="#" target="_blank" class="me-3 edit-payment-item tooltip_" data-url="{% url 'order:order.paymentitem.update' payment.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
-                                            <span class="tooltiptext">ویرایش</span>
-                                            <i class="ki-duotone ki-pencil fs-2 text-info">
-                                                <span class="path1"></span>
-                                                <span class="path2"></span>
-                                            </i>
-                                        </a>
-                                        <a href="#" target="_blank" class="me-3 delete-payment-item text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ payment|model_name }}&object_id={{ payment.pk }}&app_label={{ payment|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
-                                            <span class="tooltiptext">حذف</span>
-                                            <i class="ki-duotone ki-trash fs-2 text-danger">
-                                                <span class="path1"></span>
-                                                <span class="path2"></span>
-                                                <span class="path3"></span>
-                                                <span class="path4"></span>
-                                                <span class="path5"></span>
-                                            </i>
-                                        </a>
-                                        <a class="mx-4 tooltip_ cursor-pointer"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#id_kt_empty_modal_lg"
-                                            data-model_name="{{ payment|model_name }}"
-                                            data-object_id="{{ payment.pk }}"
-                                            data-app_name="{{ payment|app_label }}"
-                                            name="name_change_log">
-                                            <span class="tooltiptext">تاریخچه تغییرات</span>
-                                            <i class="ki-duotone ki-book-open fs-2 text-primary">
-                                             <span class="path1"></span>
-                                             <span class="path2"></span>
-                                             <span class="path3"></span>
-                                             <span class="path4"></span>
-                                            </i>
-                                        </a>
-                                    </span>
-                                    </div>
-                                    <div class="col-2"></div>
-                                </div>
-                            {% endfor %}
-                            {% endwith %}
-                        {% endif %}
-                            <div class="mt-5">
-                            {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
-                            </div>
-                    </div>
+                </table>
+                <div class="mt-5">
+                {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
                 </div>
             </div>
+{#        {% table_responsive form.instance.payment_item.all 'po_number_trade|PO NO.,supplier_trade|Supplier,price_trade|Price' title='ردیف های پکینگ' %}#}
         </div>
     </div>
 
@@ -197,4 +130,38 @@
     })
 
     </script>
+    <script language="javascript">
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.pathname.split('/').filter(Boolean).pop()
+        {#const q = url.searchParams.get("q")#}
+        AjaxDatatableViewUtils.initialize_table(
+            $('#payment_item_list'),
+            "{% url 'order:order.payment_item.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                q:q
+            },
+        );
+    });
+    </script>
+<script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
 {% endblock extra_js %}

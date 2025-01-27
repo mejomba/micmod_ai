@@ -124,8 +124,11 @@ class PackingForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(PackingForm, self).__init__(*args, **kwargs)
-        self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
-                                                   widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
+        #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['cl_10_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
@@ -151,7 +154,7 @@ class PackingItemForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super(PackingItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order'])
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 8
         # if self.instance.pk and (packing := self.initial.get('packing')):
         packing = self.initial.get('packing')
         if packing:
@@ -261,7 +264,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         self.fields['to_date'] = JalaliDateField(label=_('to_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
-                                                   required=True)
+                                                   required=False)
         self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
@@ -298,11 +301,11 @@ class OrderPaymentItemForm(CustomBaseModelForm):
         self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_from_date'}),
-                                                   required=True)
+                                                   required=False)
         self.fields['to_date'] = JalaliDateField(label=_('to_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_to_date'}),
-                                                   required=True)
+                                                   required=False)
 
         payment = self.initial.get('packing')
         if payment:

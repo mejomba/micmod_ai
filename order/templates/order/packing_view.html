@@ -24,17 +24,40 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 
-
+{#packing_number#}
+{#shipment_type#}
+{#bl_number#}
+{#departure_date#}
+{#arrival_date#}
+{#sales_manager_needed#}
+{#sales_manager_check_date#}
+{#delivery_to_salehi_date#}
+{#cl_90_date#}
+{#cl_10_date#}
+{#cl_100_date#}
+{#arrive_to_wh_date#}
+{#estimated_delivery_date#}
+{#sum_qty#}
+{#sum_arrived_qty#}
+{#tp_method#}
+{#pack_date#}
+{#description#}
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
-        <div class="row">
-        {% render_field_by_order form form.sum_qty form.sum_arrived_qty form.tp_method form.pack_date form.bl_number form.sales_manager_needed label='on-border' %}
+        <div class="row row-cols-5">
+        {% render_field_by_order form form.packing_number form.shipment_type form.bl_number form.departure_date label='on-border' %}
+        {% render_field_by_order form form.arrival_date form.sales_manager_needed form.sales_manager_check_date label='on-border' %}
+        {% render_field_by_order form form.delivery_to_salehi_date form.cl_90_date form.cl_10_date form.cl_100_date label='on-border' %}
+        {% render_field_by_order form form.arrive_to_wh_date form.estimated_delivery_date form.sum_qty form.sum_arrived_qty label='on-border' %}
+{#        {% render_field_by_order form form.sum_qty form.sum_arrived_qty form.tp_method form.pack_date form.bl_number form.sales_manager_needed label='on-border' %}#}
         <div class="col-12">
             <div class="row">
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
         </div>
 {#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
-            <div class="border" id="packing_item_container">
+
+        </div>
+    <div class="" id="packing_item_container">
                 <div class="bg-white row rounded border my-10 pt-10 mt-20 mx-2 position-relative shadow-sm">
                     <div class="col-12">
                         <h4 class="position-absolute" style="top: -10px">ردیف های پکینگ</h4>
@@ -117,7 +140,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 {#        </div>#}
 {#        </div>#}

@@ -49,7 +49,7 @@
                                 {{ form_s.repeated_goods_code_count|safe }}
                                     <div class="mt-14">
                                         <!-- Progress bar 1 -->
-                                        <div class="progress-circle mx-auto position-absolute" data-value='{{ form_list.0.instance.quotation.progress_from_inquiry_state }}' style="bottom: 3px; right: 3px;">
+                                        <div class="progress-circle mx-auto position-absolute" data-value='20' style="bottom: 3px; right: 3px;">
                                           <span class="progress-left">
                                               <span class="progress-bar border-primary"></span>
                                           </span>
@@ -57,7 +57,7 @@
                                               <span class="progress-bar border-primary"></span>
                                           </span>
                                           <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
-                                            <div class="small">{{ form_list.0.instance.quotation.progress_from_inquiry_state }}%</div>
+                                            <div class="small">10%</div>
                                           </div>
                                         </div>
                                         <!-- END -->
@@ -83,8 +83,8 @@
                                     {% endif %}
                                     </div>
                                 </div>
-                                <div class="col-lg-4 p-0 border-top border-bottom border-end">
-                                    <div class="d-flex border-bottom px-1 align-items-start">
+                                <div class="col-lg-4 p-0 border-end">
+                                    <div class="d-flex px-1 align-items-start">
                                         <div class="w-25 mt-3 on-border">
                                             {% if form_s.enable %}
                                                 <input type="text" name="goods_code" class="form-control me-3" value="{{ form_s.instance.goods_code }}">
@@ -147,7 +147,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="d-none border-bottom px-1" name="box-alt-goods">
+                                    <div class="d-none px-1" name="box-alt-goods">
                                         <div class="d-flex">
                                             <div class="w-25 on-border">
                                                 {% if form_s.enable %}
@@ -170,7 +170,7 @@
 
             {% if request.user|has_group:"trade_user" %}
             <div class="mt-3">
-                <div class="d-flex mb-1 border-bottom">
+                <div class="d-flex mb-1">
                     <div class="text-end w-50">
                         {% render_field_by_order form_s form_s.assigned_trade_user label='on-border' margin_b=1 %}
                         {{ form_s.instance.assigned_trade_user_date|date:'Y-m-d' }}
@@ -215,13 +215,13 @@
             {% endif %}
             </div>
 
-                                <div class="col-lg-6 border-top">
+                                <div class="col-lg-6">
                                     <div class="row h-100">
                                         <div class="col-lg-12 d-block p-0">
                                             <div class="row row-cols-1">
                                                 {% if request.user|has_group:"bazar_user" %}
                                                     <div class="col">
-                                                        <div class="border-bottom ps-1">
+                                                        <div class="ps-1">
                                                             <div class="d-flex justify-content-between mt-1">
                                                                 {% render_field_by_order form_s form_s.force_inquiry label='on-border' margin_b=0 %}
                                                             </div>
@@ -239,7 +239,7 @@
                                                 {% endif %}
                                                 {% if request.user|has_group:"trade_user" %}
                                                     <div class="col">
-                                                        <div class="border-top ps-1">
+                                                        <div class="ps-1">
                                                             <div class="d-flex justify-content-between mt-1">
                                                                 {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
                                                             </div>

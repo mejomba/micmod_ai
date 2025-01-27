@@ -1068,6 +1068,15 @@ span .select2-selection{
 .border-left {
   border-left: 1px solid #626E82 !important;
 }
+.border-right {
+  border-right: 1px solid #626E82 !important;
+}
+.border-top {
+  border-top: 1px solid #626E82 !important;
+}
+.border-bottom {
+  border-bottom: 1px solid #626E82 !important;
+}
 .factor_right_arrow{
     padding: 0;
     margin: 0;

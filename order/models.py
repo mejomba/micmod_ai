@@ -77,23 +77,46 @@ class Order(BaseModeWF):
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
     def __str__(self):
-        return f'{self.pk}'
+        return f'{self.pk} -- {self.final_item.part_number}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
     @property
     def total_price(self):
-        if self.price_mac:
-            return self.quantity * self.price_mac
-        if self.price_trade:
-            return self.quantity * self.price_trade
+        quantity = self.quantity_mac or self.quantity_trade or self.quantity or 0
+        price = self.price_mac or self.price_trade or 0
+        return quantity * price
+
 
     @property
     def total_paid(self):
-        return 2
+        s = 0
+        for payment in self.order_payment_items.all():
+            s += payment.total_amount
+        return s
 
     @property
     def payment_info(self):
         return 3
+
+    @property
+    def final_po_number(self):
+        return self.po_number_trade
+
+    @property
+    def final_item(self):
+        return self.item_trade
+
+    @property
+    def computed_price(self):
+        return self.price_trade
+
+    @property
+    def final_quantity(self):
+        return self.quantity_trade
+
+    def total_pay_percent(self):
+        x = (self.total_paid / self.total_price) * 100
+        return round(x, 1)
 
     def description(self):
         sepidar_wh = None
@@ -239,41 +262,104 @@ class OrderOrder(BaseModel):
 
 
 class Packing(BaseModeWF):
+    SHIPMENT_TYPE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
     # PACKING_STATUS = [("1", _("ثبت اولیه")), ("2", _("dep")), ("3", _("arrive")), ("4", _("10%")),
     #                   ("5", _("تحویل اسناد")), ("6", _("اضهار گمرک")), ("7", _("ترخیص گمرک")), ("8", _("تحویل انبار"))]
     # status = models.CharField(choices=PACKING_STATUS)
-    TP_METHOD = [('1', 'air'), ('2', 'sea'), ('3', 'exp')]
+    # TP_METHOD = [('1', 'air'), ('2', 'sea'), ('3', 'exp')]
+    packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
+    shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
+    bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
+    departure_date = models.DateField(_('departure_date'), null=True, blank=True)
+    arrival_date = models.DateField(_('arrival_date'), null=True, blank=True)
+    sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
+    sales_manager_check_date = models.DateField(_('sales_manager_date'), null=True, blank=True)
+    delivery_to_salehi_date = models.DateField(_('delivery_to_salehi_date'), null=True, blank=True)
+    cl_90_date = models.DateField(_('cl_90_date'), null=True, blank=True)
+    cl_10_date = models.DateField(_('cl_10_date'), null=True, blank=True)
+    cl_100_date = models.DateField(_('cl_100_date'), null=True, blank=True)
+    arrive_to_wh_date = models.DateField(_('arrive_to_wh_date'), null=True, blank=True)
+    estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'))
     sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
-    tp_method = models.CharField(choices=TP_METHOD)
-    pack_date = models.DateField(_('pack_date'))
-    bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
-    sales_manager_needed = models.BooleanField(_('sales_manager_needed'), default=False)
+    # tp_method = models.CharField(choices=TP_METHOD)
+    # pack_date = models.DateField(_('pack_date'))
     description = models.TextField(_('description'), null=True, blank=True)
 
     def __str__(self):
-        return f'{self.bl_number} -- {self.pack_date}'
+        return f'{self.bl_number} -- {self.created_date}'
+
+    @property
+    def computed_estimated_delivery_date(self):
+        # Todo: check this
+        return self.estimated_delivery_date
+
+    @property
+    def computed_carton_qty(self):
+        # Todo: check this
+        return self.packing_item_rel.all().count()
+
+    @property
+    def computed_weight_kg(self):
+        # Todo: check this
+        return self.packing_item_rel.all().aggregate(Sum('item_weight'))['item_weight__sum']
 
 
 class PackingItem(BaseModeWF):
-    packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order', null=True, blank=True)
     part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
-    brand = models.CharField(_('brand'), null=True, blank=True)
-    carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
-    size = models.CharField(_('size'), max_length=128, null=True, blank=True)
-    volume = models.FloatField(_('volume'), null=True, blank=True)
+    arrived_quantity = models.FloatField(_('arrived_quantity'), null=True, blank=True)
+    # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
     price = models.FloatField(_('price'), null=True, blank=True)
-    amount = models.FloatField(_('amount'), null=True, blank=True)
-    sales_conf = models.BooleanField(_('sales_conf'), default=False)
-    duty_date = models.DateField(_('duty_date'), null=True, blank=True)
-    item_weight = models.FloatField(_('item_weight'), null=True, blank=True)
-
-    carton_qty = models.PositiveIntegerField(_('carton_qty'), null=True, blank=True)
+    packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
+    carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)
     net_weight_kg = models.FloatField(_('weight_kg'), null=True, blank=True)
     gross_weight_kg = models.FloatField(_('grows_weight_kg'), null=True, blank=True)
+    size = models.CharField(_('size'), max_length=128, null=True, blank=True)
+    brand = models.CharField(_('brand'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
+    sales_conf = models.BooleanField(_('sales_conf'), default=False)
+    sales_conf_date = models.DateField(_('sales_conf_date'), null=True, blank=True)
+    invoice_conf = models.BooleanField(_('invoice_conf'), default=False)
+    invoice_conf_date = models.DateField(_('invoice_conf_date'), null=True, blank=True)
+
+    # volume = models.FloatField(_('volume'), null=True, blank=True)
+    # amount = models.FloatField(_('amount'), null=True, blank=True)
+    # duty_date = models.DateField(_('duty_date'), null=True, blank=True)
+    # item_weight = models.FloatField(_('item_weight'), null=True, blank=True)
+    # carton_qty = models.PositiveIntegerField(_('carton_qty'), null=True, blank=True)
+
+    @property
+    def computed_price(self):
+        # Todo: check this
+        return 0
+
+    @property
+    def computed_amount(self):
+        # Todo check this
+        x = self.quantity * self.price
+        return x
+
+    @property
+    def computed_net_weight_kg(self):
+        # Todo check this
+        return 0
+
+    @property
+    def computed_gross_weight_kg(self):
+        # Todo check this
+        return 0
+
+    @property
+    def computed_volume_cbm(self):
+        # Todo check this
+        return 0
+
+    @property
+    def computed_status(self):
+        # Todo check this
+        return 'wh'
 
 
 class GIO(BaseModeWF):

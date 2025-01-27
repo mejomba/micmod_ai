@@ -161,40 +161,97 @@
             <div class="tab-content">
             <!-- PAYMENT -->
                 <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel" aria-labelledby="kt_tab_pane_1">
+
+                {% with order.total_pay_percent as pay_in_percent %}
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="20">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ pay_in_percent }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span>25,075</span>
+                                <span>از</span>
+                                <span>480,000</span>
+                            </div>
+
+{#                            <div class="progress">#}
+{#                                <div class="progress-bar text-black" role="progressbar" style="width: {{ pay_in_percent }}%" aria-valuenow="{{ pay_in_percent }}"#}
+{#                                     aria-valuemin="0" aria-valuemax="100">{{ pay_in_percent }}%</div>#}
+{#                            </div>#}
+                        </div>
+                    </div>
+                {% endwith %}
                     {% if payment_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
-                            <div class="col-3 "><span class="ms-6">تاریخ</span></div>
-                            <div class="col-2 ">مبلغ</div>
-                            <div class="col-3">توضیحات</div>
-                            <div class="col-2">فایل ها</div>
-{#                            <div class="col-5">سفارش</div>#}
-{#                            <div class="col-2"></div>#}
-                            <div class="col-6"></div>
+                            <div class="col-1 "><span class="ms-6">Order-No</span></div>
+                            <div class="col-1 ">Date</div>
+                            <div class="col-1 ">Destination currency</div>
+                            <div class="col-1 ">Currency</div>
+                            <div class="col-1">Rate</div>
+                            <div class="col-1">Amount</div>
+                            <div class="col-1">Pay date</div>
+                            <div class="col-1">Bank Info</div>
+                            <div class="col-1">Paid amount</div>
+                            <div class="col-1">Refrence</div>
+                            <div class="col-1">Files</div>
+                            <div class="col-1">description</div>
                         </div>
                     {% endif %}
 
                     {% for payment_item in payment_items %}
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
-                            <div class="col-3 py-2">
-                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                <span>{{ payment_item.from_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
-                                <span class="mx-1">تا</span>
-                                <span>{{ payment_item.to_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                            <div class="col-1 py-2">
+{#                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
+                                <span>{{ payment_item.order.order_number|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2 py-2 s-05">
-                                <span>{{ payment_item.total_amount|intcomma|default_if_none:"-" }}</span>
+                            <div class="col-1 py-2">
+                                <span class="d-flex flex-column">
+                                    <span>{{ payment_item.from_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                    <span>{{ payment_item.to_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                </span>
                             </div>
-                            <div class="col-3 py-2 s-05">
-                                <span>{{ payment_item.descriptoin|intcomma|default_if_falsy:"-" }}</span>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.destination_currency|default_if_falsy:'-' }}</span>
                             </div>
-                            <div class="col-2 py-2 ">
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.currency|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.rate|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.created_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.bank_info|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.paid_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.refrence|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
                                 {% for file in payment_item.files.all %}
                                 <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
                                 {% empty %}
                                     <span>-</span>
                                 {% endfor %}
                             </div>
-                            <div class="col-6"></div>
+                            <div class="col-1">
+                                {{ payment_item.description|default_if_none:"-" }}
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -229,9 +286,10 @@
                 <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel" aria-labelledby="kt_tab_pane_3">
                     {% if packing_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
-                            <div class="col-2 "><span class="ms-6">شماره کارتن </span></div>
-                            <div class="col-1 ">تعداد کارتن </div>
-                            <div class="col-2">وزن (کیلوگرم)</div>
+                            <div class="col-2 "><span class="ms-6">Order ID</span></div>
+                            <div class="col-1 ">Packing ID</div>
+                            <div class="col-1 ">Packing NO.</div>
+                            <div class="col-2">Max Status</div>
                             <div class="col-2">پکینگ</div>
 {#                            <div class="col-5">سفارش</div>#}
 {#                            <div class="col-2"></div>#}
