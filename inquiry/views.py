@@ -1188,16 +1188,17 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title',
+            'title', 'country'
         ])
         return cols
 
     def get_initial_queryset(self, request=None):
-        param: str = self.request.POST.get('title')
-        if param:
-            qs = self.model.objects.filter(title=param)
-        else:
-            qs = self.model.objects.all()
+        qs = self.model.objects.filter(base_group=self.request.user.base_group)
+        # param: str = self.request.POST.get('title')
+        # if param:
+        #     qs = self.model.objects.filter(title=param)
+        # else:
+        #     qs = self.model.objects.all()
         return qs
 
     def customize_row(self, row, obj):

@@ -394,7 +394,7 @@ class SupplierModelForm(CustomBaseModelForm):
 
     class Meta:
         model = Supplier
-        fields = ['title']
+        fields = ['title', 'country']
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)

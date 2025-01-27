@@ -31,8 +31,17 @@ from django.apps import apps
 from tools import utils
 from django.db.models.query import QuerySet
 
+
 class ExtraData(object):
     ...
+
+
+class CHOICE:
+    supplier_country = (
+        ("CHN", _("china")),
+        ("HKG", _("hong-kong")),
+        ("IRI", _("iran")),
+    )
 
 
 class QuerysetManager(QuerySet):

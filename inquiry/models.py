@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from itertools import chain
 
 from accounts.models import User
+from core.models import CHOICE
 from tools.utils import c_get, round_price, show_error
 
 from django.template.loader import render_to_string
@@ -27,6 +28,7 @@ class Supplier(BaseModel):
     BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
     title = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
     base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
+    country = models.CharField(verbose_name=_('country'), max_length=255, choices=CHOICE.supplier_country, null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):
@@ -387,7 +389,29 @@ class PriceInquiryResult(BaseModel):
         weight = self.weight
         settings = self.price_settings
         effective_rmb_price = self.rmb_price
-        if self.currency_type.c_get("title_en","RMB") == "RMB":
+        if self.supplier and self.supplier.country == 'CHN':
+            return {
+                # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
+                #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+                "air": cost_multiplier * (
+                        self.sku.purchase_group.air_transportation or 0) * settings.air_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+                "sea": cost_multiplier * (
+                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+            }
+        elif self.supplier and self.supplier.country == 'HKG':
+            return {
+                "express": cost_multiplier * (
+                        self.sku.purchase_group.express_transportation or 0) * settings.express_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+                # "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
+                #        + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+                "sea": cost_multiplier * (
+                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+            }
+        elif self.currency_type.c_get("title_en", "RMB") == "RMB":
             return {
                 # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
                 #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
