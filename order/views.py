@@ -331,16 +331,26 @@ class PackingDataTableListView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
-        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
-        {'name': 'sum_qty', 'visible': True, 'title': _('sum_qty'), 'className': 'py-1',},
-        {'name': 'sum_arrived_qty', 'visible': True, 'title': _('sum_arrived_qty'), 'className': 'py-1', },
-        {'name': 'tp_method', 'title': _('tp_method'), 'className': 'py-1', },
-        {'name': 'pack_date', 'title': _('pack_date'), 'className': 'py-1', },
-        {'name': 'bl_number', 'title': _('bl_number'), 'className': 'py-1', },
-        {'name': 'sales_manager_needed', 'title': _('sales_manager_needed'), 'className': 'py-1', },
+        {'name': 'id', 'visible': False, 'title': "packing_id", 'className': 'py-1', },
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1', },
+        # {'name': 'packing', 'visible': True, 'title': 'packing_id', 'className': 'py-1', },
+        {'name': 'carton_qty', 'visible': True, 'title': "Carton Q'ty", 'className': 'py-1', },
+        {'name': 'weight', 'visible': True, 'title': "weight(KG)", 'className': 'py-1', },
+        {'name': 'packing_number', 'visible': True, 'title': "packing_no", 'className': 'py-1', },
+        {'name': 'created_date', 'visible': True, 'title': "pack_date", 'className': 'py-1', },
+        {'name': 'shipment_type', 'visible': True, 'title': "shipment type", 'className': 'py-1', },
+        {'name': 'bl_number', 'title': "BL Number", 'className': 'py-1', },
+        {'name': 'departure_from_origin_port_date', 'title': "<div style='width:100px:'>Departure from origin port Date</div>", 'className': 'py-1', },
+        {'name': 'arrival_to_destination_port_date', 'title': "Arrival to destination port Date", 'className': 'py-1', },
+        {'name': 'sales_manager_needed', 'title': "Sales manager Needed", 'className': 'py-1', },
+        {'name': 'sales_manager_check_date', 'title': "Sales manager check Date", 'className': 'py-1', },
+        {'name': 'delivered_to_mr_salehi_date', 'title': "Delivered to Mr Salehi Date", 'className': 'py-1', },
+        {'name': 'cl_90_date', 'title': "Clearance Date 90%", 'className': 'py-1', },
+        {'name': 'cl_10_date', 'title': "Clearance Date 10%", 'className': 'py-1', },
+        {'name': 'cl_100_date', 'title': "Clearance Date 100%", 'className': 'py-1', },
+        {'name': 'arrive_to_wh_date', 'title': "Arrive to wherehouse Date", 'className': 'py-1', },
+        {'name': 'estimated_delivery_date', 'title': "Est Delivery Date", 'className': 'py-1', },
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
-        {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
 
     def customize_row(self, row, obj):
@@ -445,8 +455,8 @@ class GIODataTableListView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
-        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
         {'name': 'gio_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
         {'name': 'total_quantity', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
@@ -555,8 +565,8 @@ class PaymentDataTableListView(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1 border',},
-        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1 border',},
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
         {'name': 'from_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
         {'name': 'to_date', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
         {'name': 'total_amount', 'title': _('total_amount'), 'className': 'py-1', },

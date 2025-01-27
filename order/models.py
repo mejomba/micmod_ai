@@ -77,7 +77,10 @@ class Order(BaseModeWF):
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
 
     def __str__(self):
-        return f'{self.pk} -- {self.final_item.part_number}'
+        if self.final_item:
+            return f'{self.pk} -- {self.final_item.part_number}'
+        else:
+            return f'{self.pk}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
     @property
@@ -363,13 +366,14 @@ class PackingItem(BaseModeWF):
 
 
 class GIO(BaseModeWF):
+    quantity = models.FloatField(_('quantity'), default=0)
     gio_date = models.DateField(_('gio_date'))
-    total_carton_quantity = models.FloatField(_('total_carton_quantity'))
     description = models.TextField(_('description'), null=True, blank=True)
+    # total_carton_quantity = models.FloatField(_('total_carton_quantity'))
 
 
 class GIOItem(BaseModeWF):
-    carton_quantity = models.FloatField(_('carton_quantity'))
+    quantity = models.FloatField(_('quantity'))
     item_quantity = models.FloatField(_('item_quantity'))
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'), null=True, blank=True)
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
