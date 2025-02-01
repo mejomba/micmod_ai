@@ -1128,8 +1128,8 @@ class SupplierView(BaseView):
 
     def get_success_url(self):
         path = reverse_lazy('inquiry:supplier.list')
-        if self.object:
-            path += f'?title={self.object.title}'
+        # if self.object:
+        #     path += f'?title={self.object.title}'
         self.success_url = path
         return path
 
@@ -1164,7 +1164,7 @@ class SupplierListView(BaseView):
 class SupplierDataTableView(AjaxDatatableView):
     model = Supplier
     title = 'supplier_list'
-    initial_order = [["created_date", "des"], ]
+    initial_order = [["last_update_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'inquiry/supplier_list_or_create.html'
@@ -1188,7 +1188,7 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title', 'country', 'creator_user', 'editor_user', 'created_date'
+            'title', 'country', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
         ])
         # cols['created_date']['searchable'] = False
         return cols
