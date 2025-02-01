@@ -1164,7 +1164,7 @@ class SupplierListView(BaseView):
 class SupplierDataTableView(AjaxDatatableView):
     model = Supplier
     title = 'supplier_list'
-    initial_order = [["title", "des"], ]
+    initial_order = [["created_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'inquiry/supplier_list_or_create.html'
@@ -1173,7 +1173,7 @@ class SupplierDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'p-0 border'
+            col['className'] = ''
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -1188,8 +1188,9 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title', 'country'
+            'title', 'country', 'creator_user', 'editor_user', 'created_date'
         ])
+        # cols['created_date']['searchable'] = False
         return cols
 
     def get_initial_queryset(self, request=None):

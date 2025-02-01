@@ -674,6 +674,24 @@
           "comments.change_comments"
         ]
       }
+    },
+    {
+      "title": "supplier",
+      "icon": "cheque",
+      "path_key": "supplier",
+      "permission": {
+        "groups": [
+          "trade_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "inquiry/supplier/list/",
+          "link": "inquiry:supplier.list"
+        }
+      ]
     }
   ]
 }
