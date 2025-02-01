@@ -165,7 +165,7 @@
                 {% with order.total_pay_percent as pay_in_percent %}
                     <div class="d-flex mb-3">
                         <div class="w-20 d-flex p-2 border rounded align-items-center">
-                            <div class="progress-circle" data-value="20">
+                            <div class="progress-circle" data-value="{{ pay_in_percent }}">
                               <span class="progress-left">
                                   <span class="progress-bar border-primary"></span>
                               </span>
@@ -555,6 +555,30 @@ const packing_item = document.querySelector('#packing_item')
             custom_ajax_get('', this.dataset.url, modal_sm_body)
         })
     })
+
+function percentageToDegrees(percentage) {
+            return percentage / 100 * 360
+          }
+        function progressPercentage (){
+            const elements = document.querySelectorAll(".progress-circle")
+            elements.forEach(function (item){
+                let value = item.getAttribute('data-value');
+                let left = item.querySelector('.progress-left .progress-bar')
+                let right = item.querySelector('.progress-right .progress-bar')
+
+                if (value > 0) {
+                  if (value <= 50) {
+                    right.style.transform = 'rotate(' + percentageToDegrees(value) + 'deg)'
+                  } else {
+                    right.style.transform = 'rotate(180deg)'
+                    {#right.css('transform', 'rotate(180deg)')#}
+                    left.style.transform = 'rotate(' + percentageToDegrees(value - 50) + 'deg)'
+                    {#left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')#}
+                  }
+                }
+            })
+        }
+        progressPercentage()
     </script>
     <script src="{% static 'js/comment.js' %}"></script>
 {% endblock extra_js %}

@@ -119,7 +119,7 @@ class Order(BaseModeWF):
 
     def total_pay_percent(self):
         x = (self.total_paid / self.total_price) * 100
-        return round(x, 1)
+        return int(x)
 
     def description(self):
         sepidar_wh = None
@@ -373,7 +373,7 @@ class GIO(BaseModeWF):
 
 
 class GIOItem(BaseModeWF):
-    quantity = models.FloatField(_('quantity'))
+    quantity = models.FloatField(_('quantity'), default=0)
     item_quantity = models.FloatField(_('item_quantity'))
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'), null=True, blank=True)
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')

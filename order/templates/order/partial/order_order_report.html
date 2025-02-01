@@ -12,7 +12,7 @@
     <table class="table caption-top border" dir="ltr">
         <caption class="bg-light-primary px-2 py-1 bold">لیست سفارش های قابل استفاده</caption>
       <thead>
-        <tr class="border-bottom bg-light-primary" style="font-weight: 600">
+        <tr class="bg-light-primary" style="font-weight: 600">
           <th scope="col" class="text-end">شماره</th>
           <th scope="col" class="text-end">عنوان</th>
           <th scope="col" class="text-end">موجودی کل</th>
@@ -24,7 +24,7 @@
       {% for foo in form.fields.order_m2m.queryset %}
           {% with foo.remaining_quantity as remaining_quantity %}
               {% if remaining_quantity > 0 %}
-                <tr class="border-bottom text-right">
+                <tr class="text-right">
                   <th scope="row" class="text-end available_order_rel">{{ foo.id }}</th>
                   <td class="text-end">{{ foo.order_title }}</td>
                   <td class="text-end">{{ foo.quantity }}</td>

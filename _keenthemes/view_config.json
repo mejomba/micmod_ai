@@ -171,7 +171,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
-              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
+              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade", "cancel"]
             },
             "formset_constraint": [
               {
@@ -185,7 +185,7 @@
             "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
+              "hide": ["sales_admin_confirmation", "order_m2m", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
               "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
             },
             "formset_constraint": [
@@ -276,7 +276,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
+              "read": ["__all__"]
             },
             "formset_constraint": [
               {

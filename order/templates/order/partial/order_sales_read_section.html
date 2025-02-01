@@ -1,13 +1,17 @@
 {% load jalali_tags %}
 {% load more_tags %}
 
-<div class="mt-5 w-20" style="position: relative; top: -90px;">
+<div class="w-20" style="position: relative; top: -50px;">
     <ul class="list-group list-group-flush">
-        <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger rounded {% endif %}">
-            <div class="ms-2 me-auto">
-                سفارش مستقل
+        <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger rounded {% else %} bg-light-success rounded {% endif %}" id="id-order-cancel-status">
+            <div class="form-check form-switch form-check-custom form-check-success form-check-solid w-100">
+                <div class="ms-2 me-auto">
+                    سفارش مستقل
+                </div>
+                <span>
+                    <input class="form-check-input h-20px w-30px {% if form.instance.cancel %} bg-danger {% endif %}" type="checkbox" name="switch_cancel" {% if not form.instance.cancel %} checked {% endif %} id="kt_flexSwitchCustomDefault_1_1"/>
+                </span>
             </div>
-            <span class="badge rounded-pill {% if form.instance.cancel %} bg-danger text-white {% else %} bg-light-info {% endif %}">{{ form.instance.cancel|yesno:"no,yes"|default_if_none:"-" }}</span>
         </li>
 
         <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -58,3 +62,20 @@
 
     </ul>
 </div>
+
+<script>
+    const order_cancel_status = document.querySelector('#id-order-cancel-status')
+    document.querySelector('input[name="switch_cancel"]').addEventListener('change', function(e){
+        if (e.currentTarget.checked){
+            e.currentTarget.classList.remove('bg-danger')
+            order_cancel_status.classList.remove('bg-light-danger')
+            order_cancel_status.classList.add('bg-light-success')
+        } else {
+            e.currentTarget.classList.add('bg-danger')
+            order_cancel_status.classList.remove('bg-light-success')
+            order_cancel_status.classList.add('bg-light-danger')
+        }
+        const cancel = document.querySelector('input[name="cancel"]')
+        cancel.checked = !cancel.checked
+    })
+</script>

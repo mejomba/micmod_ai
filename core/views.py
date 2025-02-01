@@ -381,7 +381,7 @@ class BaseView(UserPassesTestMixin,
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        fields_access = self.field_access_by_user_permission()
+        # fields_access = self.field_access_by_user_permission()
 
         try:
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
@@ -478,7 +478,7 @@ class BaseView(UserPassesTestMixin,
                     'form_constraint': self.flow_config.get('flow_form_constraint'),
                     'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                     },
-                'permission_access': fields_access,
+                # 'permission_access': fields_access,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
         except Exception as e:
@@ -977,6 +977,10 @@ class CommentsFormView(View):
             obj = model.objects.full_queryset(pk=object_id).first()
             customer = getattr(obj.quotation, 'customer_party_id', None)
             sku = getattr(obj, 'goods_code_fk', None)
+        if model.__name__.lower() == 'factoritem':
+            obj = model.objects.full_queryset(pk=object_id).first()
+            customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+            sku = getattr(obj.qi, 'goods_code_fk', None)
         else:
             obj = model.objects.filter(pk=object_id).first()
         if model.__name__.lower() == 'quotation':

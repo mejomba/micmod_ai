@@ -101,6 +101,7 @@ class OrderDataTableListView(AjaxDatatableView):
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},

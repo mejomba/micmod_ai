@@ -70,12 +70,16 @@ class OrderForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("order_order"), is_stacked=False),
         )
-        self.make_disable(['cancel'])
+        # self.make_disable(['cancel'])
         if self.instance and self.instance.qi and not self.instance.production_lead_time:
             self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
             # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
         if request and not request.user.is_superuser:
+            if '__all__' in form_constraint_read:
+                self.make_disable(self.fields)
+
+        elif request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
