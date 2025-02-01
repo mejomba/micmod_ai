@@ -25,8 +25,14 @@
 
 {% block form_content %}
     {% csrf_token %}
-    <div class="row m-0 mt-5 align-items-center bg-white">
+    <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded">
         <div class="col-12">
+            <div class="py-1 d-flex mb-3">
+                <div class="badge badge-light-info d-flex gap-1 px-3">
+                    <span>ایجاد تامین کننده </span>
+                    <span class="text-danger">جدید</span>
+                </div>
+            </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
                 {% render_field_by_order form form.title form.country label='on-border' %}
             </div>
