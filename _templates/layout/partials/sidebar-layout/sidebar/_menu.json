@@ -119,8 +119,10 @@
           "icon": "cheque",
           "path_key": "order",
           "permission": {
-            "permissions": [
-              "order.view_order"
+            "groups": [
+              "trade_user",
+              "sales_admin",
+              "mac"
             ]
           },
           "count": "order.order:get_qs_count",

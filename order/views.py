@@ -632,8 +632,11 @@ class PaymentItemDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        payment_pk = self.request.POST.get('q')
-        qs = self.model.objects.filter(payment=payment_pk)
+        payment_pk: str = self.request.POST.get('q')
+        if payment_pk.isdigit():
+            qs = self.model.objects.filter(payment=payment_pk)
+        else:
+            qs = self.model.objects.all()
         return qs
 
     def customize_row(self, row, obj):

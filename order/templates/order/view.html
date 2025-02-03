@@ -85,7 +85,9 @@
             {% if request.user|has_group:'sales_user' %}
                 {% include 'order/partial/order_sales_edit_section.html' with form=form %}
                 {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
-                {% include 'order/partial/order_sales_read_section.html' with form=form %}
+                {% if form.instance.pk %}
+                    {% include 'order/partial/order_sales_read_section.html' with form=form %}
+                {% endif %}
             {% elif request.user|has_group:'trade_user' %}
                 {% include 'order/partial/order_trade_edit_section.html' with form=form %}
                 {% include 'order/partial/order_trade_read_section.html' with form=form %}
@@ -161,11 +163,10 @@
             <div class="tab-content">
             <!-- PAYMENT -->
                 <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel" aria-labelledby="kt_tab_pane_1">
-
-                {% with order.total_pay_percent as pay_in_percent %}
+{#                {% with order.total_pay_percent as pay_in_percent %}#}
                     <div class="d-flex mb-3">
                         <div class="w-20 d-flex p-2 border rounded align-items-center">
-                            <div class="progress-circle" data-value="{{ pay_in_percent }}">
+                            <div class="progress-circle" data-value="{{ order.payment_info.0 }}">
                               <span class="progress-left">
                                   <span class="progress-bar border-primary"></span>
                               </span>
@@ -173,13 +174,13 @@
                                   <span class="progress-bar border-primary"></span>
                               </span>
                               <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
-                                <div class="small">{{ pay_in_percent }}%</div>
+                                <div class="small">{{ order.payment_info.0 }}%</div>
                               </div>
                             </div>
                             <div class="ms-3">
-                                <span>25,075</span>
-                                <span>از</span>
-                                <span>480,000</span>
+                                <span class="s-05">{{ order.payment_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.payment_info.2|floatformat:"-3g"|intcomma }}</span>
                             </div>
 
 {#                            <div class="progress">#}
@@ -188,7 +189,7 @@
 {#                            </div>#}
                         </div>
                     </div>
-                {% endwith %}
+{#                {% endwith %}#}
                     {% if payment_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
                             <div class="col-1 "><span class="ms-6">Order-No</span></div>

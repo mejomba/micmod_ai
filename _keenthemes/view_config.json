@@ -200,7 +200,7 @@
             "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity", "apply_mac"],
+              "hide": [],
               "read": []
             },
             "formset_constraint": [
@@ -215,7 +215,7 @@
             "group": "order_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_mac", "quantity", "apply_mac"],
+              "hide": [],
               "read": ["mohandes_confirmation"]
             },
             "formset_constraint": [

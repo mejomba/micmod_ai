@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Sum, ExpressionWrapper, F, FloatField
+from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
 from micmod_base.base import Currency
 from core.models import BaseModel, BaseModeWF
@@ -85,9 +85,18 @@ class Order(BaseModeWF):
 
     @property
     def total_price(self):
-        quantity = self.quantity_mac or self.quantity_trade or self.quantity or 0
+        total_price = self.final_price * self.final_quantity
+        return total_price
+
+    @property
+    def final_price(self):
         price = self.price_mac or self.price_trade or 0
-        return quantity * price
+        return price
+
+    @property
+    def final_quantity(self):
+        quantity = self.quantity_mac or self.quantity_trade or self.quantity or 0
+        return quantity
 
 
     @property
@@ -99,6 +108,12 @@ class Order(BaseModeWF):
 
     @property
     def payment_info(self):
+        total_price = self.total_price
+        pay_in_percent = total_pay = is_complete = None
+        total_pay, pay_in_percent = self.order_payment_items.aggregate(total_pay=Sum("total_amount"), pay_in_percent=Sum("total_amount")/total_price*100).values()
+        return int(pay_in_percent or 0), total_pay, total_price, is_complete
+
+
         return 3
 
     @property
@@ -112,10 +127,6 @@ class Order(BaseModeWF):
     @property
     def computed_price(self):
         return self.price_trade
-
-    @property
-    def final_quantity(self):
-        return self.quantity_trade
 
     def total_pay_percent(self):
         x = (self.total_paid / self.total_price) * 100

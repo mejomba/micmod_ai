@@ -28,10 +28,10 @@
             <div class="">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
+                        <div class="ms-2">
                             تاریخ درخواست
                         </div>
-                        <span class="badge">
+                        <span class="badge ms-auto">
                             {{ form.instance.created_date|to_jalali:"%Y-%m-%d" }} | {{ form.instance.created_date|date }}
                         </span>
                     </li>
@@ -85,10 +85,10 @@
                         </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class=" me-auto">
+                        <div class="me-auto me-3">
                             توضیحات فروش
                         </div>
-                        <span class="w-75 p-1">
+                        <span class="w-70">
                             {{ form.instance.description_sale|default_if_falsy:'-' }}
                         </span>
                     </li>

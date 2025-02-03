@@ -75,9 +75,8 @@ class OrderForm(CustomBaseModelForm):
             self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
             # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
-        if request and not request.user.is_superuser:
-            if '__all__' in form_constraint_read:
-                self.make_disable(self.fields)
+        if request and not request.user.is_superuser and '__all__' in form_constraint_read:
+            self.make_disable(self.fields)
 
         elif request and not request.user.is_superuser:
             if form_constraint_hide:
