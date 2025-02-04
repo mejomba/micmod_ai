@@ -33,7 +33,7 @@
 
     $('#customer-contract-form').on('submit', function (e){
         e.preventDefault()
-        ajax_submit(this, true, true)
+        ajax_submit_with_file(this, true, true)
         setInterval(function (){
             $("#id_kt_empty_modal_lg").hide()
         }, 500)
