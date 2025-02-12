@@ -369,6 +369,32 @@ td {
   fill: red;
 }
 
+.vertical-loading-container{
+    position: fixed;
+    bottom: 120px;
+    left: 2px;
+    width: 15px;
+    height: 500px;
+    background-color: #f9f0ff;
+    rotate: 180deg;
+    border-radius: 3px;
+}
+.vertical-loading-inner{
+    /*position: relative;*/
+    width: 15px;
+    background-color: #b759f8;
+    height: 10%;
+    border-radius: 3px;
+    opacity: 0;
+    /*transition: height 150ms ease-in-out;*/
+}
+.vertical-loading-text{
+    rotate: 90deg;
+    position: relative;
+    right: -21px;
+    top: 40%;
+    color: white;
+}
 .nextContainer {
   /*margin-right: 26px;*/
   right: 0;
