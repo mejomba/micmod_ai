@@ -392,7 +392,7 @@ class Item(BaseModel):
                         total_sum=Sum('quantity'))['total_sum'] or 0
                     if stock_qty.is_integer():
                         qty = int(stock_qty)
-                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {qty} / {qty - quantity_sum}'))
+                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) / (مانده:{(qty - quantity_sum):,})'))
                     else:
                         qty = stock_qty
                         res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}'))

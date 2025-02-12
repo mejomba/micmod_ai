@@ -1,4 +1,6 @@
 import uuid
+
+from django.contrib.contenttypes.models import ContentType
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
 from collections import Counter
@@ -764,6 +766,18 @@ class QuotationItem(BaseModel):
         if path == past_path:
             x = cls.objects.full_queryset(inquiry_type_filter).order_by('-quotation_id')
         else:
+            from django.db.models import Subquery
+
+            quotation_items = cls.objects.full_queryset().filter(
+                inquiry_type_filter,
+                quotation_id__in=Subquery(
+                    WorkFlow.objects.filter(
+                        content_type=ContentType.objects.get_for_model(Quotation),
+                        current_state_name="استعلام قیمت"
+                    ).values('object_id')
+                )
+            ).order_by('-quotation_id')
+            return quotation_items
             x = cls.objects.full_queryset(inquiry_state_condition, inquiry_type_filter).order_by('-quotation_id')
             # x = cls.objects.full_queryset(inquiry_type_filter, foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).order_by('-quotation_id')
         return x

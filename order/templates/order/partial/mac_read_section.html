@@ -26,13 +26,20 @@
         <div class="w-65 p-1" style="border-right: 2px solid grey" dir="ltr">
             <div class="">
                 <ul class="list-group list-group-flush">
-
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            request quantity
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.quantity|default_if_falsy:form.instance.quantity }}
+                        </span>
+                    </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 ms-auto">
                             trade quantity
                         </div>
                         <span class="badge">
-                            {{ form.instance.quantity_trade|default_if_falsy:form.instance.quantity }}
+                            {{ form.instance.quantity_trade|default_if_falsy:'-' }}
                         </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">

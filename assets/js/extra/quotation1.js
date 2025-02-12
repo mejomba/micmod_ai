@@ -1,3 +1,4 @@
+const global_info = document.querySelector('#global-info')
 
 function hideShowQuotationItemTransportationCost(nodeList, action) {
     nodeList.forEach(function (item){
@@ -55,6 +56,7 @@ $(document).ready(function () {
                 success: function (response){
                     console.log(response)
                     if (response.items){
+                        debugger
                         set_price_data(response.items[0], elem, e.target)
                     }
                     console.log(response.items)
@@ -687,8 +689,8 @@ function refresh_prices() {
             set_price_data(data, items[i], items[i])
             const alt_code = items[i].querySelector('[id*="-goods_code_alt"]').value
             if (alt_code != "") {
-                const alt_data = get_price_data(alt_code, party_id, items[i])
-                set_alt_price_data(alt_data, items[i])
+                // const alt_data = get_price_data(alt_code, party_id, items[i])
+                // set_alt_price_data(alt_data, items[i])
             }
         }, 150)
     }
@@ -755,6 +757,16 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 }
 
 function set_price_data(data, elem, target) {
+    let items_count;
+    let row_number;
+    try {
+        row_number = elem.querySelector('.counter').innerText
+        items_count = document.querySelectorAll('.item').length
+    }
+    catch (e) {
+        row_number = null
+        items_count = 1
+    }
     if (data){
         // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
         set_values(elem.querySelectorAll('[name$="-goods_name"]'), data.text)
@@ -815,7 +827,8 @@ function set_price_data(data, elem, target) {
         set_values(elem.querySelectorAll('[name*="price_settings"]'), data.price_settings)
         set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
 
-        set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+        // set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+        set_values_if(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market, null, 'قیمت بازار', row_number)
         set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
         if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
@@ -847,8 +860,20 @@ function set_price_data(data, elem, target) {
         }
         set_price(elem.querySelector('[name*="-goods_name"]'))
     }
+
+    set_loading(items_count, row_number)
 }
 
+function set_loading(items_count, row_number){
+    let inquiry_loading_value = (row_number/items_count)*100
+    const vertical_loading_text = document.querySelector('.vertical-loading-inner')
+    const vertical_loading_value =document.querySelector('#vertical-loading-value')
+
+    vertical_loading_text.style.opacity = "1";
+
+    vertical_loading_value.innerText = `${Math.round(inquiry_loading_value)}`
+    vertical_loading_text.style.height = `${Math.round(inquiry_loading_value)}%`
+}
 function set_alt_price_data(data, elem) {
     if (data.f_fee_cust != '') {
         // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
@@ -1367,6 +1392,38 @@ function set_values(items, value, is_date = false) {
         value = parseFloat(value.toString().replaceAll(',', ''))
         value_str = numberWithCommas(value)
     }
+    for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove('d-none')
+        if (items[i].tagName && items[i].tagName.toLowerCase() == "input") {
+            if (value == '-') {
+                value = null
+            }
+            if (value == undefined || value == '-'){value=''}
+            items[i].value = value;
+            //items[i].text = value;
+        } else {
+            if (value_str == undefined || value_str == '-'){value_str=''}
+            items[i].innerHTML = value_str;
+        }
+    }
+}
+
+function set_values_if(items, value, is_date = false, field_name=null, row_number=null) {
+    debugger
+    if (!value) {
+        if (global_info){
+            global_info.classList.remove('d-none')
+            global_info.querySelector('#global-info-text').innerHTML = `<span>${field_name}</span> <span>یافت نشد</span> <span>ردیف</span> <span>${row_number}</span>`
+        }
+        return false
+    }
+
+    let value_str = value
+    if (!isNaN(parseInt(value)) && !is_date) {
+        value = parseFloat(value.toString().replaceAll(',', ''))
+        value_str = numberWithCommas(value)
+    }
+    debugger
     for (let i = 0; i < items.length; i++) {
         items[i].classList.remove('d-none')
         if (items[i].tagName && items[i].tagName.toLowerCase() == "input") {

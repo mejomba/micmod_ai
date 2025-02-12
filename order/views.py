@@ -119,36 +119,11 @@ class OrderDataTableListView(AjaxDatatableView):
         # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
         {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
         {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
-
-        # {'name': 'id', 'orderable': True, 'visible': True, },
-        # # {'name': 'edit', 'orderable': False, 'visible': True, },
-        # {'name': 'last_work_flow','title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-        # {'name': 'order_number', 'orderable': True, 'visible': True, },
-        # {'name': 'order_title', 'orderable': True, 'visible': True, },
-        # {'name': 'is_bazar', 'orderable': True, 'visible': True, },
-        # # {'name': 'status', 'orderable': True, 'visible': True, },
-        # {'name': 'item', 'orderable': True, 'title': 'sku' , 'visible': True, 'lookup_field': '__sku__icontains'},
-        # {'name': 'qi', 'title': 'customer', 'orderable': True, 'visible': True, 'lookup_field': '__quotation__customer_party_id__title__icontains'},
-        # {'name': 'transportation_method', 'orderable': True, 'visible': True, },
-        # {'name': 'production_lead_time', 'orderable': True, 'visible': True, },
-        # {'name': 'trade_commitment_date', 'orderable': True, 'visible': True, },
-        # {'name': 'commitment_date_to_customer', 'orderable': True, 'visible': True, },
-        # {'name': 'quantity', 'orderable': True, 'visible': True, },
-        # {'name': 'description_sale', 'orderable': True, 'visible': True, },
-        # {'name': 'order_type', 'orderable': True, 'visible': True, },
-        # {'name': 'sales_admin_confirmation', 'orderable': True, 'visible': True, },
-        # {'name': 'cancel', 'orderable': True, 'visible': True, },
-        # {'name': 'is_over', 'orderable': True, 'visible': True, },
-        # {'name': 'created_date', 'orderable': True, 'visible': True, },
-        # {'name': 'qi__quotation', 'orderable': True, 'visible': True, 'lookup_field': '__id__icontains', 'title': "پیش فاکتور"},
-
-        # {'name': 'sepidar_dl_code', 'orderable': True, 'visible': True, 'width': 600, },
-        # {'name': 'title', 'title': '<div class="px-15">عنوان</div>', 'orderable': True, 'visible': True,
-        #  'className': 'text-center'},
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = super().get_initial_queryset(request)
+        # qs = super().get_initial_queryset(request)
+        qs = self.model.get_qs(self.request)
         q = request.POST.get('q')
         if q == 'sales_admin':
             return qs.filter(cancel=True)
@@ -335,17 +310,17 @@ class PackingDataTableListView(AjaxDatatableView):
         {'name': 'id', 'visible': False, 'title': "packing_id", 'className': 'py-1', },
         {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1', },
         # {'name': 'packing', 'visible': True, 'title': 'packing_id', 'className': 'py-1', },
-        {'name': 'carton_qty', 'visible': True, 'title': "Carton Q'ty", 'className': 'py-1', },
+        {'name': 'carton_qty', 'visible': True, 'title': "Carton Qty", 'className': 'py-1', },
         {'name': 'weight', 'visible': True, 'title': "weight(KG)", 'className': 'py-1', },
         {'name': 'packing_number', 'visible': True, 'title': "packing_no", 'className': 'py-1', },
         {'name': 'created_date', 'visible': True, 'title': "pack_date", 'className': 'py-1', },
         {'name': 'shipment_type', 'visible': True, 'title': "shipment type", 'className': 'py-1', },
         {'name': 'bl_number', 'title': "BL Number", 'className': 'py-1', },
-        {'name': 'departure_from_origin_port_date', 'title': "<div style='width:100px:'>Departure from origin port Date</div>", 'className': 'py-1', },
-        {'name': 'arrival_to_destination_port_date', 'title': "Arrival to destination port Date", 'className': 'py-1', },
+        {'name': 'departure_date', 'title': "<div style='width:100px:'>Departure from origin port Date</div>", 'className': 'py-1', },
+        {'name': 'arrival_date', 'title': "Arrival to destination port Date", 'className': 'py-1', },
         {'name': 'sales_manager_needed', 'title': "Sales manager Needed", 'className': 'py-1', },
         {'name': 'sales_manager_check_date', 'title': "Sales manager check Date", 'className': 'py-1', },
-        {'name': 'delivered_to_mr_salehi_date', 'title': "Delivered to Mr Salehi Date", 'className': 'py-1', },
+        {'name': 'delivery_to_salehi_date', 'title': "Delivered to Mr Salehi Date", 'className': 'py-1', },
         {'name': 'cl_90_date', 'title': "Clearance Date 90%", 'className': 'py-1', },
         {'name': 'cl_10_date', 'title': "Clearance Date 10%", 'className': 'py-1', },
         {'name': 'cl_100_date', 'title': "Clearance Date 100%", 'className': 'py-1', },
@@ -359,6 +334,8 @@ class PackingDataTableListView(AjaxDatatableView):
             reverse('order:packing.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
+        row['carton_qty'] = f'{obj.computed_carton_qty}' if obj.computed_carton_qty else '-'
+        row['weight'] = f'{obj.computed_weight_kg}' if obj.computed_weight_kg else '-'
 
 
 class GIOView(LoginRequiredMixin, BaseView):
@@ -459,7 +436,7 @@ class GIODataTableListView(AjaxDatatableView):
         {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
         {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
         {'name': 'gio_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
-        {'name': 'total_quantity', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
+        {'name': 'gioitems__order', 'visible': True, 'title': _('Order'), 'className': 'py-1'},
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
@@ -469,6 +446,12 @@ class GIODataTableListView(AjaxDatatableView):
             reverse('order:gio.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
+        order_ids = list(set(obj.gioitems.filter(order__isnull=False).values_list('order_id', flat=True)))
+        order_links = [
+            f'<a class="fw-bold" target=_blank href="{reverse("order:order.view", args=(order_id,))}">{order_id}</a>'
+            for order_id in order_ids
+        ]
+        row['gioitems__order'] = ", ".join(order_links)
 
 
 class PaymentView(LoginRequiredMixin, BaseView):
@@ -674,7 +657,7 @@ class PaymentItemDataTableListView(AjaxDatatableView):
 
         row['order_total_price'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('order:order.paymentitem.update', args=(obj.id,)),
-            obj.order.total_price if obj.order else '_'
+            round(obj.order.total_price, 4) if obj.order else '_'
         )
 
         row['order__currency'] = '<a class="fw-bold" href="%s">%s</a>' % (

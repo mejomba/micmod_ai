@@ -6,6 +6,7 @@
 {% load order_tags %}
 {% load jalali_tags %}
 
+{% block title %}سفارش {{ form.instance.pk }}{% endblock title %}
 {% block extra_css %}
 
 
@@ -82,7 +83,9 @@
         <div class="row">
             <div class="col-7 xzx">
             <span name="item_placeholder" class="d-none">{{ form.instance.item.sku }} - {{ form.instance.item.part_number }}</span>
-            {% if request.user|has_group:'sales_user' %}
+            {% if request.user.is_superuser %}
+                {% include 'order/partial/order_admin_section.html' with form=form %}
+            {% elif request.user|has_group:'sales_user' %}
                 {% include 'order/partial/order_sales_edit_section.html' with form=form %}
                 {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
                 {% if form.instance.pk %}
@@ -118,7 +121,7 @@
             <div class="card-toolbar">
                 <ul class="nav nav-light-danger nav-bold nav-pills font-size-15">
                     <li class="nav-item">
-                        <a class="nav-link active" data-toggle="tab" href="#kt_tab_pane_1">
+                        <a class="nav-link active bg-light" data-toggle="tab" href="#kt_tab_pane_1">
                             <span class="nav-icon"><i class="flaticon2-chat-1"></i></span>
                             <span class="nav-text d-flex gap-2">اسناد پرداخت
                             <i class="ki-duotone ki-two-credit-cart fs-2">
@@ -132,7 +135,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_2">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_2">
                             <span class="nav-icon"><i class="flaticon2-drop"></i></span>
                             <span class="nav-text d-flex gap-2">تحویل در دفتر چین
                             <i class="ki-duotone ki-delivery-geolocation fs-2">
@@ -146,7 +149,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_3">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_3">
                             <span class="nav-icon"><i class="flaticon2-drop"></i></span>
                             <span class="nav-text d-flex gap-2">بسته بندی
                                 <i class="ki-duotone ki-cube-3 fs-2">
@@ -211,7 +214,7 @@
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                             <div class="col-1 py-2">
 {#                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
-                                <span>{{ payment_item.order.order_number|default_if_none:"-" }}</span>
+                                <span>{{ payment_item.order.pk|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2">
                                 <span class="d-flex flex-column">
@@ -223,10 +226,10 @@
                                 <span>{{ payment_item.destination_currency|default_if_falsy:'-' }}</span>
                             </div>
                             <div class="col-1 py-2">
-                                <span>{{ payment_item.currency|default_if_falsy:'-' }}</span>
+                                <span>{{ payment_item.bank.currency|default_if_falsy:'-' }}</span>
                             </div>
                             <div class="col-1 py-2 s-05">
-                                <span>{{ payment_item.rate|intcomma|default_if_falsy:'-' }}</span>
+                                <span>{{ payment_item.exchange_rate|intcomma|default_if_falsy:'-' }}</span>
                             </div>
                             <div class="col-1 py-2">
                                 <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
@@ -235,10 +238,10 @@
                                 <span>{{ payment_item.created_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2">
-                                <span>{{ payment_item.bank_info|default_if_none:"-" }}</span>
+                                <span>{{ payment_item.bank|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2">
-                                <span>{{ payment_item.paid_amount|intcomma|default_if_falsy:'-' }}</span>
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
                             </div>
                             <div class="col-1 py-2">
                                 <span>{{ payment_item.refrence|default_if_none:"-" }}</span>
@@ -258,61 +261,128 @@
                 </div>
             <!-- GIO -->
                 <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel" aria-labelledby="kt_tab_pane_2">
+                <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.gio_info.0 }}">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ order.gio_info.0 }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.gio_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.gio_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                        </div>
+                </div>
                     {% if gio_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
                             <div class="col-2 "><span class="ms-6">تعداد </span></div>
-                            <div class="col-3 ">سفارش</div>
+                            <div class="col-3 ">GIO</div>
                             <div class="col-3">توضیحات</div>
-                            <div class="col-2"></div>
-                            <div class="col-2"></div>
+                            <div class="col-4"></div>
+{#                            <div class="col-2"></div>#}
                         </div>
                     {% endif %}
                     {% for gio in gio_items %}
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                             <div class="col-2 py-2">
                                 <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                <span>{{ gio.item_quantity|intcomma|default_if_none:"-" }}</span>
+                                <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-3 py-2 s-05">
-                                <span>{{ gio.order|default_if_none:"-" }}</span>
+                                <span>{{ gio.gio.pk|default_if_none:"-" }}</span>
+                                <span>--</span>
+                                <span>{{ gio.gio.gio_date|default_if_none:"-"|to_jalali:"%Y/%m/%d" }}</span>
                             </div>
                             <div class="col-3 py-2 ">
                                 <span>{{ gio.description|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2"></div>
+                            <div class="col-4"></div>
                         </div>
                     {% endfor %}
                 </div>
             <!-- PACKING -->
                 <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel" aria-labelledby="kt_tab_pane_3">
+
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.packing_info.0 }}">
+                                  <span class="progress-left">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <span class="progress-right">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                    <div class="small">{{ order.packing_info.0 }}%</div>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.packing_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.packing_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {% if packing_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
-                            <div class="col-2 "><span class="ms-6">Order ID</span></div>
-                            <div class="col-1 ">Packing ID</div>
-                            <div class="col-1 ">Packing NO.</div>
-                            <div class="col-2">Max Status</div>
-                            <div class="col-2">پکینگ</div>
-{#                            <div class="col-5">سفارش</div>#}
-{#                            <div class="col-2"></div>#}
-                            <div class="col-5"></div>
+                            <div class="col-1 "><span class="ms-6">sum qty</span></div>
+                            <div class="col-1 ">sum arrived qty</div>
+                            <div class="col-1 ">max arrive date</div>
+                            <div class="col-1 ">packing id</div>
+                            <div class="col-1">packing no</div>
+{#                            <div class="col-2">max status</div>#}
+                            <div class="col-1">tp icn</div>
+{#                            <div class="col-2">packing number</div>#}
+                            <div class="col-1">TP Method</div>
+{#                            <div class="col-2">packing id</div>#}
+                            <div class="col-2">shipment type</div>
+                            <div class="col-3"></div>
                         </div>
                     {% endif %}
 
                     {% for packing_item in packing_items %}
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
-                            <div class="col-2 py-2">
+                            <div class="col-1 py-2">
                                 <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                <span>{{ packing_item.carton_number|default_if_none:"-" }}</span>
+                                <span>{{ packing_item.quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2 s-05">
-                                <span>{{ packing_item.carton_qty|intcomma|default_if_none:"-" }}</span>
+                                <span>{{ packing_item.arrived_quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2 py-2 s-05">
-                                <span>{{ packing_item.net_weight_kg|intcomma|default_if_falsy:"-" }}</span>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ packing_item.packing.arrival_date|default_if_falsy:"-"|to_jalali:'%Y-%m-%d' }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.pk|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.packing_number|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                {% with packing_item.order.transportation_method as tp %}
+                                    {% if tp == 'express' %}
+                                        <span class="me-5">⚡</span>
+                                    {% elif tp == 'air' %}
+                                        <span class="me-5">🚀</span>
+                                    {% elif tp == 'sea' %}
+                                        <span class="me-5">🚢</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.order.transportation_method|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 ">
-                                <span class="me-5">{{ packing_item.pk|default_if_none:"-" }}</span>
-                                <span>{{ packing_item.packing|default_if_none:"-" }}</span>
+                                <span class="me-5">{{ packing_item.packing.shipment_type|default_if_none:"-" }}</span>
                             </div>
 {#                            <div class="col-5 py-2" direction="rtl">#}
 {#                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>#}
@@ -321,7 +391,7 @@
 {#                                <span>{{ packing_item.order.last_work_flow.current_state_name|default_if_none:"-"  }}</span>#}
 {#                                <span>{{ packing_item.order.quantity|default_if_none:"-"  }}</span>#}
 {#                            </div>#}
-                            <div class="col-5"></div>
+                            <div class="col-3"></div>
                         </div>
                     {% endfor %}
                 </div>

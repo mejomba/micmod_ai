@@ -83,6 +83,23 @@ class Order(BaseModeWF):
             return f'{self.pk}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        import jdatetime
+        year = str(jdatetime.date.today().year - 1400).zfill(2)
+        last_order = self.__class__.objects.latest('id')
+        last_pk = last_order.pk
+        if self.pk is None:
+            self.order_number = f'A{year}-{last_pk + 1}'
+        return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
+
+    @classmethod
+    def get_qs(cls, request, lst=False):
+        q = request.POST.get('q')
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True, lst=lst)
+        return qs
+
     @property
     def total_price(self):
         total_price = self.final_price * self.final_quantity
@@ -98,7 +115,6 @@ class Order(BaseModeWF):
         quantity = self.quantity_mac or self.quantity_trade or self.quantity or 0
         return quantity
 
-
     @property
     def total_paid(self):
         s = 0
@@ -113,8 +129,25 @@ class Order(BaseModeWF):
         total_pay, pay_in_percent = self.order_payment_items.aggregate(total_pay=Sum("total_amount"), pay_in_percent=Sum("total_amount")/total_price*100).values()
         return int(pay_in_percent or 0), total_pay, total_price, is_complete
 
+    @property
+    def gio_info(self):
+        final_quantity = self.final_quantity
+        total_arrived = total_arrived_in_percent = is_complete = None  # Define is_complete
+        total_arrived, total_arrived_in_percent = self.gio_items.aggregate(
+            total_arrived=Sum("quantity"),
+            total_arrived_in_precent=Sum("quantity") / final_quantity * 100
+        ).values()
 
-        return 3
+        return int(total_arrived_in_percent or 0), int(total_arrived or 0), final_quantity, is_complete
+
+    @property
+    def packing_info(self):
+        final_quantity = self.final_quantity
+        total_arrived_wh = total_arrived_wh_in_percent = None
+        total_arrived_wh, total_arrived_wh_in_percent = self.packing_item_order.aggregate(
+            total_arrived_wh=Sum("arrived_quantity"),
+            total_arrived_wh_in_precent=Sum("arrived_quantity")/self.final_quantity*100).values()
+        return int(total_arrived_wh_in_percent or 0), int(total_arrived_wh or 0), final_quantity
 
     @property
     def final_po_number(self):
@@ -266,21 +299,8 @@ class OrderOrder(BaseModel):
             return 'رسالت'
 
 
-# from django.db.models.signals import m2m_changed
-
-# def toppings_changed(sender, **kwargs):
-    ## sender.objects.create(order_base=kwargs.get('instance'), order_rel_id=list(kwargs.get('pk_set'))[0], quantity=min(rel.remaining_quantity, div_quantity))
-    # pass
-
-# m2m_changed.connect(toppings_changed, sender=Order.order_m2m.through)
-
-
 class Packing(BaseModeWF):
     SHIPMENT_TYPE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
-    # PACKING_STATUS = [("1", _("ثبت اولیه")), ("2", _("dep")), ("3", _("arrive")), ("4", _("10%")),
-    #                   ("5", _("تحویل اسناد")), ("6", _("اضهار گمرک")), ("7", _("ترخیص گمرک")), ("8", _("تحویل انبار"))]
-    # status = models.CharField(choices=PACKING_STATUS)
-    # TP_METHOD = [('1', 'air'), ('2', 'sea'), ('3', 'exp')]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
@@ -296,8 +316,6 @@ class Packing(BaseModeWF):
     estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'))
     sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
-    # tp_method = models.CharField(choices=TP_METHOD)
-    # pack_date = models.DateField(_('pack_date'))
     description = models.TextField(_('description'), null=True, blank=True)
 
     def __str__(self):
@@ -316,7 +334,7 @@ class Packing(BaseModeWF):
     @property
     def computed_weight_kg(self):
         # Todo: check this
-        return self.packing_item_rel.all().aggregate(Sum('item_weight'))['item_weight__sum']
+        return self.packing_item_rel.all().aggregate(Sum('net_weight_kg'))['net_weight_kg__sum']
 
 
 class PackingItem(BaseModeWF):
@@ -337,12 +355,6 @@ class PackingItem(BaseModeWF):
     sales_conf_date = models.DateField(_('sales_conf_date'), null=True, blank=True)
     invoice_conf = models.BooleanField(_('invoice_conf'), default=False)
     invoice_conf_date = models.DateField(_('invoice_conf_date'), null=True, blank=True)
-
-    # volume = models.FloatField(_('volume'), null=True, blank=True)
-    # amount = models.FloatField(_('amount'), null=True, blank=True)
-    # duty_date = models.DateField(_('duty_date'), null=True, blank=True)
-    # item_weight = models.FloatField(_('item_weight'), null=True, blank=True)
-    # carton_qty = models.PositiveIntegerField(_('carton_qty'), null=True, blank=True)
 
     @property
     def computed_price(self):
@@ -380,12 +392,10 @@ class GIO(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0)
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)
-    # total_carton_quantity = models.FloatField(_('total_carton_quantity'))
 
 
 class GIOItem(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0)
-    item_quantity = models.FloatField(_('item_quantity'))
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'), null=True, blank=True)
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
     description = models.TextField(_('description'), null=True, blank=True)
@@ -420,3 +430,6 @@ class ACNT(BaseModeWF):
     is_blocked = models.BooleanField(default=False)
     block_date = models.DateField(null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.info_bank} {self.currency.title_en}'

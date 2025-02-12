@@ -52,16 +52,13 @@ class OrderForm(CustomBaseModelForm):
         self.make_hidden(['item', 'qi', 'item_trade'])
         self.fields['description_sale'].widget.attrs['rows'] = 6
         self.fields['description_trade'].widget.attrs['rows'] = 3
+        self.fields['quantity_trade'].widget.attrs['value'] = self.instance.quantity_trade or self.instance.quantity
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
-        # if self.instance.local_sepidar_wh_code:
-        #     self.make_disable(['quantity'])
+        if request and request.user.base_group == 'trade':
+            self.make_required(['price_trade'])
 
-        # ~Q(id=self.instance.pk), item = self.instance.item, cancel = False
-
-        # self.instance.order_base_items.all().values_list('order_rel', flat=True)
-        # illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0 or x.local_sepidar_wh_code is not None, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) | Q(local_sepidar_wh_code__isnull=False))))) if self.instance.pk else []
         illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) )))) if self.instance.pk else []
         ooqs = Order.objects.filter(~Q(id=self.instance.pk), item=self.instance.item, cancel=False).exclude(
             pk__in=illegal_order_ids) if self.instance.cancel else Order.objects.none()

@@ -3,7 +3,7 @@ from jalali_date.fields import JalaliDateField, JalaliDateTimeField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
-from files.models import Image
+from files.models import Image, File
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
     CustomerFields, CustomerContract
 from django_select2 import forms as s2forms
@@ -163,6 +163,9 @@ class CustomerExpertForm(CustomBaseModelForm):
 
 
 class CustomerContractForm(CustomBaseModelForm):
+    file_groups = 1
+    file_model = File
+
     class Meta:
         model = CustomerContract
         fields = '__all__'
