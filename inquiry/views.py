@@ -885,9 +885,12 @@ def get_item(request):
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
@@ -938,9 +941,12 @@ def get_item(request):
                             item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                             item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
                                                                   "%Y-%m-%d")
+                            item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item['is_bazar'] = True
                         else:
                             item["goods_price_market"] = None
                             item["goods_market_date"] = None
+                            item["market_expire_date"] = None
 
                     except Exception as e:
                         show_error(e, __file__)
@@ -1030,9 +1036,12 @@ def get_items(request):
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
 
@@ -1097,9 +1106,12 @@ def get_items(request):
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
 

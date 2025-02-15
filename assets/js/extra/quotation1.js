@@ -691,6 +691,16 @@ function refresh_prices() {
 }
 
 function get_price_data(code, party_id, item) {
+        const tradePriceCode = item.querySelector('[id*="-trade_price_code"]')
+        const bazarPriceCode = item.querySelector('[id*="-bazar_price_code"]')
+        let tradePriceCodeValue;
+        let bazarPriceCodeValue;
+        if (tradePriceCode && tradePriceCode.options[tradePriceCode.selectedIndex]){
+            tradePriceCodeValue = tradePriceCode.options[tradePriceCode.selectedIndex].value
+        }
+        if (bazarPriceCode && bazarPriceCode.options[bazarPriceCode.selectedIndex]){
+            bazarPriceCodeValue = bazarPriceCode.options[bazarPriceCode.selectedIndex].value
+        }
     $.ajax({
         url: '/inquiry/item_list',
         dataType: "json",
@@ -703,6 +713,8 @@ function get_price_data(code, party_id, item) {
                 id_market_grade: document.getElementById('id_market_grade').value,
                 id_customer_grade: document.getElementById('id_customer_grade').value,
                 quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
+                'trade_price_code': tradePriceCodeValue,
+                'bazar_price_code': bazarPriceCodeValue,
             },
         cache: true,
         success: function (data) {
@@ -751,6 +763,32 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 
 function set_price_data(data, elem, target) {
     if (data){
+        const market_diff_time = diffTimeInQuotation(data.market_expire_date || 10000)
+        const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
+        let select_price_method = elem.querySelector('[name*="-price_method"]')
+        if (market_diff_time.status && data.is_bazar){
+            market_expire_element.classList.remove('d-none')
+            market_expire_element.style.color = 'green'
+            set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
+            if (select_price_method.querySelector(`option[value="price_market"]`) === null){
+                let p = new Option("قیمت بازار", "price_market");
+                select_price_method.appendChild(p)
+            }
+        } else if (data.is_bazar){
+            market_expire_element.classList.remove('d-none')
+            market_expire_element.style.color = 'red'
+            set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
+            select_price_method.value = 'sales_admin'
+            for (let i = 0; i < select_price_method.options.length; i++){
+                if (select_price_method.options[i].value === 'price_market'){
+                    select_price_method.remove(i);
+                    elem.querySelector('[name*="-final_price"]').value = round_rial(data.goods_price_market)
+                    break;
+                }
+            }
+        } else {
+            market_expire_element.classList.add('d-none')
+        }
         // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
         set_values(elem.querySelectorAll('[name$="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name$="-goods_name_lbl"]'), data.text)

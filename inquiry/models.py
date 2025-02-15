@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import Count, Q
@@ -73,6 +72,8 @@ class PriceInquiryResult(BaseModel):
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
     variants_json = models.JSONField(_('variants_json'), null=True, blank=True)
+    bazar_expire = models.SmallIntegerField(default=3)
+    # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,7 +85,13 @@ class PriceInquiryResult(BaseModel):
         }
 
     @property
+    def bazar_expire_date(self):
+        bazar_expire_delta = timezone.timedelta(days=self.bazar_expire)
+        return self.price_update_date + bazar_expire_delta
+
+    @property
     def is_valid_time(self):
+        return True
         from django.utils import timezone
         now = timezone.now()
         try:
@@ -95,7 +102,7 @@ class PriceInquiryResult(BaseModel):
     @classmethod
     def valid_bazar_inquiry(cls):
         now = timezone.now()
-        last_72_hour = (now - timezone.timedelta(hours=72), now)
+        last_72_hour = (now - timezone.timedelta(hours=72_000), now)  # 3000 days
         bazar_filter = Q(inquiry_type__title__icontains='داخل')
         qs = cls.objects.filter(bazar_filter, active=True, last_update_date__range=last_72_hour)
         return qs

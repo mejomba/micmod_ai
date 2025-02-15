@@ -733,3 +733,41 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         GenericPaymentFormGroup.innerHTML = ''
         GenericPaymentFormGroup.appendChild(commentFormForCopy)
     }
+
+    function diffTime(time_iso){
+        debugger
+        let t1 = new Date();
+        let t2 = new Date(time_iso);
+        let diffMilliseconds = t2 - t1;
+        let diffDays = Math.floor(diffMilliseconds / (1000 * 60 * 60 * 24));
+        let diffHours = Math.floor(diffMilliseconds / (1000 * 60 * 60));
+        let diffMinuets = Math.floor(diffMilliseconds / (1000 * 60));
+
+        return [diffDays, diffHours, diffMinuets]
+    }
+
+    function diffTimeInQuotation(time_iso){
+        const [days, hours, minuets] = diffTime(time_iso)
+        if (days < 0 || hours < 0 || minuets < 0){
+            return {
+                status: false,
+                message: "اعتبار استعلام به پایان رسیده"
+            }
+        }
+        else if(days >= 1){
+            return {
+                status: true,
+                message: `معتبر تا ${ days } روز و ${ hours - (days*24) } ساعت دیگر`
+            }
+        } else if (hours >= 1) {
+            return {
+                status: true,
+                message: `معتبر تا ${hours} ساعت دیگر`
+            }
+        } else {
+            return {
+                status: true,
+                message: `معتبر تا ${minuets} دقیقه دیگر`
+            }
+        }
+    }
