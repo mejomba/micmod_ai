@@ -29,7 +29,31 @@ class FlowBaseView(SingleObjectMixin):
     wf_last_step_is_open = None
 
     def save_flow(self, request, form=None, obj=None, **kwargs):
-        pass
+        state = kwargs.get('state')
+        wf_description = kwargs.get('wf_description')
+        from_user = kwargs.get('from_user')
+        to_user = kwargs.get('to_user')
+        current_state_name = kwargs.get('current_state_name')
+        object_id = kwargs.get('object_id') or self.object.pk
+        flow_data = {
+            "wf_status": 3,
+            "action": 'ایجاد خودکار',
+            "flow_name": 'سفارش',
+            "state": state,
+            "wf_description": wf_description,
+            "belong_to_group": 'order_admin',
+            "object_id": object_id,
+            "content_type": ContentType.objects.get_for_model(self.object),
+            "creator_user": request.user,
+            "editor_user": request.user,
+            "from_user": from_user,
+            "to_user": to_user,
+            "current_state_name": current_state_name,
+        }
+
+        wf = WorkFlow.objects.create(**flow_data)
+        self.object.last_work_flow = wf
+        self.object.save()
 
     def get_flow(self, obj):
         if not obj:

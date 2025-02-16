@@ -23,6 +23,9 @@ html body {
     background-color: #dcceff !important;
     color: #6a1fff !important;
 }
+.bg-over{
+    background-color: #dbdfe9;
+}
 .bigdrop {
     width: 500px !important;
 }

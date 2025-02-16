@@ -284,6 +284,7 @@ class ItemWeightDataTableView(AjaxDatatableView):
         {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border', 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },
+        {'name': 'jalali_last_update_date', 'orderable': True, 'visible': True, },
     ]
 
     def get_initial_queryset(self, request=None):

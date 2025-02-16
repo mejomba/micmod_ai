@@ -58,7 +58,22 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
         res = super().form_valid(form)
+        if self.is_need_sales_admin_confirmation() and 'next' in self.request.POST:
+            wf_data = {
+                'state': self.flow_config.get('flow_state_list')[self.state_index],
+                'wf_description': 'بدون نیاز به تایید مدیر فروش',
+                'from_user': self.request.user,
+                'to_user': get_user_model().objects.filter(groups__name='accounting'),
+                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 1],
+                'object_id': self.object.pk,
+            }
+            self.save_flow(self.request, **wf_data)
         return res
+
+    def is_need_sales_admin_confirmation(self):
+        x = not all([all((x.qi.final_price == x.price, x.qi.goods_code_fk == x.goods_code)) for x in
+                self.object.factoritem_set.all()])
+        return x
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -236,21 +251,18 @@ class FactorListDatatable(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
-        {'name': 'id', 'visible': False, },
-        {'name': 'q', 'visible': True, 'title': _('quotation'), 'className': 'py-1 border', 'lookup_field': '__pk__icontains', 'searchable': True},
-        {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'className': 'py-1 border', 'lookup_field': '__title__icontains', 'searchable': True},
-        {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'className': 'py-1 border',
-         'orderable': True, 'lookup_field': '__title__icontains'},
-        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'className': 'py-1 border', 'orderable':True, 'lookup_field': '__icontains'},
-        {'name': 'sepidar_number', 'visible': True, 'orderable': True},
-        # {'name': 'workflows', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        # {'name': 'factor_self', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True},
-        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True},
-        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True},
-        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True},
-        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains'},
+        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'currency-search'},
+        {'name': 'id', 'visible': False, 'className': 'border'},
+        {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
+        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'orderable':True, 'lookup_field': '__icontains', 'className': 'border'},
+        {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
+        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True, 'className': 'border'},
+        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains', 'className': 'border'},
 
     ]
 

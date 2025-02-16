@@ -83,6 +83,11 @@ class Order(BaseModeWF):
             return f'{self.pk}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
 
+    @property
+    def order_text_in_factor(self):
+        text = f'{self.last_work_flow.current_state_name}'
+        return text
+
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
@@ -181,6 +186,9 @@ class Order(BaseModeWF):
             x = s - self.quantity
             if x < 0:
                 return f'نیاز به {abs(x)} عدد  برای تامین کامل'
+            else:
+                return ''
+
         return ''
         return 'تامین کامل'
 
@@ -275,7 +283,7 @@ class Order(BaseModeWF):
         return total_count - total_consumed_count
 
     @property
-    def arrive_at(self):
+    def estimate_arrive_at(self):
         from django.utils import safestring
         return "1404/02/10"
 

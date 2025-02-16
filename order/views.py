@@ -126,7 +126,7 @@ class OrderDataTableListView(AjaxDatatableView):
         qs = self.model.get_qs(self.request)
         q = request.POST.get('q')
         if q == 'sales_admin':
-            return qs.filter(cancel=True)
+            return qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
         elif q == 'bazar_user':
             return qs.filter(is_bazar=True)
         elif q == 'all':

@@ -118,9 +118,9 @@
                         <span>ID</span>
                     </span>
                     <span class="col-9 bold">
-                        <span data-key="">نام کالا | کد کالا</span>
+                        <span data-key="">پارت نامبر | کد کالا</span>
                         <div class="border-top border-gray-500"></div>
-                        <span data-key=""> تعداد | فاکتور شده | قیمت</span>
+                        <span data-key=""> تعداد | قیمت | فاکتور شده </span>
                     </span>
                     <span class="col-2 bold p-0">
                         <span data-key="lead_time" class="font-size-12">lead_time</span>
@@ -134,7 +134,7 @@
                         <span data-key="">کد کالا</span>
                     </span>
                     <span class="col-4 bold">
-                        <span data-key="">نام کالا</span>
+                        <span data-key="">پارت نامبر</span>
                     </span>
                     <span class="col-1 bold">
                         <span> تعداد</span>
@@ -174,7 +174,7 @@
         	<div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" style="height: fit-content">
 
             <!--quotation item information (update)-->
-            <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+            <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x text-info hover-drop-down-icon" style="top: -10px; left: 3px; height: 25px">
@@ -305,10 +305,10 @@
             {% endif %}
 
             {% with qi.is_over as is_over %}
-            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-secondary {% endif %} " style="height: fit-content">
+            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-over {% endif %} " style="height: fit-content">
 
             <!--quotation item information (create)-->
-            <div class="col-3 border-left d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+            <div class="col-3 border-left d-flex flex-column justify-content-center {% if is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>

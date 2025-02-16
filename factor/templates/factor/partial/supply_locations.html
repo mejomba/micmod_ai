@@ -50,6 +50,9 @@
                         <span>عدد</span>
                     </a>
                 {% endfor %}
+            {% else %}
+                {{ factor_item.supply_locations.order_text_in_factor }}
+                {{ factor_item.supply_locations.estimate_arrive_at }}
             {% endif %}
         </div>
     </div>
