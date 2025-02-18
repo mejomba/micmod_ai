@@ -19,6 +19,12 @@
 {% endblock extra_css %}
 
 {% block form_content %}
+    <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
+    اعتبار استعلام ردیف(های)
+    <span id="expire_inquiry_row_number" class="bg-danger px-2 rounded text-white s-2"></span>
+    به پایان رسیده
+    (روش تعیین قیمت را اصلاح کنید)
+</div>
             {% csrf_token %}
                     {% for hidden in form.hidden_fields %}
                         {{ hidden }}

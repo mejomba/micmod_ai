@@ -240,13 +240,6 @@ $(document).ready(function () {
             templateSelection: formatRepoSelection
         });
     }
-    // $('#customer_code').on('select2:open',function (e){
-    //     const elem = $('.select2-results')[0]
-    //     const ul = $('#select2-customer_code-results')[0]
-    //     let ch = document.createTextNode("Hi there and greetings!");
-    //     elem.insertBefore(ch,ul)
-    // })
-    //$('.goods_code').data('select2').dropdown.addClass('goods_select2')
     $('#customer_code').on("select2:select", function (e) {
         const data = e.params.data;
         document.querySelector('[name="customer_code"]').value = data.id
@@ -264,7 +257,6 @@ $(document).ready(function () {
     for (let i = 0; i < items.length; i++) {
         set_item_classes(items[i])
     }
-    // $('.replace-digits').replaceDigits();
 });
 
 function set_item_classes(item) {
@@ -763,29 +755,37 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 
 function set_price_data(data, elem, target) {
     if (data){
+        // alert('set_price_data')
         const market_diff_time = diffTimeInQuotation(data.market_expire_date || 10000)
         const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
         let select_price_method = elem.querySelector('[name*="-price_method"]')
-        if (market_diff_time.status && data.is_bazar){
+        // let ids = ["#submit_draft", "#submit_next", "#submit_copy", "#submit_save"];
+        // let submit_buttons = ids.map(id => document.querySelector(id)).filter(el => el !== null);
+        if (!market_diff_time.status && data.is_bazar){
+            market_expire_element.setAttribute('data-status', false)
             market_expire_element.classList.remove('d-none')
             market_expire_element.style.color = 'green'
             set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
-            if (select_price_method.querySelector(`option[value="price_market"]`) === null){
-                let p = new Option("قیمت بازار", "price_market");
-                select_price_method.appendChild(p)
-            }
-        } else if (data.is_bazar){
+            set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+            set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
+            set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
+
+            // document.querySelector('#form-footer-container').style.height = '40px';
+            // if (select_price_method.querySelector(`option[value="price_market"]`) === null){
+            //     let p = new Option("قیمت بازار", "price_market");
+            //     select_price_method.appendChild(p)
+            // }
+        } else if (market_diff_time.status && data.is_bazar){
+            set_values(elem.querySelectorAll('label[name*="goods_price_market"]'), data.goods_price_market)
+            set_values(elem.querySelectorAll('div[name*="price_update_date"]'), data.price_update_date, true)
+
             market_expire_element.classList.remove('d-none')
             market_expire_element.style.color = 'red'
             set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
-            select_price_method.value = 'sales_admin'
-            for (let i = 0; i < select_price_method.options.length; i++){
-                if (select_price_method.options[i].value === 'price_market'){
-                    select_price_method.remove(i);
-                    elem.querySelector('[name*="-final_price"]').value = round_rial(data.goods_price_market)
-                    break;
-                }
-            }
+            market_expire_element.setAttribute('data-status', true)
         } else {
             market_expire_element.classList.add('d-none')
         }
@@ -846,10 +846,10 @@ function set_price_data(data, elem, target) {
         }
 
         set_values(elem.querySelectorAll('[name*="price_settings"]'), data.price_settings)
-        set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
+        // set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
 
-        set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
-        set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
+        // set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+        // set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
         set_values(elem.querySelectorAll('[name*="itemid"]'), data.itemid)
         if (!elem.querySelector('input[name*="-goods_code_alt"]').value) {
             set_values(elem.querySelectorAll('[name*="last_price"]'), data.f_fee_cust)
@@ -903,9 +903,13 @@ function set_alt_price_data(data, elem) {
 }
 
 function set_price(target) {
+    // alert('set_price')
     const elem = findAncestor(target, "item")
     const price_method = elem.querySelector('[name*="price_method"]')
     const final_price = elem.querySelector('[name*="-final_price"]')
+    let ids = ["#submit_draft", "#submit_next", "#submit_copy", "#submit_save"];
+    let submit_buttons = ids.map(id => document.querySelector(id)).filter(el => el !== null);
+    document.querySelector('#expire_inquiry_error').classList.add('d-none')
     let stock_amount;
     let stock_amount_res;
     try {
@@ -933,32 +937,49 @@ function set_price(target) {
     switch (p_m) {
         case
             'last_sale':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
             final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_last_price"]').value);
-            // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_last_price"]').value);
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             break;
         case
             'last_sale_q':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_q_last_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
-            // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             break;
         case
             'price_avg':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_avg_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
-            // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             break;
         case
             'sales_admin':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
             final_price.disabled = false;
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             break;
         case
             'price_sheet1':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="express_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="express_transportation_cost_2"]')
@@ -981,6 +1002,10 @@ function set_price(target) {
             break;
         case
             'price_sheet2':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="air_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="air_transportation_cost_2"]')
@@ -1003,6 +1028,10 @@ function set_price(target) {
             break;
         case
             'price_sheet3':
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            // submit_buttons.forEach(function (submit_button){
+            //     submit_button.classList.remove('disabled')
+            // })
             final_price.disabled = true;
             cost1 = elem.querySelector('[name*="sea_transportation_cost_1"]')
             cost2 = elem.querySelector('[name*="sea_transportation_cost_2"]')
@@ -1024,17 +1053,63 @@ function set_price(target) {
             break;
         case
             'price_market':
+            debugger
             final_price.disabled = true;
-            const x_ = elem.querySelector('[name*="goods_price_market"]').value
-            if (x_){final_price.value = round_rial(x_);}
-
-            final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
-            // final_price_div.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
+            // const is_market_expire_date = elem.querySelector('[name*="market_expire_date"]').innerText === 'اعتبار استعلام به پایان رسیده'
+            // const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
+            // if (is_market_expire_date){
+            //     document.querySelector('#expire_inquiry_error').classList.remove('d-none')
+            //     document.querySelector('#expire_inquiry_row_number').innerText = elem.querySelector('.counter').innerText
+            //     submit_buttons.forEach(function (submit_button){
+            //         submit_button.classList.add('disabled')
+            //     })
+            // } else {
+            //     submit_buttons.forEach(function (submit_button){
+            //         submit_button.classList.remove('disabled')
+            //     })
+            //     const x_ = elem.querySelector('[name*="goods_price_market"]').value
+            //     if (x_){final_price.value = round_rial(x_);}
+            //     final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
+            // }
+            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
             break;
     }
     calculate_price(target)
 }
 
+function check_quotation_price_market_before_save_permission(submit_buttons){
+    debugger
+    let invalid_row_number = []
+    const items = document.querySelectorAll('.item')
+    console.log(items)
+    items.forEach(function (elem){
+        const price_method = elem.querySelector('[name*="price_method"]')
+        const final_price = elem.querySelector('[name*="-final_price"]')
+        let p_m = price_method ? price_method.value : null
+        console.log(p_m)
+        if (p_m === 'price_market'){
+            const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
+            if (is_market_expire_date){
+                invalid_row_number.push(elem.querySelector('.counter').innerText)
+                document.querySelector('#expire_inquiry_error').classList.remove('d-none')
+                document.querySelector('#expire_inquiry_row_number').innerText = invalid_row_number
+                submit_buttons.forEach(function (submit_button){
+                    submit_button.classList.add('disabled')
+                })
+            } else {
+                debugger
+                submit_buttons.forEach(function (submit_button){
+                    submit_button.classList.remove('disabled')
+                })
+                const x_ = elem.querySelector('[name*="goods_price_market"]').value
+                if (x_){final_price.value = round_rial(x_);}
+                final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
+                // elem.querySelector('input[name*="selected_price_code"]').value = ''
+            }
+        }
+    })
+
+}
 function hide_show_goods_alt(el) {
 
     const elem = findAncestor(el, 'item')

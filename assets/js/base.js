@@ -750,23 +750,23 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         const [days, hours, minuets] = diffTime(time_iso)
         if (days < 0 || hours < 0 || minuets < 0){
             return {
-                status: false,
-                message: "اعتبار استعلام به پایان رسیده"
+                status: true,
+                message: "اعتبار استعلام به پایان رسیده، این قیمت روی پیش فاکتور ذخیره نمیشود"
             }
         }
         else if(days >= 1){
             return {
-                status: true,
+                status: false,
                 message: `معتبر تا ${ days } روز و ${ hours - (days*24) } ساعت دیگر`
             }
         } else if (hours >= 1) {
             return {
-                status: true,
+                status: false,
                 message: `معتبر تا ${hours} ساعت دیگر`
             }
         } else {
             return {
-                status: true,
+                status: false,
                 message: `معتبر تا ${minuets} دقیقه دیگر`
             }
         }
