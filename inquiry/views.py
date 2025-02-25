@@ -374,10 +374,14 @@ class InquiryResultListView(BaseView):
 
         if self.object and last_price and self.object.price != last_price:
             self.object.price_update_date = timezone.now()
+            if self.request.user.base_group == 'bazar':
+                self.object.goods_market_date = timezone.now()
             self.object.save()
 
         if form.cleaned_data['update_price'] and self.object:
             self.object.price_update_date = timezone.now()
+            if self.request.user.base_group == 'bazar':
+                self.object.goods_market_date = timezone.now()
             self.object.save()
 
         if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:

@@ -6,6 +6,7 @@ from django.utils import timezone
 import os
 
 from django.utils.safestring import mark_safe
+from jalali_date.fields import JalaliDateField
 
 import dw.models
 from micmod_base.base import BaseModel
@@ -15,6 +16,7 @@ from django.apps import apps
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
+from tools.utils import to_jalali_date
 from translator import get_text as _
 from sepidar.models import BaseData
 from tools.form_tools import select_cquery
@@ -623,6 +625,30 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
             print(item)
             cls.objects.update_or_create(sku=item.sku,part_number=item.title,brand=item.goods_group,quality=1,group_sell=item.sales_group,
                                          group_buy=item.purchase_group,group_customs="",package=item.package)
+
+
+class ItemRakedManager(models.Manager):
+    pass
+
+
+class ItemRaked(BaseModel):
+    goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='items_raked')
+    priority_text = models.CharField(max_length=255, null=True, blank=True)
+    last_sale_date_str = models.CharField(max_length=255, null=True, blank=True)
+
+    created_date = None
+    last_update_date = None
+    creator_user = editor_user = code = title = group = None
+
+    objects = ItemRakedManager()
+
+    def __str__(self):
+        from datetime import datetime
+        date = ''
+        if self.last_sale_date_str:
+            year, month, day = map(int, self.last_sale_date_str.split('-'))
+            date = to_jalali_date(datetime(year=year, month=month, day=day))
+        return f'{self.priority_text} - {date}'
 
 
 class ItemWeight(AbsBaseModel):

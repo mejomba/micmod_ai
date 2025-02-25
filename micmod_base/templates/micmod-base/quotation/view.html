@@ -20,9 +20,9 @@
 
 {% block form_content %}
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
-    اعتبار استعلام ردیف(های)
+    <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
+        <span class="">ردیف(های)</span>
     <span id="expire_inquiry_row_number" class="bg-danger px-2 rounded text-white s-2"></span>
-    به پایان رسیده
     (روش تعیین قیمت را اصلاح کنید)
 </div>
             {% csrf_token %}
@@ -309,4 +309,6 @@ document.querySelectorAll('input').forEach(function (item){
     })
 })
 </script>
+{#    <script src="{% static 'js/jalali.js' %}"></script>#}
+    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0"></script>
 {% endblock extra_js %}

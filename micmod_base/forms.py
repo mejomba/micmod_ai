@@ -267,7 +267,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'goods_price_sheet1': forms.HiddenInput(),
             'goods_price_sheet2': forms.HiddenInput(),
             'goods_price_sheet3': forms.HiddenInput(),
-            'goods_price_market': forms.HiddenInput(),
+            # 'goods_price_market': forms.HiddenInput(),
             'goods_name_alt': forms.HiddenInput(),
             'goods_last_price': forms.HiddenInput(),
             'goods_total_sales': forms.HiddenInput(),

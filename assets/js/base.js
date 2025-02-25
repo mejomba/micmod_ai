@@ -345,16 +345,6 @@ function checkCookie() {
 }
 
 function copyToClipboard(elem) {
-    // debugger
-    // if (navigator.clipboard) {
-    //     navigator.clipboard.writeText(text).catch(function () {
-    //     });
-    // } else {
-    // let copyText = elem;
-    // elem.focus();
-    // elem.select();
-    // document.execCommand("copy");
-    // }
     const str = elem.outerText
     const el = document.createElement('textarea');
     el.value = str;
@@ -720,7 +710,6 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
 
             if (g_from_date && g_to_date && total_amount) {generic_payment_url += `?g_from_date=${g_from_date.value}&g_to_date=${g_to_date.value}&total_amount=${total_amount.value}&description=${description.value}`}
             custom_ajax_get(comment_form, generic_payment_url, generic_payment_element)
-            // [`${g_to_date.getAttribute('id')}, ${g_from_date.getAttribute('id')}`]
         }) // end eventListener
     }) // end forEach
     function addGenericPaymentInput(){
@@ -738,6 +727,13 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         debugger
         let t1 = new Date();
         let t2 = new Date(time_iso);
+        const isDateOnly = t2.getHours() === 0 && t2.getMinutes() === 0 && t2.getSeconds() === 0;
+        if (isDateOnly){
+            t1.setHours(0);
+            t1.setMinutes(0);
+            t1.setSeconds(0);
+            t1.setMilliseconds(0);
+        }
         let diffMilliseconds = t2 - t1;
         let diffDays = Math.floor(diffMilliseconds / (1000 * 60 * 60 * 24));
         let diffHours = Math.floor(diffMilliseconds / (1000 * 60 * 60));

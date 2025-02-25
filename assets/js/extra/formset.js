@@ -129,6 +129,7 @@ window.addEventListener('load', (event) => {
            }) // end listener
         }// end if
         addCommaSeperator()
+        disableEnterKey()
     }
 
     function removeForm(event) {
@@ -201,6 +202,16 @@ window.addEventListener('load', (event) => {
 }, false);
 
 
+function disableEnterKey(){
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+}
 
 
 let items, openAll, closeAll;

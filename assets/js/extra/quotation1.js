@@ -1,3 +1,4 @@
+// import {toGregorian} from "../jalali";
 
 function hideShowQuotationItemTransportationCost(nodeList, action) {
     nodeList.forEach(function (item){
@@ -573,7 +574,7 @@ function set_item_classes(item) {
     // }
 
     // const item = item.querySelector('[class*="final_price"]')
-    set_price(item)
+    set_price(item, null, true)
 
 }
 
@@ -756,39 +757,11 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 function set_price_data(data, elem, target) {
     if (data){
         // alert('set_price_data')
-        const market_diff_time = diffTimeInQuotation(data.market_expire_date || 10000)
-        const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
+
         let select_price_method = elem.querySelector('[name*="-price_method"]')
         // let ids = ["#submit_draft", "#submit_next", "#submit_copy", "#submit_save"];
         // let submit_buttons = ids.map(id => document.querySelector(id)).filter(el => el !== null);
-        if (!market_diff_time.status && data.is_bazar){
-            market_expire_element.setAttribute('data-status', false)
-            market_expire_element.classList.remove('d-none')
-            market_expire_element.style.color = 'green'
-            set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
-            set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
-            set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
-            set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
-            // submit_buttons.forEach(function (submit_button){
-            //     submit_button.classList.remove('disabled')
-            // })
 
-            // document.querySelector('#form-footer-container').style.height = '40px';
-            // if (select_price_method.querySelector(`option[value="price_market"]`) === null){
-            //     let p = new Option("قیمت بازار", "price_market");
-            //     select_price_method.appendChild(p)
-            // }
-        } else if (market_diff_time.status && data.is_bazar){
-            set_values(elem.querySelectorAll('label[name*="goods_price_market"]'), data.goods_price_market)
-            set_values(elem.querySelectorAll('div[name*="price_update_date"]'), data.price_update_date, true)
-
-            market_expire_element.classList.remove('d-none')
-            market_expire_element.style.color = 'red'
-            set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
-            market_expire_element.setAttribute('data-status', true)
-        } else {
-            market_expire_element.classList.add('d-none')
-        }
         // set_values(elem.querySelectorAll('[name$="last__sale__goods__name"]'), data.text)
         set_values(elem.querySelectorAll('[name$="-goods_name"]'), data.text)
         set_values(elem.querySelectorAll('[name$="-goods_name_lbl"]'), data.text)
@@ -878,7 +851,7 @@ function set_price_data(data, elem, target) {
         } else {
             elem.querySelector('[name="box-alt-goods"]').classList.remove('d-none')
         }
-        set_price(elem.querySelector('[name*="-goods_name"]'))
+        set_price(elem.querySelector('[name*="-goods_name"]'), data)
     }
 }
 
@@ -902,7 +875,7 @@ function set_alt_price_data(data, elem) {
     set_price(elem.querySelector('[name*="-goods_name"]'))
 }
 
-function set_price(target) {
+function set_price(target, data=null) {
     // alert('set_price')
     const elem = findAncestor(target, "item")
     const price_method = elem.querySelector('[name*="price_method"]')
@@ -937,7 +910,7 @@ function set_price(target) {
     switch (p_m) {
         case
             'last_sale':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             final_price.disabled = true;
             final_price_value = elem.querySelector('[name*="goods_last_price"]').value;
             final_price.value = final_price_value
@@ -948,7 +921,7 @@ function set_price(target) {
             break;
         case
             'last_sale_q':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_q_last_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_q_last_price"]').value);
@@ -958,7 +931,7 @@ function set_price(target) {
             break;
         case
             'price_avg':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             final_price.disabled = true;
             final_price.value = elem.querySelector('[name*="goods_avg_price"]').value;
             final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_avg_price"]').value);
@@ -968,7 +941,7 @@ function set_price(target) {
             break;
         case
             'sales_admin':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             final_price.disabled = false;
             // submit_buttons.forEach(function (submit_button){
             //     submit_button.classList.remove('disabled')
@@ -976,7 +949,7 @@ function set_price(target) {
             break;
         case
             'price_sheet1':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             // submit_buttons.forEach(function (submit_button){
             //     submit_button.classList.remove('disabled')
             // })
@@ -1002,7 +975,7 @@ function set_price(target) {
             break;
         case
             'price_sheet2':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             // submit_buttons.forEach(function (submit_button){
             //     submit_button.classList.remove('disabled')
             // })
@@ -1028,7 +1001,7 @@ function set_price(target) {
             break;
         case
             'price_sheet3':
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
             // submit_buttons.forEach(function (submit_button){
             //     submit_button.classList.remove('disabled')
             // })
@@ -1071,43 +1044,131 @@ function set_price(target) {
             //     if (x_){final_price.value = round_rial(x_);}
             //     final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
             // }
-            check_quotation_price_market_before_save_permission(submit_buttons, final_price)
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
+
+            // const market_diff_time = diffTimeInQuotation(data.market_expire_date || 10000)
+            // const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
+
+            // const [year, month, day] = elem.querySelector('[name*="market_expire_date"]').innerText.split('-').map(Number);
+            // const miladiDate = jalaali.toGregorian(year, month, day);
+            // const inquiryDate = new Date(miladiDate[0], miladiDate[1] - 1, miladiDate[2]);
+            // const now = new Date(); // زمان فعلی
+            // const date72 = new Date(now.getTime() - 72 * 60 * 60 * 1000); // 72 ساعت قبل
+            // if (inquiryDate < date72) {
+            //   console.log("تاریخ وارد شده قبل از تاریخ فعلی است.");
+            // } else if (inquiryDate > date72) {
+            //   console.log("تاریخ وارد شده قبل از تاریخ فعلی است.");
+            // }
+
             break;
     }
     calculate_price(target)
 }
 
-function check_quotation_price_market_before_save_permission(submit_buttons){
+function date_str_to_iso_date(date_str, sep='-'){
     debugger
+    const [year, month, day] = date_str.split(sep).map(Number);
+    const miladiDate = toGregorian(year, month, day);
+    return new Date(miladiDate.gy, miladiDate.gm - 1, miladiDate.gd);
+}
+
+function add_n_hour(currentDate ,n){
+    return new Date(currentDate.getTime() + (n * 60 * 60 * 1000));
+}
+
+function check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m){
+    debugger
+    let market_expire_iso_date;
+    let data_bazar = data && data.is_bazar
+    if (!data_bazar && p_m === 'price_market'){data_bazar = true}
+    try {
+        market_expire_iso_date = data.market_expire_date
+    } catch (e) {
+        console.log(e)
+        market_expire_iso_date = add_n_hour(date_str_to_iso_date(elem.querySelector('[name="price_update_date"]').innerText), 72)
+    }
+
+    const market_diff_time = diffTimeInQuotation(market_expire_iso_date || 10000)
+    const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
+
+    if (!market_diff_time.status && data_bazar){ // valid price_market
+            market_expire_element.setAttribute('data-status', false)
+            market_expire_element.classList.remove('d-none')
+            market_expire_element.style.color = 'green'
+        if (data){
+            set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
+            set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
+            set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
+            set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
+        }
+    } else if (market_diff_time.status && data_bazar){ // invalid price_market
+        if (data){
+            set_values(elem.querySelectorAll('label[name*="goods_price_market"]'), data.goods_price_market)
+            set_values(elem.querySelectorAll('div[name*="price_update_date"]'), data.price_update_date, true)
+        }
+
+        market_expire_element.classList.remove('d-none')
+        market_expire_element.style.color = 'red'
+        set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
+        market_expire_element.setAttribute('data-status', true)
+    } else {
+        market_expire_element.classList.add('d-none')
+        // const x_ = elem.querySelector('[name*="goods_price_market"]').value
+        // if (x_){final_price.value = round_rial(x_);}
+        // final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
+    }
+
     let invalid_row_number = []
+    let all_valid = []
     const items = document.querySelectorAll('.item')
     console.log(items)
     items.forEach(function (elem){
         const price_method = elem.querySelector('[name*="price_method"]')
         const final_price = elem.querySelector('[name*="-final_price"]')
         let p_m = price_method ? price_method.value : null
+        const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
         console.log(p_m)
+        debugger
         if (p_m === 'price_market'){
-            const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
+            // const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
             if (is_market_expire_date){
                 invalid_row_number.push(elem.querySelector('.counter').innerText)
                 document.querySelector('#expire_inquiry_error').classList.remove('d-none')
                 document.querySelector('#expire_inquiry_row_number').innerText = invalid_row_number
-                submit_buttons.forEach(function (submit_button){
-                    submit_button.classList.add('disabled')
-                })
+                // submit_buttons.forEach(function (submit_button){
+                //     submit_button.classList.add('disabled')
+                // })
             } else {
                 debugger
-                submit_buttons.forEach(function (submit_button){
-                    submit_button.classList.remove('disabled')
-                })
+                // submit_buttons.forEach(function (submit_button){
+                //     submit_button.classList.remove('disabled')
+                // })
                 const x_ = elem.querySelector('[name*="goods_price_market"]').value
                 if (x_){final_price.value = round_rial(x_);}
                 final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
                 // elem.querySelector('input[name*="selected_price_code"]').value = ''
             }
+        } else { // select !price_market
+
+        }
+
+        if (is_market_expire_date && p_m === 'price_market'){ // invalid
+            all_valid.push(false)
+        } else { // valid
+            all_valid.push(true)
         }
     })
+
+    let allTrue = all_valid.every(el => el === true);
+    if (allTrue){
+        submit_buttons.forEach(function (submit_button){
+            submit_button.classList.remove('disabled')
+        })
+    } else {
+        submit_buttons.forEach(function (submit_button){
+            submit_button.classList.add('disabled')
+        })
+    }
 
 }
 function hide_show_goods_alt(el) {
@@ -1225,6 +1286,7 @@ function newFormatRepoItem(repo) {
     if (repo_sea == undefined){
         repo_sea = '-'
     }
+    debugger
     if (repo.goods_market_date){goods_market_date=repo.goods_market_date} else {goods_market_date='-'}
     if (repo.goods_price_market){goods_price_market=repo.goods_price_market} else {goods_price_market='-'}
     let parent_code = '';
