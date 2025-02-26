@@ -265,6 +265,83 @@
 
 
     <script>
+    function check_inquiry_price_diff(){
+        const id_sku_c = document.querySelector('#id_sku_c')
+        const id_price = document.querySelector('#id_price')
+        const id_currency_type = document.querySelector('#id_currency_type')
+        let is_valid = true;
+
+        $.ajax({
+            url: '/inquiry/item_list',
+            dataType: "json",
+            type: "GET",
+            async: false,
+            data: {
+                    q: id_sku_c.value, party_id: null, page: 1,
+                    id_currency_ref: 1,
+                    id_payment_method: null,
+                    id_market_grade: null,
+                    id_customer_grade: null,
+                    quantity: null,
+                    'trade_price_code': null,
+                    'bazar_price_code': null,
+                },
+            cache: true,
+            success: function (data) {
+                debugger
+                let last_price_currency_type = data.items[0].currency_type
+                let currency_type = id_currency_type.value
+                let last_price = data.items[0].price
+                let price = id_price.value
+                let rate_usd_rmb = data.items[0].rate
+                let rmb_to_usd = last_price_currency_type == 2 && currency_type == 3
+                let usd_to_rmb = last_price_currency_type == 3 && currency_type == 2
+                let diff_value_percent;
+
+                if (last_price_currency_type == currency_type){
+                    if (last_price != price){
+                        let exchanged_price = price
+                        let diff_value = ((exchanged_price - last_price) / last_price)
+                        diff_value_percent = Math.abs(diff_value) * 100
+                    }
+                } else if (usd_to_rmb){
+                    let exchanged_price = price / rate_usd_rmb
+                    let diff_value = ((exchanged_price - last_price) / last_price)
+                    {#let diff_value = ((exchanged_price - last_price) / last_price) - 1#}
+                    diff_value_percent = Math.abs(diff_value) * 100
+                } else if (rmb_to_usd){
+                    let exchanged_price = price * rate_usd_rmb
+                    let diff_value = (exchanged_price - last_price) / last_price
+                    diff_value_percent = Math.abs(diff_value) * 100
+                }
+
+                if (diff_value_percent > 50){
+                    let msg = "اختلاف قیمت ریالی بیش از ۵۰ درصد. آیا این استعلام را ثبت میکنید؟"
+                    msg += "\n\n              برای تایید OK و برای بازبینی و اصلاح cancel انتخاب کنید \n"
+                    is_valid = confirm(msg)
+                }
+            }
+        });
+        return is_valid
+    }
+
+        const submit_inquiry_btn = document.querySelector('input[name="submit"]')
+        const submit_copy_inquiry_btn = document.querySelector('input[name="submit/copy"]')
+        submit_inquiry_btn && submit_inquiry_btn.addEventListener('click', function(e){
+            const is_inquiry_valid = check_inquiry_price_diff()
+            debugger
+            if (!is_inquiry_valid){
+                e.preventDefault()
+            }
+        })
+
+        submit_copy_inquiry_btn && submit_copy_inquiry_btn.addEventListener('click', function(e){
+            const is_inquiry_valid = check_inquiry_price_diff()
+            debugger
+            if (!is_inquiry_valid){
+                e.preventDefault()
+            }
+        })
 
     </script>
 {% endblock extra_js %}

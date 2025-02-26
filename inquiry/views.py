@@ -348,9 +348,15 @@ class InquiryResultListView(BaseView):
             obj.is_new = True
         obj.user = self.request.user
         if obj:
-            context.update({
-                'form': self.form_class(instance=obj)
-            })
+            if obj.pk:
+                context.update({
+                    'form': self.form_class(instance=obj)
+                })
+            else:
+                obj.currency_type_id = None
+                context.update({
+                    'form': self.form_class(instance=obj)
+                })
         if self.request.GET.get('pk'):
             context['submit_copy'] = False
             context['form'].instance.submit_copy = False
@@ -795,9 +801,17 @@ def get_item(request):
                         )
                         item["price_settings"] = price_setting.pk
                         if str(id_currency_ref) == str(1):  # rial
+                            item['price'] = price_inquiry_result.price
+                            item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                            item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                            item['currency_type'] = price_inquiry_result.currency_type.pk
                             item["rial_final_price"] = price_inquiry_result.rial_final_price
                             item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
                         elif str(id_currency_ref) == str(2):  # rmb
+                            item['price'] = price_inquiry_result.price
+                            item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                            item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                            item['currency_type'] = price_inquiry_result.currency_type.pk
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
