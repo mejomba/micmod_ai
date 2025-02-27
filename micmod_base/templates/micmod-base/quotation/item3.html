@@ -7,9 +7,11 @@
 
 <div class="card item p-0 my-2 {% if not forloop.last %} sortable-item {% endif %}" dir="rtl">
 {% if form_s.errors %}
-<div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
+    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
+<div class="bg-light-danger"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
 {% endif %}
 {% if nested.errors %}
+    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
 <div class="bg-secondary"><span>row ({{ forloop.counter }})</span> {{ nested.errors }}</div>
 {% endif %}
     {% for hidden in form_s.hidden_fields %}

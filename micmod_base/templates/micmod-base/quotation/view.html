@@ -57,10 +57,11 @@
                                                             {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-4 ms-lg-auto">
-                                                            {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
+                                                            {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-12">
-                                                            {% render_field_group form.addition form.tax form.sale_type label_type='on-border '%}
+                                                            {% render_field_group form.addition form.tax label_type='on-border '%}
+                                                            <div class="d-none">{{ form.market_grade }}</div>
                                                         </div>
                                                     </div>
 {#                                                </div>#}
