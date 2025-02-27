@@ -894,7 +894,7 @@ class QuotationItem(BaseModel):
 
     @property
     def row_price(self):
-        return round_rial(int(self.net_price))
+        return round_rial(float(self.net_price))
 
     @property
     def price(self):
