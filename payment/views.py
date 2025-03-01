@@ -67,7 +67,7 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
             form.errors.update({'manager_confirmation': 'بدون تایید امکان ارسال به مرحله نهایی وجود ندارد'})
             return super().form_invalid(form)
 
-        is_paid = self.object.is_paid  # store is_paid value before save
+        is_paid = self.object.is_paid if self.object else None  # store is_paid value before save
 
         res = super().form_valid(form)
         if self.state_index == 2 and 'next' in self.request.POST and form.cleaned_data.get(
