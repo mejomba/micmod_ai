@@ -819,7 +819,7 @@ function set_price_data(data, elem, target) {
         }
 
         set_values(elem.querySelectorAll('[name*="price_settings"]'), data.price_settings)
-        // set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
+        set_values(elem.querySelectorAll('[name*="price_update_date"]'), data.price_update_date, true)
 
         // set_values(elem.querySelectorAll('[name*="goods_price_market"]'), data.goods_price_market)
         // set_values(elem.querySelectorAll('[name*="goods_market_date"]'), data.goods_market_date, true)
