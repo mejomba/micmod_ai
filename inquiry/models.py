@@ -72,7 +72,7 @@ class PriceInquiryResult(BaseModel):
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
     variants_json = models.JSONField(_('variants_json'), null=True, blank=True)
-    bazar_expire = models.SmallIntegerField(default=3)
+    price_expire_date = models.SmallIntegerField(_('price_expire_date'), null=True, blank=True)
     # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):
@@ -86,7 +86,7 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def bazar_expire_date(self):
-        bazar_expire_delta = timezone.timedelta(days=self.bazar_expire)
+        bazar_expire_delta = timezone.timedelta(days=self.price_expire_date)
         return self.price_update_date + bazar_expire_delta
 
     @property

@@ -680,5 +680,6 @@
     "t-payment": "پرداخت",
     "generic-payment": "پرداخت عمومی",
     "production_day_activities": "فعالیت های روز تولید",
-    "is_bazar": "بازار"
+    "is_bazar": "بازار",
+    "price_expire_date": "اعتبار استعلام (روز به عدد)"
 }

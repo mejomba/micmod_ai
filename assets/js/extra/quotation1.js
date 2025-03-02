@@ -1080,6 +1080,7 @@ function check_quotation_price_market_before_save_permission(submit_buttons, ele
     debugger
     let market_expire_iso_date;
     let data_bazar = data && data.is_bazar
+    // let market_expire_limit_days = parseInt(elem.querySelector('.market_expire_limit_days').dataset.market_expire_limit_days)
     if (!data_bazar && p_m === 'price_market'){data_bazar = true}
     try {
         market_expire_iso_date = data.market_expire_date

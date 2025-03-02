@@ -353,6 +353,8 @@ class InquiryResultListView(BaseView):
                     'form': self.form_class(instance=obj)
                 })
             else:
+                if self.request.user.base_group == 'bazar':
+                    obj.price_expire_date = 3
                 obj.currency_type_id = None
                 context.update({
                     'form': self.form_class(instance=obj)

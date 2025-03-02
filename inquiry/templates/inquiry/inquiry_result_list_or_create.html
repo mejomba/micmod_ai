@@ -36,22 +36,28 @@
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
                 <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
                 {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
-                {% render_field_by_order form form.description form.active form.update_price form.item_weight label='on-border' %}
+                {% render_field_by_order form form.description  form.item_weight margin_b=5 label='on-border' %}
+
+                <span class="{% if request.user.base_group == 'trade' %} d-none {% endif %}">
+                {% render_field_by_order form form.price_expire_date margin_b=5 label='on-border' %}
+                </span>
+
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
-                {% render_field_by_order form form.submit_for_qi form.active_main_item label='on-border' margin_b=5 %}
+
+                {% render_field_by_order form form.submit_for_qi form.active form.update_price label='on-border' margin_b=5 css='mt-10' %}
+
                 <span class="d-none">{{ form.variants_json }}</span>
-                <span class="d-none">{{ form.bazar_expire }}</span>
 
                 {% if request.user|has_group:"trade_user" %}
                     {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
                 {% endif %}
+            {% render_field_by_order form form.active_main_item %}
 
             </div>
         </div>
         <div class="col-2">
             <div class="row">
-                {#                {% include 'inquiry/partial/item_price_irr.html' with obj=form.instance detail=False %}#}
             </div>
         </div>
     </div>
@@ -120,7 +126,6 @@
                         {#$('#main-form :input').prop('disabled', true)#}
                     }
                 });
-                {#custom_ajax_get(m_form, `${window.location.origin}/inquiry/ajax/inquiryresult/list/data/?sku=${id_sku_c.val()}`, ajaxAria)#}
 
                 skuSearch.value = e.target.value;
 
@@ -129,15 +134,6 @@
                 realSkuField.dispatchEvent(event);
 
             })
-            {#document.addEventListener("load", function (e) {#}
-            {#    const id_sku_c_value = id_sku_c.val();#}
-            {#    const skuSearch = document.querySelector('.sku-search>input')#}
-            {#    if (id_sku_c_value && skuSearch){#}
-            {#        skuSearch.value = id_sku_c_value#}
-            {#        skuSearch.dispatchEvent(new Event('change'))#}
-            {#    }#}
-            //})
-            {##}
             setTimeout(function () {
                 const id_sku_c_value = id_sku_c.val();
                 const skuSearch = document.querySelector('.sku-search>input')
@@ -337,7 +333,6 @@
 
         submit_copy_inquiry_btn && submit_copy_inquiry_btn.addEventListener('click', function(e){
             const is_inquiry_valid = check_inquiry_price_diff()
-            debugger
             if (!is_inquiry_valid){
                 e.preventDefault()
             }
