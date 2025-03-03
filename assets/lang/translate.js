@@ -1,3 +1,53 @@
+async function get_translation_data(file_path){
+    debugger
+    try {
+        const response = await fetch('/assets/lang/' + file_path + '.json');
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+
+    } catch (error) {
+        console.error('Error loading JSON:', error);
+        return null; // در صورت خطا مقدار `null` برمی‌گردد
+    }
+
+}
+
+function translate_handler(lang){
+    debugger
+    const elements_for_translate = document.querySelectorAll('[data-key]')
+    get_translation_data(lang).then(data => {
+        elements_for_translate && elements_for_translate.forEach(function (item){
+            debugger
+            if (item.dataset.key in data){
+                item.innerText = data[item.dataset.key]
+            } else {
+                item.innerText = item.dataset.key
+                console.log(item.dataset.key , 'not found in', lang, 'translation file')
+            }
+            // try {
+            //     item.innerText = data[item.dataset.key]
+            // } catch (e) {
+            //     console.log(e)
+            //     item.innerText = item.dataset.key
+            // }
+        })
+    }).catch(error => console.error('Error:', error));
+}
+
+function get_translate(){
+    debugger
+    const languages = document.querySelectorAll('[class$="language"]')
+    languages && languages.forEach(function (item){
+        item.addEventListener('click', () => translate_handler(item.dataset.lang))
+        console.log(item.dataset.lang)
+    })
+}
+try {
 !function (n) {
     "use strict";
     var e, t, a, o = localStorage.getItem("Dason-language"), r = "en";
@@ -61,3 +111,10 @@ var user_login = document.getElementById("login-msg"), toastTrigger = document.g
 user_login && (toastTrigger.addEventListener("click", function () {
     new bootstrap.Toast(toastLive).show()
 }), toastTrigger.click());
+
+} catch (e) {
+    console.log(e)
+}
+document.addEventListener('DOMContentLoaded', function (e){
+    get_translate()
+})
