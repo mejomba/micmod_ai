@@ -86,7 +86,7 @@ class PriceInquiryResult(BaseModel):
 
     @property
     def bazar_expire_date(self):
-        bazar_expire_delta = timezone.timedelta(days=self.price_expire_date)
+        bazar_expire_delta = timezone.timedelta(days=self.price_expire_date or 3000)
         return self.price_update_date + bazar_expire_delta
 
     @property
