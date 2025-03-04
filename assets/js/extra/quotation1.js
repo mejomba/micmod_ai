@@ -908,6 +908,9 @@ function set_price(target, data=null) {
     }
     debugger
     switch (p_m) {
+        case '':
+            check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
+            break;
         case
             'last_sale':
             check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
