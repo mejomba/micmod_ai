@@ -25,7 +25,45 @@
 {% endblock content %}
 {% block form_content %}
     {% csrf_token %}
-    <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-3">
+    {% if request.user.base_group == 'trade' %}
+        <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-3">
+        <div class="col-12">
+            <div class="gap-1 py-1 d-flex">
+                <div data-key="price"></div>
+                <span>:</span> {% if form.instance.pk %}
+                <span class="persian-digit">{{ form.instance.pk }}</span>
+            {% else %} <span data-key="new"></span>{% endif %}
+            </div>
+            <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
+                <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
+                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
+                {% render_field_by_order form form.description  form.item_weight margin_b=5 label='on-border' %}
+
+                <span class="d-none">
+                {% render_field_by_order form form.price_expire_date margin_b=5 label='on-border' %}
+                </span>
+
+                {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
+                {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
+
+                {% render_field_by_order form form.submit_for_qi form.active form.update_price label='on-border' margin_b=5 css='mt-10' %}
+
+                <span class="d-none">{{ form.variants_json }}</span>
+
+                {% if request.user|has_group:"trade_user" %}
+                    {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
+                {% endif %}
+            {% render_field_by_order form form.active_main_item %}
+
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="row">
+            </div>
+        </div>
+    </div>
+    {% else %}
+        <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-3">
         <div class="col-12">
             <div class="gap-1 py-1 d-flex">
                 <div data-key="price"></div>
@@ -61,7 +99,7 @@
             </div>
         </div>
     </div>
-
+    {% endif %}
     <div class="table-responsive p-2 mb-15">
         <table id="inquiry_list" width="100%" class="m-table table-bordered w-100">
 
