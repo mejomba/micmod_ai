@@ -53,6 +53,14 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
+                            قیمت MAC
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.price_mac|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
                             تامین کننده MAC
                         </div>
                         <span class="badge">
