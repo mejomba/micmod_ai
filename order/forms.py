@@ -5,6 +5,7 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from files.models import File
+from inquiry.models import Supplier
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm
@@ -45,6 +46,19 @@ class OrderForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderForm, self).__init__(*args, **kwargs)
+        qs = Supplier.objects.filter(base_group='trade')
+        self.fields['supplier_trade'] = forms.ModelChoiceField(
+            queryset=qs,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            initial=self.instance.supplier_trade or qs.first().pk if qs.first() else 0,
+            required=False
+        )
+        self.fields['supplier_mac'] = forms.ModelChoiceField(
+            queryset=qs,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            initial=self.instance.supplier_mac or qs.first().pk if qs.first() else 0,
+            required=False
+        )
         self.fields['trade_commitment_date'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('request_date'),
