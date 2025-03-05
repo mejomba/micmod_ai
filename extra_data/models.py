@@ -392,7 +392,7 @@ class Item(BaseModel):
                         total_sum=Sum('quantity'))['total_sum'] or 0
                     if stock_qty.is_integer():
                         qty = int(stock_qty)
-                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) / (آزاد:{(qty - quantity_sum):,})'))
+                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد:{(qty - quantity_sum):,})'))
                     else:
                         qty = stock_qty
                         res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}'))
@@ -410,12 +410,12 @@ class Item(BaseModel):
                         remaining_quantity = o.remaining_quantity
                         if remaining_quantity > 0:
                             res.append((str(o.pk),
-                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g})"))
+                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} کل) - (مانده {remaining_quantity:0.20g})"))
             else:
                 remaining_quantity = o.remaining_quantity
                 if remaining_quantity > 0:
                     res.append((str(o.pk),
-                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} از {remaining_quantity:0.20g}) [ {o.estimate_arrive_at} ]"))
+                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.quantity:0.20g}) - (مانده {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
 
             # remaining_quantity = o.remaining_quantity
             # if remaining_quantity > 0:
