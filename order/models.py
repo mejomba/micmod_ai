@@ -15,6 +15,7 @@ from tools import const
 
 
 class Order(BaseModeWF):
+    # SALES #######################################
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
@@ -40,7 +41,7 @@ class Order(BaseModeWF):
     description_sale = models.TextField(_('description_sale'), null=True, blank=True)
     order_type = models.CharField(_('order_type'), max_length=64, choices=ORDER_TYPE_CHOICE, default='china',
                                   null=True, blank=True)
-    price = models.FloatField(_("price"), null=True, blank=True)
+    price = models.FloatField(_("order_final_price"), null=True, blank=True, help_text='قیمت نهایی (در صورت وجود تضاد در قیمت)')
 
     # TRADE #######################################
     item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
