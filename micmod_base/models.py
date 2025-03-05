@@ -403,7 +403,7 @@ class Quotation(SLSDoc):
             return
 
     @property
-    def not_over(self):
+    def not_over_q(self):
         factored_count = 0
         not_factored_count = 0
         wh_count = 0
@@ -628,6 +628,32 @@ class QuotationItem(BaseModel):
         is_order_incomplete = False
         is_order_wh_complete = False
         is_order_wh_incomplete = False
+        related_supply_locations = []
+        for fi in self.qi.all() if self.pk else []:
+            # if fi.supply_locations.order_m2m.exists():
+            #     for oo in fi.supply_locations.order_m2m.all():
+            #         related_supply_locations.append(
+            #             {
+            #                 fi.factor.pk: {
+            #                     fi.pk: (fi.supply_locations.is_wh, oo.pk, oo.quantity,
+            #                             oo.estimate_arrive_at)
+            #                 }
+            #             }
+            #         )
+            #
+            #         related_supply_locations.append(
+            #             {
+            #                 fi.factor.pk: {
+            #                     fi.pk: (fi.supply_locations.is_wh, fi.supply_locations.pk, fi.supply_locations.quantity,
+            #                             fi.supply_locations.estimate_arrive_at)
+            #                 }
+            #             }
+            #         )
+            #     related_supply_locations = (fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity,
+            #                                 fi.supply_locations.estimate_arrive_at)
+            related_supply_locations.append((fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at))
+        # related_supply_locations = [(fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at) for fi in self.qi.all() if self.pk]
+        # related_supply_locations = self.qi.all()[0].supply_locations if self.pk else False
 
         q_wh = 0
         q_order = 0
@@ -688,7 +714,7 @@ class QuotationItem(BaseModel):
         return (
             is_wh_complete, is_order_complete, is_order_wh_complete,
             is_wh_incomplete, is_order_incomplete, is_order_wh_incomplete,
-            nothing
+            nothing, related_supply_locations
                 )
 
 
