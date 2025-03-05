@@ -113,7 +113,9 @@ class Order(BaseModeWF):
 
     @property
     def final_price(self):
-        price = self.price_mac or self.price_trade or 0
+        # issues 295
+        """ calculate effective price for order"""
+        price = self.price_mac or self.price or self.price_trade or 0
         return price
 
     @property
