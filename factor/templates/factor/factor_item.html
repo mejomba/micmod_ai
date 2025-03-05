@@ -54,12 +54,13 @@
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">شماره سپیدار:</span>
+                        <span class="me-2">پیش فاکتور</span>
                         <span>{{ quotation.sepidar_number|default_if_none:'-' }}</span>
                     </span>
                     <span class="d-flex">
-                        <span class="me-3 bold w-25">شماره سپیدار</span>
-                        <span>(فاکتور)</span>
-                        <span class="ms-3 me-1">{{ form.instance.sepidar_number|default_if_falsy:"-" }}</span>
+                        <span class="me-3 bold w-25">شماره سپیدار:</span>
+                        <span class="me-2">فاکتور</span>
+                        <span class="">{{ form.instance.sepidar_number|default_if_falsy:"-" }}</span>
                     </span>
                 </div>
             </div>
@@ -258,7 +259,6 @@
                                 |
                                 <span class="row-total-price pt-1 text-info"></span>
                             </span>
-                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
                         </div>
                     </span>
                     <div class="col-3 px-1 parent-class">
@@ -267,6 +267,7 @@
                             <div class="w-75 d-flex flex-column justify-content-between">
                             {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 factor_item.instance %}
                                 <a href="{% url 'order:order.view' factor_item.instance.supply_locations.pk %}" class="text-danger hover-link text-start mt-2 font-size-12" target="_blank">{{ factor_item.instance.supply_locations.description }}</a>
+                                <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
                             </div>
 
                             <div class="w-25">
@@ -386,7 +387,7 @@
                                 |
                                 <span class="row-total-price pt-1 text-info"></span>
                             </span>
-                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </div>
                     </span>
                     <div class="col-3 px-0 d-flex">
