@@ -23,7 +23,7 @@
       <tbody>
       {% for foo in form.fields.order_m2m.queryset %}
           {% with foo.remaining_quantity as remaining_quantity %}
-              {% if remaining_quantity > 0 %}
+              {% if remaining_quantity > 0 and not foo.is_wh %}
                 <tr class="text-right">
                   <th scope="row" class="text-end available_order_rel">{{ foo.id }}</th>
                   <td class="text-end">{{ foo.order_title }}</td>
@@ -74,8 +74,19 @@
             {% for o in f.supply_locations.order_base_items.all %}
                 <span class="me-10">
                 <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black bg-light-primary px-2 mb-3 rounded-right">
-                    <span>از سفارش</span>
-                    <span class="me-2">{{ o.order_rel.pk }}</span>
+                    {% if o.sepidar_wh_code %}
+                        <span>از انبار</span>
+                        <span class="mx-1">{{ o.get_wh_name }}</span>
+                        <span class="font-size-11">
+                            (رزور
+                        {{ o.order_rel.pk }})
+                        </span>
+                        <span class="me-2 font-size-11"></span>
+                    {% else %}
+                        <span>از سفارش</span>
+                        <span class="me-2">{{ o.order_rel.pk }}</span>
+                    {% endif %}
+
                     <span class="text-success px-1 rounded bold">{{ o.quantity|floatformat:"-2g" }}</span>
                     <span>عدد</span>
                 </a>
