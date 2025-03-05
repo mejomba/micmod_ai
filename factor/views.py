@@ -58,20 +58,33 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
         res = super().form_valid(form)
-        if self.is_need_sales_admin_confirmation() and 'next' in self.request.POST:
+        if 'back' in self.request.POST and not self.is_need_sales_admin_confirmation() and self.state_index == 2:
+            # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
+            last_wf_belong_to_sales_user = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
             wf_data = {
-                'state': self.flow_config.get('flow_state_list')[self.state_index],
+                'wf_status': 2,  # back
+                'state': self.flow_config.get('flow_state_list')[self.state_index - 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
                 'from_user': self.request.user,
-                'to_user': get_user_model().objects.filter(groups__name='accounting'),
-                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 1],
+                'to_user': last_wf_belong_to_sales_user.to_user,  # get_user_model().objects.filter(groups__name='accounting_user').first(),
+                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index - 2],
+                'object_id': self.object.pk,
+            }
+            self.save_flow(self.request, **wf_data)
+        if 'next' in self.request.POST and not self.is_need_sales_admin_confirmation() and self.state_index == 0:
+            wf_data = {
+                'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
+                'wf_description': 'بدون نیاز به تایید مدیر فروش',
+                'from_user': self.request.user,
+                'to_user': get_user_model().objects.filter(groups__name='accounting_user').first(),
+                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
                 'object_id': self.object.pk,
             }
             self.save_flow(self.request, **wf_data)
         return res
 
     def is_need_sales_admin_confirmation(self):
-        x = not all([all((x.qi.final_price == x.price, x.qi.goods_code_fk == x.goods_code)) for x in
+        x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
                 self.object.factoritem_set.all()])
         return x
 
@@ -133,7 +146,7 @@ def search_factor_view(request, *args, **kwargs):
     if q.isdigit():
         q_int = int(q)
     q_str = q
-    q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس')
+    q_filter = Q(last_work_flow__current_state_name='مرحله نهایی')
     q_required = {'cancel': False, "is_deleted": False}
     for s in search_by:
         if s == 'search_customer':
@@ -149,13 +162,16 @@ def search_factor_view(request, *args, **kwargs):
         if s == 'search_part_number':
             q_filter &= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     if not search_by:
-        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') | Q(last_work_flow__current_state_name='تایید کارشناس') & \
+        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') & \
                    (Q(customer_party_id__title__icontains=q_str) | \
                    Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
                    Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
-    quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    if 'search_id' in search_by:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, **q_required).order_by('-id').distinct()
+    else:
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
@@ -244,15 +260,15 @@ class FactorsList(LoginRequiredMixin, View):
 class FactorListDatatable(AjaxDatatableView):
     model = Factor
     title = 'currency_list'
-    initial_order = [["pk", "desc"], ]
+    initial_order = [["id", "desc"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'currency-search'},
-        {'name': 'id', 'visible': False, 'className': 'border'},
+        {'name': 'pk', 'visible': False, 'className': 'currency-search'},
+        {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
@@ -271,7 +287,7 @@ class FactorListDatatable(AjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.q.id,)),
             obj.q.id if obj.q else '-'
         )
-        row['pk'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+        row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
             reverse('factor:factor.view', args=(obj.id,)),
             obj.pk if obj.pk else '-'
         )

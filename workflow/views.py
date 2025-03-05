@@ -35,8 +35,9 @@ class FlowBaseView(SingleObjectMixin):
         to_user = kwargs.get('to_user')
         current_state_name = kwargs.get('current_state_name')
         object_id = kwargs.get('object_id') or self.object.pk
+        wf_status = kwargs.get('wf_status') or 3
         flow_data = {
-            "wf_status": 3,
+            "wf_status": wf_status,
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
             "state": state,
