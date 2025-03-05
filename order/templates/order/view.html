@@ -100,6 +100,8 @@
             {% endif %}
 
             <div class="overflow-scroll">
+                <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+                <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
                 {% get_comment_user_list form request.user %}
                 <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
@@ -113,8 +115,6 @@
 
 
 {% endwith %}
-    <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
-<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
     {% if flow_state_index == 7 %}
     <div class="card card-custom mb-20">
         <div class="card-header">
