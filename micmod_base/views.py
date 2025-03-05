@@ -1055,7 +1055,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
 
         counter = obj.get_inquiry_result_count
-        over = obj.not_over
+        over = obj.not_over_q
 
         local_color_condition = counter[1] == counter[2] and counter[1] != 0
         foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
