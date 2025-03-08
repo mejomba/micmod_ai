@@ -650,6 +650,20 @@ function percentageToDegrees(percentage) {
             })
         }
         progressPercentage()
+
+    function handelOrderPriceDiff(){
+        const id_price = document.querySelector('#id_price')
+        const id_price_trade = document.querySelector('#id_price_trade')
+        const id_price_mac = document.querySelector('#id_price_mac')
+        if (id_price_trade && id_price_mac && id_price_trade.value !== id_price_mac.value && !id_price.value){
+            const msg = `قیمت اعلامی از جانب MAC با قیمت اعلامی بازرگانی متفاوت است \n\n MAC: ${id_price_trade.value} \n TRADE: ${id_price_mac.value}`
+            {#document.querySelector('#global-error').innerHTML = msg#}
+            alert(msg)
+        }
+    }
+
+    window.setTimeout(handelOrderPriceDiff, 1000)
+
     </script>
     <script src="{% static 'js/comment.js' %}"></script>
 {% endblock extra_js %}
