@@ -20,6 +20,12 @@
 
 {% block form_content %}
 
+    <select name="is_direct" class="form-control d-none" id="id_is_direct">
+      <option value="unknown">Unknown</option>
+      <option value="true" selected="">Yes</option>
+      <option value="false">No</option>
+    </select>
+
             {% csrf_token %}
                     {% for hidden in form.hidden_fields %}
                         {{ hidden }}
