@@ -7,6 +7,23 @@
   font-family: persian-digit;
   src: url(../fonts/Samim-FD.woff);
 }
+.factor-alert {
+  /*--bs-alert-bg: transparent;*/
+  --bs-alert-padding-x: 1rem;
+  --bs-alert-padding-y: 1rem;
+  --bs-alert-margin-bottom: 1rem;
+  --bs-alert-border-color: red;
+  --bs-alert-border: var(--bs-border-width) solid var(--bs-alert-border-color);
+  --bs-alert-border-radius: var(--bs-border-radius);
+  --bs-alert-link-color: inherit;
+  position: relative;
+  padding: var(--bs-alert-padding-y) var(--bs-alert-padding-x);
+  margin-bottom: var(--bs-alert-margin-bottom);
+  color: #ec1a1a;
+  background-color: #fff6f6;
+  border: var(--bs-alert-border);
+  border-radius: var(--bs-alert-border-radius);
+}
 .persian-number{
     font-family: persian-digit;
 }
