@@ -60,13 +60,14 @@ class FactorView(LoginRequiredMixin, BaseView):
         res = super().form_valid(form)
         if 'back' in self.request.POST and not self.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
-            last_wf_belong_to_sales_user = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
+            last_wf_belong_to_sales_user_if_change = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
+            last_wf_belong_to_sales_user = self.object.workflows.filter(belong_to_group='sales_user').order_by('id').first()
             wf_data = {
                 'wf_status': 2,  # back
                 'state': self.flow_config.get('flow_state_list')[self.state_index - 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
                 'from_user': self.request.user,
-                'to_user': last_wf_belong_to_sales_user.to_user,  # get_user_model().objects.filter(groups__name='accounting_user').first(),
+                'to_user': last_wf_belong_to_sales_user_if_change.to_user if last_wf_belong_to_sales_user_if_change else last_wf_belong_to_sales_user.from_user,
                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index - 2],
                 'object_id': self.object.pk,
             }
