@@ -116,6 +116,7 @@ class FactorItem(BaseModel):
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
     supply_location = models.CharField(null=True, blank=True, verbose_name=_('supply_location'))
+    reserve_count = models.FloatField(_('reserve_count'), null=True, blank=True)
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
