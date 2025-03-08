@@ -82,8 +82,8 @@
                 {% get_comment_user_list form_s request.user %}
 {#                {% get_payment_list form_s request.user %}#}
             </div>
-            <div class="col-lg-3 p-0 border-top border-bottom border-end">
-                <div class="d-flex border-bottom px-1 align-items-start">
+            <div class="col-lg-3 p-0 border-end">
+                <div class="d-flex px-1 align-items-start">
                     <div class="w-25 mt-3 on-border">
                         {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
@@ -146,7 +146,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-non border-bottom px-1" name="box-alt-goods">
+                <div class="d-non px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
                             {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
@@ -254,7 +254,7 @@
 {#                        </div>#}
 {#                    </div>#}
 {#                </div>#}
-                <div class="h-30 border-top all_pricess mt-2">
+                <div class="h-30 all_pricess mt-2">
                     <div class="d-flex">
                         <div class="p-0 w-100">
                             <div class="text-center bold bg-light-info">قیمت های موجود
@@ -286,8 +286,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-3 border-top">
-                <div class="row h-100 border-bottom">
+            <div class="col-lg-3">
+                <div class="row h-100 ">
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
 {#                            <div class="card-text text-center bold">قیمت نهایی</div>#}
@@ -330,7 +330,7 @@
                                     <a href="{% url 'inquiry:inquiry_result.list' %}?sku={{ form_s.instance.goods_code }}"
                                        target="_blank" class="bold inquiry-result-link py-1">مشاهده پرونده استعلام</a>
                                 {% endif %}
-                                <div class="d-none border-bottom ps-1">
+                                <div class="d-none ps-1">
                                     <div class="d-flex justify-content-between mt-1">
                                         {% render_field_by_order form_s form_s.need_local_price_inquiry label='on-border' margin_b=0 %}
                                     </div>
@@ -344,7 +344,7 @@
                                         {{ form_s.instance.bazar_price_code|default_if_none:'' }}
                                     </div>
                                 </div>
-                                <div class="d-none border-top ps-1">
+                                <div class="d-none ps-1">
                                     <div class="d-flex justify-content-between mt-1">
                                         {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
                                     </div>
