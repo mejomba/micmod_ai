@@ -570,7 +570,7 @@ class QuotationItem(BaseModel):
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
     is_over = models.BooleanField(_('is_over'), default=False)
-
+    is_direct = models.BooleanField(default=False, null=True, blank=True)
 
     objects = QuotationItemManager()
 
