@@ -97,6 +97,7 @@ class Quotation(SLSDoc):
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
+    is_direct = models.BooleanField(default=False, null=True, blank=True)
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
@@ -570,7 +571,6 @@ class QuotationItem(BaseModel):
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
     is_over = models.BooleanField(_('is_over'), default=False)
-    is_direct = models.BooleanField(default=False, null=True, blank=True)
 
     objects = QuotationItemManager()
 
