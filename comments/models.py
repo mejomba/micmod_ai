@@ -24,8 +24,10 @@ class Comments(BaseContentType):
         ('N', 'زمان تحویل'),
         # for group
         ('Q', 'فقط بازرگانی'),
+        # order error
+        ('R', 'خطای سفارش'),
         # other
-        ('O','کامنت ساده')
+        ('O','کامنت ساده'),
     )
     comment_title = models.CharField(max_length=1, choices=Comment_CHOICES, default='O', verbose_name=_('comment_title'))
     comment_content = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('comment_content'))
