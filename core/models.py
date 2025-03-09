@@ -364,6 +364,9 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
                 obj=cmnt,
                 input_prefix=f'{prefix}-file',
             )
+        else:
+            self.save_comment_(request)
+
     def get_content_type_forms(self):
         self.content_type_forms = list()
         if self.has_workflow:
