@@ -1004,6 +1004,9 @@ class CommentsFormView(View):
         elif comment_type == 'trade_inquiry':
             kwargs['submit_type'] = 'trade_inquiry'
             comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'order_error':
+            kwargs['submit_type'] = 'order_error'
+            comments = obj.comments.all().order_by('-created_date')
         comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
         kwargs['comment_title'] = self.request.GET.get('comment_title', '')
