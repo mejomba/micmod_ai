@@ -102,7 +102,8 @@
             <div class="overflow-scroll">
                 <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
                 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
-                {% get_comment_user_list form request.user %}
+{#                {% get_comment_user_list form request.user %}#}
+                {% get_comment_user_list form request.user comment_type='order_error' %}
                 <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
             </div>
@@ -656,7 +657,7 @@ function percentageToDegrees(percentage) {
         const id_price_trade = document.querySelector('#id_price_trade')
         const id_price_mac = document.querySelector('#id_price_mac')
         const id_can_alert = document.querySelector('#id_can_alert')
-        if (id_can_alert && id_price_trade && id_price_mac && id_price_trade.value !== id_price_mac.value && !id_price.value){
+        if (id_can_alert && id_price_trade && id_price_mac && id_price_mac.value && id_price_trade.value !== id_price_mac.value && !id_price.value){
             const msg = `قیمت اعلامی از جانب MAC با قیمت اعلامی بازرگانی متفاوت است \n\n MAC: ${id_price_trade.value} \n TRADE: ${id_price_mac.value}`
             {#document.querySelector('#global-error').innerHTML = msg#}
             alert(msg)
