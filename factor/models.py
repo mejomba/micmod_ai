@@ -309,6 +309,8 @@ class FactorItem(BaseModel):
         total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
         if total_quantity >= self.qi.quantity:
             self.qi.is_over = True
+        if self.quantity >= self.qi.quantity:
+            self.qi.is_over = True
         else:
             self.qi.is_over = False
         self.qi.save()
