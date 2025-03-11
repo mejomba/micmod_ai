@@ -122,12 +122,14 @@ class OrderDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        # qs = super().get_initial_queryset(request)
-        qs = self.model.get_qs(self.request)
+        qs = super().get_initial_queryset(request)
+        # qs = self.model.get_qs(self.request)
+
         q = request.POST.get('q')
+        user_base_group = self.request.user.base_group
         if q == 'sales_admin':
             return qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
-        elif q == 'bazar_user':
+        elif q == 'bazar_user' or user_base_group == 'bazar':
             return qs.filter(is_bazar=True)
         elif q == 'all':
             return qs
@@ -169,6 +171,51 @@ class OrderDataTableListView(AjaxDatatableView):
         #     </i>
         # </a>
         # """)
+        
+    def get_column_defs(self, request):
+        if self.request.user.base_group == 'bazar':
+            self.column_defs = [
+                AjaxDatatableView.render_row_tools_column_def(),
+                {'name': 'id', 'title': "شناسه", 'orderable': True, 'visible': True, },
+                {'name': 'order_title', 'orderable': True, 'visible': True, 'title': "عنوان سفارش"},
+                {'name': 'last_work_flow', 'title': 'وضعیت', 'visible': True, 'orderable': True,
+                 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True,
+                 'lookup_field': '__sku__icontains'},
+                {'name': 'part_number_s', 'orderable': True, 'title': 'پارت نامبر', 'visible': True,
+                 'lookup_field': '__part_number__icontains'},
+                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True,
+                 'lookup_field': '__title__icontains'},
+                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
+                 'lookup_field': '__icontains'},
+                {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', },
+                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات فروش'},
+            ]
+        else:
+            self.column_defs = [
+                AjaxDatatableView.render_row_tools_column_def(),
+                {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
+                {'name': 'order_title', 'orderable': True, 'visible': True, },
+                {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
+                 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
+                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
+                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
+                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
+                # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
+                {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
+                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+            ]
+
+        return super().get_column_defs(request)
 
 
 class OrderAction(ListView):
