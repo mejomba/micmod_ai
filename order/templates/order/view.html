@@ -97,6 +97,8 @@
             {% elif request.user|has_group:'mac' %}
                 {% include 'order/partial/mac_edit_section.html' with form=form %}
                 {% include 'order/partial/mac_read_section.html' with form=form %}
+            {% elif request.user|has_group:'bazar_user' %}
+                {% include 'order/partial/bazar_edit_section.html' with form=form %}
             {% endif %}
 
             <div class="overflow-scroll">
