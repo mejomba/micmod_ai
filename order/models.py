@@ -243,7 +243,7 @@ class Order(BaseModeWF):
             "wf_status": 3,
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
-            "state": const.WF__ORDER__FIRST_STATE,
+            "state": const.WF__ORDER__SECOND_STATE,
             "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
             "belong_to_group": 'order_admin',
             "object_id": o1.pk,
@@ -288,7 +288,7 @@ class Order(BaseModeWF):
     @property
     def estimate_arrive_at(self):
         from django.utils import safestring
-        return "1404/02/10"
+        return "-"
 
 
 class OrderOrder(BaseModel):
