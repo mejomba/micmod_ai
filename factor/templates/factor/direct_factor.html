@@ -20,15 +20,31 @@
 
 {% block form_content %}
 
+    <select name="is_direct" class="form-control d-none" id="id_is_direct">
+      <option value="unknown">Unknown</option>
+      <option value="true" selected="">Yes</option>
+      <option value="false">No</option>
+    </select>
+
             {% csrf_token %}
                     {% for hidden in form.hidden_fields %}
                         {{ hidden }}
                     {% endfor %}
                     <div class="row">
                         <div class="col-sm-12">
-        <h2 class="p-5 mb-10 bg-light-info text-dark rounded-4 bold s-1 text-center">
-        فاکتور مستقیم
-        </h2>
+        <div class="p-5 mb-10 bg-light-info text-dark rounded-4 bold">
+        <h2 class="mb-5">فاکتور مستقیم</h2>
+
+            <span class="text-danger">نکات</span>
+        <ul>
+            <li>سند فعلی پس از ذخیره مستقیم به فاکتور تبدیل میشود</li>
+            <li>امکان درخواست استعلام قیمت جدید وجود ندارد (فقط در
+                <a href="{% url 'micmod_base:quotations.create' %}" target="_blank">پیش فاکتور</a>
+                امکان پذیر است)</li>
+            <li>به ازای هر ردیف یک سفارش جدید به صورت خودکار ایجاد میشود</li>
+        </ul>
+        </div>
+    <div></div>
                         <div class="mt-5 mb-2 d-none">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
                         </div>
@@ -105,7 +121,7 @@
 
                         <div class="card">
                             <template
-                                    id="id_formset_empty_form">{% include "micmod-base/quotation/item3.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
+                                    id="id_formset_empty_form">{% include "factor/item4.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
                             </div>
 
                             <div class="card-body p-0" id="id_formset_container">
@@ -139,49 +155,24 @@
                 {# this tag maybe need to close #}
                         </div>
             {% endblock form_content %}
-{% block before_button %}
-    {% include "micmod-base/base/create_info_bar.html" %}
-{% endblock before_button %}
+{#{% block before_button %}#}
+{#    {% include "micmod-base/base/create_info_bar.html" %}#}
+{#{% endblock before_button %}#}
+{% block form_buttotns %}
+<input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره فاکتور مستقیم">
+{% endblock %}
 {% block form_footer_extra %}
 {% include "core/partial/add_formset_button.html" %}
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
-{#        {% include "micmod-base/base/create_info_bar.html" %}#}
     </div>
-        {% if form.instance.quotation_rel.all.last.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
-            {% elif form.instance.quotation_self.id %}
-            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
-        {% endif %}
 
-        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
-            <div><label class="col-form-label">استعلام سریع</label></div>
-            <div>
-                <span class="switch switch-brand">
-                    <label>
-                        {{ form.force_inquiry }}
-                        <span></span>
-                    </label>
-                </span>
-
-            </div>
-        </div>
-
-    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
-         m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
-         onclick="do_print({{ data }})" name="do_print">
-        پرینت پیش فاکتور
-    </div>
     {% else %}
         <div class="px-2 mx-auto">
         </div>
     {% endif %}
 
         <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
-            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
-                 data-key="refresh" onclick="refresh_prices()">
-                به روز رسانی قیمت
-            </div>
             <div class="align-items-center text-white bg-info w-65 rounded">
                 <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
                     <div class="w-30 ms-2"> جمع کل</div>

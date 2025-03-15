@@ -122,3 +122,7 @@ model_name_map = {
     "contract":"",
     "projectitemlist":"",
 }
+
+WF__ORDER__3_CURRENT_STATE_NAME = "تایید بازرگانی"
+WF__ORDER__3_STATE = "تایید بازرگانی"
+WF__ORDER__4_STATE = "تایید مهندس"

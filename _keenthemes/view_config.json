@@ -109,6 +109,21 @@
             ]
           },
           {
+            "state": "تایید مدیر فروش",
+            "group": "sales_admin",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
             "state": "تایید مالی",
             "group": "accounting_user",
             "deadline": 1,
@@ -170,8 +185,8 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over"],
-              "read": []
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
+              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade", "cancel"]
             },
             "formset_constraint": [
               {
@@ -182,11 +197,11 @@
           },
           {
             "state": "تایید مدیر فروش",
-            "group": "order_admin",
+            "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["sales_admin_confirmation", "order_m2m", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
+              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
             },
             "formset_constraint": [
               {
@@ -196,7 +211,7 @@
             ]
           },
           {
-            "state": "1تایید بازرگانی",
+            "state": "تایید بازرگانی",
             "group": "trade_user",
             "deadline": 1,
             "form_constraint": {
@@ -212,11 +227,11 @@
           },
           {
             "state": "تایید مهندس",
-            "group": "trade_user",
+            "group": "order_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": []
+              "read": ["mohandes_confirmation"]
             },
             "formset_constraint": [
               {
@@ -231,7 +246,7 @@
             "deadline": 1,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation"]
             },
             "formset_constraint": [
               {
@@ -242,11 +257,11 @@
           },
           {
             "state": "تایید تامین کننده",
-            "group": "trade_user",
+            "group": "mac",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
             },
             "formset_constraint": [
               {
@@ -256,12 +271,12 @@
             ]
           },
           {
-            "state": "2تایید بازرگانی",
+            "state": "تایید نهایی بازرگانی",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["quantity", "mohandes_confirmation", "apply_mac"]
             },
             "formset_constraint": [
               {
@@ -276,7 +291,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["__all__"]
             },
             "formset_constraint": [
               {
@@ -373,7 +388,7 @@
             ]
           },
           {
-            "state": "اضهار گمرکی",
+            "state": "اظهار گمرکی",
             "group": "trade_user",
             "deadline": 3,
             "form_constraint": {

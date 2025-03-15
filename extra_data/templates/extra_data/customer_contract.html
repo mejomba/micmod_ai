@@ -10,7 +10,7 @@
 {#    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc.js' %}"></script>#}
 {#    <script src="{% static 'admin/jquery.ui.datepicker.jalali/scripts/jquery.ui.datepicker-cc-fa.js' %}"></script>#}
 
-<form action="{% if form.instance.pk %}{% url 'extra_data:customer_contract.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_contract.create' %}{% endif %}" method="POST" id="customer-contract-form">
+<form action="{% if form.instance.pk %}{% url 'extra_data:customer_contract.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_contract.create' %}{% endif %}" method="POST" id="customer-contract-form" enctype="multipart/form-data">
     {% csrf_token %}
     <div>
     <div class="row bg-white rounded border my-10 mx-xl-10 pt-10 position-relative shadow-sm">

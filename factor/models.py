@@ -116,6 +116,7 @@ class FactorItem(BaseModel):
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True, blank=True, verbose_name=_('supply_locations'))
     supply_location = models.CharField(null=True, blank=True, verbose_name=_('supply_location'))
+    reserve_count = models.FloatField(_('reserve_count'), null=True, blank=True)
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
@@ -149,140 +150,195 @@ class FactorItem(BaseModel):
     def select_order(self):
         return self.supply_location and not str(self.supply_location).startswith('wh__')
 
+    def get_sepidar_stock_code_from_selected_supply_location(self):
+        sp = self.supply_location.split('__')
+        wh_code = sp[1] if len(sp) >= 2 else -1
+        return wh_code
+
+    def quantity_for_wh_order(self):
+        from sepidar.api_call import SepidarApiCall
+        import re
+        res = SepidarApiCall.get_stock_quantity([self.goods_code.sepidar_id_0])
+        res = res.get('res')
+        if res:
+            for code, quantity in res.items():
+                code = re.search(r'(code: (\d+))', code).group(2)
+                wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
+                if code == wh_code:
+                    return min([int(quantity), int(self.quantity)])
+                # if self.pk is None:
+                #     if code == wh_code:
+                #         return min([int(quantity), int(self.quantity)])
+                # elif self.pk:
+                #     if code == wh_code:
+                #         return min([int(quantity), int(self.quantity)])
+
+    def selected_order(self):
+        """
+        کدام محل تامینن انتخاب شده است
+        """
+        unselect = select_order = select_wh = select_bazar = deselect_bazar = None
+        if self.is_bazar:
+            select_bazar = True
+            select_order = select_wh = unselect = False
+        elif not self.supply_location:
+            unselect = True
+            select_order = select_wh = select_bazar = False
+        else:
+            try:
+                if int(self.supply_location) != self.supply_locations.pk:
+                    select_order = True
+                    unselect = select_wh = select_bazar= False
+                else:
+                    deselect_bazar = True
+            except Exception as e:
+                # if self.supply_location.__icontains__('__'):
+                select_wh = True
+                unselect = select_order = no_change = False
+
+        return unselect, select_order, select_wh, select_bazar, deselect_bazar
+
+    # def unselected_status(self):
+    #     """
+    #     هیچ محل تامینی انتخاب نشده است
+    #     """
+    #     return bool(self.supply_location)
+    #
+    # def selected_order_status(self):
+    #     """
+    #     سفارش ناقص انتخاب شده است
+    #     """
+    #     order_id = self.supply_location
+    #     order = Order.objects.filter(pk=order_id).first()
+    #     return order.remaining_quantity < self.quantity
+    #
+    # def selected_wh_status(self):
+    #     """
+    #     سفارش کامل انتخاب شده است
+    #     """
+    #     try:
+    #         selected_order_id = self.supply_location.split('__')
+    #         if len(selected_order_id) == 2:
+    #             if int(selected_order_id[1]):
+    #                 return True
+    #         elif len(selected_order_id) == 3:
+    #             ...
+    #     except Exception as e:
+    #         return False
+    #     return False
+
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        condition1 = self.is_order and self.select_wh_sepidar
-        condition3 = self.is_wh and self.select_wh_sepidar
-        condition6 = self.is_wh and self.select_order
-        condition7 = self.is_order and self.select_order
-        condition10 = self.pk is None and not self.select_wh_sepidar and not self.select_order
-        condition11 = self.pk is None and self.select_wh_sepidar
-        condition12 = self.pk is None and self.select_order
-        condition_list = [condition1, condition3, condition6, condition7, condition10, condition11, condition12]
-        old = self.__class__.objects.filter(pk=self.pk).first()
 
-        if not any(condition_list):
-            if self.supply_locations_id == self.supply_location:
-                pass
-            else:
-                self.supply_locations_id = self.supply_location.split('__')[-1]
-
-        if not self.pk:
-            if self.quantity == 0:
+        unselect, select_order, select_wh, select_bazar, deselect_bazar = self.selected_order()
+        if self.pk is None:
+            if not self.quantity:
                 return
-            if condition10:
+            if unselect or select_bazar:
+                """ایجاد سفارش کامل"""
                 o1 = Order.create_with_rel(factor_item=self)
                 self.supply_locations = o1
                 self.supply_location = o1.pk
-            if condition12:
-                # generate order with rel
-                data_base = {
-                    "order_title": "خودکار توسط سیستم",
-                    "status": "1",
-                    "item": self.qi.goods_code_fk,
-                    "production_lead_time": 5,  # self.qi.lead_time,
-                    "quantity": self.quantity,
-                    "cancel": False,
-                    "is_over": False,
-                    "qi": self.qi,
-                    "creator_user": self.extra_data.request.user,
-                    "editor_user": self.extra_data.request.user,
-                    "is_bazar": self.is_bazar
-                }
+            elif select_order:
+                """ایجاد سفارش کامل"""
+                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
                 o2 = Order.objects.filter(pk=self.supply_location).first()
-
-                o1 = Order.create_with_rel(data_base, o2)
+                o1 = Order.create_with_rel(o2=o2, factor_item=self)
                 self.supply_locations = o1
+            elif select_wh:
+                """ایجاد سفارش کامل"""
+                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
 
-            elif condition11:
-                # generate wh order
+                """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
                 data_base = {
                     "order_title": "رزرو انبار (خودکار توسط سیستم)",
-                    "status": "1",
+                    # "status": "1",
                     "item": self.qi.goods_code_fk,
                     "production_lead_time": 10,  # self.qi.lead_time,
-                    "quantity": self.quantity,
+                    "quantity": self.quantity_for_wh_order(),  # self.quantity,
                     "cancel": False,
                     "is_over": False,
                     "qi": self.qi,
-                    "local_sepidar_wh_code": int(self.supply_location[4:]),
                     "creator_user": self.extra_data.request.user,
                     "editor_user": self.extra_data.request.user,
+                    'is_bazar': self.is_bazar,
+                    'is_wh': True
                 }
-                o1 = Order.create_with_rel(data_base)
+                o1_as_o2 = Order.create_with_rel(data_base=data_base)
+                o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
                 self.supply_locations = o1
-                self.supply_location = o1.pk
-
-        else:
-            if self.quantity == 0:
+        elif self.pk:
+            if not self.quantity:
                 self.is_deleted = True
+                for oo in self.supply_locations.order_base_items.all():
+                    oo.delete()
+                self.supply_locations.is_deleted = True
+                self.supply_locations.save()
                 super().save(force_insert, force_update, using, update_fields)
-                self.qi.is_over = False
+                total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
+                if total_quantity >= self.qi.quantity:
+                    self.qi.is_over = True
+                else:
+                    self.qi.is_over = False
                 self.qi.save()
                 return
 
-            elif condition1 or condition3:
-                # generate wh order
-                data_base = {
-                    "order_title": "رزرو انبار (خودکار توسط سیستم)",
-                    "status": "1",
-                    "item": self.qi.goods_code_fk,
-                    "production_lead_time": 10,  # self.qi.lead_time,
-                    "quantity": self.quantity,
-                    "cancel": False,
-                    "is_over": False,
-                    "qi": self.qi,
-                    "local_sepidar_wh_code": int(self.supply_location[4:]),
-                    "creator_user": self.extra_data.request.user,
-                    "editor_user": self.extra_data.request.user,
-                }
-                o1 = Order.create_with_rel(data_base)
-                if old and old.supply_locations.local_sepidar_wh_code:
-                    old.supply_locations.is_deleted = True
-                    old.supply_locations.save()
-                self.supply_locations = o1
-                self.supply_location = o1.pk
+            if select_bazar:
+                """حذف سفارش هایی میانی و تبدیل سفارش به نوع بازار"""
+                for oo in self.supply_locations.order_base_items.all():
+                    oo.delete()
+                self.supply_locations.cancel = False
+                self.supply_locations.is_bazar = True
+                self.supply_locations.save()
 
-            elif condition6:
-                self.supply_locations_id = self.supply_location
-                if old:
-                    old.supply_locations.is_deleted = True
-                    old.supply_locations.save()
-
-            elif condition7:
-                self.supply_locations_id = self.supply_location
-
-        if not any(condition_list):
-            if self.supply_locations_id == self.supply_location:
+            elif unselect:
                 pass
-            else:
-                self.supply_locations_id = self.supply_location.split('__')[-1]
+            elif deselect_bazar:
+                self.supply_locations.is_bazar = False
+                self.supply_locations.save()
+
+            elif select_order:
+                """بروز سفارش کامل"""
+                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
+                o2 = Order.objects.filter(pk=self.supply_location).first()
+                o1 = Order.create_with_rel(o2=o2, factor_item=self)
+                # self.supply_locations = o1
+            elif select_wh:
+                pass
 
         super().save(force_insert, force_update, using, update_fields)
         total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
         if total_quantity >= self.qi.quantity:
             self.qi.is_over = True
-            self.qi.save()
+        if self.quantity >= self.qi.quantity:
+            self.qi.is_over = True
+        else:
+            self.qi.is_over = False
+        self.qi.save()
 
-        # if self.pk is None:
-        #     if self.select_wh_sepidar: # str(self.supply_location).startswith('wh__'):
-        #         # generate wh order
-        #         data_base = {
-        #             "order_title": "خودکار توسط سیستم",
-        #             "status": "1",
-        #             "item": self.qi.goods_code_fk,
-        #             "production_lead_time": 10,  # self.qi.lead_time,
-        #             "quantity": self.quantity,
-        #             "cancel": False,
-        #             "is_over": False,
-        #             "qi": self.qi,
-        #             "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #             "creator_user": self.extra_data.request.user,
-        #             "editor_user": self.extra_data.request.user,
-        #         }
-        #         o1 = Order.create_with_rel(data_base)
+        # condition1 = self.is_order and self.select_wh_sepidar
+        # condition3 = self.is_wh and self.select_wh_sepidar
+        # condition6 = self.is_wh and self.select_order
+        # condition7 = self.is_order and self.select_order
+        # condition10 = self.pk is None and not self.select_wh_sepidar and not self.select_order
+        # condition11 = self.pk is None and self.select_wh_sepidar
+        # condition12 = self.pk is None and self.select_order
+        # condition_list = [condition1, condition3, condition6, condition7, condition10, condition11, condition12]
+        # old = self.__class__.objects.filter(pk=self.pk).first()
+        #
+        # if not any(condition_list):
+        #     if self.supply_locations_id == self.supply_location:
+        #         pass
+        #     else:
+        #         self.supply_locations_id = self.supply_location.split('__')[-1]
+        #
+        # if not self.pk:
+        #     if self.quantity == 0:
+        #         return
+        #     if condition10:
+        #         o1 = Order.create_with_rel(factor_item=self)
         #         self.supply_locations = o1
         #         self.supply_location = o1.pk
-        #     elif self.supply_location:
+        #     if condition12:
         #         # generate order with rel
         #         data_base = {
         #             "order_title": "خودکار توسط سیستم",
@@ -295,13 +351,68 @@ class FactorItem(BaseModel):
         #             "qi": self.qi,
         #             "creator_user": self.extra_data.request.user,
         #             "editor_user": self.extra_data.request.user,
+        #             "is_bazar": self.is_bazar
         #         }
         #         o2 = Order.objects.filter(pk=self.supply_location).first()
         #
         #         o1 = Order.create_with_rel(data_base, o2)
         #         self.supply_locations = o1
-        #     elif not self.supply_location:
-        #         # generate order independent
+        #
+        #     elif condition11:
+        #         # generate wh order
+        #         data_base = {
+        #             "order_title": "رزرو انبار (خودکار توسط سیستم)",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 10,  # self.qi.lead_time,
+        #             "quantity": self.quantity_for_wh_order(),  #self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "local_sepidar_wh_code": int(self.supply_location[4:]),
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #         }
+        #         o1 = Order.create_with_rel(data_base)
+        #         self.supply_locations = o1
+        #         self.supply_location = o1.pk
+        #
+        # else:
+        #     if self.quantity == 0:
+        #         self.is_deleted = True
+        #         self.supply_location = self.supply_locations.pk
+        #         if self.is_wh:
+        #             self.supply_locations.is_deleted = True
+        #             self.supply_locations.save()
+        #         super().save(force_insert, force_update, using, update_fields)
+        #         self.qi.is_over = False
+        #         self.qi.save()
+        #         return
+        #
+        #     elif condition1 or condition3:
+        #         # generate wh order
+        #         data_base = {
+        #             "order_title": "رزرو انبار (خودکار توسط سیستم)",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 10,  # self.qi.lead_time,
+        #             "quantity": self.quantity_for_wh_order(),  # self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "local_sepidar_wh_code": int(self.supply_location[4:]),
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #         }
+        #         o1 = Order.create_with_rel(data_base)
+        #         if old and old.supply_locations.local_sepidar_wh_code:
+        #             old.supply_locations.is_deleted = True
+        #             old.supply_locations.save()
+        #         self.supply_locations = o1
+        #         self.supply_location = o1.pk
+        #
+        #     elif condition6:
+        #         # generate order with rel
         #         data_base = {
         #             "order_title": "خودکار توسط سیستم",
         #             "status": "1",
@@ -313,76 +424,47 @@ class FactorItem(BaseModel):
         #             "qi": self.qi,
         #             "creator_user": self.extra_data.request.user,
         #             "editor_user": self.extra_data.request.user,
+        #             "is_bazar": self.is_bazar
         #         }
-        #         o1 = Order.create_with_rel(data_base)
+        #         o2 = Order.objects.filter(pk=self.supply_location).first()
+        #
+        #         o1 = Order.create_with_rel(data_base, o2)
         #         self.supply_locations = o1
-
-
-        # if condition10:
-        #     o1 = Order.create_with_rel(factor_item=self)
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
-        # elif condition11:
-        #     # generate wh order
-        #     data_base = {
-        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
-        #         "status": "1",
-        #         "item": self.qi.goods_code_fk,
-        #         "production_lead_time": 10,  # self.qi.lead_time,
-        #         "quantity": self.quantity,
-        #         "cancel": False,
-        #         "is_over": False,
-        #         "qi": self.qi,
-        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #         "creator_user": self.extra_data.request.user,
-        #         "editor_user": self.extra_data.request.user,
-        #     }
-        #     o1 = Order.create_with_rel(data_base)
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
+        #         # self.supply_locations_id = self.supply_location
+        #         if old:
+        #             old.supply_locations.is_deleted = True
+        #             old.supply_locations.save()
         #
-        # elif condition1 or condition3:
-        #     # generate wh order
-        #     data_base = {
-        #         "order_title": "رزرو انبار (خودکار توسط سیستم)",
-        #         "status": "1",
-        #         "item": self.qi.goods_code_fk,
-        #         "production_lead_time": 10,  # self.qi.lead_time,
-        #         "quantity": self.quantity,
-        #         "cancel": False,
-        #         "is_over": False,
-        #         "qi": self.qi,
-        #         "local_sepidar_wh_code": int(self.supply_location[4:]),
-        #         "creator_user": self.extra_data.request.user,
-        #         "editor_user": self.extra_data.request.user,
-        #     }
-        #     o1 = Order.create_with_rel(data_base)
-        #     if old and old.supply_locations.local_sepidar_wh_code:
-        #         old.supply_locations.is_deleted = True
-        #         old.supply_locations.save()
-        #     self.supply_locations = o1
-        #     self.supply_location = o1.pk
+        #     elif condition7:
+        #         # generate order with rel
+        #         data_base = {
+        #             "order_title": "خودکار توسط سیستم",
+        #             "status": "1",
+        #             "item": self.qi.goods_code_fk,
+        #             "production_lead_time": 5,  # self.qi.lead_time,
+        #             "quantity": self.quantity,
+        #             "cancel": False,
+        #             "is_over": False,
+        #             "qi": self.qi,
+        #             "creator_user": self.extra_data.request.user,
+        #             "editor_user": self.extra_data.request.user,
+        #             "is_bazar": self.is_bazar
+        #         }
+        #         o2 = Order.objects.filter(pk=self.supply_location).first()
         #
-        # elif condition6:
-        #     self.supply_locations_id = self.supply_location
-        #     if old:
-        #         old.supply_locations.is_deleted = True
-        #         old.supply_locations.save()
-        # elif condition7:
-        #     self.supply_locations_id = self.supply_location
-        # elif not any(condition_list):
+        #         o1 = Order.create_with_rel(data_base, o2)
+        #         self.supply_locations = o1
+        #
+        # if not any(condition_list):
         #     if self.supply_locations_id == self.supply_location:
         #         pass
         #     else:
         #         self.supply_locations_id = self.supply_location.split('__')[-1]
         #
         # super().save(force_insert, force_update, using, update_fields)
-        # total_quantity = self.qi.total_quantity_in_factor
+        # total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
         # if total_quantity >= self.qi.quantity:
         #     self.qi.is_over = True
-        #     self.qi.save()
-        # else:
-        #     self.qi.is_over = False
         #     self.qi.save()
 
     def total_supply(self):

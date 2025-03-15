@@ -4,7 +4,9 @@
 {% load accounts_tag %}
 {% load core_tags %}
 {% load order_tags %}
+{% load jalali_tags %}
 
+{% block title %}سفارش {{ form.instance.pk }}{% endblock title %}
 {% block extra_css %}
 
 
@@ -69,81 +71,60 @@
     <div class="mb-2">
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
-<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
 
-    <div class="rounded shadow-sm my-10 bg-white py-10 px-3 ">
+
+{% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+
+{% with request.user.base_group as user_group %}
+    <span id="{% if user_group == 'trade' %}id_can_alert{% endif %}"></span>
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
-            <div class="col-7">
-                <div class="row">
-                    <div class="col-9">
-                        <div class="row row-cols-3 align-items-baseline">
-                            <div class="col-8"><div id="id_item_select2"></div></div>
-                            {% render_field_by_order form form.quantity label='on-border' %}
-                            {% render_field_by_order form form.order_title form.status form.transportation_method label='on-border' margin_b=5 %}
-                            {% render_field_by_order form form.production_lead_time form.trade_commitment_date form.commitment_date_to_customer label='on-border' %}
-                            {% render_field_by_order form form.order_type label='on-border' %}
-                            <div class="col-8 t">
-                                <div class="d-flex">
-                            {% render_field_by_order form form.sales_admin_confirmation form.is_over label='on-border' %}
-                                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">
-                                {% render_field_by_order form form.cancel label='on-border' %}
-                                    </div>
-                                </div>
-                                </div>
-                            {% render_field_by_order form form.item form.qi label='on-border' %}
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        {% render_field_by_order form form.description_sale label='on-border' %}
-                    </div>
-                </div>
-            </div>
-                <div id="order_order_report_ajax" class="col-5">
-                {% include 'order/partial/order_order_report.html' with form=form %}
-                </div>
-{#            <div class="col-5">{{ form.order_m2m }}</div>#}
+            <div class="col-7 xzx">
+            <span name="item_placeholder" class="d-none">{{ form.instance.item.sku }} - {{ form.instance.item.part_number }}</span>
+            {% if request.user.is_superuser %}
+                {% include 'order/partial/order_admin_section.html' with form=form %}
+            {% elif request.user|has_group:'sales_user' %}
+                {% include 'order/partial/order_sales_edit_section.html' with form=form %}
+                {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
+                {% if form.instance.pk %}
+                    {% include 'order/partial/order_sales_read_section.html' with form=form %}
+                {% endif %}
+            {% elif request.user|has_group:'trade_user' %}
+                {% include 'order/partial/order_trade_edit_section.html' with form=form %}
+                {% include 'order/partial/order_trade_read_section.html' with form=form %}
+            {% elif request.user|has_group:'mac' %}
+                {% include 'order/partial/mac_edit_section.html' with form=form %}
+                {% include 'order/partial/mac_read_section.html' with form=form %}
+            {% elif request.user|has_group:'bazar_user' %}
+                {% include 'order/partial/bazar_edit_section.html' with form=form %}
+            {% endif %}
+
             <div class="overflow-scroll">
+                <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+                <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
+{#                {% get_comment_user_list form request.user %}#}
+                {% get_comment_user_list form request.user comment_type='order_error' %}
+                <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
             </div>
+
         </div>
-        {% if form.instance.pk and 0 %}
-            {% with form.instance.remaining_quantity as rq %}
-            <span class="{% if rq > 0 %} bg-info {% else %} bg-danger {% endif %} px-3 py-1 rounded text-white">
-            تعداد باقی مانده:
-            <span>{{ rq|floatformat:"-3g" }}</span>
-            </span>
-            {% endwith %}
-            <div>
-            {% for f in form.instance.factor_items.all  %}
-                {% for o in f.supply_locations.order_base_items.all %}
-                <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
-                    <span>از سفارش</span>
-                    <span class="me-1">{{ o.order_rel.pk }}</span>
-                    <span class="bg-light-info px-1 rounded">{{ o.quantity|floatformat:"-2g" }}</span>
-                    <span>عدد</span>
-                </a>
-                {% endfor %}
-                <div>
-                <span>جمع</span>
-                <span>{% total_supply f %}</span>
-                <span>از</span>
-                <span>{{ form.instance.quantity }}</span>
-                </div>
-            {% endfor %}
 
-
-            </div>
-            <div>{{ form.instance.order_rel.all }}</div>
-        {% endif %}
+    </div>
     </div>
 
+
+
+{% endwith %}
     {% if flow_state_index == 7 %}
     <div class="card card-custom mb-20">
         <div class="card-header">
             <div class="card-toolbar">
                 <ul class="nav nav-light-danger nav-bold nav-pills font-size-15">
                     <li class="nav-item">
-                        <a class="nav-link active" data-toggle="tab" href="#kt_tab_pane_1">
+                        <a class="nav-link active bg-light" data-toggle="tab" href="#kt_tab_pane_1">
                             <span class="nav-icon"><i class="flaticon2-chat-1"></i></span>
                             <span class="nav-text d-flex gap-2">اسناد پرداخت
                             <i class="ki-duotone ki-two-credit-cart fs-2">
@@ -157,7 +138,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_2">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_2">
                             <span class="nav-icon"><i class="flaticon2-drop"></i></span>
                             <span class="nav-text d-flex gap-2">تحویل در دفتر چین
                             <i class="ki-duotone ki-delivery-geolocation fs-2">
@@ -171,7 +152,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_3">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_3">
                             <span class="nav-icon"><i class="flaticon2-drop"></i></span>
                             <span class="nav-text d-flex gap-2">بسته بندی
                                 <i class="ki-duotone ki-cube-3 fs-2">
@@ -188,17 +169,128 @@
             <div class="tab-content">
             <!-- PAYMENT -->
                 <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel" aria-labelledby="kt_tab_pane_1">
-                    ...
+{#                {% with order.total_pay_percent as pay_in_percent %}#}
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.payment_info.0 }}">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ order.payment_info.0 }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.payment_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.payment_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+
+{#                            <div class="progress">#}
+{#                                <div class="progress-bar text-black" role="progressbar" style="width: {{ pay_in_percent }}%" aria-valuenow="{{ pay_in_percent }}"#}
+{#                                     aria-valuemin="0" aria-valuemax="100">{{ pay_in_percent }}%</div>#}
+{#                            </div>#}
+                        </div>
+                    </div>
+{#                {% endwith %}#}
+                    {% if payment_items %}
+                        <div class="row align-items-center pb-2 mb-3 bold">
+                            <div class="col-1 "><span class="ms-6">Order-No</span></div>
+                            <div class="col-1 ">Date</div>
+                            <div class="col-1 ">Destination currency</div>
+                            <div class="col-1 ">Currency</div>
+                            <div class="col-1">Rate</div>
+                            <div class="col-1">Amount</div>
+                            <div class="col-1">Pay date</div>
+                            <div class="col-1">Bank Info</div>
+                            <div class="col-1">Paid amount</div>
+                            <div class="col-1">Refrence</div>
+                            <div class="col-1">Files</div>
+                            <div class="col-1">description</div>
+                        </div>
+                    {% endif %}
+
+                    {% for payment_item in payment_items %}
+                        <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                            <div class="col-1 py-2">
+{#                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
+                                <span>{{ payment_item.order.pk|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span class="d-flex flex-column">
+                                    <span>{{ payment_item.from_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                    <span>{{ payment_item.to_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                </span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.destination_currency|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.bank.currency|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.exchange_rate|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.created_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.bank|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.refrence|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                {% for file in payment_item.files.all %}
+                                <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                                {% empty %}
+                                    <span>-</span>
+                                {% endfor %}
+                            </div>
+                            <div class="col-1">
+                                {{ payment_item.description|default_if_none:"-" }}
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             <!-- GIO -->
                 <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel" aria-labelledby="kt_tab_pane_2">
+                <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.gio_info.0 }}">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ order.gio_info.0 }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.gio_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.gio_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                        </div>
+                </div>
                     {% if gio_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
                             <div class="col-2 "><span class="ms-6">تعداد </span></div>
-                            <div class="col-3 ">سفارش</div>
+                            <div class="col-3 ">GIO</div>
                             <div class="col-3">توضیحات</div>
-                            <div class="col-2"></div>
-                            <div class="col-2"></div>
+                            <div class="col-4"></div>
+{#                            <div class="col-2"></div>#}
                         </div>
                     {% endif %}
                     {% for gio in gio_items %}
@@ -208,47 +300,100 @@
                                 <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-3 py-2 s-05">
-                                <span>{{ gio.order|default_if_none:"-" }}</span>
+                                <span>{{ gio.gio.pk|default_if_none:"-" }}</span>
+                                <span>--</span>
+                                <span>{{ gio.gio.gio_date|default_if_none:"-"|to_jalali:"%Y/%m/%d" }}</span>
                             </div>
                             <div class="col-3 py-2 ">
                                 <span>{{ gio.description|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2"></div>
+                            <div class="col-4"></div>
                         </div>
                     {% endfor %}
                 </div>
             <!-- PACKING -->
                 <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel" aria-labelledby="kt_tab_pane_3">
+
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.packing_info.0 }}">
+                                  <span class="progress-left">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <span class="progress-right">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                    <div class="small">{{ order.packing_info.0 }}%</div>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.packing_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.packing_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {% if packing_items %}
                         <div class="row align-items-center pb-2 mb-3 bold">
-                            <div class="col-2 "><span class="ms-6">شماره کارتن </span></div>
-                            <div class="col-1 ">تعداد کارتن </div>
-                            <div class="col-2">وزن (کیلوگرم)</div>
-                            <div class="col-2">پکینگ</div>
-                            <div class="col-2">سفارش</div>
-                            <div class="col-2"></div>
+                            <div class="col-1 "><span class="ms-6">sum qty</span></div>
+                            <div class="col-1 ">sum arrived qty</div>
+                            <div class="col-1 ">max arrive date</div>
+                            <div class="col-1 ">packing id</div>
+                            <div class="col-1">packing no</div>
+{#                            <div class="col-2">max status</div>#}
+                            <div class="col-1">tp icn</div>
+{#                            <div class="col-2">packing number</div>#}
+                            <div class="col-1">TP Method</div>
+{#                            <div class="col-2">packing id</div>#}
+                            <div class="col-2">shipment type</div>
                             <div class="col-3"></div>
                         </div>
                     {% endif %}
 
                     {% for packing_item in packing_items %}
                         <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
-                            <div class="col-2 py-2">
+                            <div class="col-1 py-2">
                                 <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                <span>{{ packing_item.carton_number|default_if_none:"-" }}</span>
+                                <span>{{ packing_item.quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2 s-05">
-                                <span>{{ packing_item.carton_qty|intcomma|default_if_none:"-" }}</span>
+                                <span>{{ packing_item.arrived_quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2 py-2 s-05">
-                                <span>{{ packing_item.weight_kg|intcomma|default_if_falsy:"-" }}</span>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ packing_item.packing.arrival_date|default_if_falsy:"-"|to_jalali:'%Y-%m-%d' }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.pk|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.packing_number|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                {% with packing_item.order.transportation_method as tp %}
+                                    {% if tp == 'express' %}
+                                        <span class="me-5">⚡</span>
+                                    {% elif tp == 'air' %}
+                                        <span class="me-5">🚀</span>
+                                    {% elif tp == 'sea' %}
+                                        <span class="me-5">🚢</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.order.transportation_method|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-2 py-2 ">
-                                <span>{{ packing_item.packing|default_if_none:"-" }}</span>
+                                <span class="me-5">{{ packing_item.packing.shipment_type|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-2 py-2 ">
-                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>
-                            </div>
+{#                            <div class="col-5 py-2" direction="rtl">#}
+{#                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.pk|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.title|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.last_work_flow.current_state_name|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.quantity|default_if_none:"-"  }}</span>#}
+{#                            </div>#}
                             <div class="col-3"></div>
                         </div>
                     {% endfor %}
@@ -484,5 +629,54 @@ const packing_item = document.querySelector('#packing_item')
             custom_ajax_get('', this.dataset.url, modal_sm_body)
         })
     })
+
+function percentageToDegrees(percentage) {
+            return percentage / 100 * 360
+          }
+        function progressPercentage (){
+            const elements = document.querySelectorAll(".progress-circle")
+            elements.forEach(function (item){
+                let value = item.getAttribute('data-value');
+                let left = item.querySelector('.progress-left .progress-bar')
+                let right = item.querySelector('.progress-right .progress-bar')
+
+                if (value > 0) {
+                  if (value <= 50) {
+                    right.style.transform = 'rotate(' + percentageToDegrees(value) + 'deg)'
+                  } else {
+                    right.style.transform = 'rotate(180deg)'
+                    {#right.css('transform', 'rotate(180deg)')#}
+                    left.style.transform = 'rotate(' + percentageToDegrees(value - 50) + 'deg)'
+                    {#left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')#}
+                  }
+                }
+            })
+        }
+        progressPercentage()
+
+    function handelOrderPriceDiff(){
+        const id_price = document.querySelector('#id_price')
+        const id_price_trade = document.querySelector('#id_price_trade')
+        const id_price_mac = document.querySelector('#id_price_mac')
+        const id_can_alert = document.querySelector('#id_can_alert')
+        if (id_can_alert && id_price_trade && id_price_mac && id_price_mac.value && id_price_trade.value !== id_price_mac.value && !id_price.value){
+            const msg = `قیمت اعلامی از جانب MAC با قیمت اعلامی بازرگانی متفاوت است \n\n MAC: ${id_price_trade.value} \n TRADE: ${id_price_mac.value}`
+            {#document.querySelector('#global-error').innerHTML = msg#}
+            alert(msg)
+        }
+    }
+
+    window.setTimeout(handelOrderPriceDiff, 1000)
+
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+
     </script>
+    <script src="{% static 'js/comment.js' %}"></script>
 {% endblock extra_js %}

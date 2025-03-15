@@ -24,36 +24,72 @@
     {% endfor %}
     <div class="card-body p-0">
         <div class="ribbon ribbon-start ribbon-clip" style="top: 13px">
-            <div class="ribbon-label text-black px-6" style="padding-bottom: 2px; padding-top: 2px;">
+            <div class="ribbon-label text-black px-6 d-flex justify-content-between" style="padding-bottom: 2px; padding-top: 2px; width: 10%">
             {% with form_s.instance.not_over as not_over %}
+                <span class="me-2">
                 {% if not_over.0 %}
-                    قطعی
+                    انبار کامل
                 {% elif not_over.1 %}
-                    انبار ناقص
-                {% elif not_over.2 %}
                     سفارش کامل
+                {% elif not_over.2 %}
+                    انبار + سفارش (کامل)
                 {% elif not_over.3 %}
-                    سفارش ناقص
+                    انبار ناقص
                 {% elif not_over.4 %}
+                    سفارش ناقص
+                {% elif not_over.5 %}
+                    انبار + سفارش (ناقص)
+                {% elif not_over.6 %}
                     بدون فاکتور
                 {% endif %}
+                </span>
                 <span class="ribbon-inner
                 {% if not_over.0 %}
                 bg-success
                 {% elif not_over.1 %}
                 bg-light-success
                 {% elif not_over.2 %}
-                bg-light-warning
+                bg-light-success
                 {% elif not_over.3 %}
-                bg-warning
+                bg-light-warning
                 {% elif not_over.4 %}
+                bg-light-danger
+                {% elif not_over.5 %}
+                bg-light-danger
+                {% elif not_over.6 %}
                 bg-white
                 {% endif %}">
                 </span>
+                {% if not not_over.6 %}
+                    <i class="ki-outline ki-information-2 fs-3 text-black cursor-pointer tooltip_">
+                <span class="tooltiptext-fit">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark">
+                          <tr>
+                            <th>فاکتور</th>
+                            <th>سفارش</th>
+                            <th>تعداد</th>
+                            <th>پیش بینی زمان تحویل</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for supply_location in not_over.7 %}
+                        <tr>
+                            <td>{{ supply_location.0 }}</td>
+                            <td>{{ supply_location.1 }}</td>
+                            <td>{{ supply_location.2 }}</td>
+                            <td>{{ supply_location.3 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+                </span>
+                </i>
+                {% endif %}
             {% endwith %}
             </div>
         </div>
-        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 9rem">
+        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 10%">
             <span class="counter">{{ forloop.counter }}</span>
             <div class="col-1 col ms-4">
                 <span class="me-2">کد کالا:</span>

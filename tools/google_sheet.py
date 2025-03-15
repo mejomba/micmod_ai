@@ -92,8 +92,35 @@ class GSheet:
 
 # price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
 
+def x():
+    import gspread
+    # from django.core.management.base import BaseCommand
+    # from order.models import Order
+
+    # connect to Google Sheets
+    wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
+    # wb = GSheet("1cHOUL7RTVf4MqsO4I9bMWLk5WjOm5RSkIuzge78fxVk")
+
+
+    # read Google Sheets data
+    data = wb.read_sheet('Sheet1')
+    # data = sheet.get_all_records()
+
+    for row in data:
+        pass
+        # YourModel.objects.update_or_create(
+        #     field1=row['Column1'],  # تطبیق نام ستون‌های Google Sheets با فیلدهای مدل
+        #     defaults={
+        #         'field2': row['Column2'],
+        #         'field3': row['Column3'],
+        #     }
+        # )
+
+    # self.stdout.write(self.style.SUCCESS("Data successfully imported to the database!"))
+
 
 if __name__ == '__main__':
+    x()
     g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
     price_wb = GSheet("1QaCzGf_sqELtWsK1hqmUGWftkGE4B8JPPbyrkt8ye3o")
     p = price_wb.get_sheet_price('255')

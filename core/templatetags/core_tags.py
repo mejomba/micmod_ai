@@ -260,12 +260,19 @@ def abs_(a):
 @register.inclusion_tag('core/partial/table_responsive.html')
 def table_responsive(objs, fields=None, title=None):
     rows = dict()
-    fields = fields.split(',') if fields else None
+    fields_pair = fields.split(',') if fields else None
+    fields_pair_list = list(map(lambda x: x.split('|'), fields_pair))
     if fields:
         for idx, obj in enumerate(objs):
             if rows.get(idx) is None:
                 rows[idx] = []
-            rows[idx] = {field.name: getattr(obj, field.name) for field in obj._meta.get_fields() if field.name in fields}
+
+            for field in obj._meta.get_fields():
+                for field_pair in fields_pair_list:
+                    if field.name in field_pair:
+                        rows[idx] = {field.name: getattr(obj, field.name)}
+                        break
+                # rows[idx] = {field.name: getattr(obj, field.name) for field in obj._meta.get_fields() if field.name in fields_[0]}
             rows[idx].update({'action_': mark_safe(f"""
                                             <span>
                                             <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{reverse('order:packingitem.update', kwargs={'pk': obj.pk})}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">

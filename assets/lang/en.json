@@ -1,5 +1,5 @@
 {
-    "title": "Dashboard | Dason - Admin & Dashboard Template",
+    "title": "Title",
     "t-menu":"Menu",
     "t-dashboard":"Dashboard",
     "t-default":"Default",
@@ -172,5 +172,6 @@
     "t-mainmenu": "Main menu",
     "t-fa_lang": "Persian",
     "t-en_lang": "English",
-    "t-quotation": "Quotation"
+    "t-quotation": "Quotation",
+    "t-factor": "Factor"
 }

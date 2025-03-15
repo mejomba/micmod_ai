@@ -349,6 +349,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         for f in context['formset']:
             if f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
                 f.has_alt_code = True
+        factors = self.object.q.all() if self.object else None
+        if factors and factors.exists():
+            context['form'].enable = False
+            context['factors'] = factors
         return context
 
 
@@ -1052,7 +1056,7 @@ class QuotationListDatatable(AjaxDatatableView):
         )
 
         counter = obj.get_inquiry_result_count
-        over = obj.not_over
+        over = obj.not_over_q
 
         local_color_condition = counter[1] == counter[2] and counter[1] != 0
         foreign_color_condition = counter[3] == counter[4] and counter[3] != 0
@@ -1107,12 +1111,14 @@ class QuotationListDatatable(AjaxDatatableView):
                 <span>{over[1]}</span>
                 <span>{over[0]}</span>
             </div>
+            <!--
             <hr>
             <div class="d-flex justify-content-between">
                 <span>{over[2]}</span>
                 <span>{over[3]}</span>
                 <span>{over[4]}</span>
             </div>
+            -->
         </div>
         '''
         row['not_over'] = res

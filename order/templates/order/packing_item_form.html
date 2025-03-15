@@ -13,24 +13,34 @@
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
         <div class="row">
-            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
-            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
-            {% render_field_by_order form form.order form.packing form.carton_number form.carton_qty form.brand label='on-border' %}
-            <div class="col-12">
-                <div class="row">
-                    {% render_field_by_order form form.part_number form.quantity form.size form.net_weight_kg form.gross_weight_kg label='on-border' %}
+            <div class="col-9">
+                <div class="row ">
+                    <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
+                    {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
+                    {% render_field_by_order form form.order form.part_number label='on-border' %}
+                </div>
+                <div class="row row-cols-3">
+                    {% render_field_by_order form form.quantity form.arrived_quantity form.price form.packing label='on-border' %}
+                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand label='on-border' %}
                 </div>
             </div>
-            <div class="col-12">
-                <div class="row">
-                    {% render_field_by_order form form.volume form.price form.amount form.sales_conf form.item_weight label='on-border' %}
-                </div>
-            </div>
-            <div class="col-12">
+            <div class="col-3">
                 <div class="row">
                     {% render_field_by_order form form.description label='on-border' %}
                 </div>
             </div>
+
+{#            {% render_field_by_order form.quantity form.arrived_quantity form.price form.packing label='on-border' %}#}
+{#            <div class="col-12">#}
+{#                <div class="row">#}
+{#                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand label='on-border' %}#}
+{#                </div>#}
+{#            </div>#}
+{#            <div class="col-12">#}
+{#                <div class="row">#}
+{#                    {% render_field_by_order form form.description label='on-border' %}#}
+{#                </div>#}
+{#            </div>#}
 
 
         </div>
@@ -39,9 +49,20 @@
 </form>
 
 <script>
-    debugger
+    function packing_item_after_order_select(select2_element, target_element, id_field){
+        $(select2_element).on("select2:select", function (e) {
+            debugger
+            const data = e.params.data;
+            const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
+            $(document).find(target_element).val(data[id_field])
+            document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+            console.log('inja')
+            document.querySelector('input[name="part_number"]').value = data.text
+            document.querySelector('input[name="price"]').value = data.price
+        })
+    }
     const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
-    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/item__part_number/?view_name=packing_item_order_select2', order_select2_placeholder, 'id', null, null, null, packing_item_after_order_select)
     $('#packing-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit(this, true, true)

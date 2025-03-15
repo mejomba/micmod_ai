@@ -81,8 +81,8 @@
 
                                     </div>
                                 </div>
-                                <div class="col-lg-4 p-0 border-top border-bottom border-end">
-                                    <div class="d-flex border-bottom px-1 align-items-start">
+                                <div class="col-lg-4 p-0 border-top border-end">
+                                    <div class="d-flex px-1 align-items-start">
                                         <div class="w-25 mt-3 on-border">
                                             {% if form_s.enable %}
 {#                                                <div class="select2 goods_code " name="goods_code"></div>#}
@@ -151,7 +151,7 @@
 
             {% if request.user|has_group:"trade_user" %}
             <div class="mt-3">
-                <div class="d-flex mb-1 border-bottom">
+                <div class="d-flex mb-1">
                     <div class="text-end w-50">
                         {% render_field_by_order form_s form_s.assigned_trade_user label='on-border' margin_b=1 %}
                         {{ form_s.instance.assigned_trade_user_date|date:'Y-m-d' }}
@@ -202,7 +202,7 @@
                                             <div class="row row-cols-1">
                                                 {% if request.user|has_group:"bazar_user" %}
                                                     <div class="col">
-                                                        <div class="border-bottom ps-1">
+                                                        <div class="ps-1">
                                                             <div class="d-flex justify-content-between mt-1">
                                                                 {% render_field_by_order form_s form_s.force_inquiry label='on-border' margin_b=0 %}
                                                             </div>

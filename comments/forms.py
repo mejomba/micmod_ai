@@ -31,6 +31,12 @@ class CommentsForm(CustomBaseModelForm):
         self.fields['comment_title'].widget.attrs.update({'name': "jafar"})
         self.submit_type = self.initial.get('submit_type') or 'save_comment'
 
+        if self.submit_type == 'order_error':
+            self.initial['comment_title'] = 'O'
+            self.fields['comment_title'].choices = (
+                ('O', 'کامنت ساده'),
+                ('R', 'خطای سفارش'),
+            )
         if self.submit_type == 'save_comment':
             self.initial['comment_title'] = 'O'
             self.fields['comment_title'].choices = (
