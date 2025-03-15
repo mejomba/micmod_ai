@@ -328,7 +328,7 @@ class SuppliersAccountingList(LoginRequiredMixin,View):
         if not has_groups(request.user,'trade_user,accounting_user'):
             return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
         item_list = []
-        mylist = (Dl.get_accounting_list())
+        mylist = (Dl.get_accounting_list(self.request.GET.get('q')))
         for item in mylist:
             if self.has_only_latin_letters(item.dl_title):
                 item_list.append(item)

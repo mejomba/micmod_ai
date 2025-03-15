@@ -42,19 +42,46 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
         return res
 
     @staticmethod
-    def get_accounting_list():
-        return Dl.objects.using('sepidar').raw("""
-select Cur.Title cur_ref,DL.Code DLId,VI.AccountSLRef,DL.Title dl_title,
-	sum(VI.CurrencyCredit) sum_credit,sum(VI.CurrencyDebit) sum_debit, 
-	sum(VI.CurrencyDebit)-sum(VI.CurrencyCredit) in_line,MAX(V.Date) last_voucher_date
-from [ACC].[VoucherItem] VI
-Join [ACC].[Voucher] V on V.VoucherId = VI.VoucherRef
-Join [ACC].[DL] DL on DL.DLId = VI.DLRef
-Join [GNR].[Currency] Cur on Cur.CurrencyID = VI.CurrencyRef
-where VI.AccountSLRef = 404 and VI.CurrencyRef > 1
-Group by Cur.Title,DL.Code,DL.Title,VI.AccountSLRef
-order by DL.Title
-        """)
+    def get_accounting_list(f):
+        if f == 'mande_positive':
+            return Dl.objects.using('sepidar').raw("""
+            select 
+                Cur.Title cur_ref,
+                DL.Code DLId,
+                VI.AccountSLRef,
+                DL.Title dl_title,
+            	sum(VI.CurrencyCredit) sum_credit,
+            	sum(VI.CurrencyDebit) sum_debit, 
+            	sum(VI.CurrencyDebit)-sum(VI.CurrencyCredit) in_line,
+            	MAX(V.Date) last_voucher_date
+            from [ACC].[VoucherItem] VI
+            Join [ACC].[Voucher] V on V.VoucherId = VI.VoucherRef
+            Join [ACC].[DL] DL on DL.DLId = VI.DLRef
+            Join [GNR].[Currency] Cur on Cur.CurrencyID = VI.CurrencyRef
+            where VI.AccountSLRef = 404 and VI.CurrencyRef > 1
+            Group by Cur.Title,DL.Code,DL.Title,VI.AccountSLRef
+            HAVING SUM(VI.CurrencyDebit) - SUM(VI.CurrencyCredit) > 0
+            order by DL.Title
+                    """)
+        else:
+            return Dl.objects.using('sepidar').raw("""
+            SELECT
+        Cur.Title AS cur_ref,
+        DL.Code AS DLId,
+        VI.AccountSLRef,
+        DL.Title AS dl_title,
+        SUM(VI.CurrencyCredit) AS sum_credit,
+        SUM(VI.CurrencyDebit) AS sum_debit,
+        SUM(VI.CurrencyDebit) - SUM(VI.CurrencyCredit) AS in_line,
+        MAX(V.Date) AS last_voucher_date
+    FROM [ACC].[VoucherItem] VI
+    JOIN [ACC].[Voucher] V ON V.VoucherId = VI.VoucherRef
+    JOIN [ACC].[DL] DL ON DL.DLId = VI.DLRef
+    JOIN [GNR].[Currency] Cur ON Cur.CurrencyID = VI.CurrencyRef
+    WHERE VI.AccountSLRef = 404 AND VI.CurrencyRef > 1
+    GROUP BY Cur.Title, DL.Code, DL.Title, VI.AccountSLRef
+    ORDER BY DL.Title;
+    """)
 
     @staticmethod
     def get_sales_history_list(kwargs):
