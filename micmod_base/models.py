@@ -84,7 +84,7 @@ class Quotation(SLSDoc):
                                       verbose_name=_('payment_method'), default="6,2 Month")
     market_grade = models.CharField(choices=MarketGrade, max_length=10, null=True, blank=True,
                                     verbose_name=_('market_grade'), default="5,A")
-    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
+    description = models.TextField(max_length=2000, null=True, blank=True, verbose_name=_('description'))
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
     sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
@@ -533,8 +533,7 @@ class QuotationItem(BaseModel):
     goods_q_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price_q"))
     goods_q_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales_q"))
 
-    price_method = models.CharField(choices=PriceMethod, max_length=20, default="last_sale",
-                                    verbose_name=_('price_method'))
+    price_method = models.CharField(choices=PriceMethod, max_length=20, verbose_name=_('price_method'), null=True, blank=True)
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
@@ -990,7 +989,7 @@ class QuotationItem(BaseModel):
 
     @property
     def row_price(self):
-        return round_rial(int(self.net_price))
+        return round_rial(float(self.net_price))
 
     @property
     def price(self):

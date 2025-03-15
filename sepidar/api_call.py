@@ -13,6 +13,7 @@ class SepidarApiCall:
     endpoints = {
         'login': f'{protocol}://{host}:{port}/api_log/token/',
         'stock_quantity': f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary/',
+        'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
     }
 
     @classmethod
@@ -66,6 +67,19 @@ class SepidarApiCall:
             out['res'] = r
 
         return out
+
+    @classmethod
+    def get_all_items(cls, page=0):
+        cls.setup()
+        endpoint = cls.endpoints.get('all_items')
+        if page:
+            endpoint = endpoint + f'?page={page}'
+        res = requests.get(endpoint, headers=cls.headers)
+        out = dict()
+        if res.ok:
+            response = res.json()
+            return response
+        return None
 
     @classmethod
     def create_dl(cls):

@@ -175,7 +175,14 @@ class BaseView(UserPassesTestMixin,
                 if value:
                     obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
                     if not obj and model.insert_new:
-                        obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user, 'editor_user': self.request.user})
+                        if model.__name__.lower() == 'creditcard':
+                            obj = model.objects.create(**{model.auto_complete: value,
+                                                          'credit_card_number': self.request.POST.get('to_account'),
+                                                          'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
+                        else:
+                            obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
                         obj.extra_data.request = self.request
                         obj.save()
                         obj.auto_complete_func()

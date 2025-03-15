@@ -1,0 +1,88 @@
+/**
+ * Minified by jsDelivr using Terser v5.19.2.
+ * Original file: /npm/jalaali-js@1.1.0/index.js
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+function toJalaali(a, i, d) {
+    return "[object Date]" === Object.prototype.toString.call(a) && (d = a.getDate(), i = a.getMonth() + 1, a = a.getFullYear()), d2j(g2d(a, i, d))
+}
+
+function toGregorian(a, i, d) {
+    return d2g(j2d(a, i, d))
+}
+
+function isValidJalaaliDate(a, i, d) {
+    return a >= -61 && a <= 3177 && i >= 1 && i <= 12 && d >= 1 && d <= jalaaliMonthLength(a, i)
+}
+
+function isLeapJalaaliYear(a) {
+    return 0 === jalCal(a).leap
+}
+
+function jalaaliMonthLength(a, i) {
+    return i <= 6 ? 31 : i <= 11 || isLeapJalaaliYear(a) ? 30 : 29
+}
+
+function jalCal(a) {
+    var i, d, t, l, r, n,
+        e = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178],
+        o = e.length, v = a + 621, g = -14, u = e[0];
+    if (a < u || a >= e[o - 1]) throw new Error("Invalid Jalaali year " + a);
+    for (n = 1; n < o && (d = (i = e[n]) - u, !(a < i)); n += 1) g = g + 8 * div(d, 33) + div(mod(d, 33), 4), u = i;
+    return g = g + 8 * div(r = a - u, 33) + div(mod(r, 33) + 3, 4), 4 === mod(d, 33) && d - r == 4 && (g += 1), l = 20 + g - (div(v, 4) - div(3 * (div(v, 100) + 1), 4) - 150), d - r < 6 && (r = r - d + 33 * div(d + 4, 33)), -1 === (t = mod(mod(r + 1, 33) - 1, 4)) && (t = 4), {
+        leap: t,
+        gy: v,
+        march: l
+    }
+}
+
+function j2d(a, i, d) {
+    var t = jalCal(a);
+    return g2d(t.gy, 3, t.march) + 31 * (i - 1) - div(i, 7) * (i - 7) + d - 1
+}
+
+function d2j(a) {
+    var i, d = d2g(a).gy, t = d - 621, l = jalCal(t);
+    if ((i = a - g2d(d, 3, l.march)) >= 0) {
+        if (i <= 185) return {jy: t, jm: 1 + div(i, 31), jd: mod(i, 31) + 1};
+        i -= 186
+    } else t -= 1, i += 179, 1 === l.leap && (i += 1);
+    return {jy: t, jm: 7 + div(i, 30), jd: mod(i, 30) + 1}
+}
+
+function g2d(a, i, d) {
+    var t = div(1461 * (a + div(i - 8, 6) + 100100), 4) + div(153 * mod(i + 9, 12) + 2, 5) + d - 34840408;
+    return t = t - div(3 * div(a + 100100 + div(i - 8, 6), 100), 4) + 752
+}
+
+function d2g(a) {
+    var i, d, t, l;
+    return i = (i = 4 * a + 139361631) + 4 * div(3 * div(4 * a + 183187720, 146097), 4) - 3908, d = 5 * div(mod(i, 1461), 4) + 308, t = div(mod(d, 153), 5) + 1, l = mod(div(d, 153), 12) + 1, {
+        gy: div(i, 1461) - 100100 + div(8 - l, 6),
+        gm: l,
+        gd: t
+    }
+}
+
+function div(a, i) {
+    return ~~(a / i)
+}
+
+function mod(a, i) {
+    return a - ~~(a / i) * i
+}
+
+module.exports = {
+    toJalaali: toJalaali,
+    toGregorian: toGregorian,
+    isValidJalaaliDate: isValidJalaaliDate,
+    isLeapJalaaliYear: isLeapJalaaliYear,
+    jalaaliMonthLength: jalaaliMonthLength,
+    jalCal: jalCal,
+    j2d: j2d,
+    d2j: d2j,
+    g2d: g2d,
+    d2g: d2g
+};
+//# sourceMappingURL=/sm/a0681e11adc76d5221ec0c7c5b6d584ad3dcfa944c8915a3a807bbfd3dea1035.map

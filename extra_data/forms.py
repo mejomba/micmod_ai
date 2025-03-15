@@ -165,7 +165,6 @@ class CustomerExpertForm(CustomBaseModelForm):
 class CustomerContractForm(CustomBaseModelForm):
     file_groups = 1
     file_model = File
-
     class Meta:
         model = CustomerContract
         fields = '__all__'

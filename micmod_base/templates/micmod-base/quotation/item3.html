@@ -7,9 +7,11 @@
 
 <div class="card item p-0 my-2 {% if not forloop.last %} sortable-item {% endif %}" dir="rtl">
 {% if form_s.errors %}
-<div class="bg-warning"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
+    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
+<div class="bg-light-danger"><span>row ({{ forloop.counter }}) {{ form_s.errors }}</span></div>
 {% endif %}
 {% if nested.errors %}
+    <div class="position-fixed fixed-top w-50 p-3 mx-auto bg-light-danger text-danger bold">خطا در ردیف های پیش فاکتور !</div>
 <div class="bg-secondary"><span>row ({{ forloop.counter }})</span> {{ nested.errors }}</div>
 {% endif %}
     {% for hidden in form_s.hidden_fields %}
@@ -260,6 +262,8 @@
                         <div class="w-20 d-flex flex-column gap-2">
                             <div class="card-title-desc text-center">تاریخ</div>
                             <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>
+                            <div name="market_expire_date" style="width: 450px;"></div>
+                            <div name="trade_expire_date" style="width: 250px;"></div>
                         </div>
                         <div class="w-20 d-flex flex-column gap-2">
                             <div class="card-title-desc text-center">بازار</div>
@@ -295,6 +299,7 @@
                         </div>
                     </div>
                 </div>
+{#                <div class="bg-danger">{{ nested }}</div>#}
                 <div>
                     <div class="sepidar_stock_info_result"></div>
                 </div>
@@ -400,7 +405,7 @@
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
             <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
             <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
-            <span class="sepidar_stock_info cursor-pointer text-primary" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
+            <span class="sepidar_stock_info cursor-pointer text-primary d-non" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
             {% if form_s.instance.task_start or form_s.instance.task_start2 %}
                 {% if not form_s.instance.foreign_price_inquiry_done %}
                     <span class="text-danger">فرایند استعلام این ردیف آغاز شده است، برای هرگونه تغییر در اطلاعات ردیف با کارشناس بازرگانی هماهنگ کنید</span>
@@ -409,6 +414,7 @@
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
+{#    <div class="d-non bg-danger market_expire_limit_days" data-market_expire_limit_days="{{ nested.instance.price_expire_date }}"></div>#}
 </div>
         </div>
     </div>

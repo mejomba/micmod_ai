@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import Count, Q
@@ -7,6 +6,7 @@ from django.dispatch import receiver
 from itertools import chain
 
 from accounts.models import User
+from core.models import CHOICE
 from tools.utils import c_get, round_price, show_error
 
 from django.template.loader import render_to_string
@@ -20,12 +20,14 @@ from tools.form_tools import get_dif_percentage
 from tools.utils import elapsed_time
 
 from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
+from django.utils import timezone
 
 
 class Supplier(BaseModel):
     BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
     title = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
     base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
+    country = models.CharField(verbose_name=_('country'), max_length=255, choices=CHOICE.supplier_country, null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):
@@ -69,6 +71,9 @@ class PriceInquiryResult(BaseModel):
     active = models.BooleanField(verbose_name=_('active'), default=False)
     inquiry_type = models.ForeignKey('InquiryResultVariant', on_delete=models.DO_NOTHING, verbose_name=_('inquiry_type'), default=1)
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
+    variants_json = models.JSONField(_('variants_json'), null=True, blank=True)
+    price_expire_date = models.SmallIntegerField(_('price_expire_date'), null=True, blank=True)
+    # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -78,6 +83,29 @@ class PriceInquiryResult(BaseModel):
             'payment_method_': None,
             'currency_': None,
         }
+
+    @property
+    def bazar_expire_date(self):
+        bazar_expire_delta = timezone.timedelta(days=self.price_expire_date or 3000)
+        return self.price_update_date + bazar_expire_delta
+
+    @property
+    def is_valid_time(self):
+        return True
+        from django.utils import timezone
+        now = timezone.now()
+        try:
+            return ((now - self.last_update_date).total_seconds() / 3600) < 72
+        except Exception as e:
+            return
+
+    @classmethod
+    def valid_bazar_inquiry(cls):
+        now = timezone.now()
+        last_72_hour = (now - timezone.timedelta(hours=72_000), now)  # 3000 days
+        bazar_filter = Q(inquiry_type__title__icontains='داخل')
+        qs = cls.objects.filter(bazar_filter, active=True, last_update_date__range=last_72_hour)
+        return qs
 
     @property
     def item_sku(self):
@@ -368,7 +396,29 @@ class PriceInquiryResult(BaseModel):
         weight = self.weight
         settings = self.price_settings
         effective_rmb_price = self.rmb_price
-        if self.currency_type.c_get("title_en","RMB") == "RMB":
+        if self.supplier and self.supplier.country == 'CHN':
+            return {
+                # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
+                #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+                "air": cost_multiplier * (
+                        self.sku.purchase_group.air_transportation or 0) * settings.air_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+                "sea": cost_multiplier * (
+                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+            }
+        elif self.supplier and self.supplier.country == 'HKG':
+            return {
+                "express": cost_multiplier * (
+                        self.sku.purchase_group.express_transportation or 0) * settings.express_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
+                # "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
+                #        + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
+                "sea": cost_multiplier * (
+                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
+                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
+            }
+        elif self.currency_type.c_get("title_en", "RMB") == "RMB":
             return {
                 # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
                 #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
@@ -407,6 +457,7 @@ class PriceInquiryResult(BaseModel):
         ordering = 'created_date',
 
     def deactivate_other(self):
+        condition = None
         if p := self.price_inquiry_file:
             sku = p.item
             result = [pif.inquery_result.all() for pif in sku.sku_const.all()]
@@ -414,7 +465,8 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type:
+                condition = self.variants_json == res.variants_json
+                if (self.active and self != res and self.inquiry_type == res.inquiry_type) and condition:
                     res.active = False
                     res.save()
         else:
@@ -424,7 +476,8 @@ class PriceInquiryResult(BaseModel):
             result.append(r2)
             result = list(chain(*result))
             for res in result:
-                if self.active and self != res and self.inquiry_type == res.inquiry_type and res.active:
+                condition = self.variants_json == res.variants_json
+                if (self.active and self != res and self.inquiry_type == res.inquiry_type and res.active) and condition:
                     res.active = False
                     res.save()
 
@@ -537,3 +590,10 @@ class InquiryResultVariant(AbsBaseModel):
 
     def __str__(self):
         return f'{self.value}'
+
+
+class AllowedInquiry(BaseModel):
+    title = models.CharField(max_length=255, verbose_name=_('title'))
+
+    def __str__(self):
+        return f'{self.title}'

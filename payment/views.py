@@ -66,7 +66,9 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         if self.state_index == 3 and 'next' in self.request.POST and not form.cleaned_data.get('manager_confirmation'):
             form.errors.update({'manager_confirmation': 'بدون تایید امکان ارسال به مرحله نهایی وجود ندارد'})
             return super().form_invalid(form)
-        
+
+        is_paid = self.object.is_paid if self.object else None  # store is_paid value before save
+
         res = super().form_valid(form)
         if self.state_index == 2 and 'next' in self.request.POST and form.cleaned_data.get(
                 'manager_confirmation') and form.cleaned_data.get('is_paid'):
@@ -75,6 +77,13 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
                                     object_id=self.object.pk, content_type=ContentType.objects.get_for_model(PaymentOrder),
                                     creator_user=self.request.user, editor_user=self.request.user, from_user=self.object.last_work_flow.to_user,
                                     to_user=self.object.last_work_flow.to_user, current_state_name='مرحله نهایی')
+
+        # save payment date if it's checked
+        if not is_paid and form.cleaned_data.get('is_paid'):
+            self.object.payment_date = timezone.now()
+            self.object.extra_data.request = self.request
+            self.object.save()
+
         return res
 
 
@@ -99,7 +108,7 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'payment_date', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'amount', 'visible': True, 'orderable': True,},
         {'name': 'behalf', 'visible': True, 'orderable': True},
-        {'name': 'pay_to', 'visible': True, 'orderable': True},
+        {'name': 'credit_card', 'visible': True, 'orderable': True, 'title': 'در وجه'},
         {'name': 'from_source', 'visible': True, 'orderable': True,  'lookup_field': '__title__icontains'},
         {'name': 'to_account', 'visible': True, 'orderable': True, 'title': '<div class="px-20">به حساب یا کارت</div>'},
         {'name': 'applicant', 'visible': True, 'orderable': True},

@@ -1,12 +1,8 @@
 import datetime
 import threading
 
-from django.shortcuts import render
-
-from tools.utils import build_column_filter
 from django.core.cache import cache
 from django.conf import settings
-from django.db.models.lookups import LessThan
 from django.forms import inlineformset_factory
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
@@ -18,24 +14,23 @@ from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import Min, IntegerField, F, Q, ExpressionWrapper, FloatField, When, Case, Subquery, Value
-from django.db.models.functions import Cast, Abs, Coalesce
+from django.db.models import IntegerField, F, Q, When, Case
+from django.db.models.functions import Cast
 
 from micmod_base.models import QuotationItem
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
-from tools.import_data import set_items_sepidar_id_from_sepidar
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry
 from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
 
-from tools.utils import show_error, get_tuple_value_list, c_get
-from tools.form_tools import get_choice_field, get_obj_from_dict
+from tools.utils import show_error, get_tuple_value_list
+from tools.form_tools import get_choice_field
 from .tasks import update_price_list, update_components, db_backup
 
 from tools.utils import round_price
@@ -64,28 +59,14 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
         ]
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'PriceInquiryFileCreateView')
-    # form_class = PriceInquiryFileCreateForm
     model = PriceInquiryFile
-    # formset = inlineformset_factory(PriceInquiryFile, PriceInquiryResult, form=PriceInquiryResultCreateForm, extra=1, )
     has_formset = True
-    # formset_form = PriceInquiryResultCreateForm
     formset_model = PriceInquiryResult
     extra_formset = 1
     template_name = 'inquiry/price_inquiry_file_update_or_create.html'
     success_message = '%(item)s create'
     related_name_fk = 'inquery_result'
     formset_fk_field = 'price_inquiry_file'
-
-    # has_simple_flow = True
-    # has_flow = True
-    # flow_config = {
-    #     'flow_name': 'create sku',
-    #     'flow_action': 'some action',
-    #     'flow_state_list': ['state1', 'state2', 'state3', 'state4', 'state5', 'state6', 'state7'],
-    #     'flow_users_groups': ['sales_admin', 'base_user', 'wh_user', 'wh_user', 'wh_user', 'wh_user', 'base_user'],
-    #     'flow_deadline': [0, 2, 3, 1, 1, 1, 2],
-    # }
-    # wf_to_user_permission = 'inquiry.change_priceinquiryfile'
 
     def get_success_url(self):
         return reverse_lazy('inquiry:price_inquiry_file.view-related', kwargs={'pk': self.object.pk})
@@ -99,10 +80,6 @@ class PriceInquiryFileCreateView(LoginRequiredMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # if self.request.user.has_perms(('inquiry.change_priceinquiryfile',)):
-        #     if self.object:
-        #         context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
-        #     ...
         return context
 
 
@@ -155,9 +132,7 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
         ]
     }
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'PriceInquiryFileUpdateView')
-    # form_class = PriceInquiryFileCreateForm
     has_formset = True
-    # formset_form = PriceInquiryResultCreateForm
     formset_model = PriceInquiryResult
     model = PriceInquiryFile
     template_name = 'inquiry/price_inquiry_file_update_or_create.html'
@@ -166,9 +141,6 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
     related_name_fk = 'inquery_result'
     formset_fk_field = 'price_inquiry_file'
     wf_to_user_permission = 'inquiry.change_priceinquiryfile'
-
-    # has_flow = True
-    # has_simple_flow = True
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -179,17 +151,14 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
         return reverse_lazy('inquiry:price_inquiry_file.view-related', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
-        # form.make_disable(['sku'])
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if flow := self.get_flow(context[self.context_object_name]):
             context['flow'] = flow.order_by('-id')
-        # context['flow'] = self.get_flow(context[self.context_object_name]).order_by('-id')
 
         context['object_logs'] = ChangeLog.get_log(context[self.context_object_name])
-        # context['formset'] = self.formset(instance=self.object, initial=[{'sku': self.object.item if self.object else None}])
 
         related_obj = context[self.context_object_name].inquery_result.all()
 
@@ -203,7 +172,6 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 class SkuListDataTableView(CustomAjaxDataTable):
     model = Item
     title = 'sku_list'
-    # initial_order = [["id", "des"], ]
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     not_search_values_separator = '|'
@@ -241,19 +209,6 @@ class SkuListDataTableView(CustomAjaxDataTable):
         import json
         status_array = json.loads(self.request.POST.get('status_array'))
         search_list = []
-        # if status_array:
-        #     part_number = self.request.POST.get('columns[3][search][value]') or None
-        #     sale_group = self.request.POST.get('columns[6][search][value]') or None
-        #     purchase_group = self.request.POST.get('columns[7][search][value]') or None
-        #     package = self.request.POST.get('columns[8][search][value]') or None
-        #     if part_number:
-        #         search_list.append(~Q(part_number__icontains=part_number)) if status_array[0] else search_list.append(Q(part_number__icontains=part_number))
-        #     if sale_group:
-        #         search_list.append(~Q(sale_group__title__icontains=sale_group)) if status_array[1] else search_list.append(Q(sale_group__title__icontains=sale_group))
-        #     if purchase_group:
-        #         search_list.append(~Q(purchase_group__title__icontains=purchase_group)) if status_array[2] else search_list.append(Q(purchase_group__title__icontains=purchase_group))
-        #     if package:
-        #         search_list.append(~Q(package__icontains=package)) if status_array[3] else search_list.append(Q(package__icontains=package))
 
         qs = self.model.objects.get_access_object(self.request.user)
         qs = qs.filter(*search_list)
@@ -288,7 +243,6 @@ class SkuListDataTableView(CustomAjaxDataTable):
 	) WH
 	where TRADE.sku_id=WH.sku_id """
 
-            #"""and abs(((WH.weight-TRADE.weight)/Trade.weight)*100)::integer>10"""
             raw = self.model.objects.raw(qry)
             ids = [x.sku for x in raw]
             qs = qs.filter(id__in=ids)
@@ -297,12 +251,17 @@ class SkuListDataTableView(CustomAjaxDataTable):
             pk_list = [item.pk for item in qs]
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(pk_list)])
             qs = self.model.objects.filter(pk__in=pk_list).order_by(preserved)
+        elif q == 'partnumber_diff':
+            from sepidar.api_call import SepidarApiCall
+            res = SepidarApiCall.get_all_items()
+            for page in range(res.get('total_page', 0)):
+                res = SepidarApiCall.get_all_items(page)
+            pass
 
         return qs
 
     def get_column_defs(self, request):
         column = super().get_column_defs(request)
-        print('get_column')
         if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and 'express_extra_cost_percentage' != column[-1].get('name'):
             column.append({'name': 'extra_cost_percentage', 'visible': True})
             column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
@@ -365,16 +324,12 @@ class InquiryResultListView(BaseView):
     form_class = PriceInquiryResult2CreateForm
     template_name = 'inquiry/inquiry_result_list_or_create.html'
 
-    # success_url = '.'
-
     def get_success_url(self):
         sku = self.request.GET.get('sku')
         path = reverse('inquiry:inquiry_result.list')
         if 'submit/copy' in self.request.POST:
             path += f"?sku={sku if sku else self.object.sku.pk}"
         self.success_url = path
-        # if cache.get(f'{self.request.user}__submit/copy'):
-        #     pass
         return path
 
     def setup(self, request, *args, **kwargs):
@@ -393,29 +348,22 @@ class InquiryResultListView(BaseView):
             obj.is_new = True
         obj.user = self.request.user
         if obj:
-            context.update({
-                'form': self.form_class(instance=obj)
-            })
+            if obj.pk:
+                context.update({
+                    'form': self.form_class(instance=obj)
+                })
+            else:
+                if self.request.user.base_group == 'bazar':
+                    obj.price_expire_date = 3
+                obj.currency_type_id = None
+                context.update({
+                    'form': self.form_class(instance=obj)
+                })
         if self.request.GET.get('pk'):
             context['submit_copy'] = False
             context['form'].instance.submit_copy = False
         context['app_name'] = self.request.resolver_match.app_name
 
-        # if cache.get(f'{self.request.user}__submit/copy'):
-        #     object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
-        #     context.update({
-        #         'form': self.form_class(initial=dict(map(lambda x: x, [('sku', object_for_copy.sku),
-        #                                                                ('sku_c', object_for_copy.sku),
-        #                                                                ]
-        #                                                  )
-        #                                              )
-        #                                 )
-        #     })
-        # else:
-        #     context.update({
-        #         'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-        #     })
-        # context['submit_copy'] = True
         return context
 
     def post(self, request, *args, **kwargs):
@@ -434,17 +382,20 @@ class InquiryResultListView(BaseView):
 
         if self.object and last_price and self.object.price != last_price:
             self.object.price_update_date = timezone.now()
+            if self.request.user.base_group == 'bazar':
+                self.object.goods_market_date = timezone.now()
             self.object.save()
 
         if form.cleaned_data['update_price'] and self.object:
             self.object.price_update_date = timezone.now()
+            if self.request.user.base_group == 'bazar':
+                self.object.goods_market_date = timezone.now()
             self.object.save()
 
         if self.object and self.object.item_weight and 'item_weight' in form.changed_data and self.object.sku.weight != self.object.item_weight:
             item_weight = ItemWeight.objects.create(sku=self.object.sku, weight=self.object.item_weight)
             item_weight.extra_data.request = self.request
             item_weight.save()
-            # item_weight.save_user(request=self.request)
 
         """save quotation_item inquiry result"""
         if submit_for_qi and qi_id:
@@ -477,19 +428,14 @@ class InquiryResultUpdateView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # self.request.GET._mutable = True
-        # self.request.GET.update({'user': self.request.user})
         context.update({
             'form': self.form_class(instance=self.object, data={'sku': self.object.sku},
                                     initial={'user': self.request.user})
         })
-        # self.request.GET._mutable = False
         context['submit_copy'] = False
-        # if not self.object.item_weight:
         sku = self.object.sku
         # TODO: filter by user type
         qry = f"select * from((select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where g_.name = 'wh_user' order by iw.id desc) a1) union (select * from(SELECT distinct iw.*FROM public.extra_data_itemweight as iw left join public.auth_user_groups as ug on ug.user_id = iw.creator_user_id left join public.auth_group as g_ on g_.id = ug.group_id where not g_.name = 'wh_user' or g_.name is null order by iw.id desc) a2)) a3 where sku_id = {sku.pk}"
-        # context['pre_item_weight'] = ItemWeight.objects.filter(sku=sku).first()
         try:
             context['pre_item_weight'] = ItemWeight.objects.raw(qry)[0]
         except Exception:
@@ -497,9 +443,7 @@ class InquiryResultUpdateView(BaseView):
         return context
 
     def get_success_url(self):
-        # sku = self.request.GET.get('sku')
         path = reverse('inquiry:inquiry_result.list')
-        # path += f"?sku={sku if sku else self.object.sku.pk}"
         return path
 
     def form_valid(self, form):
@@ -550,15 +494,11 @@ class InquiryResultDataTableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'sku', 'lookup_field': '__sku__iexact', 'className': 'sku-search w-15px'},
-            # {'name': 'last_update_date', 'data': 'last_update_date', 'orderable': True, 'visible': True, 'className': 'w-10px'},
             {'name': 'price_update_date', 'data': 'price_update_date', 'orderable': True, 'visible': True,
              'className': 'w-10px'},
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
             {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains',
              'className': 'w-20'},
-            # 'part_number',
-            # {"name": "purchase_group", "lookup_field": "sku__purchase_group__title__icontains"},
-            # {"name": "purchase_group", "searchable": False},
             {'name': 'purchase_group', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'active', 'className': 'w-7px'},
             {'name': 'price', 'className': 'w-15px'},
@@ -567,6 +507,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'id', 'visible': False},
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
+            'variants_json',
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
             {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
@@ -590,14 +531,13 @@ class InquiryResultDataTableView(AjaxDatatableView):
             qs = self.model.inquiry_list_datatable(user=self.request.user, param={"sku": sku})
         else:
             qs = self.model.inquiry_list_datatable(user=self.request.user)
-        # qs = qs.extra(select={'m_part_number': f'select part_number from extra_data_Item where extra_data_Item.id = inquiry_PriceInquiryResult.sku_id'}).filter()
         qs = qs.annotate(part_number=F('sku__part_number'), purchase_group=F('sku__purchase_group__title'))
         return qs.order_by('last_update_date')
 
     def customize_row(self, row, obj):
         delete_url = reverse('core:delete.confirm')
         row['delete'] = f"""
-        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+        <a href="#" onclick="delete_inquiry(event)" target="_blank" class="delete-inquiry-result text-danger tooltip_ py-3" data-url="{delete_url}?model={obj.__class__.__name__}&object_id={obj.pk}&app_label=inquiry" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
                             <span class="tooltiptext">حذف</span>
                             <i class="ki-duotone ki-trash fs-2 text-danger">
                                 <span class="path1"></span>
@@ -608,7 +548,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
                             </i>
                         </a>
                         """
-        qi = obj.trade_quotation_rel.first()
+        qi = obj.trade_quotation_rel.first() or obj.bazar_quotation_rel.first()
         row['qi_count'] = f"<span class='d-flex flex-column'><span>{qi.quantity} - {qi.quotation.pk}</span>" \
                           f"<hr class='text-muted'><span>تعداد - پیش</span></span>" if qi else '-'
         row['sku'] = '<a class="fw-bold" href="%s">%s</a>' % (
@@ -622,6 +562,16 @@ class InquiryResultDataTableView(AjaxDatatableView):
 
         if obj.active:
             row['active'] = """<b class="text-success">Yes</b>"""
+
+        html = '<div class="d-flex flex-column">'
+        for k, v in obj.variants_json.items() if obj.variants_json else []:
+            html += f'''<span class="d-flex justify-content-start">
+                            <span class="me-1 px-1">{k}</span>
+                            <span>{v}</span>
+                        </span>'''
+        else:
+            html += '</div>'
+        row['variants_json'] = html
 
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
@@ -672,7 +622,6 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
     sku_or_partnumber_filter = Q(sku=sku) | Q(part_number=sku)
     item_sku = Item.objects.filter(sku_or_partnumber_filter).first()
-    # item_sku = Item.objects.filter(sku=sku).first()
     all_trade_active_prices = item_sku.all_trade_active_price_
     all_bazar_active_prices = item_sku.all_bazar_active_price_
 
@@ -745,7 +694,6 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         inquiry_log_obj = SalesPriceInqueryLog.objects.create(**inquiry_log_params)
         inquiry_log_obj.extra_data.request = request
         inquiry_log_obj.save()
-        # inquiry_log_obj.save_user(request)
 
         inquiry_result_params = {
             #  استعلام از بازار
@@ -786,7 +734,6 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         obj = InquiryResult.objects.create(**inquiry_result_params)
         obj.extra_data.request = request
         obj.save()
-        # obj.save_user(request)
 
     html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html',
                             {'form': form, 'item': item, "sku": item_sku}, request)
@@ -856,13 +803,21 @@ def get_item(request):
                         )
                         item["price_settings"] = price_setting.pk
                         if str(id_currency_ref) == str(1):  # rial
+                            item['price'] = price_inquiry_result.price
+                            item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                            item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                            item['currency_type'] = price_inquiry_result.currency_type.pk
                             item["rial_final_price"] = price_inquiry_result.rial_final_price
                             item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
                         elif str(id_currency_ref) == str(2):  # rmb
+                            item['price'] = price_inquiry_result.price
+                            item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                            item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                            item['currency_type'] = price_inquiry_result.currency_type.pk
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -874,9 +829,12 @@ def get_item(request):
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
                         item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
                 obj['items'].append(item)
@@ -915,7 +873,7 @@ def get_item(request):
                                 item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                             item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
 
-                        if price_inquiry_result_bazar:
+                        if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                             price_setting = price_inquiry_result_bazar.price_settings
                             price_inquiry_result_bazar.set_discount_params(
                                 quantity=quantity,
@@ -927,9 +885,12 @@ def get_item(request):
                             item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                             item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
                                                                   "%Y-%m-%d")
+                            item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item['is_bazar'] = True
                         else:
                             item["goods_price_market"] = None
                             item["goods_market_date"] = None
+                            item["market_expire_date"] = None
 
                     except Exception as e:
                         show_error(e, __file__)
@@ -1007,7 +968,7 @@ def get_items(request):
                         item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -1018,9 +979,13 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
 
@@ -1073,7 +1038,7 @@ def get_items(request):
                         item["rial_final_price"] = {'express': None, 'air': None, 'sea': None}
                         item["rial_final_price_new_order"] = {'express': None, 'air': None, 'sea': None}
 
-                    if price_inquiry_result_bazar:
+                    if price_inquiry_result_bazar and price_inquiry_result_bazar.is_valid_time:
                         price_setting = price_inquiry_result_bazar.price_settings
                         price_inquiry_result_bazar.set_discount_params(
                             quantity=quantity,
@@ -1084,9 +1049,13 @@ def get_items(request):
                         )
                         item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                         item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date, "%Y-%m-%d")
+                        item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                        item['is_bazar'] = True
                     else:
                         item["goods_price_market"] = None
                         item["goods_market_date"] = None
+                        item["market_expire_date"] = None
                 except Exception as e:
                     show_error(e, __file__)
 
@@ -1115,8 +1084,8 @@ class SupplierView(BaseView):
 
     def get_success_url(self):
         path = reverse_lazy('inquiry:supplier.list')
-        if self.object:
-            path += f'?title={self.object.title}'
+        # if self.object:
+        #     path += f'?title={self.object.title}'
         self.success_url = path
         return path
 
@@ -1151,7 +1120,7 @@ class SupplierListView(BaseView):
 class SupplierDataTableView(AjaxDatatableView):
     model = Supplier
     title = 'supplier_list'
-    initial_order = [["title", "des"], ]
+    initial_order = [["last_update_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'inquiry/supplier_list_or_create.html'
@@ -1160,7 +1129,7 @@ class SupplierDataTableView(AjaxDatatableView):
         res = [AjaxDatatableView.render_row_tools_column_def()]
         for field in fields:
             col = dict()
-            col['className'] = 'p-0 border'
+            col['className'] = ''
             col['lookup_field'] = '__icontains'
             col['defaultContent'] = ''
             col['orderable'] = True
@@ -1175,16 +1144,18 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title',
+            'title', 'country', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
         ])
+        # cols['created_date']['searchable'] = False
         return cols
 
     def get_initial_queryset(self, request=None):
-        param: str = self.request.POST.get('title')
-        if param:
-            qs = self.model.objects.filter(title=param)
-        else:
-            qs = self.model.objects.all()
+        qs = self.model.objects.filter(base_group=self.request.user.base_group)
+        # param: str = self.request.POST.get('title')
+        # if param:
+        #     qs = self.model.objects.filter(title=param)
+        # else:
+        #     qs = self.model.objects.all()
         return qs
 
     def customize_row(self, row, obj):
@@ -1335,6 +1306,7 @@ def trade_all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1347,19 +1319,19 @@ def bazar_all_prices(request):
             return JsonResponse({'items': [{'invalid': 'item'}]})
         if q := request.GET.get('q'):
             try:
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                     Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
             except Exception as e:
                 print('exception')
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
         else:
-            bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains='داخل'),
+            bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains='داخل'),
                                                                 sku=sku,
                                                                 active=True,
                                                                 is_deleted=False)
@@ -1371,6 +1343,7 @@ def bazar_all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1383,19 +1356,21 @@ def all_prices(request):
             return JsonResponse({'items': [{'invalid': 'item'}]})
         if q := request.GET.get('q'):
             try:
-                bazar_all_price = PriceInquiryResult.objects.filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(Q(inquiry_type__title__icontains=q) | Q(pk__icontains=q),
                                                                     sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
             except Exception as e:
                 print('exception')
-                bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
+                bazar_all_price = PriceInquiryResult.valid_bazar_inquiry().filter(sku=sku,
                                                                     active=True,
                                                                     is_deleted=False)
         else:
             bazar_all_price = PriceInquiryResult.objects.filter(sku=sku,
                                                                 active=True,
-                                                                is_deleted=False)
+                                                                is_deleted=False,
+                                                                inquiry_type__title__icontains='خارج')
+            bazar_all_price |= PriceInquiryResult.valid_bazar_inquiry().filter(active=True, is_deleted=False, sku=sku)
 
         data = list()
         for item in bazar_all_price:
@@ -1405,6 +1380,7 @@ def all_prices(request):
             obj['sku'] = item.sku.pk
             obj['last_update_date'] = item.jalali_last_update_date
             obj['inquiry_type'] = item.inquiry_type.title
+            obj['variants_json'] = item.variants_json
             obj['editor_user'] = item.editor_user.username
             data.append(obj)
         return JsonResponse({'items': data})
@@ -1418,7 +1394,16 @@ def inquiry_count(request):
     return JsonResponse({'res': count})
 
 
+def get_inquiry_title(request, *args, **kwargs):
+    allowed_inquiry = AllowedInquiry.objects.all()
+    res = dict()
+    for idx, item in enumerate(allowed_inquiry):
+        res[f'title_{idx}'] = item.title
+    return JsonResponse(res)
+
+
 def pg_backup(request, *args, **kwargs):
     if request.user.is_superuser:
         res = db_backup()
         return HttpResponse(res)
+

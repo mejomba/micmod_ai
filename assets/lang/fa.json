@@ -608,6 +608,7 @@
     "from_date": "از تاریخ",
     "to_date": "تا تاریخ",
     "is_paid": "پرداخت شد",
+    "variants_json": "ورینت های استعلام",
     "contract_title": "عنوان قرارداد",
     "goods_code_fk": "کد کالا",
     "project_name_en": "نام انگلیسی پروژه",
@@ -684,5 +685,6 @@
     "mohandes_confirmation": "نیاز به تایید مهندس",
     "quantity_trade": "تعداد (بازرگانی)",
     "apply_mac": "MAC",
-    "order_final_price": "قیمت نهایی خرید"
+    "order_final_price": "قیمت نهایی خرید",
+    "price_expire_date": "اعتبار استعلام (روز به عدد)"
 }

@@ -19,13 +19,19 @@
 {% endblock extra_css %}
 
 {% block form_content %}
+    <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
+    <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
+        <span class="">ردیف(های)</span>
+    <span id="expire_inquiry_row_number" class="bg-danger px-2 rounded text-white s-2"></span>
+    (روش تعیین قیمت را اصلاح کنید)
+</div>
             {% csrf_token %}
                     {% for hidden in form.hidden_fields %}
                         {{ hidden }}
                     {% endfor %}
                     <div class="row">
                         <div class="col-sm-12">
-{#    {{ form.instance.fee_quotation }}#}
+
     {% if form.instance.pk and form.instance.cancel %}
         <h3 class="p-5 bg-light-danger text-danger bold text-center">
         این پیش فاکتور کنسل شده است
@@ -67,10 +73,11 @@
                                                             {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-4 ms-lg-auto">
-                                                            {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
+                                                            {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-12">
-                                                            {% render_field_group form.addition form.tax form.sale_type label_type='on-border '%}
+                                                            {% render_field_group form.addition form.tax label_type='on-border '%}
+                                                            <div class="d-none">{{ form.market_grade }}</div>
                                                         </div>
                                                     </div>
 {#                                                </div>#}
@@ -320,4 +327,6 @@ document.querySelectorAll('input').forEach(function (item){
     })
 })
 </script>
+{#    <script src="{% static 'js/jalali.js' %}"></script>#}
+    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0"></script>
 {% endblock extra_js %}

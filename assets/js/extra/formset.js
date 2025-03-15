@@ -129,6 +129,7 @@ window.addEventListener('load', (event) => {
            }) // end listener
         }// end if
         addCommaSeperator()
+        disableEnterKey()
     }
 
     function removeForm(event) {
@@ -201,6 +202,16 @@ window.addEventListener('load', (event) => {
 }, false);
 
 
+function disableEnterKey(){
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+}
 
 
 let items, openAll, closeAll;
@@ -256,16 +267,20 @@ function closeAllFormset(headerData){
     }
 }
 function setFormsetHeader(header, body, headerData, idx){
-    for(const [x, y] of Object.entries(headerData)){
-        if (y[0] === 'class' && y[2] === 'lbl') {
-            header.querySelector(`[class*=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
-        }else if (y[0] === 'class' && y[2] === 'input'){
-            header.querySelector(`[class=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).value;
-        }else if (y[0] === 'name' && y[2] === 'lbl'){
-            header.querySelector(`[name=${x}]`).innerHTML = body.querySelector(`[name*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
-        }else if (y[0] === 'name' && y[2] === 'input'){
-            header.querySelector(`[name=${x}]`).innerHTML = body.querySelector(`[name*=${y[1].replace('idx', idx.toString())}]`).value;
+    try {
+        for(const [x, y] of Object.entries(headerData)){
+            if (y[0] === 'class' && y[2] === 'lbl') {
+                header.querySelector(`[class*=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
+            }else if (y[0] === 'class' && y[2] === 'input'){
+                header.querySelector(`[class=${x}]`).innerHTML = body.querySelector(`[class*=${y[1].replace('idx', idx.toString())}]`).value;
+            }else if (y[0] === 'name' && y[2] === 'lbl'){
+                header.querySelector(`[name=${x}]`).innerHTML = body.querySelector(`[name*=${y[1].replace('idx', idx.toString())}]`).innerHTML;
+            }else if (y[0] === 'name' && y[2] === 'input'){
+                header.querySelector(`[name=${x}]`).innerHTML = body.querySelector(`[name*=${y[1].replace('idx', idx.toString())}]`).value;
+            }
         }
+    } catch (e){
+        console.log(e)
     }
 }
 function hideQuotationFormsetHeader(el){

@@ -241,6 +241,7 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
                 pass
             print('err cons')
         super(PriceInquiryResult2CreateForm, self).__init__(*args, **kwargs)
+        # self.fields['variants_json'] = forms.HiddenInput()
         self.fields['sku_c'] = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}), required=False)
         # self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         self.make_optional(['image_1', 'file_1'])
@@ -288,41 +289,22 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
                     self.fields['currency_type'] = forms.ModelChoiceField(
                         queryset=qs,
                         widget=forms.Select(attrs={'class': 'form-control'}),
-                        initial=self.instance.currency_type if qs.first() else 0
+                        initial=self.instance.currency_type if qs.first() else None
                     )
-                    ...
+                elif base_group == 'trade' and not self.instance.pk:
+                    self.make_required(['currency_type'])
             if self.instance.id:
                 self.make_disable(['sku_c'])
         except Exception as e:
             show_error(e, __file__)
-        #
-        # kwargs.pop('constraint', None)
-        # super().__init__(*args, **kwargs)
-        #
-        # if request and not request.user.is_superuser:
-        #     if form_constraint_hide:
-        #         self.make_hidden(form_constraint_hide)
-        #     if form_constraint_read:
-        #         self.make_disable(form_constraint_read)
-        #     if formset_constraint_hide:
-        #         self.make_hidden(formset_constraint_hide)
-        #     if formset_constraint_read:
-        #         self.make_disable(formset_constraint_read)
-        #
-        # if not access:
-        #     self.make_disable(self.fields)
-        #     self.enable = False
 
         try:
             initial = kwargs.get('initial')
-            print(__file__, 'initial in formset ===== ', initial)
+            # print(__file__, 'initial in formset ===== ', initial)
             if initial:
-                permission_access = initial.get('permission_access')
-                # self.set_field_level_permission(permission_access.get('fields'), permission_access.get('action'))
                 self.set_field_level_permission(initial)
         except Exception as e:
             show_error(e, __file__)
-
 
 
 class SalesPriceInqueryLogForm(CustomBaseModelForm):
@@ -393,7 +375,7 @@ class SupplierModelForm(CustomBaseModelForm):
 
     class Meta:
         model = Supplier
-        fields = ['title']
+        fields = ['title', 'country']
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)
