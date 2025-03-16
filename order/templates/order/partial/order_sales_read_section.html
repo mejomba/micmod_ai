@@ -49,6 +49,15 @@
 
         <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="ms-2 me-auto">
+                شماره سفارش
+            </div>
+            <span class="badge">
+                {{ form.instance.order_number|default_if_falsy:'-' }}
+            </span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
                 لید تایم روز تولید
             </div>
             <span class="badge bg-light-info rounded-pill">{{ form.instance.production_lead_time|default_if_none:"-" }}</span>
