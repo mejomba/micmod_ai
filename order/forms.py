@@ -66,7 +66,7 @@ class OrderForm(CustomBaseModelForm):
         self.make_hidden(['item', 'qi', 'item_trade'])
         self.fields['description_sale'].widget.attrs['rows'] = 6
         self.fields['description_trade'].widget.attrs['rows'] = 3
-        self.fields['quantity_trade'].widget.attrs['value'] = self.instance.quantity_trade or self.instance.quantity
+        # self.fields['quantity_trade'].widget.attrs['value'] = self.instance.quantity_trade or self.instance.quantity
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
