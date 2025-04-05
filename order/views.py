@@ -123,6 +123,8 @@ class OrderDataTableListView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = super().get_initial_queryset(request)
+        if request.user.is_superuser:
+            return qs
         # qs = self.model.get_qs(self.request)
 
         q = request.POST.get('q')
