@@ -650,7 +650,7 @@ class QuotationItem(BaseModel):
             #         )
             #     related_supply_locations = (fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity,
             #                                 fi.supply_locations.estimate_arrive_at)
-            related_supply_locations.append((fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at))
+            related_supply_locations.append((fi.factor.pk, fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at))
         # related_supply_locations = [(fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at) for fi in self.qi.all() if self.pk]
         # related_supply_locations = self.qi.all()[0].supply_locations if self.pk else False
 
