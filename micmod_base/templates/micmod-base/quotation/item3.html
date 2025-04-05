@@ -24,36 +24,72 @@
     {% endfor %}
     <div class="card-body p-0">
         <div class="ribbon ribbon-start ribbon-clip" style="top: 13px">
-            <div class="ribbon-label text-black px-6" style="padding-bottom: 2px; padding-top: 2px;">
+            <div class="ribbon-label text-black px-6 d-flex justify-content-between" style="padding-bottom: 2px; padding-top: 2px; width: 10%">
             {% with form_s.instance.not_over as not_over %}
+                <span class="me-2">
                 {% if not_over.0 %}
-                    قطعی
+                    انبار کامل
                 {% elif not_over.1 %}
-                    انبار ناقص
-                {% elif not_over.2 %}
                     سفارش کامل
+                {% elif not_over.2 %}
+                    انبار + سفارش (کامل)
                 {% elif not_over.3 %}
-                    سفارش ناقص
+                    انبار ناقص
                 {% elif not_over.4 %}
+                    سفارش ناقص
+                {% elif not_over.5 %}
+                    انبار + سفارش (ناقص)
+                {% elif not_over.6 %}
                     بدون فاکتور
                 {% endif %}
+                </span>
                 <span class="ribbon-inner
                 {% if not_over.0 %}
                 bg-success
                 {% elif not_over.1 %}
                 bg-light-success
                 {% elif not_over.2 %}
-                bg-light-warning
+                bg-light-success
                 {% elif not_over.3 %}
-                bg-warning
+                bg-light-warning
                 {% elif not_over.4 %}
+                bg-light-danger
+                {% elif not_over.5 %}
+                bg-light-danger
+                {% elif not_over.6 %}
                 bg-white
                 {% endif %}">
                 </span>
+                {% if not not_over.6 %}
+                    <i class="ki-outline ki-information-2 fs-3 text-black cursor-pointer tooltip_">
+                <span class="tooltiptext-fit">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark">
+                          <tr>
+                            <th>فاکتور</th>
+                            <th>سفارش</th>
+                            <th>تعداد</th>
+                            <th>پیش بینی زمان تحویل</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for supply_location in not_over.7 %}
+                        <tr>
+                            <td>{{ supply_location.0 }}</td>
+                            <td>{{ supply_location.1 }}</td>
+                            <td>{{ supply_location.2 }}</td>
+                            <td>{{ supply_location.3 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+                </span>
+                </i>
+                {% endif %}
             {% endwith %}
             </div>
         </div>
-        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 9rem">
+        <div class="row-counter rounded d-flex align-items-center question-btn active-form" style="padding-right: 10%">
             <span class="counter">{{ forloop.counter }}</span>
             <div class="col-1 col ms-4">
                 <span class="me-2">کد کالا:</span>
@@ -82,7 +118,7 @@
             {% endif %}
         </div>
         <div class="row answer m-0">
-            <div class="col-lg-2 border rounded">
+            <div class="col-lg-2 rounded" style="border-bottom: 1px solid #f1f1f2">
                 <div class="d-flex">
                     <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
                     <div class="w-50 replace-digits">
@@ -110,8 +146,8 @@
                 {% get_comment_user_list form_s request.user %}
 {#                {% get_payment_list form_s request.user %}#}
             </div>
-            <div class="col-lg-3 p-0 border-top border-bottom border-end">
-                <div class="d-flex border-bottom px-1 align-items-start">
+            <div class="col-lg-3 p-0" style="border-bottom: 1px solid #f1f1f2">
+                <div class="d-flex px-1 align-items-start">
                     <div class="w-25 mt-3 on-border">
                         {% if form_s.enable and not form_s.goods_code.field.disabled %}
                             <div class="select2 goods_code " name="goods_code"></div>
@@ -168,7 +204,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-non border-bottom px-1" name="box-alt-goods">
+                <div class="d-non px-1" name="box-alt-goods" style="border-bottom: 1px solid lightgrey">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
                             {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
@@ -219,7 +255,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4 border p-0 replace-digits">
+            <div class="col-lg-4 p-0 replace-digits" style="border-bottom: 1px solid #f1f1f2">
                 <div class="px-2 h-40">
                     <div class="card-text bold">استعلام قیمت </div>
                     <div class="d-flex ">
@@ -250,7 +286,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-30 border-top all_pricess mt-2">
+                <div class="h-30 all_pricess mt-2">
                     <div class="d-flex">
                         <div class="p-0 w-100">
                             <div class="text-center bold bg-light-info">قیمت های موجود
@@ -268,8 +304,8 @@
                     <div class="sepidar_stock_info_result"></div>
                 </div>
             </div>
-            <div class="col-lg-3 border-top">
-                <div class="row h-100 border-bottom">
+            <div class="col-lg-3 border" style="border-bottom: 1px solid #f1f1f2">
+                <div class="row h-100">
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
                             <div class="d-flex mt-2 ">
@@ -325,7 +361,7 @@
                                         {{ form_s.instance.bazar_price_code|default_if_none:'' }}
                                     </div>
                                 </div>
-                                <div class="border-top ps-1">
+                                <div class="ps-1">
                                     <div class="d-flex justify-content-between mt-1">
                                         {% render_field_by_order form_s form_s.need_foreign_price_inquiry label='on-order' margin_b=0 %}
                                     </div>
@@ -364,7 +400,7 @@
                 </div>
             </div>
 
-        <div class="d-flex align-items-center gap-8 py-2 ms-20">
+        <div class="d-flex align-items-center gap-8 py-2 ms-20" >
             <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
             <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
             <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>

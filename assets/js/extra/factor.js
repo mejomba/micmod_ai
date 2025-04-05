@@ -45,6 +45,7 @@ function set_values(items, value, is_date = false) {
 
 function get_quotation_items(quotation_pk){
     const ajax_quotation_items = $('#ajax_quotation_items')
+    debugger
     if (ajax_quotation_items){
         custom_ajax_get(null, `/factor/ajax/get_quotation_items_for_factor/${quotation_pk}/`, ajax_quotation_items)
     }

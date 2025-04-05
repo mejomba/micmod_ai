@@ -20,6 +20,8 @@ def has_one_group(user, group_names):
     if user.is_superuser:
         return True
     has_group = False
+    if isinstance(group_names, str):
+        group_names = group_names.split(',')
     for group in group_names:
         has_group = has_group or (group in [gn[0] for gn in user.groups.values_list('name')])
     return has_group

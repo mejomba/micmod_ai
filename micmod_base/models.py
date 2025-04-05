@@ -97,6 +97,7 @@ class Quotation(SLSDoc):
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
+    is_direct = models.BooleanField(default=False, null=True, blank=True)
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
@@ -183,7 +184,7 @@ class Quotation(SLSDoc):
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q, quotation=True)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True).filter(is_direct=False)
         return qs
 
     @classmethod
@@ -403,7 +404,7 @@ class Quotation(SLSDoc):
             return
 
     @property
-    def not_over(self):
+    def not_over_q(self):
         factored_count = 0
         not_factored_count = 0
         wh_count = 0
@@ -418,7 +419,7 @@ class Quotation(SLSDoc):
 
                 factor_item = item.qi.aggregate(total=Sum('quantity'))['total'] or 0
                 for fi in factor_items:
-                    supply_locations = fi.supply_locations.local_sepidar_wh_code
+                    supply_locations = fi.supply_locations.is_wh
                     if supply_locations:
                         wh_count += 1
                     else:
@@ -570,8 +571,26 @@ class QuotationItem(BaseModel):
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
     is_over = models.BooleanField(_('is_over'), default=False)
 
-
     objects = QuotationItemManager()
+
+    @property
+    def lead_time_day(self):
+        import re
+        pattern = r'(\d)+-(\d)+.*\b(days|week|month)\b'
+        b = ''
+        if self.lead_time:
+            try:
+                matches = re.findall(pattern, self.lead_time)
+                a, b, c = matches[0]
+                if c == 'days':
+                    pass
+                if c == 'weeks':
+                    b *= 7
+                if c == 'months':
+                    b *= 30
+            except Exception as e:
+                b = ''
+        return b
 
     # @property
     # def appearance_or_real_part_number(self):
@@ -606,28 +625,96 @@ class QuotationItem(BaseModel):
         is_wh_incomplete = False
         is_order_complete = False
         is_order_incomplete = False
+        is_order_wh_complete = False
+        is_order_wh_incomplete = False
+        related_supply_locations = []
+        for fi in self.qi.all() if self.pk else []:
+            # if fi.supply_locations.order_m2m.exists():
+            #     for oo in fi.supply_locations.order_m2m.all():
+            #         related_supply_locations.append(
+            #             {
+            #                 fi.factor.pk: {
+            #                     fi.pk: (fi.supply_locations.is_wh, oo.pk, oo.quantity,
+            #                             oo.estimate_arrive_at)
+            #                 }
+            #             }
+            #         )
+            #
+            #         related_supply_locations.append(
+            #             {
+            #                 fi.factor.pk: {
+            #                     fi.pk: (fi.supply_locations.is_wh, fi.supply_locations.pk, fi.supply_locations.quantity,
+            #                             fi.supply_locations.estimate_arrive_at)
+            #                 }
+            #             }
+            #         )
+            #     related_supply_locations = (fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity,
+            #                                 fi.supply_locations.estimate_arrive_at)
+            related_supply_locations.append((fi.factor.pk, fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at))
+        # related_supply_locations = [(fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at) for fi in self.qi.all() if self.pk]
+        # related_supply_locations = self.qi.all()[0].supply_locations if self.pk else False
+
+        q_wh = 0
+        q_order = 0
+
         nothing = False
         if self.pk:
             factor_items = self.qi.all()
             factor_item_quantity = self.qi.aggregate(total=Sum('quantity'))['total'] or 0
             if factor_item_quantity > 0:
+                x = []
                 # not_over = factor_item_quantity < self.quantity
                 is_over = factor_item_quantity >= self.quantity  # کامل مستهلک شده
                 for fi in factor_items:
-                    wh_supply_location = fi.supply_locations.local_sepidar_wh_code
-                    if wh_supply_location and is_over:
-                        is_wh_complete = True  # فاکتور قطعی
-                    elif wh_supply_location and not is_over:
-                        is_wh_incomplete = True  # فاکتور ناقص
-                    elif not wh_supply_location and is_over:
-                        is_order_complete = True
-                    elif not wh_supply_location and not is_over:
-                        is_order_incomplete = True
+                    # wh_supply_location = fi.supply_locations.local_sepidar_wh_code
+                    if fi.supply_locations.cancel:
+                        for oo in fi.supply_locations.order_base_items.all():
+                            if oo.sepidar_wh_code:
+                                q_wh += oo.quantity
+                            else:
+                                q_order += oo.quantity
+                    else:
+                        q_order += fi.supply_locations.quantity
+                    # if fi.supply_locations.is_wh:
+                    #     q_wh += fi.supply_locations.quantity
+                    # elif not fi.supply_locations.is_wh:
+                    #     if fi.supply_locations.cancel:
+                    #         for oo in fi.supply_locations.order_base_items.all():
+                    #             q_order += oo.quantity
+                    #     elif not fi.supply_locations.cancel:
+                    #         q_order += fi.supply_locations.quantity
+
+                    # if wh_supply_location and is_over:
+                    #     is_wh_complete = True  # فاکتور قطعی
+                    # elif wh_supply_location and not is_over:
+                    #     is_wh_incomplete = True  # فاکتور ناقص
+                    # elif not wh_supply_location and is_over:
+                    #     is_order_complete = True
+                    # elif not wh_supply_location and not is_over:
+                    #     is_order_incomplete = True
+                sum_quantity = sum([q_wh, q_order])
+                if q_wh and q_order and sum_quantity >= self.quantity:
+                    is_order_wh_complete = True
+                elif q_wh and q_order and sum_quantity < self.quantity:
+                    is_order_wh_incomplete = True
+                elif q_wh and sum_quantity >= self.quantity:
+                    is_wh_complete = True
+                elif q_wh and sum_quantity < self.quantity:
+                    is_wh_incomplete = True
+                elif q_order and sum_quantity >= self.quantity:
+                    is_order_complete = True
+                elif q_order and sum_quantity < self.quantity:
+                    is_order_incomplete = True
+
             else:
                 nothing = True
             # all([fi.supply_locations.local_sepidar_wh_code for fi in factor_items True if factor_items else False])
 
-        return is_wh_complete, is_wh_incomplete, is_order_complete, is_order_incomplete, nothing
+        return (
+            is_wh_complete, is_order_complete, is_order_wh_complete,
+            is_wh_incomplete, is_order_incomplete, is_order_wh_incomplete,
+            nothing, related_supply_locations
+                )
 
 
     @property
@@ -636,9 +723,17 @@ class QuotationItem(BaseModel):
         total_quantity_wh = 0
         all_factor_items = self.qi.all()
         for f in all_factor_items:
-            if f.supply_locations.local_sepidar_wh_code:
-                total_quantity_wh += f.quantity if f.quantity else 0
-            total_quantity += f.quantity if f.quantity else 0
+            if f.supply_locations.order_base_items.all().exists():
+                for item in f.supply_locations.order_base_items.all():
+                    if item.sepidar_wh_code:
+                        total_quantity_wh += item.quantity
+                        total_quantity += item.quantity
+                    else:
+                        total_quantity += item.quantity
+            # if f.supply_locations.local_sepidar_wh_code:
+            #     total_quantity_wh += f.quantity if f.quantity else 0
+            else:
+                total_quantity += f.quantity if f.quantity else 0
         return total_quantity, total_quantity_wh
 
     @property

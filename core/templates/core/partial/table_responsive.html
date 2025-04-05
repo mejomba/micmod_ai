@@ -4,10 +4,10 @@
     }
 </style>
 <div class="table-responsive">
-    <table class="table table-rounded table-row-bordered border gy-7 gs-7">
+    <table class="table table-bordered">
     <caption>{{ title }}</caption>
         <thead>
-            <tr class="fw-bold fs-6 text-gray-800 border-bottom-2 border-gray-200">
+            <tr class="fw-bold fs-6 text-gray-800">
                 <th data-key="row">ردیف</th>
                 {% for th in rows.0.keys %}
                     <th data-key="{{ th }}">{{ th }}</th>

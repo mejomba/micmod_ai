@@ -10,14 +10,20 @@
     }
 </style>
 <form action="{% if form.instance.pk %}{% url 'order:order.paymentitem.update' form.instance.pk %}{% else %}{% url 'order:order.paymentitem.view' %}{% endif %}" method="POST" id="payment-item-form" enctype="multipart/form-data">
+    <h5>ردیف پرداخت به ازای هر سفارش</h5>
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
         <div class="row">
-{#            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>#}
-{#            {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}#}
-            {% render_field_by_order form form.payment form.from_date form.to_date form.total_amount form.file_1 label='on-border' %}
-            <div class="col-12">
-                <div class="row">
+            <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
+            <div class="col-8">
+                {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
+                <div class="row row-cols-4">
+                    {% render_field_by_order form form.payment form.order form.from_date form.to_date form.total_amount form.exchange_rate label='on-border' %}
+                    {% render_field_by_order form form.quantity form.bank form.destination_currency form.file_1 label='on-border' %}
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="row row-cols-1">
                     {% render_field_by_order form form.description label='on-border' %}
                 </div>
             </div>
@@ -28,8 +34,8 @@
 
 <script>
     debugger
-    {#const order_select2_placeholder = document.querySelector('[name="payment_placeholder"]').innerText || "انتخاب سفارش"#}
-    {#select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)#}
+    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
     $('#payment-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit_with_file(this, true, true)

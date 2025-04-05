@@ -5,7 +5,7 @@
 {% load core_tags %}
 {% load order_tags %}
 {% load jalali_tags %}
-
+{% block title %} GIO {{ form.instance.pk }} {% endblock title %}
 {% block extra_css %}
 
 
@@ -25,26 +25,27 @@
 {#    </div>#}
 
 
-    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+    <div class="rounded shadow my-10 bg-white py-10 px-3">
         <div class="row">
-        {% render_field_by_order form form.gio_date form.total_carton_quantity  label='on-border' %}
+        {% render_field_by_order form form.gio_date form.quantity  label='on-border' %}
         <div class="col-12">
             <div class="row">
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
         </div>
 {#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
-            <div class="border" id="gio_item_container">
-                <div class="bg-white row rounded border my-10 pt-10 mt-20 mx-2 position-relative shadow-sm">
+            <div class="" id="gio_item_container">
+                <div class="bg-white row rounded border border-2 my-10 pt-10 mt-20 mx-2 position-relative">
                     <div class="col-12">
                         <h4 class="position-absolute" style="top: -10px">ردیف های GIO</h4>
                         {% if form.instance.pk %}
                             {% with form.instance.gioitems.all as gios %}
                                 {% if gios %}
                                     <div class="row align-items-center pb-2 mb-3 bold">
-                                        <div class="col-2 "><span class="ms-6">تعداد </span></div>
-                                        <div class="col-3 ">سفارش</div>
-                                        <div class="col-3">توضیحات</div>
+{#                                        <div class="col-1 "><span class="ms-6">تعداد کارتن </span></div>#}
+                                        <div class="col-2 "><span class="ms-6"> تعداد کالا </span></div>
+                                        <div class="col-2 ">سفارش</div>
+                                        <div class="col-4">توضیحات</div>
                                         <div class="col-2">عملیات</div>
                                         <div class="col-2"></div>
                                     </div>
@@ -56,10 +57,10 @@
                                         <span class="me-3"><b>{{ forloop.counter }})  </b></span>
                                         <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
                                     </div>
-                                    <div class="col-3 py-2 s-05">
+                                    <div class="col-2 py-2 s-05">
                                         <span>{{ gio.order|default_if_none:"-" }}</span>
                                     </div>
-                                    <div class="col-3 py-2 ">
+                                    <div class="col-4 py-2 ">
                                         <span>{{ gio.description|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-2 py-1 ">

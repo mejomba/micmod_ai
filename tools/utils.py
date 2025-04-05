@@ -180,10 +180,12 @@ def to_persian_number(mystr):
 
 def to_jalali_date(time):
     try:
-        jtime = myjalali.Gregorian(time).persian_tuple()
-        jtime_list = list(jtime)
-        output = '{}/{}/{}'.format(jtime_list[0], jtime_list[1], jtime_list[2])
-        return output
+        if time:
+            jtime = myjalali.Gregorian(time).persian_tuple()
+            # jtime_list = list(jtime)
+            output = '{}/{}/{}'.format(jtime[0], jtime[1], jtime[2])
+            return output
+        return '1000/01/01'
     except Exception as e:
         print('error ', __file__, e.__traceback__.tb_lineno, e)
         return '1000/01/01'

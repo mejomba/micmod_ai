@@ -514,7 +514,7 @@ function ajax_delete(elms) {
 }
 
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
-                          formatRepoDL=null, formatRepoSelection=null){
+                          formatRepoDL=null, formatRepoSelection=null, afterSelect=null) {
     let select2_container_width;
     // target_element => '#target_element'
     $(select2_element).select2({
@@ -544,13 +544,17 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
         templateResult: formatRepoDL || defaultFormatRepoDL,
         templateSelection: formatRepoSelection || defaultFormatRepoSelection
     });
-
-    $(select2_element).on("select2:select", function (e) {
-        const data = e.params.data;
-        const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
-        $(document).find(target_element).val(data[id_field])
-        document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
-    })
+debugger
+    if (afterSelect){
+        afterSelect(select2_element, target_element, id_field)
+    } else {
+        $(select2_element).on("select2:select", function (e) {
+            const data = e.params.data;
+            const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
+            $(document).find(target_element).val(data[id_field])
+            document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+        })
+    }
 
     $(select2_element).on("select2:open", function (e){
          $('#id_kt_empty_modal_lg').css({
@@ -653,12 +657,14 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         },
         onEnd: function (evt) {
             var items = document.querySelectorAll(draggable_items_selector);
+            debugger
             items.forEach(function(item, index) {
                 item.querySelector(`[id*=${index_field_id_selector}]`).value = index
             });
             removeWindowHighlightSections()
         },
         onUpdate: function (evt) {
+            debugger
             evt.item.querySelector(`[id*=${index_field_id_selector}]`).value = evt.newIndex
         },
         onChange: function (evt) {
@@ -723,6 +729,58 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         GenericPaymentFormGroup.appendChild(commentFormForCopy)
     }
 
+    function delete_with_modal(elem){
+        const modal_sm_body = $('#id-empty-modal-body-sm')
+        custom_ajax_get('', elem.dataset.url, modal_sm_body)
+    }
+
+    function edit_with_modal(elem){
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: elem.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers(['id_g_from_date', 'id_g_to_date']);
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    }
+
+    function change_log_with_modal(elem){
+        const modelName = elem.dataset.model_name
+        const objectId = elem.dataset.object_id
+        const appName = elem.dataset.app_name
+        let new_url = `/core/ajax/changelog/${appName}/${modelName}/${objectId}/`
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = html
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+
+        });
+    }
     function diffTime(time_iso){
         debugger
         let t1 = new Date();

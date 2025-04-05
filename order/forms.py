@@ -5,6 +5,7 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from files.models import File
+from inquiry.models import Supplier
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm
@@ -12,6 +13,8 @@ from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, 
 
 
 class OrderForm(CustomBaseModelForm):
+    has_comment = True
+
     class Meta:
         model = Order
         exclude = ['group', 'last_work_flow']
@@ -43,20 +46,34 @@ class OrderForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderForm, self).__init__(*args, **kwargs)
+        qs = Supplier.objects.filter(base_group='trade')
+        self.fields['supplier_trade'] = forms.ModelChoiceField(
+            queryset=qs,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            initial=self.instance.supplier_trade or qs.first().pk if qs.first() else 0,
+            required=False
+        )
+        self.fields['supplier_mac'] = forms.ModelChoiceField(
+            queryset=qs,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            initial=self.instance.supplier_mac or qs.first().pk if qs.first() else 0,
+            required=False
+        )
         self.fields['trade_commitment_date'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        self.make_hidden(['item', 'qi'])
-        self.fields['description_sale'].widget.attrs['rows'] = 10
+        self.make_hidden(['item', 'qi', 'item_trade'])
+        self.fields['description_sale'].widget.attrs['rows'] = 6
+        self.fields['description_trade'].widget.attrs['rows'] = 3
+        # self.fields['quantity_trade'].widget.attrs['value'] = self.instance.quantity_trade or self.instance.quantity
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
+        if request and request.user.base_group == 'trade':
+            self.make_required(['price_trade'])
 
-        # ~Q(id=self.instance.pk), item = self.instance.item, cancel = False
-
-        # self.instance.order_base_items.all().values_list('order_rel', flat=True)
-        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity <= 0 or x.local_sepidar_wh_code is not None, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) | Q(local_sepidar_wh_code__isnull=False))))) if self.instance.pk else []
+        illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) )))) if self.instance.pk else []
         ooqs = Order.objects.filter(~Q(id=self.instance.pk), item=self.instance.item, cancel=False).exclude(
             pk__in=illegal_order_ids) if self.instance.cancel else Order.objects.none()
         self.fields['order_m2m'] = forms.ModelMultipleChoiceField(
@@ -64,12 +81,21 @@ class OrderForm(CustomBaseModelForm):
             required=False,
             widget=FilteredSelectMultiple(_("order_order"), is_stacked=False),
         )
+        # self.make_disable(['cancel'])
+        if self.instance and self.instance.qi and not self.instance.production_lead_time:
+            self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
+            # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser and '__all__' in form_constraint_read:
+            self.make_disable(self.fields)
+
+        elif request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
                 self.make_disable(form_constraint_read)
+                if 'supplier_trade' in form_constraint_read:
+                    self.fields['supplier_trade'].widget.attrs['disabled'] = "disabled"
             if formset_constraint_hide:
                 self.make_hidden(formset_constraint_hide)
             if formset_constraint_read:
@@ -112,8 +138,11 @@ class PackingForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(PackingForm, self).__init__(*args, **kwargs)
-        self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
-                                                   widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
+        #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['cl_10_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
@@ -139,7 +168,7 @@ class PackingItemForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super(PackingItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order'])
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 8
         # if self.instance.pk and (packing := self.initial.get('packing')):
         packing = self.initial.get('packing')
         if packing:
@@ -249,7 +278,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         self.fields['to_date'] = JalaliDateField(label=_('to_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
-                                                   required=True)
+                                                   required=False)
         self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
@@ -281,15 +310,16 @@ class OrderPaymentItemForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.make_hidden(['order', 'payment'])
+        self.fields['description'].widget.attrs['rows'] = 6
         self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_from_date'}),
-                                                   required=True)
+                                                   required=False)
         self.fields['to_date'] = JalaliDateField(label=_('to_date'),
                                                    widget=AdminJalaliDateWidget(
                                                        attrs={'class': 'jalali_date-date form-control', 'size': '10', 'id': 'id_g_to_date'}),
-                                                   required=True)
+                                                   required=False)
 
         payment = self.initial.get('packing')
         if payment:

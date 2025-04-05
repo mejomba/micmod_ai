@@ -1,0 +1,109 @@
+{% load more_tags %}
+{% load jalali_tags %}
+
+<div class="col-5">
+    <div class="d-flex gap-4">
+        <div class="w-35">
+            <span>price info</span>
+            <div class="">
+                <ul class="list-group list-group-flush">
+                    {% for trade_price in trade_price_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            {{ trade_price.created_date|date }}
+                        </div>
+                        <span class="badge bg-light-info rounded-pill">
+                            <span class="mx-1">{{ trade_price.currency_type.title_en }}</span>
+                            <span>{{ trade_price.price }}</span>
+                        </span>
+                        <span class="ms-2">{{ trade_price.supplier }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="w-65 p-1" style="border-right: 2px solid grey" dir="ltr">
+            <div class="">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            request quantity
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.quantity|default_if_falsy:form.instance.quantity }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            trade quantity
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.quantity_trade|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            trade sku
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.item.sku }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            trade part number
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.item.part_number }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            po_number (T)
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.po_number_trade|default_if_falsy:"-" }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            order number
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.order_number|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            price (T)
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.price_trade|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            Supplier (T)
+                        </div>
+                        <span class="badge">{{ form.instance.supplier_trade|default_if_falsy:'-' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ">
+                            Description (T)
+                        </div>
+                        <span class="me-2">{{ form.instance.description_trade|default_if_falsy:'-' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 ms-auto">
+                            requested date
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.created_date|date }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

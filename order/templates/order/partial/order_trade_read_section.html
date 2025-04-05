@@ -1,0 +1,123 @@
+{% load more_tags %}
+{% load jalali_tags %}
+
+<div class="col-5">
+    <div class="d-flex gap-4">
+        <div class="w-40">
+            <span>اطلاعات استعلام قیمت</span>
+            <div class="mt-3">
+                <ul class="list-group list-group-flush">
+                    {% for trade_price in trade_price_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            {{ trade_price.created_date|date }}
+                        </div>
+                        <span class="badge bg-light-info rounded-pill">
+                            <span class="mx-1">{{ trade_price.currency_type.title_en }}</span>
+                            <span>{{ trade_price.price }}</span>
+                        </span>
+                        <span class="ms-2">{{ trade_price.supplier }}</span>
+                    </li>
+                    {% endfor %}
+
+                </ul>
+            </div>
+        </div>
+        <div class="w-60 p-1" style="border-right: 2px solid grey">
+
+            <div class="">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2">
+                            تاریخ درخواست
+                        </div>
+                        <span class="badge ms-auto">
+                            {{ form.instance.created_date|to_jalali:"%Y-%m-%d" }} | {{ form.instance.created_date|date }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            تعداد درخواست
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.quantity|default_if_falsy:'بدون تعداد' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            شماره سفارش
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.order_number|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            تعداد MAC
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.quantity_mac|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            قیمت MAC
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.price_mac|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            تامین کننده MAC
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.supplier_mac|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            پیش فاکتور
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.qi.quotation|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            لید تایم تولید
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.qi.lead_time|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            روش حمل
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.transportation_method }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            کنسل مدیر فروش
+                        </div>
+                        <span class="badge">
+                            {{ form.instance.sales_admin_cancel|yesno }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="me-auto me-3">
+                            توضیحات فروش
+                        </div>
+                        <span class="w-70">
+                            {{ form.instance.description_sale|default_if_falsy:'-' }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

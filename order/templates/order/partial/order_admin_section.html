@@ -1,0 +1,58 @@
+{% load more_tags %}
+
+<div class="row">
+    <div class="col-9">
+        <div class="row row-cols-3 align-items-baseline">
+        <div class="d-none sale-edit-section">
+            {{ form.local_sepidar_wh_code }}
+            {{ form.order_m2m }}
+            {{ form.currency }}
+            {{ form.production_lead_time }}
+            {{ form.cancel }}
+            {{ form.item_trade }}
+            {{ form.quantity_trade }}
+            {{ form.po_number_trade }}
+            {{ form.supplier_trade }}
+            {{ form.price_trade }}
+            {{ form.description_trade }}
+            {{ form.apply_mac }}
+            {{ form.mohandes_confirmation }}
+            {{ form.order_title }}
+            {{ form.quantity }}
+            {{ form.transportation_method }}
+            {{ form.commitment_date_to_customer }}
+            {{ form.description_sale }}
+            {{ form.order_type }}
+            {{ form.quantity_mac }}
+            {{ form.po_number_mac }}
+            {{ form.supplier_mac }}
+            {{ form.price_mac }}
+            {{ form.price }}
+            {{ form.description_mac }}
+        </div>
+            <div class="col-8"><div id="id_item_select2"></div></div>
+            {% render_field_by_order form form.quantity label='on-border' %}
+            {% render_field_by_order form form.order_title form.transportation_method label='on-border' margin_b=5 %}
+            {% render_field_by_order form form.commitment_date_to_customer form.order_type label='on-border' %}
+            <div class="col-8 t">
+                <div class="d-flex">
+                    {% render_field_by_order form form.sales_admin_cancel form.currency form.price_trade label='on-border' %}
+{#                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">#}
+{#                        {% render_field_by_order form form.cancel label='on-border' %}#}
+{#                    </div>#}
+                </div>
+                </div>
+{#            {% render_field_by_order form form.item form.qi label='on-border' %}#}
+        </div>
+    </div>
+    <div class="col-3">
+        {% render_field_by_order form form.description_sale label='on-border' %}
+    </div>
+    <div class="sales-readable-field bg-light-info"></div>
+    {% if form.instance.local_sepidar_wh_code %}
+        <div class="">
+            <span class="py-2 px-3 bg-light-danger">سفارش از نوع رزرو انبار امکان تغییر تعداد ندارد</span>
+        </div>
+    {% endif %}
+    </div>
+</div>

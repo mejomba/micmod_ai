@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 from django import forms
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem
+from order.models import Order
 
 
 class FactorModelForm(CustomBaseModelForm):
@@ -80,6 +81,11 @@ class FactorItemModelForm(CustomBaseModelForm):
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
+        self.fields['is_bazar'].widget.attrs['class'] = 'checkbox_is_bazar'
+        if self.fields['is_bazar']:
+            self.make_disable(['supply_locations'])
+        if self.instance:
+            self.fields['supply_locations'].queryset = Order.objects.filter(item_id=self.instance.goods_code)
         # self.make_hidden(['index'])
 
 

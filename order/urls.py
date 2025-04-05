@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView
+from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, PaymentItemDataTableListView
 
 app_name = 'order'
 urlpatterns = [
@@ -37,6 +37,7 @@ urlpatterns = [
     path('payment/view/<int:pk>/', PaymentView.as_view(), name='order.payment.update'),
     path('payment/list/', PaymentListView.as_view(), name='order.payment.list'),
     path('payment/list/datatable/', PaymentDataTableListView.as_view(), name='order.payment.list.datatable'),
+    path('payment_item/list/datatable/', PaymentItemDataTableListView.as_view(), name='order.payment_item.list.datatable'),
 
     #  order paymentitem
     path('paymentitem/view/', PaymentItemView.as_view(), name='order.paymentitem.view'),

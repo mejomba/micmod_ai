@@ -54,12 +54,13 @@
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">شماره سپیدار:</span>
+                        <span class="me-2">پیش فاکتور</span>
                         <span>{{ quotation.sepidar_number|default_if_none:'-' }}</span>
                     </span>
                     <span class="d-flex">
-                        <span class="me-3 bold w-25">شماره سپیدار</span>
-                        <span>(فاکتور)</span>
-                        <span class="ms-3 me-1">{{ form.instance.sepidar_number|default_if_falsy:"-" }}</span>
+                        <span class="me-3 bold w-25">شماره سپیدار:</span>
+                        <span class="me-2">فاکتور</span>
+                        <span class="">{{ form.instance.sepidar_number|default_if_falsy:"-" }}</span>
                     </span>
                 </div>
             </div>
@@ -118,9 +119,9 @@
                         <span>ID</span>
                     </span>
                     <span class="col-9 bold">
-                        <span data-key="">نام کالا | کد کالا</span>
+                        <span data-key="">پارت نامبر | کد کالا</span>
                         <div class="border-top border-gray-500"></div>
-                        <span data-key=""> تعداد | فاکتور شده | قیمت</span>
+                        <span data-key=""> تعداد | قیمت | فاکتور شده </span>
                     </span>
                     <span class="col-2 bold p-0">
                         <span data-key="lead_time" class="font-size-12">lead_time</span>
@@ -134,7 +135,7 @@
                         <span data-key="">کد کالا</span>
                     </span>
                     <span class="col-4 bold">
-                        <span data-key="">نام کالا</span>
+                        <span data-key="">پارت نامبر</span>
                     </span>
                     <span class="col-1 bold">
                         <span> تعداد</span>
@@ -146,11 +147,11 @@
                         <div class="border-top border-gray-500"></div>
                         <span>تخفیف ردیف | قیمت کل ردیف</span>
                     </span>
-                    <span class="col-2 bold">
+                    <span class="col-3 bold">
                         <span data-key="">محل تامین</span>
                     </span>
                     <span class="col-1 bold">
-                        <span data-key="">محل تامین</span>
+                        <span data-key="">عملیات</span>
                     </span>
                 </div>
             </div>
@@ -162,7 +163,7 @@
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
     <div class="sortable-item">
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
-        <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
+        <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
         <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">
         <!-- update factor item -->
         {% if factor_item.instance.pk %}
@@ -173,8 +174,8 @@
                 </div>
         	<div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" style="height: fit-content">
 
-            <!--quotation item information-->
-            <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+            <!--quotation item information (update)-->
+            <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <i class="ki-duotone ki-arrow-up-down handel-drop cursor-move fs-2x text-info hover-drop-down-icon" style="top: -10px; left: 3px; height: 25px">
@@ -200,8 +201,8 @@
                                 {% with qi.total_quantity_in_factor as tqif %}
                                 <span class="font-size-11 text-success"> فاکتور شده: </span> <span>({{ tqif.0|intcomma }}, <span class="text-success">{{ tqif.1|intcomma }}</span>)</span>
                                 {% endwith %}
-                                <b>|</b>
-                                 <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>
+{#                                <b>|</b>#}
+{#                                 <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>#}
                             </span>
                         </div>
                     </span>
@@ -211,7 +212,7 @@
                 </div>
             </div>
 
-            <!--factor item information and input-->
+            <!--factor item information and input (update)-->
             <div class="col-9 text-center hover_light_primary d-flex flex-column justify-content-center factor_item_self" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
@@ -246,7 +247,7 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-0">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center">
@@ -258,20 +259,34 @@
                                 |
                                 <span class="row-total-price pt-1 bold font-size-12"></span>
                             </span>
-{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </div>
                     </span>
-                    <div class="col-2 px-1">
-                        {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 factor_item.instance %}
-                        <div class="font-size-11 text-start">
-                            <a href="{% url 'order:order.view' factor_item.instance.supply_locations.pk %}" class="text-danger hover-link" target="_blank">{{ factor_item.instance.supply_locations.description }}</a>
-{#                            <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >#}
-{#                            <label for="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar">بازار</label>#}
+                    <div class="col-3 px-1 parent-class">
+                        <div class="d-flex">
+
+                            <div class="w-75 d-flex flex-column justify-content-between">
+                            {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 factor_item.instance %}
+                                <a href="{% url 'order:order.view' factor_item.instance.supply_locations.pk %}" class="text-danger hover-link text-start mt-2 font-size-12" target="_blank">{{ factor_item.instance.supply_locations.description }}</a>
+                                <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+                            </div>
+
+                            <div class="w-25">
                             {% render_field_by_order factor_item factor_item.is_bazar label='in-line' %}
+                                </div>
                         </div>
                     </div>
-                    <div class="col-2">
+                    <div class="col-1">
                         {% include 'core/partial/components/edit_delete_log.html' with edit_url='' obj=factor_item.instance exclude='edit,delete' %}
+                        <span href="#" class="me-2 delete-factor-item text-danger tooltip_ cursor-pointer" onclick="delete_factor_item(this)">
+                            <span class="tooltiptext">حذف</span>
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -291,9 +306,10 @@
             {% endif %}
 
             {% with qi.is_over as is_over %}
-            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-secondary {% endif %} " style="height: fit-content">
-            <!--quotation item information-->
-            <div class="col-3 border-left d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
+            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-over {% endif %} " style="height: fit-content">
+
+            <!--quotation item information (create)-->
+            <div class="col-3 border-left d-flex flex-column justify-content-center {% if is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 px-1">
                         <span class=" cursor-pointer">{{ qi.pk }}</span>
@@ -313,8 +329,8 @@
                                 <br>
                                 <b>|</b>
                                 <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
-                                <b>|</b>
-                                <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>
+{#                                <b>|</b>#}
+{#                                <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>#}
 
                             </span>
                         </div>
@@ -324,7 +340,8 @@
                     </span>
                 </div>
             </div>
-            <!--factor item information and input-->
+
+            <!--factor item information and input (create)-->
             <div class="col-9 text-center d-flex flex-column justify-content-center {% if is_over %} bg-secondary {% else %} hover_light_primary {% endif %} factor_item_self" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2 align-items-center">
                     <span class="col-1 text-center px-1">
@@ -357,7 +374,7 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-1">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center px-1">
@@ -373,14 +390,26 @@
 {#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
                         </div>
                     </span>
-                    <div class="col-2 px-0 d-flex">
+                    <div class="col-3 px-0 d-flex">
                         <span class="w-75">
                             {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
-{#                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>#}
+                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
                         </span>
                         <span class="w-25">
                             <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >
                             <label for="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar">بازار</label>
+                        </span>
+                    </div>
+                    <div class="col-1">
+                        <span href="#" class="me-2 delete-factor-item text-danger tooltip_ cursor-pointer" onclick="delete_factor_item(this)">
+{#                            <span class="tooltiptext">حذف</span>#}
+                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
                         </span>
                     </div>
                 </div>
@@ -397,6 +426,33 @@
 <div class="mt-10 pt-10"></div>
 
 <script>
+
+    {#const supply_locations = document.querySelectorAll('.disabled_supply_locations')#}
+    {#const is_bazars = document.querySelectorAll('.checkbox_is_bazar')#}
+    {#is_bazars.forEach(function (item){#}
+    {#    item.addEventListener('change', function () {#}
+    {#    debugger#}
+    {#    supply_locations.forEach(function (supply_location){#}
+    {#        supply_location.disabled = item.checked;#}
+    {#    })#}
+    //})
+    //})
+
+    document.querySelectorAll('.checkbox_is_bazar').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+            // Find the closest parent container
+            const parentClass = this.closest('.parent-class');
+            if (parentClass) {
+                // Select the corresponding supply location within the same parent
+                const supplyLocation = parentClass.querySelector('.disabled_supply_locations');
+                if (supplyLocation) {
+                    supplyLocation.disabled = this.checked;
+                }
+            }
+        });
+    });
+
+
     function findAncestor(el, cls) {
         if (el.classList.contains(cls)) {
             return el
@@ -440,8 +496,8 @@
         })
     })
 
-    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
-    submitCommentBtns.forEach(function (item){
+    //const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]');
+    document.querySelectorAll('[id*="id_comment__"]') && document.querySelectorAll('[id*="id_comment__"]').forEach(function (item){
         item.addEventListener('click', function (e){
             e.preventDefault()
             let comment_url = item.dataset.form_url;
@@ -570,8 +626,9 @@ function factor_calculate_price(target, direct_target=null) {
     }
     calculated_price = net_price - totalDiscount + tax
 
-    var items = document.querySelectorAll('[name="-total_price"]')
+    var items = document.querySelectorAll('[class*="row-total-price"]')
     let m_sum = 0
+    debugger
     for (let i = 0; i < items.length; i++) {
         val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
         if (!isNaN(val)) {
@@ -581,6 +638,7 @@ function factor_calculate_price(target, direct_target=null) {
     if (!m_sum) {
         m_sum = 0
     }
+    debugger
     const t_prices = document.querySelector('.factor_total_price')
     const additionElm = document.querySelector('#id_addition')
     const taxElm = document.querySelector('#id_tax')
@@ -594,4 +652,20 @@ function factor_calculate_price(target, direct_target=null) {
 }
 window.setTimeout(factor_calculate_price_all_rows, 600)
 
+setTimeout(factor_calculate_price_all_rows, 1000)
+
+    function delete_factor_item(item){
+        debugger
+        const row = findAncestor(item, "factor_item_self")
+        const full_row = findAncestor(row, 'factor_item')
+        const quantity = row.querySelector('.quantity')
+        if (quantity){
+            quantity.value = 0
+            quantity.classList.add('text-danger')
+            quantity.classList.add('border-danger')
+            full_row.style.height = '0'
+            full_row.style.minHeight = '0'
+            full_row.style.overflow = 'hidden'
+        }
+    }
 </script>

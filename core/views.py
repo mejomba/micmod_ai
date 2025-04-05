@@ -388,7 +388,7 @@ class BaseView(UserPassesTestMixin,
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        fields_access = self.field_access_by_user_permission()
+        # fields_access = self.field_access_by_user_permission()
 
         try:
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
@@ -485,7 +485,7 @@ class BaseView(UserPassesTestMixin,
                     'form_constraint': self.flow_config.get('flow_form_constraint'),
                     'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                     },
-                'permission_access': fields_access,
+                # 'permission_access': fields_access,
                                  'wf_access': wf_access if self.has_flow else True,
                                  }
         except Exception as e:
@@ -984,6 +984,10 @@ class CommentsFormView(View):
             obj = model.objects.full_queryset(pk=object_id).first()
             customer = getattr(obj.quotation, 'customer_party_id', None)
             sku = getattr(obj, 'goods_code_fk', None)
+        if model.__name__.lower() == 'factoritem':
+            obj = model.objects.full_queryset(pk=object_id).first()
+            customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+            sku = getattr(obj.qi, 'goods_code_fk', None)
         else:
             obj = model.objects.filter(pk=object_id).first()
         if model.__name__.lower() == 'quotation':
@@ -1006,6 +1010,9 @@ class CommentsFormView(View):
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'trade_inquiry':
             kwargs['submit_type'] = 'trade_inquiry'
+            comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'order_error':
+            kwargs['submit_type'] = 'order_error'
             comments = obj.comments.all().order_by('-created_date')
         comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
@@ -1406,23 +1413,64 @@ class Select2BaseSearch_(View):
         return JsonResponse(obj, safe=False)
 
 
+def getattr_recursive(obj, attr_list: list):
+    if attr_list and obj:
+        obj = getattr(obj, attr_list.pop(0))
+        if attr_list and obj:
+            return getattr_recursive(obj, attr_list)
+        return obj
+
+
 class Select2BaseSearch(View):
     model = None
     title = None
     # "core/select2/<str:app_name>/<str:model_name>/<str:title>/"
-    def get(self, request, app_name, model_name, title, *args, **kwargs):
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name:
+            return self.__class__.get_view(view_name)(self, request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    @classmethod
+    def get_view(cls, view_name):
+        return getattr(cls, view_name, 'get')
+
+    def packing_item_order_select2(self, request, app_name, model_name, title, *args, **kwargs):
         q = request.GET.get('q', None)
         obj = {}
         count = 0
         from django.apps import apps
         model = apps.get_model(app_name, model_name)
+        title = title.split('__')
         if q:
             qs = model.objects.filter(pk=q)
             obj['items'] = []
             for x in qs:
                 item = {}
                 item['id'] = x.pk
-                item['text'] = getattr(x, title)
+                item['text'] = getattr_recursive(x, title)
+                item['price'] = x.computed_price
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+    def get(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        title = title.split('__')
+        if q:
+            qs = model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr_recursive(x, title)
+                # item['text'] = getattr(x, title)
                 obj['items'].append(item)
                 count += 1
         obj['total_count'] = count

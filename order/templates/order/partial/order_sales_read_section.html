@@ -1,0 +1,90 @@
+{% load jalali_tags %}
+{% load more_tags %}
+
+<div class="w-20" style="position: relative; top: -50px;">
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger {% else %} bg-light-success {% endif %}" id="id-order-cancel-status">
+            <div class="form-check form-switch form-check-custom form-check-success form-check-solid w-100">
+                <div class="ms-2 me-auto">
+                    سفارش مستقل
+                </div>
+                <span>
+                    <input class="form-check-input h-20px w-30px {% if form.instance.cancel %} bg-danger {% endif %}" type="checkbox" name="switch_cancel" {% if not form.instance.cancel %} checked {% endif %} id="kt_flexSwitchCustomDefault_1_1"/>
+                </span>
+            </div>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                مشتری
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.qi.quotation.customer_party_id|default_if_falsy:"-" }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                پیش فاکتور
+            </div>
+            <span class="badge bg-light-info rounded-pill">
+                {% if form.instance.qi.quotation_id %}
+                <a href="{% url 'micmod_base:quotations.view' form.instance.qi.quotation_id %}">{{ form.instance.qi.quotation_id|default_if_none:"-" }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تاریخ درخواست
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.created_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تامین از بازار
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.is_bazar|yesno:"بله,خیر" }}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                شماره سفارش
+            </div>
+            <span class="badge">
+                {{ form.instance.order_number|default_if_falsy:'-' }}
+            </span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                لید تایم روز تولید
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.production_lead_time|default_if_none:"-" }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                تاریخ تعهد بازرگانی
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.trade_commitment_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
+        </li>
+
+    </ul>
+</div>
+
+<script>
+    const order_cancel_status = document.querySelector('#id-order-cancel-status')
+    document.querySelector('input[name="switch_cancel"]').addEventListener('change', function(e){
+        if (e.currentTarget.checked){
+            e.currentTarget.classList.remove('bg-danger')
+            order_cancel_status.classList.remove('bg-light-danger')
+            order_cancel_status.classList.add('bg-light-success')
+        } else {
+            e.currentTarget.classList.add('bg-danger')
+            order_cancel_status.classList.remove('bg-light-success')
+            order_cancel_status.classList.add('bg-light-danger')
+        }
+        const cancel = document.querySelector('input[name="cancel"]')
+        cancel.checked = !cancel.checked
+    })
+</script>
