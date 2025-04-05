@@ -1,5 +1,6 @@
 import uuid
 
+import jdatetime
 from django.db import models
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -374,10 +375,11 @@ class Item(BaseModel):
 
     @property
     def supply_locations_(self):
+        year = jdatetime.date.today().year
         import re
         res = []
         # stock_qty_qry = sepidarItem.get_stock_qty(self.sku)
-        stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], '1403')
+        stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], year)
         api_res = stock_qty_api.get('res')
         if api_res:
             # for k, v in api_res.items():
