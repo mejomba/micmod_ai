@@ -212,7 +212,7 @@
           },
           {
             "state": "تایید بازرگانی",
-            "group": "trade_user",
+            "group": "trade_order",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -227,7 +227,7 @@
           },
           {
             "state": "تایید مهندس",
-            "group": "order_user",
+            "group": "trade_order",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -242,7 +242,7 @@
           },
           {
             "state": "ارسال به تامین کننده",
-            "group": "trade_user",
+            "group": "trade_order",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
@@ -272,7 +272,7 @@
           },
           {
             "state": "تایید نهایی بازرگانی",
-            "group": "trade_user",
+            "group": "trade_order",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
@@ -287,7 +287,7 @@
           },
           {
             "state": "پرداخت / PACKING / GIO",
-            "group": "trade_user",
+            "group": "trade_order",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
