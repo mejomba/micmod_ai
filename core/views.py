@@ -816,6 +816,8 @@ class BaseView(UserPassesTestMixin,
                     new_obj.last_work_flow = wf_obj
                     new_obj.save()
                 except Exception as e:
+                    new_obj.last_work_flow = last_flow_obj
+                    new_obj.save()
                     LogError.save_db(self.request, e, __file__)
                     show_error(e, __file__)
                 return super().form_valid(form)
