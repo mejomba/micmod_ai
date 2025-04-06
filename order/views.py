@@ -51,14 +51,35 @@ class OrderView(LoginRequiredMixin, BaseView):
     def form_valid(self, form):
         from tools import const
         res = super().form_valid(form)
-        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'change_user' not in self.request.POST and 'back' not in self.request.POST:
+        if 'back' in self.request.POST and self.state_index == 4 and not self.object.mohandes_confirmation:
             flow_data = {
-                "wf_status": 3, # next
+                "wf_status": 2,  # back
                 "action": 'ایجاد خودکار',
                 "flow_name": 'سفارش',
                 "state": const.WF__ORDER__4_STATE,
                 "wf_description": "بدون نیاز به تایید مهندس",
-                "belong_to_group": 'order_admin',
+                "belong_to_group": 'trade_order',
+                "object_id": self.object.pk,
+                "content_type": ContentType.objects.get_for_model(self.object),
+                "creator_user": self.request.user,
+                "editor_user": self.request.user,
+                "from_user": self.request.user,
+                "to_user": self.request.user,  # get_user_model().objects.filter(groups__name='order_admin').first(),
+                "current_state_name": const.WF__ORDER__3_CURRENT_STATE_NAME,
+            }
+
+            wf = WorkFlow.objects.create(**flow_data)
+            self.object.last_work_flow = wf
+            self.object.extra_data.request = self.request
+            self.object.save()
+        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'change_user' not in self.request.POST and 'back' not in self.request.POST and 'next' in self.request.POST:
+            flow_data = {
+                "wf_status": 3,  # next
+                "action": 'ایجاد خودکار',
+                "flow_name": 'سفارش',
+                "state": const.WF__ORDER__4_STATE,
+                "wf_description": "بدون نیاز به تایید مهندس",
+                "belong_to_group": 'trade_order',
                 "object_id": self.object.pk,
                 "content_type": ContentType.objects.get_for_model(self.object),
                 "creator_user": self.request.user,
