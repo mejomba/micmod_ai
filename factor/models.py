@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -10,7 +11,7 @@ from extra_data.models import Item
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem
 from order.models import Order
-from tools.utils import show_error
+from tools.utils import show_error, round_rial
 
 from translator import get_text as _
 from datetime import datetime
@@ -90,16 +91,21 @@ class Factor(SLSDoc):
     #         order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
 
     @property
-    def sum_prices(self):
+    def payment(self):
         fis = self.factoritem_set.all()
-        sum_price = 0
-        row_price = 0
-        for fi in fis:
-            price = fi.price
-            quantity = fi.quantity
-            row_price = price * quantity
-        sum_price += row_price
-        return sum_price, row_price
+        sum_price = sum((fi.row_price for fi in fis))
+        tax = sum([fi.tax for fi in fis])
+        discount = sum([fi.discount_value for fi in fis])
+
+        additions = self.q.addition or 0
+        total = sum_price + additions - discount + tax
+
+
+        if self.q.currency_ref.title_en == 'Rial':
+            return int(sum_price), int(additions), int(discount), int(tax), int(total)
+        return sum_price, additions, discount, tax, total
+
+        # return sum_price
 
 
 class FactorItem(BaseModel):
@@ -123,6 +129,88 @@ class FactorItem(BaseModel):
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
 
     objects = FactorItemManager()
+
+    @property
+    def row_price(self):
+        price = self.price or 0
+        quantity = self.quantity or 0
+        row_price = price * quantity
+        return row_price
+
+    def fee_(self):
+        iqr = self.qi.quotation_item_rel.all().last()
+        if iqr is None:
+            return self.price or 0
+        if iqr.quotation_item.quotation.currency_ref.title == 'ریال':
+            currency_ref = 'RIAL'
+        else:
+            currency_ref = 'RMB'
+        match self.qi.price_method:
+            case 'last_sale':
+                return iqr.goods_last_price
+            case 'last_sale_q':
+                return iqr.goods_q_last_price
+            case 'price_avg':
+                return iqr.goods_avg_price
+            case 'sales_admin':
+                return self.price
+            case 'price_sheet1':
+                x = iqr.express_transportation_cost_1 if self.factor.q.currency_ref_id == 1 else iqr.express_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
+            case 'price_sheet2':
+                x = iqr.air_transportation_cost_1 if self.factor.q.currency_ref_id == 1 else iqr.air_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
+            case 'price_sheet3':
+                x = iqr.sea_transportation_cost_1 if self.factor.q.currency_ref_id == 1 else iqr.sea_transportation_cost_3
+                return round_rial(x, currency_ref) if isinstance(x, (int, float)) else 1
+            case 'price_market':
+                x = iqr.goods_price_market
+                return round_rial(x, currency_ref='RIAL') if isinstance(x, (int, float)) else 1
+
+    @property
+    def net_price(self):
+        try:
+            return (self.fee_()) * self.quantity if self.pk and self.fee_() else 0
+        except Exception as e:
+            return 0
+            raise ValueError('قیمت یا تعداد در یکی از ردیف ها اشتباه است')
+
+    @property
+    def tax(self):
+        try:
+            if self.factor.is_official:
+                x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
+                if self.factor.q.currency_ref.title_en == 'Rial':
+                    return int(x)
+                return x
+            else:
+                return 0
+        except Exception as e:
+            show_error(e, __file__)
+            return None
+
+    @property
+    def discount_tuple(self):
+        try:
+            net_price = self.net_price
+            row_discount = self.quantity * self.qi.discount_per_item
+            row_discount_base_percentage = net_price * (self.factor.self_discount / 100) if self.pk else 0
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                    1 - ((100 + settings.TAX_VALUE - self.factor.official_value) / (100 + settings.TAX_VALUE)))
+        except Exception as e:
+            row_discount = tax_discount = row_discount_base_percentage = 0
+        return tax_discount, row_discount_base_percentage, row_discount
+
+    @property
+    def discount_value(self):
+        x = sum(self.discount_tuple)
+        try:
+            return int(x)
+        except Exception as e:
+            print(e)
+            return 0
+
+
 
     @property
     def is_wh(self):
