@@ -147,21 +147,22 @@ def search_factor_view(request, *args, **kwargs):
     if q.isdigit():
         q_int = int(q)
     q_str = q
-    q_filter = Q(last_work_flow__current_state_name='مرحله نهایی')
+    q_filter = Q()
     q_required = {'cancel': False, "is_deleted": False}
     for s in search_by:
         if s == 'search_customer':
-            q_filter &= Q(customer_party_id__title__icontains=q_str)
+            q_filter |= Q(customer_party_id__title__icontains=q_str)
         if s == 'search_id':
-            q_filter &= Q(pk=q_int)
+            q_filter |= Q(pk=q_int)
         if s == 'search_marketer':
-            q_filter &= Q(last_work_flow__creator_user__username__icontains=q_str)
+            q_filter |= Q(last_work_flow__creator_user__username__icontains=q_str)
         if s == 'search_sepidar_id':
-            q_filter &= Q(sepidar_number__icontains=q_int)
+            q_filter |= Q(sepidar_number__icontains=q_int)
         if s == 'search_sku':
-            q_filter &= Q(quotation__goods_code_fk__sku__iexact=q_str)
+            q_filter |= Q(quotation__goods_code_fk__sku__iexact=q_str)
         if s == 'search_part_number':
-            q_filter &= Q(quotation__goods_code_fk__part_number__icontains=q_str)
+            q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
+    q_filter &= Q(last_work_flow__current_state_name='مرحله نهایی')
     if not search_by:
         q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') & \
                    (Q(customer_party_id__title__icontains=q_str) | \
@@ -169,10 +170,11 @@ def search_factor_view(request, *args, **kwargs):
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
                    Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
-    if 'search_id' in search_by:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
-        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, **q_required).order_by('-id').distinct()
-    else:
-        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    # if 'search_id' in search_by:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
+    #     quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    # else:
+    #     quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
