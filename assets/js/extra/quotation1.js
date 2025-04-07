@@ -55,12 +55,10 @@ $(document).ready(function () {
                 cache: false,
                 type: 'GET',
                 success: function (response){
-                    console.log(response)
                     if (response.items){
                         debugger
                         set_price_data(response.items[0], elem, e.target)
                     }
-                    console.log(response.items)
                 },
                 error: function (xhr) {
                     console.log(xhr)
@@ -92,11 +90,9 @@ $(document).ready(function () {
                 cache: false,
                 type: 'GET',
                 success: function (response){
-                    console.log(response)
                     if (response.items){
                         set_price_data(response.items[0], elem, e.target)
                     }
-                    console.log(response.items)
                 },
                 error: function (xhr) {
                     console.log(xhr)
@@ -267,7 +263,6 @@ function set_item_classes(item) {
         $(item).find('.goods_code').on("select2:select", function (e) {
             const elem = findAncestor(e.target, "item")
             const data = e.params.data;
-            console.log(data)
             set_price_data(data, elem, e.target)
             $(item).find('input[id*="goods_code_fk"]').val(data['id'])
             let m_url = "/inquiry/ajax/count/?sku=" + data['id']
@@ -299,7 +294,6 @@ function set_item_classes(item) {
                 dataType: "json",
                 type: "GET",
                 data: function (data) {
-                    console.log('inside data')
                     let p_id = document.getElementById('customer_pid').textContent || -1;
                     if (!p_id){
                         p_id = item.getElementById('customer_pid')
@@ -1121,13 +1115,11 @@ function check_quotation_price_market_before_save_permission(submit_buttons, ele
     let invalid_row_number = []
     let all_valid = []
     const items = document.querySelectorAll('.item')
-    console.log(items)
     items.forEach(function (elem){
         const price_method = elem.querySelector('[name*="price_method"]')
         const final_price = elem.querySelector('[name*="-final_price"]')
         let p_m = price_method ? price_method.value : null
         const is_market_expire_date = elem.querySelector('[name*="market_expire_date"]') ? Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null)) : null
-        console.log(p_m)
         debugger
         if (p_m === 'price_market'){
             if (is_market_expire_date){
@@ -1261,9 +1253,6 @@ function formatRepoItem(repo) {
 function newFormatRepoItem(repo) {
     if (repo.loading) {
         return repo.text;
-    }
-    if (repo.goods_price_market==4494){
-        console.log('')
     }
 
     let repo_express;
