@@ -908,7 +908,8 @@ function set_price(target, data=null) {
     const final_price = elem.querySelector('[name*="-final_price"]')
     let ids = ["#submit_draft", "#submit_next", "#submit_copy", "#submit_save"];
     let submit_buttons = ids.map(id => document.querySelector(id)).filter(el => el !== null);
-    document.querySelector('#expire_inquiry_error').classList.add('d-none')
+    const expire_inquiry_error = document.querySelector('#expire_inquiry_error')
+    expire_inquiry_error && expire_inquiry_error.classList.add('d-none')
     let stock_amount;
     let stock_amount_res;
     try {
@@ -1057,38 +1058,7 @@ function set_price(target, data=null) {
             'price_market':
             debugger
             final_price.disabled = true;
-            // const is_market_expire_date = elem.querySelector('[name*="market_expire_date"]').innerText === 'اعتبار استعلام به پایان رسیده'
-            // const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
-            // if (is_market_expire_date){
-            //     document.querySelector('#expire_inquiry_error').classList.remove('d-none')
-            //     document.querySelector('#expire_inquiry_row_number').innerText = elem.querySelector('.counter').innerText
-            //     submit_buttons.forEach(function (submit_button){
-            //         submit_button.classList.add('disabled')
-            //     })
-            // } else {
-            //     submit_buttons.forEach(function (submit_button){
-            //         submit_button.classList.remove('disabled')
-            //     })
-            //     const x_ = elem.querySelector('[name*="goods_price_market"]').value
-            //     if (x_){final_price.value = round_rial(x_);}
-            //     final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
-            // }
             check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
-
-            // const market_diff_time = diffTimeInQuotation(data.market_expire_date || 10000)
-            // const market_expire_element = elem.querySelector('[name*="market_expire_date"]')
-
-            // const [year, month, day] = elem.querySelector('[name*="market_expire_date"]').innerText.split('-').map(Number);
-            // const miladiDate = jalaali.toGregorian(year, month, day);
-            // const inquiryDate = new Date(miladiDate[0], miladiDate[1] - 1, miladiDate[2]);
-            // const now = new Date(); // زمان فعلی
-            // const date72 = new Date(now.getTime() - 72 * 60 * 60 * 1000); // 72 ساعت قبل
-            // if (inquiryDate < date72) {
-            //   console.log("تاریخ وارد شده قبل از تاریخ فعلی است.");
-            // } else if (inquiryDate > date72) {
-            //   console.log("تاریخ وارد شده قبل از تاریخ فعلی است.");
-            // }
-
             break;
     }
     calculate_price(target)
@@ -1142,7 +1112,7 @@ function check_quotation_price_market_before_save_permission(submit_buttons, ele
         set_values(elem.querySelectorAll('[name*="market_expire_date"]'), market_diff_time.message)
         market_expire_element.setAttribute('data-status', true)
     } else {
-        market_expire_element.classList.add('d-none')
+        market_expire_element && market_expire_element.classList.add('d-none')
         // const x_ = elem.querySelector('[name*="goods_price_market"]').value
         // if (x_){final_price.value = round_rial(x_);}
         // final_price.innerHTML = numberWithCommas(elem.querySelector('[name*="goods_price_market"]').value);
@@ -1156,11 +1126,10 @@ function check_quotation_price_market_before_save_permission(submit_buttons, ele
         const price_method = elem.querySelector('[name*="price_method"]')
         const final_price = elem.querySelector('[name*="-final_price"]')
         let p_m = price_method ? price_method.value : null
-        const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
+        const is_market_expire_date = elem.querySelector('[name*="market_expire_date"]') ? Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null)) : null
         console.log(p_m)
         debugger
         if (p_m === 'price_market'){
-            // const is_market_expire_date = Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null))
             if (is_market_expire_date){
                 invalid_row_number.push(elem.querySelector('.counter').innerText)
                 document.querySelector('#expire_inquiry_error').classList.remove('d-none')
