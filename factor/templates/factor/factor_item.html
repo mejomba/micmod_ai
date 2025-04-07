@@ -165,6 +165,8 @@
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
         <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">
+        <input type="hidden" value="{{ qi.quotation.addition }}" id="id_addition">
+        <input type="hidden" value="{{ qi.quotation.tax }}" id="id_tax">
         <!-- update factor item -->
         {% if factor_item.instance.pk %}
                 <div class="hidden-section">
@@ -654,8 +656,8 @@ function factor_calculate_price(target, direct_target=null) {
     const t_prices = document.querySelector('.factor_total_price')
     const additionElm = document.querySelector('#id_addition')
     const taxElm = document.querySelector('#id_tax')
-    const additionValue = 0 //additionElm.value ? parseFloat(additionElm.value) : 0
-    const topTaxValue = 0 //taxElm.value ? parseFloat(taxElm.value) : 0
+    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
+    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
     t_prices.innerText = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
     //for (let i = 0; i < t_prices.length; i++) {
         //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
