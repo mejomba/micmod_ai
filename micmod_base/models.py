@@ -184,7 +184,7 @@ class Quotation(SLSDoc):
     @classmethod
     def get_qs(cls, request):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q, quotation=True).filter(is_direct=False)
+        qs = cls.objects.get_access_object(request.user, q=q, quotation=True, lst=False).filter(is_direct=False)
         return qs
 
     @classmethod
