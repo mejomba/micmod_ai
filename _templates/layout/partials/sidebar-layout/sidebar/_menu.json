@@ -122,7 +122,8 @@
             "groups": [
               "trade_user",
               "sales_admin",
-              "mac"
+              "mac",
+              "bazar_user"
             ]
           },
           "count": "order.order:get_qs_count",

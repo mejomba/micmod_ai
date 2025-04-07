@@ -172,7 +172,7 @@
                     {{ hidden_field }}
                 {% endfor %}
                 </div>
-        	<div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" style="height: fit-content">
+        	<div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" id="id_factor_item" style="height: fit-content">
 
             <!--quotation item information (update)-->
             <div class="col-3 border-left d-flex flex-column justify-content-center {% if qi.is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
@@ -247,7 +247,7 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-0">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center">
@@ -306,7 +306,7 @@
             {% endif %}
 
             {% with qi.is_over as is_over %}
-            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-over {% endif %} " style="height: fit-content">
+            <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item {% if is_over %} bg-over {% endif %} " id="id_factor_item" style="height: fit-content">
 
             <!--quotation item information (create)-->
             <div class="col-3 border-left d-flex flex-column justify-content-center {% if is_over %} bg-over {% else %} hover_light_info {% endif %}" style="height: fit-content; min-height: 70px;">
@@ -374,7 +374,7 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-1">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center px-1">
@@ -544,6 +544,18 @@
         })
     }
 
+    function factor_item_back_to_the_game(item){ // این همون تابعی هست که وقتی یک ردیف حذف شده فاکتور دوباره به فاکتور برمیگرده ایندکس ها را تنظیم میکند
+        debugger
+        let local_index = 0
+        document.querySelectorAll(`[class*=sortable-item]`).forEach(function (item){
+            if (item.querySelector('[id*="factor_item"]').style.height !== '0px' && item.querySelector('input[name*=quantity]').value.trim() !== '0'){
+                item.querySelector(`input[id*=-index]`).value = local_index
+                local_index += 1
+            } else {
+                item.querySelector(`input[id*=-index]`).value = local_index + 1000
+            }
+        })
+    }
 function factor_calculate_price(target, direct_target=null) {
         debugger
     let elem;
@@ -576,9 +588,9 @@ function factor_calculate_price(target, direct_target=null) {
     }
 
     // price
-    let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
+    let price = final_price ? parseFloat(final_price.innerHTML.replaceAll(',', '')) : NaN
     if (isNaN(price)) {
-        price = final_price.value
+        price = final_price ? final_price.value : 0
     }
     row_discount_amount = parseFloat(elem.querySelector('input[name$="-row-discount"]').value.replaceAll(',', '')) || 0
     row_discount = row_discount_amount * qty
@@ -666,6 +678,16 @@ setTimeout(factor_calculate_price_all_rows, 1000)
             full_row.style.height = '0'
             full_row.style.minHeight = '0'
             full_row.style.overflow = 'hidden'
+            let local_index = 0
+            document.querySelectorAll(`[class*=sortable-item]`).forEach(function (item){
+                if (item.querySelector('[id*="factor_item"]').style.height !== '0px'){
+                    debugger
+                    item.querySelector(`input[id*=-index]`).value = local_index
+                    local_index += 1
+                } else {
+                    item.querySelector(`input[id*=-index]`).value = local_index + 1000
+                }
+            })
         }
     }
 </script>

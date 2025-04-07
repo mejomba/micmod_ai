@@ -178,11 +178,11 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['item_trade__part_number'] = f'<span>{obj.item_trade.part_number}</span>' if obj.item_trade else ""
         o = obj.workflows.filter(current_state_name='تایید مهندس').first()
-        row['co_conf'] = f'<span>{o.created_date}</span>' if o else ""
+        row['co_conf'] = f'<span>{o.created_date.strftime("%Y-%b-%d %H:%m")}</span>' if o else ""
 
-        row['order_title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+        row['order_number'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
             reverse('order:order.view', args=(obj.id,)),
-            obj.order_title if obj.order_title else 'بدون عنوان'
+            obj.order_number if obj.order_number else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
