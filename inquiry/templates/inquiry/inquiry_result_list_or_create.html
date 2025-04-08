@@ -135,7 +135,6 @@
                     processData: false,
                     contentType: false,
                     success: function (data) {
-                        debugger
                         const br = document.createElement('br')
                         const sku_detail = document.createElement('small')
                         const id_sku_c_container = document.createElement('small')
@@ -323,7 +322,6 @@
                 },
             cache: true,
             success: function (data) {
-                debugger
                 let last_price_currency_type = data.items[0].currency_type
                 let currency_type = id_currency_type.value
                 let last_price = data.items[0].price
@@ -364,7 +362,6 @@
         const submit_copy_inquiry_btn = document.querySelector('input[name="submit/copy"]')
         submit_inquiry_btn && submit_inquiry_btn.addEventListener('click', function(e){
             const is_inquiry_valid = check_inquiry_price_diff()
-            debugger
             if (!is_inquiry_valid){
                 e.preventDefault()
             }
