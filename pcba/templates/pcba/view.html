@@ -8,7 +8,7 @@
 {% block title %}قرارداد{% endblock title %}
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
     <style>
         .item_customer_receipt_list{
             transition: all 0.3s ease;
@@ -475,7 +475,6 @@
     const CustomerItemReceipt = document.querySelector('#customer_item_receipt')
     CustomerItemReceipt && CustomerItemReceipt.addEventListener('click', function (e){
         e.preventDefault()
-        debugger
         const modal_lg_body = $('#id-empty-modal-body-lg')
         $.ajax({
             type: 'GET',
@@ -486,7 +485,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -513,7 +511,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -537,7 +534,6 @@
     const ProjectItemList = document.querySelector('#project_item_list')
     ProjectItemList && ProjectItemList.addEventListener('click', function (e){
         e.preventDefault()
-        debugger
         const modal_lg_body = $('#id-empty-modal-body-lg')
         {#const projectForm = $('#id-project-item-list-form')#}
         $.ajax({
@@ -549,7 +545,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 {#document.getElementById('id-project-item-list-form').classList.remove('d-none')#}
                 modal_lg_body.html(html);
@@ -577,7 +572,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -602,7 +596,6 @@
     const ProductionDayActivities = document.querySelector('#production_day_activities')
     ProductionDayActivities && ProductionDayActivities.addEventListener('click', function (e){
         e.preventDefault()
-        debugger
         const modal_lg_body = $('#id-empty-modal-body-lg')
         $.ajax({
             type: 'GET',
@@ -613,7 +606,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -641,7 +633,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -678,7 +669,6 @@
     ItemCustomerReceipts.forEach((ItemCustomerReceipt) =>{
         ItemCustomerReceipt.addEventListener('click', function (e){
         e.preventDefault()
-        debugger
         const modal_lg_body = $('#id-empty-modal-body-lg')
         let contract_id = document.querySelector("button[data-model_name='contract']")
         if (contract_id){
@@ -697,10 +687,9 @@
             },
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
-                initializeDatepickers();
+                {#initializeDatepickers();#}
             },
             error: function () {
 
@@ -725,7 +714,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -753,7 +741,6 @@
     items_btn.forEach((btn, idx) => {
 
         btn.addEventListener("click", function (){
-            debugger
             if (items[idx].style.height === "0px" || items[idx].style.height === "") {
             items[idx].style.height = `${items[idx].scrollHeight}px`;
             } else {
@@ -765,7 +752,6 @@
 
 
     document.querySelector('#select2-id_goods_code_fk_select2-container').addEventListener('change', function() {
-        debugger
         const goodsCode = this.value;
         if (goodsCode) {
             fetch(`/pcba/goods/customer/?goods_code=${goodsCode}`)
