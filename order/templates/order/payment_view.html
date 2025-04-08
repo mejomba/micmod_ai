@@ -83,7 +83,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers(['id_g_from_date', 'id_g_to_date']);
@@ -110,7 +109,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers(['id_g_from_date', 'id_g_to_date']);

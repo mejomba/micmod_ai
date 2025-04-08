@@ -2,7 +2,7 @@
 {% load more_tags %}
 
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 
 <form action="{% if form.instance.pk %}{% url 'extra_data:customer_document.update' form.instance.pk %}{% else %}{% url 'extra_data:customer_document.create' %}{% endif %}" method="POST" id="customer-document-form" enctype="multipart/form-data">
@@ -16,9 +16,7 @@
 </form>
 
 <script>
-    debugger
     $('#customer-document-form').on('submit', function (e){
-        debugger
         e.preventDefault()
         var doc_type = $('#id_doc_type').val();
         var description = $('#customer-document-form #id_description').val();

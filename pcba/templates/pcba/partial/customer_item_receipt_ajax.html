@@ -5,7 +5,7 @@
 
 
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
 
 
 <style>
@@ -68,7 +68,6 @@
     const CustomerItemReceipt = document.querySelector('#item_in_customer_receipt')
     CustomerItemReceipt && CustomerItemReceipt.addEventListener('click', function (e){
         e.preventDefault()
-        debugger
         const item_form = $('#id_form_item')
         $.ajax({
             type: 'GET',
@@ -79,10 +78,9 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 item_form.html(html);
-                initializeDatepickers();
+                {#initializeDatepickers();#}
             },
             error: function () {
 

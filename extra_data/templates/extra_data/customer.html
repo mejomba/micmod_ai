@@ -8,7 +8,7 @@
 {% block title %}مشتری{% endblock title %} {"title": ""})
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 
 <script src="{% static 'js/base_define.js' %}"></script>
@@ -463,7 +463,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -491,7 +490,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers();
@@ -555,7 +553,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
             },
@@ -575,7 +572,6 @@
     })
 
     const customer_to_sepidar = document.querySelector('#customer_to_sepidar')
-    debugger
     if (customer_to_sepidar){
         customer_to_sepidar.addEventListener('click', function (e){
             $.ajax({
