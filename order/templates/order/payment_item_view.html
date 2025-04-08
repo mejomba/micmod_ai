@@ -33,9 +33,15 @@
 </form>
 
 <script>
-    debugger
-    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
-    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    try {
+        let order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    } catch (e) {
+        console.log(e)
+        order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    }
+
     $('#payment-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit_with_file(this, true, true)

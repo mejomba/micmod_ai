@@ -459,13 +459,24 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
-        let customer_placeholder  = document.querySelector('#customer_name')
-        let goods_placeholder  = document.querySelector('#goods_name')
+    try {
+        let customer_placeholder = document.querySelector('#customer_name')
+        let goods_placeholder = document.querySelector('#goods_name')
         customer_placeholder = customer_placeholder.innerText || 'مشتری'
         goods_placeholder = goods_placeholder.innerText || 'کد کالا'
 
         select2_generate("#id_customer_party_id_select2", '#id_customer_party_id', '/sepidar/customers_list', customer_placeholder, 'sepidar_party_id')
         select2_generate("#id_goods_code_fk_select2", '#id_goods_code_fk', '/inquiry/items_list/', goods_placeholder)
+    } catch (e) {
+        console.log(e)
+        customer_placeholder = document.querySelector('#customer_name')
+        goods_placeholder = document.querySelector('#goods_name')
+        customer_placeholder = customer_placeholder.innerText || 'مشتری'
+        goods_placeholder = goods_placeholder.innerText || 'کد کالا'
+
+        select2_generate("#id_customer_party_id_select2", '#id_customer_party_id', '/sepidar/customers_list', customer_placeholder, 'sepidar_party_id')
+        select2_generate("#id_goods_code_fk_select2", '#id_goods_code_fk', '/inquiry/items_list/', goods_placeholder)
+    }
     </script>
 
     <script>

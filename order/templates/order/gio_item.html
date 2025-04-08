@@ -23,9 +23,15 @@
 </form>
 
 <script>
-    debugger
-    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
-    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    try {
+        let order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    } catch (e) {
+        console.log(e)
+        let order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)
+    }
+
     $('#gio-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit(this, true, true)

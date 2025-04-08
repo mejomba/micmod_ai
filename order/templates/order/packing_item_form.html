@@ -61,8 +61,14 @@
             document.querySelector('input[name="price"]').value = data.price
         })
     }
-    const order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
-    select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/item__part_number/?view_name=packing_item_order_select2', order_select2_placeholder, 'id', null, null, null, packing_item_after_order_select)
+    try {
+        let order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/item__part_number/?view_name=packing_item_order_select2', order_select2_placeholder, 'id', null, null, null, packing_item_after_order_select)
+    } catch (e) {
+        order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"
+        select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/item__part_number/?view_name=packing_item_order_select2', order_select2_placeholder, 'id', null, null, null, packing_item_after_order_select)
+    }
+
     $('#packing-item-form').on('submit', function (e){
         e.preventDefault()
         ajax_submit(this, true, true)

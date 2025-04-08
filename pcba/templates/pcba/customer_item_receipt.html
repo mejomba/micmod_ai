@@ -49,14 +49,24 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
-        let parent_placeholder  = document.querySelector('#parent_name')
-        let contract_placeholder  = document.querySelector('#contract_name')
+    try {
+        let parent_placeholder = document.querySelector('#parent_name')
+        let contract_placeholder = document.querySelector('#contract_name')
         parent_placeholder = parent_placeholder.innerText
         contract_placeholder = contract_placeholder.innerText
 
         select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)
         select2_generate("#id_parent_select2", '#id_parent', '/pcba/parent/select2/', parent_placeholder)
+    } catch (e) {
+        console.log(e)
+        parent_placeholder = document.querySelector('#parent_name')
+        contract_placeholder = document.querySelector('#contract_name')
+        parent_placeholder = parent_placeholder.innerText
+        contract_placeholder = contract_placeholder.innerText
 
+        select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)
+        select2_generate("#id_parent_select2", '#id_parent', '/pcba/parent/select2/', parent_placeholder)
+    }
 
 
     </script>
