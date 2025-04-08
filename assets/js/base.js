@@ -543,7 +543,6 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
         templateResult: formatRepoDL || defaultFormatRepoDL,
         templateSelection: formatRepoSelection || defaultFormatRepoSelection
     });
-debugger
     if (afterSelect){
         afterSelect(select2_element, target_element, id_field)
     } else {
@@ -744,7 +743,6 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 modal_lg_body.html(html);
                 initializeDatepickers(['id_g_from_date', 'id_g_to_date']);

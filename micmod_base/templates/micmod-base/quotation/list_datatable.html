@@ -107,7 +107,6 @@
     const SaleUserReportBtn = document.querySelector("#id_sale_user_report")
     if (SaleUserReportBtn){
         SaleUserReportBtn.addEventListener('click',function (e){
-            debugger
         var from_time = document.getElementById("id_from_time").value;
         var to_time = document.getElementById("id_to_time").value;
         let new_url = "{% url 'micmod_base:sale_user_report' %}"
@@ -121,7 +120,6 @@
             dataType: 'json',
             cache: false,
             success: function (data) {
-                debugger
                 html = data['res'];
                 document.querySelector('#id-empty-modal-body-lg').innerHTML = html
             },
@@ -135,7 +133,6 @@
     }
 
     function foreign_inquiry_not_responded(event){
-        debugger
         const target_element = event.currentTarget
         const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
         all_quotation_foreign_inquiry_not_responded.forEach(function (other){
@@ -147,7 +144,6 @@
     }
 
     function local_inquiry_not_responded(event){
-        debugger
         const target_element = event.currentTarget
         const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
         all_quotation_foreign_inquiry_not_responded.forEach(function (other){

@@ -198,7 +198,6 @@
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 document.querySelector('#id-empty-modal-body').innerHTML = html
             },
@@ -225,7 +224,6 @@ const RepeatedGoodsCodeBtn = document.querySelectorAll("#id_repeated_goods_code"
             contentType: false,
             beforeSend: block_main_container,
             success: function (data) {
-                debugger
                 html = data['res'];
                 document.querySelector('#id-empty-modal-body').innerHTML = html
             },
