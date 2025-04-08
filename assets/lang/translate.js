@@ -40,7 +40,6 @@ function translate_handler(lang){
 }
 
 function get_translate(){
-    debugger
     const languages = document.querySelectorAll('[class$="language"]')
     languages && languages.forEach(function (item){
         item.addEventListener('click', () => translate_handler(item.dataset.lang))

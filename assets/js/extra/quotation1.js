@@ -927,7 +927,6 @@ function set_price(target, data=null) {
     if (!p_m) {
         p_m = price_method ? price_method.value : null
     }
-    debugger
     switch (p_m) {
         case '':
             check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m)
@@ -1059,7 +1058,6 @@ function set_price(target, data=null) {
 }
 
 function date_str_to_iso_date(date_str, sep='-'){
-    debugger
     const [year, month, day] = date_str.split(sep).map(Number);
     const miladiDate = toGregorian(year, month, day);
     return new Date(miladiDate.gy, miladiDate.gm - 1, miladiDate.gd);
@@ -1070,7 +1068,6 @@ function add_n_hour(currentDate ,n){
 }
 
 function check_quotation_price_market_before_save_permission(submit_buttons, elem, data, p_m){
-    debugger
     let market_expire_iso_date;
     let data_bazar = data && data.is_bazar
     // let market_expire_limit_days = parseInt(elem.querySelector('.market_expire_limit_days').dataset.market_expire_limit_days)
@@ -1120,7 +1117,6 @@ function check_quotation_price_market_before_save_permission(submit_buttons, ele
         const final_price = elem.querySelector('[name*="-final_price"]')
         let p_m = price_method ? price_method.value : null
         const is_market_expire_date = elem.querySelector('[name*="market_expire_date"]') ? Boolean(JSON.parse(elem.querySelector('[name*="market_expire_date"]').dataset.status || null)) : null
-        debugger
         if (p_m === 'price_market'){
             if (is_market_expire_date){
                 invalid_row_number.push(elem.querySelector('.counter').innerText)

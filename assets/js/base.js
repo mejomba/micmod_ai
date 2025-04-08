@@ -149,7 +149,6 @@ function shomare_kart(on_load=null) {
 }
 
 function removeCommaSeperator(str=null) {
-    debugger
     if (str !== null){
         try {
             return str.replaceAll(',', '')
@@ -782,7 +781,6 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         });
     }
     function diffTime(time_iso){
-        debugger
         let t1 = new Date();
         let t2 = new Date(time_iso);
         const isDateOnly = t2.getHours() === 0 && t2.getMinutes() === 0 && t2.getSeconds() === 0;
