@@ -50,6 +50,7 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
+    try {
         let goods_placeholder_pil_  = document.querySelector('#goods_name')
         let contract_placeholder  = document.querySelector('#contract_name')
         goods_placeholder_pil_ = goods_placeholder_pil_.innerText
@@ -57,6 +58,17 @@
 
         select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)
         select2_generate("#id_goods_code_fk_select2", '#id_goods_code_fk', '/inquiry/items_list/', goods_placeholder_pil_)
+    } catch (e) {
+        console.log(e)
+        goods_placeholder_pil_  = document.querySelector('#goods_name')
+        contract_placeholder  = document.querySelector('#contract_name')
+        goods_placeholder_pil_ = goods_placeholder_pil_.innerText
+        contract_placeholder = contract_placeholder.innerText
+
+        select2_generate("#id_contract_select2", '#id_contract', '/pcba/contracts/select2', contract_placeholder)
+        select2_generate("#id_goods_code_fk_select2", '#id_goods_code_fk', '/inquiry/items_list/', goods_placeholder_pil_)
+    }
+
 
         $('#customer-item-receipt-form').on('submit', function (e){
         e.preventDefault()
