@@ -42,20 +42,20 @@
 </script>
 <script>
         function initializeDatepickers() {
-            if (!$('#id_contract_date').data("datepicker")){
-                $('#id_contract_date').datepicker({
-                    dateFormat: 'yy-mm-dd',
-                    changeMonth: true,
-                    changeYear: true,
-                });
-            }
-            if (!$('#id_contract_due_date').data("datepicker")){
-                $('#id_contract_due_date').datepicker({
-                    dateFormat: 'yy-mm-dd',
-                    changeMonth: true,
-                    changeYear: true,
-                });
-            }
+            {#if (!$('#id_contract_date').data("datepicker")){#}
+            {#    $('#id_contract_date').datepicker({#}
+            {#        dateFormat: 'yy-mm-dd',#}
+            {#        changeMonth: true,#}
+            {#        changeYear: true,#}
+            {#    });#}
+            //}
+            {#if (!$('#id_contract_due_date').data("datepicker")){#}
+            {#    $('#id_contract_due_date').datepicker({#}
+            {#        dateFormat: 'yy-mm-dd',#}
+            {#        changeMonth: true,#}
+            {#        changeYear: true,#}
+            {#    });#}
+            //}
         }
 
 
