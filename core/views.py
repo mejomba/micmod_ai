@@ -824,56 +824,6 @@ class BaseView(UserPassesTestMixin,
             return super().form_valid(form)
         return HttpResponseRedirect('.')
 
-    # def copy_view(self, related_name, nested_name):
-    #     wfform = None
-    #     formset = None
-    #     form = None
-    #
-    #
-    #     if self.has_flow:
-    #         wfform = self.workflow_form(
-    #             content_type_model=self.model,
-    #             initial={
-    #                     'wf_access': True,
-    #                     'from_user': None,
-    #                     'to_user': self.request.user,
-    #                     'state': 0,
-    #                     'state_index': 0,
-    #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-    #                     'action': self.flow_config.get('flow_action'),
-    #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-    #                         days=self.flow_config.get('flow_deadline')[0]) if self.has_flow else None,
-    #                     'flow_config': self.flow_config,
-    #                     'create': False if self.object else True
-    #                 },
-    #             current_user=self.request.user,
-    #         )
-    #
-    #     if self.has_formset:
-    #         formset = self.formset_form(
-    #             instance=self.object, form_kwargs={
-    #                 "constraint": {
-    #                     "wf_access": self.wf_access,
-    #                     'form_state': self.state_index,
-    #                     'request': self.request,
-    #                     'form_constraint': self.flow_config.get('flow_form_constraint'),
-    #                     'formset_constraint': self.flow_config.get('flow_formset_constraint')
-    #                 }
-    #             }
-    #         )
-    #         formset_prefix = formset.prefix
-    #         self.request.POST._mutable = True
-    #         for idx in range(getattr(self.object, related_name), 0):
-    #             formset_pattern = f'{formset_prefix}_{idx}_{related_name}'
-    #             self.request.POST[formset_pattern] = ''
-    #
-    #             nesterd_pattern = f'{prefix}_{idx}_{nested_name}'
-    #             self.request.POST[nesterd_pattern] = ''
-    #         self.request.POST._mutable = False
-    #
-    #     form = self.get_form_class()(data=self.request.POST)
-    #     self.request.full_copy = True
-    #     return self.render_to_response(context={'data': None, 'form': form, 'formset': formset, 'workflow_form': wfform},)
 
 class Base:
     @classmethod
