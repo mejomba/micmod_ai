@@ -124,16 +124,20 @@ def deactivate_old_bazar_price(expiration_in_day=3):
         price.active = False
 
 
-def create_essentials():
-    db_config = settings.DATABASES.get('default')
+
+def create_essentials(db_config):
+    if db_config is None:
+        db_config = settings.DATABASES.get('default')
+
     db_name = db_config['NAME']
     db_user = db_config['USER']
     db_password = db_config['PASSWORD']
     db_host = db_config['HOST']
     db_port = db_config['PORT']
     backup_path = db_config["BACKUP_PATH"] or 'db_backup'
+
     filename = f'db_backup__'
-    filename = filename + time.strftime("%Y_%m_%d__%H_%M_%S") + ".sql"
+    filename = db_name + '__' + filename + time.strftime("%Y_%m_%d__%H_%M_%S") + ".sql"
     command_str = str(db_host) + " -p " + str(db_port) + " -d " + db_name + " -U " + db_user
     import os
     os.environ["PGPASSWORD"] = db_password
@@ -141,8 +145,8 @@ def create_essentials():
 
 
 @shared_task
-def db_backup(table_names=None):
-    command_str, backup_path, filename = create_essentials()
+def db_backup(db, table_names=None):
+    command_str, backup_path, filename = create_essentials(db)
     command_str = "pg_dump -h " + command_str
 
     if table_names is not None:

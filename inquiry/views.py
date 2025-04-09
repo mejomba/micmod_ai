@@ -3,6 +3,7 @@ import threading
 
 from django.core.cache import cache
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.forms import inlineformset_factory
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
@@ -10,6 +11,8 @@ from django.urls import reverse_lazy, reverse
 from django.views import generic
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from rest_framework.status import HTTP_403_FORBIDDEN
+
 from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
@@ -1403,7 +1406,45 @@ def get_inquiry_title(request, *args, **kwargs):
 
 
 def pg_backup(request, *args, **kwargs):
+    import os
     if request.user.is_superuser:
-        res = db_backup()
+        # dbs = ['portal', 'product_db', 'product', 'micmod_ir']
+        # dbs = ['mojtaba', 'e_shop', 'rana']
+        db_config_for_backup = {
+            'micmod_ir': {
+                'NAME': 'micmod_ir',
+                'USER': os.environ.get('PG_USER'),
+                'PASSWORD': os.environ.get('PG_PASSWORD'),
+                'HOST': os.environ.get('PG_HOST'),
+                'PORT': os.environ.get('PG_PORT'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
+            'portal': {
+                'NAME': 'portal',
+                'USER': os.environ.get('PG_USER'),
+                'PASSWORD': os.environ.get('PG_PASSWORD'),
+                'HOST': os.environ.get('PG_HOST'),
+                'PORT': os.environ.get('PG_PORT'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
+            'product_db': {
+                'NAME': 'product_db',
+                'USER': os.environ.get('PG_USER'),
+                'PASSWORD': os.environ.get('PG_PASSWORD'),
+                'HOST': os.environ.get('PG_HOST'),
+                'PORT': os.environ.get('PG_PORT'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
+            'product': {
+                'NAME': 'product',
+                'USER': os.environ.get('PG_USER'),
+                'PASSWORD': os.environ.get('PG_PASSWORD'),
+                'HOST': os.environ.get('PG_HOST'),
+                'PORT': os.environ.get('PG_PORT'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
+        }
+        for k, v in db_config_for_backup.items():
+            res = db_backup(v)
         return HttpResponse(res)
-
+    raise PermissionDenied
