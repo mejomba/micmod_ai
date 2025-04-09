@@ -165,3 +165,4 @@ media/*
 #**/migrations/0**
 #dason/settings.py
 node_modules/
+db_backup/
