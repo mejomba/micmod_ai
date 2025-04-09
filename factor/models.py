@@ -126,6 +126,7 @@ class FactorItem(BaseModel):
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
+    discount_per_item = models.FloatField(_('discount_per_item'), null=True, blank=True)
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
 
     objects = FactorItemManager()
