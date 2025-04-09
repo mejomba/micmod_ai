@@ -170,11 +170,11 @@ def search_factor_view(request, *args, **kwargs):
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
                    Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
-    # if 'search_id' in search_by:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
-    #     quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
-    # else:
-    #     quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
-    quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    if 'search_id' in search_by and len(search_by) == 1:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, **q_required).order_by('-id').distinct()
+    else:
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+    # quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
     total_count = 0
