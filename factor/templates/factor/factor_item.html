@@ -9,17 +9,26 @@
                         </div>
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
-<div class="mt-10 mb-5 badge bg-light-warning py-2 px-3 rounded font-size-15">
+
+<div class="mt-10 mb-2  bg-light-warning py-2 px-3 rounded font-size-15" style="width: fit-content">
 <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
     <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>
 <span>    آمده است به رنگ</span>
     <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>
 <span>    در انتهای لیست نمایش داده میشوند</span>
 </div>
+
+{% if is_need_sales_admin_confirmation %}
+    <div class="bg-light-danger p-2 mb-5 rounded font-size-15" style="width: fit-content">
+        این فاکتور نیاز به تایید مدیر فروش دارد
+    </div>
+{% endif %}
+
 <div class="d-flex my-3">
+    <span class="me-5">فاکتور های مرتبط</span>
     {% for factor in quotation.q.all %}
         {% if form.instance.pk != factor.pk %}
-            <a class="mx-3 text-primary badge pb-1 badge-light-primary border border-primary font-size-12" href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
+            <a class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12" href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
         {% endif %}
     {% endfor %}
 </div>
