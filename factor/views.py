@@ -58,7 +58,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
         res = super().form_valid(form)
-        if 'back' in self.request.POST and not self.is_need_sales_admin_confirmation() and self.state_index == 2:
+        if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
             last_wf_belong_to_sales_user_if_change = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
             last_wf_belong_to_sales_user = self.object.workflows.filter(belong_to_group='sales_user').order_by('id').first()
@@ -72,7 +72,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                 'object_id': self.object.pk,
             }
             self.save_flow(self.request, **wf_data)
-        if 'next' in self.request.POST and not self.is_need_sales_admin_confirmation() and self.state_index == 0:
+        if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 0:
             wf_data = {
                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
@@ -84,15 +84,20 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.save_flow(self.request, **wf_data)
         return res
 
-    def is_need_sales_admin_confirmation(self):
-        x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
-                self.object.factoritem_set.all()])
-        return x
+    # def is_need_sales_admin_confirmation(self):
+    #     # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
+    #     #         self.object.factoritem_set.all()])
+    #     for fis in self.object.factoritem_set.all():
+    #         if fis.qi.fee != fis.price or fis.goods_code_fk != fis.goods_code:
+    #             return True
+    #     return False
+        # return x
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if not self.object:
             return context
+        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation()
         context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object
