@@ -127,7 +127,7 @@ class PriceInquiryResult(BaseModel):
             return qs
         elif user.groups.filter(name='bazar_user') or user.groups.filter(name='bazar_admin'):
             return qs.filter(inquiry_type__base_group='bazar')
-        elif user.groups.filter(name='trade_user') or user.groups.filter(name='trade_admin'):
+        elif user.groups.filter(name='trade_user') or user.groups.filter(name='trade_admin') or user.has_perm("inquiry.add_priceinquiryresult"):
             return qs.filter(inquiry_type__base_group='trade')
         else:
             return cls.objects.none()

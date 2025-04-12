@@ -45,6 +45,14 @@ class Factor(SLSDoc):
 
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
 
+    def is_need_sales_admin_confirmation(self):
+        # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
+        #         self.object.factoritem_set.all()])
+        for fis in self.factoritem_set.all():
+            if fis.qi.fee != fis.price or fis.goods_code != fis.qi.goods_code_fk:
+                return True
+        return False
+        # return x
     @classmethod
     def get_qs_count(cls, user):
         return len(cls.objects.get_access_object(user, q='active', quotation=False))
@@ -126,6 +134,7 @@ class FactorItem(BaseModel):
     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
     #                                             related_name='factor_items', null=True, blank=True,
     #                                             verbose_name=_('supply_locations'))
+    discount_per_item = models.FloatField(_('discount_per_item'), null=True, blank=True)
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
 
     objects = FactorItemManager()

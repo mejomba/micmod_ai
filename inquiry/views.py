@@ -34,7 +34,7 @@ from translator import get_text as _
 
 from tools.utils import show_error, get_tuple_value_list
 from tools.form_tools import get_choice_field
-from .tasks import update_price_list, update_components, db_backup
+from .tasks import update_price_list, update_components, db_backup, cleanup_filesystem
 
 from tools.utils import round_price
 
@@ -1446,5 +1446,6 @@ def pg_backup(request, *args, **kwargs):
         }
         for k, v in db_config_for_backup.items():
             res = db_backup(v)
+        cleanup_filesystem()
         return HttpResponse(res)
     raise PermissionDenied

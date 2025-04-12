@@ -187,6 +187,28 @@
         }
     }
 
+    function check_all_price(){
+        debugger
+        const Alert = document.querySelector('.factor-alert')
+        const rows = document.querySelectorAll('.sortable-item') //findAncestor(event.currentTarget, 'row').parentElement.parentElement
+
+        rows.forEach(function (item){
+            const qi_price = item.querySelector('.qi_price')
+            const elem = item.querySelector("input[name*='-price']")
+            if (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price)){
+                elem.classList.add('border-danger')
+                elem.classList.add('text-danger')
+                Alert.classList.add('alert-danger')
+                Alert.classList.add('show')
+                Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+                setTimeout(()=>{
+                    Alert.classList.remove('show')
+                    Alert.classList.remove('alert-danger')
+                }, 7000)
+            }
+        })
+    }
+    setTimeout(check_all_price, 1200)
     function sync_supply_location(event){
         debugger
         const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')

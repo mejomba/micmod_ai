@@ -190,3 +190,24 @@ def restore_database(table_names=None):
     except Exception as e:
         print("!!Problem occured!!")
         print(e)
+
+
+def cleanup_filesystem():
+
+    # مسیر دایرکتوری مورد نظر
+    directory = settings.BASE_DIR / 'db_backup'
+
+    days = 10
+    now = time.time()
+    cutoff = now - (days * 86400)
+
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+
+        if os.path.isfile(filepath):
+            file_creation_time = os.path.getctime(filepath)
+
+            if file_creation_time < cutoff:
+                print(f"حذف فایل: {filepath}")
+                os.remove(filepath)
+

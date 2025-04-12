@@ -92,6 +92,43 @@ class BaseView(UserPassesTestMixin,
         super().__init__()
         self.extra_data = ExtraData()
 
+    def test_func(self):
+        if not self.model:
+            raise ImproperlyConfigured(f'''BaseView need model attribute''')
+        if not self.allow_perms:
+            self.allow_perms = [f'{self.model._meta.app_label}.view_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.add_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.change_{self.model._meta.model_name}',
+                                f'{self.model._meta.app_label}.delete_{self.model._meta.model_name}',
+                                ]
+
+        if self.priority_strategy == 'or':
+            return any(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
+        if self.priority_strategy == 'and':
+            return all(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
+
+    def __permission_priority_check(self, priority):
+        permissions = getattr(self, priority)
+        return self.__permission_check(permissions, priority)
+
+    def __permission_check(self, permissions, priority):
+        if 'perms' in priority and self.permission_strategy == 'or':
+            return any(self.request.user.has_perm(perm) for perm in permissions)
+        elif 'perms' in priority and self.permission_strategy == 'and':
+            return all(self.request.user.has_perm(perm) for perm in permissions)
+
+        if 'groups' in priority and self.permission_strategy == 'or':
+            user_groups = self.request.user.groups.values_list('name', flat=True)
+            for g in user_groups:
+                if g in permissions:
+                    return True
+
+        elif 'groups' in priority and self.permission_strategy == 'and':
+            user_groups = self.request.user.groups.values_list('name', flat=True)
+            for g in user_groups:
+                if g not in permissions:
+                    return False
+
     def get_object(self, queryset=None):
         try:
             return super().get_object(queryset)
@@ -107,6 +144,11 @@ class BaseView(UserPassesTestMixin,
 
     def get_form_from_struct(self):
         return self.form_struct.get('form')
+
+    def get_form_class(self):
+        if self.form_struct:
+            self.form_class = self.form_struct.get('form')
+        return self.form_class
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
@@ -155,11 +197,6 @@ class BaseView(UserPassesTestMixin,
         if self.has_formset:
             self.formset_form.form_state = self.state_index
         return super().get(request, *args, **kwargs)
-
-    def get_form_class(self):
-        if self.form_struct:
-            self.form_class = self.form_struct.get('form')
-        return self.form_class
 
     def post(self, request, *args, **kwargs):
         if 'duplicate' in self.request.POST:
@@ -296,43 +333,6 @@ class BaseView(UserPassesTestMixin,
         # if not wfform.is_valid():
         #     print(wfform.errors.as_data())
         #     return self.form_invalid(self.form)
-
-    def test_func(self):
-        if not self.model:
-            raise ImproperlyConfigured(f'''BaseView need model attribute''')
-        if not self.allow_perms:
-            self.allow_perms = [f'{self.model._meta.app_label}.view_{self.model._meta.model_name}',
-                                f'{self.model._meta.app_label}.add_{self.model._meta.model_name}',
-                                f'{self.model._meta.app_label}.change_{self.model._meta.model_name}',
-                                f'{self.model._meta.app_label}.delete_{self.model._meta.model_name}',
-                                ]
-
-        if self.priority_strategy == 'or':
-            return any(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
-        if self.priority_strategy == 'and':
-            return all(self.__permission_priority_check(priority) for priority in self.permission_priority_order)
-
-    def __permission_priority_check(self, priority):
-        permissions = getattr(self, priority)
-        return self.__permission_check(permissions, priority)
-
-    def __permission_check(self, permissions, priority):
-        if 'perms' in priority and self.permission_strategy == 'or':
-            return any(self.request.user.has_perm(perm) for perm in permissions)
-        elif 'perms' in priority and self.permission_strategy == 'and':
-            return all(self.request.user.has_perm(perm) for perm in permissions)
-
-        if 'groups' in priority and self.permission_strategy == 'or':
-            user_groups = self.request.user.groups.values_list('name', flat=True)
-            for g in user_groups:
-                if g in permissions:
-                    return True
-
-        elif 'groups' in priority and self.permission_strategy == 'and':
-            user_groups = self.request.user.groups.values_list('name', flat=True)
-            for g in user_groups:
-                if g not in permissions:
-                    return False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -824,56 +824,6 @@ class BaseView(UserPassesTestMixin,
             return super().form_valid(form)
         return HttpResponseRedirect('.')
 
-    # def copy_view(self, related_name, nested_name):
-    #     wfform = None
-    #     formset = None
-    #     form = None
-    #
-    #
-    #     if self.has_flow:
-    #         wfform = self.workflow_form(
-    #             content_type_model=self.model,
-    #             initial={
-    #                     'wf_access': True,
-    #                     'from_user': None,
-    #                     'to_user': self.request.user,
-    #                     'state': 0,
-    #                     'state_index': 0,
-    #                     'belong_to_group': self.flow_config.get('flow_users_groups')[0],
-    #                     'action': self.flow_config.get('flow_action'),
-    #                     'deadline': datetime.datetime.now() + datetime.timedelta(
-    #                         days=self.flow_config.get('flow_deadline')[0]) if self.has_flow else None,
-    #                     'flow_config': self.flow_config,
-    #                     'create': False if self.object else True
-    #                 },
-    #             current_user=self.request.user,
-    #         )
-    #
-    #     if self.has_formset:
-    #         formset = self.formset_form(
-    #             instance=self.object, form_kwargs={
-    #                 "constraint": {
-    #                     "wf_access": self.wf_access,
-    #                     'form_state': self.state_index,
-    #                     'request': self.request,
-    #                     'form_constraint': self.flow_config.get('flow_form_constraint'),
-    #                     'formset_constraint': self.flow_config.get('flow_formset_constraint')
-    #                 }
-    #             }
-    #         )
-    #         formset_prefix = formset.prefix
-    #         self.request.POST._mutable = True
-    #         for idx in range(getattr(self.object, related_name), 0):
-    #             formset_pattern = f'{formset_prefix}_{idx}_{related_name}'
-    #             self.request.POST[formset_pattern] = ''
-    #
-    #             nesterd_pattern = f'{prefix}_{idx}_{nested_name}'
-    #             self.request.POST[nesterd_pattern] = ''
-    #         self.request.POST._mutable = False
-    #
-    #     form = self.get_form_class()(data=self.request.POST)
-    #     self.request.full_copy = True
-    #     return self.render_to_response(context={'data': None, 'form': form, 'formset': formset, 'workflow_form': wfform},)
 
 class Base:
     @classmethod
