@@ -200,6 +200,7 @@ class OrderDataTableListView(AjaxDatatableView):
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': "شناسه", 'orderable': True, 'visible': True, },
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': True, 'visible': True, 'title': "عنوان سفارش"},
                 {'name': 'last_work_flow', 'title': 'وضعیت', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
@@ -219,10 +220,10 @@ class OrderDataTableListView(AjaxDatatableView):
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': True, 'visible': True, },
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
-                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
                 {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
