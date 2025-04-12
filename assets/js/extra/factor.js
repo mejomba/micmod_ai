@@ -183,13 +183,13 @@ function getUrlParameter(name) {
 
     // document.addEventListener('DOMContentLoaded', function () {
         const paramName = 'q_id';
-        const paramValue = 0//getUrlParameter(paramName);
+        const paramValue = getUrlParameter(paramName);
 
         if (paramValue) {
             console.log('Found q_id param:', paramValue);
             setTimeout(() => {
                 get_quotation_items(paramValue);
                 removeUrlParam(paramName);
-            }, 2000); // delay can be adjusted or removed
+            }, 200); // delay can be adjusted or removed
         }
     // });
