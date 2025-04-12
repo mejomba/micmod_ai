@@ -169,3 +169,27 @@ function selectQuotationForFactorRepoItem(repo) {
 function formatRepoSelection(repo) {
     return repo.id || repo.text
 }
+
+function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function removeUrlParam(paramName) {
+        const url = new URL(window.location);
+        url.searchParams.delete(paramName);
+        window.history.replaceState({}, document.title, url.toString());
+    }
+
+    // document.addEventListener('DOMContentLoaded', function () {
+        const paramName = 'q_id';
+        const paramValue = 0//getUrlParameter(paramName);
+
+        if (paramValue) {
+            console.log('Found q_id param:', paramValue);
+            setTimeout(() => {
+                get_quotation_items(paramValue);
+                removeUrlParam(paramName);
+            }, 2000); // delay can be adjusted or removed
+        }
+    // });
