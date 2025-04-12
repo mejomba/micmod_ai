@@ -49,7 +49,7 @@ class Factor(SLSDoc):
         # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
         #         self.object.factoritem_set.all()])
         for fis in self.factoritem_set.all():
-            if fis.qi.fee != fis.price or fis.goods_code_fk != fis.goods_code:
+            if fis.qi.fee != fis.price or fis.goods_code != fis.qi.goods_code_fk:
                 return True
         return False
         # return x
