@@ -519,6 +519,8 @@ class InquiryResult(AbsBaseModel):
     # goods_price_sheet2 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
     # goods_price_sheet3 = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_sheet"))
 
+    price_inquiry_result = models.ForeignKey(PriceInquiryResult, on_delete=models.DO_NOTHING, null=True, blank=True)
+
     #  استعلام از بازار
     goods_price_market = models.FloatField(null=True, blank=True, verbose_name=_("goods_price_market"))
     goods_market_date = models.DateField(null=True, blank=True, verbose_name=_("goods_market_date"))
