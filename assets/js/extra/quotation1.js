@@ -57,7 +57,7 @@ $(document).ready(function () {
                 success: function (response){
                     if (response.items){
                         debugger
-                        set_price_data(response.items[0], elem, e.target)
+                        set_price_data(response.items[0], elem, e.target, true)
                     }
                 },
                 error: function (xhr) {
@@ -479,7 +479,7 @@ function set_item_classes(item) {
             if (select2_price) {
                 select2_price.innerHTML = `<span class="d-flex flex-row-reverse gap-2"><span class="font-size-12">${data.sku}</span> <span class="me-3">&#8592;</span> <span class="font-size-12 me-2">${data.inquiry_type}</span> <span class="font-size-11 text-danger">${data.last_update_date}</span> <span class="font-size-11">${data.editor_user}</span></span>`
             }
-            set_price_data(d, elem, e.target)
+            set_price_data(d, elem, e.target, true)
         })
         $(item).find('.bazar_selected_price_code').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")
@@ -750,12 +750,17 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
     }
 }
 
-function set_price_data(data, elem, target) {
+function set_price_data(data, elem, target, single=null) {
     let items_count;
     let row_number;
     try {
-        row_number = elem.querySelector('.counter').innerText
-        items_count = document.querySelectorAll('.item').length
+        if (single){
+            row_number = 1
+            items_count = 1
+        } else {
+            row_number = elem.querySelector('.counter').innerText
+            items_count = document.querySelectorAll('.item').length
+        }
     }
     catch (e) {
         row_number = null
