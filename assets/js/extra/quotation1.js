@@ -496,6 +496,9 @@ function set_item_classes(item) {
             set_price_data(d, elem, e.target)
 
         })
+        $(item).find('.goods_code').on("select2:open", function (e){
+            document.querySelector('.select2-search__field')?.focus();
+        })
     }
     $(item).find('[id$="final_price"]').on('change keydown paste input', function (e) {
         calculate_price(e.target);

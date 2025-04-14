@@ -131,6 +131,9 @@ $(document).ready(function () {
         get_quotation_items(data.id)
 
     })
+    $('#id_select_quotation_for_factor').on("select2:open", function (e){
+        document.querySelector('.select2-search__field')?.focus();
+    })
 })
 
 function selectQuotationForFactorRepoItem(repo) {

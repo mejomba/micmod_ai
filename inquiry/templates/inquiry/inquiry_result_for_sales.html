@@ -86,6 +86,7 @@
         })
 
         $('#select2_sku_c').on("select2:open", function (e){
+            document.querySelector('.select2-search__field')?.focus();
             const s2_input = document.querySelector('.select2-search__field')
             const prev_value = document.querySelector("#id_prev_value")
             s2_input.addEventListener('input', function (e){
