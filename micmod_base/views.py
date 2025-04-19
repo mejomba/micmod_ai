@@ -1006,6 +1006,7 @@ class QuotationListDatatable(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'factor_create', 'visible': True, 'title': _('ایجاد فاکتور'), 'className': 'py-1 border currency-search'},
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
@@ -1073,6 +1074,8 @@ class QuotationListDatatable(AjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
+        row['factor_create'] = f'<a class="fw-bold" href="{reverse("factor:factor.view")}?q_id={obj.id}" target="_blank"><i class="ki-duotone ki-plus-circle fs-2"><span class="path1"></span><span class="path2"></span></i></a>'
+
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)
         result = f'''<span class="mb-1">

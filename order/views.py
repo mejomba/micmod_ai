@@ -126,6 +126,8 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},
+        {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
+        {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
@@ -186,6 +188,7 @@ class OrderDataTableListView(AjaxDatatableView):
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
+        row['estimated_arrive_date'] = obj.estimate_arrive_at
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -224,6 +227,9 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_title', 'orderable': True, 'visible': True, },
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
+                {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
                 {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},

@@ -37,7 +37,7 @@
         این پیش فاکتور کنسل شده است
         </h3>
     {% endif %}
-
+{% if factors %}
     <div class="bg-light-danger {% if factors %} p-3 {% endif %}">
     {% for factor in factors %}
     {% if forloop.first %}
@@ -51,6 +51,9 @@
         <a href="{% url 'factor:factor.view' factor.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12 ms-2" target="_blank" style="letter-spacing: 1.5px">{{ factor.pk }}</a>
     {% endfor %}
     </div>
+    {% else %}
+    <a class="fw-bold border border-primary bg-light-primary rounded p-1 m-10" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
+    {% endif %}
 
                         <div class="mt-5 mb-2">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}

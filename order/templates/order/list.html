@@ -27,11 +27,19 @@
     <div class="border rounded mb-5 p-3">
         <div class="d-flex justify-content-between">
         <span>
-            <span class="mt-3 me-3">استفاده از فیلتر</span>
-            <a href="{% url 'order:order.list' %}?q=sales_admin" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_admin' %} bg-primary {% endif %}">نیاز به بررسی مدیر فروش</a>
-            <a href="{% url 'order:order.list' %}?q=not_complete" class="btn btn-bordered btn-outline-danger mx-1 {% if request.GET.q == 'not_complete' %} bg-danger {% endif %}">تکمیل نشده‌ها</a>
-            <a href="{% url 'order:order.list' %}?q=bazar_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'bazar_user' %} bg-primary {% endif %}">بازار</a>
-            <a href="{% url 'order:order.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
+{#            <span class="mt-3 me-3">استفاده از فیلتر</span>#}
+{#            <a href="{% url 'order:order.list' %}?q=sales_admin" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_admin' %} bg-primary {% endif %}">نیاز به بررسی مدیر فروش</a>#}
+{#            <a href="{% url 'order:order.list' %}?q=not_complete" class="btn btn-bordered btn-outline-danger mx-1 {% if request.GET.q == 'not_complete' %} bg-danger {% endif %}">تکمیل نشده‌ها</a>#}
+{#            <a href="{% url 'order:order.list' %}?q=bazar_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'bazar_user' %} bg-primary {% endif %}">بازار</a>#}
+{#            <a href="{% url 'order:order.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>#}
+            <select id="filter-orders" class="form-select">
+              <option value="">استفاده از فیلتر</option>
+              <option value="all" {% if request.GET.q == "all" %}selected{% endif %}>همه</option>
+              <option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
+              <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>بازار</option>
+              <option value="not_complete" {% if request.GET.q == "not_complete" %}selected{% endif %}>تکمیل نشده ها</option>
+            </select>
+
         </span>
         </div>
 
@@ -88,6 +96,21 @@
         );
     });
     </script>
+    <script>
+      document.getElementById('filter-orders').addEventListener('change', function () {
+        const selected = this.value;
+        const url = new URL(window.location);
+
+        if (selected) {
+          url.searchParams.set('q', selected);
+        } else {
+          url.searchParams.delete('q');
+        }
+
+        window.location.href = url.toString();
+      });
+    </script>
+
 
 
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
