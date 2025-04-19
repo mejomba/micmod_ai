@@ -194,6 +194,8 @@ def search_factor_view(request, *args, **kwargs):
         item['last_work_flow_state'] = q.last_work_flow.current_state_name if q.last_work_flow else '-'
         item['expiration_date'] = to_jalali_date(q.expiration_date)
         item['sale_type'] = q.sale_type.title
+        item['payment_method'] = q.payment_method
+        item['is_official'] = q.is_official
         res['items'].append(item)
     else:
         res['total_count'] = total_count
@@ -279,6 +281,8 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'), 'lookup_field': '__to_user__username__icontains'},
+        {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains'},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
         {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'orderable':True, 'lookup_field': '__icontains', 'className': 'border'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
@@ -300,6 +304,8 @@ class FactorListDatatable(AjaxDatatableView):
             obj.pk if obj.pk else '-'
         )
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
+        row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
+        row['q__payment_method'] = obj.q.payment_method if obj.q else ''
 
 
 def print_view(request,id=-1):
