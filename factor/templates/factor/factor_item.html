@@ -176,8 +176,8 @@
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
         <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">
-        <input type="hidden" value="{{ qi.quotation.addition }}" id="id_addition">
-        <input type="hidden" value="{{ qi.quotation.tax }}" id="id_tax">
+        <input type="hidden" value="{{ qi.quotation.addition|default_if_falsy:0 }}" id="id_addition">
+        <input type="hidden" value="{{ qi.quotation.tax|default_if_falsy:0 }}" id="id_tax">
         <!-- update factor item -->
         {% if factor_item.instance.pk %}
                 <div class="hidden-section">
@@ -451,6 +451,13 @@
     //})
     //})
 
+    function numberWithCommas(x, digits = 2) {
+        if (x == '' || x == null || isNaN(x)) return ''
+        x = parseFloat(x)
+        let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
+        return res
+    }
+
     document.querySelectorAll('.checkbox_is_bazar').forEach(function (checkbox) {
     checkbox.addEventListener('change', function () {
             // Find the closest parent container
@@ -635,7 +642,6 @@ function factor_calculate_price(target, direct_target=null) {
     } else {
         taxValue = 0
     }
-    debugger
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
         net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
