@@ -98,11 +98,17 @@ $(document).ready(function () {
                                     <div class="col-2 ">
                                         <span class="ms-1">کارشناس</span>
                                     </div>
-                                    <div class="col-2 ">
+                                    <div class="col-1 ">
                                         <span class="ms-1">تاریخ انقضا</span>
                                     </div>
-                                    <div class="col-2 ">
+                                    <div class="col-1 ">
                                         <span class="ms-1">نوع فروش</span>
+                                    </div>
+                                    <div class="col-1 ">
+                                        <span class="ms-1">روش پرداخت</span>
+                                    </div>
+                                    <div class="col-1 ">
+                                        <span class="ms-1">نوع1</span>
                                     </div>
                                   </div>`
                 const div = document.createElement('div')
@@ -154,11 +160,17 @@ function selectQuotationForFactorRepoItem(repo) {
             <div class="col-2">
                 <span>${repo.last_work_flow_user}</span>
             </div>
-            <div class="col-2">
+            <div class="col-1">
                 <span>${repo.expiration_date}</span>
             </div>
-            <div class="col-2">
+            <div class="col-1">
                 <span>${repo.sale_type}</span>
+            </div>
+            <div class="col-1">
+                <span>${repo.payment_method}</span>
+            </div>
+            <div class="col-1">
+                <span>${repo.is_official}</span>
             </div>
         </div>
     </div>`
@@ -181,9 +193,11 @@ function getUrlParameter(name) {
         window.history.replaceState({}, document.title, url.toString());
     }
 
-    // document.addEventListener('DOMContentLoaded', function () {
-        const paramName = 'q_id';
+    function createFactorFromQuotationList(){
+     const paramName = 'q_id';
         const paramValue = getUrlParameter(paramName);
+        // document.getElementById('quotation_id_for_factor').value = paramValue
+        document.querySelector("input[name='q']").value = paramValue
 
         if (paramValue) {
             console.log('Found q_id param:', paramValue);
@@ -192,4 +206,6 @@ function getUrlParameter(name) {
                 removeUrlParam(paramName);
             }, 200); // delay can be adjusted or removed
         }
-    // });
+    }
+
+createFactorFromQuotationList()
