@@ -358,6 +358,7 @@ class SalesHistory(LoginRequiredMixin,View):
         context = {}
         context['customer_code'] = requset.GET.get('customer_code',"")
         context['item_code'] = requset.GET.get('item_code',"")
+        context['part'] = requset.GET.get('part',"")
         context['g_p'] = requset.GET.get('g_p',"")
         context['doc_type'] = requset.GET.get('doc_type',"")
         print(context)
