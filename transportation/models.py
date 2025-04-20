@@ -7,6 +7,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from core.models import AbsBaseModel, Q, BaseContentType,BaseModel
 from accounts.models import User
+from micmod_base.base import Currency
 from translator import get_text as _
 from django.template.loader import render_to_string
 from django.contrib.contenttypes.models import ContentType
@@ -37,3 +38,12 @@ class Packing(AbsBaseModel):
                     'transportation_at','deliver_to_customs_at','clearance_until'], 'css_class':'row row-cols-4'},
         {'fields': ['descriptions'], 'css_class': 'row row-cols-1'},
     ]
+
+
+class TradeTransportationMethod(BaseModel):
+    ORIGIN_AREA_CHOICE = (('CHN', 'china'), ('HNG', 'hong-kong'))
+    origin_area = models.CharField(_('origin_area'), max_length=4)
+    currency_type = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, verbose_name=_('currency_type'))
+    fixed_cost = models.FloatField(_('fixed_cost_kg'))
+    variable_cost = models.FloatField(_('variable_cost_kg'))
+

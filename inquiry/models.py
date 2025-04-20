@@ -22,12 +22,24 @@ from tools.utils import elapsed_time
 from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
 from django.utils import timezone
 
+from transportation.models import TradeTransportationMethod
+
+
+class SupplierCity(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+
+    insert_new = True
+
 
 class Supplier(BaseModel):
     BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
     title = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
     base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
     country = models.CharField(verbose_name=_('country'), max_length=255, choices=CHOICE.supplier_country, null=True, blank=True)
+    city = models.ForeignKey(SupplierCity,verbose_name=_('city'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'), on_delete=models.DO_NOTHING, null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):
@@ -73,6 +85,8 @@ class PriceInquiryResult(BaseModel):
     item_weight = models.FloatField(verbose_name=_('item_weight'), null=True, blank=True)
     variants_json = models.JSONField(_('variants_json'), null=True, blank=True)
     price_expire_date = models.SmallIntegerField(_('price_expire_date'), null=True, blank=True)
+    trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
+                                                    on_delete=models.DO_NOTHING, null=True, blank=True)
     # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):
