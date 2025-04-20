@@ -228,7 +228,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
-                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},

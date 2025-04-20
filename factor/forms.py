@@ -10,9 +10,9 @@ class FactorModelForm(CustomBaseModelForm):
     class Meta:
         model = Factor
         exclude = ['factor_self', 'guid', 'status', 'group', ]
-        widgets = {
-            'q': forms.HiddenInput()
-        }
+        # widgets = {
+        #     'q': forms.HiddenInput()
+        # }
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -43,6 +43,7 @@ class FactorModelForm(CustomBaseModelForm):
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
+        self.make_hidden(['q'])
 
 
 class FactorItemModelForm(CustomBaseModelForm):

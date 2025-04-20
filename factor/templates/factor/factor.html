@@ -40,6 +40,10 @@
         {% for hidden in form.hidden_fields %}
             {{ hidden }}
         {% endfor %}
+    <span class="d-none"></span>
+    {% if form.instance.pk %}
+        <input type="hidden" value="{{ form.instance.q }}" name="q" id="id_q">
+    {% endif %}
 
 
     {% if obj %}
