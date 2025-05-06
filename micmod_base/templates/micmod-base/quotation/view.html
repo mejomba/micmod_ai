@@ -19,6 +19,9 @@
 {% endblock extra_css %}
 
 {% block form_content %}
+    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+        خروجی اکسل
+    </button>
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -330,6 +333,133 @@ document.querySelectorAll('input').forEach(function (item){
     })
 })
 </script>
+
+
+<script>
+let config = {};
+
+// Main function to open modal
+function openModal(event) {
+    event.preventDefault();
+
+    const quotationId = $(event.target).data('quotation-id');
+    window.currentQuotationId = quotationId;
+
+    const requestData = {
+        app_label: 'micmod_base',
+        model_name: 'quotationitem',
+        filter_str: []
+    };
+
+    $.ajax({
+        url: '/micmod_base/get_model_fields_config/',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        contentType: 'application/json',
+        data: JSON.stringify(requestData),
+        success: function (data) {
+            config = {};
+            $.each(data.labels, function (index, label) {
+                config[data.fields[index]] = label;
+            });
+
+            renderModalContent();  // Build the modal UI after config is ready
+        },
+        error: function () {
+            alert('خطا در بارگذاری فیلدها');
+        }
+    });
+}
+
+function renderModalContent() {
+    const container = $('#id-empty-modal-body-lg');
+    container.empty();
+
+    container.append(`<h2 class="text-center mb-5">انتخاب فیلدها برای خروجی اکسل</h2>`);
+
+    const buttonsHtml = `
+        <div class="mb-10">
+            <button type="button" class="btn btn-sm btn-success me-2" id="selectAllBtn">انتخاب همه</button>
+            <button type="button" class="btn btn-sm btn-danger" id="deselectAllBtn">حذف انتخاب همه</button>
+        </div>`;
+    container.append(buttonsHtml);
+
+    container.append(`<div id="checkboxes-container" class="row"></div>`);
+    const checkboxesContainer = $('#checkboxes-container');
+
+    $.each(config, function (field, label) {
+        const checkbox = `
+            <div class="col-3 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${field}" id="checkbox_${field}">
+                    <label class="form-check-label" for="checkbox_${field}">${label}</label>
+                </div>
+            </div>`;
+        checkboxesContainer.append(checkbox);
+    });
+
+    container.append(`
+        <div class="mt-4">
+            <div id="submitExportBtn" class="btn btn-primary close-modal" data-bs-dismiss="modal">تایید و دانلود اکسل</div>
+        </div>
+    `);
+
+    // Button listeners
+    $('#selectAllBtn').on('click', function () {
+        $('#checkboxes-container input[type=checkbox]').prop('checked', true);
+    });
+
+    $('#deselectAllBtn').on('click', function () {
+        $('#checkboxes-container input[type=checkbox]').prop('checked', false);
+    });
+
+    $('#submitExportBtn').on('click', downloadExcel);
+}
+
+// Handle Excel export
+function downloadExcel(event) {
+    const selectedFields = $('#checkboxes-container input[type=checkbox]:checked')
+        .map(function () { return this.value; }).get();
+    const selectedLabels = selectedFields.map(f => config[f]);
+
+    const quotationId = window.currentQuotationId;
+
+    $.ajax({
+        url: `/micmod_base/export_to_excel/${quotationId}/`,
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        contentType: 'application/json',
+        data: JSON.stringify({
+            selected_fields: selectedFields,
+            selected_labels: selectedLabels
+        }),
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (blob) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quotation_${quotationId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        },
+        error: function () {
+            alert('خطا در دانلود فایل');
+        }
+    });
+}
+
+
+
+</script>
+
+
     <script src="{% static 'js/jalali.js' %}"></script>
 {#    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0"></script>#}
 {% endblock extra_js %}
