@@ -1,5 +1,6 @@
 import json
 
+from django.apps import apps
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
@@ -7,6 +8,7 @@ from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
+from core.models import BaseModelAuto
 from extra_data.models import Item
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
@@ -17,7 +19,7 @@ import uuid
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings
@@ -30,7 +32,7 @@ from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchang
 from sepidar.models import Dl
 from tools import const
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import show_error, to_jalali_date
+from tools.utils import show_error, to_jalali_date, export_to_excel
 from translator import get_text as _
 from django.views import View
 
@@ -1293,3 +1295,102 @@ def duplicate_quotation(request, quotation_id):
                 item.save()
 
         return quotation
+
+
+class QuotationsSalesHistoryList(LoginRequiredMixin,View):
+    def get(self, request):
+        q = self.request.GET.get('q')
+        greeting = {}
+        greeting['heading'] = _("quotation")
+        greeting['pageview'] = _("micmod_base")
+        greeting['time_form'] = TimeForm()
+        # greeting['quotations'] = quotations_record
+        # greeting['quotations'] = quotations_record_lst
+        return render(request,'micmod-base/quotation/sales_history_list_datatable.html',greeting)
+
+
+class QuotationSalesHistoryDatatable(AjaxDatatableView):
+    model = QuotationItem
+    title = 'sales history'
+    initial_order = [["pk", "desc"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'quotation__pk', 'visible': True, 'title': _('شماره پیش‌فاکتور'), 'className': 'py-1 border currency-search', 'searchable': True,
+         'orderable': True, 'lookup_field': '__icontains'},
+        {'name': 'pk', 'visible': True, 'title': _('شماره سند'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, },
+        {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'quotation', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
+        {'name': 'quotation__customer_party_id', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__pk__icontains'},
+        {'name': 'creator_user', 'visible': True, 'title': 'کارشناس', 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'goods_code_fk', 'visible': True, 'title': 'کد کالا', 'orderable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'goods_code_fk__part_number', 'visible': True, 'title': 'کالا', 'orderable': True, 'lookup_field': '__icontains'},
+        {'name': 'goods_code_fk__purchase_group', 'visible': True, 'title': _('گروه خرید'), 'orderable': True, 'searchable': True, 'lookup_field': '__title__icontains'},
+        {'name': 'goods_code_fk__sale_group', 'visible': True, 'title': _('گروه فروش'), 'orderable': True, 'searchable': True, 'lookup_field': '__title__icontains'},
+        {'name': 'quotation__sale_type', 'title': 'نوع فروش', 'visible': True, 'orderable': True, 'lookup_field': '__title__icontains'},
+        {'name': 'quantity', 'visible': True, 'orderable': True, 'searchable': True},
+        {'name': 'fee', 'title': 'فی', 'visible': True, 'orderable': False, 'searchable': False, },
+        {'name': 'quotation__currency_ref', 'title': 'ارز', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__title__icontains'},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        q = request.POST.get('q')
+        # if q == 'portal':
+        #     qs = self.model.objects.all()
+        # elif q == 'sepidar':
+        #
+        #     ...
+        qs = self.model.objects.all()
+        return qs
+
+    # @timer
+    def customize_row(self, row, obj):
+
+        row['quotation__pk'] = obj.quotation.pk if obj.quotation else ''
+        row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
+        row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
+        row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
+        row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
+        row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
+        row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
+        row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
+        row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
+        row['fee'] = obj.fee if obj else ''
+
+
+def get_model_fields_config(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        app_label = data.get('app_label')
+        model_name = data.get('model_name')
+        filter_str = data.get('filter_str')
+
+        queryset, config = BaseModelAuto.get_model_config(app_label=app_label, model_name=model_name, filter_str=filter_str)
+        return JsonResponse(config)
+    return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+
+
+def export_quotation_items_to_excel(request, quotation_id):
+    q = Quotation.objects.filter(id=quotation_id).first()
+
+    qis = q.quotation.all()
+
+    if request.method == 'POST':
+        body = json.loads(request.body)
+        # body = q.get_model_config[0]
+
+        excel_buffer = export_to_excel(qis, body)
+
+        response = HttpResponse(
+            excel_buffer,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'quotation_{quotation_id}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    return HttpResponseBadRequest('Only POST method allowed.')
