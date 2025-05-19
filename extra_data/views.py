@@ -353,6 +353,7 @@ class PurchaseGroupDataTableView(AjaxDatatableView):
         {'name': 'sea_transportation', 'orderable': True, 'visible': True, },
         {'name': 'air_transportation', 'orderable': True, 'visible': True, },
         {'name': 'express_transportation', 'orderable': True, 'visible': True, },
+        {'name': 'trade_transportation_method_json', 'orderable': True, 'visible': True, },
         {'name': 'sepidar_id', 'orderable': True, 'visible': True, },
         {'name': 'sepidar_code', 'orderable': True, 'visible': True, },
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', 'lookup_field': '__username__icontains'},

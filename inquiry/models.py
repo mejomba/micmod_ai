@@ -39,7 +39,8 @@ class Supplier(BaseModel):
     base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
     country = models.CharField(verbose_name=_('country'), max_length=255, choices=CHOICE.supplier_country, null=True, blank=True)
     city = models.ForeignKey(SupplierCity,verbose_name=_('city'), on_delete=models.DO_NOTHING, null=True, blank=True)
-    trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):
@@ -87,6 +88,7 @@ class PriceInquiryResult(BaseModel):
     price_expire_date = models.SmallIntegerField(_('price_expire_date'), null=True, blank=True)
     trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
                                                     on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):
@@ -248,7 +250,8 @@ class PriceInquiryResult(BaseModel):
                     'payment_method_discount_percentage': payment_method_discount_percentage or 0,
                     'office_cost_percentage': office_cost_percentage or 0,
                 }
-                self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + (self.sku.extra_cost_percentage or 0 if not settings.delivery_in_china else 0 or 0))) * (self.effective_rmb_price or 0+ self.customs_cost or 0)
+                # self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + (self.sku.extra_cost_percentage or 0 if not settings.delivery_in_china else 0 or 0))) * (self.effective_rmb_price or 0+ self.customs_cost or 0)
+                self.extra_data.after_office_price = (1 + 0.01 * (office_cost_percentage + (self.sku.extra_cost_percentage or 0 if not settings.delivery_in_china else 0 or 0))) * ((self.effective_rmb_price or 0) + (self.customs_cost or 0))
                 self.extra_data.after_price_discount_price = (self.extra_data.after_office_price *
                                                               (1 + 0.01 * (settings.get_discount_based_price(self.extra_data.after_office_price))))
                 self.extra_data.rmb_final_price_custom_office = dict( map(lambda x: (x[0], x[1] + self.extra_data.after_price_discount_price),
@@ -267,6 +270,9 @@ class PriceInquiryResult(BaseModel):
                                                         + settings.max_discount_for_final_step
                                                         + settings.interest_percentage)))),
                         self.extra_data.rmb_final_price_custom_office.items()))
+                x = TradeTransportationMethod.objects.filter(pk__in=self.trade_transportation_method_json.values()) if self.trade_transportation_method_json else []
+                if x:
+                    self.extra_data.rmb_final_price_before_ondemand = {TradeTransportationMethod.objects.filter(pk__in=x).get(title=k).method.lower(): v for k, v in self.extra_data.rmb_final_price_before_ondemand.items()}
                 self.extra_data.rmb_final_price_before_ondemand = dict(map(lambda x: (x[0], (x[1] * (1 + 0.01 *
                                                                             (
                                                                                 (self.sku.express_extra_cost_percentage or 0 if not settings.delivery_in_china else 0)
@@ -302,11 +308,26 @@ class PriceInquiryResult(BaseModel):
                 self.extra_data.rmb_final_price_percentage = get_dif_percentage(self.extra_data._rmb_final_price_,
                                                                      self.extra_data.rmb_final_price_custom_office)
 
+                d = dict()
+                for item in x:
+                    if item.method.lower() in self.extra_data._rmb_final_price_:
+                        d[item.title.lower()] = self.extra_data._rmb_final_price_.get(item.method.lower())
+
+                if d:
+                    self.extra_data._rmb_final_price_ = d
                 return self.extra_data._rmb_final_price_
             except Exception as e:
                 show_error(e, __file__)
                 return 0
 
+    @staticmethod
+    def select_title(title):
+        if title.lower() == 'express':
+            return "2-3 هفته"
+        elif title.lower() == 'air':
+            return "3-5 هفته"
+        elif title.lower() == 'sea':
+            return "12-14 هفته"
 
     def rial_final_price_rendered(self):
         return render_to_string('inquiry/partial/item_price_irr.html',
@@ -404,52 +425,63 @@ class PriceInquiryResult(BaseModel):
 
     @queryable_property
     def transportations_cost(self):
-        if not self.sku or not self.sku.purchase_group or not self.sku.active_hs or not self.weight:
-            return
-        cost_multiplier = 1/self.price_settings.free_rmb_rate if self.price_settings.calculation_method == CalculationMethod.Old else 1
-        weight = self.weight
-        settings = self.price_settings
-        effective_rmb_price = self.rmb_price
-        if self.supplier and self.supplier.country == 'CHN':
-            return {
-                # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
-                #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
-                "air": cost_multiplier * (
-                        self.sku.purchase_group.air_transportation or 0) * settings.air_transportation_cost * weight / 1000
-                ,  # + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": cost_multiplier * (
-                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
-                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
-            }
-        elif self.supplier and self.supplier.country == 'HKG':
-            return {
-                "express": cost_multiplier * (
-                        self.sku.purchase_group.express_transportation or 0) * settings.express_transportation_cost * weight / 1000
-                ,  # + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
-                # "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
-                #        + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": cost_multiplier * (
-                        self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
-                ,  # + 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
-            }
-        elif self.currency_type.c_get("title_en", "RMB") == "RMB":
-            return {
-                # "express": self.sku.purchase_group.express_transportation * settings.express_transportation_cost * weight / 1000
-                #            + 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
-                "air": cost_multiplier * (self.sku.purchase_group.air_transportation or 0) * settings.air_transportation_cost * weight / 1000
-                       ,#+ 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": cost_multiplier * (self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
-                       ,#+ 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
-            }
+        trade_transportation_method_json = self.trade_transportation_method_json # or self.sku.trade_transportation_method_json or self.supplier.trade_transportation_method_json or self.sku.purchase_group.trade_transportation_method_json
+        trade_transportation_method_obj = TradeTransportationMethod.objects.filter(pk__in=trade_transportation_method_json.values()) if trade_transportation_method_json else None
+        if not trade_transportation_method_obj:
+            if not self.sku or not self.sku.purchase_group or not self.sku.active_hs or not self.weight:
+                return
+            cost_multiplier = 1/self.price_settings.free_rmb_rate if self.price_settings.calculation_method == CalculationMethod.Old else 1
+            weight = self.weight
+            settings = self.price_settings
+            effective_rmb_price = self.rmb_price
+            if self.supplier and self.supplier.country == 'CHN':
+                return {
+                    "air": cost_multiplier * (
+                            self.sku.purchase_group.air_transportation or 1) * settings.air_transportation_cost * weight / 1000,
+                    "sea": cost_multiplier * (
+                            self.sku.purchase_group.sea_transportation or 1) * settings.sea_transportation_cost * weight / 1000,
+                }
+            elif self.supplier and self.supplier.country == 'HKG':
+                return {
+                    "express": cost_multiplier * (
+                            self.sku.purchase_group.express_transportation or 1) * settings.express_transportation_cost * weight / 1000,
+                    "sea": cost_multiplier * (
+                            self.sku.purchase_group.sea_transportation or 1) * settings.sea_transportation_cost * weight / 1000,
+                }
+            elif self.currency_type.c_get("title_en", "RMB") == "RMB":
+                return {
+                    "air": cost_multiplier * (self.sku.purchase_group.air_transportation or 1) * settings.air_transportation_cost * weight / 1000,
+                    "sea": cost_multiplier * (self.sku.purchase_group.sea_transportation or 1) * settings.sea_transportation_cost * weight / 1000,
+                }
+            else:
+                return {
+                    "express": cost_multiplier * (self.sku.purchase_group.express_transportation or 1) * settings.express_transportation_cost * weight / 1000,
+                    "sea": cost_multiplier * (self.sku.purchase_group.sea_transportation or 1) * settings.sea_transportation_cost * weight / 1000,
+                }
         else:
-            return {
-                "express": cost_multiplier * (self.sku.purchase_group.express_transportation or 0) * settings.express_transportation_cost * weight / 1000
-                           ,#+ 0.01 * self.sku.express_extra_cost_percentage * effective_rmb_price,
-                # "air": self.sku.purchase_group.air_transportation * settings.air_transportation_cost * weight / 1000
-                #        + 0.01 * self.sku.air_extra_cost_percentage * effective_rmb_price,
-                "sea": cost_multiplier * (self.sku.purchase_group.sea_transportation or 0) * settings.sea_transportation_cost * weight / 1000
-                       ,#+ 0.01 * self.sku.sea_extra_cost_percentage * effective_rmb_price,
-            }
+            trade_transportation_method_obj |= TradeTransportationMethod.objects.filter(access_type__isnull=False)
+            out = {}
+            for item in trade_transportation_method_obj:
+                currency_type = item.currency_type.title_en
+                if currency_type.lower() == 'rmb':
+                    rmb = item.variable_cost + item.fixed_cost
+                elif currency_type.lower() == 'dollar':
+                    rmb = (item.variable_cost + item.fixed_cost) * self.price_settings.dollar_rmb_rate
+                elif currency_type.lower() == 'ero':
+                    rmb = (item.variable_cost + item.fixed_cost) * self.price_settings.dollar_rmb_rate
+                elif currency_type.lower() == 'rial':
+                    rmb = (item.variable_cost + item.fixed_cost) / self.price_settings.customs_rmb_rate
+
+                out.update({item.title: rmb * self.weight / 1000,})
+            return out
+            # cost_multiplier = 1 / self.price_settings.free_rmb_rate if self.price_settings.calculation_method == CalculationMethod.Old else 1
+
+            # return {
+            #     "express": cost_multiplier * (
+            #                 self.sku.purchase_group.express_transportation or 1) * settings.express_transportation_cost * weight / 1000,
+            #     "sea": cost_multiplier * (
+            #                 self.sku.purchase_group.sea_transportation or 1) * settings.sea_transportation_cost * weight / 1000,
+            # }
 
     @queryable_property
     def customs_cost(self):

@@ -36,8 +36,19 @@
             </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
                 <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
-                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file form.supplier form.price form.inquiry_type form.currency_type label='on-border' %}
-                {% render_field_by_order form form.description form.active form.update_price  form.item_weight margin_b=5 label='on-border' %}
+                {% render_field_by_order form form.sku form.sku_c form.price_inquiry_file margin_b=8 label='on-border' %}
+                <span>
+                    {% render_field_by_order form form.supplier margin_b=0 label='on-border' %}
+                    <div class="pb-2">
+                        <span>منطقه: </span>
+                        <span id="id_region">
+                            {{ form.instance.supplier.country|default_if_falsy:'' }} -- {{ form.instance.supplier.city|default_if_falsy:"" }}
+                        </span>
+                    </div>
+                </span>
+
+                {% render_field_by_order form form.price form.inquiry_type margin_b=8 label='on-border' %}
+                {% render_field_by_order form form.currency_type form.description form.active form.update_price  form.item_weight margin_b=5 label='on-border' %}
 
                 <span class="d-none">
                 {% render_field_by_order form form.price_expire_date margin_b=5 label='on-border' %}
@@ -49,7 +60,16 @@
                 {% render_field_by_order form form.submit_for_qi label='on-border' margin_b=5 css='mt-10' %}
 
                 <span class="d-none">{{ form.variants_json }}</span>
-                <div></div>
+                <div class="d-none">
+                    {{ form.trade_transportation_method_json }}
+                </div>
+
+                <script>
+                    const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
+                </script>
+                {% if request.user|has_group:"trade_user" %}
+                    {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+                {% endif %}
 
                 {% if request.user|has_group:"trade_user" %}
                     {% include 'inquiry/partial/key_value_input.html' with id='id_variants_json' %}
@@ -373,6 +393,55 @@
                 e.preventDefault()
             }
         })
+
+        const supplier = document.querySelector('input[name="inquiry.models.Supplier__auto__supplier"]')
+        const sku = document.querySelector('input[id="id_sku_c"]')
+        supplier && supplier.addEventListener('change', function (e){
+            $.ajax({
+                url: '/inquiry/supplier/region/',
+                dataType: "json",
+                type: "GET",
+                async: false,
+                data: {q: supplier.value},
+                cache: false,
+                success: function (data) {
+                    document.querySelector('#id_region').innerHTML = data['res']
+                }
+            });
+
+            $.ajax({
+                url: '/inquiry/trade_transportation_method/json/',
+                dataType: "json",
+                type: "GET",
+                async: false,
+                data: {supplier: supplier.value, sku: sku?.value},
+                cache: false,
+                success: function (data) {
+                    debugger
+                    document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
+                    show_transportation_title()
+                }
+            });
+
+        })
+
+        sku && sku.addEventListener('keyup', function (e){
+            $.ajax({
+                url: '/inquiry/trade_transportation_method/json/',
+                dataType: "json",
+                type: "GET",
+                async: false,
+                data: {supplier: supplier.value, sku: sku?.value},
+                cache: false,
+                success: function (data) {
+                    debugger
+                    document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
+                    show_transportation_title()
+                }
+            });
+        })
+
+
 
     </script>
 {% endblock extra_js %}

@@ -66,7 +66,7 @@ $(document).ready(function () {
     }
     const items = $(document).find(".item")
     for (let i = 0; i < items.length; i++) {
-        set_item_classes(items[i])
+        set_item_classes(items[i], i)
     }
     $('.replace-digits').replaceDigits();
     // scroll_down()

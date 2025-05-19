@@ -256,8 +256,9 @@ class PurchaseGroup(AbsBaseModel):
     express_transportation = models.FloatField(verbose_name=_('express_transportation'), default=1)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True,null=True,blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True,null=True,blank=True)
-    trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
-                                                    on_delete=models.DO_NOTHING, null=True, blank=True)
+    # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
+    #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     auto_complete = 'title'
 
     def __str__(self):
@@ -334,7 +335,7 @@ class Item(BaseModel):
     extra_cost_percentage = models.FloatField(verbose_name=_('extra_cost_percentage'), null=True, blank=True,default=0)
     express_extra_cost_percentage = models.FloatField(verbose_name=_('express_extra_cost_percentage'), null=True, blank=True,default=0)
     air_extra_cost_percentage = models.FloatField(verbose_name=_('air_extra_cost_percentage'), null=True, blank=True,default=0)
-    sea_extra_cost_percentage = models.FloatField(verbose_name=_('sea_extra_cost_percentage'), null=True, blank=True,default=7)
+    sea_extra_cost_percentage = models.FloatField(verbose_name=_('sea_extra_cost_percentage'), null=True, blank=True,default=5)
     customs_price = models.FloatField(verbose_name=_('customs_price'), null=True, blank=True)
     technical_confirm = models.BooleanField(verbose_name=_('technical_confirm'), default=False)
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
@@ -343,8 +344,9 @@ class Item(BaseModel):
     active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
     parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
     hs = models.ForeignKey(HS, verbose_name=_('hs'), on_delete=models.DO_NOTHING, null=True, blank=True)
-    trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
-                                                    on_delete=models.DO_NOTHING, null=True, blank=True)
+    # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
+    #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
     @property
@@ -491,10 +493,10 @@ class Item(BaseModel):
     @staticmethod
     def variant_show(json_obj):
         l = []
-        for k, v in json_obj.items():
+        for k, v in json_obj.items() if json_obj else []:
             l.append(str(k) + ": " + str(v))
         y = '|'.join(l)
-        return f'( {y} )'
+        return f'( {y} )' if y else ''
 
     @property
     def all_bazar_active_price_(self):

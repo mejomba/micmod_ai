@@ -1,0 +1,100 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load more_tags %}
+
+{% block title %}روش حمل مجاز{% endblock title %}
+{% block extra_css %}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+
+    <style>
+        span.select2-selection__rendered{
+            direction: ltr !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block form_content %}
+    {% csrf_token %}
+    <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded mb-16">
+        <div class="col-12">
+            <div class="py-1 d-flex mb-3">
+                <div class="badge badge-light-info d-flex gap-1 px-3">
+                    <span>ایجادروش حمل </span>
+                    <span class="text-danger">جدید</span>
+                </div>
+            </div>
+            <div class="row row-cols-md-6 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
+                <input type="hidden" name="base_group" value="{{ user.base_group|default_if_falsy:"" }}">
+                {{ form.get_origin_area_display }}
+                {% render_field_by_order form form.title form.origin_area form.method form.currency_type form.fixed_cost form.variable_cost form.access_type label='on-border' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive p-2 mb-15">
+        <table id="supplier_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+        </table>
+    </div>
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script language="javascript">
+    setTimeout(addCommaSeperator, 1000, true)
+
+    $(document).ready(function() {
+        let q, url;
+        url = new URL(window.location);
+        q = url.searchParams.get("title");
+
+
+        AjaxDatatableViewUtils.initialize_table(
+            $('#supplier_list'),
+            "{% url 'transportation:trade_transportation_method.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                name: q
+            },
+        );
+
+
+    });
+
+    </script>
+
+    <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
+    <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+{#    {{ form.media.js }}#}
+
+{% endblock extra_js %}

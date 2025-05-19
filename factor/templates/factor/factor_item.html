@@ -154,7 +154,18 @@
                         <span >قیمت</span>
                     </span>
                     <span class="col-2 bold">
-                        <span data-key="lead_time" class="font-size-11">توافق زمان تحویل با مشتری <span class="font-size-11 text-danger ms-1">(روز به عدد)</span> </span>
+                        <div class="d-flex">
+                        <div data-key="lead_time" class="font-size-11 w-50">
+                            توافق تحویل با مشتری
+{#                            <span class="font-size-11 text-danger ms-1">#}
+{#                                #}
+{#                            </span>#}
+                        </div>
+                            |
+                        <div>
+                            تعداد رزرو
+                        </div>
+                            </div>
                         <div class="border-top border-gray-500"></div>
                         <span>تخفیف ردیف | قیمت کل ردیف</span>
                     </span>
@@ -265,7 +276,10 @@
                     </span>
                     <span class="col-2 text-center">
                         <div class="d-flex flex-column">
-                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                            <span class="d-flex">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" placeholder="روز به عدد" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" >
+                                </span>
                             <span class="d-flex gap-1 justify-content-center mt-1">
                                 <span class="row-discount pt-1 text-success"></span>
                                 <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ factor_item.instance.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center">
@@ -393,7 +407,10 @@
                     <span class="col-2 text-center px-1">
 {#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
                         <div class="d-flex flex-column">
-                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                            <span class="d-flex">
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" placeholder="روز به عدد" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:qi.quantity }}" >
+                                </span>
                             <span class="d-flex gap-1 justify-content-center mt-1">
                                 <span class="row-discount pt-1 text-success"></span>
                                 <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ qi.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center">

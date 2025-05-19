@@ -40,7 +40,7 @@
                 {% for o in factor_item.supply_locations.order_base_items.all %}
                     <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black">
                         {% if o.sepidar_wh_code %}
-                            <span>از انبار</span>
+{#                            <span>از انبار</span>#}
                             <span>{{ o.get_wh_name }}</span>
                             {% else %}
                             <span>از سفارش</span>

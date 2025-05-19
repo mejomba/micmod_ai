@@ -47,8 +47,17 @@
                 {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_1 target='Image' crispy=True editable=form.enable %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.image_2 target='Image' crispy=True editable=form.enable %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=item field=form.file_1 target='File' crispy=True editable=form.enable %}
-                {% render_field_by_order form form.is_sea_default form.active_main_item label='on-border' margin_b=6 %}
-                {% render_field_by_order form  form.hs margin_b=6 %}
+                {% render_field_by_order form form.is_sea_default form.active_main_item label='on-border' crispy=False margin_b=16 %}
+                {% render_field_by_order form form.hs label='on-border' crispy=False margin_b=6 %}
+                <span class="d-none">
+                    {{ form.trade_transportation_method_json }}
+                </span>
+                <script>
+                    const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
+                </script>
+{#                {% if request.user|has_group:"trade_user" %}#}
+                    {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+{#                {% endif %}#}
                 {% if flow_state_index >= 1 %}
                     {% render_field_by_order form  form.technical_confirm margin_b=6 %}
                 {% endif %}

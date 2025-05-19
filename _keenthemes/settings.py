@@ -108,7 +108,8 @@ THIRD_PARTY_APPS = [
     'django_celery_beat',
     'el_pagination',
     'sekizai',
-    'sslserver'
+    'sslserver',
+    'django_json_widget',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -720,3 +721,5 @@ SEPIDAR_CUSTOM_API_HOST = '192.168.1.80'
 SEPIDAR_CUSTOM_API_PORT = '8888'
 SEPIDAR_STOCK_NUMBER = 46
 # AQYVp4^icl8F
+
+SESSION_COOKIE_AGE = 120960000  # 200 weeks

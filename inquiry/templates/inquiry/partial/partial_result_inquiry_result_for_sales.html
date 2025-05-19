@@ -43,25 +43,47 @@
                         <table class="table table-row-dashed table-row-gray-300">
                             <tr class="fw-bold fs-6 text-gray-800">
                                 <td class="w-40 text-primary"></td>
-                                <td class="w-30 text-primary">یوانی</td>
+                                <td class="w-30 text-primary">یوآنی</td>
                                 <td class="w-30 text-primary">ریالی</td>
                             </tr>
-                            <tr>
-                                <td class="text-primary">قیمت اکسپرس</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.express|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.express|intcomma }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-primary">قیمت هوایی</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.air|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.air|intcomma }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-primary">قیمت دریایی</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>
-                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.sea|intcomma }}</td>
-                            </tr>
+                            {% for title, val in trade_price.rmb_final_price.items %}
+                                <tr>
+                                    <td class="text-primary">{{ title }}</td>
+                                    <td class="text-danger persian-digit">{{ val|intcomma|floatformat:4 }}</td>
+                                    <td class="text-danger persian-digit">{{ trade_price.rial_final_price|get_item:title|intcomma }}</td>
+                                </tr>
+                            {% endfor %}
+{#                            {% for t, v in trade_price.rial_final_price.items %}#}
+{#                                <tr>#}
+{#                                    <td class="text-primary">{{ t }}</td>#}
+{#                                    <td class="text-danger persian-digit">{{ v|intcomma }}</td>#}
+{#                                </tr>#}
+{#                            {% endfor %}#}
                         </table>
+                        <hr>
+                        <hr>
+{#                        <table class="table table-row-dashed table-row-gray-300">#}
+{#                            <tr class="fw-bold fs-6 text-gray-800">#}
+{#                                <td class="w-40 text-primary"></td>#}
+{#                                <td class="w-30 text-primary">یوانی</td>#}
+{#                                <td class="w-30 text-primary">ریالی</td>#}
+{#                            </tr>#}
+{#                            <tr>#}
+{#                                <td class="text-primary">قیمت اکسپرس</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.express|intcomma|floatformat:4 }}</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.express|intcomma }}</td>#}
+{#                            </tr>#}
+{#                            <tr>#}
+{#                                <td class="text-primary">قیمت هوایی</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.air|intcomma|floatformat:4 }}</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.air|intcomma }}</td>#}
+{#                            </tr>#}
+{#                            <tr>#}
+{#                                <td class="text-primary">قیمت دریایی</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rmb_final_price.sea|intcomma|floatformat:4 }}</td>#}
+{#                                <td class="text-danger persian-digit">{{ trade_price.rial_final_price.sea|intcomma }}</td>#}
+{#                            </tr>#}
+{#                        </table>#}
                     </div>
                 </a>
             </li>

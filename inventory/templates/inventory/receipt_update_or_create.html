@@ -142,7 +142,7 @@
 
         const items_ = $(document).find(".item")
         for (let i = 0; i < items_.length; i++) {
-            set_item_classes(items_[i])
+            set_item_classes(items_[i], i)
             setValue(items_[i], i)
         }
 

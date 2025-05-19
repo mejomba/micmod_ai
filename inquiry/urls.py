@@ -48,6 +48,9 @@ urlpatterns = [
     path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable'),
     path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult'),
     path('ajax/count/', views.inquiry_count, name='inquiry.count'),
-    path('variant/title/', views.get_inquiry_title, name='inquiry.count'),
+    path('variant/title/', views.get_inquiry_title, name='inquiry.title'),
+    path('transportation_method/title/', views.get_transportation_method_title, name='transportation.title'),
+    path('supplier/region/', views.get_supplier_region, name='supplier.region'),
+    path('trade_transportation_method/json/', views.get_trade_transportation_method_json, name='get_trade_transportation_method_json'),
     path('pg_backup/', views.pg_backup, name='pg_backup')
 ]

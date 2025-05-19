@@ -90,7 +90,7 @@ window.addEventListener('load', (event) => {
         // (the fragment is empty afterwards)
         containerFormSet.appendChild(formFragment);
         const items = $(containerFormSet).find(".item")
-        set_item_classes(items[items.length - 1])
+        set_item_classes(items[items.length - 1], items.length - 1)
         // set_item_classes(formFragment)
         // keep track of form indices
         extraFormIndices.push(nextFormIndex++);

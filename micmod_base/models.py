@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.contrib.contenttypes.models import ContentType
@@ -19,7 +20,7 @@ from core.models import BaseManager
 from extra_data.models import Customer
 from tools import utils
 from tools.myjalali import Persian
-from tools.utils import show_error, diff_time
+from tools.utils import show_error, diff_time, to_jalali_date
 
 from translator import get_text as _
 from workflow.models import WorkFlow
@@ -533,7 +534,7 @@ class QuotationItem(BaseModel):
     goods_q_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price_q"))
     goods_q_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales_q"))
 
-    price_method = models.CharField(choices=PriceMethod, max_length=20, verbose_name=_('price_method'), null=True, blank=True)
+    price_method = models.CharField(max_length=20, verbose_name=_('price_method'), null=True, blank=True)
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
@@ -570,6 +571,7 @@ class QuotationItem(BaseModel):
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
     is_over = models.BooleanField(_('is_over'), default=False)
+    price_json = models.JSONField(_('price_json'), null=True, blank=True)
 
     objects = QuotationItemManager()
 
@@ -891,7 +893,116 @@ class QuotationItem(BaseModel):
     def foreign_pending(self):
         return self.need_foreign_price_inquiry != self.foreign_price_inquiry_done
 
+    def create_price_json_for_old_qi(self):
+        # return
+        print(f'row: {self.index}, qi: {self.pk}')
+        price = self.fee_()
+
+        self.final_price = price
+        iqr = self.quotation_item_rel.all().last()
+        price_list = [iqr, self.selected_price_code]
+
+        price_list_json = []
+        for item in price_list:
+            if item:
+                if getattr(item, 'express_transportation_cost_1', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.price_update_date.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "seen": None,
+                            "type": 'exp',
+                            "iqref": None,
+                            "title": '2-3 هفته',
+                            "value": item.express_transportation_cost_3 if self.quotation.currency_ref.title_en.lower() != 'rial' else item.express_transportation_cost_1,
+                            "access_type": None,
+                            "unique_title": 'express'
+                        }
+                    )
+                if getattr(item, 'air_transportation_cost_1', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.price_update_date.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "seen": None,
+                            "type": 'air',
+                            "iqref": None,
+                            "title": '3-5 هفته',
+                            "value": item.air_transportation_cost_3 if self.quotation.currency_ref.title_en.lower() != 'rial' else item.air_transportation_cost_1,
+                            "access_type": None,
+                            "unique_title": 'air'
+                        }
+                    )
+                if getattr(item, 'sea_transportation_cost_1', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.price_update_date.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "seen": None,
+                            "type": 'sea',
+                            "iqref": None,
+                            "title": '12-14 هفته',
+                            "value": item.sea_transportation_cost_3 if self.quotation.currency_ref.title_en.lower() != 'rial' else item.sea_transportation_cost_1,
+                            "access_type": None,
+                            "unique_title": 'sea'
+                        }
+                    )
+                if getattr(item, 'goods_price_market', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.price_update_date.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "seen": None,
+                            "type": 'bazar',
+                            "iqref": None,
+                            "title": 'بازار',
+                            "value": item.goods_price_market,
+                            "access_type": None,
+                            "unique_title": 'bazar'
+                        }
+                    )
+                if getattr(item, 'goods_last_price', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.goods_last_sale.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.goods_last_sale) if item else None,
+                            "seen": None,
+                            "type": 'فاکتور',
+                            "iqref": None,
+                            "title": 'فاکتور',
+                            "value": item.goods_last_price,
+                            "access_type": None,
+                            "unique_title": 'goods_last_price',
+                            "quantity": item.goods_total_sales,
+                        }
+                    )
+                if getattr(item, 'goods_q_last_price', None):
+                    price_list_json.append(
+                        {
+                            "ref": None,
+                            "date": item.goods_q_last_sale.isoformat() if item else None,
+                            "jdate": to_jalali_date(item.goods_q_last_sale) if item else None,
+                            "seen": None,
+                            "type": 'پیش فاکتور',
+                            "iqref": None,
+                            "title": 'پیش فاکتور',
+                            "value": item.goods_q_last_price,
+                            "access_type": None,
+                            "unique_title": 'goods_q_last_price',
+                            "quantity": item.goods_q_total_sales,
+                        }
+                    )
+        self.price_json = price_list_json
+        self.save()
+
     def fee_(self):
+        if self.final_price:
+            return self.final_price
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
             return self.final_price or 0
