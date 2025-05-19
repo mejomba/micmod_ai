@@ -1,0 +1,173 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load accounts_tag %}
+
+{% block title %}مرور فروش پیش فاکتور{% endblock title %}
+{% block extra_css %}
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+            <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+              <a href="{% url 'micmod_base:quotationitem.list.sales.history' %}?q=portal" class="btn btn-bordered btn-outline-primary  {% if request.GET.q == 'portal' %} bg-primary {% endif %}">پرتال</a>
+              <a href="{% url 'micmod_base:quotationitem.list.sales.history' %}?q=sepidar" class="btn btn-bordered btn-outline-primary {% if request.GET.q == 'sepidar' %} bg-primary {% endif %}">سپیدار</a>
+            </div>
+{#        <span>#}
+{#            <span class="mt-3 me-3">استفاده از فیلتر</span>#}
+{#            <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>#}
+{#            <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>#}
+{#            <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>#}
+{#        </span>#}
+{#        {% if request.user|has_group:"sales_admin" %}#}
+{#        <span class="d-flex">#}
+{#            <a href="{% url 'micmod_base:sale_user_report' %}" class="btn btn-dark mx-1 ms-20 me-3" target="_blank" data-bs-toggle="modal" id="id_sale_user_report" data-bs-target="#id_kt_empty_modal_lg">گزارش کار</a>#}
+{#            <span>{{ time_form.from_time }}</span>#}
+{#            <span>{{ time_form.to_time }}</span>#}
+{#        </span>#}
+{#        {% endif %}#}
+        </div>
+
+
+    </div>
+
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                <div class="row">
+                            <div class="col-12">
+                                <div class="container-fluid">
+                                    <div class="table-responsive p-2">
+                                        <table id="quotation_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                </div>
+
+                </div> <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+{% include 'core/partial/empty_modal_lg.html' %}
+        </div>
+        <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+
+    <script language="javascript">
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
+        AjaxDatatableViewUtils.initialize_table(
+            $('#quotation_list'),
+            "{% url 'micmod_base:quotationitem.sales.history.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+                q:q
+            },
+        );
+    });
+
+    const SaleUserReportBtn = document.querySelector("#id_sale_user_report")
+    if (SaleUserReportBtn){
+        SaleUserReportBtn.addEventListener('click',function (e){
+        var from_time = document.getElementById("id_from_time").value;
+        var to_time = document.getElementById("id_to_time").value;
+        let new_url = "{% url 'micmod_base:sale_user_report' %}"
+        $.ajax({
+            type: 'GET',
+            url: new_url,
+            data: {
+                "from_time": from_time,
+                "to_time": to_time
+            },
+            dataType: 'json',
+            cache: false,
+            success: function (data) {
+                html = data['res'];
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = html
+            },
+            error: function () {
+
+            },
+            {#complete: release_main_container#}
+
+        });
+     })
+    }
+
+    function foreign_inquiry_not_responded(event){
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
+
+    function local_inquiry_not_responded(event){
+        const target_element = event.currentTarget
+        const all_quotation_foreign_inquiry_not_responded = document.querySelectorAll('[class*="_inquiry_not_responded__"]')
+        all_quotation_foreign_inquiry_not_responded.forEach(function (other){
+            if(other !== target_element){
+                other.classList.add('d-none')
+            }
+        })
+        target_element.nextElementSibling.classList.remove('d-none')
+    }
+    </script>
+
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+{% endblock extra_js %}

@@ -166,6 +166,88 @@ order by docs.Date desc
         return qs
 
     @staticmethod
+    def get_sales_history_list_qi(kwargs):
+        customer_code = kwargs.get('customer_code')
+        item_code = kwargs.get('item_code')
+        part = kwargs.get('part')
+        if not (customer_code or item_code or kwargs.get('g_p') or part):
+            return None
+        dl_filter = ""
+        part_filter = ""
+        if customer_code:
+            try:
+                s = float(customer_code)
+                dl_filter = f" and dl.Code={customer_code}"
+            except:
+                dl_filter = " and dl.title like N'%%" + customer_code.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+        item_filter = ""
+        if item_code:
+            try:
+                s = float(item_code)
+                item_filter = f" and Item.Code={item_code}"
+            except:
+                pass
+
+        if part:
+            part_filter = " and Item.title like N'%%" + part.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+        # if item_code:
+        #     try:
+        #         s = float(item_code)
+        #         item_filter = f" and Item.Code={item_code}"
+        #     except:
+        #         item_filter = " and Item.title like N'%%" + item_code.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+        g_p = kwargs.get('g_p')
+        if g_p:
+            g_p = str(g_p).lower().replace('ی', 'ي').replace("ك", "ک")
+        qry = f"""
+    select top 3000
+            docs.Date,docs.Number as pk,docs.coef,docs.doc_type,docs.Fee,docs.itemId as goods_code_fk,docs.NetPrice,docs.NetPriceInBaseCurrency,docs.Price,docs.PriceInBaseCurrency,docs.Quantity as quantity,docs.Rate
+            ,st.Numb
+            
+            er sales_type_code, Convert(nvarchar(20),st.Title) sales_type
+            ,p.CreationDate customer_creation_date,dl.Title customer_title,dl.Code customer_code ,dl.DLId
+            ,g1.Code sales_user_code, g1.Title sales_user_group
+            ,item.Code item_code, Item.Title item_title
+            --,g_p.Code purchase_group_code, g_p.Title purchase_group, g_s.Code sales_group_code, g_s.Title sales_group
+            ,fy.Title year_title
+            ,curr.Title currency
+    from
+    (
+    select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+            ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.InvoiceItemID itemId
+            ,1 as coef,'invoice' as doc_type
+    from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.InvoiceId
+    union
+    select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+            ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.QuotationItemID itemId
+            ,0 as coef,'quotation' as doc_type
+    from [SLS].[Quotation] as I Join [SLS].[QuotationItem] as II on II.QuotationRef = I.QuotationId
+    union
+    select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+            ,II.ItemRef, II.Quantity,II.Fee,-II.NetPrice,-II.NetPriceInBaseCurrency,-II.Price,-II.PriceInBaseCurrency,II.ReturnedInvoiceItemID itemId
+            ,-1 as coef,'returned_invoice' as doc_type
+    from [SLS].[ReturnedInvoice] as I Join [SLS].[ReturnedInvoiceItem] as II on II.ReturnedInvoiceRef = I.ReturnedInvoiceId
+    )as docs
+    join [SLS].[SaleType] as st on st.SaleTypeId = docs.SaleTypeRef
+    join [INV].[Item] as Item on Item.ItemID = docs.ItemRef
+    left join [GNR].[Grouping] as g_p on g_p.GroupingID = Item.PurchaseGroupRef
+    --left join [GNR].[Grouping] as g_s on g_s.GroupingID = Item.SaleGroupRef
+    join [GNR].[Party] as p on p.PartyId = docs.CustomerPartyRef join [ACC].[DL] as dl on dl.DLId = p.DLRef
+    left join [GNR].[Grouping] as g1 on g1.GroupingID = p.CustomerGroupingRef
+    join [FMK].[FiscalYear] as fy on fy.FiscalYearId = docs.FiscalYearRef
+    join [GNR].[Currency] as curr on curr.CurrencyID = docs.CurrencyRef
+    where 1=1 {dl_filter} 
+              {item_filter}
+              {part_filter}
+              {" and g_p.Title like N'%%" + g_p + "%%'" if g_p else ''}
+              {" and docs.doc_type like N'%%" + kwargs.get('doc_type') + "%%'" if kwargs.get('doc_type') else ''}
+
+    order by docs.Date desc
+                """
+        qs = Dl.objects.using('sepidar').raw(qry)
+        return qs
+
+    @staticmethod
     def get_dl(code):
         res = Dl.objects.using('sepidar').raw(f"""
 Select TOP 1 dl.Code as code,dl.Title as name,dl.DLId,p.* 

@@ -13,7 +13,7 @@ from django.utils import timezone
 
 # from django.contrib.auth.models import User
 from accounts.models import User
-from django.db import models
+from django.db import models, connection
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
@@ -52,6 +52,21 @@ class QuotationItemManager(BaseManager):
 
     # def remaining_quotations_for_factor(self, exclude_qi):
     #     return self.get_queryset().filter(quotation=self.quotation, pk__not_in=exclude_qi)
+
+    def raw_as_qs(self, raw_query):
+        """Execute a raw query and return a QuerySet.  The first column in the
+        result set must be the id field for the model.
+        :type raw_query: str | unicode
+        :return: django.db.models.query.QuerySet
+        """
+        cursor = connection.cursor()
+        try:
+            cursor.execute(raw_query)
+            return self.filter(id__in=(x[0] for x in cursor))
+        except Exception as e:
+            pass
+        finally:
+            cursor.close()
 
 
 class Month(AbsBaseModel):

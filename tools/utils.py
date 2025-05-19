@@ -22,6 +22,9 @@ import datetime
 from forbiddenfruit import curse
 from requests.structures import LookupDict
 
+import pandas as pd
+from io import BytesIO
+
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -434,3 +437,27 @@ def senf_init():
     __doc__ = (__doc__ + '\n' +
                '\n'.join(doc(senf) for senf in sorted(_senf))
                if __doc__ is not None else None)
+
+
+def export_to_excel(objects, config_json):
+
+    selected_fields = config_json.get('selected_fields', [])
+    selected_labels = config_json.get('selected_labels', [])
+
+    data = []
+
+    for obj in objects:
+        row = {}
+        for field, label in zip(selected_fields, selected_labels):
+            value = getattr(obj, field, None) if not isinstance(obj, dict) else obj.get(field)
+            if isinstance(value, datetime.datetime) and value.tzinfo is not None:
+                value = value.replace(tzinfo=None)
+            row[label] = value
+        data.append(row)
+
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)
+    return output

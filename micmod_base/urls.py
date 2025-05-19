@@ -37,6 +37,8 @@ urlpatterns = [
     path('quotationitem/list/form/pending/', QuotationItemFormPending2.as_view(), name='quotationitem.form.pending'),
     path('quotationitem/past/quotationitems', QuotationItemFormPending2.as_view(), name='quotationitem.form.past'),
     path('quotation/list/datatable', QuotationListDatatable.as_view(), name='quotation.list.datatable'),
+    path('quotationitem/sales_history', QuotationsSalesHistoryList.as_view(), name='quotationitem.list.sales.history'),
+    path('quotationitem/list/sales_history/datatable', QuotationSalesHistoryDatatable.as_view(), name='quotationitem.sales.history.datatable'),
     path('get_sku/', get_sku, name='get_sku'),
     path('quotation/print/<int:id>/', print_view, name='print'),
     path('quotationitem/inquiry/report/', inquiry_report, name='inquiry_report'),
@@ -45,4 +47,6 @@ urlpatterns = [
     path('sale_user_report/', sale_user_report, name='sale_user_report'),
     path('repeated/goods_code/', repeated_goods_code_view, name='repeated_goods_code'),
     path('ajax/inquiry_not_started/', inquiry_not_started, name='inquiry_not_started'),
+    path('export_to_excel/<int:quotation_id>/', export_quotation_items_to_excel, name='export.qi.to.excel'),
+    path('get_model_fields_config/', get_model_fields_config, name='get.model.fields.config'),
 ]
