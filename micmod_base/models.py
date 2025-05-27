@@ -588,6 +588,37 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
+    @classmethod
+    def get_model_config(cls, app_label, model_name, filter_str):
+        return {
+            'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date'],
+            'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد']
+        }
+        # queryset = []
+        # fields = []
+        # labels = []
+        # # model = apps.get_model(app_label, model_name)
+        # for field in cls._meta.get_fields():
+        #     if hasattr(field, 'verbose_name'):
+        #         fields.append(field.name)
+        #         labels.append(field.verbose_name)
+        #     else:
+        #         fields.append(field.name)
+        #         labels.append(field.name)
+        # config_json = {
+        #     'fields': fields,
+        #     'labels': labels
+        # }
+        # if filter_str:
+        #     for filtr in filter_str:  # filter_str = [{'id':'4559'}, {'sku':'7589'}, ...]
+        #         for k, v in filtr.items():
+        #             # x = getattr(self, k, None)
+        #             queryset = model.objects.filter(**{k: v})
+        # else:
+        #     queryset = model.objects.all()
+        #
+        # return queryset, config_json
+
     @property
     def lead_time_day(self):
         import re
