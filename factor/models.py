@@ -27,6 +27,7 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
+    DELIVER_TYPE_CHOICES = (('in_person', 'in_person'), ('delivery', 'delivery'))
     q = models.ForeignKey(Quotation, verbose_name=_('q'), related_name='q', on_delete=models.DO_NOTHING)
 
     delivery_time = models.CharField(choices=DeliveryTime, max_length=10, null=True, blank=True,
@@ -44,6 +45,19 @@ class Factor(SLSDoc):
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
+
+    need_financial_approval = models.BooleanField(default=False, verbose_name=_('need_financial_approval'), null=True, blank=True)
+    wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True)
+    to_be_collected = models.BooleanField(default=False, verbose_name=_('to_be_collected'))
+    collecting_start_time = models.DateTimeField(verbose_name=_('collecting_start_time'), null=True, blank=True)
+    final_check = models.BooleanField(default=False, verbose_name=_('final_check'))
+    require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('require_official_factor_with_delivery'))
+    official_factor_send_with_this_factor = models.TextField(verbose_name=_('official_factor_send_with_this_factor'), null=True, blank=True)
+    deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES)
+    deliver_to_customer = models.BooleanField(default=False, verbose_name=_('deliver_to_customer'))
+    need_factor_document = models.BooleanField(default=False, verbose_name=_('need_factor_document'))
+    checker = models.ForeignKey(User, related_name='factor_checker', null=True, blank=True, on_delete=models.DO_NOTHING)
+    packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):
         # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
@@ -579,3 +593,45 @@ class FactorOrder(BaseModeWF):
     fi = models.ForeignKey(FactorItem, on_delete=models.DO_NOTHING, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), default=0)
+
+
+# class FactorItemChange(BaseModeWF):
+#     fi = models.ForeignKey(FactorItem, on_delete=models.DO_NOTHING)
+#
+#     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))
+#     factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, verbose_name=_('factor'))
+#     qi = models.ForeignKey(QuotationItem, verbose_name=_('qi'), related_name='qi', on_delete=models.DO_NOTHING)
+#     goods_code = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='factor_goods_code',
+#                                    verbose_name=_('goods_code'), null=True, blank=True)
+#     part_number_show = models.CharField(max_length=255, verbose_name=_('part_number_show'), null=True, blank=True)
+#     price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
+#     index = models.IntegerField(null=True, blank=True, verbose_name=_("index"))
+#     quantity = models.PositiveBigIntegerField(null=True, blank=True, validators=[MinValueValidator(0)],
+#                                               verbose_name=_("quantity"))
+#     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
+#                                      verbose_name=_('delivery_time'))
+#     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)
+#     supply_locations = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='factor_items', null=True,
+#                                          blank=True, verbose_name=_('supply_locations'))
+#     supply_location = models.CharField(null=True, blank=True, verbose_name=_('supply_location'))
+#     reserve_count = models.DecimalField(_('reserve_count'), max_digits=20, decimal_places=2, null=True, blank=True)
+#     # supply_locations = models.ManyToManyField(Order, through='FactorOrder',
+#     #                                             related_name='factor_items', null=True, blank=True,
+#     #                                             verbose_name=_('supply_locations'))
+#     discount_per_item = models.FloatField(_('discount_per_item'), null=True, blank=True)
+#     is_bazar = models.BooleanField(_('is_bazar'), default=False)
+
+
+class Delivery(BaseModeWF):
+    POST = 'POST'
+    TIPAX = 'TIPAX'
+    PICKUP = 'PICKUP'
+    CUSTOM = 'CUSTOM'
+    DELIVERY_TYPE_CHOICES = ((POST, 'Post'), (TIPAX, 'TIPAX'), (PICKUP, 'PICKUP IN PERSON'), (CUSTOM, 'CUSTOM'))
+
+    factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, related_name='factor_delivery')
+    type = models.CharField(max_length=250, verbose_name=_('delivery_type'), choices=DELIVERY_TYPE_CHOICES)
+    tracking_number = models.CharField(max_length=250, verbose_name=_('tracking_number'))
+    delivery_date = models.DateField(verbose_name=_('delivery_date'))
+
+
