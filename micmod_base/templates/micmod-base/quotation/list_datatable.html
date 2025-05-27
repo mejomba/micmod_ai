@@ -34,6 +34,7 @@
             <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
             <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
             <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
+            <span class="tooltip_"><a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank"><i class="ki-duotone ki-plus-circle fs-3x"><span class="tooltiptext font-size-12">ایجاد پیش‌فاکتور</span><span class="path1"></span><span class="path2"></span></i></a></span>
         </span>
 {#        {% if request.user|has_group:"sales_admin" %}#}
         <span class="d-flex">
