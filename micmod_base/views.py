@@ -1406,3 +1406,18 @@ def export_quotation_items_to_excel(request, quotation_id):
         return response
 
     return HttpResponseBadRequest('Only POST method allowed.')
+
+
+# from custom_base_django.views import DynamicAPIView
+
+
+# class ExportQuotation(DynamicAPIView):
+#     def get(self, request, *args, **kwargs):
+#         if self.errors:
+#             return self.errors
+#         if self.get_structure:
+#             return self.get_serializer_structure()
+#
+#         # return self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
+#         _data, _status = self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
+#         return JsonResponse(_data, status=_status, safe=True)

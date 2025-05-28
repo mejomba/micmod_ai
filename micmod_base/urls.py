@@ -49,4 +49,5 @@ urlpatterns = [
     path('ajax/inquiry_not_started/', inquiry_not_started, name='inquiry_not_started'),
     path('export_to_excel/<int:quotation_id>/', export_quotation_items_to_excel, name='export.qi.to.excel'),
     path('get_model_fields_config/', get_model_fields_config, name='get.model.fields.config'),
+    # path('api/', ExportQuotation.as_view(), name='api'),
 ]
