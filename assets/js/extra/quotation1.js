@@ -823,27 +823,35 @@ function display_price(row){
     const price_json = JSON.parse(row.querySelector('textarea[name$="-price_json"]')?.value || 0) || []
     let last_sale_price_list = []
     let iqr_price_list = []
+    let access_type = '';
 
     if (display_price_container) {
         price_json.forEach(function (item){
+            console.log(item)
             if (item.unique_title === 'goods_last_price' || item.unique_title === 'goods_q_last_price'){
                 last_sale_price_list.push(`<div class="row row-cols-4 mx-1 hover-link" id=id_${item.unique_title}>
                     <span class="col-3 p-0">
                     آخرین
                     ${item.title}</span>
                     <span class="col-3">${item.jdate}</span>
-                    <span class="col-2">${numberWithCommas(item.quantity)}</span>
+                    <span class="col-2 p-0">${numberWithCommas(item.quantity)}</span>
                     <span class="col-4">
                          💵
                         ${numberWithCommas(item.value)}
                     </span>
                 </div>`)
             } else {
+                console.log(item)
+                if (item.access_type === 'QUESTION'){
+                    access_type = '(باهماهنگی بازرگانی)'
+                } else {
+                    access_type = ''
+                }
                 iqr_price_list.push(`<div class="row row-cols-4 mx-1 hover-link">
                     <span class="col-12 p-0 font-size-11" name="price_expire_date"></span>
-                    <span class="col-4 px-1">${item.unique_title}</span>
+                    <span class="col-5 px-1">${item.unique_title} ${access_type}</span>
                     <span class="col-3 p-0">${numberWithCommas(item.value)}</span>
-                    <span class="col-3 p-0" name="price_update_date">${item.jdate}</span>
+                    <span class="col-2 p-0" name="price_update_date">${item.jdate}</span>
                     <span class="col-2 p-0">${item.title}</span>
                 </div>`)
             }
@@ -1062,7 +1070,7 @@ debugger
                 final_price.readOnly = true;
                 final_price.style.backgroundColor = "#fafafa";   // ظاهر غیرقابل ویرایش
                 final_price.style.cursor = "not-allowed";
-                final_price.value = round_rial(numberWithCommas(item.value).replace(',', ''))
+                final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
                 elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', item.unique_title)
                 found = true
             }
@@ -1408,16 +1416,18 @@ function calculate_price(target) {
         elem.querySelector('[name*="discount_value"]').innerHTML = numberWithCommas(totalDiscount)
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
     }
-    calculated_price = net_price - totalDiscount + tax
+    //calculated_price = net_price - totalDiscount + tax
 
     var items = document.querySelectorAll('[name="-total_price"]')
     let m_sum = 0
     for (let i = 0; i < items.length; i++) {
         val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
+        console.log(`${i}=== ${val}`)
         if (!isNaN(val)) {
             m_sum += val
         }
     }
+    console.log(`===========================\n============================`)
     if (!m_sum) {
         m_sum = 0
     }

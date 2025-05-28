@@ -47,6 +47,11 @@ urlpatterns = [
 
     path('customer/contract/create/', views.CustomerContractView.as_view(), name='customer_contract.create'),
     path('customer/contract/update/<int:pk>/', views.CustomerContractView.as_view(), name='customer_contract.update'),
-    path('customer/sepidar/insert/<int:pk>/', views.CustomerSepidarInsertView.as_view(), name='customer_sepidar.insert')
+    path('customer/sepidar/insert/<int:pk>/', views.CustomerSepidarInsertView.as_view(), name='customer_sepidar.insert'),
+
+    path('item_package/list_or_create/', views.ItemPackageView.as_view(), name='item_package_list_or_create.view'),
+    path('item_package/list_or_create/<int:pk>/', views.ItemPackageView.as_view(), name='item_package_list_or_create.update'),
+    path('item_package/datatable/', views.ItemPackageDatatableView.as_view(), name='item_package.datatable'),
+    path('item_package_weight/', views.ItemPackageWeightSearchView.as_view(), name='item_package_weight.search'),
 
 ]

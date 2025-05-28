@@ -37,6 +37,14 @@
                 <input type="hidden" name="base_group" value="{{ user.base_group|default_if_falsy:"" }}">
                 {{ form.get_origin_area_display }}
                 {% render_field_by_order form form.title form.origin_area form.method form.currency_type form.fixed_cost form.variable_cost form.access_type label='on-border' %}
+
+                        <div class="col-3 w-50">
+                            {% render_field_by_order form form.description label='on-border' %}
+                        </div>
+                {% get_comment_user_list form request.user %}
+                <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+
+                <span class="d-none">{{ form.is_public }}</span>
             </div>
         </div>
     </div>
@@ -46,6 +54,9 @@
 
         </table>
     </div>
+    {% include 'core/partial/empty_modal_sm.html' %}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
 {% endblock form_content %}
 
 {% block extra_js %}
@@ -95,6 +106,7 @@
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'js/comment.js' %}"></script>
 {#    {{ form.media.js }}#}
 
 {% endblock extra_js %}

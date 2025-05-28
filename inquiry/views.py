@@ -194,6 +194,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 sale_group_search', 'lookup_field': '__title__icontains'},
         {'name': 'purchase_group', 'visible': True, 'title': _('group buy'), 'className': 'py-1 purchase_group_search', 'lookup_field': '__title__icontains'},
         {'name': 'package', 'visible': True, 'title': _('package'), 'className': 'py-1 package_search'},
+        {'name': 'package2', 'visible': True, 'title': _('package2'), 'className': 'py-1 package_search', 'lookup_field': '__title__icontains'},
         {'name': 'created_date', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
         {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
@@ -415,9 +416,10 @@ class InquiryResultListView(BaseView):
 
             try:
                 if not self.object.sku.purchase_group.trade_transportation_method_json:
-                    self.object.sku.purchase_group.trade_transportation_method_json = self.object.trade_transportation_method_json
-                    self.object.sku.purchase_group.extra_data.request = self.request
-                    self.object.sku.purchase_group.save()
+                    """توی صورت جلسه درباره این که روی گروه خرید هم ثبت شود چیزی نبود"""
+                    # self.object.sku.purchase_group.trade_transportation_method_json = self.object.trade_transportation_method_json
+                    # self.object.sku.purchase_group.extra_data.request = self.request
+                    # self.object.sku.purchase_group.save()
             except Exception as e:
                 pass
 
@@ -896,7 +898,7 @@ def get_item(request):
                                             'type': ttm.method.lower(),
                                             'ref': ttm.pk,
                                             'iqref': price_inquiry_result.pk,
-                                            'value': item['rial_final_price'][ttm.title],
+                                            'value': item['rial_final_price'][ttm.title].get('price'),
                                             'title': price_inquiry_result.select_title(ttm.method),
                                             'access_type': ttm.access_type,
                                             'unique_title': ttm.title,

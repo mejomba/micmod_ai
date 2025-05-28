@@ -1,0 +1,24 @@
+<div class="d-flex gap-10 flex-row-reverse me-5">
+    {% if not package %}
+        <span class="text-danger">پکیج نامعتبر</span>
+    {% elif package.weight %}
+    <span class="tooltip_">
+        <span class="tooltiptext">وزن</span>
+        {{ package.weight }}
+    </span>
+    <span class="tooltip_">
+        <span class="tooltiptext">ویرایش/ایجاد</span>
+        {{ package.created_date|date }} / {{ package.last_update_date|date }}
+    </span>
+    <span class="tooltip_">
+        <span class="tooltiptext">ویرایش کننده/ایجاد کننده</span>
+        {{ package.creator_user }}/{{ package.editor_user }}
+    </span>
+    <span class="tooltip_">
+        <span class="tooltiptext">آخرین بروزرسانی(شمسی)</span>
+        {{ package.jalali_last_update_date }}
+    </span>
+    {% else %}
+        <span>بدون وزن</span>
+    {% endif %}
+</div>

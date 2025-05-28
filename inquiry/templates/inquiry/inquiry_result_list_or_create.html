@@ -25,7 +25,12 @@
 {% endblock content %}
 {% block form_content %}
     {% csrf_token %}
+        <div class="d-flex flex-row-reverse align-items-baseline">
+            <input type="text" id="id_item_package" placeholder="type package name + Enter" dir="ltr" class="form-control w-25 text-left" onkeydown="item_package_search(event)">
+            <span class="me-3" id="id_package_weight_container"></span>
+        </div>
     {% if request.user.base_group == 'trade' %}
+
         <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-3">
         <div class="col-12">
             <div class="gap-1 py-1 d-flex">
@@ -260,6 +265,20 @@
             const modal_sm_body = $('#id-empty-modal-body-sm')
             custom_ajax_get('', event.currentTarget.dataset.url, modal_sm_body)
         }
+
+        function item_package_search(e){
+            debugger
+
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                const item_package_input = document.querySelector('#id_item_package')
+                const package_weight_container = $('#id_package_weight_container')
+                const url = `/extra_data/item_package_weight/?package=${item_package_input.value}`
+                custom_ajax_get(null, url, package_weight_container)
+            }
+        }
+
+
 
     </script>
 

@@ -307,6 +307,18 @@ class Brand(AbsBaseModel):
         return f'{self.title}'
 
 
+class ItemPackage(BaseModel):
+    weight = models.FloatField(null=True, blank=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.title}'
+
+    auto_complete = 'title'
+    insert_new = False
+
+
 class Item(BaseModel):
     print('import item .....')
     def __init__(self, *args, **kwargs):
@@ -330,6 +342,7 @@ class Item(BaseModel):
     customs_group = models.ForeignKey(CustomsGroup, related_name="items", verbose_name=_('customs_group'),
                                       null=True, blank=True,on_delete=models.DO_NOTHING)
     package = models.CharField(max_length=100, verbose_name=_('package'), null=True, blank=True)
+    package2 = models.ForeignKey(ItemPackage, on_delete=models.DO_NOTHING, null=True, blank=True)
     batch_type = models.CharField(verbose_name=_('batch type'), choices=BATCH_TYPE, max_length=16, null=True, blank=True)
     batch_count = models.FloatField(verbose_name=_('batch count'), null=True, blank=True)
     extra_cost_percentage = models.FloatField(verbose_name=_('extra_cost_percentage'), null=True, blank=True,default=0)

@@ -75,20 +75,21 @@ class TradeTransportationMethodDataTableView(AjaxDatatableView):
             {'name': 'currency_type', 'lookup_field': '__title__icontains'},
             'fixed_cost',
             'variable_cost',
+            'access_type',
             'created_date',
             'last_update_date'
         ])
         return cols
 
-    # def get_initial_queryset(self, request=None):
-    #     qs = self.model.objects.filter(base_group=self.request.user.base_group)
-    #     # param: str = self.request.POST.get('title')
-    #     # if param:
-    #     #     qs = self.model.objects.filter(title=param)
-    #     # else:
-    #     #     qs = self.model.objects.all()
-    #     return qs
-    #
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.filter(is_public=True, is_deleted=False)
+        # param: str = self.request.POST.get('title')
+        # if param:
+        #     qs = self.model.objects.filter(title=param)
+        # else:
+        #     qs = self.model.objects.all()
+        return qs
+
     def customize_row(self, row, obj):
         row['origin_area'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('transportation:trade_transportation_method.update', args=(obj.id,)),

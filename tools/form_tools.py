@@ -30,10 +30,13 @@ def get_obj_from_dict(model, m_dict):
     return dict_
 
 def get_dif_percentage(dict1, dict2):
+    # x = {k: {**v, 'price': v.get("price", 0) + 1)} for k, v in dict2.items()}
     dict_ = dict()
     for key in dict1.keys():
+        dict_[key] = dict()
         if key in dict2.keys():
-            dict_[key] = 100 * dict1[key]/dict2[key] -  100
+            # dict_[key] = 100 * dict1[key]/dict2[key] -  100
+            dict_[key] = {**dict1[key], 'price': 100 * dict1[key]['price']/dict2[key]['price'] - 100}
     return dict_
 
 def get_function(function_string):

@@ -12,6 +12,7 @@ from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic, View
+from rest_framework.views import APIView
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from sepidar.models import APILogs, Device
@@ -19,13 +20,13 @@ from sepidar.scripts.sepidar_classes import Urls
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
-    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm
+    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract, ChangeCustomerGroup
+    CustomerContract, ChangeCustomerGroup, ItemPackage
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -765,3 +766,74 @@ class ItemListUpdate(View):
             return JsonResponse({'res': 'success'})
         except Exception as e:
             return JsonResponse({'res': 'fail'}, status=500)
+
+
+class ItemPackageView(LoginRequiredMixin, BaseView):
+    model = ItemPackage
+    template_name = 'extra_data/item_package_list_or_create.html'
+    success_message = '%(package)s update'
+    form_struct = {
+        'form': ItemPackageForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_message(self, cleaned_data):
+        return f'package {self.object.title} save'
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:item_package_list_or_create.view')
+
+
+class ItemPackageDatatableView(AjaxDatatableView):
+    model = ItemPackage
+    title = 'item_package'
+    initial_order = [["last_update_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border'},
+        {'name': 'weight', 'visible': True, 'title': _('weight'), 'className': 'py-1 border',},
+        {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border', 'lookup_field': '__username__icontains' },
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'last_update_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'jalali_last_update_date', 'orderable': True, 'visible': True, 'searchable': False},
+    ]
+
+    # def get_initial_queryset(self, request=None):
+    #     param: str = self.request.POST.get('sku')
+    #     try:
+    #         if param and param.isdigit():
+    #             param = int(param)
+    #         else:
+    #             param = ''
+    #     except TypeError as e:
+    #         show_error(e, __file__)
+    #     if param:
+    #         qs = self.model.objects.filter(item=param)
+    #     else:
+    #         qs = self.model.objects.all()
+    #     return qs.order_by('last_update_date')
+
+    def customize_row(self, row, obj):
+        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('extra_data:item_package_list_or_create.update', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )
+
+
+class ItemPackageWeightSearchView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        package = self.request.GET.get('package')
+        package = ItemPackage.objects.filter(title__iexact=package).first()
+        context = {'package': package}
+
+        res = render_to_string('extra_data/partials/item_package_weight_result.html', context=context, request=self.request)
+        return JsonResponse({'res': res})
