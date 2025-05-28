@@ -94,7 +94,7 @@
       "action":"create",
         "list": [
           {
-            "state": "فاکتور اولیه",
+            "state": "پیش‌نویس",
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
@@ -124,7 +124,7 @@
             ]
           },
           {
-            "state": "تایید مالی",
+            "state": "تخصیص کارشناس انبار",
             "group": "accounting_user",
             "deadline": 1,
             "form_constraint": {
@@ -139,7 +139,7 @@
             ]
           },
           {
-            "state": "پرداخت",
+            "state": "جمع‌‌آوری",
             "group": "accounting_user",
             "deadline": 1,
             "form_constraint": {
@@ -154,8 +154,38 @@
             ]
           },
           {
-            "state": "انبار",
+            "state": "چک نهایی",
             "group": "wh_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "ارسال یا تحویل",
+            "group": "accounting_user",
+            "deadline": 1,
+            "form_constraint": {
+              "hide": [],
+              "read": []
+            },
+            "formset_constraint": [
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "تایید تحویل",
+            "group": "accounting_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],

@@ -101,9 +101,9 @@ class Order(BaseModeWF):
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 
     @classmethod
-    def get_qs(cls, request, lst=False):
+    def get_qs(cls, request, lst=False, groups_list=None):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q, quotation=True, lst=lst)
+        qs = cls.objects.get_access_object(request.user, q=q, lst=lst, groups_list=groups_list)
         return qs
 
     @property

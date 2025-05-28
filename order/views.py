@@ -148,18 +148,30 @@ class OrderDataTableListView(AjaxDatatableView):
         qs = super().get_initial_queryset(request)
         if request.user.is_superuser:
             return qs
-        # qs = self.model.get_qs(self.request)
+
+
+        # qs = self.model.get_qs(self.request, lst=False)
 
         q = request.POST.get('q')
-        user_base_group = self.request.user.base_group
-        if q == 'sales_admin':
-            return qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
-        elif q == 'bazar_user' or user_base_group == 'bazar':
-            return qs.filter(is_bazar=True)
+        user_groups = request.user.base_group #groups.values_list('name', flat=True).exclude(name='base_user')
+        if user_groups == 'trade':
+            user_groups = request.user.groups.filter(name='trade_user')
+        elif user_groups == 'bazar':
+            user_groups = request.user.groups.filter(name='bazar_user')
+        elif user_groups == 'sales':
+            user_groups = request.user.groups.filter(name='sales_user')
+
+        if q == 'all':
+            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+        elif q == 'sales_admin':
+            qs = qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
+        elif q == 'bazar_user' or 'bazar_user' in user_groups:
+            qs = qs.filter(is_bazar=True)
         elif q == 'all':
-            return qs
+            qs = qs
         elif q == 'not_complete':
             not_complete_order = Q()
+            qs = self.model.get_qs(self.request, lst=False)
             qs = qs.filter(cancel=True)
             for order in qs:
                 not_complete = 0
@@ -169,6 +181,15 @@ class OrderDataTableListView(AjaxDatatableView):
                 if res < 0:
                     not_complete_order |= Q(id=order.id)
             return Order.objects.filter(not_complete_order) if not_complete_order else Order.objects.none()
+        elif q == 'is_wh':
+            return qs.filter(is_wh=True)
+
+        elif q == 'is_trade':
+            return qs.filter(is_wh=False, is_bazar=False, cancel=False)
+
+        if request.user.groups.filter(name='trade_user'):
+            return qs.filter(is_wh=False, is_bazar=False, cancel=False)
+
 
         else:
             return qs

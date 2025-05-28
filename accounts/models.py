@@ -70,18 +70,23 @@ class User(AbstractUser):
         print('qs before return ', qs)
         return qs
 
-    def get_target_users(self):
+    def get_target_users(self, groups_list=None):
         from django.contrib.auth import get_user_model
-        user_qs = get_user_model().objects.filter(id=self.id)
-        return self.team.all() | user_qs
-        for main_user_group in self.groups.all():
-            user_qs |= self.get_target_user_from_group(main_user_group)
-        print('user_list  > ', user_qs)
-        return user_qs
+        if groups_list:
+            # groups = Group.objects.filter(name__in=groups_list)
+            return User.objects.filter(groups__in=groups_list.values_list('id', flat=True), is_superuser=False)
+        else:
+            get_user_model().objects.filter()
+            user_qs = get_user_model().objects.filter(id=self.id)
+            return self.team.all() | user_qs
+        # for main_user_group in self.groups.all():
+        #     user_qs |= self.get_target_user_from_group(main_user_group)
+        # print('user_list  > ', user_qs)
+        # return user_qs
 
-    def get_target_wf(self):
+    def get_target_wf(self, groups_list=None):
         from workflow.models import WorkFlow
-        user_list = self.get_target_users()
+        user_list = self.get_target_users(groups_list=groups_list)
         wf = WorkFlow.objects.filter(id=-1)
         for user in user_list:
             wf |= WorkFlow.objects.filter(

@@ -88,7 +88,7 @@ class BaseManager(models.Manager):
             # print('================ private', self.model.objects)
         return qs.order_by('-last_update_date')
 
-    def get_access_object(self, user, q="all", lst=True, *args, **kwargs):
+    def get_access_object(self, user, q="all", lst=True, groups_list=None, *args, **kwargs):
         from workflow.models import WorkFlow
 
         direct_access = ''
@@ -101,10 +101,10 @@ class BaseManager(models.Manager):
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()
 
-        wfs = user.get_target_wf()
+        wfs = user.get_target_wf(groups_list=groups_list)
         object_id_from_flow = wfs.filter(content_type=content_type).values_list('object_id', flat=True)
 
-        user_list = user.get_target_users()
+        user_list = user.get_target_users(groups_list=groups_list)
         objects_from_user = self.model.objects.filter(
             Q(creator_user__in=user_list) |
             Q(editor_user__in=user_list)
@@ -331,7 +331,8 @@ class BaseModelAuto:
         else:
             queryset = model.objects.all()
 
-        return queryset, config_json
+        return config_json
+        # return queryset, config_json
 
 
 class BaseFunctions():

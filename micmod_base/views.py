@@ -1379,8 +1379,9 @@ def get_model_fields_config(request):
         app_label = data.get('app_label')
         model_name = data.get('model_name')
         filter_str = data.get('filter_str')
+        model_class = apps.get_model(app_label, model_name)
 
-        queryset, config = BaseModelAuto.get_model_config(app_label=app_label, model_name=model_name, filter_str=filter_str)
+        config = model_class.get_model_config(app_label=app_label, model_name=model_name, filter_str=filter_str)
         return JsonResponse(config)
     return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
 
