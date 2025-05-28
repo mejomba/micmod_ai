@@ -521,6 +521,7 @@ class PriceInquiryResult(BaseModel):
             trade_transportation_method_obj |= TradeTransportationMethod.objects.filter(access_type__in=dj_settings.PUBLIC_TRADE_TRANSPORTATION_METHOD)
             out = {}
             for item in trade_transportation_method_obj:
+                transportation_cost_multiplier = getattr(self.sku.purchase_group,f"{item.method.lower()}_transportation", 1) or 1
                 currency_type = item.currency_type.title_en
                 if currency_type.lower() == 'rmb':
                     rmb = item.variable_cost + item.fixed_cost
@@ -531,7 +532,7 @@ class PriceInquiryResult(BaseModel):
                 elif currency_type.lower() == 'rial':
                     rmb = (item.variable_cost + item.fixed_cost) / self.price_settings.customs_rmb_rate
 
-                out.update({item.title: {'price': rmb * self.weight / 1000,
+                out.update({item.title: {'price': transportation_cost_multiplier * rmb * self.weight / 1000,
                                          'method': item.method,
                                          'duration': 'xxxx'}
                             })

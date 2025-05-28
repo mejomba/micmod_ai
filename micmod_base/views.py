@@ -1138,7 +1138,7 @@ class QuotationListDatatable(AjaxDatatableView):
         </div>
         '''
         row['not_over'] = res
-        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
+        cancel_obj = obj.comments.filter(~Q(comment_title='O')).order_by('id').last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
         else:
