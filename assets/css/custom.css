@@ -289,7 +289,7 @@ hr {
     /*aspect-ratio: 16/9;*/
 }
 .m-table > :not(caption) > * > *{
-    padding: 0.75rem 0.75rem !important;
+    padding: 0.5rem 0.5rem !important;
 }
 th {
     text-align: right !important;
