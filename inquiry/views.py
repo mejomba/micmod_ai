@@ -202,7 +202,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
         {'name': 'wh_last_weight', 'title': 'وزن انبار', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True},
         {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False},
-        {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین وزن پکیج وزن نهایی</div>', 'searchable': False, 'orderable': False},
+        {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
