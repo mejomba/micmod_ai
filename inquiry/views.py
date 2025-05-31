@@ -197,10 +197,12 @@ class SkuListDataTableView(CustomAjaxDataTable):
         {'name': 'package2', 'visible': True, 'title': _('package2'), 'className': 'py-1 package_search', 'lookup_field': '__title__icontains'},
         {'name': 'created_date', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
-        {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': True},
+        {'name': 'weight', 'title': 'وزن نهایی', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'trade_last_weight', 'title': 'وزن بازرگانی', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'wh_last_weight', 'title': 'وزن انبار', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True},
+        {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False},
+        {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین وزن پکیج وزن نهایی</div>', 'searchable': False, 'orderable': False},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
@@ -292,6 +294,16 @@ class SkuListDataTableView(CustomAjaxDataTable):
         return column
 
     def customize_row(self, row, obj):
+        items = obj.package2.item_set.all() if obj.package2 else []
+        weights = [item.weight for item in items if item.weight is not None]
+        avg_weight = sum(weights) / len(weights) if weights else 0
+        row['package_weight_avg'] = round(avg_weight, 4)
+        effective_weight = obj.weight
+        if not effective_weight or not avg_weight:
+            row['package_weight_diff'] = '-'
+        else:
+            row['package_weight_diff'] = f'{round(((avg_weight / effective_weight) - 1) * 100, 1)} %'
+
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('extra_data:sku.update', args=(obj.id,)),
             obj.sku if obj.sku else '_'
