@@ -686,5 +686,8 @@
     "quantity_trade": "تعداد (بازرگانی)",
     "apply_mac": "MAC",
     "order_final_price": "قیمت نهایی خرید",
-    "price_expire_date": "اعتبار استعلام (روز به عدد)"
+    "price_expire_date": "اعتبار استعلام (روز به عدد)",
+    "trade_transportation_method": "روش های حمل",
+    "list/create": "لیست/ایجاد",
+    "package_list_or_create": "پکیج"
 }

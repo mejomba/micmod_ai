@@ -36,6 +36,7 @@ def get_customer_from_pg(customer_id):
 
 @register.simple_tag
 def get_price_method(value):
+    return value
     if not value:
         return ""
     price_method = dict(PriceMethod)

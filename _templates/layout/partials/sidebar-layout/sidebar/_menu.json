@@ -695,6 +695,42 @@
           "link": "inquiry:supplier.list"
         }
       ]
+    },
+    {
+      "title": "trade_transportation_method",
+      "icon": "cheque",
+      "path_key": "trade_transportation_method.view",
+      "permission": {
+        "groups": [
+          "trade_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "transportation/trade_transportation_method/view",
+          "link": "transportation:trade_transportation_method.view"
+        }
+      ]
+    },
+    {
+      "title": "package_list_or_create",
+      "icon": "cheque",
+      "path_key": "packing_list_or_create.view",
+      "permission": {
+        "permissions": [
+          "extra_data.view_item_package"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "item_package/list_or_create/",
+          "link": "extra_data:item_package_list_or_create.view"
+        }
+      ]
     }
   ]
 }

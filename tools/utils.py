@@ -186,12 +186,12 @@ def to_jalali_date(time):
         if time:
             jtime = myjalali.Gregorian(time).persian_tuple()
             # jtime_list = list(jtime)
-            output = '{}/{}/{}'.format(jtime[0], jtime[1], jtime[2])
+            output = '{}-{}-{}'.format(jtime[0], jtime[1], jtime[2])
             return output
-        return '1000/01/01'
+        return '1000-01-01'
     except Exception as e:
         print('error ', __file__, e.__traceback__.tb_lineno, e)
-        return '1000/01/01'
+        return '1000-01-01'
 
 
 def show_error(e, file):

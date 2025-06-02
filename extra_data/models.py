@@ -24,6 +24,8 @@ from tools.form_tools import select_cquery
 from django.core.validators import MaxValueValidator
 from queryable_properties.properties import queryable_property
 
+from transportation.models import TradeTransportationMethod
+
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
@@ -254,6 +256,9 @@ class PurchaseGroup(AbsBaseModel):
     express_transportation = models.FloatField(verbose_name=_('express_transportation'), default=1)
     sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True,null=True,blank=True)
     sepidar_code = models.BigIntegerField(verbose_name=_('sepidar_code'), unique=True,null=True,blank=True)
+    # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
+    #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     auto_complete = 'title'
 
     def __str__(self):
@@ -302,6 +307,18 @@ class Brand(AbsBaseModel):
         return f'{self.title}'
 
 
+class ItemPackage(BaseModel):
+    weight = models.FloatField(null=True, blank=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.title}'
+
+    auto_complete = 'title'
+    insert_new = False
+
+
 class Item(BaseModel):
     print('import item .....')
     def __init__(self, *args, **kwargs):
@@ -325,12 +342,13 @@ class Item(BaseModel):
     customs_group = models.ForeignKey(CustomsGroup, related_name="items", verbose_name=_('customs_group'),
                                       null=True, blank=True,on_delete=models.DO_NOTHING)
     package = models.CharField(max_length=100, verbose_name=_('package'), null=True, blank=True)
+    package2 = models.ForeignKey(ItemPackage, on_delete=models.DO_NOTHING, null=True, blank=True)
     batch_type = models.CharField(verbose_name=_('batch type'), choices=BATCH_TYPE, max_length=16, null=True, blank=True)
     batch_count = models.FloatField(verbose_name=_('batch count'), null=True, blank=True)
     extra_cost_percentage = models.FloatField(verbose_name=_('extra_cost_percentage'), null=True, blank=True,default=0)
     express_extra_cost_percentage = models.FloatField(verbose_name=_('express_extra_cost_percentage'), null=True, blank=True,default=0)
     air_extra_cost_percentage = models.FloatField(verbose_name=_('air_extra_cost_percentage'), null=True, blank=True,default=0)
-    sea_extra_cost_percentage = models.FloatField(verbose_name=_('sea_extra_cost_percentage'), null=True, blank=True,default=7)
+    sea_extra_cost_percentage = models.FloatField(verbose_name=_('sea_extra_cost_percentage'), null=True, blank=True,default=5)
     customs_price = models.FloatField(verbose_name=_('customs_price'), null=True, blank=True)
     technical_confirm = models.BooleanField(verbose_name=_('technical_confirm'), default=False)
     price_settings = models.ForeignKey(PriceSettings, verbose_name=_("price_settings"), blank=True, null=True,
@@ -339,6 +357,9 @@ class Item(BaseModel):
     active_main_item = models.BooleanField(default=True, verbose_name=_('active_main_item'))
     parent = models.ForeignKey('self', verbose_name=_('parent_code'), on_delete=models.DO_NOTHING, null=True, blank=True)
     hs = models.ForeignKey(HS, verbose_name=_('hs'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
+    #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
+    trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
     @property
@@ -480,7 +501,15 @@ class Item(BaseModel):
     @property
     def all_trade_active_price_(self):
         trade_filter = Q(inquiry_type__title__icontains='خارج')
-        return [(k.pk, k.inquiry_type.title) for k in self.items.filter(trade_filter, sku=self).filter(active=True)]
+        return [(k.pk, k.inquiry_type.title + " " + self.variant_show(k.variants_json)) for k in self.items.filter(trade_filter, sku=self).filter(active=True)]
+
+    @staticmethod
+    def variant_show(json_obj):
+        l = []
+        for k, v in json_obj.items() if json_obj else []:
+            l.append(str(k) + ": " + str(v))
+        y = '|'.join(l)
+        return f'( {y} )' if y else ''
 
     @property
     def all_bazar_active_price_(self):

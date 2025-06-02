@@ -276,7 +276,7 @@ class FactorItem(BaseModel):
                 code = re.search(r'(code: (\d+))', code).group(2)
                 wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
                 if code == wh_code:
-                    return min([int(quantity), int(self.quantity)])
+                    return min([float(quantity), float(self.quantity), self.reserve_count])
                 # if self.pk is None:
                 #     if code == wh_code:
                 #         return min([int(quantity), int(self.quantity)])
@@ -308,35 +308,6 @@ class FactorItem(BaseModel):
                 unselect = select_order = no_change = False
 
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
-
-    # def unselected_status(self):
-    #     """
-    #     هیچ محل تامینی انتخاب نشده است
-    #     """
-    #     return bool(self.supply_location)
-    #
-    # def selected_order_status(self):
-    #     """
-    #     سفارش ناقص انتخاب شده است
-    #     """
-    #     order_id = self.supply_location
-    #     order = Order.objects.filter(pk=order_id).first()
-    #     return order.remaining_quantity < self.quantity
-    #
-    # def selected_wh_status(self):
-    #     """
-    #     سفارش کامل انتخاب شده است
-    #     """
-    #     try:
-    #         selected_order_id = self.supply_location.split('__')
-    #         if len(selected_order_id) == 2:
-    #             if int(selected_order_id[1]):
-    #                 return True
-    #         elif len(selected_order_id) == 3:
-    #             ...
-    #     except Exception as e:
-    #         return False
-    #     return False
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 
@@ -374,7 +345,7 @@ class FactorItem(BaseModel):
                     'is_bazar': self.is_bazar,
                     'is_wh': True
                 }
-                o1_as_o2 = Order.create_with_rel(data_base=data_base)
+                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)
                 o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
                 self.supply_locations = o1
         elif self.pk:

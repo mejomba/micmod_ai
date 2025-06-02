@@ -178,7 +178,7 @@
                             </div>
                         </div>
                         <div class="col on-border">
-                            <label>نام کالا</label>
+{#                            <label>نام کالا</label>#}
                             <textarea class="w-100 goods_name form-control bg-white bold text-black"  rows="1" name="-goods_name_lbl" disabled>{{ form_s.instance.goods_code_fk.part_number }}</textarea>
                             {% if form_s.instance.pk and not form_s.instance.goods_code_fk.sepidar_id_0 %}
                                 <div class="sepidar_id_warning">
@@ -204,7 +204,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-non px-1" name="box-alt-goods" style="border-bottom: 1px solid lightgrey">
+                <div class="d-non px-1" name="box-alt-goods">
                     <div class="d-flex mt-3">
                         <div class="w-25 on-border">
                             {% if form_s.enable and not form_s.goods_code_alt.field.disabled %}
@@ -228,63 +228,69 @@
                 </div>
                 <div class="px-1 replace-digits">
                     <div class="w-100">
-                        <div class="card-text bold">
-                            <span>آخرین فروش به مشتری</span>
-                        </div>
-                        <div class="d-flex" id="customer-last-sales">
-                            <div class="w-30 mt-3">
-                                <div class="">فاکتور</div>
-                                <div class="mt-3 ">پیش فاکتور</div>
-                            </div>
-                            <div class="w-50">
-                                <div class="card-title-desc text-center" data-key="date">تاریخ</div>
-                                <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>
-                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>
-                            </div>
-                            <div class="w-25">
-                                <div class="card-title-desc text-center" data-key="count">تعداد</div>
-                                <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>
-                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>
-                            </div>
-                            <div class="w-25">
-                                <div class="card-title-desc text-center" data-key="price">قیمت</div>
-                                <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>
-                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>
-                            </div>
+{#                        <div class="card-text bold">#}
+{#                            <span>آخرین فروش به مشتری</span>#}
+{#                        </div>#}
+                        <div class="mt-1" id="customer-last-sales" style="border-top: 1px solid #f1f1f2">
+{#                            <div class="w-30 mt-3">#}
+{#                                <div class="">فاکتور</div>#}
+{#                                <div class="mt-3 ">پیش فاکتور</div>#}
+{#                            </div>#}
+{#                            <div class="w-50">#}
+{#                                <div class="card-title-desc text-center" data-key="date">تاریخ</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_last_sale no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_sale no_input=True %}</div>#}
+{#                            </div>#}
+{#                            <div class="w-25">#}
+{#                                <div class="card-title-desc text-center" data-key="count">تعداد</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_total_sales no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_total_sales no_input=True %}</div>#}
+{#                            </div>#}
+{#                            <div class="w-25">#}
+{#                                <div class="card-title-desc text-center" data-key="price">قیمت</div>#}
+{#                                <div>{% render_field_by_order nested nested.goods_last_price no_input=True %}</div>#}
+{#                                <div class="mt-3">{% render_field_by_order nested nested.goods_q_last_price no_input=True %}</div>#}
+{#                            </div>#}
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4 p-0 replace-digits" style="border-bottom: 1px solid #f1f1f2">
                 <div class="px-2 h-40">
-                    <div class="card-text bold">استعلام قیمت </div>
-                    <div class="d-flex ">
-                        <div class="w-20 d-flex flex-column gap-2">
-                            <div class="card-title-desc text-center">تاریخ</div>
-                            <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>
-                            <div name="market_expire_date" style="width: 450px;"></div>
-                            <div name="trade_expire_date" style="width: 250px;"></div>
-                        </div>
-                        <div class="w-20 d-flex flex-column gap-2">
-                            <div class="card-title-desc text-center">بازار</div>
-                                {% render_field_by_order nested nested.goods_price_market no_input=True %}
-                        </div>
-                        <div class="w-20 d-flex flex-column gap-2">
-                            <div class="card-title-desc text-center">2 تا 3 هفته</div>
-                                {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}
-                                {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}
-                        </div>
-                        <div class="w-20 d-flex flex-column gap-2">
-                            <div class="card-title-desc text-center">3 تا 5 هفته</div>
-                                {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}
-                                {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}
-                        </div>
-                        <div class="w-20 d-flex flex-column gap-2">
-                            <div class="card-title-desc text-center">12 تا 14 هفته</div>
-                                {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}
-                                {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}
-                        </div>
-                    </div>
+
+
+
+
+                    <div id="id_display_price_container"></div>
+{#                    <div class="card-text bold">استعلام قیمت </div>#}
+{#                    <div class="d-flex ">#}
+{#                        <div class="w-20 d-flex flex-column gap-2">#}
+{#                            <div class="card-title-desc text-center">تاریخ</div>#}
+{#                            <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>#}
+{#                            <div name="market_expire_date" style="width: 450px;"></div>#}
+{#                            <div name="trade_expire_date" style="width: 250px;"></div>#}
+{#                        </div>#}
+{#                        <div class="w-20 d-flex flex-column gap-2">#}
+{#                            <div class="card-title-desc text-center">بازار</div>#}
+{#                                {% render_field_by_order nested nested.goods_price_market no_input=True %}#}
+{#                        </div>#}
+{#                        <div class="w-20 d-flex flex-column gap-2">#}
+{#                            <div class="card-title-desc text-center" id="id_exp_title">2 تا 3 هفته</div>#}
+{#                                {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}#}
+{#                                {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}#}
+{#                        </div>#}
+{#                        <div class="w-20 d-flex flex-column gap-2">#}
+{#                            <div class="card-title-desc text-center" id="id_air_title">3 تا 5 هفته</div>#}
+{#                                {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}#}
+{#                                {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}#}
+{#                        </div>#}
+{#                        <div class="w-20 d-flex flex-column gap-2">#}
+{#                            <div class="card-title-desc text-center" id="id_sea_title">12 تا 14 هفته</div>#}
+{#                                {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}#}
+{#                                {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}#}
+{#                        </div>#}
+                        <span class="d-none">{{ form_s.price_json }}</span>
+{#                    </div>#}
                 </div>
                 <div class="h-30 all_pricess mt-2">
                     <div class="d-flex">
@@ -309,7 +315,22 @@
                     <div class="col-lg-7 p-0 border-end border-start-0 rounded overflow-hidden">
                         <div class="">
                             <div class="d-flex mt-2 ">
-                                <div class="text-center w-100">{% render_field_by_order form_s form_s.price_method label='on-border' %}</div>
+                                <div class="text-center w-100">
+{#                                    {% render_field_by_order form_s form_s.price_method label='on-border' %}#}
+{#                                    {{ form_s.price_method }}#}
+                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.price_method }}"></span>
+                                    <div class="col on-border  mb-3 ">
+                                        <div class="form-group" id="div_price_method">
+                                            <div id="id_price_method_container">
+
+                                            </div>
+                                        </div>
+                                        <label data-key="price_method" id="None" class="None">روش تعیین قیمت</label>
+                                        <div class="text-danger"></div>
+                                    </div>
+                                </div>
+
+
                             </div>
                             <div class="d-flex">
                                 <div class="w-100 card-text text-center">{% render_field_by_order form_s form_s.final_price label='on-border' margin_b="0" %}</div>

@@ -108,7 +108,7 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'payment_date', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'amount', 'visible': True, 'orderable': True,},
         {'name': 'behalf', 'visible': True, 'orderable': True},
-        {'name': 'credit_card', 'visible': True, 'orderable': True, 'title': 'در وجه'},
+        {'name': 'credit_card', 'visible': True, 'orderable': True, 'title': 'در وجه', 'lookup_field': '__title__icontains'},
         {'name': 'from_source', 'visible': True, 'orderable': True,  'lookup_field': '__title__icontains'},
         {'name': 'to_account', 'visible': True, 'orderable': True, 'title': '<div class="px-20">به حساب یا کارت</div>'},
         {'name': 'applicant', 'visible': True, 'orderable': True},

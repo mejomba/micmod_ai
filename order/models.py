@@ -94,8 +94,8 @@ class Order(BaseModeWF):
     ):
         import jdatetime
         year = str(jdatetime.date.today().year - 1400).zfill(2)
-        last_order = self.__class__.objects.latest('id')
-        last_pk = last_order.pk
+        last_order = self.__class__.objects.latest('id').pk if self.__class__.objects.exists() else 0
+        last_pk = last_order
         if self.pk is None:
             self.order_number = f'A{year}-{last_pk + 1}'
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
@@ -252,7 +252,7 @@ class Order(BaseModeWF):
             "editor_user": data_base.get('editor_user'),
             "from_user": data_base.get('editor_user'),
             "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
-            "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
+            "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
         }
 
         wf = WorkFlow.objects.create(**flow_data)
@@ -261,7 +261,7 @@ class Order(BaseModeWF):
             factor_item.supply_locations = o1
             # o1.cancel = True
             remaining_quantity = o2.remaining_quantity
-            oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=min(o1.quantity, remaining_quantity),
+            oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=min(factor_item.quantity, o1.quantity, remaining_quantity, factor_item.reserve_count),
                                            sepidar_wh_code=sepidar_wh_code)
             # if remaining_quantity >= o1.quantity:
             #     oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=o1.quantity, sepidar_wh_code=sepidar_wh_code)
@@ -292,6 +292,64 @@ class Order(BaseModeWF):
 
 
 class OrderOrder(BaseModel):
+    sepidar_wh_map = {
+    1: "انبار مركزي",
+    4: "انبار اوليه فروشگاه",
+    5: "ويترين",
+    2: "انبار فروشگاه",
+    3: "انبار توليد",
+    6: "انبار موقت",
+    7: "انبار سايت",
+    8: "shenzen",
+    9: "انباري",
+    10: "leadtime",
+    11: "گمرك",
+    12: "انبار 19",
+    15: "انبار فني",
+    13: "انبار سوختي گمرك",
+    14: "hogkog majazi",
+    16: "انبار طبقه 3",
+    17: "گمرك مجازي",
+    18: "انبار اماني",
+    19: "انبار 5",
+    20: "انبار كالاي معيوب",
+    21: "انبار اماني سايت",
+    22: "HONGKONG",
+    23: "انبار رزرو 2",
+    24: "انبار رزرو 1",
+    25: "انبار رزرو 3",
+    26: "انبار رزرو 4",
+    27: "انبار ورامين",
+    28: "انبار رزرو ماركت",
+    29: "انبار رزرو رايكا",
+    30: "انبار رزرو JRC",
+    31: "انبار مركزي 2",
+    32: "انبار رزرو آقاي چاوشي",
+    33: "انبار نمونه",
+    34: "انبار قرنطينه",
+    35: "انبار بازار",
+    36: "انبار مرجوعي مشتري خاص",
+    37: "انبار بازرگاني(غير قابل فروش)",
+    38: "انبار رزرو 5",
+    39: "انبار اصفهان",
+    40: "انبار رسالت",
+    41: "انبار رسالت رزرو 1",
+    42: "انبار رسالت رزرو 2",
+    43: "انبار رسالت رزرو 3",
+    44: "انبار رسالت رزرو 4",
+    45: "انبار رسالت رزرو 5",
+    46: "انبار رسالت معيوب",
+    47: "انبار توليد آقاي پاكدل",
+    48: "انبار مجازي مرصوص",
+    49: "انبار توليد PCB",
+    50: "انبار محصول  PCB",
+    51: "انبار رزرو 6",
+    52: "انبار رسالت رزرو 6",
+    53: "انبار آذين",
+    54: "انبار مواد اوليه ايروان",
+    55: "انبار محصول ايروان",
+}
+
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),
                       ("-3", _("wh__res_chavoshi__1")), ("-4", _("wh__res_chavoshi__2")),
                       ("-5", _("wh__res_moradi__1",)), ]
@@ -304,10 +362,11 @@ class OrderOrder(BaseModel):
 
     @property
     def get_wh_name(self):
-        if self.sepidar_wh_code == 1:
-            return 'مرکزی'
-        else:
-            return 'رسالت'
+        return self.sepidar_wh_map.get(self.sepidar_wh_code)
+        # if self.sepidar_wh_code == 1:
+        #     return 'مرکزی'
+        # else:
+        #     return 'رسالت'
 
 
 class Packing(BaseModeWF):

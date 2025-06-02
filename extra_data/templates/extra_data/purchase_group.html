@@ -4,6 +4,7 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load more_tags %}
+{% load accounts_tag %}
 
 {% block title %} گروه خرید {% endblock title %} {"title": ""})
 {% block extra_css %}
@@ -21,6 +22,15 @@
 {% csrf_token %}
     <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-6 pb-4 align-items-end">
         {% render_field_by_order form form.title form.price_settings form.hs form.sea_transportation form.air_transportation form.express_transportation form.sepidar_id form.sepidar_code label='on-border' margin_b=6 %}
+        <span class="d-none">
+                {{ form.trade_transportation_method_json }}
+        </span>
+        <script>
+            const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
+        </script>
+        {% if request.user|has_group:"trade_user" %}
+            {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+        {% endif %}
     </div>
 {% endblock form_content %}
 

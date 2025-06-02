@@ -315,7 +315,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             pass
             print('rol back ....')
             content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
-            flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).last()
+            flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).first()
             if flow_object:
                 flow_object.is_deleted = True
                 flow_object.save()
@@ -325,8 +325,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
-        user_groups = self.request.user.groups.values_list('name', flat=True)
+        # user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
+            for qi in self.object.quotation.all():
+                if not qi.price_json:
+                    qi.create_price_json_for_old_qi()
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
@@ -1008,22 +1011,23 @@ class QuotationListDatatable(AjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'factor_create', 'visible': True, 'title': _('ایجاد فاکتور'), 'className': 'py-1 border currency-search'},
+        {'name': 'factor_create', 'visible': True, 'searchable': False, 'title': '<div class="px-0">ایجاد فاکتور</div>', 'className': 'py-1 border currency-search'},
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
         {'name': 'customer_party_id', 'visible': True, 'title': _('customer_name'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains'},
-        {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'expiration_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'created_date', 'title': '<div class="px-2">تاریخ ایجاد</div>', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'expiration_date', 'title': '<div class="px-2">تاریخ انقضا</div>', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'not_over', 'title': 'وضعیت استهلاک','visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-        {'name': 'sepidar_number', 'visible': True, 'orderable': True},
+        {'name': 'sepidar_number', 'title': "کد سپیدار", 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
-        {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False}
+        {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False},
+        {'name': 'quotation__goods_code_fk', 'visible': True, 'title': '<div class="px-10">جستجوی کالا</div>', 'searchable': True, 'lookup_field': '__sku__iexact'}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -1051,6 +1055,13 @@ class QuotationListDatatable(AjaxDatatableView):
             row['comment'] = f'<span class="bg-success rounded px-2">{c} کامنت جدید</span>'
         else:
             row['comment'] = f'{c} کامنت جدید'
+
+        out = ''
+        # for idx, item in enumerate(obj.quotation.all()):
+        #     out += str(item.goods_code_fk.sku) + ", "
+        #     if idx == 2:
+        #         break
+        row['quotation__goods_code_fk'] = '-'
 
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
@@ -1127,7 +1138,7 @@ class QuotationListDatatable(AjaxDatatableView):
         </div>
         '''
         row['not_over'] = res
-        cancel_obj = obj.comments.filter(~Q(comment_title='O')).last()
+        cancel_obj = obj.comments.filter(~Q(comment_title='O')).order_by('id').last()
         if obj.cancel:
             row['cancel'] = f'''<span class="text-danger">{cancel_obj.get_comment_title_display() if cancel_obj else 'cancel'} </span><span>{cancel_obj.comment_content if cancel_obj else 'علت کنسلی نیاز به بررسی دارد!!!' }</span>'''
         else:
@@ -1395,3 +1406,18 @@ def export_quotation_items_to_excel(request, quotation_id):
         return response
 
     return HttpResponseBadRequest('Only POST method allowed.')
+
+
+# from custom_base_django.views import DynamicAPIView
+
+
+# class ExportQuotation(DynamicAPIView):
+#     def get(self, request, *args, **kwargs):
+#         if self.errors:
+#             return self.errors
+#         if self.get_structure:
+#             return self.get_serializer_structure()
+#
+#         # return self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
+#         _data, _status = self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
+#         return JsonResponse(_data, status=_status, safe=True)

@@ -14,6 +14,8 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm, CustomBaseForm
 import json
 
+from transportation.models import TradeTransportationMethod
+
 
 class QuotationForm(CustomBaseModelForm):
     form_state = None
@@ -98,9 +100,9 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['currency_ref'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['payment_method'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
-        self.fields['is_official'].widget.attrs['onchange'] = 'refresh_prices()'
-        self.fields['official_value'].widget.attrs['onchange'] = 'refresh_prices()'
-        self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['is_official'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
+        self.fields['official_value'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
+        self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
 
 
 class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
@@ -142,7 +144,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                          widget=forms.HiddenInput())
         self.fields['goods_q_last_sale'] = JalaliDateField(label=_('goods_last_sale_q'), required=False,
                                                            widget=forms.HiddenInput())
-        self.fields['discount_per_item'].widget.attrs['onchange'] = 'refresh_prices()'
+        self.fields['discount_per_item'].widget.attrs['onchange'] = 'refresh_front_prices()'
+        self.fields['quantity'].widget.attrs['onkeyup'] = 'setPriceWithAjax(event)'
 
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
@@ -189,7 +192,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.fields['goods_code'].name = 'goods_code'
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
-        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black'
+        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black s-0'
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         self.make_required(['quantity'])
@@ -239,7 +242,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
                   'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
-                  'selected_price_code',
+                  'selected_price_code', 'price_json',
                   #'bazar_selected_price_code', 'trade_selected_price_code'
                   ]
         widgets = {
@@ -250,8 +253,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             'goods_code_alt': forms.Select(
                 attrs={"class": "select2 goods_code_alt", "style": "width:100%", }),
             'customer_goods_name': forms.Textarea(attrs={'name': 'customer_goods_name', "rows": 1}),
-            # 'price_method': forms.HiddenInput(),
-            'price_method': forms.Select(attrs={'class': 'price_method w-100 '}),
+            'price_method': forms.HiddenInput(attrs={'class': 'price_method'}),
+            # 'price_method': forms.Select(attrs={'class': 'price_method w-100 '}),
             'final_price': forms.TextInput(attrs={'disabled': True, 'class': 'final_price w-100 text-center'}),
             'goods_code': forms.HiddenInput(),
             'selected_price_code': forms.HiddenInput(),
@@ -405,7 +408,7 @@ qi_fields = [
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
-    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', #'bazar_selected_price_code', 'trade_selected_price_code'
+    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json', #'bazar_selected_price_code', 'trade_selected_price_code'
     ]
 
 

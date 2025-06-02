@@ -37,10 +37,20 @@ class ExtraData(object):
 
 
 class CHOICE:
+    AIR = 'AIR'
+    SEA = 'SEA'
+    EXP = 'EXPRESS'
+
     supplier_country = (
         ("CHN", _("china")),
         ("HKG", _("hong-kong")),
         ("IRI", _("iran")),
+    )
+
+    trade_transportation_choice = (
+        (AIR, _("air")),
+        (SEA, _("sea")),
+        (EXP, _("express")),
     )
 
 
@@ -333,6 +343,20 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_data = ExtraData()
+
+    @staticmethod
+    def default_if_falsy(obj, out='-'):
+        """
+        return `out` when obj value interpreted as False
+        if exception raised return obj
+        """
+        try:
+            if bool(obj):
+                return obj
+            else:
+                return out
+        except Exception as e:
+            return obj
 
     def content_type(self):
         return ContentType.objects.get_for_model(self)

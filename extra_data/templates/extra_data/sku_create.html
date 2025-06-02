@@ -4,6 +4,7 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load more_tags %}
+{% load accounts_tag %}
 
 {% block title %}محصولات{% endblock title %} {"title": ""})
 {% block extra_css %}
@@ -45,6 +46,15 @@
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.file_1 target='File' crispy=True %}
             {% render_field_by_order form form.is_sea_default form.active_main_item label='on-border' margin_b=6 %}
             {% render_field_by_order form form.hs label='on-border' margin_b=6 %}
+            <span class="d-none">
+                {{ form.trade_transportation_method_json }}
+            </span>
+            <script>
+                const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
+            </script>
+{#            {% if request.user|has_group:"trade_user" %}#}
+                {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+{#            {% endif %}#}
         </div>
     </div>
 {% endblock form_content %}

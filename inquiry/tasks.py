@@ -194,6 +194,8 @@ def restore_database(table_names=None):
 
 def cleanup_filesystem():
 
+    delete = False
+    for_delete = []
     # مسیر دایرکتوری مورد نظر
     directory = settings.BASE_DIR / 'db_backup'
 
@@ -208,6 +210,5 @@ def cleanup_filesystem():
             file_creation_time = os.path.getctime(filepath)
 
             if file_creation_time < cutoff:
-                print(f"حذف فایل: {filepath}")
                 os.remove(filepath)
-
+                print(f'{filepath}')

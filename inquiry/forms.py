@@ -68,6 +68,9 @@ class SkuCreateForm(CustomBaseModelForm):
         kwargs.pop('constraint', None)
         super().__init__(*args, **kwargs)
 
+        if not self.instance.trade_transportation_method_json and self.instance.pk:
+            self.fields['trade_transportation_method_json'].initial = self.instance.purchase_group.trade_transportation_method_json
+
         if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
@@ -350,6 +353,7 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
                                                                          )
             self.fields['price_setting'].widget.attrs['onchange'] = "refresh_data(event)"
 
+
 class InquiryResultForm(CustomBaseModelForm):
 
     class Meta:
@@ -375,7 +379,7 @@ class SupplierModelForm(CustomBaseModelForm):
 
     class Meta:
         model = Supplier
-        fields = ['title', 'country']
+        fields = ['title', 'country', 'city', 'trade_transportation_method_json', 'base_group']
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)

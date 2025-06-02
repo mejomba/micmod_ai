@@ -75,7 +75,7 @@
                 <span class="me-10">
                 <a href="{% url 'order:order.view' o.order_rel.pk %}" target="_blank" class="hover-link text-black bg-light-primary px-2 mb-3 rounded-right">
                     {% if o.sepidar_wh_code %}
-                        <span>از انبار</span>
+{#                        <span>از انبار</span>#}
                         <span class="mx-1">{{ o.get_wh_name }}</span>
                         <span class="font-size-11">
                             (رزور

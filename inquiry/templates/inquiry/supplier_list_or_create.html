@@ -3,6 +3,7 @@
 {% load quotation_tag %}
 {% load jalali_tags %}
 {% load more_tags %}
+{% load accounts_tag %}
 
 {% block title %}لیست تامین کننده{% endblock title %}
 {% block extra_css %}
@@ -34,7 +35,17 @@
                 </div>
             </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
-                {% render_field_by_order form form.title form.country label='on-border' %}
+                <input type="hidden" name="base_group" value="{{ user.base_group|default_if_falsy:"" }}">
+                {% render_field_by_order form form.title form.country form.city label='on-border' %}
+                <span class="d-none">
+                    {{ form.trade_transportation_method_json }}
+                </span>
+                <script>
+                    const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
+                </script>
+                {% if request.user|has_group:"trade_user" %}
+                    {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+                {% endif %}
             </div>
         </div>
     </div>

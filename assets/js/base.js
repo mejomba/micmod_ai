@@ -802,23 +802,27 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
         if (days < 0 || hours < 0 || minuets < 0){
             return {
                 status: true,
-                message: "اعتبار استعلام به پایان رسیده، این قیمت روی پیش فاکتور ذخیره نمیشود"
+                message: "اعتبار استعلام به پایان رسیده، این قیمت روی پیش فاکتور ذخیره نمیشود",
+                css: "text-danger"
             }
         }
         else if(days >= 1){
             return {
                 status: false,
-                message: `معتبر تا ${ days } روز و ${ hours - (days*24) } ساعت دیگر`
+                message: `معتبر تا ${ days } روز و ${ hours - (days*24) } ساعت دیگر`,
+                css: ""
             }
         } else if (hours >= 1) {
             return {
                 status: false,
-                message: `معتبر تا ${hours} ساعت دیگر`
+                message: `معتبر تا ${hours} ساعت دیگر`,
+                css: ""
             }
         } else {
             return {
                 status: false,
-                message: `معتبر تا ${minuets} دقیقه دیگر`
+                message: `معتبر تا ${minuets} دقیقه دیگر`,
+                css: ""
             }
         }
     }
