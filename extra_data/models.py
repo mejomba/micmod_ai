@@ -726,7 +726,7 @@ class AccountingUser(AbsBaseModel):
 
     auto_complete = 'title'
 
-    insert_new = False
+    insert_new = True
 
 
 class Senf(AbsBaseModel):
@@ -867,6 +867,8 @@ class Customer(AbsBaseModel):
     # کارشناس
     marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',
                                  verbose_name=_("marketer"), null=True, blank=True)
+    accounting = models.ForeignKey(AccountingUser, on_delete=models.DO_NOTHING, related_name='customer_accounting',
+                                 verbose_name=_("accounting_user"), null=True, blank=True)
     # مشتریان بدون قرارداد ( چک هنگام تحویل کالا)
     cheque_to_delivery = models.BooleanField(_('cheque_to_delivery'), default=False)
 
