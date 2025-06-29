@@ -86,6 +86,7 @@ class SaleType(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     # translations = TranslatedFields(
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True, to_field='sepidar_party_id', on_delete=models.DO_NOTHING, db_column='customer_party_id')
     # customer_party_id = models.BigIntegerField(verbose_name=_('party_id'), null=True, blank=True)
