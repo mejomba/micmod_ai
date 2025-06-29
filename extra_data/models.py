@@ -718,6 +718,17 @@ class CustomerGroup(AbsBaseModel):
     insert_new = False
 
 
+class AccountingUser(AbsBaseModel):
+    title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
+    sepidar_id = models.BigIntegerField(verbose_name=_('sepidar_id'), unique=True, null=True, blank=True)
+    sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), unique=True, blank=True, null=True)
+    name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
+
+    auto_complete = 'title'
+
+    insert_new = False
+
+
 class Senf(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
 
