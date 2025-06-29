@@ -91,7 +91,7 @@ class FlowBaseView(SingleObjectMixin):
             #         return flow_belong_to_object.last().to_user
 
             """if any user don't have work flow, select first user"""
-            if not self.flow_model.objects.filter(from_user__in=user_list):
+            if not self.flow_model.objects.filter(from_user__in=user_list).exists():
                 return user_list.first()
             flow_belong_to_group = self.flow_model.objects.filter(belong_to_group=group)
 
