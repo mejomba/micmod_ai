@@ -711,6 +711,7 @@ class CustomerGroup(AbsBaseModel):
     title = models.CharField(max_length=100, verbose_name=_('title'), unique=True)
     sepidar_id = models.AutoField(verbose_name=_('sepidar_id'), unique=True, primary_key=True, editable=False)
     sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), blank=True, null=True, unique=True)
+    name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
 
     auto_complete = 'title'
 
