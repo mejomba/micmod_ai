@@ -23,6 +23,7 @@ from django.db.models import IntegerField, F, Q, When, Case
 from django.db.models.functions import Cast
 
 from micmod_base.models import QuotationItem
+from sepidar.api_call import SepidarApiCall
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
@@ -557,7 +558,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'variants_json',
-            'trade_transportation_method_json',
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
             {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
@@ -566,6 +566,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
             cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
+
+        if request.user.groups == 'trade' or request.user.is_superuser:
+            cols.append('trade_transportation_method_json')
         return self.get_columns(cols)
 
     def get_initial_queryset(self, request=None):
@@ -1150,7 +1153,7 @@ def get_items(request):
                                         item['price_list'].append({
                                             'type': ttm.method.lower(),
                                             'ref': ttm.pk,
-                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'value': round(v.get('price'), 3) if v.get('price') > 1 else round(v.get('price'), 5),
                                             'title': price_inquiry_result.select_title(ttm.method),
                                             'access_type': ttm.access_type,
                                             'unique_title': ttm.title,
@@ -1768,3 +1771,19 @@ def get_trade_transportation_method_json(request, *args, **kwargs):
             return JsonResponse(res)
 
     return JsonResponse({"res": None})
+
+
+def get_last_receipt_from_sepidar(request, *args, **kwargs):
+    sku = request.GET.get('sku')
+    item = Item.objects.filter(sku=sku).first()
+    if item:
+        res = SepidarApiCall.get_receipt_item(item_ref=item.sepidar_id_0)
+        receipt = SepidarApiCall.get_receipt(pk=res.get('inventoryreceiptref'))
+        receipt_date = receipt.get('date')
+
+        if receipt_date:
+            d = datetime.datetime.fromisoformat(receipt_date)
+            res.update({'created_date': f'{d.day} - {d.month} - {d.year}'})
+    else:
+        res = dict()
+    return JsonResponse(res)
