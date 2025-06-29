@@ -38,7 +38,7 @@
           },
           {
             "state": "تایید پیش فاکتور",
-            "group": "sales_admin",
+            "group": "sales_user",
             "deadline": 1,
             "form_constraint": {
               "hide": [],
