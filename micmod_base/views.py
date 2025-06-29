@@ -1027,7 +1027,8 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'sepidar_number', 'title': "کد سپیدار", 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
         {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False},
-        {'name': 'quotation__goods_code_fk', 'visible': True, 'title': '<div class="px-10">جستجوی کالا</div>', 'searchable': True, 'lookup_field': '__sku__iexact'}
+        {'name': 'quotation__goods_code_fk', 'visible': True, 'title': '<div class="px-10">جستجوی کالا</div>', 'searchable': True, 'lookup_field': '__sku__iexact'},
+        {'name': 'sales_admin_confirm', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
