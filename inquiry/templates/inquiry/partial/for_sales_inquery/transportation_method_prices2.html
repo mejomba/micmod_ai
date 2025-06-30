@@ -1,30 +1,18 @@
+{% load core_tags %}
+{% load more_tags %}
 <div class="bg-gray-600 text-white  w-100 text-center" data-key="{{ rma_title }}">{{ rma_title }}</div>
 {% if rma_price %}
 <div class="row row-cols-3 d-flex justify-content-center align-items-center w-100">
-    {% if rma_previous_price.sea %}
-        {% if rma_price.express %}
-            {% include 'core/partial/components/two_value_compare.html' with rma_key="express" rma_value=rma_price.express rma_second_value=rma_previous_price.express  rma_class="py-3" %}
-        {% endif %}
-        {% if rma_price.air %}
-            {% include 'core/partial/components/two_value_compare.html' with rma_key="air" rma_value=rma_price.air rma_second_value=rma_previous_price.air  rma_class="py-3 " %}
-        {% endif %}
-        {% if rma_price.sea %}
-            {% include 'core/partial/components/two_value_compare.html' with rma_key="sea" rma_value=rma_price.sea rma_second_value=rma_previous_price.sea  rma_class="py-3 " %}
-        {% endif %}
-    {% else %}
+    {% if rma_previous_price|typename != 'dict' %}
         {% for title, value in rma_price.items %}
-            {% include 'core/partial/components/two_value_compare.html' with rma_key=title rma_value=value rma_second_value=rma_previous_price  rma_class="py-3" %}
+                {% include 'core/partial/components/two_value_compare.html' with rma_key=title rma_value=value|get_item:'price' rma_second_value=rma_previous_price  rma_class="py-3" %}
         {% endfor %}
-
-{#        {% if rma_price.express %}#}
-{#            {% include 'core/partial/components/two_value_compare.html' with rma_key="express" rma_value=rma_price.express rma_second_value=rma_previous_price  rma_class="py-3" %}#}
-{#        {% endif %}#}
-{#        {% if rma_price.air %}#}
-{#            {% include 'core/partial/components/two_value_compare.html' with rma_key="air" rma_value=rma_price.air rma_second_value=rma_previous_price  rma_class="py-3 " %}#}
-{#        {% endif %}#}
-{#        {% if rma_price.sea %}#}
-{#            {% include 'core/partial/components/two_value_compare.html' with rma_key="sea" rma_value=rma_price.sea rma_second_value=rma_previous_price  rma_class="py-3 " %}#}
-{#        {% endif %}#}
+    {% else %}
+        {% with x=rma_price|merge_dict_common_key:rma_previous_price %}
+            {% for item in x %}
+                {% include 'core/partial/components/two_value_compare.html' with rma_key=item.key rma_value=item.dict1|get_item:'price' rma_second_value=item.dict2|get_item:'price'  rma_class="py-3" %}
+            {% endfor %}
+        {% endwith %}
     {% endif %}
 </div>
 {% else %}
