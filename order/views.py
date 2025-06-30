@@ -163,8 +163,10 @@ class OrderDataTableListView(AjaxDatatableView):
 
         if q == 'all':
             qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
-        elif q == 'sales_admin':
+        elif q == 'dependent':
             qs = qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
+        elif q == 'sales_admin':
+            qs = qs.filter(cancel=False, last_work_flow__current_state_name='تایید مدیر فروش')
         elif q == 'bazar_user' or 'bazar_user' in user_groups:
             qs = qs.filter(is_bazar=True)
         elif q == 'all':
