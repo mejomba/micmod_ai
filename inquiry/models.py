@@ -311,7 +311,7 @@ class PriceInquiryResult(BaseModel):
                 # self.extra_data.rmb_final_price_custom_office_percentage = dict(
                 #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
                 #         self.extra_data.rmb_final_price_custom_office.items()))
-                self.extra_data.rmb_final_price_custom_office_percentage = {k: {**v, 'price': 100 * v.get("price", 0) / self.rmb_price - 100} for k, v in self.extra_data.rmb_final_price_custom_office.items()}
+                self.extra_data.rmb_final_price_custom_office_percentage = {k: {**v, 'percentage': 100 * v.get("price", 0) / self.rmb_price - 100} for k, v in self.extra_data.rmb_final_price_custom_office.items()}
 
                 self.extra_data.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.extra_data.rmb_final_price_before_ondemand,
                                                                                      self.extra_data.rmb_final_price_custom_office)
