@@ -321,7 +321,10 @@ def render_field_by_order_v2(form, parent_template_col_num, template_col_num, in
 
 @register.filter
 def get_item(dictionary, key):
-    return dictionary.get(key)
+    if isinstance(dictionary, dict):
+        return dictionary.get(key)
+    else:
+        return dictionary
 
 
 @register.filter
@@ -495,3 +498,18 @@ def get_payment_list(form, current_user, size=None, obj_rel=None):
 @register.filter
 def zip_(a, b):
     return zip(a, b)
+
+
+@register.filter
+def merge_dict_common_key(x, y):
+    merged = []
+    try:
+        for key in x.keys() & y.keys():
+            merged.append({
+                'key': key,
+                'dict1': x[key],
+                'dict2': y[key]
+            })
+    except Exception as e:
+        show_error(e, __file__)
+    return merged
