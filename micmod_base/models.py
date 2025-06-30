@@ -550,7 +550,7 @@ class QuotationItem(BaseModel):
     goods_q_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price_q"))
     goods_q_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales_q"))
 
-    price_method = models.CharField(max_length=20, verbose_name=_('price_method'), null=True, blank=True)
+    price_method = models.CharField(max_length=128, verbose_name=_('price_method'), null=True, blank=True)
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
