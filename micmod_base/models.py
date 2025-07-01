@@ -591,6 +591,12 @@ class QuotationItem(BaseModel):
 
     objects = QuotationItemManager()
 
+    @property
+    def get_price_method_type(self):
+        for item in self.price_json or []:  # self.price_json is `list of dict`
+            if item.get('unique_title') == self.price_method:
+                return item.get('type')
+
     @classmethod
     def get_model_config(cls, app_label, model_name, filter_str):
         return {

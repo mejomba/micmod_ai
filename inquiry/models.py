@@ -424,9 +424,10 @@ class PriceInquiryResult(BaseModel):
             return self.rmb_price
         free_rmb_rate = self.price_settings.free_rmb_rate
         talar_rmb_rate = self.price_settings.talar_rmb_rate
-        customs_price = self.sku.get_customs_price
+        # customs_price = self.sku.get_customs_price
         # customs_price = self.rmb_price
         rmb_price = self.rmb_price
+        customs_price = self.sku.get_customs_price or rmb_price
 
         if rmb_price >= customs_price:
             return (customs_price * talar_rmb_rate + (rmb_price - customs_price) * free_rmb_rate) / free_rmb_rate

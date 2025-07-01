@@ -173,7 +173,7 @@
           "path_key": "packing",
           "permission": {
             "permissions": [
-              "packing.view_packing"
+              "order.view_packing"
             ]
           },
           "menus": [
@@ -197,7 +197,7 @@
           "path_key": "gio",
           "permission": {
             "permissions": [
-              "gio.view_gio"
+              "order.view_gio"
             ]
           },
           "menus": [
