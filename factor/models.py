@@ -46,17 +46,17 @@ class Factor(SLSDoc):
 
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
 
-    need_financial_approval = models.BooleanField(default=False, verbose_name=_('need_financial_approval'), null=True, blank=True)
-    wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True)
-    to_be_collected = models.BooleanField(default=False, verbose_name=_('to_be_collected'))
-    collecting_start_time = models.DateTimeField(verbose_name=_('collecting_start_time'), null=True, blank=True)
-    final_check = models.BooleanField(default=False, verbose_name=_('final_check'))
-    require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('require_official_factor_with_delivery'))
-    official_factor_send_with_this_factor = models.TextField(verbose_name=_('official_factor_send_with_this_factor'), null=True, blank=True)
-    deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES)
-    deliver_to_customer = models.BooleanField(default=False, verbose_name=_('deliver_to_customer'))
-    need_factor_document = models.BooleanField(default=False, verbose_name=_('need_factor_document'))
-    checker = models.ForeignKey(User, related_name='factor_checker', null=True, blank=True, on_delete=models.DO_NOTHING)
+    need_financial_approval = models.BooleanField(default=False, verbose_name=_('نیاز به تایید مالی'))
+    wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True, verbose_name=_('کارشناس انبار'))
+    to_be_collected = models.BooleanField(default=False, verbose_name=_('جمع‌آوری شود'))
+    collecting_start_time = models.DateTimeField(verbose_name=_('زمان شروع جمع‌آوری'), null=True, blank=True)
+    final_check = models.BooleanField(default=False, verbose_name=_('چک نهایی'))
+    require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('الزام ارسال فاکتور رسمی همراه بار'))
+    official_factor_send_with_this_factor = models.TextField(verbose_name=_('فاکتور رسمی(با ویرگول جدا شود)'), null=True, blank=True)
+    deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('نوع ارسال'))
+    deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
+    need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
+    checker = models.ForeignKey(User, related_name='factor_checker', null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name=_('چک کننده'))
     packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):

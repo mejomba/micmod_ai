@@ -1,10 +1,25 @@
+from django.db.models import Q
 from django.forms import inlineformset_factory
 
 from django import forms
+from django_select2.forms import ModelSelect2MultipleWidget
+from jalali_date.fields import JalaliDateField
+from jalali_date.widgets import AdminJalaliDateWidget
+
+from accounts.models import User
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem
 from order.models import Order
+from translator import get_text as _
 
+
+class UserSelectWidget(ModelSelect2MultipleWidget):
+    search_fields = [
+        "username__icontains",
+        "first_name__icontains",
+        "last_name__icontains",
+        "email__icontains",
+    ]
 
 class FactorModelForm(CustomBaseModelForm):
     class Meta:
@@ -13,6 +28,10 @@ class FactorModelForm(CustomBaseModelForm):
         # widgets = {
         #     'q': forms.HiddenInput()
         # }
+        widgets = {
+            'official_factor_send_with_this_factor': forms.Textarea(attrs={"rows": 1}),
+            'packing_json': forms.Textarea(attrs={"rows": 1}),
+        }
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -44,6 +63,13 @@ class FactorModelForm(CustomBaseModelForm):
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.make_hidden(['q'])
+        self.fields['collecting_start_time'] = JalaliDateField(label=_('request_date'),
+                                                      widget=AdminJalaliDateWidget(
+                                                          attrs={'class': 'jalali_date-date form-control',
+                                                                 'size': '10'}), required=True
+                                                      )
+        self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
+                                                                              Q(groups__name='wh_admin')).distinct())
 
 
 class FactorItemModelForm(CustomBaseModelForm):
