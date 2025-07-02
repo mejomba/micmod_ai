@@ -597,6 +597,16 @@ class QuotationItem(BaseModel):
             if item.get('unique_title') == self.price_method:
                 return item.get('type')
 
+    @property
+    def get_old_price_method_type(self):
+        d = {
+            'price_market': 'bazar',
+            'price_sheet1': 'express',
+            'price_sheet2': 'air',
+            'price_sheet3': 'sea',
+        }
+        return d.get(self.price_method or '')
+
     @classmethod
     def get_model_config(cls, app_label, model_name, filter_str):
         return {
