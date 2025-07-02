@@ -50,7 +50,7 @@ function setPriceWithAjax(e, elem=null, price_code=''){
                 success: function (response){
                     if (response.items){
                         debugger
-                        console.log('kdsjfkdsj fkldsjfkdsjf klsdjf')
+                        // console.log('kdsjfkdsj fkldsjfkdsjf klsdjf')
 
                         set_price_data(response.items[0], elem, e.target, true)
                         display_price(elem)
@@ -751,7 +751,7 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 }
 
 function init_price_method(row, idx){
-
+    debugger
     const price_json = row.querySelector('textarea[name$="-price_json"]')
     const price_json_value = JSON.parse(price_json?.value || 0) || []
     display_price(row)
@@ -1422,7 +1422,7 @@ function calculate_price(target) {
     let m_sum = 0
     for (let i = 0; i < items.length; i++) {
         val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
-        console.log(`${i}=== ${val}`)
+        // console.log(`${i}=== ${val}`)
         if (!isNaN(val)) {
             m_sum += val
         }
