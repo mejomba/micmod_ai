@@ -690,5 +690,7 @@
     "trade_transportation_method": "روش های حمل",
     "list/create": "لیست/ایجاد",
     "package_list_or_create": "پکیج",
-    "sales_admin_confirm": "تایید مدیر فروش"
+    "sales_admin_confirm": "تایید مدیر فروش",
+    "accounting_user": "کاربر مالی",
+    "accounting_user_list_or_create": "کاربر مالی"
 }
