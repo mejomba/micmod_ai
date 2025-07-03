@@ -731,6 +731,24 @@
           "link": "extra_data:item_package_list_or_create.view"
         }
       ]
+    },
+    {
+      "title": "accounting_user_list_or_create",
+      "icon": "cheque",
+      "path_key": "accounting_user_list_or_create.view",
+      "permission": {
+        "permissions": [
+          "extra_data.view_accounting_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "accounting_user/",
+          "link": "extra_data:accounting_user"
+        }
+      ]
     }
   ]
 }
