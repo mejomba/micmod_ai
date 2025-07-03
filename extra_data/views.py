@@ -20,17 +20,18 @@ from sepidar.scripts.sepidar_classes import Urls
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
-    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm
+    ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm, AccountingUserForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract, ChangeCustomerGroup, ItemPackage
+    CustomerContract, ChangeCustomerGroup, ItemPackage, AccountingUser
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
 from translator import get_text as _
+from .task import link_item_packages
 
 
 class SkuCreateView(LoginRequiredMixin,
@@ -781,6 +782,9 @@ class ItemPackageView(LoginRequiredMixin, BaseView):
             },
         ]
     }
+    def get(self, request, *args, **kwargs):
+        link_item_packages()
+        return super().get(request, *args, **kwargs)
 
     def get_success_message(self, cleaned_data):
         return f'package {self.object.title} save'
@@ -837,3 +841,76 @@ class ItemPackageWeightSearchView(LoginRequiredMixin, View):
 
         res = render_to_string('extra_data/partials/item_package_weight_result.html', context=context, request=self.request)
         return JsonResponse({'res': res})
+
+
+class AccountingUserView(LoginRequiredMixin, BaseView):
+    model = AccountingUser
+    template_name = 'extra_data/accounting_user.html'
+    success_message = 'ذخیره شد'
+    form_struct = {
+        'form': AccountingUserForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:accounting_user')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class AccountingUserDatatableView(AjaxDatatableView):
+    model = AccountingUser
+    title = 'accounting_user_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    def get_columns(self, fields):
+        res = [AjaxDatatableView.render_row_tools_column_def()]
+        for field in fields:
+            col = dict()
+            col['className'] = 'py-3'
+            col['lookup_field'] = '__icontains'
+            col['defaultContent'] = ''
+            col['orderable'] = True
+            col['searchable'] = True
+            col['name'] = field if isinstance(field, str) else None
+            col['visible'] = True
+            if isinstance(field, dict):
+                for key in field.keys():
+                    col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('name'))
+            res.append(col)
+        return res
+
+    def get_column_defs(self, request):
+        cols = [
+            {'name': 'id', 'title': "<div class='px-3' style='max-width:40px;'>شناسه</div>", 'className': 'mxw-50px'},
+            {'name': 'title', },
+            {'name': 'name', 'title': "<div class='px-3' style='width:40px;'>نام اصلی</div>",},
+            {'name': 'sepidar_id', },
+            {'name': 'sepidar_group_id', },
+            {'name': 'creator_user', 'lookup_field': '__username__icontains'},
+            {'name': 'editor_user', 'lookup_field': '__username__icontains'},
+            {'name': 'jalali_last_update_date', 'title': "<div class='px-3' style='width:40px;'>آخرین زمان تغییر</div>", 'searchable': False, 'orderable': False},
+        ]
+
+        return self.get_columns(cols)
+
+    def customize_row(self, row, obj):
+        x = super().customize_row(row, obj)
+        row['title'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('extra_data:accounting_user.update', args=(obj.id,)),
+            obj.title if obj.title else '_'
+        )
+

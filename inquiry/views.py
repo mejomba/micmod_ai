@@ -567,7 +567,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
             cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
 
-        if request.user.groups == 'trade' or request.user.is_superuser:
+        if request.user.base_group == 'trade' or request.user.is_superuser:
             cols.append('trade_transportation_method_json')
         return self.get_columns(cols)
 
@@ -1337,7 +1337,7 @@ class SupplierView(BaseView):
         ]
     }
 
-    # template_name = 'inquiry/supplier_create_or_update.html'
+    template_name = 'inquiry/supplier_list_or_create.html'
 
     def get_success_url(self):
         path = reverse_lazy('inquiry:supplier.list')

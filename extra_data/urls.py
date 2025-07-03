@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-
+from .views import AccountingUserView, AccountingUserDatatableView
 
 app_name = 'extra_data'
 urlpatterns = [
@@ -54,4 +54,7 @@ urlpatterns = [
     path('item_package/datatable/', views.ItemPackageDatatableView.as_view(), name='item_package.datatable'),
     path('item_package_weight/', views.ItemPackageWeightSearchView.as_view(), name='item_package_weight.search'),
 
+    path('accounting_user/', AccountingUserView.as_view(), name='accounting_user'),
+    path('accounting_user/<int:pk>/', AccountingUserView.as_view(), name='accounting_user.update'),
+    path('accounting_user/datatable/', AccountingUserDatatableView.as_view(), name='accounting_user.datatable'),
 ]
