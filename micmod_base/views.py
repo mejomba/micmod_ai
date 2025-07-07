@@ -717,9 +717,9 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
         if self.request.user.is_superuser:
             quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type=None, path=self.request.path)
-        if 'trade' in self.request.user.base_group:
+        if self.request.user.base_group and 'trade' in self.request.user.base_group:
             quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type='trade', path=self.request.path)
-        if 'bazar' in self.request.user.base_group:
+        if self.request.user.base_group and 'bazar' in self.request.user.base_group:
             quotations_record_lst = QuotationItem.quotation_item_all_pending(inquiry_type='bazar', path=self.request.path)
         if quotation:
             quotations_record_lst = quotations_record_lst.filter(quotation=quotation)
