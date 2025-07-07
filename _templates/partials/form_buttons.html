@@ -1,11 +1,4 @@
-{#{% if not finish or wf_last_step_is_open %}#}
-
 <div class="d-flex justify-content-center">
-{#    {% if formset and form.enable %}#}
-{#        <div name="id_formset_add_button" class="btn btn-info text-xl-center py-0 px-3 me-1" style="font-size: 2rem">&#x2b;</div>#}
-{#    {% elif formset and not form.enable %}#}
-{#        <button class="btn btn-info text-xl-center py-0 px-3 me-1" disabled style="font-size: 2rem">&#x2b;</button>#}
-{#    {% endif %}#}
     {% if form.enable %}
         {% if not submit_duplicate %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish and not submit_duplicate %}
@@ -45,7 +38,6 @@
             <i class="ki-duotone ki-copy fs-3qx"></i>
             </button>
 
-{#            <a href="?duplicate=1" class="btn btn-bordered btn-outline-warning me-1 px-4">کپی</a>#}
         {% endif %}
         {% else %}
             <input type="submit" class="btn btn-bordered btn-outline-success me-1 px-4" name="submit_duplicate" value="ذخیره" id="submit_save"/>
