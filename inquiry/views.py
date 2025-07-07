@@ -201,9 +201,9 @@ class SkuListDataTableView(CustomAjaxDataTable):
         {'name': 'weight', 'title': 'وزن نهایی', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'trade_last_weight', 'title': 'وزن بازرگانی', 'visible': True, 'searchable': False, 'orderable': False},
         {'name': 'wh_last_weight', 'title': 'وزن انبار', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True},
-        {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False},
-        {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False},
+        # {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True},
+        # {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False},
+        # {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
@@ -272,11 +272,17 @@ class SkuListDataTableView(CustomAjaxDataTable):
 
     def get_column_defs(self, request):
         column = super().get_column_defs(request)
-        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and 'express_extra_cost_percentage' != column[-1].get('name'):
-            column.append({'name': 'extra_cost_percentage', 'visible': True})
-            column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
-            column.append({'name': 'air_extra_cost_percentage', 'visible': True})
-            column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        if request.POST.get('q') == 'package_weight_percentage':
+            column.append({'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True}) if {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True} not in column else ''
+            column.append({'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False} not in column else ''
+            column.append({'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False} not in column else ''
+        else:
+            column = column[:15]
+        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and ('express_extra_cost_percentage' != column[-1].get('name') or 'package_weight_diff' != column[-1].get('name')):
+            column.append({'name': 'extra_cost_percentage', 'visible': True}) if {'name': 'extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'sea_extra_cost_percentage', 'visible': True}) if {'name': 'sea_extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'air_extra_cost_percentage', 'visible': True}) if {'name': 'air_extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'express_extra_cost_percentage', 'visible': True}) if {'name': 'express_extra_cost_percentage', 'visible': True} not in column else ''
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
@@ -295,15 +301,16 @@ class SkuListDataTableView(CustomAjaxDataTable):
         return column
 
     def customize_row(self, row, obj):
-        items = obj.package2.item_set.all() if obj.package2 else []
-        weights = [item.weight for item in items if item.weight is not None]
-        avg_weight = sum(weights) / len(weights) if weights else 0
-        row['package_weight_avg'] = round(avg_weight, 4)
-        effective_weight = obj.weight
-        if not effective_weight or not avg_weight:
-            row['package_weight_diff'] = '-'
-        else:
-            row['package_weight_diff'] = f'{round(((avg_weight / effective_weight) - 1) * 100, 1)} %'
+        if self.request.POST.get('q') == 'package_weight_percentage':
+            items = obj.package2.item_set.all() if obj.package2 else []
+            weights = [item.weight for item in items if item.weight is not None]
+            avg_weight = sum(weights) / len(weights) if weights else 0
+            row['package_weight_avg'] = round(avg_weight, 4)
+            effective_weight = obj.weight
+            if not effective_weight or not avg_weight:
+                row['package_weight_diff'] = '-'
+            else:
+                row['package_weight_diff'] = f'{round(((avg_weight / effective_weight) - 1) * 100, 1)} %'
 
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('extra_data:sku.update', args=(obj.id,)),
