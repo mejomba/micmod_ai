@@ -428,7 +428,7 @@ class HsDataTableView(AjaxDatatableView):
 
 
 def ajax_update_from_sepidar(request):
-    set_items_sepidar_id_from_sepidar()
+    set_items_sepidar_id_from_sepidar(request)
     return JsonResponse({'res': 'ok'})
 
 
