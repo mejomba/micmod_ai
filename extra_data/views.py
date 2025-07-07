@@ -789,6 +789,11 @@ class ItemPackageView(LoginRequiredMixin, BaseView):
     def get_success_message(self, cleaned_data):
         return f'package {self.object.title} save'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
     def get_success_url(self):
         return reverse_lazy('extra_data:item_package_list_or_create.view')
 
