@@ -1070,7 +1070,12 @@ debugger
                 final_price.readOnly = true;
                 final_price.style.backgroundColor = "#fafafa";   // ظاهر غیرقابل ویرایش
                 final_price.style.cursor = "not-allowed";
-                final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                if (Number.isFinite(item.value)){
+                    final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                }else{
+                    final_price.value = round_rial(numberWithCommas(item.value?.price).replaceAll(',', ''))
+                }
+
                 elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', item.unique_title)
                 found = true
             }
@@ -1195,6 +1200,7 @@ function formatRepoItem(repo) {
 }
 
 function newFormatRepoItem(repo) {
+    debugger
     if (repo.loading) {
         return repo.text;
     }
@@ -1205,8 +1211,8 @@ function newFormatRepoItem(repo) {
     let goods_market_date;
     let goods_price_market;
 
-    if (repo.rial_final_price){repo_express = repo.rial_final_price.express; repo_air = repo.rial_final_price.air; repo_sea = repo.rial_final_price.sea}
-    if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express; repo_air = repo.rmb_final_price.air; repo_sea = repo.rmb_final_price.sea}
+    if (repo.rial_final_price){repo_express = repo.rial_final_price.express?.price; repo_air = repo.rial_final_price.air?.price; repo_sea = repo.rial_final_price.sea?.price}
+    if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express?.price; repo_air = repo.rmb_final_price.air?.price; repo_sea = repo.rmb_final_price.sea?.price}
 
 
     if (repo_express == undefined){
