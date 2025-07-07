@@ -34,7 +34,7 @@ class Dl(models.Model):
             customer_filter = Q(sepidar_dl_id__icontains=text) | Q(sepidar_dl_code__icontains=text) | Q(sepidar_party_id__icontains=text)
         else:
             customer_filter = Q(title__icontains=text) | Q(name__icontains=text) | Q(last_name__icontains=text)
-        res = Customer.objects.filter(customer_filter)
+        res = Customer.objects.filter(customer_filter).filter(active=True)
         return res
         res = Dl.objects.using('sepidar').raw(f"""
 Select TOP 10 dl.Code as code,dl.Title as name,dl.DLId,p.* 
