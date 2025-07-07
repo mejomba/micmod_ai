@@ -1170,7 +1170,7 @@ def get_items(request):
                                         'value': v,
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
-                                        'unique_title': k + '*',
+                                        'unique_title': k,  #+ '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'seen': to_jalali(timezone.now())  # when sales user see the price
@@ -1202,7 +1202,7 @@ def get_items(request):
                                         'value': v,
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
-                                        'unique_title': k + '*',
+                                        'unique_title': k,  # + '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'seen': to_jalali(timezone.now())  # when sales user see the price
