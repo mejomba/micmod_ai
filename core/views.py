@@ -338,6 +338,12 @@ class BaseView(UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if self.request.user.is_superuser:
+            context['submit_copy_text'] = 'ثبت و کپی'
+        if self.request.user.base_group == 'trade':
+            context['submit_copy_text'] = 'ثبت و کپی'
+        elif self.request.user.base_group == 'sales':
+            context['submit_copy_text'] = 'پیش فاکتور اول'
         workflow_form = kwargs.get('workflow_form')
         self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
@@ -374,14 +380,14 @@ class BaseView(UserPassesTestMixin,
 
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
-                                                      "constraint": {
-                                                          "wf_access": self.wf_access,
-                                                          'form_state': self.state_index,
-                                                          'request': self.request,
-                                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                          }
-                                                  }) if self.formset else self.formset
+                "constraint": {
+                    "wf_access": self.wf_access,
+                    'form_state': self.state_index,
+                    'request': self.request,
+                    'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                }
+            }) if self.formset else self.formset
         except:
             context['formset'] = self.formset
 

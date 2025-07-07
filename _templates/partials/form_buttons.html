@@ -14,16 +14,16 @@
             {% endif %}
 
             {% if form.instance.submit_copy or submit_copy %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="{{ submit_copy_text }}" id="submit_copy"/>
             {% elif submit_copy_q %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% endif %}
         {% elif not has_flow and form and not submit_duplicate %}
             <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
             {% if form.instance.submit_copy or submit_copy %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% elif submit_copy_q %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% endif %}
         {% else %}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="x" value="ذخیره" id="submit_save"/>
@@ -49,9 +49,9 @@
             <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس" id="submit_draft"/>
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
             {% if form.instance.submit_copy or submit_copy %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% elif submit_copy_q %}
-                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="پیش فاکتور اول" id="submit_copy"/>
+                <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% endif %}
         {% elif not has_flow %}
             <input type="button" class="btn btn-outline-success btn-bordered me-1 px-4" disabled name="submit" value="ذخیره" id="submit_save"/>
