@@ -692,5 +692,7 @@
     "package_list_or_create": "پکیج",
     "sales_admin_confirm": "تایید مدیر فروش",
     "accounting_user": "کاربر مالی",
-    "accounting_user_list_or_create": "کاربر مالی"
+    "accounting_user_list_or_create": "کاربر مالی",
+    "in_person": "حضوری",
+    "delivery": "ارسالی"
 }

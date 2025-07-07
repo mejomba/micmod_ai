@@ -441,6 +441,8 @@ class BaseView(UserPassesTestMixin,
                     next_state_group = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
                     if current_state_group == next_state_group and current_state_group == previous_state_group:
                         to_user = last_flow_objs.last().to_user if last_flow_objs else self.request.user
+                    if current_state_group == next_state_group and previous_state_group is None:
+                        to_user = self.request.user
                     elif self.state_index is not None and 'back' in self.request.POST:
                         to_user = self.get_flow_user(flow_user_groups[self.state_index - 1]) if self.has_flow else None
                     elif self.state_index is not None and self.state_index + 1 == wf_len:

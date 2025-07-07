@@ -847,7 +847,7 @@ function display_price(row){
                 } else {
                     access_type = ''
                 }
-                iqr_price_list.push(`<div class="row row-cols-4 mx-1 hover-link">
+                iqr_price_list.push(`<div class="row row-cols-4 mx-1 mb-1 hover-link">
                     <span class="col-12 p-0 font-size-11" name="price_expire_date"></span>
                     <span class="col-5 px-1">${item.unique_title} ${access_type}</span>
                     <span class="col-3 p-0">${numberWithCommas(item.value)}</span>
