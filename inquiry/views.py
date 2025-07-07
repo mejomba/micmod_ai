@@ -1028,6 +1028,7 @@ def get_item(request):
         if not items:
             for item_ in Item.objects.filter(Q(sku__iexact=q) | Q(part_number__iexact=q), sepidar_id_0__isnull=True):
                 item = {}
+                item['price_list'] = []
                 try:
                     item['id'] = item_.pk
                     item['itemid'] = item_.sepidar_id_0
@@ -1068,7 +1069,37 @@ def get_item(request):
                             item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                             item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
                                                                   "%Y-%m-%d")
-                            item["price_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
+                                                                  "%Y-%m-%d")
+                            item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item['is_bazar'] = True
+                            v = item["goods_price_market"]
+                            item['price_list'].append({
+                                'type': "bazar",
+                                'ref': None,
+                                'iqref': price_inquiry_result_bazar.pk,
+                                'value': round(v, 3) if v > 1 else round(v, 5),
+                                'title': "بازار",
+                                'access_type': None,
+                                'unique_title': "bazar",
+                                'date': item["price_update_date"],  # when inquiry submit
+                                'jdate': to_jalali_date(price_inquiry_result_bazar.price_update_date),
+                                # when inquiry submit
+                                'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            })
+                            # price_setting = price_inquiry_result_bazar.price_settings
+                            # price_inquiry_result_bazar.set_discount_params(
+                            #     quantity=quantity,
+                            #     customer_grade=id_customer_grade,
+                            #     payment_method=id_payment_method,
+                            #     currency=id_currency_ref,
+                            #     price_setting=price_setting
+                            # )
+                            # item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                            # item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
+                            #                                       "%Y-%m-%d")
+                            # item["price_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
                             item['is_bazar'] = True
                         else:
                             item["goods_price_market"] = None
