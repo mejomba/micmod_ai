@@ -783,7 +783,7 @@ class ItemPackageView(LoginRequiredMixin, BaseView):
         ]
     }
     def get(self, request, *args, **kwargs):
-        link_item_packages()
+        # link_item_packages()
         return super().get(request, *args, **kwargs)
 
     def get_success_message(self, cleaned_data):
