@@ -2,6 +2,7 @@ import json
 import uuid
 from uuid import uuid4
 
+from OpenSSL.rand import status
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -12,6 +13,7 @@ from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic, View
+from rest_framework import status
 from rest_framework.views import APIView
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
@@ -385,6 +387,11 @@ class HsView(LoginRequiredMixin, BaseView):
             },
         ]
     }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
 
 
 class HsListView(LoginRequiredMixin, generic.ListView):
@@ -837,3 +844,20 @@ class ItemPackageWeightSearchView(LoginRequiredMixin, View):
 
         res = render_to_string('extra_data/partials/item_package_weight_result.html', context=context, request=self.request)
         return JsonResponse({'res': res})
+
+#
+# class ReadCustomerDebtsFromSheet(APIView):
+#     def post(self, request, *args, **kwargs):
+#         customer_id = -1
+#         rows = request.data.get('rows', [])
+#
+#         for row in rows[1:]:
+#             try:
+#                 customer_id = row[0]
+#                 debts = row[2]
+#                 Customer.objects.filter(id=customer_id).update(debts=debts)
+#
+#             except Exception as e:
+#                 print(f'{customer_id}--{e}')
+#         return JsonResponse({'success': True}, status=status.HTTP_200_OK)
+#
