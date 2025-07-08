@@ -54,4 +54,6 @@ urlpatterns = [
     path('item_package/datatable/', views.ItemPackageDatatableView.as_view(), name='item_package.datatable'),
     path('item_package_weight/', views.ItemPackageWeightSearchView.as_view(), name='item_package_weight.search'),
 
+    path('read/customer/debts/from/sheet', views.ReadCustomerDebtsFromSheet.as_view(), name='read_customer_debts_from_sheet'),
+
 ]
