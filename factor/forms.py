@@ -63,13 +63,23 @@ class FactorModelForm(CustomBaseModelForm):
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.make_hidden(['q'])
-        self.fields['collecting_start_time'] = JalaliDateField(label=_('request_date'),
+        self.fields['collecting_start_time'] = JalaliDateField(label=_('collecting_start_time'),
                                                       widget=AdminJalaliDateWidget(
                                                           attrs={'class': 'jalali_date-date form-control',
-                                                                 'size': '10'}), required=True
+                                                                 'size': '10'}), required=False
                                                       )
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
-                                                                              Q(groups__name='wh_admin')).distinct())
+                                                                              Q(groups__name='wh_admin')).distinct(), required=False)
+        if request.user.base_group == 'accounting':
+            self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
+                                                                                                 Q(groups__name='accounting_admin')).distinct(), required=False)
+        else:
+            self.make_disable(['checker'])
+
+        self.make_hidden(form_constraint_hide or [])
+        self.make_hidden(formset_constraint_hide or [])
+        self.make_disable(form_constraint_read or [])
+        self.make_disable(formset_constraint_read or [])
 
 
 class FactorItemModelForm(CustomBaseModelForm):

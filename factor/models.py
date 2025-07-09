@@ -27,7 +27,7 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
-    DELIVER_TYPE_CHOICES = (('in_person', 'in_person'), ('delivery', 'delivery'))
+    DELIVER_TYPE_CHOICES = (('in_person', _('in_person')), ('delivery', _('delivery')))
     q = models.ForeignKey(Quotation, verbose_name=_('q'), related_name='q', on_delete=models.DO_NOTHING)
 
     delivery_time = models.CharField(choices=DeliveryTime, max_length=10, null=True, blank=True,
@@ -111,6 +111,12 @@ class Factor(SLSDoc):
     #         if fi.supply_locations.remaining_quantity >= fi.quantity:
     #             ...
     #         order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
+
+    @classmethod
+    def get_qs(cls, request, lst=False, groups_list=None):
+        q = request.POST.get('q')
+        qs = cls.objects.get_access_object(request.user, q=q, lst=False)
+        return qs
 
     @property
     def payment(self):
