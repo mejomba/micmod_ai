@@ -971,11 +971,12 @@ def get_item(request):
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
+                                    price = item['rmb_final_price'][k].get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
                                         'iqref': price_inquiry_result.pk,
-                                        'value': round(v, 3) if v > 1 else round(v, 5),
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
                                         'unique_title': k,  #+ '*',
@@ -1302,6 +1303,8 @@ def get_items(request):
                                         })
                             else:
                                 for k, v in item["rial_final_price"].items():
+                                    if isinstance(v, dict):
+                                        v = v.get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
@@ -1333,11 +1336,12 @@ def get_items(request):
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
+                                    price = item['rmb_final_price'][k].get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
                                         'iqref': price_inquiry_result.pk,
-                                        'value': v,
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
                                         'unique_title': k,  # + '*',
