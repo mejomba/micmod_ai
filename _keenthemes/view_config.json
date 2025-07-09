@@ -98,7 +98,7 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": [],
+              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer", "packing_json"],
               "read": []
             },
             "formset_constraint": [
@@ -113,7 +113,7 @@
             "group": "sales_admin",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
+              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer","packing_json"],
               "read": []
             },
             "formset_constraint": [
@@ -125,11 +125,11 @@
           },
           {
             "state": "تخصیص کارشناس انبار",
-            "group": "accounting_user",
+            "group": "wh_admin",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["packing_json"],
+              "read": ["deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             "formset_constraint": [
               {
@@ -140,11 +140,11 @@
           },
           {
             "state": "جمع‌‌آوری",
-            "group": "accounting_user",
+            "group": "wh_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["packing_json"],
+              "read": ["need_factor_document"]
             },
             "formset_constraint": [
               {
@@ -158,8 +158,8 @@
             "group": "wh_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["packing_json"],
+              "read": ["need_factor_document"]
             },
             "formset_constraint": [
               {
@@ -170,11 +170,11 @@
           },
           {
             "state": "ارسال یا تحویل",
-            "group": "accounting_user",
+            "group": "wh_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["packing_json"],
+              "read": ["need_factor_document"]
             },
             "formset_constraint": [
               {
@@ -185,11 +185,11 @@
           },
           {
             "state": "تایید تحویل",
-            "group": "accounting_user",
+            "group": "wh_user",
             "deadline": 1,
             "form_constraint": {
-              "hide": [],
-              "read": []
+              "hide": ["packing_json"],
+              "read": ["need_factor_document"]
             },
             "formset_constraint": [
               {
@@ -227,7 +227,7 @@
           },
           {
             "state": "تایید مدیر فروش",
-            "group": "sales_admin",
+            "group": "order_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": ["sales_admin_confirmation", "order_m2m", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
