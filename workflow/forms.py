@@ -65,24 +65,17 @@ class WorkFlowModelForm(CustomBaseModelForm):
                 next_state_user_list = None
                 prev_state_user_list = User.objects.filter(groups__name__in=[flow_user_groups[state_index]]).distinct() if flow_user_groups else None
 
-            if self.initial.get('wf_access'):
+            if isinstance(self.initial.get('wf_access'), list):
+                access = self.initial.get('wf_access')[0]
+            else:
+                access = self.initial.get('wf_access')
+
+            if access:
                 self.make_optional(self.fields)
 
                 if self.initial.get('from_user'):
                     self.fields['from_user'].queryset = get_user_model().objects.filter(id=self.initial.get('from_user').id)
 
-                # if content_type_model:
-                #     self.fields['action'] = forms.ModelChoiceField(
-                #         queryset=[],#WorkFlowAction.objects.filter(content_type__model=content_type_model._meta.model_name),
-                #         to_field_name='pk',  # set as select option value
-                #         required=False,
-                #         widget=forms.Select(),
-                #         label=_('action'),
-                #     )
-                #     self.fields['action'].widget.attrs['class'] = 'LTR-RTL'
-                #     self.fields['action'].initial = self.initial.get('action')
-
-                # if next_state_user_list:
                 self.fields['to_user'].queryset = next_state_user_list or prev_state_user_list
 
                 self.make_disable(['from_user', 'action', 'state', 'belong_to_group', 'belong_to_group_'])
