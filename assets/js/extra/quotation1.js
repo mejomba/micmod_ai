@@ -563,6 +563,7 @@ function set_item_classes(item, idx=null) {
     copy_values(item, 'express_transportation_cost_3')
     copy_values(item, 'air_transportation_cost_3')
     copy_values(item, 'sea_transportation_cost_3')
+    copy_values(item, 'inquiry_price_json')
 
     const select01 = item.querySelector('[id*="select2-goods_code"][id*="container"]')
     if (select01) {
@@ -875,6 +876,10 @@ function display_price(row){
 }
 
 function set_price_data(data, elem, target, single=null, idx=null) {
+    debugger
+    if (data){
+        elem.querySelector('#id_inquiry_price_json').value = data.price_list
+    }
     debugger
     let items_count;
     let row_number;

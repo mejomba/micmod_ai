@@ -51,18 +51,44 @@
     </td>
 <!-- PRICE INQUIRY -->
     <td class=" font-size-12 replace-digits">
+    {% with form.instance.price_json_for_template as price_json_for_template %}
         {% if form.instance.quotation.currency_ref.pk == 1 %}
-        <div class="d-flex justify-content-between">
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-        </div>
+            <div class="d-flex justify-content-between">
 
-        <div class="d-flex justify-content-between border-top">
-            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-            <div class="mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>
-        </div>
+
+
+            {% for inquiry_price_json in price_json_for_template %}
+                {% if inquiry_price_json.unique_title == 'express' %}
+                    <div class="mx-1 px-1 persian-digit">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+                {% endif %}
+            {% endfor %}
+
+            {% for inquiry_price_json in price_json_for_template %}
+                {% if inquiry_price_json.unique_title == 'air' %}
+                    <div class="mx-1 px-1 persian-digit">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+                {% endif %}
+            {% endfor %}
+
+            {% for inquiry_price_json in price_json_for_template %}
+                {% if inquiry_price_json.unique_title == 'sea' %}
+                    <div class="mx-1 px-1 persian-digit">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:digit|intcomma }}</div>
+                {% endif %}
+            {% endfor %}
+
+
+            </div>
+            
+{#        <div class="d-flex justify-content-between">#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-1 px-1 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_1|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#        </div>#}
+{##}
+{#        <div class="d-flex justify-content-between border-top">#}
+{#            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.air_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#            <div class="mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.sea_transportation_cost_2|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+{#        </div>#}
         {% else %}
         <div class="d-flex border-top">
             <div class="px-3 mx-3 persian-digit">{{ form.instance.quotation_item_rel.all.0.express_transportation_cost_3|default_if_none:"-"|floatformat:digit|intcomma }}</div>
@@ -71,10 +97,14 @@
         </div>
         {% endif %}
         <div class="d-flex justify-content-between border-top">
-            <div class="px-3 mx-3 persian-digit bg-secondary">{{ form.instance.quotation_item_rel.all.0.goods_price_market|default_if_none:"-"|floatformat:0|intcomma }}</div>
+            {% for inquiry_price_json in price_json_for_template %}
+                {% if inquiry_price_json.unique_title == 'bazar' %}
+                    <div class="px-3 mx-3 persian-digit bg-secondary">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:0|intcomma }}</div>
+                {% endif %}
+            {% endfor %}
         </div>
     </td>
-
+{% endwith %}
 <!-- LEAD TIME -->
  <td class="align-middle">
      <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
@@ -82,13 +112,9 @@
 <!-- FINAL PRICE -->
 <td class=" font-size-12 replace-digits">
         <div class="price_method text-center persian-digit" disabled="disabled" value="{{ form.price_method.value }}" name="price_method">{% get_price_method form.price_method.value %}</div>
-{#        <div class="final_price text-center px-10 mx-10 persian-digit" name="-final_price">{{ form.instance.final_price|default_if_none:"-"|floatformat:digit|intcomma}}</div>#}
-
         <div class="fee text-center persian-digit" name="fee">{{ form.instance.fee|default_if_none:"-"|floatformat:digit|intcomma}}</div>
         <div class="fee text-center persian-digit" name="fee">{{ form.instance.final_price|default_if_none:"-"}}</div>
         <div class="fee_en d-none" name="fee">{{ form.instance.fee}}</div>
-{#        <div class="final_price_en d-none" name="-final_price_div">{{ form.instance.final_price}}</div>#}
-{#        <div class="text-center bold bg-soft-primary text-darkblue font-size-11 persian-digit " name="-total_price">-</div>#}
 </td>
 
 <!-- TARGET PRICE -->
