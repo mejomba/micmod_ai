@@ -22,6 +22,7 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 from django.db.models import IntegerField, F, Q, When, Case
 from django.db.models.functions import Cast
 
+from dw.models import DimOrder
 from micmod_base.models import QuotationItem
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Item as sepidar_item

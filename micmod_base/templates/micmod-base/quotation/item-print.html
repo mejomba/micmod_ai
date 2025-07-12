@@ -32,22 +32,45 @@
     </td>
 <!-- SALE HISTORY -->
     <td class="font-size-12 ">
-        <div class="d-flex justify-content-between">
-            <div class="persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class="text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
-            <div class="persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
-        </div>
-        <div class="d-flex justify-content-between">
-            <div class="persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>
-            <div class="text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>
-            <div class="persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
-        </div>
+
+        {% for sales_history in form.instance.price_json %}
+                {% if sales_history.unique_title == 'goods_last_price' %}
+                    <div class="d-flex justify-content-between">
+                        <div class="persian-digit">{{ sales_history.jdate|default_if_none:"-" }}</div>
+                        <div class="text-center persian-digit ">{{ sales_history.quantity|default_if_none:"-"|floatformat|intcomma }}</div>
+                        <div class="persian-digit">{{ sales_history.value|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
+                    </div>
+{#                    <div class="mx-1 px-1 persian-digit">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+                {% endif %}
+            {% endfor %}
+
+    {% for sales_history in form.instance.price_json %}
+                {% if sales_history.unique_title == 'goods_q_last_price' %}
+                    <div class="d-flex justify-content-between">
+                        <div class="persian-digit">{{ sales_history.jdate|default_if_none:"-" }}</div>
+                        <div class="text-center persian-digit ">{{ sales_history.quantity|default_if_none:"-"|floatformat|intcomma }}</div>
+                        <div class="persian-digit">{{ sales_history.value|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>
+                    </div>
+{#                    <div class="mx-1 px-1 persian-digit">{{ inquiry_price_json.value|default_if_none:"-"|floatformat:digit|intcomma }}</div>#}
+                {% endif %}
+            {% endfor %}
+
+{#        <div class="d-flex justify-content-between">#}
+{#            <div class="persian-digit">{{ form.instance.goods_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>#}
+{#            <div class="text-center persian-digit ">{{ form.instance.goods_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>#}
+{#            <div class="persian-digit">{{ form.instance.goods_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>#}
+{#        </div>#}
+{#        <div class="d-flex justify-content-between">#}
+{#            <div class="persian-digit ">{{ form.instance.goods_q_last_sale|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</div>#}
+{#            <div class="text-center persian-digit ">{{ form.instance.goods_q_total_sales|default_if_none:"-"|floatformat|intcomma }}</div>#}
+{#            <div class="persian-digit">{{ form.instance.goods_q_last_price|default_if_none:"-"|floatformat:'-4g'|intcomma }}</div>#}
+{#        </div>#}
 {#        <br class="border-dark w-100"/>#}
-        <div class="d-flex justify-content-between">
-            <div class="text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:'-4g' }}</div>
-            <div class="text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:'-4g' }}</div>
-            <div class="text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:'-4g' }}</div>
-        </div>
+{#        <div class="d-flex justify-content-between">#}
+{#            <div class="text-center persian-digit">{{ form.instance.goods_max_price|default_if_none:"-"|floatformat:'-4g' }}</div>#}
+{#            <div class="text-center persian-digit">{{ form.instance.goods_avg_price|default_if_none:"-"|floatformat:'-4g' }}</div>#}
+{#            <div class="text-center persian-digit">{{ form.instance.goods_min_price|default_if_none:"-"|floatformat:'-4g' }}</div>#}
+{#        </div>#}
     </td>
 <!-- PRICE INQUIRY -->
     <td class=" font-size-12 replace-digits">

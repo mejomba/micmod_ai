@@ -110,14 +110,18 @@
                                 <td class="text-primary">مجموع انبارها</td>
                                 <td class="text-danger persian-digit">{{ sku.extra_data.sepidar_data.stocks_sum|humanized_format}}</td>
                             </tr>
+                            {% with sku.order_inway as inway %}
                             <tr>
                                 <td class="text-primary">در راه (کسری)</td>
-                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+{#                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>#}
+                                <td class="text-danger persian-digit">{{ inway.kasri_inway|default_if_none:'-'|intcomma }}</td>
                             </tr>
                             <tr>
                                 <td class="text-primary">در راه (مشتری)</td>
-                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>
+{#                                <td class="text-danger persian-digit">{{ item.stock_res_qty|intcomma|floatformat:0 }}</td>#}
+                                <td class="text-danger persian-digit">{{ inway.customer_inway|default_if_none:'-'|intcomma }}</td>
                             </tr>
+                            {% endwith %}
                         </table>
                     </div>
                 </a>

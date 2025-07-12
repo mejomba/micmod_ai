@@ -290,6 +290,21 @@ $(document).ready(function () {
         } catch(e) {
             console.log(e)
         }
+
+        try {
+            const foreign_price_inquiry_done = items[i].querySelector('[id*="foreign_price_inquiry_done"]')
+            const local_price_inquiry_done = items[i].querySelector('[id*="local_price_inquiry_done"]')
+            if (foreign_price_inquiry_done.checked){
+                items[i].querySelector('[id*="need_foreign_price_inquiry"]').disabled = true
+            }
+            if (local_price_inquiry_done.checked){
+                items[i].querySelector('[id*="need_local_price_inquiry"]').disabled = true
+            }
+        } catch (e) {
+            console.log(e)
+        }
+
+
     }
 });
 
@@ -876,10 +891,6 @@ function display_price(row){
 }
 
 function set_price_data(data, elem, target, single=null, idx=null) {
-    debugger
-    if (data){
-        elem.querySelector('#id_inquiry_price_json').value = data.price_list
-    }
     debugger
     let items_count;
     let row_number;

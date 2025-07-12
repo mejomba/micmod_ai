@@ -25,6 +25,7 @@ from django.core.validators import MaxValueValidator
 from queryable_properties.properties import queryable_property
 
 from transportation.models import TradeTransportationMethod
+from dw.models import DimOrder
 
 
 class DiscountBasedPriceType(models.TextChoices):
@@ -361,6 +362,10 @@ class Item(BaseModel):
     #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     objects = BaseManager(is_public=True)
+
+    @property
+    def order_inway(self):
+        return DimOrder.order_inway(self.sku)
 
     @property
     def active_hs(self):
