@@ -63,19 +63,20 @@
                 {% if not not_over.6 %}
                     <i class="ki-outline ki-information-2 fs-3 text-black cursor-pointer tooltip_">
                 <span class="tooltiptext-fit">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead class="table-dark">
+                    <table class="table table-stripe  table-dar m-0">
+                        <thead>
                           <tr>
-                            <th>فاکتور</th>
-                            <th>سفارش</th>
-                            <th>تعداد</th>
-                            <th>پیش بینی زمان تحویل</th>
+                            <th scope="col">فاکتور</th>
+                            <th scope="col">سفارش</th>
+                            <th scope="col">تعداد</th>
+                            <th scope="col">پیش بینی زمان تحویل</th>
                           </tr>
                         </thead>
                         <tbody>
                         {% for supply_location in not_over.7 %}
-                        <tr>
-                            <td>{{ supply_location.0 }}</td>
+                        <tr class="border-top">
+                        <th scope="row">{{ supply_location.0 }}</th>
+{#                            <td>{{ supply_location.0 }}</td>#}
                             <td>{{ supply_location.1 }}</td>
                             <td>{{ supply_location.2 }}</td>
                             <td>{{ supply_location.3 }}</td>
@@ -83,6 +84,7 @@
                         {% endfor %}
                         </tbody>
                       </table>
+
                 </span>
                 </i>
                 {% endif %}

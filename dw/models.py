@@ -284,3 +284,29 @@ class CargoListDatatableModel(models.Model):
     class Meta:
         managed = False
         db_table = 'CargoListView'
+
+
+class DimOrderModelManager(Manager):
+    def get_queryset(self):
+        return super(DimOrderModelManager, self).get_queryset().all().using('micmod_dw')
+
+
+class DimOrder(models.Model):
+    order_id = models.CharField(max_length=100, primary_key=True)
+
+    objects = DimOrderModelManager()
+
+    class Meta:
+        managed = False
+        db_table = "dim_order"
+
+    @classmethod
+    def order_inway(cls, sku_):
+        qry = f'''
+        select order_id, sku, sum(remaining_qty) as customer_inway, sum(kasri_remained) as kasri_inway from dim_order
+        where sku = {sku_} and status_coef>2
+        group by sku, order_id
+        '''
+
+        for item in cls.objects.raw(qry):
+            return item

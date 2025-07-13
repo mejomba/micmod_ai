@@ -22,6 +22,7 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 from django.db.models import IntegerField, F, Q, When, Case
 from django.db.models.functions import Cast
 
+from dw.models import DimOrder
 from micmod_base.models import QuotationItem
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Item as sepidar_item
@@ -740,6 +741,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         item['q_date_cust'] = res.quotation_date
         item['q_qty_cust'] = res.quotation_qty
         item['q_fee_cust'] = res.quotation_fee
+        item['inway'] = item_sku.order_inway
     else:
         item = dict()
     if request.GET:
@@ -971,11 +973,12 @@ def get_item(request):
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
+                                    price = item['rmb_final_price'][k].get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
                                         'iqref': price_inquiry_result.pk,
-                                        'value': round(v, 3) if v > 1 else round(v, 5),
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
                                         'unique_title': k,  #+ '*',
@@ -1302,6 +1305,8 @@ def get_items(request):
                                         })
                             else:
                                 for k, v in item["rial_final_price"].items():
+                                    if isinstance(v, dict):
+                                        v = v.get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
@@ -1333,11 +1338,12 @@ def get_items(request):
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
+                                    price = item['rmb_final_price'][k].get('price')
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
                                         'iqref': price_inquiry_result.pk,
-                                        'value': v,
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
                                         'unique_title': k,  # + '*',

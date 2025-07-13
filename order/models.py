@@ -32,7 +32,7 @@ class Order(BaseModeWF):
     #                              to_field='sepidar_party_id', db_column='customer_party_id')
     # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
-                                             default='sea')
+                                             default='sea', null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
 
     quantity = models.FloatField(_('quantity'), default=0)
@@ -211,7 +211,7 @@ class Order(BaseModeWF):
                 "order_title": "خودکار توسط سیستم",
                 # "status": "1",
                 "item": factor_item.qi.goods_code_fk,
-                "production_lead_time": 5,  # self.qi.lead_time,
+                "production_lead_time": 5,  # TODO self.qi.lead_time,
                 "quantity": factor_item.quantity,
                 "cancel": True if o2 else False,
                 "is_over": False,
@@ -224,12 +224,12 @@ class Order(BaseModeWF):
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {
-            "wf_status": 5,
+            "wf_status": 5,  # first draft
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
             "state": const.WF__ORDER__FIRST_STATE,
             "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
-            "belong_to_group": 'order_admin',
+            "belong_to_group": 'sales_user',
             "object_id": o1.pk,
             "content_type": ContentType.objects.get_for_model(o1),
             "creator_user": data_base.get('creator_user'),
@@ -240,7 +240,7 @@ class Order(BaseModeWF):
         }
         wf = WorkFlow.objects.create(**flow_data)
         flow_data = {
-            "wf_status": 3,
+            "wf_status": 3,  # next
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
             "state": const.WF__ORDER__SECOND_STATE,

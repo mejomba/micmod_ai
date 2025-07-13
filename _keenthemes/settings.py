@@ -277,7 +277,14 @@ DATABASES = {
         'USER': os.environ.get('DW_USER'),
         'PASSWORD': os.environ.get('DW_PASSWORD'),
         'HOST': os.environ.get('DW_HOST'),
-        # 'PORT': DB_PIRINEOS_PORT,
+        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
+     },
+    'micmod_dw':  {
+        'ENGINE': os.environ.get('DW_ENGIN'),
+        'NAME': os.environ.get('MICMODDW_NAME'),
+        'USER': os.environ.get('DW_USER'),
+        'PASSWORD': os.environ.get('DW_PASSWORD'),
+        'HOST': os.environ.get('DW_HOST'),
         'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
      },
 }

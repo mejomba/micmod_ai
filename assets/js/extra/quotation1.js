@@ -290,6 +290,21 @@ $(document).ready(function () {
         } catch(e) {
             console.log(e)
         }
+
+        try {
+            const foreign_price_inquiry_done = items[i].querySelector('[id*="foreign_price_inquiry_done"]')
+            const local_price_inquiry_done = items[i].querySelector('[id*="local_price_inquiry_done"]')
+            if (foreign_price_inquiry_done.checked){
+                items[i].querySelector('[id*="need_foreign_price_inquiry"]').disabled = true
+            }
+            if (local_price_inquiry_done.checked){
+                items[i].querySelector('[id*="need_local_price_inquiry"]').disabled = true
+            }
+        } catch (e) {
+            console.log(e)
+        }
+
+
     }
 });
 
@@ -563,6 +578,7 @@ function set_item_classes(item, idx=null) {
     copy_values(item, 'express_transportation_cost_3')
     copy_values(item, 'air_transportation_cost_3')
     copy_values(item, 'sea_transportation_cost_3')
+    copy_values(item, 'inquiry_price_json')
 
     const select01 = item.querySelector('[id*="select2-goods_code"][id*="container"]')
     if (select01) {

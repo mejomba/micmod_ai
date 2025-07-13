@@ -592,6 +592,36 @@ class QuotationItem(BaseModel):
     objects = QuotationItemManager()
 
     @property
+    def price_json_for_template(self):
+        out = self.price_json
+        all_match_express = any(item['type'] == 'express' for item in self.price_json)
+        all_match_air = any(item['type'] == 'air' for item in self.price_json)
+        all_match_sea = any(item['type'] == 'sea' for item in self.price_json)
+
+        if not all_match_express:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'express',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'express'}
+            )
+
+        if not all_match_air:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'air',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'air'}
+            )
+
+        if not all_match_sea:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'sea',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'sea'}
+            )
+
+        return out
+
+    @property
     def get_price_method_type(self):
         for item in self.price_json or []:  # self.price_json is `list of dict`
             if item.get('unique_title') == self.price_method:

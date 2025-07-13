@@ -207,7 +207,15 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
     quotation = Quotation.objects.filter(pk=pk).first()
     qis = QuotationItem.objects.filter(quotation_id=pk)
-    form = FactorModelForm(instance=quotation)
+    form = FactorModelForm(instance=quotation, initial={
+                                                  "constraint": {
+                                                      "wf_access": True,
+                                                      'form_state': 0,
+                                                      'request': request,
+                                                      'form_constraint': flow_config.get("flow_form_constraint"),
+                                                      'formset_constraint': flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
     FactorItemFormset.extra = quotation.quotation.count()
     form_s = FactorItemFormset()
     context = {'quotation': quotation, 'form': form, 'form_s': form_s, 'factoritem_qi_pair': [], 'request': request}
@@ -293,6 +301,10 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains', 'className': 'border'},
 
     ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.get_qs(self.request, lst=False)
+        return qs
 
     def customize_row(self, row, obj):
         row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (

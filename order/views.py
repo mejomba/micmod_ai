@@ -187,13 +187,16 @@ class OrderDataTableListView(AjaxDatatableView):
             return qs.filter(is_wh=True)
 
         elif q == 'is_trade':
-            return qs.filter(is_wh=False, is_bazar=False, cancel=False)
+            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+            return qs.filter(is_wh=False, is_bazar=False, cancel=False).filter(~Q(last_work_flow__current_state_name='تایید مدیر فروش') & ~Q(last_work_flow__current_state_name='پیش نویس'))
 
         if request.user.groups.filter(name='trade_user'):
+            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
             return qs.filter(is_wh=False, is_bazar=False, cancel=False)
 
 
         else:
+            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
             return qs
         return qs
 

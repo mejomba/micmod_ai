@@ -694,5 +694,6 @@
     "accounting_user": "کاربر مالی",
     "accounting_user_list_or_create": "کاربر مالی",
     "in_person": "حضوری",
-    "delivery": "ارسالی"
+    "delivery": "ارسالی",
+    "collecting_start_time": "زمان شروع جمع‌آوری"
 }
