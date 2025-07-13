@@ -295,10 +295,10 @@ $(document).ready(function () {
             const foreign_price_inquiry_done = items[i].querySelector('[id*="foreign_price_inquiry_done"]')
             const local_price_inquiry_done = items[i].querySelector('[id*="local_price_inquiry_done"]')
             if (foreign_price_inquiry_done.checked){
-                items[i].querySelector('[id*="need_foreign_price_inquiry"]').disabled = true
+                items[i].querySelector('[id*="need_foreign_price_inquiry"]').style.pointerEvents = 'none'
             }
             if (local_price_inquiry_done.checked){
-                items[i].querySelector('[id*="need_local_price_inquiry"]').disabled = true
+                items[i].querySelector('[id*="need_local_price_inquiry"]').style.pointerEvents = 'none'
             }
         } catch (e) {
             console.log(e)
