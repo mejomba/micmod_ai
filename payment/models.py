@@ -64,7 +64,7 @@ class PaymentDocument(AbsBaseModel):
     )
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
-    total_amount = models.FloatField(_('total_amount'))
+    total_amount = models.FloatField(_('total_amount'), null=True, blank=True)
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
     description = models.TextField(_('description'), null=True, blank=True)

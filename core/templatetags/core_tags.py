@@ -313,3 +313,8 @@ def table_responsive(objs, fields=None, title=None):
         context['rows'] = rows
         context['title'] = title
         return context
+
+
+@register.filter
+def typename(obj):
+    return type(obj).__name__.lower()

@@ -173,7 +173,7 @@
           "path_key": "packing",
           "permission": {
             "permissions": [
-              "packing.view_packing"
+              "order.view_packing"
             ]
           },
           "menus": [
@@ -197,7 +197,7 @@
           "path_key": "gio",
           "permission": {
             "permissions": [
-              "gio.view_gio"
+              "order.view_gio"
             ]
           },
           "menus": [
@@ -729,6 +729,24 @@
           "title": "list/create",
           "path_key": "item_package/list_or_create/",
           "link": "extra_data:item_package_list_or_create.view"
+        }
+      ]
+    },
+    {
+      "title": "accounting_user_list_or_create",
+      "icon": "cheque",
+      "path_key": "accounting_user_list_or_create.view",
+      "permission": {
+        "permissions": [
+          "extra_data.view_accounting_user"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "accounting_user/",
+          "link": "extra_data:accounting_user"
         }
       ]
     }

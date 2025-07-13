@@ -318,7 +318,8 @@
                                 <div class="text-center w-100">
 {#                                    {% render_field_by_order form_s form_s.price_method label='on-border' %}#}
 {#                                    {{ form_s.price_method }}#}
-                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.price_method }}"></span>
+{#                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.price_method }}"></span>#}
+                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
                                     <div class="col on-border  mb-3 ">
                                         <div class="form-group" id="div_price_method">
                                             <div id="id_price_method_container">

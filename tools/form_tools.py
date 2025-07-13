@@ -36,7 +36,7 @@ def get_dif_percentage(dict1, dict2):
         dict_[key] = dict()
         if key in dict2.keys():
             # dict_[key] = 100 * dict1[key]/dict2[key] -  100
-            dict_[key] = {**dict1[key], 'price': 100 * dict1[key]['price']/dict2[key]['price'] - 100}
+            dict_[key] = {**dict1[key], 'percentage': 100 * dict1[key]['price']/dict2[key]['price'] - 100}
     return dict_
 
 def get_function(function_string):

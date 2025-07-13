@@ -40,23 +40,30 @@
                 <option value="not_complete" {% if request.GET.q == "not_complete" %}selected{% endif %}>تکمیل نشده ها</option>
             {% if  request.user.is_superuser %}
             	<option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
+            	<option value="dependent" {% if request.GET.q == "dependent" %}selected{% endif %}>سفارش های وابسته</option>
                 <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>بازار</option>
                 <option value="is_wh" {% if request.GET.q == "is_wh" %}selected{% endif %}>رزرو انبار</option>
                 <option value="is_trade" {% if request.GET.q == "is_trade" %}selected{% endif %}>سفارش خارج</option>
             {% endif %}
             {% for group in request.user.groups.all %}
-            {% if group.name == 'sales_admin'%}
-                <option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
-            {% endif %}
-            {% if group.name == 'bazar_user' or group.name == 'sales_admin' %}
-              <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>بازار</option>
-            {% endif %}
-            {% if group.name == 'sales_user' or group.name == 'wh_user' %}
-              <option value="is_wh" {% if request.GET.q == "is_wh" %}selected{% endif %}>رزرو انبار</option>
-            {% endif %}
-            {% if group.name == 'trade_user' %}
-              <option value="is_trade" {% if request.GET.q == "is_trade" %}selected{% endif %}>سفارش خارج</option>
-            {% endif %}
+
+                {% if group.name == 'sales_admin'%}
+                    <option value="dependent" {% if request.GET.q == "dependent" %}selected{% endif %}>سفارش های وابسته</option>
+                    <option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
+                {% endif %}
+
+                {% if group.name == 'bazar_user' or group.name == 'sales_admin' %}
+                  <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>بازار</option>
+                {% endif %}
+
+                {% if group.name == 'sales_user' or group.name == 'wh_user' %}
+                  <option value="is_wh" {% if request.GET.q == "is_wh" %}selected{% endif %}>رزرو انبار</option>
+                {% endif %}
+
+                {% if group.name == 'trade_user' %}
+                  <option value="is_trade" {% if request.GET.q == "is_trade" %}selected{% endif %}>سفارش خارج</option>
+                {% endif %}
+
             {% endfor %}
             </select>
         </span>

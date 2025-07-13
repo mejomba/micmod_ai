@@ -86,6 +86,7 @@ class SaleType(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     # translations = TranslatedFields(
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True, to_field='sepidar_party_id', on_delete=models.DO_NOTHING, db_column='customer_party_id')
     # customer_party_id = models.BigIntegerField(verbose_name=_('party_id'), null=True, blank=True)
@@ -549,7 +550,7 @@ class QuotationItem(BaseModel):
     goods_q_last_price = models.FloatField(null=True, blank=True, verbose_name=_("goods_last_price_q"))
     goods_q_total_sales = models.FloatField(null=True, blank=True, verbose_name=_("goods_total_sales_q"))
 
-    price_method = models.CharField(max_length=20, verbose_name=_('price_method'), null=True, blank=True)
+    price_method = models.CharField(max_length=128, verbose_name=_('price_method'), null=True, blank=True)
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
@@ -589,6 +590,23 @@ class QuotationItem(BaseModel):
     price_json = models.JSONField(_('price_json'), null=True, blank=True)
 
     objects = QuotationItemManager()
+
+    @property
+    def get_price_method_type(self):
+        for item in self.price_json or []:  # self.price_json is `list of dict`
+            if item.get('unique_title') == self.price_method:
+                return item.get('type')
+
+    @property
+    def get_old_price_method_type(self):
+        d = {
+            'price_market': 'bazar',
+            'price_sheet1': 'express',
+            'price_sheet2': 'air',
+            'price_sheet3': 'sea',
+        }
+        out = d.get(self.price_method) if self.price_method in d.keys() else self.price_method
+        return out
 
     @classmethod
     def get_model_config(cls, app_label, model_name, filter_str):
@@ -955,8 +973,8 @@ class QuotationItem(BaseModel):
                     price_list_json.append(
                         {
                             "ref": None,
-                            "date": item.price_update_date.isoformat() if item else None,
-                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "date": item.price_update_date.isoformat() if item.price_update_date else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item.price_update_date else None,
                             "seen": None,
                             "type": 'exp',
                             "iqref": None,
@@ -970,8 +988,8 @@ class QuotationItem(BaseModel):
                     price_list_json.append(
                         {
                             "ref": None,
-                            "date": item.price_update_date.isoformat() if item else None,
-                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "date": item.price_update_date.isoformat() if item and item.price_update_date else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item and item.price_update_date else None,
                             "seen": None,
                             "type": 'air',
                             "iqref": None,
@@ -985,8 +1003,8 @@ class QuotationItem(BaseModel):
                     price_list_json.append(
                         {
                             "ref": None,
-                            "date": item.price_update_date.isoformat() if item else None,
-                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "date": item.price_update_date.isoformat() if item and item.price_update_date else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item and item.price_update_date else None,
                             "seen": None,
                             "type": 'sea',
                             "iqref": None,
@@ -1000,8 +1018,8 @@ class QuotationItem(BaseModel):
                     price_list_json.append(
                         {
                             "ref": None,
-                            "date": item.price_update_date.isoformat() if item else None,
-                            "jdate": to_jalali_date(item.price_update_date) if item else None,
+                            "date": item.price_update_date.isoformat() if item and item.price_update_date else None,
+                            "jdate": to_jalali_date(item.price_update_date) if item and item.price_update_date else None,
                             "seen": None,
                             "type": 'bazar',
                             "iqref": None,

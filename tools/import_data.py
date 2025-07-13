@@ -384,7 +384,7 @@ def update_imei_from_sheet():
     print('IMEI_imeintswregdetail')
 
 
-def set_items_sepidar_id_from_sepidar():
+def set_items_sepidar_id_from_sepidar(request):
     max_importet_item = 0
     items = SepItem.get_all_items(max_importet_item)
     items_code = []
@@ -398,7 +398,9 @@ def set_items_sepidar_id_from_sepidar():
 
     for extra_data_item in extra_data_items:
         if not extra_data_item.sepidar_id_0:
+            extra_data_item.extra_data.request = request
             x = extra_data_item.sepidar_id
+            extra_data_item.save()
 
     # for extra_data_item, item_id in zip(extra_data_items, items_id):
     #     if extra_data_item.sku == '12899' or extra_data_item.pk == 12899:

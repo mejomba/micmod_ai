@@ -50,7 +50,7 @@ function setPriceWithAjax(e, elem=null, price_code=''){
                 success: function (response){
                     if (response.items){
                         debugger
-                        console.log('kdsjfkdsj fkldsjfkdsjf klsdjf')
+                        // console.log('kdsjfkdsj fkldsjfkdsjf klsdjf')
 
                         set_price_data(response.items[0], elem, e.target, true)
                         display_price(elem)
@@ -751,7 +751,7 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 }
 
 function init_price_method(row, idx){
-
+    debugger
     const price_json = row.querySelector('textarea[name$="-price_json"]')
     const price_json_value = JSON.parse(price_json?.value || 0) || []
     display_price(row)
@@ -847,7 +847,7 @@ function display_price(row){
                 } else {
                     access_type = ''
                 }
-                iqr_price_list.push(`<div class="row row-cols-4 mx-1 hover-link">
+                iqr_price_list.push(`<div class="row row-cols-4 mx-1 mb-1 hover-link">
                     <span class="col-12 p-0 font-size-11" name="price_expire_date"></span>
                     <span class="col-5 px-1">${item.unique_title} ${access_type}</span>
                     <span class="col-3 p-0">${numberWithCommas(item.value)}</span>
@@ -1070,7 +1070,12 @@ debugger
                 final_price.readOnly = true;
                 final_price.style.backgroundColor = "#fafafa";   // ظاهر غیرقابل ویرایش
                 final_price.style.cursor = "not-allowed";
-                final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                if (Number.isFinite(item.value)){
+                    final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                }else{
+                    final_price.value = round_rial(numberWithCommas(item.value?.price).replaceAll(',', ''))
+                }
+
                 elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', item.unique_title)
                 found = true
             }
@@ -1195,6 +1200,7 @@ function formatRepoItem(repo) {
 }
 
 function newFormatRepoItem(repo) {
+    debugger
     if (repo.loading) {
         return repo.text;
     }
@@ -1205,8 +1211,8 @@ function newFormatRepoItem(repo) {
     let goods_market_date;
     let goods_price_market;
 
-    if (repo.rial_final_price){repo_express = repo.rial_final_price.express; repo_air = repo.rial_final_price.air; repo_sea = repo.rial_final_price.sea}
-    if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express; repo_air = repo.rmb_final_price.air; repo_sea = repo.rmb_final_price.sea}
+    if (repo.rial_final_price){repo_express = repo.rial_final_price.express?.price; repo_air = repo.rial_final_price.air?.price; repo_sea = repo.rial_final_price.sea?.price}
+    if (repo.rmb_final_price){repo_express = repo.rmb_final_price.express?.price; repo_air = repo.rmb_final_price.air?.price; repo_sea = repo.rmb_final_price.sea?.price}
 
 
     if (repo_express == undefined){
@@ -1422,7 +1428,7 @@ function calculate_price(target) {
     let m_sum = 0
     for (let i = 0; i < items.length; i++) {
         val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
-        console.log(`${i}=== ${val}`)
+        // console.log(`${i}=== ${val}`)
         if (!isNaN(val)) {
             m_sum += val
         }

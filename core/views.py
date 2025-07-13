@@ -251,7 +251,9 @@ class BaseView(UserPassesTestMixin,
                                                 content_type_model=self.model, current_user=self.request.user,
                                                 instance=flow_obj)
                 else:
-                    wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
+                    data = self.request.POST.copy()  # حالا mutable هست
+                    data['to_user'] = self.wf_initial.get('to_user').pk
+                    wfform = self.workflow_form(data=data, initial=self.wf_initial,
                                                 content_type_model=self.model, current_user=self.request.user)
             except Exception as e:
                 LogError.save_db(self.request, e, __file__)
@@ -336,6 +338,12 @@ class BaseView(UserPassesTestMixin,
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if self.request.user.is_superuser:
+            context['submit_copy_text'] = 'ثبت و کپی'
+        if self.request.user.base_group == 'trade':
+            context['submit_copy_text'] = 'ثبت و کپی'
+        elif self.request.user.base_group == 'sales':
+            context['submit_copy_text'] = 'پیش فاکتور اول'
         workflow_form = kwargs.get('workflow_form')
         self.profile = Profile.get_or_create(self.request.user)
         context = KTLayout.init(context)
@@ -372,14 +380,14 @@ class BaseView(UserPassesTestMixin,
 
         try:
             context['formset'] = self.formset(instance=self.object, form_kwargs={
-                                                      "constraint": {
-                                                          "wf_access": self.wf_access,
-                                                          'form_state': self.state_index,
-                                                          'request': self.request,
-                                                          'form_constraint': self.flow_config.get('flow_form_constraint'),
-                                                          'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                          }
-                                                  }) if self.formset else self.formset
+                "constraint": {
+                    "wf_access": self.wf_access,
+                    'form_state': self.state_index,
+                    'request': self.request,
+                    'form_constraint': self.flow_config.get('flow_form_constraint'),
+                    'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                }
+            }) if self.formset else self.formset
         except:
             context['formset'] = self.formset
 
@@ -424,9 +432,20 @@ class BaseView(UserPassesTestMixin,
                 if flow_user_groups:
                     # if self.request.POST.get('draft'):
                     #     to_user = self.request.user
-                    if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
+                    # if self.state_index == 0 and flow_user_groups[0] == flow_user_groups[1]:
+                    #     to_user = self.request.user
+
+                    wf_len = len(self.flow_config.get('flow_state_list'))
+                    current_state_group = flow_user_groups[self.state_index]
+                    previous_state_group = flow_user_groups[self.state_index - 1] if self.state_index > 0 else None
+                    next_state_group = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
+                    if current_state_group == next_state_group and current_state_group == previous_state_group:
+                        to_user = last_flow_objs.last().to_user if last_flow_objs else self.request.user
+                    if current_state_group == next_state_group and previous_state_group is None:
                         to_user = self.request.user
-                    elif self.state_index is not None and self.state_index + 1 == len(self.flow_config.get('flow_state_list')):
+                    elif self.state_index is not None and 'back' in self.request.POST:
+                        to_user = self.get_flow_user(flow_user_groups[self.state_index - 1]) if self.has_flow else None
+                    elif self.state_index is not None and self.state_index + 1 == wf_len:
                         to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
                     elif self.state_index is not None:
                         to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
@@ -560,16 +579,14 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.content_type = ContentType.objects.filter(app_label=old_obj._meta.app_label,
                                                                      model=old_obj._meta.model_name).first()
 
-                    flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                    pad = 2 if self.state_index >= 2 else 1
-                    for item in flow_items:
-                        if item.state == self.flow_config.get('flow_state_list')[self.state_index - pad]:
-                            # wf_obj.to_user = item.from_user
-                            wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
-                            wf_obj.deadline = item.deadline
-                            # wf_obj.wf_status = 2  # back
-                            print(__file__, '========= save as back')
-                            break
+                    # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
+                    # pad = 2 if self.state_index >= 2 else 1
+                    # for item in flow_items:
+                    #     if item.state == self.flow_config.get('flow_state_list')[self.state_index - pad]:
+                    #         wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
+                    #         wf_obj.deadline = item.deadline
+                    #         print(__file__, '========= save as back')
+                    #         break
                     # wf_obj.save_user(self.request)
                     wf_obj.wf_status = 2  # back
                     wf_obj.extra_data.request = self.request

@@ -23,6 +23,7 @@ from django.db.models import IntegerField, F, Q, When, Case
 from django.db.models.functions import Cast
 
 from micmod_base.models import QuotationItem
+from sepidar.api_call import SepidarApiCall
 from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
@@ -197,10 +198,12 @@ class SkuListDataTableView(CustomAjaxDataTable):
         {'name': 'package2', 'visible': True, 'title': _('package2'), 'className': 'py-1 package_search', 'lookup_field': '__title__icontains'},
         {'name': 'created_date', 'visible': True, },
         {'name': 'sepidar_id_0', 'visible': True, },
-        {'name': 'weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'trade_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'wh_last_weight', 'visible': True, 'searchable': False, 'orderable': False},
-        {'name': 'weight_percentage', 'visible': True, 'searchable': False, 'orderable': True},
+        {'name': 'weight', 'title': 'وزن نهایی', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'trade_last_weight', 'title': 'وزن بازرگانی', 'visible': True, 'searchable': False, 'orderable': False},
+        {'name': 'wh_last_weight', 'title': 'وزن انبار', 'visible': True, 'searchable': False, 'orderable': False},
+        # {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True},
+        # {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False},
+        # {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False},
         {'name': 'duplicate_item', 'visible': True, 'searchable': False},
     ]
 
@@ -269,11 +272,17 @@ class SkuListDataTableView(CustomAjaxDataTable):
 
     def get_column_defs(self, request):
         column = super().get_column_defs(request)
-        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and 'express_extra_cost_percentage' != column[-1].get('name'):
-            column.append({'name': 'extra_cost_percentage', 'visible': True})
-            column.append({'name': 'sea_extra_cost_percentage', 'visible': True})
-            column.append({'name': 'air_extra_cost_percentage', 'visible': True})
-            column.append({'name': 'express_extra_cost_percentage', 'visible': True})
+        if request.POST.get('q') == 'package_weight_percentage':
+            column.append({'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True}) if {'name': 'weight_percentage', 'title': 'اختلاف وزن', 'visible': True, 'searchable': False, 'orderable': True} not in column else ''
+            column.append({'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False} not in column else ''
+            column.append({'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False} not in column else ''
+        else:
+            column = column[:16]
+        if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and ('express_extra_cost_percentage' != column[-1].get('name') or 'package_weight_diff' != column[-1].get('name')):
+            column.append({'name': 'extra_cost_percentage', 'visible': True}) if {'name': 'extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'sea_extra_cost_percentage', 'visible': True}) if {'name': 'sea_extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'air_extra_cost_percentage', 'visible': True}) if {'name': 'air_extra_cost_percentage', 'visible': True} not in column else ''
+            column.append({'name': 'express_extra_cost_percentage', 'visible': True}) if {'name': 'express_extra_cost_percentage', 'visible': True} not in column else ''
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
@@ -292,6 +301,17 @@ class SkuListDataTableView(CustomAjaxDataTable):
         return column
 
     def customize_row(self, row, obj):
+        if self.request.POST.get('q') == 'package_weight_percentage':
+            items = obj.package2.item_set.all() if obj.package2 else []
+            weights = [item.weight for item in items if item.weight is not None]
+            avg_weight = sum(weights) / len(weights) if weights else 0
+            row['package_weight_avg'] = round(avg_weight, 4)
+            effective_weight = obj.weight
+            if not effective_weight or not avg_weight:
+                row['package_weight_diff'] = '-'
+            else:
+                row['package_weight_diff'] = f'{round(((avg_weight / effective_weight) - 1) * 100, 1)} %'
+
         row['sku_int'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('extra_data:sku.update', args=(obj.id,)),
             obj.sku if obj.sku else '_'
@@ -545,7 +565,6 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'inquiry_type', 'orderable': True, 'searchable': True, 'visible': True,
              'lookup_field': '__title__icontains', 'className': 'w-10px'},
             'variants_json',
-            'trade_transportation_method_json',
             'description',
             {'name': 'supplier', 'lookup_field': '__title__icontains'},
             {'name': 'qi_count', 'title': 'تعداد در پیش فاکتور', 'searchable': False, 'orderable': False},
@@ -554,6 +573,9 @@ class InquiryResultDataTableView(AjaxDatatableView):
         if request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True):
             cols.append({'name': 'rial_final_price_rendered', 'searchable': False, 'orderable': False})
             cols.append({'name': 'rmb_final_price_rendered', 'searchable': False, 'orderable': False})
+
+        if request.user.base_group == 'trade' or request.user.is_superuser:
+            cols.append('trade_transportation_method_json')
         return self.get_columns(cols)
 
     def get_initial_queryset(self, request=None):
@@ -911,11 +933,12 @@ def get_item(request):
                                         })
                             else:
                                 for k, v in item["rial_final_price"].items():
+                                    price = v.get('price') if isinstance(v, dict) else v
                                     item['price_list'].append({
                                         'type': k.lower(),
                                         'ref': None,
                                         'iqref': price_inquiry_result.pk,
-                                        'value': round(v, 3) if v > 1 else round(v, 5),
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
                                         'unique_title': k,  # '*',
@@ -1005,6 +1028,7 @@ def get_item(request):
         if not items:
             for item_ in Item.objects.filter(Q(sku__iexact=q) | Q(part_number__iexact=q), sepidar_id_0__isnull=True):
                 item = {}
+                item['price_list'] = []
                 try:
                     item['id'] = item_.pk
                     item['itemid'] = item_.sepidar_id_0
@@ -1015,8 +1039,108 @@ def get_item(request):
                             pk=trade_price_code).first() if (trade_price_code) else item_obj.price
                         price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(
                             pk=bazar_price_code).first() if (bazar_price_code) else item_obj.bazar_price
-                        # price_inquiry_result: PriceInquiryResult = item_obj.price
                         if price_inquiry_result:
+                            price_setting = price_inquiry_result.price_settings
+                            price_inquiry_result.set_discount_params(
+                                quantity=quantity,
+                                customer_grade=id_customer_grade,
+                                payment_method=id_payment_method,
+                                currency=id_currency_ref,
+                                price_setting=price_setting
+                            )
+                            item["price_settings"] = price_setting.pk
+                            trade_transportation_method_obj = TradeTransportationMethod.objects.filter(
+                                pk__in=price_inquiry_result.trade_transportation_method_json.values()) if price_inquiry_result.trade_transportation_method_json else None
+                            if trade_transportation_method_obj:
+                                trade_transportation_method_obj |= TradeTransportationMethod.objects.filter(
+                                    Q(access_type__isnull=False) | Q(title__in=['air', 'sea', 'express']))
+                            else:
+                                trade_transportation_method_obj = TradeTransportationMethod.objects.filter(
+                                    Q(access_type__isnull=False) | Q(title__in=['air', 'sea', 'express']))
+
+                            if str(id_currency_ref) == str(1):  # rial
+                                item['price'] = price_inquiry_result.price
+                                item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                                item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                                item['currency_type'] = price_inquiry_result.currency_type.pk
+                                item["rial_final_price"] = price_inquiry_result.rial_final_price
+                                item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+                                if trade_transportation_method_obj:
+                                    for ttm in trade_transportation_method_obj:
+                                        if ttm.title in item['rial_final_price']:
+                                            item['price_list'].append({
+                                                'type': ttm.method.lower(),
+                                                'ref': ttm.pk,
+                                                'iqref': price_inquiry_result.pk,
+                                                'value': item['rial_final_price'][ttm.title].get('price'),
+                                                'title': price_inquiry_result.select_title(ttm.method),
+                                                'access_type': ttm.access_type,
+                                                'unique_title': ttm.title,
+                                                'date': price_inquiry_result.last_update_date,  # when inquiry submit
+                                                'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                                # when inquiry submit
+                                                'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            })
+                                else:
+                                    for k, v in item["rial_final_price"].items():
+                                        price = v.get('price') if isinstance(v, dict) else v
+                                        item['price_list'].append({
+                                            'type': k.lower(),
+                                            'ref': None,
+                                            'iqref': price_inquiry_result.pk,
+                                            'value': round(price, 3) if price > 1 else round(price, 5),
+                                            'title': price_inquiry_result.select_title(k),
+                                            'access_type': None,
+                                            'unique_title': k,  # '*',
+                                            'date': price_inquiry_result.last_update_date,  # when inquiry submit
+                                            'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        })
+
+                            elif str(id_currency_ref) == str(2):  # rmb
+                                item['price'] = price_inquiry_result.price
+                                item['free_rmb_rate'] = price_inquiry_result.price_settings.free_rmb_rate
+                                item['rate'] = price_inquiry_result.price_settings.dollar_rmb_rate
+                                item['currency_type'] = price_inquiry_result.currency_type.pk
+                                item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+                                if trade_transportation_method_obj:
+                                    for ttm in trade_transportation_method_obj:
+                                        if ttm.title in item['rmb_final_price']:
+                                            v = item['rmb_final_price'][ttm.title]
+                                            item['price_list'].append({
+                                                'type': ttm.method.lower(),
+                                                'ref': ttm.pk,
+                                                'iqref': price_inquiry_result.pk,
+                                                'value': round(v, 3) if v > 1 else round(v, 5),
+                                                'title': price_inquiry_result.select_title(ttm.method),
+                                                'access_type': ttm.access_type,
+                                                'unique_title': ttm.title,
+                                                'date': price_inquiry_result.last_update_date,  # when inquiry submit
+                                                'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                                # when inquiry submit
+                                                'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            })
+                                else:
+                                    for k, v in item["rmb_final_price"].items():
+                                        item['price_list'].append({
+                                            'type': k.lower(),
+                                            'ref': None,
+                                            'iqref': price_inquiry_result.pk,
+                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'title': price_inquiry_result.select_title(k),
+                                            'access_type': None,
+                                            'unique_title': k,  # + '*',
+                                            'date': price_inquiry_result.last_update_date,  # when inquiry submit
+                                            'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        })
+
+                            item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
+
+
+
                             price_setting = price_inquiry_result.price_settings
                             price_inquiry_result.set_discount_params(
                                 quantity=quantity,
@@ -1045,7 +1169,37 @@ def get_item(request):
                             item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
                             item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
                                                                   "%Y-%m-%d")
-                            item["price_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item["price_update_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
+                                                                  "%Y-%m-%d")
+                            item["market_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            item['is_bazar'] = True
+                            v = item["goods_price_market"]
+                            item['price_list'].append({
+                                'type': "bazar",
+                                'ref': None,
+                                'iqref': price_inquiry_result_bazar.pk,
+                                'value': round(v, 3) if v > 1 else round(v, 5),
+                                'title': "بازار",
+                                'access_type': None,
+                                'unique_title': "bazar",
+                                'date': item["price_update_date"],  # when inquiry submit
+                                'jdate': to_jalali_date(price_inquiry_result_bazar.price_update_date),
+                                # when inquiry submit
+                                'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            })
+                            # price_setting = price_inquiry_result_bazar.price_settings
+                            # price_inquiry_result_bazar.set_discount_params(
+                            #     quantity=quantity,
+                            #     customer_grade=id_customer_grade,
+                            #     payment_method=id_payment_method,
+                            #     currency=id_currency_ref,
+                            #     price_setting=price_setting
+                            # )
+                            # item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
+                            # item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
+                            #                                       "%Y-%m-%d")
+                            # item["price_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
                             item['is_bazar'] = True
                         else:
                             item["goods_price_market"] = None
@@ -1138,7 +1292,7 @@ def get_items(request):
                                         item['price_list'].append({
                                             'type': ttm.method.lower(),
                                             'ref': ttm.pk,
-                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'value': round(v.get('price'), 3) if v.get('price') > 1 else round(v.get('price'), 5),
                                             'title': price_inquiry_result.select_title(ttm.method),
                                             'access_type': ttm.access_type,
                                             'unique_title': ttm.title,
@@ -1154,7 +1308,7 @@ def get_items(request):
                                         'value': v,
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
-                                        'unique_title': k + '*',
+                                        'unique_title': k,  #+ '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'seen': to_jalali(timezone.now())  # when sales user see the price
@@ -1186,7 +1340,7 @@ def get_items(request):
                                         'value': v,
                                         'title': price_inquiry_result.select_title(k),
                                         'access_type': None,
-                                        'unique_title': k + '*',
+                                        'unique_title': k,  # + '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'seen': to_jalali(timezone.now())  # when sales user see the price
@@ -1321,7 +1475,7 @@ class SupplierView(BaseView):
         ]
     }
 
-    # template_name = 'inquiry/supplier_create_or_update.html'
+    template_name = 'inquiry/supplier_list_or_create.html'
 
     def get_success_url(self):
         path = reverse_lazy('inquiry:supplier.list')
@@ -1756,3 +1910,19 @@ def get_trade_transportation_method_json(request, *args, **kwargs):
             return JsonResponse(res)
 
     return JsonResponse({"res": None})
+
+
+def get_last_receipt_from_sepidar(request, *args, **kwargs):
+    sku = request.GET.get('sku')
+    item = Item.objects.filter(sku=sku).first()
+    if item:
+        res = SepidarApiCall.get_receipt_item(item_ref=item.sepidar_id_0)
+        receipt = SepidarApiCall.get_receipt(pk=res.get('inventoryreceiptref'))
+        receipt_date = receipt.get('date')
+
+        if receipt_date:
+            d = datetime.datetime.fromisoformat(receipt_date)
+            res.update({'created_date': f'{d.day} - {d.month} - {d.year}'})
+    else:
+        res = dict()
+    return JsonResponse(res)

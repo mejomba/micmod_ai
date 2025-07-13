@@ -35,8 +35,7 @@
                    data-bs-toggle="tab"
                    href="#kt_tab_pane_2">
                     <div class="anchor fw-bold position-relative" data-key="goods_information"><i
-                            class="bi bi-currency-dollar me-2"></i>اطلاعات
-                        قیمت و فروش
+                            class="bi bi-currency-dollar me-2"></i>اطلاعات قیمت و فروش
                         <span class="badge badge-square badge-light-danger ms-2"> % {{ trade_price.extra_data.discount_percentage.on_demand_discounts_percentage }}</span>
                     </div>
                     <div class="border border-primary border-dashed rounded w-100 mt-2 mb-2 table-responsive text-primary">
@@ -47,11 +46,17 @@
                                 <td class="w-30 text-primary">ریالی</td>
                             </tr>
                             {% for title, val in trade_price.rmb_final_price.items %}
+                                {% if val|typename == 'dict' %}
                                 <tr>
                                     <td class="text-primary">{{ title }}</td>
-                                    <td class="text-danger persian-digit">{{ val|intcomma|floatformat:4 }}</td>
-                                    <td class="text-danger persian-digit">{{ trade_price.rial_final_price|get_item:title|intcomma }}</td>
+                                    <td class="text-danger persian-digit">{{ val|get_item:'price'|intcomma|floatformat:4 }}</td>
+{#                                    <td class="text-danger persian-digit">{{ val|intcomma|floatformat:4 }}</td>#}
+                                    <td class="text-danger persian-digit">{{ trade_price.rial_final_price|get_item:title|get_item:'price'|intcomma }}</td>
                                 </tr>
+                                {% else %}
+                                    <td class="text-primary">{{ title }}</td>
+                                    <td class="text-danger persian-digit">{{ val|intcomma|floatformat:4 }}</td>
+                                {% endif %}
                             {% endfor %}
 {#                            {% for t, v in trade_price.rial_final_price.items %}#}
 {#                                <tr>#}
@@ -133,42 +138,48 @@
                                     <td class="w-30 text-warning">{{ trade_price.rmb_price|intcomma|floatformat:4 }}</td>
                                 </tr>
                                 <tr class="fw-bold fs-6 bg-primary text-inverse-primary">
-                                    <td class="">اکسپرس</td>
-                                    <td class="">هوایی</td>
-                                    <td class="">دریایی</td>
+                                    {% for title, val in trade_price.extra_data.rmb_final_price_custom_office.items %}
+                                    <td>{{ title }}</td>
+                                    {% endfor %}
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_custom_office_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.air|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_custom_office_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.sea|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_custom_office_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
+                                    {% for title, val in trade_price.extra_data.rmb_final_price_custom_office.items %}
+                                        {% if val|typename == 'dict' %}
+                                            <td class="text-primary">{{ val|get_item:'price'|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_custom_office_percentage|get_item:title|get_item:'percentage'|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% else %}
+                                            <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_custom_office_percentage.express|get_item:'price'|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_before_ondemand.express|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_before_ondemand_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_before_ondemand.air|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_before_ondemand_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_before_ondemand.sea|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_before_ondemand_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
+                                    {% for title, val in trade_price.extra_data.rmb_final_price_before_ondemand.items %}
+                                        {% if val|typename == 'dict' %}
+                                            <td class="text-primary">{{ val|get_item:'price'|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_before_ondemand_percentage|get_item:title|get_item:'percentage'|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% else %}
+                                            <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_before_ondemand_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
                                 </tr>
                                 <tr>
-                                    <td class="text-primary">{{ trade_price.rmb_final_price.express|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.rmb_final_price.air|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_percentage.air|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
-                                    <td class="text-primary">{{ trade_price.rmb_final_price.sea|intcomma|floatformat:4 }}
-                                        <span class="badge badge-square text-danger  mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_percentage.sea|intcomma|floatformat:1|set_suffix:"%" }}</span>
-                                    </td>
+                                    {% for title, val in trade_price.rmb_final_price.items %}
+                                        {% if val|typename == 'dict' %}
+                                            <td class="text-primary">{{ val|get_item:'price'|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_percentage|get_item:title|get_item:'percentage'|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% else %}
+                                            <td class="text-primary">{{ trade_price.extra_data.rmb_final_price_custom_office.express|intcomma|floatformat:4 }}
+                                                <span class="badge badge-square text-danger mt-1 ms-2">{{ trade_price.extra_data.rmb_final_price_percentage.express|intcomma|floatformat:1|set_suffix:"%" }}</span>
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
                                 </tr>
                             </table>
                         {% else %}

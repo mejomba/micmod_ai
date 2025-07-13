@@ -48,6 +48,7 @@ urlpatterns = [
     path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable'),
     path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult'),
     path('ajax/count/', views.inquiry_count, name='inquiry.count'),
+    path('ajax/sepidar_api/last_receipt/', views.get_last_receipt_from_sepidar, name='last_receipt'),
     path('variant/title/', views.get_inquiry_title, name='inquiry.title'),
     path('transportation_method/title/', views.get_transportation_method_title, name='transportation.title'),
     path('supplier/region/', views.get_supplier_region, name='supplier.region'),

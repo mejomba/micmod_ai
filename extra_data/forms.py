@@ -5,7 +5,7 @@ from jalali_date.widgets import AdminJalaliDateWidget
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
-    CustomerFields, CustomerContract, ItemPackage
+    CustomerFields, CustomerContract, ItemPackage, AccountingUser
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -53,7 +53,7 @@ class CustomerForm(CustomBaseModelForm):
                   'province', 'location', 'address', 'senf', 'sub_senf', 'active', 'revival_date', 'black_list',
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
-                  'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade']
+                  'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade', 'accounting']
 
     def __init__(self, *args, **kwargs):
         access = None
@@ -188,3 +188,13 @@ class ItemPackageForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs.update({'rows': 1})
+
+
+class AccountingUserForm(CustomBaseModelForm):
+
+    class Meta:
+        model = AccountingUser
+        exclude = ['group']
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)

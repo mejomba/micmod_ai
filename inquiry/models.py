@@ -311,7 +311,7 @@ class PriceInquiryResult(BaseModel):
                 # self.extra_data.rmb_final_price_custom_office_percentage = dict(
                 #     map(lambda x: (x[0], 100 * x[1] / self.rmb_price - 100),
                 #         self.extra_data.rmb_final_price_custom_office.items()))
-                self.extra_data.rmb_final_price_custom_office_percentage = {k: {**v, 'price': 100 * v.get("price", 0) / self.rmb_price - 100} for k, v in self.extra_data.rmb_final_price_custom_office.items()}
+                self.extra_data.rmb_final_price_custom_office_percentage = {k: {**v, 'percentage': 100 * v.get("price", 0) / self.rmb_price - 100} for k, v in self.extra_data.rmb_final_price_custom_office.items()}
 
                 self.extra_data.rmb_final_price_before_ondemand_percentage = get_dif_percentage(self.extra_data.rmb_final_price_before_ondemand,
                                                                                      self.extra_data.rmb_final_price_custom_office)
@@ -424,9 +424,10 @@ class PriceInquiryResult(BaseModel):
             return self.rmb_price
         free_rmb_rate = self.price_settings.free_rmb_rate
         talar_rmb_rate = self.price_settings.talar_rmb_rate
-        customs_price = self.sku.get_customs_price
+        # customs_price = self.sku.get_customs_price
         # customs_price = self.rmb_price
         rmb_price = self.rmb_price
+        customs_price = self.sku.get_customs_price or rmb_price
 
         if rmb_price >= customs_price:
             return (customs_price * talar_rmb_rate + (rmb_price - customs_price) * free_rmb_rate) / free_rmb_rate

@@ -94,8 +94,7 @@ class Order(BaseModeWF):
     ):
         import jdatetime
         year = str(jdatetime.date.today().year - 1400).zfill(2)
-        last_order = self.__class__.objects.latest('id').pk if self.__class__.objects.exists() else 0
-        last_pk = last_order
+        last_pk = self.__class__.objects.latest('id').pk if self.__class__.objects.exists() else 0
         if self.pk is None:
             self.order_number = f'A{year}-{last_pk + 1}'
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
@@ -221,6 +220,7 @@ class Order(BaseModeWF):
                 "editor_user": factor_item.extra_data.request.user,
                 'is_bazar': factor_item.is_bazar,
                 'is_wh': False,
+                'transportation_method': factor_item.qi.get_price_method_type
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {
@@ -243,7 +243,7 @@ class Order(BaseModeWF):
             "wf_status": 3,
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
-            "state": const.WF__ORDER__FIRST_STATE,
+            "state": const.WF__ORDER__SECOND_STATE,
             "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
             "belong_to_group": 'order_admin',
             "object_id": o1.pk,

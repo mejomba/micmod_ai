@@ -85,7 +85,11 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 <div class="container mt-10 persian-number mb-20 pb-20">
+
 <a href="#" onclick="printDiv('DivToPrint')" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
+{% if form.errors %}
+  <span class="text-danger">خطا: اطلاعات وارد شده را بررسی کنید</span>
+{% endif %}
     <div class="DivToPrint A5" id="DivToPrint">
         <div class="row row-cols-3">
         <div class="col">

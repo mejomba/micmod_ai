@@ -29,6 +29,10 @@
             <input type="text" id="id_item_package" placeholder="type package name + Enter" dir="ltr" class="form-control w-25 text-left" onkeydown="item_package_search(event)">
             <span class="me-3" id="id_package_weight_container"></span>
         </div>
+    <div class="d-flex" id="id_receipt_detail_from_sepidar">
+
+    </div>
+
     {% if request.user.base_group == 'trade' %}
 
         <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-3">
@@ -145,6 +149,21 @@
             //document.getElementById('id_sku_c').parentElement.appendChild(x.appendChild(document.createTextNode(` نام کالا: {{ form.instance.sku.part_number }}`)))
 
             const id_sku_c = $('#id_sku_c')
+            id_sku_c.on("change", function (e){
+                $.ajax({
+                    type: 'GET',
+                    url: `${window.location.origin}/inquiry/ajax/sepidar_api/last_receipt/?sku=${id_sku_c.val()}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        document.querySelector('#id_receipt_detail_from_sepidar').innerHTML = `آخرین قیمت: ${data.price ?? "-"}   , تعداد: ${data.quantity ?? "-"} ,  تاریخ: ${data.created_date ?? "-"}`
+                    },
+                    error: function (er) {
+                    }
+                }); // end ajax
+            })
             id_sku_c.on("input", function (e) {
                 $('#main-form :input').prop('disabled', false)
                 const skuSearch = document.querySelector('.sku-search>input')
@@ -437,8 +456,11 @@
                 cache: false,
                 success: function (data) {
                     debugger
-                    document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
-                    show_transportation_title()
+                    const tr = document.querySelector('#id_trade_transportation_method_json')
+                    if (tr) {
+                        tr.value = JSON.stringify(data['res'])
+                        show_transportation_title()
+                    }
                 }
             });
 
@@ -454,8 +476,11 @@
                 cache: false,
                 success: function (data) {
                     debugger
-                    document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
-                    show_transportation_title()
+                    const tr = document.querySelector('#id_trade_transportation_method_json')
+                    if (tr) {
+                        tr.value = JSON.stringify(data['res'])
+                        show_transportation_title()
+                    }
                 }
             });
         })
