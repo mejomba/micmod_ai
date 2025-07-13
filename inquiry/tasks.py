@@ -86,7 +86,7 @@ def update_price_list():
         for idx, item in enumerate(items):
             if item.price and item.price.rmb_final_price:
                 price = item.price.rmb_final_price
-                price = {k: v.get('price') for k, v in price.items()}
+                price = {k: round(v.get('price'), 4) for k, v in price.items()}
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
                 prices.append(price)
