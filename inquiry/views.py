@@ -741,6 +741,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
         item['q_date_cust'] = res.quotation_date
         item['q_qty_cust'] = res.quotation_qty
         item['q_fee_cust'] = res.quotation_fee
+        item['inway'] = item_sku.order_inway
     else:
         item = dict()
     if request.GET:
