@@ -911,6 +911,7 @@ class Customer(AbsBaseModel):
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)
     black_list = models.BooleanField(_('black_list'), default=False)
 
+    # customer_debts = models.CharField(max_length=255, verbose_name=_('customer_debts'), null=True, blank=True)
     risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
 
     @staticmethod
