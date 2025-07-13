@@ -83,12 +83,15 @@ def update_price_list():
         g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
         print('gsheet created')
         # i=0
-        for item in items:
+        for idx, item in enumerate(items):
             if item.price and item.price.rmb_final_price:
                 price = item.price.rmb_final_price
+                price = {k: v.get('price') for k, v in price.items()}
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
                 prices.append(price)
+                if idx % 1000 == 0:
+                    print(f'count: {idx}: ', item.sku, price)
                 if not y_rate:
                     y_rate = item.price.price_settings.free_rmb_rate
                     chash_rial = item.price.price_settings.discount_based_payment_method[0]['rial_percentage']
