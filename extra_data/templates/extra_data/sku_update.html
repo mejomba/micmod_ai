@@ -55,12 +55,18 @@
                 <script>
                     const insertAfter = (element, htmlString) => element.insertAdjacentHTML("afterend", htmlString)
                 </script>
-{#                {% if request.user|has_group:"trade_user" %}#}
-                    {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
-{#                {% endif %}#}
                 {% if flow_state_index >= 1 %}
                     {% render_field_by_order form  form.technical_confirm margin_b=6 %}
                 {% endif %}
+                {% if request.user|has_group:"trade_user" %}
+                    {% include 'inquiry/partial/list_json_input.html' with id='id_list_json' %}
+                {% endif %}
+
+
+            <span class="d-none">
+            {% render_field_by_order form  form.site_urls margin_b=6 %}
+            </span>
+            {% include 'extra_data/partials/list_input.html' with id='id_site_urls' %}
             </div>
         </div>
 {#        {% if request.user|has_group:'total_admin' %}#}
