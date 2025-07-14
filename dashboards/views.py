@@ -50,11 +50,21 @@ class DashboardsView(LoginRequiredMixin,TemplateView):
 
 class BIView(View):
     def get(self, request, pk):
-        # bi_pk = request.GET.get('report_url')
+        from urllib.parse import urlparse, urlencode, urlunparse, quote
+        from tools.utils import generate_powerbi_filter
+
         bi_obj = BIReport.objects.filter(pk=pk).first()
         url = bi_obj.url if bi_obj else ''
+
+        if bi_filter := generate_powerbi_filter(request.user.bi_filter):
+            # url += "&filter=" + bi_filter
+            url += bi_filter
+
         host = request.META.get('HTTP_HOST')
         if host.split(':')[0] == '94.182.194.120':
             url = url.replace('192.168.1.80', '94.182.194.120:4040')
-        context = {'url': url}
+        parsed = urlparse(url)
+        encoded_query = quote(parsed.query, safe="=&:")
+        valid_url = urlunparse(parsed._replace(query=encoded_query))
+        context = {'url': valid_url}
         return render(request, 'dashboards/bi_report.html', context)

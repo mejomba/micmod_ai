@@ -1,27 +1,19 @@
 import math
-import uuid
 from typing import List, Dict
 import pandas
 import pytz
 from ajax_datatable.utils import parse_date
 from dateutil.relativedelta import relativedelta
 import time
-
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import make_aware
-
 from _keenthemes.settings import TIME_ZONE
-# from factor.forms import FactorModelForm, FactorItemModelForm
-# from factor.models import Factor, FactorItem
-# from micmod_base.models import Quotation
-# from order.models import Order
 from . import myjalali
 import datetime
-# from workflow.models import FlowAdminGroup, WorkFlow
 from forbiddenfruit import curse
 from requests.structures import LookupDict
-
+import urllib.parse
 import pandas as pd
 from io import BytesIO
 
@@ -461,3 +453,16 @@ def export_to_excel(objects, config_json):
         df.to_excel(writer, index=False)
     output.seek(0)
     return output
+
+
+def generate_powerbi_filter(filters):
+    parts = []
+    for f in filters:
+        dim = f["dim"]
+        field = f["field"]
+        value = f["field_value"]
+
+        # اگر مقدار رشته‌ای باشه، در کوتیشن قرار بگیره و انکد بشه
+        encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
+        parts.append(f"{dim}/{field} eq {encoded_value}")
+    return "&filter=" + " and ".join(parts)
