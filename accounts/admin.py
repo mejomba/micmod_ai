@@ -8,10 +8,10 @@ from django.utils.translation import gettext_lazy as _
 
 from .extra_models import Profile
 from .forms import ManageFormFieldAdminForm
-# admin.site.register(models.Role)
+from core.admin import BaseJsonFieldAdmin
 
 
-class AdminUser(UserAdmin):
+class AdminUser(UserAdmin, BaseJsonFieldAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email",
@@ -29,7 +29,8 @@ class AdminUser(UserAdmin):
                     "groups",
                     "user_permissions",
                     "head",
-                    "z_index"
+                    "z_index",
+                    "bi_filter"
                 ),
             },
         ),
