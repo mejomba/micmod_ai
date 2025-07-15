@@ -757,7 +757,8 @@
           "permission": {
             "permissions": [
               "guides.view_guides"
-            ]
+            ],
+            "groups": ["base_user"]
           },
           "menus": [
             {

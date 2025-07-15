@@ -83,7 +83,7 @@ class GuidesDatatableView(AjaxDatatableView):
         )
         row['file_1'] = ''
         for file in obj.files.all():
-            row['file_1'] += '<a  target="_blank" href="%s" class ="me-1" ><i class ="fas fa-file-upload icon-lg" ></i></a>' % (
+            row['file_1'] += '<a  target="_blank" href="%s" class ="me-1" ><i class ="fas fa-file-upload fs-2" ></i></a>' % (
                 file.path.url,
             )
 
