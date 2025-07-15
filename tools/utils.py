@@ -461,3 +461,15 @@ def export_to_excel(objects, config_json):
         df.to_excel(writer, index=False)
     output.seek(0)
     return output
+
+
+def first_common_index(list1, list2):
+    """
+    Returns the index of the first common item in list1 that also exists in list2.
+    If there is no common item, returns None.
+    """
+    set2 = set(list2)
+    for index, item in enumerate(list1):
+        if item in set2:
+            return index
+    return None  # یعنی اشتراک ندارن

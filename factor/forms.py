@@ -25,13 +25,6 @@ class FactorModelForm(CustomBaseModelForm):
     class Meta:
         model = Factor
         exclude = ['factor_self', 'guid', 'status', 'group', ]
-        # widgets = {
-        #     'q': forms.HiddenInput()
-        # }
-        widgets = {
-            'official_factor_send_with_this_factor': forms.Textarea(attrs={"rows": 1}),
-            'packing_json': forms.Textarea(attrs={"rows": 1}),
-        }
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -55,11 +48,15 @@ class FactorModelForm(CustomBaseModelForm):
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
             if form_constraint:
-                form_constraint_read = form_constraint[self.form_state].get('read')
-                form_constraint_hide = form_constraint[self.form_state].get('hide')
+                for item in form_constraint[self.form_state]:
+                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                        form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
+                        form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if formset_constraint:
-                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+                for item in formset_constraint[self.form_state]:
+                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                        formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
+                        formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.make_hidden(['q'])
@@ -71,7 +68,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
         if request.user.base_group == 'accounting':
-            self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
+            self.fields['checker'] = forms.ModelChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
                                                                                                  Q(groups__name='accounting_admin')).distinct(), required=False)
         else:
             self.make_disable(['checker'])
@@ -110,11 +107,22 @@ class FactorItemModelForm(CustomBaseModelForm):
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
             if form_constraint:
-                form_constraint_read = form_constraint[self.form_state].get('read')
-                form_constraint_hide = form_constraint[self.form_state].get('hide')
+                for item in form_constraint[self.form_state]:
+                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                        form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
+                        form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if formset_constraint:
-                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+                for item in formset_constraint[self.form_state]:
+                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                        formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
+                        formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
+
+            # if form_constraint:
+            #     form_constraint_read = form_constraint[self.form_state].get('read')
+            #     form_constraint_hide = form_constraint[self.form_state].get('hide')
+            # if formset_constraint:
+            #     formset_constraint_read = formset_constraint[self.form_state][0].get('read')
+            #     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
@@ -123,7 +131,11 @@ class FactorItemModelForm(CustomBaseModelForm):
             self.make_disable(['supply_locations'])
         if self.instance:
             self.fields['supply_locations'].queryset = Order.objects.filter(item_id=self.instance.goods_code)
-        # self.make_hidden(['index'])
+
+        self.make_hidden(form_constraint_hide or [])
+        self.make_hidden(formset_constraint_hide or [])
+        self.make_disable(form_constraint_read or [])
+        self.make_disable(formset_constraint_read or [])
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',

@@ -79,6 +79,7 @@ class BaseView(UserPassesTestMixin,
     finish = None
     extra_formset = 1
     wf_access = None
+    wf_access2 = None
     form_partial = []
     formset_partial = []
     _form_partial = []
@@ -392,7 +393,7 @@ class BaseView(UserPassesTestMixin,
             context['formset'] = self.formset
 
         context['allow_next'] = True
-        context['wf_access'] = self.wf_access
+        context['wf_access2'] = self.wf_access2
         return context
 
     def get_form_kwargs(self):
@@ -403,7 +404,7 @@ class BaseView(UserPassesTestMixin,
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
             try:
                 belong_to_groups = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
-                belong_to_group = belong_to_groups[0] if isinstance(belong_to_groups, list) else [belong_to_groups]
+                belong_to_group = belong_to_groups[0] if isinstance(belong_to_groups, list) else belong_to_groups
             except Exception as e:
                 belong_to_group = None
                 print('firm error ', __file__, e.__traceback__.tb_lineno, e)
@@ -475,8 +476,8 @@ class BaseView(UserPassesTestMixin,
                      (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
 
                 fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
-                self.wf_access = (self.wf_access, fci)
-                wf_access = (wf_access, fci)
+                self.wf_access, self.wf_access2 = (self.wf_access, fci)
+                wf_access, wf_access2 = (wf_access, fci)
 
                 # if self.object.cancel:
                 #     self.wf_access = False
@@ -488,9 +489,9 @@ class BaseView(UserPassesTestMixin,
                     last_flow = flow.order_by('id').last()
                     self.finish = True if last_flow.wf_status == 3 and last_flow.state == self.flow_config.get('flow_state_list')[-2] else None
                 if self.finish and not self.wf_last_step_is_open:
-                    wf_access = False
+                    wf_access = self.wf_access = False
                 self.wf_initial = {
-                    'wf_access': wf_access,
+                    'wf_access': self.wf_access,
                     'from_user': from_user_,
                     'to_user': to_user,
                     'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
@@ -526,25 +527,26 @@ class BaseView(UserPassesTestMixin,
                     'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                     },
                 # 'permission_access': fields_access,
-                                 'wf_access': wf_access if self.has_flow else True,
+                                 'wf_access': self.wf_access if self.has_flow else True,
                                  }
         except Exception as e:
             LogError.save_db(self.request, e, __file__)
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
 
             # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
-            self.wf_initial = {
-                    'wf_access': wf_access,
-                    'from_user': from_user_,
-                    'to_user': to_user,
-                    'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
-                    'state_index': self.state_index,
-                    'belong_to_group': belong_to_group,
-                    'action': self.flow_config.get('flow_action'),
-                    'deadline': datetime.datetime.now() + deadline if self.has_flow else None,
-                    'flow_config': self.flow_config,
-                    'create': False if self.object else True
-                }
+            if self.has_flow:
+                self.wf_initial = {
+                        'wf_access': self.wf_access,
+                        'from_user': from_user_,
+                        'to_user': to_user,
+                        'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
+                        'state_index': self.state_index,
+                        'belong_to_group': belong_to_group,
+                        'action': self.flow_config.get('flow_action'),
+                        'deadline': datetime.datetime.now() + deadline if self.has_flow else None,
+                        'flow_config': self.flow_config,
+                        'create': False if self.object else True
+                    }
             kwargs['initial'] = {
                             "constraint": {
                                 'form_state': self.state_index,

@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-center">
-    {% if form.enable %}
+    {% if form.enable or wf_access2 %}
         {% if not submit_duplicate %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish and not submit_duplicate %}
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>
@@ -10,7 +10,11 @@
                     <input type="submit" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
                 </span>
             {% else %}
+                {% if wf_access2 %}
+                <input type="submit" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
+                {% else %}
                 <input type="submit" class="btn btn-primary me-1" name="next" value="ارسال به مرحله بعد" id="submit_next"/>
+                {% endif %}
             {% endif %}
 
             {% if form.instance.submit_copy or submit_copy %}
@@ -29,7 +33,11 @@
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="x" value="ذخیره" id="submit_save"/>
         {% endif %}
         {% if flow_state_index %}
-            <input type="submit" class="btn btn-outline-danger btn-bordered me-1" name="back" value="عودت کار"/>
+            {% if wf_access2 %}
+                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار"/>
+            {% else %}
+                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" name="back" value="عودت کار"/>
+            {% endif %}
         {% elif flow_state_index and finish and not wf_last_step_is_open %}
             <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>
         {% endif %}

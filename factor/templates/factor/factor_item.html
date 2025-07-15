@@ -104,11 +104,11 @@
                         {% render_field_by_order form form.is_official label='in-line' %}
                     </span>
                     <span class="d-flex">
-                        <span class="me-3 bold w-50">تخفیف نوع ۱</span>
+                        <span class="me-3 bold w-55">تخفیف نوع ۱</span>
                         <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">
                     </span>
                     <span class="d-flex">
-                        <span class="me-3 bold w-50">درصد تخفیف روی همه</span>
+                        <span class="me-3 bold w-55">درصد تخفیف روی همه</span>
                         <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">
                     </span>
                 </div>
