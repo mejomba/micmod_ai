@@ -749,6 +749,24 @@
           "link": "extra_data:accounting_user"
         }
       ]
-    }
+    },
+     {
+          "title": "t-guides",
+          "icon": "help",
+          "path_key": "guides",
+          "permission": {
+            "permissions": [
+              "guides.view_guides"
+            ]
+          },
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "list/create",
+              "path_key": "guides/",
+              "link": "guides:guides.view"
+            }
+          ]
+        }
   ]
 }

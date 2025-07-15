@@ -6,7 +6,7 @@
         {% elif not finish and has_flow and not submit_duplicate%}
             <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس" id="submit_draft"/>
             {% if not allow_next %}
-                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="برخی از رکوردها قابل تایید نیستن!">
+                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="برخی از رکوردها قابل تایید نیستند!">
                     <input type="submit" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
                 </span>
             {% else %}
