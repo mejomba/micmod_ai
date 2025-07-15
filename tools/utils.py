@@ -435,15 +435,32 @@ def export_to_excel(objects, config_json):
 
     selected_fields = config_json.get('selected_fields', [])
     selected_labels = config_json.get('selected_labels', [])
+    # header = config_json.get('header', [])
+    # footer = config_json.get('footer', [])
 
     data = []
+
+    # header = {
+    #     'selected_fields': ['quotation__customer_party_id', 'quotation__created_date'],
+    #     'selected_labels': ['مشتری', 'تاریخ ایجاد']
+    # }
+    #
+    # row = dict()
+    # for f, l in zip(header.get('selected_fields'), header.get('selected_labels')):
+    #     if '__' in f:
+    #         f_list = f.split('__')
+    #         value = reduce_getattr(getattr, f_list, objects[0])
+    #         if isinstance(value, datetime.datetime) and value.tzinfo is not None:
+    #             value = to_jalali_date(value.replace(tzinfo=None))
+    #         row[l] = value
+
 
     for obj in objects:
         row = {}
         for field, label in zip(selected_fields, selected_labels):
             value = getattr(obj, field, None) if not isinstance(obj, dict) else obj.get(field)
             if isinstance(value, datetime.datetime) and value.tzinfo is not None:
-                value = value.replace(tzinfo=None)
+                value = to_jalali_date(value.replace(tzinfo=None))
             row[label] = value
         data.append(row)
 
@@ -466,3 +483,25 @@ def generate_powerbi_filter(filters):
         encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
         parts.append(f"{dim}/{field} eq {encoded_value}")
     return "&filter=" + " and ".join(parts)
+
+
+_initial_missing = object()
+def reduce_getattr(function, sequence, initial=_initial_missing):
+
+    it = iter(sequence)
+
+    if initial is _initial_missing:
+        try:
+            value = next(it)
+        except StopIteration:
+            raise TypeError(
+                "reduce() of empty iterable with no initial value") from None
+    else:
+        value = initial
+
+    for element in it:
+        value = function(value, element, None)
+        if value is None:
+            break
+
+    return value
