@@ -67,10 +67,10 @@ class GuidesDatatableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = [
-            {'name': 'id', 'title': "<div class='px-3' style='max-width:40px;'>شناسه</div>", 'className': 'mxw-50px'},
+            {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'mxw-50px'},
             {'name': 'title', },
             {'name': 'description', 'title': "<div class='px-3' style='width:40px;'>توضیحات</div>",},
-            {'name': 'file_1', 'title': "<div class='px-3' style='width:40px;'>فایل</div>",},
+            {'name': 'file_1', 'title': "<div class='px-3' style='width:40px;'>فایل</div>", "searchable": False},
         ]
 
         return self.get_columns(cols)
