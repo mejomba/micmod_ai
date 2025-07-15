@@ -157,6 +157,12 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
         # if self.object is None:
         #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        if self.object.last_work_flow.current_state_name in ['تایید پیش فاکتور'] and 'back' in self.request.POST:
+            self.request.POST._mutable = True
+            # self.request.POST['sales_admin_confirm'] = ''
+            self.object.sales_admin_confirm = False
+            self.request.POST._mutable = False
+            self.object.save()
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -189,7 +195,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 for qi in self.object.quotation.all():
                     if bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                             bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
-                        """مجاز نیستن برن مرحله بعد"""
+                        """عبور به مرحله بعد غیر مجاز می‌باشد"""
                         """create new quotation"""
                         quotation_data = dict()
                         pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user',
