@@ -157,7 +157,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
         # if self.object is None:
         #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
-        if self.object.last_work_flow.current_state_name in ['تایید پیش فاکتور'] and 'back' in self.request.POST:
+        if self.object and self.object.last_work_flow.current_state_name in ['تایید پیش فاکتور'] and 'back' in self.request.POST:
             self.request.POST._mutable = True
             # self.request.POST['sales_admin_confirm'] = ''
             self.object.sales_admin_confirm = False
