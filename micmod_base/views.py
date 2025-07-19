@@ -90,7 +90,7 @@ def generate_direct_factor(request, quotation: Quotation):
                 'qi': qi,
                 'goods_code': qi.goods_code_fk,
                 'part_number_show': qi.goods_code_fk.part_number,
-                'price': qi.price,
+                'price': qi.fee,
                 'quantity': qi.quantity,
                 'delivery_time': qi.delivery_time,
                 # 'supply_locations': order,
