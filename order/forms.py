@@ -50,13 +50,13 @@ class OrderForm(CustomBaseModelForm):
         self.fields['supplier_trade'] = forms.ModelChoiceField(
             queryset=qs,
             widget=forms.Select(attrs={'class': 'form-control'}),
-            initial=self.instance.supplier_trade or qs.first().pk if qs.first() else 0,
+            initial=self.instance.supplier_trade,  # or qs.first().pk if qs.first() else 0,
             required=False
         )
         self.fields['supplier_mac'] = forms.ModelChoiceField(
             queryset=qs,
             widget=forms.Select(attrs={'class': 'form-control'}),
-            initial=self.instance.supplier_mac or qs.first().pk if qs.first() else 0,
+            initial=self.instance.supplier_mac,  # or qs.first().pk if qs.first() else 0,
             required=False
         )
         self.fields['trade_commitment_date'] = JalaliDateField(label=_('request_date'),
