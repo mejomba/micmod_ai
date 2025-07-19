@@ -834,6 +834,7 @@ def uploaded_image_path(instance, filename: str):
 class Customer(AbsBaseModel):
     RISK_STATUS_CHOICE = (
         ("low risk", "کم ریسک"),
+        ("mid risk", "متوسط ریسک"),
         ("high risk", "پر ریسک"),
         ("suspicious", "مشکوک الوصول"),
         ("valid", "معتبر"),
