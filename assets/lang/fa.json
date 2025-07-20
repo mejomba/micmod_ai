@@ -696,5 +696,6 @@
     "in_person": "حضوری",
     "delivery": "ارسالی",
     "collecting_start_time": "زمان شروع جمع‌آوری",
-    "t-guides": "راهنما"
+    "t-guides": "راهنما",
+    "description_sales": "توضیحات فروش (عدم نمایش به مشتری)"
 }
