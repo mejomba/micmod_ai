@@ -1,0 +1,23 @@
+{% load core_tags %}
+<section id="gallery" dir="ltr" class="w-100">
+    <div class="container">
+        <div class="bg-gray-300 text-primary bold text-center w-100 rounded-top-5 py-3 fs-1"
+             data-key="related_source"> مراجع مشابه </div>
+        {% if rma_related_sources %}
+
+            {% for rma_related_source in rma_related_sources %}
+                <div class="d-flex flex-column mb-1 hover-link">
+                <a href="{{ rma_related_source }}" target="_blank">{{ rma_related_source|truncatechars:60 }}</a>
+                </div>
+            {% endfor %}
+
+            
+        {% else %}
+            <div class="py-10 fs-3x text-center w-100">
+                {% include "core/partial/components/blank_data.html" %}
+            </div>
+        {% endif %}
+    </div><!-- End container -->
+</section>
+
+
