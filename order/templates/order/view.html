@@ -91,7 +91,7 @@
                 {% if form.instance.pk %}
                     {% include 'order/partial/order_sales_read_section.html' with form=form %}
                 {% endif %}
-            {% elif request.user|has_group:'trade_user' and form.form_state != 5 %}
+            {% elif request.user|has_group:'trade_user' and request.user.pk != 26 %}
                 {% include 'order/partial/order_trade_edit_section.html' with form=form %}
                 {% include 'order/partial/order_trade_read_section.html' with form=form %}
             {% elif request.user|has_group:'mac' %}
