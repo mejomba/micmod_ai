@@ -7,8 +7,8 @@
 {% load more_tags %}
 {% block content_ %}
     <div id="main-content">
-<div class="mb-10 py-3 px-5 border border-success badge badge-light-success text-start sticky-top {% if request.user.base_group != 'trade' %} d-none {% endif %}">
-    <p class="text-success font-size-15 bold p-0 m-0 d-flex flex-column">
+<div class="mb-10 py-2 px-5 border border-success badge bg-light-success text-start sticky-top  {% if request.user.base_group != 'trade' %} d-none {% endif %}">
+    <p class="text-success font-size-15 p-0 m-0 d-flex flex-column">
         <span class="mb-2">
             استعلام شروع نشده‌ی شما :
             <span id="id_my_inquiry_not_started_">{{ my_inquiry_not_started }}</span>
@@ -23,7 +23,7 @@
 {% block content %}
     {% for pk, form_lists in d.items %}
         <div>
-            <div class="{% if forloop.counter|divisibleby:2 %}bg-light-danger{% else %}bg-light-primary{% endif %} position-sticky z-index-3" style="top: 74px;">
+            <div class="{% if forloop.counter|divisibleby:2 %}bg-light-danger{% else %}bg-light-primary{% endif %} position-sticky z-index-3" style="top: 40px;">
                 <!--header-->
                 <div class="rounded p-2 d-flex align-items-center h-40px">
                     <div class="col ms-4">

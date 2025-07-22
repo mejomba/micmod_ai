@@ -124,5 +124,6 @@ model_name_map = {
 }
 
 WF__ORDER__3_CURRENT_STATE_NAME = "تایید بازرگانی"
+WF__ORDER__5_CURRENT_STATE_NAME = "ارسال به تامین کننده"
 WF__ORDER__3_STATE = "تایید بازرگانی"
 WF__ORDER__4_STATE = "تایید مهندس"
