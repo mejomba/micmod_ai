@@ -80,6 +80,7 @@ urlpatterns = [
     path('order/', include('order.urls')),
     path('transportation/', include('transportation.urls')),
     path('guides/', include('guides.urls')),
+    path('reminder/', include('reminder.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 handler404 = SystemView.as_view(template_name = 'pages/system/not-found.html', status=404)
