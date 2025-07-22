@@ -83,8 +83,7 @@ LOCAL_APPS = [
     'factor',
     'order',
     'pcba',
-    'guides',
-    'reminder'
+    'guides'
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
