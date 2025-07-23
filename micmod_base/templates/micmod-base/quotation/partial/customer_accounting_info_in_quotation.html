@@ -1,0 +1,31 @@
+{% load humanize %}
+<div class="row row-cols-2">
+    {% if customer.refund_remaind %}
+    <div class="col">
+        <span>چک برگشتی</span>
+        <span>{{ customer.refund_remaind|floatformat:'-2g' }}</span>
+    </div>
+    {% endif %}
+
+    {% if customer.total_remaind %}
+    <div class="col">
+        <span>مانده حساب</span>
+        <span>{{ customer.total_remaind|floatformat:'-2g' }}</span>
+    </div>
+    {% endif %}
+
+    {% if customer.total_remaind_y %}
+    <div class="col">
+        <span>مانده یوآنی</span>
+        <span>{{ customer.total_remaind_y|floatformat:'-2g' }}</span>
+    </div>
+    {% endif %}
+
+    {% if customer.total_remaind_d %}
+    <div class="col">
+        <span>مانده دلاری</span>
+        <span>{{ customer.total_remaind_d|floatformat:'-2g' }}</span>
+    </div>
+    {% endif %}
+
+</div>

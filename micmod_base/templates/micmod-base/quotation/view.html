@@ -19,9 +19,11 @@
 {% endblock extra_css %}
 
 {% block form_content %}
-    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
-        خروجی اکسل
-    </button>
+    <div class="d-flex gap-5 align-items-baseline">
+        <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+            خروجی اکسل
+        </button>
+    </div>
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -112,7 +114,11 @@
                                                                     <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
                                                                     <div data-key="party_id">party id</div>
                                                                     <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
+
                                                                 </div>
+                                                                {% if request.user.pk == 21 or form.isntance.last_work_flow.to_user or request.user.is_superuser %}
+                                                                <div class="d-flex gap-6" id="id_customer_accounting_info_container"></div>
+                                                                {% endif %}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -463,7 +469,16 @@ function downloadExcel(event) {
     });
 }
 
+function get_customer_accounting_info(){
+    const customer_party_id = document.querySelector('#id_customer_party_id')
+    if (customer_party_id){
+        const url = `/micmod_base/ajax/customer_accounting_info/?party_id=${customer_party_id.value}`
+        const el = $('#id_customer_accounting_info_container')
+        custom_ajax_get(null, url, el)
+    }
+}
 
+setTimeout(get_customer_accounting_info, 1500)
 
 </script>
 
