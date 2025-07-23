@@ -9,6 +9,7 @@ from jalali_date.templatetags.jalali_tags import to_jalali
 
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
+from dw.models import DimCustomer
 from extra_data.models import Item
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
@@ -1429,3 +1430,15 @@ def export_quotation_items_to_excel(request, quotation_id):
 #         # return self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
 #         _data, _status = self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
 #         return JsonResponse(_data, status=_status, safe=True)
+
+
+def get_customer_accounting_info(request, *args, **kwargs):
+    # return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
+    party_id = request.GET.get('party_id')
+    if party_id:
+        customer = DimCustomer.get_customer(party_id)
+        html = render_to_string('micmod-base/quotation/partial/customer_accounting_info_in_quotation.html', {"customer": customer[0]})
+        return JsonResponse({'res': html})
+
+    return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
+
