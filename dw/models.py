@@ -310,3 +310,27 @@ class DimOrder(models.Model):
 
         for item in cls.objects.raw(qry):
             return item
+
+
+class DimCustomerModelManager(Manager):
+    def get_queryset(self):
+        return super(DimCustomerModelManager, self).get_queryset().all().using('micmod_dw')
+
+
+class DimCustomer(models.Model):
+    customer_id = models.CharField(max_length=100, primary_key=True)
+
+    objects = DimCustomerModelManager()
+
+    class Meta:
+        managed = False
+        db_table = "dim_order"
+
+    @classmethod
+    def get_customer(cls, party_id):
+        qry = f'''
+        select * from dim_customer
+        where party_id = {party_id}
+        '''
+
+        return cls.objects.raw(qry)

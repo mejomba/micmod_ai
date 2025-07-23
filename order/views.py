@@ -86,7 +86,7 @@ class OrderView(LoginRequiredMixin, BaseView):
                 "editor_user": self.request.user,
                 "from_user": self.request.user,
                 "to_user": self.request.user,  # get_user_model().objects.filter(groups__name='order_admin').first(),
-                "current_state_name": const.WF__ORDER__3_CURRENT_STATE_NAME,
+                "current_state_name": const.WF__ORDER__5_CURRENT_STATE_NAME,
             }
 
             wf = WorkFlow.objects.create(**flow_data)
