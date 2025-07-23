@@ -19,11 +19,15 @@
 {% endblock extra_css %}
 
 {% block form_content %}
-    <div class="d-flex gap-5 align-items-baseline">
-        <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
-            خروجی اکسل
-        </button>
-    </div>
+
+    <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
+    <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
+    <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
+
+    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+        خروجی اکسل
+    </button>
+
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -477,6 +481,39 @@ function get_customer_accounting_info(){
         custom_ajax_get(null, url, el)
     }
 }
+
+function lastUpdate() {
+    debugger
+    console.log('debug')
+    let qDateJson = document.querySelector('input[name="last_update_datetime"]').value
+    let qiDateJson = document.querySelector('input[name="qis_last_update_datetime"]').value
+
+
+
+    if (qiDateJson.startsWith('"') && qiDateJson.endsWith('"')) {
+        qiDateJson = qiDateJson.slice(1, -1);
+        qiDateJson = qiDateJson.replace(/\\"/g, '"'); // رفع escape های اضافی
+    }
+    if (qDateJson.startsWith('"') && qDateJson.endsWith('"')) {
+        qDateJson = qDateJson.slice(1, -1);
+    }
+
+    let qiDateJsonObj  = JSON.parse(qiDateJson)
+
+    let qiDateJsonString = JSON.stringify(qiDateJsonObj)
+
+    const quotationId = document.querySelector('input[name="quotation_id"]').value
+    console.log('qDateJson:', qDateJson);
+    console.log('qiDateJson:', qiDateJson);
+    const url = `/micmod_base/quotation/view/${quotationId}?last_update_datetime=${qDateJson}&qis_last_update_datetime=${qiDateJsonString}`
+    const el = $('#global-error')
+    custom_ajax_get(null, url, el)
+
+}
+
+{#setTimeout(lastUpdate, 3600000);#}
+{#setInterval(lastUpdate, 3600000);#}
+
 
 setTimeout(get_customer_accounting_info, 1500)
 

@@ -1,11 +1,14 @@
+import ast
 import json
 
+import jdatetime
 from django.apps import apps
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
+from datetime import timezone, timedelta, datetime
 
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
@@ -33,7 +36,7 @@ from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchang
 from sepidar.models import Dl
 from tools import const
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import show_error, to_jalali_date, export_to_excel
+from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
 from translator import get_text as _
 from django.views import View
 
@@ -122,6 +125,8 @@ class QuotationsList(LoginRequiredMixin,View):
 
 class QuotationsView(LoginRequiredMixin, BaseView):
     template_name = 'micmod-base/quotation/view.html'
+    conflict_template_name = 'micmod-base/quotation/conflict_view.html'
+    post_conflict_template_name = 'micmod-base/quotation/conflict_post_view.html'
     form_class = QuotationForm
     model = Quotation
     wf_last_step_is_open = True
@@ -147,11 +152,36 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def get(self, request, *args, **kwargs):
+        if is_ajax(self.request):
+            if not self.check_last_update():
+                html = render_to_string(self.conflict_template_name, {'conflict': True, 'obj': self.object})
+                return JsonResponse({'res': html}, safe=False)
+            else:
+                return JsonResponse({'res': ''}, safe=False)
         if 'direct' in request.GET:
             self.template_name = 'factor/direct_factor.html'
         return super().get(request, *args, **kwargs)
 
+    def check_last_update(self):
+        return True
+        qis_last_update = json.loads(self.request.POST.get('qis_last_update_datetime', "{}")) or self.request.GET.get('qis_last_update_datetime')
+        q_last_update = self.request.POST.get('last_update_datetime') or self.request.GET.get('last_update_datetime').replace(' ', '+')
+        if is_ajax(self.request):
+            qis_last_update = json.loads(qis_last_update)
+
+        if q_last_update and self.object.last_update_date.replace(microsecond=0) != datetime.fromisoformat(q_last_update).replace(microsecond=0):
+            return False
+
+        for qi in self.object.quotation.all():
+            if qi_last_update:=qis_last_update.get(str(qi.pk)):
+                qi_last_update = qi_last_update.replace(' ', '+')
+                if datetime.fromisoformat(qi_last_update).replace(microsecond=0) != qi.last_update_date.replace(microsecond=0):
+                    return False
+        return True
+
     def post(self, request, *args, **kwargs):
+        if not self.check_last_update():
+            return render(request, self.post_conflict_template_name, {'conflict': True, 'obj': self.object})
         if 'duplicate' in self.request.POST:
             obj = duplicate_quotation(self.request, self.object.pk)
             if obj:
@@ -332,6 +362,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
+        last_update_datetime = self.object.last_update_date.isoformat()
+        context['last_update_datetime'] = last_update_datetime
+        qis = {qi.pk: qi.last_update_date.isoformat() for qi in self.object.quotation.all()}
+        context['qis_last_update_datetime'] = json.dumps(qis)
         # user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
             for qi in self.object.quotation.all():

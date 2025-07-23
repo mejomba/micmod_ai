@@ -16,7 +16,6 @@ function hideShowQuotationItemTransportationCost(nodeList, action) {
 
 function setPriceWithAjax(e, elem=null, price_code=''){
         elem = elem ? elem : findAncestor(e.target, "item")
-        debugger
         let party_id = document.getElementById('customer_pid').textContent || elem.querySelector('#customer_pid') || -1
         if (party_id == 'None'){
             party_id = -1
@@ -49,7 +48,6 @@ function setPriceWithAjax(e, elem=null, price_code=''){
                 type: 'GET',
                 success: function (response){
                     if (response.items){
-                        debugger
                         // console.log('kdsjfkdsj fkldsjfkdsjf klsdjf')
 
                         set_price_data(response.items[0], elem, e.target, true)
@@ -108,7 +106,6 @@ $(document).ready(function () {
                 cache: false,
                 type: 'GET',
                 success: function (response){
-                    debugger
                     if (response.items){
                         //set_price_data(response.items[0], elem, e.target)
                         set_price_data(response.items[0], elem, e.target, true)
@@ -313,7 +310,6 @@ function set_item_classes(item, idx=null) {
     if (idx === null) {idx = parseInt(item.dataset.formIndex)}
     if(item.getElementsByClassName('goods_code')) {
         $(item).find('.goods_code').on("select2:select", function (e) {
-            debugger
             const elem = findAncestor(e.target, "item")
             const data = e.params.data;
             set_price_data(data, elem, e.target, true, idx)
@@ -503,7 +499,6 @@ function set_item_classes(item, idx=null) {
             set_price_data(d, elem, e.target, true, idx)
             // set_price_data(response.items[0], elem, e.target, true)
             display_price(elem)
-            debugger
             generate_price_method_select_option(elem)
             check_price_expire_date_array = []
             document.querySelectorAll('.item').forEach(function (item){
@@ -535,11 +530,9 @@ function set_item_classes(item, idx=null) {
     });
     // $(item).find('.quantity').on('change keydown paste input', function (e) {
     $(item).find('input[id$="quantity"]').on('change keydown paste input', function (e) {
-        debugger
         calculate_price(e.target);
     });
     $(item).find('[id$="price_method"]').on('change', function (e) {
-        debugger
         const expire_inquiry_error = document.querySelector('#expire_inquiry_error')
         expire_inquiry_error && expire_inquiry_error.classList.add('d-none')
         calculate_price(e.target)
@@ -675,7 +668,6 @@ function refresh_prices() {
             // price_updated.classList.add('d-none')
         }
         setTimeout(function (){
-            debugger
             const code = items[i].querySelector('[id*="-goods_code"]').value
             const data = get_price_data(code, party_id, items[i]) // 1
             set_price_data(data, items[i], items[i]) // 2
@@ -768,7 +760,6 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
 }
 
 function init_price_method(row, idx){
-    debugger
     const price_json = row.querySelector('textarea[name$="-price_json"]')
     const price_json_value = JSON.parse(price_json?.value || 0) || []
     display_price(row)
@@ -781,7 +772,6 @@ function init_price_method(row, idx){
 }
 
 function generate_price_method_select_option(row, price_json=null, idx=null){
-    debugger
     idx = idx ? idx : parseInt(row.querySelector('.counter').innerText) - 1
     const previous_price_method = row.querySelector('[data-previous_price_method]')?.dataset.previous_price_method
     const select = document.createElement('select');
@@ -892,7 +882,6 @@ function display_price(row){
 }
 
 function set_price_data(data, elem, target, single=null, idx=null) {
-    debugger
     let items_count;
     let row_number;
     try {
@@ -1045,7 +1034,6 @@ function set_alt_price_data(data, elem) {
 
 function set_price2(target, data=null) {
     // تنظیم فیلد قیمت نهایی بر اساس روش تعین قیمت از جیسون موجود
-debugger
     // alert('set_price')
     let elem;
     let found;
@@ -1081,7 +1069,6 @@ debugger
         elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', 'sales_admin')
     } else {
         price_json && price_json.forEach(function (item){
-            debugger
             if (item.unique_title === selected_method){
                 final_price.disabled = false
                 final_price.readOnly = true;
@@ -1120,7 +1107,6 @@ function add_n_hour(currentDate ,n){
 }
 
 function show_expire_message_popup(){
-    debugger
     const trueIndexes = check_price_expire_date_array.map((val, idx) => !val ? idx + 1 : null).filter(idx => idx !== null).join(', ');
     if (trueIndexes) {
         document.querySelector('#expire_inquiry_error').classList.remove('d-none')
@@ -1217,7 +1203,6 @@ function formatRepoItem(repo) {
 }
 
 function newFormatRepoItem(repo) {
-    debugger
     if (repo.loading) {
         return repo.text;
     }
@@ -1364,7 +1349,6 @@ function numberWithCommas(x, digits = 2) {
 }
 
 function calculate_price(target) {
-    debugger
     const elem = findAncestor(target, "item")
     const final_price = elem.querySelector('[name*="-final_price"]')
     const total_price = elem.querySelector('[name*="-total_price"]')
