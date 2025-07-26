@@ -697,5 +697,7 @@
     "delivery": "ارسالی",
     "collecting_start_time": "زمان شروع جمع‌آوری",
     "t-guides": "راهنما",
-    "description_sales": "توضیحات فروش (عدم نمایش به مشتری)"
+    "description_sales": "توضیحات فروش (عدم نمایش به مشتری)",
+    "section_id": "بخش",
+    "document_management": "مدیریت اسناد"
 }
