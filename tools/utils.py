@@ -431,6 +431,11 @@ def senf_init():
                if __doc__ is not None else None)
 
 
+def get_price_value(price_list, type_name, key):
+    item = next((item for item in price_list if item.get('type') == type_name), {})
+    return item.get(key)
+
+
 def export_to_excel(objects, config_json):
 
     selected_fields = config_json.get('selected_fields', [])
@@ -454,11 +459,24 @@ def export_to_excel(objects, config_json):
     #             value = to_jalali_date(value.replace(tzinfo=None))
     #         row[l] = value
 
-
     for obj in objects:
         row = {}
+
+        is_dict = isinstance(obj, dict)
+        is_quotation_item = not is_dict and obj.__class__.__name__ == 'QuotationItem'
+
         for field, label in zip(selected_fields, selected_labels):
-            value = getattr(obj, field, None) if not isinstance(obj, dict) else obj.get(field)
+            if is_quotation_item and field in ['goods_last_price', 'goods_q_last_price']:
+                price = getattr(obj, 'price_json', []) or []
+                if isinstance(price, list):
+                    if field == 'goods_last_price':
+                        value = get_price_value(price, 'فاکتور', 'value')
+                    elif field == 'goods_q_last_price':
+                        value = get_price_value(price, 'پیش فاکتور', 'value')
+                else:
+                    value = None
+            else:
+                value = getattr(obj, field, None) if not isinstance(obj, dict) else obj.get(field)
             if isinstance(value, datetime.datetime) and value.tzinfo is not None:
                 value = to_jalali_date(value.replace(tzinfo=None))
             row[label] = value
