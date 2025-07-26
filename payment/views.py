@@ -50,6 +50,7 @@ class LocalPaymentOrderView(LoginRequiredMixin, BaseView):
         context['show_pay_doc'] = True if self.state_index >= 1 else False
         context['show_pay_accounting_doc'] = True if self.state_index >= 1 else False
         context['wf_access'] = self.wf_access
+        context['section_id'] = 'payment_order'
 
         return context
 

@@ -169,7 +169,7 @@
         },
         {
           "title": "t-packing",
-          "icon": "cheque",
+          "icon": "package",
           "path_key": "packing",
           "permission": {
             "permissions": [
@@ -547,7 +547,7 @@
     },
     {
       "title": "notify",
-      "icon": "element-12",
+      "icon": "information",
       "path_key": "tlg",
       "section": "False",
       "permission": {
@@ -631,7 +631,7 @@
     },
     {
       "title": "payment_order",
-      "icon": "cheque",
+      "icon": "user",
       "path_key": "payment_order",
       "permission": {
         "groups": [
@@ -716,7 +716,7 @@
     },
     {
       "title": "package_list_or_create",
-      "icon": "cheque",
+      "icon": "package",
       "path_key": "packing_list_or_create.view",
       "permission": {
         "permissions": [
@@ -725,7 +725,7 @@
       },
       "menus": [
         {
-          "icon": "burger-menu",
+          "icon": "package",
           "title": "list/create",
           "path_key": "item_package/list_or_create/",
           "link": "extra_data:item_package_list_or_create.view"
@@ -734,7 +734,7 @@
     },
     {
       "title": "accounting_user_list_or_create",
-      "icon": "cheque",
+      "icon": "user",
       "path_key": "accounting_user_list_or_create.view",
       "permission": {
         "permissions": [
@@ -750,16 +750,23 @@
         }
       ]
     },
-     {
-          "title": "t-guides",
-          "icon": "help",
-          "path_key": "guides",
+    {
+        "title": "document_management",
+        "icon": "book",
+        "path_key": "guides",
+        "section": "False",
+     "menus": [
+        {
           "permission": {
             "permissions": [
               "guides.view_guides"
             ],
             "groups": ["base_user"]
           },
+          "title": "t-guides",
+          "icon": "question",
+          "path_key": "guides",
+
           "menus": [
             {
               "icon": "message-add",
@@ -769,5 +776,7 @@
             }
           ]
         }
+       ]
+    }
   ]
 }

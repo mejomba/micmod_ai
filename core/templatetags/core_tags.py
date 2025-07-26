@@ -11,6 +11,7 @@ from pprint import pprint
 from django.apps import apps
 from django.apps import apps
 
+from guides.models import Guides
 from tools.utils import show_error
 
 register = template.Library()
@@ -318,3 +319,10 @@ def table_responsive(objs, fields=None, title=None):
 @register.filter
 def typename(obj):
     return type(obj).__name__.lower()
+
+
+@register.simple_tag()
+def guide_for_each_model(section_id):
+    guide = Guides.objects.filter(section_id=section_id).first()
+    return guide.id if guide else None
+

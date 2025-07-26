@@ -1,7 +1,21 @@
 {% load accounts_tag %}
+{% load core_tags %}
+
 <!--begin::Navbar-->
 <div class="app-navbar flex-lg-shrink-0">
+
     {#    lan#}
+    <div class="mt-2 me-2"><span class="d-none">{% guide_for_each_model section_id as guide_id%}</span>
+            {% if guide_id %}
+            	<a href="{% url 'guides:guides.update' guide_id %}" target="_blank">
+                    <i class="ki-duotone ki-question fs-2x " data-bs-toggle="tooltip" data-bs-placement="left" title="راهنما">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                        <span class="path3"></span>
+                    </i>
+                </a>
+            {% endif %}
+        </div>
     {% include 'partials/menus/_languages-menu.html' %}
 
     <!--begin::Search-->
