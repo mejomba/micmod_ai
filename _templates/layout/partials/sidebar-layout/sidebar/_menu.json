@@ -147,7 +147,7 @@
           "path_key": "order",
           "permission": {
             "permissions": [
-              "order.view_payment"
+              "order.view_orderpayment"
             ]
           },
           "menus": [

@@ -25,6 +25,9 @@
         <td class="">
             <div class="font-size-12">{{ form.instance.customer_goods_code|default_if_falsy:"-" }}</div>
         </td>
+        <td>
+        <div class="font-size-12">{{ form.instance.customer_goods_name|default_if_falsy:"-" }}</div>
+        </td>
     {% endif %}
 <!-- QUANTITY -->
     <td class="font-size-12 replace-digits">

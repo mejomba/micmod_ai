@@ -140,6 +140,11 @@ class PackingForm(CustomBaseModelForm):
         super(PackingForm, self).__init__(*args, **kwargs)
         # self.fields['pack_date'] = JalaliDateField(label=_('pack_date'),
         #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        self.fields['departure_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['arrival_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['delivery_to_salehi_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_10_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})

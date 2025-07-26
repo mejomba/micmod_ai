@@ -20,6 +20,12 @@
     <td class="p-0 m-0">
         <div class="bold font-size-12 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
         <div class="w-100 font-size-12 text-center ">{{ form.instance.goods_code_fk.part_number|default_if_none:"" }}</div>
+        {% if form.instance.customer_goods_code or form.instance.customer_goods_name %}
+        <hr>
+        <div class="w-100 font-size-12 text-center ">{{ form.instance.customer_goods_code|default_if_none:"" }}</div>
+        <div class="w-100 font-size-12 text-center ">{{ form.instance.customer_goods_name|default_if_none:"" }}</div>
+        {% endif %}
+
     </td>
 <!-- QUANTITY -->
     <td class="replace-digits">

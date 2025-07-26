@@ -273,6 +273,7 @@ $(document).ready(function () {
         $(document).find("#customer_name").text(data.text);
         $(document).find("#customer_pid").text(data.sepidar_party_id);
         $(document).find("#id_customer_party_id").val(data.sepidar_party_id);
+        get_customer_accounting_info()
     })
     document.getElementsByClassName('goods_name').ondblclick = function () {
         const item = findAncestor(this)
