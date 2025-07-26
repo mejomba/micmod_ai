@@ -642,8 +642,8 @@ class QuotationItem(BaseModel):
     @classmethod
     def get_model_config(cls, app_label, model_name, filter_str):
         return {
-            'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date'],
-            'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد']
+            'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date', 'goods_last_price', 'goods_q_last_price', 'discount_per_item'],
+            'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد', 'آخرین فاکتور', 'آخرین پیش‌فاکتور', 'تخفیف در هر ردیف']
         }
         # queryset = []
         # fields = []
