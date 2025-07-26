@@ -362,11 +362,11 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
-        # last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
-        # context['last_update_datetime'] = last_update_datetime
-        # qis = {qi.pk: qi.last_update_date.isoformat() for qi in self.object.quotation.all() if self.object}
-        # context['qis_last_update_datetime'] = json.dumps(qis)
-        # user_groups = self.request.user.groups.values_list('name', flat=True)
+        last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
+        context['last_update_datetime'] = last_update_datetime
+        qis = {qi.pk: qi.last_update_date.isoformat() for qi in self.object.quotation.all()} if self.object else {}
+        context['qis_last_update_datetime'] = json.dumps(qis)
+        user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
             for qi in self.object.quotation.all():
                 if not qi.price_json:
