@@ -120,8 +120,9 @@
                                                                     <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
 
                                                                 </div>
-                                                                {% if request.user.pk == 21 or form.isntance.last_work_flow.to_user or request.user.is_superuser %}
-                                                                <div class="d-flex gap-6" id="id_customer_accounting_info_container"></div>
+                                                            <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
+                                                            {% if request.user.pk == 21 or form.isntance.last_work_flow.to_user == request.user or request.user.is_superuser %}
+                                                                <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
                                                                 {% endif %}
                                                             </div>
                                                         </div>
@@ -515,7 +516,7 @@ function lastUpdate() {
 {#setInterval(lastUpdate, 3600000);#}
 
 
-{#setTimeout(get_customer_accounting_info, 1500)#}
+setTimeout(get_customer_accounting_info, 1500)
 
 </script>
 
