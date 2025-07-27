@@ -10,6 +10,8 @@ from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
 from datetime import timezone, timedelta, datetime
 
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
 from dw.models import DimCustomer
@@ -49,7 +51,9 @@ from workflow.models import WorkFlow
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
-
+from rest_framework import viewsets
+from .models import CustomerRequest
+from .serializers import CustomerRequestSerializer
 
 def generate_direct_factor(request, quotation: Quotation):
     factor_data = {
@@ -1479,3 +1483,8 @@ def get_customer_accounting_info(request, *args, **kwargs):
 
     return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
 
+
+class CustomerRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = CustomerRequest.objects.all().order_by('-request_date')
+    serializer_class = CustomerRequestSerializer

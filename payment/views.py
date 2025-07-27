@@ -121,6 +121,7 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True,
          'lookup_field': '__profile__first_name__icontains'},
         {'name': 'is_paid', 'visible': True, 'orderable': True},
+        {'name': 'is_formal2', 'visible': True, 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):

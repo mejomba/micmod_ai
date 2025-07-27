@@ -85,6 +85,22 @@ class SaleType(AbsBaseModel):
         return f'{self.title}'
 
 
+class CustomerRequest(AbsBaseModel):
+    request_date = models.DateTimeField(_('request_date'), null=True, blank=True)
+    expire_date = models.DateTimeField(_('expire_date'), null=True, blank=True)
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True,
+                                          to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
+
+
+class CustomerRequestItem(AbsBaseModel):
+    cr = models.ForeignKey(CustomerRequest, verbose_name=_('cutomer_request'), on_delete=models.DO_NOTHING, related_name='items')
+    quantity = models.FloatField(_('quantity'))
+    goods_code = models.CharField(_('goods_code'), max_length=32, null=True, blank=True)
+    part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
+    customer_goods_code = models.CharField(_('goods_code'), max_length=32, null=True, blank=True)
+    customer_part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
+
+
 class Quotation(SLSDoc):
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
