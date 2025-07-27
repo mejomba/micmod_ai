@@ -1,9 +1,16 @@
-from django.urls import path, re_path
+from django.urls import path, include
 
 from .views import *
 
+from rest_framework.routers import DefaultRouter
+from .views import CustomerRequestViewSet
+
+router = DefaultRouter()
+router.register(r'customer-requests', CustomerRequestViewSet, basename='customer-request')
+
 app_name = "micmod_base"
 urlpatterns = [
+    path('', include(router.urls)),
     path(
         r"quotation/view/<int:pk>",
         view=QuotationsView.as_view(),
