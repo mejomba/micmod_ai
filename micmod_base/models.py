@@ -90,6 +90,17 @@ class CustomerRequest(AbsBaseModel):
     expire_date = models.DateTimeField(_('expire_date'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
+    customer_phone = models.CharField(_('customer_phone'), null=True, blank=True, max_length=16)
+    request_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
+
+    @property
+    def get_request_date(self):
+        return 'some data time'
+
+    @get_request_date.setter
+    def get_request_date(self, value):
+        print(value)
+
 
 
 class CustomerRequestItem(AbsBaseModel):
@@ -99,6 +110,7 @@ class CustomerRequestItem(AbsBaseModel):
     part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
     customer_goods_code = models.CharField(_('goods_code'), max_length=32, null=True, blank=True)
     customer_part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
+    request_item_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
 
 
 class Quotation(SLSDoc):

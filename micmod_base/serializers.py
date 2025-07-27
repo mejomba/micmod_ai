@@ -3,17 +3,25 @@ from .models import CustomerRequest, CustomerRequestItem
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = CustomerRequestItem
-        fields = ['id', 'quantity', 'goods_code', 'part_number', 'customer_goods_code', 'customer_part_number']
+        fields = ['id', 'quantity', 'goods_code', 'part_number', 'customer_goods_code', 'customer_part_number',
+                  'request_item_extra_data']
 
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
-    items = CustomerRequestItemSerializer(many=True, read_only=True)
+    items = CustomerRequestItemSerializer(many=True)
+    get_request_date = serializers.CharField(required=False)
+
+    def run_validation(self, data):
+        valid = super().run_validation(data)
+        return valid
 
     class Meta:
         model = CustomerRequest
-        fields = ['id', 'request_date', 'expire_date', 'customer', 'items']
+        fields = ['id', 'get_request_date', 'request_date', 'expire_date', 'customer', 'items', 'request_extra_data', 'customer_phone']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -56,5 +64,41 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
     #                 item_instance.delete()
     #
     #     return instance
+    #
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        is_partial = request.method == 'PATCH'
+
+        items_data = validated_data.pop('items', None)
+
+        # update CustomerRequest fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if items_data is not None:
+            existing_items = {item.id: item for item in instance.items.all()}
+            incoming_ids = []
+
+            for item_data in items_data:
+                item_id = item_data.get('id')
+                if item_id and item_id in existing_items:
+                    item_instance = existing_items[item_id]
+                    for attr, value in item_data.items():
+                        setattr(item_instance, attr, value)
+                    item_instance.save()
+                    incoming_ids.append(item_id)
+                else:
+                    CustomerRequestItem.objects.create(cr=instance, **item_data)
+
+            if not is_partial:
+                # در حالت PUT فقط اون‌هایی که اومدن بمونن
+                for item_id, item_instance in existing_items.items():
+                    if item_id not in incoming_ids:
+                        item_instance.delete()
+
+        return instance
+
 
 
