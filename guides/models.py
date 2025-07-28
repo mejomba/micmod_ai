@@ -14,7 +14,7 @@ class Guides(BaseModel):
     )
     section_id = models.CharField(max_length=100, choices=SECTION_CHOICES, null=True, blank=True)
     title = models.CharField(max_length=255, verbose_name=_('title'))
-    description = models.TextField(verbose_name=_("Description"))
+    description = models.TextField(verbose_name=_("Description"), null=True, blank=True)
 
     def __str__(self):
         return self.title

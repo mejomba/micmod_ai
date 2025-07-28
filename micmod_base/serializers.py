@@ -10,16 +10,16 @@ class QuotationItemSerializer(serializers.ModelSerializer):
 
 
 class QuotationSerializer(serializers.ModelSerializer):
-    items = QuotationItemSerializer(many=True)
+    quotation_items = QuotationItemSerializer(many=True)
 
     class Meta:
         model = Quotation
-        fields = ['id', 'request_date', ]
+        fields = ['id', 'request_date', 'quotation_items']
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    cir_items = QuotationItemSerializer(many=True)
+    id = serializers.IntegerField(required=False, read_only=True)
+    customer_quotation_items = QuotationItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomerRequestItem
@@ -30,11 +30,11 @@ class CustomerRequestItemSerializer(serializers.ModelSerializer):
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
     items = CustomerRequestItemSerializer(many=True)
-    customer_items = QuotationSerializer(many=True)
+    customer_quotations = QuotationSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomerRequest
-        exclude = ['is_deleted']
+        exclude = ['is_deleted',]
         # fields = ['id', 'request_date', 'expire_date', 'customer', 'items', 'request_extra_data', 'customer_phone',
         #           'cart_id', 'created_date', 'last_update_date']
 

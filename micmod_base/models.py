@@ -109,7 +109,7 @@ class CustomerRequestItem(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
-    customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_items', null=True, blank=True)
+    customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
     # translations = TranslatedFields(
@@ -534,7 +534,7 @@ class Quotation(SLSDoc):
 
 
 class QuotationItem(BaseModel):
-    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='cir_items')
+    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='customer_quotation_items')
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
                                   verbose_name=_('quotation'))
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)

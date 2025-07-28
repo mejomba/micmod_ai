@@ -128,9 +128,12 @@
             const pathParts = window.location.pathname.split('/').filter(Boolean);
             const guide_id = pathParts[pathParts.length - 1];
             const guideSearch = document.querySelector('.guide-search>input')
-                guideSearch.value = guide_id;
-                var event = new Event('change');
-                guideSearch.dispatchEvent(event);
+
+            const parsed = parseInt(guide_id, 10);
+            guideSearch.value = isNaN(parsed) ? '' : parsed;
+
+            var event = new Event('change');
+            guideSearch.dispatchEvent(event);
         }
 
         setTimeout(filter_guide, 1000)

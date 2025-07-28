@@ -751,6 +751,24 @@
       ]
     },
     {
+      "title": "customer_group_user_list_or_create",
+      "icon": "user",
+      "path_key": "customer_group_user_list_or_create.view",
+      "permission": {
+        "permissions": [
+          "extra_data.view_accountinguser"
+        ]
+      },
+      "menus": [
+        {
+          "icon": "burger-menu",
+          "title": "list/create",
+          "path_key": "customer_group_user/",
+          "link": "extra_data:customer_group_user"
+        }
+      ]
+    },
+    {
         "title": "document_management",
         "icon": "book",
         "path_key": "guides",

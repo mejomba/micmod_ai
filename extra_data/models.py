@@ -1,6 +1,7 @@
 import uuid
 
 import jdatetime
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -718,6 +719,7 @@ class CustomerGroup(AbsBaseModel):
     sepidar_id = models.AutoField(verbose_name=_('sepidar_id'), unique=True, primary_key=True, editable=False)
     sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), blank=True, null=True, unique=True)
     name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
+    current_user = models.ForeignKey(get_user_model(), on_delete=models.DO_NOTHING, null=True, blank=True)
 
     auto_complete = 'title'
 

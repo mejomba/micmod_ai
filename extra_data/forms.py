@@ -5,7 +5,7 @@ from jalali_date.widgets import AdminJalaliDateWidget
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
-    CustomerFields, CustomerContract, ItemPackage, AccountingUser
+    CustomerFields, CustomerContract, ItemPackage, AccountingUser, CustomerGroup
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -197,5 +197,9 @@ class AccountingUserForm(CustomBaseModelForm):
         model = AccountingUser
         exclude = ['group']
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
+
+class CustomerGroupUserForm(CustomBaseModelForm):
+
+    class Meta:
+        model = CustomerGroup
+        exclude = ['group']

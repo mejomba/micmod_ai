@@ -1,7 +1,8 @@
 from django.urls import path
 
 from . import views
-from .views import AccountingUserView, AccountingUserDatatableView
+from .views import (AccountingUserView, AccountingUserDatatableView,
+                    CustomerGroupUserView, CustomerGroupUserDatatableView)
 
 app_name = 'extra_data'
 urlpatterns = [
@@ -60,5 +61,9 @@ urlpatterns = [
     path('accounting_user/', AccountingUserView.as_view(), name='accounting_user'),
     path('accounting_user/<int:pk>/', AccountingUserView.as_view(), name='accounting_user.update'),
     path('accounting_user/datatable/', AccountingUserDatatableView.as_view(), name='accounting_user.datatable'),
+
+    path('customer_group_user/', CustomerGroupUserView.as_view(), name='customer_group_user'),
+    path('customer_group_user/<int:pk>/', CustomerGroupUserView.as_view(), name='customer_group_user.update'),
+    path('customer_group_user/datatable/', CustomerGroupUserDatatableView.as_view(), name='customer_group_user.datatable'),
 
 ]
