@@ -1,27 +1,42 @@
 from rest_framework import serializers
-from .models import CustomerRequest, CustomerRequestItem
+from .models import CustomerRequest, CustomerRequestItem, QuotationItem, Quotation
+
+
+class QuotationItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuotationItem
+        fields = ['id', 'quantity', 'goods_code_fk']
+
+
+class QuotationSerializer(serializers.ModelSerializer):
+    items = QuotationItemSerializer(many=True)
+
+    class Meta:
+        model = Quotation
+        fields = ['id', 'request_date', ]
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    cir_items = QuotationItemSerializer(many=True)
 
     class Meta:
         model = CustomerRequestItem
-        fields = ['id', 'quantity', 'goods_code', 'part_number', 'customer_goods_code', 'customer_part_number',
-                  'request_item_extra_data']
+        exclude = ['is_deleted', 'cr']
+        # fields = ['id', 'quantity', 'goods_code', 'part_number', 'customer_goods_code', 'customer_part_number',
+        #           'request_item_extra_data', 'cart_item_id', 'created_date', 'last_update_date']
 
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
     items = CustomerRequestItemSerializer(many=True)
-    get_request_date = serializers.CharField(required=False)
-
-    def run_validation(self, data):
-        valid = super().run_validation(data)
-        return valid
+    customer_items = QuotationSerializer(many=True)
 
     class Meta:
         model = CustomerRequest
-        fields = ['id', 'get_request_date', 'request_date', 'expire_date', 'customer', 'items', 'request_extra_data', 'customer_phone']
+        exclude = ['is_deleted']
+        # fields = ['id', 'request_date', 'expire_date', 'customer', 'items', 'request_extra_data', 'customer_phone',
+        #           'cart_id', 'created_date', 'last_update_date']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

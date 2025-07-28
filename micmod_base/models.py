@@ -90,30 +90,26 @@ class CustomerRequest(AbsBaseModel):
     expire_date = models.DateTimeField(_('expire_date'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
-    customer_phone = models.CharField(_('customer_phone'), null=True, blank=True, max_length=16)
+    customer_phone = models.CharField(_('customer_phone'), max_length=16)
+    cart_id = models.BigIntegerField(_('cart_id'))
     request_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
-
-    @property
-    def get_request_date(self):
-        return 'some data time'
-
-    @get_request_date.setter
-    def get_request_date(self, value):
-        print(value)
-
 
 
 class CustomerRequestItem(AbsBaseModel):
     cr = models.ForeignKey(CustomerRequest, verbose_name=_('cutomer_request'), on_delete=models.DO_NOTHING, related_name='items')
+    cart_item_id = models.BigIntegerField(_('cart_item_id'))
     quantity = models.FloatField(_('quantity'))
-    goods_code = models.CharField(_('goods_code'), max_length=32, null=True, blank=True)
-    part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
-    customer_goods_code = models.CharField(_('goods_code'), max_length=32, null=True, blank=True)
-    customer_part_number = models.CharField(_('goods_name'), max_length=255, null=True, blank=True)
+
+    product_id = models.BigIntegerField(_('product_id'), null=True, blank=True)
+    customer_part_number = models.CharField(_('goods_code'), max_length=255, null=True, blank=True)
+    customer_sku = models.CharField(_('goods_name'), max_length=32, null=True, blank=True)
+    customer_description = models.TextField(_('customer_description'), max_length=2000, null=True, blank=True)
+
     request_item_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
 
 
 class Quotation(SLSDoc):
+    customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_items', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
     # translations = TranslatedFields(
@@ -538,6 +534,7 @@ class Quotation(SLSDoc):
 
 
 class QuotationItem(BaseModel):
+    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='cir_items')
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
                                   verbose_name=_('quotation'))
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)

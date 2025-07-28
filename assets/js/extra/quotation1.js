@@ -809,7 +809,7 @@ function generate_price_method_select_option(row, price_json=null, idx=null){
             if (option.value === previous_price_method){
                 option.selected = true
                 if (previous_price_method !== 'sales_admin' && previous_price_method !== '----------'){
-                    row.querySelector('[name*="-final_price"]').value = item.value
+                    row.querySelector('[name*="-final_price"]').value = round_rial(item.value)
                 } //else if (previous_price_method !== '----------'){
                     //row.querySelector('[name*="-final_price"]').value = ''
                 //}
