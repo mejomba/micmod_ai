@@ -755,8 +755,8 @@
       "icon": "user",
       "path_key": "customer_group_user_list_or_create.view",
       "permission": {
-        "permissions": [
-          "extra_data.view_customergroup"
+          "groups": [
+            "sales_admin"
         ]
       },
       "menus": [
