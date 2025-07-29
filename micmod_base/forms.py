@@ -148,6 +148,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                            widget=forms.HiddenInput())
         self.fields['discount_per_item'].widget.attrs['onchange'] = 'refresh_front_prices()'
         self.fields['quantity'].widget.attrs['onkeyup'] = 'setPriceWithAjax(event)'
+        self.fields['sales_description'].widget.attrs.update({'class': 'w-100 narrow-input', 'placeholder': "توضیحات فروش برای مشتری (تا 255 کاراکتر)"})
+        # self.fields['sales_description'].widget.attrs['class'] = 'rounded w-100'
 
         self.fields['trade_price_code'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}),
                                                                      queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'trade'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
@@ -244,7 +246,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
                   'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
-                  'selected_price_code', 'price_json',
+                  'selected_price_code', 'price_json', 'sales_description',
                   #'bazar_selected_price_code', 'trade_selected_price_code'
                   ]
         widgets = {
@@ -410,7 +412,8 @@ qi_fields = [
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
-    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json', #'bazar_selected_price_code', 'trade_selected_price_code'
+    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json',
+    'sales_description', #'bazar_selected_price_code', 'trade_selected_price_code'
     ]
 
 

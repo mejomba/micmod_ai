@@ -534,6 +534,7 @@ class Quotation(SLSDoc):
 
 
 class QuotationItem(BaseModel):
+    sales_description = models.CharField(_('sales_description'), max_length=255, null=True, blank=True)
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='customer_quotation_items')
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
                                   verbose_name=_('quotation'))

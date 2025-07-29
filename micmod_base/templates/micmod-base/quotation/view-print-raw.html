@@ -46,7 +46,7 @@
         {% endif %}
     </a>
 </div>
-
+<div>
 <div class="container mt-10" dir="rtl">
     <div class="row">
         <div class="col">
@@ -171,20 +171,22 @@
 
 <div class="container" dir="rtl">
     <div class="row">
-        <table class="table table-bordered border-dark mb-0">
+        <table class="table table-responsive table-bordered border-dark mb-0">
             <thead>
             <tr class="text-center">
-                <th scope="col" class="text-center">ردیف</th>
-                <th scope="col" class="text-center">کد کالا</th>
-                <th scope="col" class="text-center" >شرح کالا/ خدمت</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 30px;">ردیف</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 45px;">کد کالا</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 100px;">شرح کالا/ خدمت</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 100px;">توضیحات فروش</th>
                 {% if with_customer_goods_code == '1' %}
-                    <th scope="col" class="text-center">کد کالای مشتری</th>
-                    <th scope="col" class="text-center">شرح کالا/خدمت مشتری</th>
+                    <th scope="col" class="text-center font-size-12 text-wrap" style="width: 50px;">کد کالای مشتری</th>
+                    <th scope="col" class="text-center font-size-12 text-wrap" style="width: 80px;">شرح کالا/خدمت مشتری</th>
                 {% endif %}
-                <th scope="col" class="text-center">تعداد/ مقدار</th>
+{#                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 50px;">تامین</th>#}
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 60px;">تعداد/ مقدار</th>
 {#                <th scope="col">واحد</th>#}
-                <th scope="col" class="text-center">مبلغ واحد</th>
-                <th scope="col" class="text-center">مبلغ کل</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 80px;">مبلغ واحد</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 100px;">مبلغ کل</th>
             </tr>
             </thead>
             <tbody class="border border-dark">
@@ -309,10 +311,11 @@
         </div>
     </div>
 </div>
-<br>
-<br>
-<br>
-<br>
+</div>
+{#<br>#}
+{#<br>#}
+{#<br>#}
+{#<br>#}
 {% block extra_js %}
     <script src="{% static 'js/base.js' %}"></script>
 
