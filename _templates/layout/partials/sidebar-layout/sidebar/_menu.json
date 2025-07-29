@@ -756,7 +756,7 @@
       "path_key": "customer_group_user_list_or_create.view",
       "permission": {
         "permissions": [
-          "extra_data.view_accountinguser"
+          "extra_data.view_customergroup"
         ]
       },
       "menus": [
