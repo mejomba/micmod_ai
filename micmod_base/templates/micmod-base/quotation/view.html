@@ -124,7 +124,7 @@
                                                         <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
                                                         {% endif %}
 
-                                                            {% if request.user.pk == 21 or request.user.is_superuser or customer.change_marketer_rel.last.to_marketer.current_user == request.user %}
+                                                            {% if request.user.pk == 21 or request.user.is_superuser or customer.change_marketer_rel.first.to_marketer.current_user == request.user %}
                                                                 <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
                                                                 {% endif %}
                                                             </div>

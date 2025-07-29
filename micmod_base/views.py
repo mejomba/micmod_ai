@@ -1488,3 +1488,50 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = CustomerRequest.objects.all().order_by('-request_date')
     serializer_class = CustomerRequestSerializer
+
+
+class CustomerRequestList(LoginRequiredMixin,View):
+    def get(self, request):
+        q = self.request.GET.get('q')
+        context = {}
+        return render(request, 'micmod-base/customer_request/list_datatable.html', context)
+
+
+class CustomerRequestDatatableView(AjaxDatatableView):
+    model = CustomerRequest
+    title = 'customer request'
+    initial_order = [["id", "desc"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        # {'name': 'pk', 'visible': True, 'title': _('شماره سند'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, 'title': 'شناسه'},
+        {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'expire_date', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
+        {'name': 'customer', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__pk__icontains'},
+        {'name': 'customer_phone', 'visible': True, 'title': 'کارشناس', 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'cart_id', 'visible': True, 'title': 'کد کالا', 'orderable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'request_extra_data', 'visible': True, 'title': 'کالا', 'orderable': True, 'lookup_field': '__icontains'},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        q = request.POST.get('q')
+        qs = self.model.objects.all()
+        return qs
+
+    def customize_row(self, row, obj):
+
+        row['quotation__pk'] = obj.quotation.pk if obj.quotation else ''
+        row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
+        row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
+        row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
+        row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
+        row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
+        row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
+        row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
+        row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
+        row['fee'] = obj.fee if obj else ''
+

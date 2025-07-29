@@ -1,0 +1,527 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}
+    {{ form.instance.pk }}
+    درخواست
+{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+{% block form_content %}
+
+    <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
+    <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
+    <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
+
+    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+        خروجی اکسل
+    </button>
+
+    <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
+    <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
+        <span class="">ردیف(های)</span>
+    <span id="expire_inquiry_row_number" class="bg-danger px-2 rounded text-white s-2"></span>
+    (روش تعیین قیمت را اصلاح کنید)
+</div>
+            {% csrf_token %}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    <div class="row">
+                        <div class="col-sm-12">
+
+    {% if form.instance.pk and form.instance.cancel %}
+        <h3 class="p-5 bg-light-danger text-danger bold text-center">
+        این پیش فاکتور کنسل شده است
+        </h3>
+    {% endif %}
+{% if factors %}
+    <div class="bg-light-danger {% if factors %} p-3 {% endif %}">
+    {% for factor in factors %}
+    {% if forloop.first %}
+        <div class="text-danger bold mb-4">امکان تغییر در پیش فاکتوری که برای آن فاکتور صادر شده است وجود ندارد
+            {% if form.instance.is_direct %}
+                <span class="badge">این سند برای فاکتور مستقیم ثبت شده است</span>
+            {% endif %}
+        </div>
+        <span class="bold">فاکتور های مرتبط</span>
+    {% endif %}
+        <a href="{% url 'factor:factor.view' factor.pk %}" class="text-primary badge pb-1 badge-light-primary border border-primary font-size-12 ms-2" target="_blank" style="letter-spacing: 1.5px">{{ factor.pk }}</a>
+    {% endfor %}
+    </div>
+    {% else %}
+    <a class="fw-bold border border-primary bg-light-primary rounded p-1 m-10 d-none" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
+    {% endif %}
+
+                        <div class="mt-5 mb-2">
+                            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+                        </div>
+                            <div class="card p-0">
+                                <div class="row">
+                                    <div class="col-sm-7">
+                                        <div class="border-end p-2 pe-4">
+                                            <h3 class="card-title pb-3" data-key="quotation-information">Quotation
+                                                Information
+                                            </h3>
+{#                                            <div class="row">#}
+{#                                                <div class="">#}
+                                                    <div class="row">
+                                                        <div class="col-sm-4 m-0">
+                                                            {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
+                                                            {% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
+                                                        </div>
+                                                        <div class="col-sm-4 ms-lg-auto">
+                                                            {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
+                                                        </div>
+                                                        <div class="col-sm-12">
+                                                            {% render_field_group form.addition form.tax label_type='on-border '%}
+                                                            <div class="d-none">{{ form.market_grade }}</div>
+                                                        </div>
+                                                    </div>
+{#                                                </div>#}
+{#                                            </div>#}
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-5 ms-lg-auto">
+                                        <div class="p-2">
+                                            <h3 class="card-title pb-3" data-key="customer-information">Customer Information
+                                            </h3>
+                                            <div class="row">
+                                                <div class="">
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
+                                                            {% get_comment_user_list form request.user %}
+                                                        </div>
+                                                        <div class="col-sm-6 ms-sm-auto rounded">
+                                                            {% get_customer form.instance.customer_code as customer %}
+                                                                {% if  customer %}
+                                                                    <div class="p-2 pb-3 rounded bg-success" id="customer_card">
+                                                                {% else %}
+                                                                    <div class="d-none p-2 pb-3 rounded bg-success" id="customer_card">
+                                                                {% endif %}
+                                                                    <div data-key="customer_title" class="rounded">customer title</div>
+                                                                    <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
+                                                                    <div data-key="party_id">party id</div>
+                                                                    <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
+
+                                                                </div>
+                                                        {% if customer.pk %}
+                                                        <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
+                                                        {% endif %}
+
+                                                            {% if request.user.pk == 21 or request.user.is_superuser or customer.change_marketer_rel.last.to_marketer.current_user == request.user %}
+                                                                <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                        </div>
+                        <!--list start-->
+                        {{ formset.management_form }}
+                        {{ formset.non_form_errors }}
+                        <div class="card">
+                            <template
+                                    id="id_formset_empty_form">{% include "micmod-base/quotation/item3.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
+                            </div>
+                            <div class="card-body p-0" id="id_formset_container">
+                            <div class="d-flex justify-content-start align-items-center gap-4 mt-10 bg-white position-sticky" style="top: 40px; z-index: 200">
+                                {% include 'partials/formset_header_buttons.html' %}
+                                {% if form.instance.get_inquiry_result_count %}
+                                <p class="font-size-14 inquiry-status">تعداد کل ردیف <strong>{{ form.instance.get_inquiry_result_count.0 }}</strong></p>
+                                <p class="font-size-14 inquiry-status">وضعیت استعلام داخلی <strong>{{ form.instance.get_inquiry_result_count.2 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.1 }}</small></p>
+                                <p class="font-size-14 inquiry-status">وضعیت استعلام خارجی <strong>{{ form.instance.get_inquiry_result_count.4 }}</strong>/<small>{{ form.instance.get_inquiry_result_count.3 }}</small></p>
+                                {% endif %}
+                            <div class="row row-cols-4 align-items-baseline ms-5 me-5">
+                                {% render_field_by_order form form.is_official form.official_value form.self_discount label='on-border' %}
+                                {% get_comment_user_list form request.user cancel=True %}
+                            </div>
+
+                                {% if request.user|has_group:'sales_admin' %}
+                                    {% render_field_by_order form form.sales_admin_confirm label='on-border' %}
+                                {% else %}
+                                    <span class="d-none">{{ form.sales_admin_confirm }}</span>
+                                {% endif %}
+
+
+                            </div>
+                            <div id="sortable-container">
+                                {% for form_ in formset.forms %}
+                                    {% include "micmod-base/quotation/item3.html" with form_s=form_ nested=form_.nested.forms.0 nested_manage=form_.nested detail_logs=detail_logs %}
+                                {% endfor %}
+                            </div>
+                            </div>
+                        <div class="mt-20 pt-10"></div>
+            {% include 'core/partial/empty_modal.html' %}
+            {% include 'core/partial/empty_modal_lg.html' %}
+            {% include 'core/partial/empty_modal_sm.html' %}
+<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}">
+                {# this tag maybe need to close #}
+                        </div>
+            {% endblock form_content %}
+{% block before_button %}
+    {% include "micmod-base/base/create_info_bar.html" %}
+{% endblock before_button %}
+{% block form_footer_extra %}
+{% include "core/partial/add_formset_button.html" %}
+    {% if form.instance.id %}
+    <div class="px-2 mx-auto">
+    </div>
+        {% if form.instance.quotation_rel.all.last.id %}
+            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_rel.all.last.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+            {% elif form.instance.quotation_self.id %}
+            <a href="{% url 'micmod_base:quotations.view' form.instance.quotation_self.id %}" class="btn btn-outline-dark btn-bordered text-xl-center ms-auto">مرتبط </a>
+        {% endif %}
+        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
+            <div><label class="col-form-label">استعلام سریع</label></div>
+            <div>
+                <span class="switch switch-brand">
+                    <label>
+                        {{ form.force_inquiry }}
+                        <span></span>
+                    </label>
+                </span>
+            </div>
+        </div>
+    <div class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
+         m-href="{% url 'micmod_base:quotations.print-view' form.instance.id %}"
+         onclick="do_print({{ data }})" name="do_print">
+        پرینت پیش فاکتور
+    </div>
+    {% else %}
+        <div class="px-2 mx-auto">
+        </div>
+    {% endif %}
+        <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
+            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
+                 data-key="refresh" onclick="refresh_prices()">
+                به روز رسانی قیمت
+            </div>
+            <div class="align-items-center text-white bg-info w-65 rounded">
+                <div class=""></div>
+                <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
+                    <div class="w-30 ms-2"> جمع کل</div>
+                    <div class="quotation_total_price w-70 text-center "
+                         name="quotation_total_price"></div>
+                </h5>
+            </div>
+        </div>
+    </div>
+    </div>
+<div class="position-fixed bg-light-info w-75 p-5 rounded d-none" id="price-updating" style="top: 50%; right: 50%; transform: translate(50%, 50%);">در حال بروز رسانی قیمت ...</div>
+<div class="position-fixed bg-light-success w-75 p-5 rounded d-none" id="price-updated" style="top: 50%; right: 50%; transform: translate(50%, 50%);">قیمت ها بروز شدند</div>
+{% endblock form_footer_extra %}
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+    $('._x').on('hidden.bs.modal', function (e) {
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+    </script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/quotation1.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function (e) {
+        closeAllFormset({
+            'code_h': ['class', 'select2-selection__rendered', 'lbl'],
+            'name_h': ['name', '-goods_name_lbl', 'lbl'],
+            'quantity_h': ['name', 'quotation-idx-quantity', 'input'],
+            'unit-price_h': ['name', 'quotation-idx-final_price', 'input'],
+            'total-price_h': ['name', '-total_price', 'lbl']
+        })
+    })
+    const isOfficial = document.getElementById('id_is_official');
+    const officialValue = document.getElementById('id_official_value');
+    isOfficialCheck()
+    isOfficial.addEventListener('change', isOfficialCheck)
+    function isOfficialCheck(){
+        if(isOfficial && isOfficial.checked){
+            officialValue.disabled = false
+        } else if (isOfficial && !isOfficial.checked){
+            officialValue.disabled = true
+        }
+    }
+    const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]')
+    submitCommentBtns.forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            let comment_url = item.dataset.form_url;
+            const pk = item.dataset.pk;
+            const comment_type = item.dataset.comment_type
+            const comment_input_id = comment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const comment_element = $('#id-empty-modal-body')
+            const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+            const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+            const title = commentFormGroup.querySelector('[id*="title"]')
+            const content = commentFormGroup.querySelector('[id*="content"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            if (father){
+                const images = father.querySelectorAll('img')
+                images.forEach(function (img){
+                    img.classList.remove('border')
+                    commentCounter.innerHTML = '0'
+                })
+            }
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
+            custom_ajax_get(comment_form, comment_url, comment_element)
+        }) // end eventListener
+    }) // end forEach
+
+    function addCommentInput(){
+        const pkElement = document.querySelector('[id*="object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+        commentFormGroup.innerHTML = ''
+        commentFormGroup.appendChild(commentFormForCopy)
+    }
+
+    const emptyModal = document.getElementById('id_kt_empty_modal')
+    emptyModal.addEventListener('hidden.bs.modal', function (e) {
+        document.querySelector('#id-empty-modal-body').innerHTML = ''
+    })
+    const customerName = document.querySelector('#customer_name')
+    customerName.addEventListener('change', createTitle)
+    const saleType = document.querySelector('#id_sale_type')
+    saleType.addEventListener('change', createTitle)
+    const requestDate = document.querySelector('#id_request_date')
+    requestDate.addEventListener('change', createTitle)
+
+    function createTitle (){
+        debugger
+        const title = document.querySelector('#id_title')
+        const saleTypeText = saleType.options[saleType.selectedIndex].text
+        if (title) {
+            title.value =  requestDate.value + '--' + saleTypeText + '--' + customerName.innerText
+        }
+    }
+
+    // disable submit buttons if click
+    const inputs = document.querySelectorAll('input[type="submit"]')
+    const qForm = document.querySelector('#main-form')
+    qForm.addEventListener('submit', function (e){
+        setTimeout(() => {
+            inputs.forEach(function (item){
+            item.setAttribute('disabled', 'disabled')
+            })
+        }, 600);
+    })
+
+</script>
+<script src="{% static 'js/local/sortable.min.js' %}"></script>
+<script>
+generate_drag_drop()
+
+document.querySelectorAll('input').forEach(function (item){
+    item.addEventListener('keydown', function (e){
+        if (e.key === 'Enter'){
+            e.preventDefault()
+            alert('استفاده از کلید Enter مجاز نیست')
+        }
+    })
+})
+</script>
+
+
+<script>
+let config = {};
+
+// Main function to open modal
+function openModal(event) {
+    event.preventDefault();
+
+    const quotationId = $(event.target).data('quotation-id');
+    window.currentQuotationId = quotationId;
+
+    const requestData = {
+        app_label: 'micmod_base',
+        model_name: 'quotationitem',
+        filter_str: []
+    };
+
+    $.ajax({
+        url: '/micmod_base/get_model_fields_config/',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        contentType: 'application/json',
+        data: JSON.stringify(requestData),
+        success: function (data) {
+            config = {};
+            $.each(data.labels, function (index, label) {
+                config[data.fields[index]] = label;
+            });
+
+            renderModalContent();  // Build the modal UI after config is ready
+        },
+        error: function () {
+            alert('خطا در بارگذاری فیلدها');
+        }
+    });
+}
+
+function renderModalContent() {
+    const container = $('#id-empty-modal-body-lg');
+    container.empty();
+
+    container.append(`<h2 class="text-center mb-5">انتخاب فیلدها برای خروجی اکسل</h2>`);
+
+    const buttonsHtml = `
+        <div class="mb-10">
+            <button type="button" class="btn btn-sm btn-success me-2" id="selectAllBtn">انتخاب همه</button>
+            <button type="button" class="btn btn-sm btn-danger" id="deselectAllBtn">حذف انتخاب همه</button>
+        </div>`;
+    container.append(buttonsHtml);
+
+    container.append(`<div id="checkboxes-container" class="row"></div>`);
+    const checkboxesContainer = $('#checkboxes-container');
+
+    $.each(config, function (field, label) {
+        const checkbox = `
+            <div class="col-3 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${field}" id="checkbox_${field}">
+                    <label class="form-check-label" for="checkbox_${field}">${label}</label>
+                </div>
+            </div>`;
+        checkboxesContainer.append(checkbox);
+    });
+
+    container.append(`
+        <div class="mt-4">
+            <div id="submitExportBtn" class="btn btn-primary close-modal" data-bs-dismiss="modal">تایید و دانلود اکسل</div>
+        </div>
+    `);
+
+    // Button listeners
+    $('#selectAllBtn').on('click', function () {
+        $('#checkboxes-container input[type=checkbox]').prop('checked', true);
+    });
+
+    $('#deselectAllBtn').on('click', function () {
+        $('#checkboxes-container input[type=checkbox]').prop('checked', false);
+    });
+
+    $('#submitExportBtn').on('click', downloadExcel);
+}
+
+// Handle Excel export
+function downloadExcel(event) {
+    const selectedFields = $('#checkboxes-container input[type=checkbox]:checked')
+        .map(function () { return this.value; }).get();
+    const selectedLabels = selectedFields.map(f => config[f]);
+
+    const quotationId = window.currentQuotationId;
+
+    $.ajax({
+        url: `/micmod_base/export_to_excel/${quotationId}/`,
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        contentType: 'application/json',
+        data: JSON.stringify({
+            selected_fields: selectedFields,
+            selected_labels: selectedLabels
+        }),
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (blob) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quotation_${quotationId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        },
+        error: function () {
+            alert('خطا در دانلود فایل');
+        }
+    });
+}
+
+function get_customer_accounting_info(){
+    const customer_party_id = document.querySelector('#id_customer_party_id')
+    if (customer_party_id){
+        const url = `/micmod_base/ajax/customer_accounting_info/?party_id=${customer_party_id.value}`
+        const el = $('#id_customer_accounting_info_container')
+        custom_ajax_get(null, url, el)
+    }
+}
+
+function lastUpdate() {
+    debugger
+    console.log('debug')
+    let qDateJson = document.querySelector('input[name="last_update_datetime"]').value
+    let qiDateJson = document.querySelector('input[name="qis_last_update_datetime"]').value
+
+
+
+    if (qiDateJson.startsWith('"') && qiDateJson.endsWith('"')) {
+        qiDateJson = qiDateJson.slice(1, -1);
+        qiDateJson = qiDateJson.replace(/\\"/g, '"'); // رفع escape های اضافی
+    }
+    if (qDateJson.startsWith('"') && qDateJson.endsWith('"')) {
+        qDateJson = qDateJson.slice(1, -1);
+    }
+
+    let qiDateJsonObj  = JSON.parse(qiDateJson)
+
+    let qiDateJsonString = JSON.stringify(qiDateJsonObj)
+
+    const quotationId = document.querySelector('input[name="quotation_id"]').value
+    console.log('qDateJson:', qDateJson);
+    console.log('qiDateJson:', qiDateJson);
+    const url = `/micmod_base/quotation/view/${quotationId}?last_update_datetime=${qDateJson}&qis_last_update_datetime=${qiDateJsonString}`
+    const el = $('#global-error')
+    custom_ajax_get(null, url, el)
+
+}
+
+{#setTimeout(lastUpdate, 3600000);#}
+{#setInterval(lastUpdate, 3600000);#}
+
+
+setTimeout(get_customer_accounting_info, 1500)
+
+</script>
+
+
+    <script src="{% static 'js/jalali.js' %}"></script>
+{#    <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0"></script>#}
+{% endblock extra_js %}
