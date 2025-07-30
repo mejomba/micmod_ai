@@ -20,9 +20,16 @@
     <td class="">
         <div class="font-size-11">{{ form.instance.goods_code_fk.part_number|default_if_none:"-" }}</div>
     </td>
+<!-- SUPPLY STATUS -->
+    <td class="">
+        <div class="font-size-11">{{ form.instance.supply_status|default_if_none:"-" }}</div>
+    </td>
+<!-- SALES DESCRIPTION -->
+    {% if has_sales_description %}
     <td class="">
         <div class="font-size-11">{{ form.instance.sales_description|default_if_none:"-" }}</div>
     </td>
+    {% endif %}
 <!-- CUSTOMER GOODS CODE -->
     {% if with_customer_goods_code == '1' %}
         <td class="">
@@ -41,9 +48,6 @@
         <div class=" text-center font-size-12" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
         <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
     </td>
-{#    <td class="font-size-10 replace-digits">#}
-{#        <div class="bold text-center font-size-10" name="unit" >عدد</div>#}
-{#    </td>#}
 <!-- GOODS LAST PRICE -->
     <td class="font-size-11 replace-digits">
 {#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}

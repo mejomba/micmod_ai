@@ -638,9 +638,9 @@ div[comma-value] input{
 
 .narrow-input {
     outline: none;
-    border: 1px solid lightgray;
+    border: 1px solid #dadada;
     padding: 2px 10px;
-    border-radius: 0.25rem;
+    border-radius: 0.3rem;
 }
 /*=================================*/
 .inquiry-status {
