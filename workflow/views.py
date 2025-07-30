@@ -60,7 +60,7 @@ class FlowBaseView(SingleObjectMixin):
         if not obj:
             return None
         content_type = ContentType.objects.filter(model=obj._meta.model_name, app_label=obj._meta.app_label).first()
-        return self.flow_model.objects.filter(object_id=obj.id, content_type=content_type).order_by('id')
+        return self.flow_model.objects.filter(object_id=getattr(obj, f'{self.flow_model._meta.pk.name}', None), content_type=content_type).order_by(self.flow_model._meta.pk.name)
 
     def get_flow_user(self, group: str):
         if isinstance(group, list):

@@ -1,14 +1,20 @@
+import ast
 import json
 
+import jdatetime
 from django.apps import apps
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
 from jalali_date.templatetags.jalali_tags import to_jalali
+from datetime import timezone, timedelta, datetime
+
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
+from dw.models import DimCustomer
 from extra_data.models import Item
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
@@ -32,7 +38,7 @@ from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchang
 from sepidar.models import Dl
 from tools import const
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import show_error, to_jalali_date, export_to_excel
+from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
 from translator import get_text as _
 from django.views import View
 
@@ -45,7 +51,9 @@ from workflow.models import WorkFlow
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
-
+from rest_framework import viewsets
+from .models import CustomerRequest
+from .serializers import CustomerRequestSerializer
 
 def generate_direct_factor(request, quotation: Quotation):
     factor_data = {
@@ -90,7 +98,7 @@ def generate_direct_factor(request, quotation: Quotation):
                 'qi': qi,
                 'goods_code': qi.goods_code_fk,
                 'part_number_show': qi.goods_code_fk.part_number,
-                'price': qi.price,
+                'price': qi.fee,
                 'quantity': qi.quantity,
                 'delivery_time': qi.delivery_time,
                 # 'supply_locations': order,
@@ -121,6 +129,8 @@ class QuotationsList(LoginRequiredMixin,View):
 
 class QuotationsView(LoginRequiredMixin, BaseView):
     template_name = 'micmod-base/quotation/view.html'
+    conflict_template_name = 'micmod-base/quotation/conflict_view.html'
+    post_conflict_template_name = 'micmod-base/quotation/conflict_post_view.html'
     form_class = QuotationForm
     model = Quotation
     wf_last_step_is_open = True
@@ -146,17 +156,48 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return reverse_lazy('micmod_base:quotations.view', kwargs={'pk': self.object.pk})
 
     def get(self, request, *args, **kwargs):
+        if is_ajax(self.request):
+            if not self.check_last_update():
+                html = render_to_string(self.conflict_template_name, {'conflict': True, 'obj': self.object})
+                return JsonResponse({'res': html}, safe=False)
+            else:
+                return JsonResponse({'res': ''}, safe=False)
         if 'direct' in request.GET:
             self.template_name = 'factor/direct_factor.html'
         return super().get(request, *args, **kwargs)
 
+    def check_last_update(self):
+        return True
+        qis_last_update = json.loads(self.request.POST.get('qis_last_update_datetime', "{}")) or self.request.GET.get('qis_last_update_datetime')
+        q_last_update = self.request.POST.get('last_update_datetime') or self.request.GET.get('last_update_datetime').replace(' ', '+')
+        if is_ajax(self.request):
+            qis_last_update = json.loads(qis_last_update)
+
+        if q_last_update and self.object.last_update_date.replace(microsecond=0) != datetime.fromisoformat(q_last_update).replace(microsecond=0):
+            return False
+
+        for qi in self.object.quotation.all():
+            if qi_last_update:=qis_last_update.get(str(qi.pk)):
+                qi_last_update = qi_last_update.replace(' ', '+')
+                if datetime.fromisoformat(qi_last_update).replace(microsecond=0) != qi.last_update_date.replace(microsecond=0):
+                    return False
+        return True
+
     def post(self, request, *args, **kwargs):
+        if not self.check_last_update():
+            return render(request, self.post_conflict_template_name, {'conflict': True, 'obj': self.object})
         if 'duplicate' in self.request.POST:
             obj = duplicate_quotation(self.request, self.object.pk)
             if obj:
                 return HttpResponseRedirect(reverse('micmod_base:quotations.view', kwargs={'pk': obj.pk}))
         # if self.object is None:
         #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+        if self.object and self.object.last_work_flow.current_state_name in ['تایید پیش فاکتور'] and 'back' in self.request.POST:
+            self.request.POST._mutable = True
+            # self.request.POST['sales_admin_confirm'] = ''
+            self.object.sales_admin_confirm = False
+            self.request.POST._mutable = False
+            self.object.save()
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -189,7 +230,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 for qi in self.object.quotation.all():
                     if bool(qi.local_price_inquiry_done) != bool(qi.need_local_price_inquiry) or \
                             bool(qi.foreign_price_inquiry_done) != bool(qi.need_foreign_price_inquiry):
-                        """مجاز نیستن برن مرحله بعد"""
+                        """عبور به مرحله بعد غیر مجاز می‌باشد"""
                         """create new quotation"""
                         quotation_data = dict()
                         pop_quotation_item = ['id', 'guid', 'created_date', 'last_update_date', 'creator_user',
@@ -325,7 +366,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
-        # user_groups = self.request.user.groups.values_list('name', flat=True)
+
+        context['section_id'] = 'quotation'
+        last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
+
+        context['last_update_datetime'] = last_update_datetime
+        qis = {qi.pk: qi.last_update_date.isoformat() for qi in self.object.quotation.all()} if self.object else {}
+        context['qis_last_update_datetime'] = json.dumps(qis)
+        user_groups = self.request.user.groups.values_list('name', flat=True)
         if self.object:
             for qi in self.object.quotation.all():
                 if not qi.price_json:
@@ -416,6 +464,8 @@ def print_view(request,id=-1):
                                   }
                                   )
     for f in greeting['formset']:
+        if f.instance.sales_description:
+            greeting['has_sales_description'] = True
         f.alt_codes_html = []
         if alt_qs := f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
             for alt_comment in alt_qs:
@@ -1027,7 +1077,8 @@ class QuotationListDatatable(AjaxDatatableView):
         {'name': 'sepidar_number', 'title': "کد سپیدار", 'visible': True, 'orderable': True},
         {'name': 'cancel', 'visible': True, 'orderable': True},
         {'name': 'comment', 'visible': True, 'title': '<div class="px-10">نظرات</div>', 'searchable': False},
-        {'name': 'quotation__goods_code_fk', 'visible': True, 'title': '<div class="px-10">جستجوی کالا</div>', 'searchable': True, 'lookup_field': '__sku__iexact'},
+        {'name': 'description_sales', 'visible': True, 'title': '<div class="px-10">توضیحات فروش</div>', 'searchable': True},
+        {'name': 'quotation__goods_code_fk', 'visible': True, 'title': '<div class="px-1">جستجوی کالا</div>', 'searchable': True, 'lookup_field': '__sku__iexact'},
         {'name': 'sales_admin_confirm', 'visible': True, 'orderable': True},
     ]
 
@@ -1422,3 +1473,67 @@ def export_quotation_items_to_excel(request, quotation_id):
 #         # return self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
 #         _data, _status = self.serializer_class.get_json_response(view_obj=self, *args, **kwargs)
 #         return JsonResponse(_data, status=_status, safe=True)
+
+
+def get_customer_accounting_info(request, *args, **kwargs):
+    # return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
+    party_id = request.GET.get('party_id')
+    if party_id:
+        customer = DimCustomer.get_customer(party_id)
+        html = render_to_string('micmod-base/quotation/partial/customer_accounting_info_in_quotation.html', {"customer": customer[0]})
+        return JsonResponse({'res': html})
+
+    return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
+
+
+class CustomerRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = CustomerRequest.objects.all().order_by('-request_date')
+    serializer_class = CustomerRequestSerializer
+
+
+class CustomerRequestList(LoginRequiredMixin,View):
+    def get(self, request):
+        q = self.request.GET.get('q')
+        context = {}
+        return render(request, 'micmod-base/customer_request/list_datatable.html', context)
+
+
+class CustomerRequestDatatableView(AjaxDatatableView):
+    model = CustomerRequest
+    title = 'customer request'
+    initial_order = [["id", "desc"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        # {'name': 'pk', 'visible': True, 'title': _('شماره سند'), 'className': 'py-1 border currency-search'},
+        {'name': 'id', 'visible': False, 'title': 'شناسه'},
+        {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'expire_date', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
+        {'name': 'customer', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__pk__icontains'},
+        {'name': 'customer_phone', 'visible': True, 'title': 'کارشناس', 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'cart_id', 'visible': True, 'title': 'کد کالا', 'orderable': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'request_extra_data', 'visible': True, 'title': 'کالا', 'orderable': True, 'lookup_field': '__icontains'},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        q = request.POST.get('q')
+        qs = self.model.objects.all()
+        return qs
+
+    def customize_row(self, row, obj):
+
+        row['quotation__pk'] = obj.quotation.pk if obj.quotation else ''
+        row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
+        row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
+        row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
+        row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
+        row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
+        row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
+        row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
+        row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
+        row['fee'] = obj.fee if obj else ''
+

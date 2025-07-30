@@ -5,7 +5,7 @@ WF__ORDER__SECOND_STATE = "تایید مدیر فروش"
 WF__ORDER__SECOND_WF_DESCRIPTION = 'ایجاد شده خودکار توسط سیستم'
 WF__ORDER__SECOND_CURRENT_STATE_NAME = 'تایید مدیر فروش'
 
-WF__FACTOR__FIRST_STATE = "پیش نویس"
+WF__FACTOR__FIRST_STATE = "پیش‌نویس"
 model_name_map = {
     "logentry":"",
     "permission":"",
@@ -124,5 +124,6 @@ model_name_map = {
 }
 
 WF__ORDER__3_CURRENT_STATE_NAME = "تایید بازرگانی"
+WF__ORDER__5_CURRENT_STATE_NAME = "ارسال به تامین کننده"
 WF__ORDER__3_STATE = "تایید بازرگانی"
 WF__ORDER__4_STATE = "تایید مهندس"

@@ -665,6 +665,8 @@ class InquiryResult(AbsBaseModel):
     air_transportation_cost_3 = models.FloatField(verbose_name=_('air_transportation_cost_3'), null=True, blank=True)
     sea_transportation_cost_3 = models.FloatField(verbose_name=_('sea_transportation_cost_3'), null=True, blank=True)
 
+    inquiry_price_json = models.JSONField(null=True, blank=True)
+
     quotation_item = models.ForeignKey(QuotationItem, on_delete=models.SET_NULL, related_name='quotation_item_rel',
                                        null=True, blank=True)
     sales_price_inquery_log = models.ForeignKey(SalesPriceInqueryLog, on_delete=models.DO_NOTHING,

@@ -1,9 +1,9 @@
 from django.contrib import admin
+
+from core.admin import BaseJsonFieldAdmin
 from .models import ItemWeight,Item, HS, PurchaseGroup, SaleGroup, Customer, WH
 
-# Register your models here.
-
-admin.site.register([ItemWeight,Item, HS,PurchaseGroup, SaleGroup, Customer])
+admin.site.register([ItemWeight, HS,PurchaseGroup, SaleGroup, Customer])
 
 
 class WHAdmin(admin.ModelAdmin):
@@ -11,3 +11,8 @@ class WHAdmin(admin.ModelAdmin):
 
 
 admin.site.register(WH, WHAdmin)
+
+
+@admin.register(Item)
+class PriceSettingsAdmin(BaseJsonFieldAdmin):
+    pass

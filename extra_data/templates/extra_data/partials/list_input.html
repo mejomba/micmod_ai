@@ -1,0 +1,162 @@
+<div id="{{ id }}">
+
+    <div id="id_list_container">
+        <div class="d-fle d-none" id="id_list_title">
+            <span class="mx-auto">مقدار</span>
+        </div>
+    </div>
+
+    <div class="float-end">
+        مراجع مشابه
+        <i class="ki-duotone ki-plus-circle text-primary fs-1 cursor-pointer scale-1-3" onclick="add_list(event)">
+             <span class="path1"></span>
+             <span class="path2"></span>
+        </i>
+    </div>
+
+</div>
+
+<script>
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    }
+
+    function remove_list_json(event){
+        event.currentTarget.parentElement.remove()
+    }
+
+    function add_list(event){
+        debugger
+        const list_json_title = document.querySelector('#id_list_title')
+        if (list_json_title){list_json_title.classList.remove('d-none')}
+        const uuid = generateUUID()
+        const element = `
+            <input type="text" name="site_urls__${uuid}" class="form-control py-1 px-2" onchange="list_to_list_json(this)">
+            <i class="ki-duotone ki-cross-circle text-danger fs-1 cursor-pointer scale-1-3" onclick="remove_list_json(event); list_to_list_json()">
+                <span class="path1"></span>
+                <span class="path2"></span>
+            </i>
+`
+        const variantsJsonContainer = document.querySelector('#id_list_container')
+        if (variantsJsonContainer){
+            const container = document.createElement('div')
+            container.className = "d-flex align-items-center sites_list_json gap-1"
+            container.innerHTML = element
+            variantsJsonContainer.append(container)
+            {#get_list_title(uuid, container)#}
+        }
+
+    }
+
+    function get_list_title(uuid){
+        $.ajax({
+        type: 'GET',
+        url: '/inquiry/transportation_method/title/',
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        //beforeSend: block_main_container,
+        success: function (data) {
+            console.log('success ', data)
+            if (data){
+                let html = `
+                <datalist id="list_transportation_method__${uuid}">`
+                for (const d in data) {
+                    html += `<option data-pk="${data[d][0]}">${data[d][1]}</option>`
+                }
+                html += `</datalist>`
+                const item = document.querySelector(`input[list="site_urls__${uuid}"]`)
+                insertAfter(item, html)
+            }
+        },
+        error: function () {
+            console.log('error .....')
+        },
+    });
+    }
+
+    function list_to_list_json() {
+        debugger
+        let list_array = []
+        const variant_jsons = document.querySelectorAll('.sites_list_json')
+        const real_list_jsons = document.querySelector("textarea[name='site_urls']")
+        let jsonObj = [];
+
+
+        variant_jsons && variant_jsons.forEach(function (item) {
+            const title = item.querySelector('input').value
+            jsonObj.push(title)
+        })
+
+        if (jsonObj && real_list_jsons) {
+            if (jsonObj.length === 0){
+                real_list_jsons.value = null
+            } else {
+                real_list_jsons.value = JSON.stringify(jsonObj)
+            }
+        }
+    }
+
+    function show_title(){
+        debugger
+        let uuid;
+        const element = `
+            <input type="text" name="" class="form-control py-1 px-2" onchange="list_to_list_json(this)">
+            <i class="ki-duotone ki-cross-circle text-danger fs-1 cursor-pointer scale-1-3" onclick="remove_list_json(event); list_to_list_json()">
+                <span class="path1"></span>
+                <span class="path2"></span>
+            </i>
+            `
+
+
+
+        const trade_transportation_method_json = document.querySelector('#id_site_urls').value
+        const variantsJsonContainer = document.querySelector('#id_list_title')
+        variantsJsonContainer.innerHTML = ''
+        let container;
+        let ttmj = JSON.parse(trade_transportation_method_json)
+
+        for (const d of ttmj) {
+            debugger
+            uuid = generateUUID()
+            if (variantsJsonContainer){
+                container = document.createElement('div')
+                container.className = "d-flex align-items-center sites_list_json gap-1"
+                container.innerHTML = `
+                                    <input type="text" value="${d}" name="" class="form-control py-1 px-2" onchange="list_to_list_json(this)">
+                                    <i class="ki-duotone ki-cross-circle text-danger fs-1 cursor-pointer scale-1-3" onclick="remove_list_json(event); list_to_list_json()">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                    </i>
+                                    `
+                variantsJsonContainer.append(container)
+                variantsJsonContainer.classList.remove('d-none')
+                {#insertAfter(item, html)#}
+                {#get_list_title(uuid, container)#}
+            }
+        }
+    }
+
+    {#function get_trade_transportation_method_json(){#}
+    {#    $.ajax({#}
+    {#        url: '/inquiry/trade_transportation_method/json/',#}
+    {#        dataType: "json",#}
+    {#        type: "GET",#}
+    {#        async: false,#}
+    {#        data: {supplier: supplier?.value, sku: sku?.value},#}
+    {#        cache: false,#}
+    {#        success: function (data) {#}
+    {#            debugger#}
+    {#            document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])#}
+    {#        }#}
+    {#    }); // end ajax#}
+    //}
+    {#setTimeout(get_trade_transportation_method_json, 1000)#}
+
+    setTimeout(show_title, 1000)
+</script>

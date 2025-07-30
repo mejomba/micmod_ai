@@ -243,7 +243,7 @@ class Order(BaseModeWF):
             "wf_status": 3,  # next
             "action": 'ایجاد خودکار',
             "flow_name": 'سفارش',
-            "state": const.WF__ORDER__SECOND_STATE,
+            "state": const.WF__ORDER__FIRST_STATE,
             "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
             "belong_to_group": 'order_admin',
             "object_id": o1.pk,

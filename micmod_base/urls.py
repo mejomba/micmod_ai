@@ -1,9 +1,15 @@
-from django.urls import path, re_path
+from django.urls import path, include
 
 from .views import *
 
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'customer-requests', CustomerRequestViewSet, basename='customer-request')
+
 app_name = "micmod_base"
 urlpatterns = [
+    path('', include(router.urls)),
     path(
         r"quotation/view/<int:pk>",
         view=QuotationsView.as_view(),
@@ -49,5 +55,9 @@ urlpatterns = [
     path('ajax/inquiry_not_started/', inquiry_not_started, name='inquiry_not_started'),
     path('export_to_excel/<int:quotation_id>/', export_quotation_items_to_excel, name='export.qi.to.excel'),
     path('get_model_fields_config/', get_model_fields_config, name='get.model.fields.config'),
+    path('ajax/customer_accounting_info/', get_customer_accounting_info, name='get_customer_accounting_info'),
     # path('api/', ExportQuotation.as_view(), name='api'),
+    path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
+    # path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
+    path('customer_request_list_datatable/', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
 ]

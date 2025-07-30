@@ -15,14 +15,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.conf import settings
 from _keenthemes.views import SystemView
 from . import views
 from django.conf.urls.static import static
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
+    # YOUR PATTERNS
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
     path('admin/', admin.site.urls),
 
     # Dashboard urls
@@ -79,6 +86,7 @@ urlpatterns = [
     path('pcba/', include('pcba.urls')),
     path('order/', include('order.urls')),
     path('transportation/', include('transportation.urls')),
+    path('guides/', include('guides.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 handler404 = SystemView.as_view(template_name = 'pages/system/not-found.html', status=404)
