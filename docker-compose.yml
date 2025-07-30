@@ -104,6 +104,8 @@ services:
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
     networks:
       - live
+    volumes:
+      - .:/app
 
   celerybeat:
     build:
@@ -120,7 +122,9 @@ services:
       - SECRET_KEY=django-insecure-blehs+vjho@s4qug%9ferf0-tucvbr9#_1k2!#ebs4u68@)ss+
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
     networks:
-      - live 
+      - live
+    volumes:
+      - .:/app
 
 networks:
   live:

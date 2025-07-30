@@ -1,6 +1,7 @@
 import uuid
 
 import jdatetime
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -25,6 +26,7 @@ from django.core.validators import MaxValueValidator
 from queryable_properties.properties import queryable_property
 
 from transportation.models import TradeTransportationMethod
+from dw.models import DimOrder
 
 
 class DiscountBasedPriceType(models.TextChoices):
@@ -360,7 +362,12 @@ class Item(BaseModel):
     # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
     #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
+    site_urls = models.JSONField(default=list, verbose_name='مراجع مشابه', null=True, blank=True)
     objects = BaseManager(is_public=True)
+
+    @property
+    def order_inway(self):
+        return DimOrder.order_inway(self.sku)
 
     @property
     def active_hs(self):
@@ -712,6 +719,7 @@ class CustomerGroup(AbsBaseModel):
     sepidar_id = models.AutoField(verbose_name=_('sepidar_id'), unique=True, primary_key=True, editable=False)
     sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), blank=True, null=True, unique=True)
     name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
+    current_user = models.ForeignKey(get_user_model(), on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name=_('portal_current_user'))
 
     auto_complete = 'title'
 
@@ -724,9 +732,12 @@ class AccountingUser(AbsBaseModel):
     sepidar_group_id = models.BigIntegerField(verbose_name=_('sepidar_group_id'), unique=True, blank=True, null=True)
     name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
 
-    auto_complete = 'title'
+    # auto_complete = 'title'
 
-    insert_new = True
+    # insert_new = True
+
+    def __str__(self):
+        return f'{self.title} - {self.name}'
 
 
 class Senf(AbsBaseModel):
@@ -823,6 +834,13 @@ def uploaded_image_path(instance, filename: str):
 
 
 class Customer(AbsBaseModel):
+    RISK_STATUS_CHOICE = (
+        ("low risk", "کم ریسک"),
+        ("mid risk", "متوسط ریسک"),
+        ("high risk", "پر ریسک"),
+        ("suspicious", "مشکوک الوصول"),
+        ("valid", "معتبر"),
+    )
     sepidar_dl_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     sepidar_dl_code = models.BigIntegerField(verbose_name=_('sepidar_code'), null=True, blank=True, unique=True)
     sepidar_party_id = models.BigIntegerField(verbose_name=_('sepidar_party_id'), null=True, blank=True, unique=True)
@@ -867,7 +885,7 @@ class Customer(AbsBaseModel):
     # کارشناس
     marketer = models.ForeignKey(Marketer, on_delete=models.DO_NOTHING, related_name='customers',
                                  verbose_name=_("marketer"), null=True, blank=True)
-    accounting = models.ForeignKey(AccountingUser, on_delete=models.DO_NOTHING, related_name='customer_accounting',
+    accounting_user = models.ForeignKey(AccountingUser, on_delete=models.DO_NOTHING, related_name='customer_accounting',
                                  verbose_name="کاربر مالی", null=True, blank=True)
     # مشتریان بدون قرارداد ( چک هنگام تحویل کالا)
     cheque_to_delivery = models.BooleanField(_('cheque_to_delivery'), default=False)
@@ -896,6 +914,9 @@ class Customer(AbsBaseModel):
     # customer_expert_phone_number = models.CharField(_('customer_expert_phone_number'), max_length=50, null=True, blank=True)
     meet_in_person = models.BooleanField(_('meet_in_person'), default=False)
     black_list = models.BooleanField(_('black_list'), default=False)
+
+    # customer_debts = models.CharField(max_length=255, verbose_name=_('customer_debts'), null=True, blank=True)
+    risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
 
     @staticmethod
     def get_list(text):

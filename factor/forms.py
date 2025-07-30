@@ -67,8 +67,9 @@ class FactorModelForm(CustomBaseModelForm):
                                                       )
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
-        if request.user.base_group == 'accounting':
-            self.fields['checker'] = forms.ModelChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
+
+        if request and request.user.base_group == 'accounting':
+            self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
                                                                                                  Q(groups__name='accounting_admin')).distinct(), required=False)
         else:
             self.make_disable(['checker'])

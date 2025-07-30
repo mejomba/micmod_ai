@@ -579,7 +579,10 @@ class BaseView(UserPassesTestMixin,
     def form_valid(self, form):
         if form.is_valid():
             """save main form"""
-            old_obj = self.model.objects.filter(Q(id=self.kwargs.get('pk')) | Q(id=self.kwargs.get('id'))).first()
+            # old_obj = self.model.objects.filter(Q(id=self.kwargs.get(f'{self.flow_model._meta.pk.name}')) | Q(id=self.kwargs.get('id'))).first()
+
+            pk_field_nae = self.model._meta.pk.name
+            old_obj = self.model.objects.filter(Q(**{pk_field_nae: self.kwargs.get('pk')}) | Q(**{pk_field_nae: self.kwargs.get('id')})).first()
             if 'uncanceled' in self.request.POST:
                 old_obj.cancel = False
                 old_obj.extra_data.request = self.request

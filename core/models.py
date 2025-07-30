@@ -136,6 +136,9 @@ class BaseManager(models.Manager):
                 factor_item_quantity=Coalesce(Sum('quotation__qi__quantity'), Value(0)),
                 qi_quantity=Coalesce(Sum('quotation__quantity'), Value(0)))\
                 .filter(qi_quantity__gt=F('factor_item_quantity'))
+        elif q == 'sales_admin_confirm':
+            quotations_record_lst = qry.filter(sales_admin_confirm=False, cancel=False, is_deleted=False).filter(~Q(last_work_flow__current_state_name='پیش فاکتور اولیه') &
+                                                                                 ~Q(last_work_flow__current_state_name='استعلام قیمت'))
         else:
             quotations_record_lst = qry
 

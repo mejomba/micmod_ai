@@ -19,9 +19,15 @@
 {% endblock extra_css %}
 
 {% block form_content %}
-    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary d-none" onclick="openModal(event)" id="openExportModal">
+
+    <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
+    <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
+    <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
+
+    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
         خروجی اکسل
     </button>
+
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -98,7 +104,7 @@
                                                 <div class="">
                                                     <div class="row">
                                                         <div class="col-sm-6">
-                                                            {% render_field_by_order form form.customer_code form.customer_grade form.description form.cancel label='on-border' margin_b=3 %}
+                                                            {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
                                                             {% get_comment_user_list form request.user %}
                                                         </div>
                                                         <div class="col-sm-6 ms-sm-auto rounded">
@@ -112,7 +118,15 @@
                                                                     <div class="bg-light-info p-2 rounded text-black mb-1" id="customer_name">{{ customer.name }}</div>
                                                                     <div data-key="party_id">party id</div>
                                                                     <div class="bg-light-info p-2 rounded text-black" id="customer_pid">{{ customer.sepidar_party_id }}</div>
+
                                                                 </div>
+                                                        {% if customer.pk %}
+                                                        <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
+                                                        {% endif %}
+
+                                                            {% if request.user|has_group:"sales_admin" or customer.change_marketer_rel.first.to_marketer.current_user == request.user %}
+                                                                <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
+                                                                {% endif %}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -130,7 +144,7 @@
                                     id="id_formset_empty_form">{% include "micmod-base/quotation/item3.html" with form_s=formset.empty_form nested=formset.forms.0.nested.empty_form nested_manage=formset.forms.0.nested %}</template>
                             </div>
                             <div class="card-body p-0" id="id_formset_container">
-                            <div class="d-flex justify-content-start align-items-center gap-4 mt-10 bg-white position-sticky" style="top: 65px; z-index: 200">
+                            <div class="d-flex justify-content-start align-items-center gap-4 mt-10 bg-white position-sticky" style="top: 40px; z-index: 200">
                                 {% include 'partials/formset_header_buttons.html' %}
                                 {% if form.instance.get_inquiry_result_count %}
                                 <p class="font-size-14 inquiry-status">تعداد کل ردیف <strong>{{ form.instance.get_inquiry_result_count.0 }}</strong></p>
@@ -463,7 +477,49 @@ function downloadExcel(event) {
     });
 }
 
+function get_customer_accounting_info(){
+    const customer_party_id = document.querySelector('#id_customer_party_id')
+    if (customer_party_id){
+        const url = `/micmod_base/ajax/customer_accounting_info/?party_id=${customer_party_id.value}`
+        const el = $('#id_customer_accounting_info_container')
+        custom_ajax_get(null, url, el)
+    }
+}
 
+function lastUpdate() {
+    debugger
+    console.log('debug')
+    let qDateJson = document.querySelector('input[name="last_update_datetime"]').value
+    let qiDateJson = document.querySelector('input[name="qis_last_update_datetime"]').value
+
+
+
+    if (qiDateJson.startsWith('"') && qiDateJson.endsWith('"')) {
+        qiDateJson = qiDateJson.slice(1, -1);
+        qiDateJson = qiDateJson.replace(/\\"/g, '"'); // رفع escape های اضافی
+    }
+    if (qDateJson.startsWith('"') && qDateJson.endsWith('"')) {
+        qDateJson = qDateJson.slice(1, -1);
+    }
+
+    let qiDateJsonObj  = JSON.parse(qiDateJson)
+
+    let qiDateJsonString = JSON.stringify(qiDateJsonObj)
+
+    const quotationId = document.querySelector('input[name="quotation_id"]').value
+    console.log('qDateJson:', qDateJson);
+    console.log('qiDateJson:', qiDateJson);
+    const url = `/micmod_base/quotation/view/${quotationId}?last_update_datetime=${qDateJson}&qis_last_update_datetime=${qiDateJsonString}`
+    const el = $('#global-error')
+    custom_ajax_get(null, url, el)
+
+}
+
+{#setTimeout(lastUpdate, 3600000);#}
+{#setInterval(lastUpdate, 3600000);#}
+
+
+setTimeout(get_customer_accounting_info, 1500)
 
 </script>
 

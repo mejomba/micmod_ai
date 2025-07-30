@@ -85,8 +85,33 @@ class SaleType(AbsBaseModel):
         return f'{self.title}'
 
 
+class CustomerRequest(AbsBaseModel):
+    request_date = models.DateTimeField(_('request_date'), null=True, blank=True)
+    expire_date = models.DateTimeField(_('expire_date'), null=True, blank=True)
+    customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True,
+                                          to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
+    customer_phone = models.CharField(_('customer_phone'), max_length=16)
+    cart_id = models.BigIntegerField(_('cart_id'))
+    request_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
+
+
+class CustomerRequestItem(AbsBaseModel):
+    cr = models.ForeignKey(CustomerRequest, verbose_name=_('cutomer_request'), on_delete=models.DO_NOTHING, related_name='items')
+    cart_item_id = models.BigIntegerField(_('cart_item_id'))
+    quantity = models.FloatField(_('quantity'))
+
+    product_id = models.BigIntegerField(_('product_id'), null=True, blank=True)
+    customer_part_number = models.CharField(_('goods_code'), max_length=255, null=True, blank=True)
+    customer_sku = models.CharField(_('goods_name'), max_length=32, null=True, blank=True)
+    customer_description = models.TextField(_('customer_description'), max_length=2000, null=True, blank=True)
+
+    request_item_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
+
+
 class Quotation(SLSDoc):
+    customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
+    description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
     # translations = TranslatedFields(
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True, to_field='sepidar_party_id', on_delete=models.DO_NOTHING, db_column='customer_party_id')
     # customer_party_id = models.BigIntegerField(verbose_name=_('party_id'), null=True, blank=True)
@@ -508,7 +533,17 @@ class Quotation(SLSDoc):
         pass
 
 
+class SupplyStatus(AbsBaseModel):
+    title = models.CharField(max_length=128, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+    insert_new = True
+
+
 class QuotationItem(BaseModel):
+    supply_status = models.ForeignKey(SupplyStatus, verbose_name=_('supply_status'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    sales_description = models.CharField(_('sales_description'), max_length=255, null=True, blank=True)
+    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='customer_quotation_items')
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
                                   verbose_name=_('quotation'))
     created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
@@ -592,6 +627,36 @@ class QuotationItem(BaseModel):
     objects = QuotationItemManager()
 
     @property
+    def price_json_for_template(self):
+        out = self.price_json
+        all_match_express = any(item['type'] == 'express' for item in self.price_json)
+        all_match_air = any(item['type'] == 'air' for item in self.price_json)
+        all_match_sea = any(item['type'] == 'sea' for item in self.price_json)
+
+        if not all_match_express:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'express',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'express'}
+            )
+
+        if not all_match_air:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'air',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'air'}
+            )
+
+        if not all_match_sea:
+            out.append(
+                {'ref': None, 'date': None, 'seen': None, 'type': 'sea',
+                 'iqref': None, 'jdate': None, 'title': None, 'value': None, 'access_type': None,
+                 'unique_title': 'sea'}
+            )
+
+        return out
+
+    @property
     def get_price_method_type(self):
         for item in self.price_json or []:  # self.price_json is `list of dict`
             if item.get('unique_title') == self.price_method:
@@ -611,8 +676,8 @@ class QuotationItem(BaseModel):
     @classmethod
     def get_model_config(cls, app_label, model_name, filter_str):
         return {
-            'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date'],
-            'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد']
+            'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date', 'goods_last_price', 'goods_q_last_price', 'discount_per_item'],
+            'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد', 'آخرین فاکتور', 'آخرین پیش‌فاکتور', 'تخفیف در هر ردیف']
         }
         # queryset = []
         # fields = []

@@ -91,6 +91,9 @@
                 {% if form.instance.pk %}
                     {% include 'order/partial/order_sales_read_section.html' with form=form %}
                 {% endif %}
+            {% elif request.user|has_group:'trade_user' and form.form_state == 5 and request.user.pk == 26 %}
+                {% include 'order/partial/mac_edit_section.html' with form=form %}
+                {% include 'order/partial/mac_read_section.html' with form=form %}
             {% elif request.user|has_group:'trade_user' %}
                 {% include 'order/partial/order_trade_edit_section.html' with form=form %}
                 {% include 'order/partial/order_trade_read_section.html' with form=form %}
@@ -261,6 +264,16 @@
                             </div>
                         </div>
                     {% endfor %}
+
+{#                <span class="tooltip_">#}
+{#                <a class="fw-bold" href="/micmod_base/quotations/create" target="_blank">#}
+{#                    <i class="ki-duotone ki-plus-circle fs-3x">#}
+{#                        <span class="tooltiptext font-size-12">پرداخت جدید</span>#}
+{#                        <span class="path1"></span>#}
+{#                        <span class="path2"></span>#}
+{#                    </i>#}
+{#                </a>#}
+            </span>
                 </div>
             <!-- GIO -->
                 <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel" aria-labelledby="kt_tab_pane_2">

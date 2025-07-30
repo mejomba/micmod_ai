@@ -82,7 +82,8 @@ LOCAL_APPS = [
     'payment',
     'factor',
     'order',
-    'pcba'
+    'pcba',
+    'guides'
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -110,6 +111,7 @@ THIRD_PARTY_APPS = [
     'sekizai',
     'sslserver',
     'django_json_widget',
+    'drf_spectacular',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -277,7 +279,14 @@ DATABASES = {
         'USER': os.environ.get('DW_USER'),
         'PASSWORD': os.environ.get('DW_PASSWORD'),
         'HOST': os.environ.get('DW_HOST'),
-        # 'PORT': DB_PIRINEOS_PORT,
+        'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
+     },
+    'micmod_dw':  {
+        'ENGINE': os.environ.get('DW_ENGIN'),
+        'NAME': os.environ.get('MICMODDW_NAME'),
+        'USER': os.environ.get('DW_USER'),
+        'PASSWORD': os.environ.get('DW_PASSWORD'),
+        'HOST': os.environ.get('DW_HOST'),
         'OPTIONS': {'driver': 'ODBC Driver 17 for SQL Server', },
      },
 }
@@ -464,7 +473,16 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 50
+    'PAGE_SIZE': 50,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Your Project API',
+    'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {
