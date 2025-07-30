@@ -1,4 +1,6 @@
 import datetime
+from django.utils import timezone
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -52,6 +54,15 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
+        if self.object and self.object.last_work_flow.current_state_name in ['جمع‌‌آوری'] and 'next' in self.request.POST:
+            self.request.POST._mutable = True
+            self.request.POST['collecting_end_time'] = timezone.now()
+            self.request.POST._mutable = False
+        if self.object and self.object.last_work_flow.current_state_name in ['چک نهایی'] and 'back' in self.request.POST:
+            self.request.POST._mutable = True
+            self.request.POST['collecting_end_time'] = None
+            self.request.POST._mutable = False
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -247,7 +258,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
                     'wf_access': True,
                     'from_user': None,
                     'to_user': to_user, #self.get_flow_user(flow_user_groups[self.state_index + 1]), #request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
-                    'state': 'فاکتور اولیه',
+                    'state': 'پیش‌نویس',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',
                     'action': 'create',

@@ -465,6 +465,9 @@ class BaseView(UserPassesTestMixin,
                 to_user = None
 
             if self.has_flow:
+                # fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
+                # self.wf_access2 = wf_access2 = fci
+
                 # self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
                 #     FlowAdminGroup.is_admin_of_group(self.request.user, current_state_group, model=self.model) or \
                 #     (bool(set(belong_to_groups) & set(self.request.user.groups.values_list('name', flat=True))) and
@@ -477,7 +480,7 @@ class BaseView(UserPassesTestMixin,
 
                 fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
                 self.wf_access, self.wf_access2 = (self.wf_access, fci)
-                wf_access, wf_access2 = (wf_access, fci)
+                # wf_access, wf_access2 = (wf_access, fci)
 
                 # if self.object.cancel:
                 #     self.wf_access = False

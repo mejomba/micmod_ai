@@ -50,6 +50,7 @@ class Factor(SLSDoc):
     wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True, verbose_name=_('کارشناس انبار'))
     to_be_collected = models.BooleanField(default=False, verbose_name=_('جمع‌آوری شود'))
     collecting_start_time = models.DateTimeField(verbose_name=_('زمان شروع جمع‌آوری'), null=True, blank=True)
+    collecting_end_time = models.DateTimeField(verbose_name=_('زمان پایان جمع‌آوری'), null=True, blank=True)
     final_check = models.BooleanField(default=False, verbose_name=_('چک نهایی'))
     require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('الزام ارسال فاکتور رسمی همراه بار'))
     official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
