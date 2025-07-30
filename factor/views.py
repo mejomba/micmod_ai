@@ -55,19 +55,16 @@ class FactorView(LoginRequiredMixin, BaseView):
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
-        if self.object and self.object.last_work_flow.current_state_name in ['جمع‌‌آوری'] and 'next' in self.request.POST:
-            self.request.POST._mutable = True
-            self.request.POST['collecting_end_time'] = timezone.now()
-            self.request.POST._mutable = False
-        if self.object and self.object.last_work_flow.current_state_name in ['چک نهایی'] and 'back' in self.request.POST:
-            self.request.POST._mutable = True
-            self.request.POST['collecting_end_time'] = None
-            self.request.POST._mutable = False
+        if self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST:
+            self.object.collecting_end_time = None
+            self.object.extra_data.request = self.request
+            self.object.save()
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        if self.object is None:
-            pass
+        if self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST:
+            self.form.instance.collecting_end_time = timezone.now()
+
         res = super().form_valid(form)
         if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
