@@ -133,12 +133,12 @@
               {
               "group": "wh_admin",
               "hide": ["packing_json"],
-              "read": ["deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["self_discount", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
               "hide": ["packing_json", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer"],
-              "read": ["need_financial_approval", "final_check", "need_factor_document"]
+              "read": ["official_factor_send_with_this_factor", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }],
             "formset_constraints": [
               {

@@ -59,6 +59,9 @@ class FactorModelForm(CustomBaseModelForm):
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
+        self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
+        self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
+
         self.make_hidden(['q'])
         self.fields['collecting_start_time'] = JalaliDateField(label=_('collecting_start_time'),
                                                       widget=AdminJalaliDateWidget(

@@ -105,11 +105,14 @@
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">تخفیف نوع ۱</span>
-                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">
+                        {% render_field_by_order form form.official_value %}
+{#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">درصد تخفیف روی همه</span>
-                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">
+{#                        {{ form.self_discount }}#}
+                        {% render_field_by_order form form.self_discount %}
+{#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">#}
                     </span>
                 </div>
             </div>
@@ -120,7 +123,17 @@
             </div>
         </div>
         <div class="row mt-4">
-                {% render_field_by_order form form.wh_user form.collecting_start_time form.official_factor_send_with_this_factor form.checker form.packing_json form.deliver_type label='on-border' %}
+                {% render_field_by_order form form.wh_user form.collecting_start_time form.official_factor_send_with_this_factor form.packing_json form.deliver_type label='on-border' %}
+{#        {{ form.checker }}#}
+            <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="true" multiple="multiple">
+                {% for item in form.checker.field.queryset %}
+                    {% if item in form.initial.checker %}
+                        <option value="{{ item.pk }}" selected>{{ item }}</option>
+                     {% else %}
+                        <option value="{{ item.pk }}">{{ item }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
             </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
 {#        <input type="hidden" value="{{ quotation.is_official }}" name="is_official">#}

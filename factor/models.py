@@ -57,7 +57,7 @@ class Factor(SLSDoc):
     deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('نوع ارسال'))
     deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
-    checker = models.ForeignKey(User, related_name='factor_checker', null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name=_('چک کننده'))
+    checker = models.ManyToManyField(User, related_name='factor_checker', verbose_name=_('چک کننده'))
     packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):
