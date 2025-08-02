@@ -458,7 +458,10 @@ class BaseView(UserPassesTestMixin,
                     elif self.state_index is not None and self.state_index + 1 == wf_len:
                         to_user = self.get_flow_user(current_state_group) if self.has_flow else None
                     elif self.state_index is not None:
-                        to_user = self.get_flow_user(next_state_group) if self.has_flow else None
+                        if self.model.__name__.lower() == 'quotation':
+                            to_user = self.request.user if self.has_flow else None
+                        else:
+                            to_user = self.get_flow_user(next_state_group) if self.has_flow else None
 
             except Exception as e:
                 print('error: ', __file__, e.__traceback__.tb_lineno, e)

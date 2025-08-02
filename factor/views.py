@@ -144,6 +144,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
+            self.object.collecting_start_time = datetime2jalali(self.object.collecting_start_time).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
         context['submit_copy'] = False

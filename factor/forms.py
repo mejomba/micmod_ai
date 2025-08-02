@@ -3,14 +3,19 @@ from django.forms import inlineformset_factory
 
 from django import forms
 from django_select2.forms import ModelSelect2MultipleWidget
-from jalali_date.fields import JalaliDateField
-from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.fields import JalaliDateField, JalaliDateTimeField, SplitJalaliDateTimeField
+from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
 from accounts.models import User
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem
 from order.models import Order
 from translator import get_text as _
+from django.utils.html import format_html
+
+
+class x (AdminSplitJalaliDateTime):
+    template_name = 'core/partial/jalali_split_datetime.html'
 
 
 class UserSelectWidget(ModelSelect2MultipleWidget):
@@ -63,8 +68,11 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
 
         self.make_hidden(['q'])
-        self.fields['collecting_start_time'] = JalaliDateField(label=_('collecting_start_time'),
-                                                      widget=AdminJalaliDateWidget(
+        # self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('date time'),
+        #     widget=AdminSplitJalaliDateTime # required, for decompress DatetimeField to JalaliDateField and JalaliTimeField
+        # )
+        self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
+                                                      widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
                                                                  'size': '10'}), required=False
                                                       )
@@ -75,7 +83,9 @@ class FactorModelForm(CustomBaseModelForm):
             self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
                                                                                                  Q(groups__name='accounting_admin')).distinct(), required=False)
         else:
-            self.make_disable(['checker'])
+            self.fields['checker'] = forms.ModelMultipleChoiceField(
+                queryset=User.objects.filter(Q(groups__name='accounting_user') |
+                                             Q(groups__name='accounting_admin')).distinct(), required=False, disabled=True)
 
         self.make_hidden(form_constraint_hide or [])
         self.make_hidden(formset_constraint_hide or [])

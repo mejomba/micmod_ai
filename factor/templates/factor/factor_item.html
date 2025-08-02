@@ -1,15 +1,36 @@
+{% load i18n %}
 {% load factor_tags %}
 {% load humanize %}
 {% load jalali_tags %}
 {% load more_tags %}
 {% load core_tags %}
+{% load accounts_tag %}
 
 <div class="mt-5 mb-2">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
                         </div>
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
+
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
 {{ form.media }}
+<style>
+    .select2-selection--multiple{
+        padding-right: 5px !important;
+        padding-top: 7px !important;
+    }
+    .select2-selection__clear{
+        color: red !important;
+    }
+    .select2-selection__choice{
+        padding-right: 3px !important;
+    }
+    .select2-container--default[dir="rtl"] .select2-selection--multiple .select2-selection__choice__remove{
+        border-left: none;
+    }
+</style>
+
+
 
 <div class="mt-10 mb-2  bg-light-warning py-2 px-3 rounded font-size-15" style="width: fit-content">
 <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
@@ -122,45 +143,37 @@
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
-                {% render_field_by_order form form.wh_user form.collecting_start_time form.official_factor_send_with_this_factor form.packing_json form.deliver_type label='on-border' %}
-{#        {{ form.checker }}#}
-            <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="true" multiple="multiple">
-                {% for item in form.checker.field.queryset %}
-                    {% if item in form.initial.checker %}
-                        <option value="{{ item.pk }}" selected>{{ item }}</option>
-                     {% else %}
-                        <option value="{{ item.pk }}">{{ item }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
+        <div class="row row-cols-6 mt-4">
+            {% render_field_by_order form form.collecting_start_time %}
+            {% render_field_by_order form form.deliver_type label='on-border' %}
+            {% render_field_by_order form form.official_factor_send_with_this_factor form.packing_json label='on-border' %}
+            <div class="col-3 on-border">
+                <label style="z-index: 100 !important;">کاربر انبار</label>
+                <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"accounting_user" %} disabled {% endif %}>
+                    {% for item in form.wh_user.field.queryset %}
+                        {% if item in form.initial.wh_user %}
+                            <option value="{{ item.pk }}" selected>{{ item }}</option>
+                        {% else %}
+                            <option value="{{ item.pk }}">{{ item }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
             </div>
+            <div class="col-3 on-border">
+                <label style="z-index: 100 !important;">کاربر مالی</label>
+                <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"wh_user" %} disabled {% endif %}>
+                    {% for item in form.checker.field.queryset %}
+                        {% if item in form.initial.checker %}
+                            <option value="{{ item.pk }}" selected>{{ item }}</option>
+                        {% else %}
+                            <option value="{{ item.pk }}">{{ item }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
-{#        <input type="hidden" value="{{ quotation.is_official }}" name="is_official">#}
-{#        <input type="hidden" value="{{ quotation.official_value }}" name="official_value">#}
-{#        <input type="hidden" value="{{ quotation.self_discount }}" name="self_discount">#}
     </div>
-{#<div class="row">#}
-{#    <div class="d-flex flex-column gap-2">#}
-{#    <div class="col-3">#}
-{#        <span class="d-flex">#}
-{#            {% render_field_by_order form form.is_official label='in-line' %}#}
-{#        </span>#}
-{#    </div>#}
-{#    <div class="col-2">#}
-{#        <span class="d-flex">#}
-{#            <span class="me-3 bold w-35">تخفیف نوع ۱</span>#}
-{#            <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
-{#        </span>#}
-{#    </div>#}
-{#    <div class="col-2">#}
-{#        <span class="d-flex">#}
-{#            <span class="me-3 bold w-50">درصد تخفیف روی همه</span>#}
-{#            <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">#}
-{#        </span>#}
-{#    </div>#}
-{#    </div>#}
-{#</div>#}
 
     <!-- items header -->
     <div class="sticky-top text-center" style="top: 110px; z-index: 100;">
