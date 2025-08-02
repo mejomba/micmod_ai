@@ -482,6 +482,22 @@ a .next {
     transition: all ease 0.5s;
     border-radius: 50%;
 }
+
+.factor-header-toggle {
+    /*width: 35px;*/
+    /*height: 35px;*/
+    font-size: 1rem;
+    text-align: center;
+    /*background-color: #bbe2f1;*/
+    /*color: red;*/
+    position: relative;
+    /*bottom: -35px;*/
+    /*left: 0;*/
+    cursor: pointer;
+    transition: all ease 0.5s;
+    border-radius: 0.5rem;
+}
+
 #form-footer-container {
     transition: all ease 0.3s;
 }

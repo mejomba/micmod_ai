@@ -58,7 +58,8 @@
 </div>
 <div class="bg-white rounded border p-5 pb-20 mb-20">
     <!-- factor header -->
-    <div class="mb-3 pb-2 bg-white sticky-top" style="top: 10px; z-index: 100">
+
+    <div class="bg-white sticky-top overflow-hidden" id="factor-header" style="top: 10px; z-index: 100; height: fit-content; max-height: 400px; transition: all ease 0.5s;">
         <div class="row row-cols-4 bg-white">
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
@@ -174,9 +175,11 @@
         </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
+<span class="factor-header-toggle btn btn-sm btn-secondary" onclick="factor_header_toggle(event)">بستن</span>
+
 
     <!-- items header -->
-    <div class="sticky-top text-center" style="top: 110px; z-index: 100;">
+    <div class="sticky-top text-center mt-5" style="top: 110px; z-index: 100;">
         <div class="row">
             <!--quotation item header-->
             <div class="col-3 py-2 bg-light-info rounded-right">
@@ -783,4 +786,25 @@ setTimeout(factor_calculate_price_all_rows, 1000)
             })
         }
     }
+
+    let factorHeaderOpen = true;
+    function factor_header_toggle(event){
+        debugger
+            const factor_header = document.querySelector("#factor-header")
+            const factorHeaderToggle = event.currentTarget
+        if (factor_header.style.height === "0px" || factor_header.style.height === "") {
+            factor_header.style.height = `${factor_header.scrollHeight}px`;
+            } else {
+                factor_header.style.height = 0;
+            }
+
+            if (factorHeaderOpen) {
+                factorHeaderToggle.innerText = 'باز کردن';
+                factorHeaderOpen = !factorHeaderOpen
+            } else {
+                factorHeaderToggle.innerText = 'بستن';
+                factorHeaderOpen = !factorHeaderOpen;
+            }
+        }
+
 </script>
