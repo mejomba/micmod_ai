@@ -1,5 +1,13 @@
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
+
+from factor.models import Factor, FactorItem
+from factor.serializers import FactorItemSerializer, FactorSerializer
+from order.models import Order
+from order.serializers import OrderSerializer
 from .models import CustomerRequest, CustomerRequestItem, QuotationItem, Quotation
+
+from core.serializers import CustomFieldModelSerializer
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):
@@ -9,17 +17,27 @@ class QuotationItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'quantity', 'goods_code_fk']
 
 
-class QuotationSerializer(serializers.ModelSerializer):
-    quotation_items = QuotationItemSerializer(many=True)
+class QuotationSerializer(CustomFieldModelSerializer):
+    quotation = QuotationItemSerializer(many=True)
 
     class Meta:
         model = Quotation
-        fields = ['id', 'request_date', 'quotation_items']
+        fields = '__all__'
+        # fields = ['id', 'request_date', 'quotation', 'created_date']
+
+    # def __init__(self, *args, **kwargs):
+    #     fields = kwargs.pop('fields', None)
+    #     super().__init__(*args, **kwargs)
+    #
+    #     if fields is not None:
+    #         allowed = set(fields)
+    #         existing = set(self.fields)
+    #         for field_name in existing - allowed:
+    #             self.fields.pop(field_name)
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, read_only=True)
-    customer_quotation_items = QuotationItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomerRequestItem
@@ -30,13 +48,27 @@ class CustomerRequestItemSerializer(serializers.ModelSerializer):
 
 class CustomerRequestSerializer(serializers.ModelSerializer):
     items = CustomerRequestItemSerializer(many=True)
-    customer_quotations = QuotationSerializer(many=True, read_only=True)
+    customer_quotations = SerializerMethodField()
+    customer_factors = SerializerMethodField()
+    customer_orders = SerializerMethodField()
 
     class Meta:
         model = CustomerRequest
         exclude = ['is_deleted',]
         # fields = ['id', 'request_date', 'expire_date', 'customer', 'items', 'request_extra_data', 'customer_phone',
         #           'cart_id', 'created_date', 'last_update_date']
+
+    def get_customer_quotations(self, obj):
+        qs = Quotation.objects.filter(customer_request=obj)
+        return QuotationSerializer(qs, many=True, fields=['id']).data
+
+    def get_customer_factors(self, obj):
+        qs = Factor.objects.filter(customer_request=obj)
+        return FactorSerializer(qs, many=True, fields=['id']).data
+
+    def get_customer_orders(self, obj):
+        qs = Order.objects.filter(customer_request_item__in=obj.items.all())
+        return OrderSerializer(qs, many=True, fields=['id']).data
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

@@ -917,6 +917,7 @@ class Customer(AbsBaseModel):
 
     # customer_debts = models.CharField(max_length=255, verbose_name=_('customer_debts'), null=True, blank=True)
     risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
+    shop_id = models.BigIntegerField(_('shop_id'), null=True, blank=True)
 
     @staticmethod
     def get_list(text):

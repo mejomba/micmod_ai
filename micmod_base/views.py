@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
+from django.views.generic import DetailView, UpdateView
 from jalali_date.templatetags.jalali_tags import to_jalali
 from datetime import timezone, timedelta, datetime
 
@@ -34,7 +35,8 @@ from jalali_date import datetime2jalali
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
+from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, \
+    QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm
 from sepidar.models import Dl
 from tools import const
 from tools.import_data import import_customers_from_sepidar
@@ -1484,6 +1486,27 @@ def get_customer_accounting_info(request, *args, **kwargs):
     return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
 
 
+class CustomerRequestView(LoginRequiredMixin, View):
+    queryset = CustomerRequest.objects.all()
+    template_name = 'micmod-base/customer_request/view.html'
+    # form_struct = {
+    #     'form': CustomerRequestForm,
+    #     'childes': [
+    #         {
+    #             'form': CustomerRequestItemForm,
+    #             'childes': [{}]
+    #         },
+    #     ]
+    # }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
+
+    def get(self, request, pk, *args, **kwargs):
+        self.object = CustomerRequest.objects.filter(pk=pk).prefetch_related('items')
+        context = {'object': self.object}
+
+        return render(request, self.template_name, context)
+
+
 class CustomerRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = CustomerRequest.objects.all().order_by('-request_date')
@@ -1500,14 +1523,14 @@ class CustomerRequestList(LoginRequiredMixin,View):
 class CustomerRequestDatatableView(AjaxDatatableView):
     model = CustomerRequest
     title = 'customer request'
-    initial_order = [["id", "desc"], ]
+    initial_order = [["pk", "desc"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        # {'name': 'pk', 'visible': True, 'title': _('شماره سند'), 'className': 'py-1 border currency-search'},
+        {'name': 'pk', 'visible': True, 'title': _('شماره درخواست'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, 'title': 'شناسه'},
         {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expire_date', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
@@ -1524,14 +1547,14 @@ class CustomerRequestDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
 
-        row['quotation__pk'] = obj.quotation.pk if obj.quotation else ''
-        row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
-        row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
-        row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
-        row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
-        row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
-        row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
-        row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
-        row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
-        row['fee'] = obj.fee if obj else ''
+        row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
+        # row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
+        # row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
+        # row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
+        # row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
+        # row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
+        # row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
+        # row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
+        # row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
+        # row['fee'] = obj.fee if obj else ''
 

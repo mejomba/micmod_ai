@@ -700,5 +700,6 @@
     "description_sales": "توضیحات فروش (عدم نمایش به مشتری)",
     "section_id": "بخش",
     "document_management": "مدیریت اسناد",
-    "customer_group_user_list_or_create": "گروه کارشناس"
+    "customer_group_user_list_or_create": "گروه کارشناس",
+    "customer-request": "درخواست مشتری"
 }
