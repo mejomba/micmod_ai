@@ -27,7 +27,7 @@ class WorkFlowModelForm(CustomBaseModelForm):
             state_index = self.initial.get('state_index')
             flow_user_group_previous = flow_user_groups[state_index - 1]
             flow_user_group_current = flow_user_groups[state_index]
-            flow_user_group_next = flow_user_groups[state_index + 1]
+            flow_user_group_next = flow_user_groups[state_index + 1] if state_index < len(flow_user_groups) - 1 else flow_user_groups[state_index]
             if isinstance(flow_user_group_previous, list):
                 flow_user_group_previous = flow_user_group_previous[0]
             if isinstance(flow_user_group_current, list):
