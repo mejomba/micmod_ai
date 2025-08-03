@@ -565,6 +565,8 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     """***NEW***"""
     def save_payment(self, request, *args, **kwargs):
         from payment.models import GenericPaymentItem
+        from jdatetime import JalaliToGregorian
+        from datetime import datetime
         app_label = self._meta.app_label
         model_name = self._meta.model_name
         ctt_id = ContentType.objects.get_for_model(self._meta.model).pk
@@ -574,12 +576,14 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         if total_amount:
             g_from_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_from_date')
             g_to_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_to_date')
+            gregorian_g_from_date = JalaliToGregorian(*list(map(int, g_from_date.split('-')))) if g_from_date else None
+            gregorian_g_to_date = JalaliToGregorian(*list(map(int, g_to_date.split('-')))) if g_to_date else None
             description = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-description')
             file_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file'
             content_type = ContentType.objects.get_for_model(self._meta.model)
             payment = GenericPaymentItem.objects.create(
-                g_from_date=g_from_date or None,
-                g_to_date=g_to_date or None,
+                g_from_date=datetime(*gregorian_g_from_date.getGregorianList()) if gregorian_g_from_date else None,  # gregorian_g_from_date or None,
+                g_to_date=datetime(*gregorian_g_to_date.getGregorianList()) if gregorian_g_to_date else None,  # or None,
                 description=description,
                 total_amount=total_amount,
                 content_type=content_type,

@@ -16,7 +16,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
 from dw.models import DimCustomer
-from extra_data.models import Item
+from extra_data.models import Item, PriceSettings
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
 from sepidar.models import APILogs
@@ -408,6 +408,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         if factors and factors.exists():
             context['form'].enable = False
             context['factors'] = factors
+
+        ps = PriceSettings.objects.none()
+        for user_group in self.request.user.groups.values_list('name', flat=True):
+            ps |= PriceSettings.objects.filter(Q(permission_json__group__icontains=user_group))
+        ps |= PriceSettings.objects.filter(
+            Q(permission_json__user__icontains='all') | Q(permission_json__user__icontains=self.request.user.username))
+        context['q_price_settings'] = ps
         return context
 
 

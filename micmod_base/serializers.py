@@ -5,6 +5,8 @@ from factor.models import Factor, FactorItem
 from factor.serializers import FactorItemSerializer, FactorSerializer
 from order.models import Order
 from order.serializers import OrderSerializer
+from payment.models import GenericPaymentItem
+from payment.serializers import GenericPaymentSerializer
 from .models import CustomerRequest, CustomerRequestItem, QuotationItem, Quotation
 
 from core.serializers import CustomFieldModelSerializer
@@ -18,22 +20,16 @@ class QuotationItemSerializer(serializers.ModelSerializer):
 
 
 class QuotationSerializer(CustomFieldModelSerializer):
-    quotation = QuotationItemSerializer(many=True)
+    quotation_items = SerializerMethodField()
 
     class Meta:
         model = Quotation
         fields = '__all__'
         # fields = ['id', 'request_date', 'quotation', 'created_date']
 
-    # def __init__(self, *args, **kwargs):
-    #     fields = kwargs.pop('fields', None)
-    #     super().__init__(*args, **kwargs)
-    #
-    #     if fields is not None:
-    #         allowed = set(fields)
-    #         existing = set(self.fields)
-    #         for field_name in existing - allowed:
-    #             self.fields.pop(field_name)
+    def get_quotation_items(self, obj):
+        qs = obj.quotation.all()
+        return QuotationItemSerializer(qs, many=True).data
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
@@ -51,6 +47,7 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
     customer_quotations = SerializerMethodField()
     customer_factors = SerializerMethodField()
     customer_orders = SerializerMethodField()
+    customer_payments = SerializerMethodField()
 
     class Meta:
         model = CustomerRequest
@@ -60,7 +57,7 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
 
     def get_customer_quotations(self, obj):
         qs = Quotation.objects.filter(customer_request=obj)
-        return QuotationSerializer(qs, many=True, fields=['id']).data
+        return QuotationSerializer(qs, many=True, fields=['id', 'quotation_items']).data
 
     def get_customer_factors(self, obj):
         qs = Factor.objects.filter(customer_request=obj)
@@ -69,6 +66,13 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
     def get_customer_orders(self, obj):
         qs = Order.objects.filter(customer_request_item__in=obj.items.all())
         return OrderSerializer(qs, many=True, fields=['id']).data
+
+    def get_customer_payments(self, obj):
+        qs = obj.payments.all()
+        for q in obj.customer_quotations.all():
+            qs |= q.payments.all()
+
+        return GenericPaymentSerializer(qs, many=True, fields=['id', 'total_amount', 'g_from_date', 'g_to_date', 'description', 'attachment']).data
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
