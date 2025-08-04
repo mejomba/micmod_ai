@@ -126,6 +126,9 @@ class FlowAdminGroup(models.Model):
             group_name -> real name of group, from current state of flow
         return -> bool
         """
+        if isinstance(group_name, list):
+            group_name = group_name[0]
+
         if user.is_superuser:
             return True
         

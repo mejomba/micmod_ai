@@ -424,17 +424,24 @@
                 </div>
             </div>
 
-        <div class="d-flex align-items-center gap-8 py-2 ms-20" >
-            <span>{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
-            <span class="mx-2">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
-            <span><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
-            <span><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
-            <span class="sepidar_stock_info cursor-pointer text-primary d-non" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
+        <div class="d-flex align-items-center y-2" >
+            <span class="ms-8">{{ form_s.item_in_china }} {{ form_s.item_in_china.label }}</span>
+            <span class="ms-8">زمان تحویل: {{ form_s.instance.lead_time|default_if_none:'-' }}</span>
+            <span class="ms-8"><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
+            <span class="ms-8"><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
+            <span class="sepidar_stock_info cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
+            <span class="w-20 ms-8">{{ form_s.sales_description }}</span>
+            <span class="ms-2">
+                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}
+            </span>
+{#        {{ form_s.supply_status }}#}
             {% if form_s.instance.task_start or form_s.instance.task_start2 %}
                 {% if not form_s.instance.foreign_price_inquiry_done %}
-                    <span class="text-danger">فرایند استعلام این ردیف آغاز شده است، برای هرگونه تغییر در اطلاعات ردیف با کارشناس بازرگانی هماهنگ کنید</span>
+                    <span class="text-danger ms-8">فرایند استعلام این ردیف آغاز شده؛ برای تغییرات با کارشناس بازرگانی هماهنگ کنید.</span>
                 {% endif %}
             {% endif %}
+
+
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>

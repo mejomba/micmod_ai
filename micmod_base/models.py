@@ -533,7 +533,16 @@ class Quotation(SLSDoc):
         pass
 
 
+class SupplyStatus(AbsBaseModel):
+    title = models.CharField(max_length=128, verbose_name=_('title'), unique=True)
+
+    auto_complete = 'title'
+    insert_new = True
+
+
 class QuotationItem(BaseModel):
+    supply_status = models.ForeignKey(SupplyStatus, verbose_name=_('supply_status'), on_delete=models.DO_NOTHING, null=True, blank=True)
+    sales_description = models.CharField(_('sales_description'), max_length=255, null=True, blank=True)
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='customer_quotation_items')
     quotation = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, related_name='quotation',
                                   verbose_name=_('quotation'))

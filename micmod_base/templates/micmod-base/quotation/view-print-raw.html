@@ -46,7 +46,7 @@
         {% endif %}
     </a>
 </div>
-
+<div>
 <div class="container mt-10" dir="rtl">
     <div class="row">
         <div class="col">
@@ -171,29 +171,34 @@
 
 <div class="container" dir="rtl">
     <div class="row">
-        <table class="table table-bordered border-dark mb-0">
+        <table class="table table-responsive table-bordered border-dark mb-0">
             <thead>
             <tr class="text-center">
-                <th scope="col" class="text-center">ردیف</th>
-                <th scope="col" class="text-center">کد کالا</th>
-                <th scope="col" class="text-center" >شرح کالا/ خدمت</th>
-                {% if with_customer_goods_code == '1' %}
-                    <th scope="col" class="text-center">کد کالای مشتری</th>
-                    <th scope="col" class="text-center">شرح کالا/خدمت مشتری</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 10px; max-width: 20px">ردیف</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 30px; max-width: 30px">کد کالا</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 100px;">شرح کالا/ خدمت</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 25px;">تامین</th>
+                {% if has_sales_description %}
+                    <th scope="col" class="text-center font-size-12 text-wrap" style="width: 100px;" >توضیحات فروش</th>
                 {% endif %}
-                <th scope="col" class="text-center">تعداد/ مقدار</th>
+                {% if with_customer_goods_code == '1' %}
+                    <th scope="col" class="text-center font-size-12 text-wrap" style="width: 50px;">کد کالای مشتری</th>
+                    <th scope="col" class="text-center font-size-12 text-wrap" style="width: 80px;">شرح کالا/خدمت مشتری</th>
+                {% endif %}
+{#                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 50px;">تامین</th>#}
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 50px;">تعداد/ مقدار</th>
 {#                <th scope="col">واحد</th>#}
-                <th scope="col" class="text-center">مبلغ واحد</th>
-                <th scope="col" class="text-center">مبلغ کل</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 70px;">مبلغ واحد</th>
+                <th scope="col" class="text-center font-size-12 text-wrap" style="width: 80px;">مبلغ کل</th>
             </tr>
             </thead>
             <tbody class="border border-dark">
             {% for form_ in formset %}
             <tr>
                 {% if form.currency_ref.value == 1 %}
-                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=0 with_customer_goods_code=with_customer_goods_code %}
+                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=0 with_customer_goods_code=with_customer_goods_code has_sales_description=has_sales_description %}
                 {% else %}
-                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=4 with_customer_goods_code=with_customer_goods_code %}
+                    {% include "micmod-base/quotation/item-print-raw.html" with form=form_ digit=4 with_customer_goods_code=with_customer_goods_code has_sales_description=has_sales_description %}
                 {% endif %}
             </tr>
             {% endfor %}
@@ -309,10 +314,11 @@
         </div>
     </div>
 </div>
-<br>
-<br>
-<br>
-<br>
+</div>
+{#<br>#}
+{#<br>#}
+{#<br>#}
+{#<br>#}
 {% block extra_js %}
     <script src="{% static 'js/base.js' %}"></script>
 

@@ -473,6 +473,8 @@ def print_view(request,id=-1):
                                   }
                                   )
     for f in greeting['formset']:
+        if f.instance.sales_description:
+            greeting['has_sales_description'] = True
         f.alt_codes_html = []
         if alt_qs := f.instance.comments.filter(comment_title__in=['L', 'M', 'N']):
             for alt_comment in alt_qs:
