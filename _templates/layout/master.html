@@ -106,6 +106,11 @@
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl)
     })
+
+        function delete_obj(event){
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', event.currentTarget.dataset.url, modal_sm_body)
+        }
     </script>
     {% block extra_js %}
 

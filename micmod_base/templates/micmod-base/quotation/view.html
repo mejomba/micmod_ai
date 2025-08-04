@@ -91,7 +91,7 @@
                                                             <div class="row row-cols-3">
                                                                 {% render_field_by_order form form.addition form.tax label='on-border '%}
                                                             <div class="col on-border">
-                                                            <label data-key="tax" id="None" class="None">تنظیمات قیمت</label>
+                                                            <label>تنظیمات قیمت</label>
                                                                 <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">
                                                                     <option value="1">پیشفرض</option>
                                                                     {% for q_price_setting in q_price_settings %}
