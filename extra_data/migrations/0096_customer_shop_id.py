@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('extra_data', '0094_customergroup_current_user'),
+        ('extra_data', '0095_alter_customergroup_current_user'),
     ]
 
     operations = [
