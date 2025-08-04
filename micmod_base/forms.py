@@ -9,7 +9,7 @@ from inquiry.models import InquiryResult, PriceInquiryResult
 from micmod_base.base import CurrencyExchange, Currency
 from translator import get_text as _
 
-from micmod_base.models import Quotation, QuotationItem
+from micmod_base.models import Quotation, QuotationItem, CustomerRequest, CustomerRequestItem
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from core.forms import CustomBaseModelForm, CustomBaseForm
 import json
@@ -491,3 +491,48 @@ class TimeForm(CustomBaseForm):
             {'class': 'jalali_date-date form-control', 'placeholder': _('from_time'), 'required': False})
         self.fields['to_time'].widget.attrs.update(
             {'class': 'jalali_date-date form-control', 'placeholder': _('to_time'), 'required': False})
+
+
+class CustomerRequestForm(CustomBaseModelForm):
+    pass
+
+    # class Meta:
+    #     model = Quotation
+    #
+    #     fields = [
+    #         "request_date",
+    #         "expire_date",
+    #         "customer_party_id", #"customer",
+    #         "customer_phone",
+    #         "cart_id",
+    #         "request_extra_data",
+    #               ]
+    #
+    # def __init__(self, *args, **kwargs):
+    #     super(CustomerRequestForm, self).__init__(*args, **kwargs)
+    #     self.fields['request_date'] = JalaliDateField(label=_('request_date'),
+    #                                                   widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
+    #                                                   )
+    #     self.fields['expiration_date'] = JalaliDateField(label=_('expiration_date'),
+    #                                                      widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
+    #                                                      )
+
+
+class CustomerRequestItemForm(CustomBaseModelForm):
+    pass
+
+    # class Meta:
+    #     model = QuotationItem
+    #     fields = [
+    #         "cr",
+    #         "cart_item_id",
+    #         "quantity",
+    #         "product_id",
+    #         "customer_part_number",
+    #         "customer_sku",
+    #         "customer_description",
+    #         "request_item_extra_data",
+    #     ]
+    #
+    # def __init__(self, *args, **kwargs):
+    #     super(CustomerRequestItemForm, self).__init__(*args, **kwargs)

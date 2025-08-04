@@ -57,7 +57,8 @@ urlpatterns = [
     path('get_model_fields_config/', get_model_fields_config, name='get.model.fields.config'),
     path('ajax/customer_accounting_info/', get_customer_accounting_info, name='get_customer_accounting_info'),
     # path('api/', ExportQuotation.as_view(), name='api'),
-    path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
-    # path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
-    path('customer_request_list_datatable/', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
+    # path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
+    path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
+    path('customer_request/list/', CustomerRequestList.as_view(), name="customer_request.list"),
+    path('customer_request/list/datatable', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
 ]
