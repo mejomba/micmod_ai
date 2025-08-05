@@ -701,5 +701,6 @@
     "section_id": "بخش",
     "document_management": "مدیریت اسناد",
     "customer_group_user_list_or_create": "گروه کارشناس",
-    "customer-request": "درخواست مشتری"
+    "customer-request": "درخواست مشتری",
+    "portal_current_user": "کاربر فعلی پرتال"
 }

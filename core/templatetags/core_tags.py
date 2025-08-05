@@ -173,8 +173,8 @@ def get_attrs_str(field):
     m_str = ""
     for attr, value in field.field.widget.attrs.items():
         if attr != "class":
-            m_str += f" {attr} = {value}"
-    return m_str
+            m_str += f""" {attr}="{value}" """
+    return mark_safe(m_str)
 
 @register.simple_tag
 def replace(m_str, old_str, new_str):

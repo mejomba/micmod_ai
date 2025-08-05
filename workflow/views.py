@@ -63,6 +63,8 @@ class FlowBaseView(SingleObjectMixin):
         return self.flow_model.objects.filter(object_id=getattr(obj, f'{self.flow_model._meta.pk.name}', None), content_type=content_type).order_by(self.flow_model._meta.pk.name)
 
     def get_flow_user(self, group: str):
+        if isinstance(group, list):
+            group = group[0]
         user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
         # this access for team leader in quotation 3rd step
         # try:

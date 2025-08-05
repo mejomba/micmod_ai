@@ -34,7 +34,7 @@ from micmod_base.models import Quotation
 from order.models import Order
 from payment.forms import GenericPaymentForm
 from tools.import_data import import_customers_from_sepidar
-from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter
+from tools.utils import map_model_to_python_type, show_error, diff_time, build_column_filter, first_common_index
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
@@ -80,6 +80,7 @@ class BaseView(UserPassesTestMixin,
     finish = None
     extra_formset = 1
     wf_access = None
+    wf_access2 = None
     form_partial = []
     formset_partial = []
     _form_partial = []
@@ -393,6 +394,7 @@ class BaseView(UserPassesTestMixin,
             context['formset'] = self.formset
 
         context['allow_next'] = True
+        context['wf_access2'] = self.wf_access2
         return context
 
     def get_form_kwargs(self):
@@ -402,7 +404,8 @@ class BaseView(UserPassesTestMixin,
         try:
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
             try:
-                belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
+                belong_to_groups = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
+                belong_to_group = belong_to_groups[0] if isinstance(belong_to_groups, list) else belong_to_groups
             except Exception as e:
                 belong_to_group = None
                 print('firm error ', __file__, e.__traceback__.tb_lineno, e)
@@ -437,47 +440,66 @@ class BaseView(UserPassesTestMixin,
                     #     to_user = self.request.user
 
                     wf_len = len(self.flow_config.get('flow_state_list'))
-                    current_state_group = flow_user_groups[self.state_index]
-                    previous_state_group = flow_user_groups[self.state_index - 1] if self.state_index > 0 else None
-                    next_state_group = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
+
+                    current_state_groups = flow_user_groups[self.state_index]
+                    current_state_group = current_state_groups[0] if isinstance(current_state_groups, list) else [current_state_groups]
+
+                    previous_state_groups = flow_user_groups[self.state_index - 1] if self.state_index > 0 else None
+                    previous_state_group = previous_state_groups[0] if isinstance(previous_state_groups, list) else [previous_state_groups]
+
+                    next_state_groups = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
+                    next_state_group = next_state_groups[0] if isinstance(next_state_groups, list) else [next_state_groups]
+
                     if current_state_group == next_state_group and current_state_group == previous_state_group:
                         to_user = last_flow_objs.last().to_user if last_flow_objs else self.request.user
                     if current_state_group == next_state_group and previous_state_group is None:
                         to_user = self.request.user
                     elif self.state_index is not None and 'back' in self.request.POST:
-                        to_user = self.get_flow_user(flow_user_groups[self.state_index - 1]) if self.has_flow else None
+                        to_user = self.get_flow_user(previous_state_group) if self.has_flow else None
                     elif self.state_index is not None and self.state_index + 1 == wf_len:
-                        to_user = self.get_flow_user(flow_user_groups[self.state_index]) if self.has_flow else None
+                        to_user = self.get_flow_user(current_state_group) if self.has_flow else None
                     elif self.state_index is not None:
-                        to_user = self.get_flow_user(flow_user_groups[self.state_index + 1]) if self.has_flow else None
+                        to_user = self.get_flow_user(next_state_group) if self.has_flow else None
 
             except Exception as e:
                 print('error: ', __file__, e.__traceback__.tb_lineno, e)
                 to_user = None
 
             if self.has_flow:
+                # self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
+                #     FlowAdminGroup.is_admin_of_group(self.request.user, current_state_group, model=self.model) or \
+                #     (bool(set(belong_to_groups) & set(self.request.user.groups.values_list('name', flat=True))) and
+                #     (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+
                 self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
-                    FlowAdminGroup.is_admin_of_group(self.request.user, flow_user_groups[self.state_index], model=self.model) or \
-                    (belong_to_group in self.request.user.groups.values_list('name', flat=True) and
-                    (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+                     FlowAdminGroup.is_admin_of_group(self.request.user, current_state_group, model=self.model) or \
+                     (belong_to_group in self.request.user.groups.values_list('name',flat=True) and
+                     (from_user_ == self.request.user or self.state_index == 0) and not last_flow_objs)
+
+                fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
+                self.wf_access, self.wf_access2 = (self.wf_access, fci)
+                wf_access, wf_access2 = (wf_access, fci)
+
                 # if self.object.cancel:
                 #     self.wf_access = False
+
+            deadline = datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index][0]) if isinstance(self.flow_config.get('flow_deadline')[self.state_index], list) else datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index])
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
                     last_flow = flow.order_by('id').last()
                     self.finish = True if last_flow.wf_status == 3 and last_flow.state == self.flow_config.get('flow_state_list')[-2] else None
                 if self.finish and not self.wf_last_step_is_open:
-                    wf_access = False
+                    wf_access = self.wf_access = False
                 self.wf_initial = {
-                    'wf_access': wf_access,
+                    'wf_access': self.wf_access,
                     'from_user': from_user_,
                     'to_user': to_user,
                     'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
                     'state_index': self.state_index,
                     'belong_to_group': belong_to_group,
                     'action': self.flow_config.get('flow_action'),
-                    'deadline': datetime.datetime.now() + datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index]) if self.has_flow else None,
+                    'deadline': datetime.datetime.now() + deadline if self.has_flow else None,
                     'flow_config': self.flow_config,
                     'create': False if self.object else True
                 }
@@ -506,25 +528,26 @@ class BaseView(UserPassesTestMixin,
                     'formset_constraint': self.flow_config.get('flow_formset_constraint'),
                     },
                 # 'permission_access': fields_access,
-                                 'wf_access': wf_access if self.has_flow else True,
+                                 'wf_access': self.wf_access if self.has_flow else True,
                                  }
         except Exception as e:
             LogError.save_db(self.request, e, __file__)
             print('error: ', __name__, 'line',  e.__traceback__.tb_lineno, e)
 
             # self.wf_initial = {'create': self.create, 'flow_config': self.flow_config, }
-            self.wf_initial = {
-                    'wf_access': wf_access,
-                    'from_user': from_user_,
-                    'to_user': to_user,
-                    'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
-                    'state_index': self.state_index,
-                    'belong_to_group': belong_to_group,
-                    'action': self.flow_config.get('flow_action'),
-                    'deadline': datetime.datetime.now() + datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index]) if self.has_flow else None,
-                    'flow_config': self.flow_config,
-                    'create': False if self.object else True
-                }
+            if self.has_flow:
+                self.wf_initial = {
+                        'wf_access': self.wf_access,
+                        'from_user': from_user_,
+                        'to_user': to_user,
+                        'state': self.flow_config.get('flow_state_list')[self.state_index] if self.has_flow else None,
+                        'state_index': self.state_index,
+                        'belong_to_group': belong_to_group,
+                        'action': self.flow_config.get('flow_action'),
+                        'deadline': datetime.datetime.now() + deadline if self.has_flow else None,
+                        'flow_config': self.flow_config,
+                        'create': False if self.object else True
+                    }
             kwargs['initial'] = {
                             "constraint": {
                                 'form_state': self.state_index,
@@ -870,16 +893,28 @@ class Base:
             'flow_formset_constraint': []
         }
         cfg: dict = Base.get_view_config(file, view)
-        if wf_config := cfg.get('workflow'):
-            res['flow_name'] = _(wf_config.get('name'))
-            res['flow_action'] = _(wf_config.get('action'))
-            if config_list := wf_config.get('list'):
-                for config in config_list:
-                    res['flow_state_list'].append(config.get('state'))
-                    res['flow_users_groups'].append(config.get('group'))
-                    res['flow_deadline'].append(config.get('deadline'))
-                    res['flow_form_constraint'].append(config.get('form_constraint'))
-                    res['flow_formset_constraint'].append(config.get('formset_constraint'))
+        if view.lower() == 'factor':
+            if wf_config := cfg.get('workflow'):
+                res['flow_name'] = _(wf_config.get('name'))
+                res['flow_action'] = _(wf_config.get('action'))
+                if config_list := wf_config.get('list'):
+                    for config in config_list:
+                        res['flow_state_list'].append(config.get('state'))
+                        res['flow_users_groups'].append(config.get('groups'))
+                        res['flow_deadline'].append(config.get('deadlines'))
+                        res['flow_form_constraint'].append(config.get('form_constraints'))
+                        res['flow_formset_constraint'].append(config.get('formset_constraints'))
+        else:
+            if wf_config := cfg.get('workflow'):
+                res['flow_name'] = _(wf_config.get('name'))
+                res['flow_action'] = _(wf_config.get('action'))
+                if config_list := wf_config.get('list'):
+                    for config in config_list:
+                        res['flow_state_list'].append(config.get('state'))
+                        res['flow_users_groups'].append(config.get('group'))
+                        res['flow_deadline'].append(config.get('deadline'))
+                        res['flow_form_constraint'].append(config.get('form_constraint'))
+                        res['flow_formset_constraint'].append(config.get('formset_constraint'))
 
         return res
 
