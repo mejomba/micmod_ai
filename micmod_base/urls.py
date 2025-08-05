@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'customer-requests', CustomerRequestViewSet, basename='customer-request')
+router.register(r'customer-request-quotation', CustomerRequestQuotationViewSet, basename='customer-quotation')
 
 app_name = "micmod_base"
 urlpatterns = [

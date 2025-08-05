@@ -12,11 +12,24 @@ from .models import CustomerRequest, CustomerRequestItem, QuotationItem, Quotati
 from core.serializers import CustomFieldModelSerializer
 
 
-class QuotationItemSerializer(serializers.ModelSerializer):
+class QuotationItemSerializer(CustomFieldModelSerializer):
 
     class Meta:
         model = QuotationItem
-        fields = ['id', 'quantity', 'goods_code_fk']
+        fields = '__all__'
+
+
+class CustomerQuotationSerializer(CustomFieldModelSerializer):
+    quotation_items = SerializerMethodField()
+
+    class Meta:
+        model = Quotation
+        fields = '__all__'
+        # fields = ['id', 'request_date', 'quotation', 'created_date']
+
+    def get_quotation_items(self, obj):
+        qs = obj.quotation.all()
+        return QuotationItemSerializer(qs, many=True,).data
 
 
 class QuotationSerializer(CustomFieldModelSerializer):
@@ -29,7 +42,7 @@ class QuotationSerializer(CustomFieldModelSerializer):
 
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()
-        return QuotationItemSerializer(qs, many=True).data
+        return QuotationItemSerializer(qs, many=True, fields=['id', 'quantity', 'goods_code_fk']).data
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):

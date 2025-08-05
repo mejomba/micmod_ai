@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from .models import GenericPaymentItem
 
@@ -11,3 +11,7 @@ def customer_created_handler(sender, instance, created, **kwargs):
     if created:
         # فقط در زمان ایجاد اجرا میشه
         print(f"پرداخت جدید ساخته شد: {instance}")
+
+    if instance.is_deleted:
+        print('delete payment....')
+

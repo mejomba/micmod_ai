@@ -11,7 +11,12 @@ from django.urls import reverse_lazy, reverse
 from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from core.permissions import HasShopPermission
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
 from tools.utils import is_ajax
@@ -20,6 +25,8 @@ from workflow.models import WorkFlow
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, OrderPaymentItemForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
 from translator import get_text as _
+from .serializers import OrderSerializer
+
 
 # def factor_order_item(request, sku, quantity):
 #     items = get_object_or_404(QuotationItem, goods_code=sku)
@@ -810,3 +817,23 @@ class PaymentItemDataTableListView(AjaxDatatableView):
                 </a>
             </span>
         """
+
+
+class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasShopPermission]
+    queryset = Order.objects.all().order_by('-created_date')
+    serializer_class = OrderSerializer
+    http_method_names = ['get']
+
+    @action(detail=False, methods=['get'], url_path='by-request/(?P<customer_request_id>[^/.]+)')
+    def list_by_request(self, request, customer_request_id=None):
+        queryset = self.get_queryset().filter(customer_request_item_id=customer_request_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})

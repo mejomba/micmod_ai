@@ -11,10 +11,14 @@ from django.views.generic import DetailView, UpdateView
 from jalali_date.templatetags.jalali_tags import to_jalali
 from datetime import timezone, timedelta, datetime
 
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from werkzeug.exceptions import MethodNotAllowed
 
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
+from core.permissions import HasShopPermission
 from dw.models import DimCustomer
 from extra_data.models import Item, PriceSettings
 from factor.forms import FactorItemModelForm, FactorModelForm
@@ -55,7 +59,8 @@ from django.urls import reverse
 import re
 from rest_framework import viewsets
 from .models import CustomerRequest
-from .serializers import CustomerRequestSerializer
+from .serializers import CustomerRequestSerializer, QuotationSerializer, CustomerQuotationSerializer
+
 
 def generate_direct_factor(request, quotation: Quotation):
     factor_data = {
@@ -1518,6 +1523,38 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = CustomerRequest.objects.all().order_by('-request_date')
     serializer_class = CustomerRequestSerializer
+
+    @action(detail=False, methods=['get'], url_path='by-customer/(?P<customer_id>[^/.]+)')
+    def list_by_customer(self, request, customer_id=None):
+        queryset = self.get_queryset().filter(customer=customer_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})
+
+class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasShopPermission]
+    queryset = Quotation.objects.all().order_by('-request_date')
+    serializer_class = CustomerQuotationSerializer
+    http_method_names = ['get']
+
+    @action(detail=False, methods=['get'], url_path='by-request/(?P<customer_request_id>[^/.]+)')
+    def list_by_request(self, request, customer_request_id=None):
+        queryset = self.get_queryset().filter(customer_request_id=customer_request_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})
 
 
 class CustomerRequestList(LoginRequiredMixin,View):
