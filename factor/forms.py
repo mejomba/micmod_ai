@@ -138,6 +138,24 @@ class FactorItemModelForm(CustomBaseModelForm):
             #     formset_constraint_read = formset_constraint[self.form_state][0].get('read')
             #     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
+        # self.fields['goods_code'].widget = forms.TextInput(
+        #     attrs={'class': 'narrow-input LTR-RTL w-100 rounded text-center font-size-11',
+        #            'value': self.instance.goods_code.sku if self.instance.goods_code else '', 'type': 'text'
+        #            })
+        # qis = self.instance.factor.q.quotation.all() if self.instance.pk else []
+        # for idx, qi in enumerate(qis):
+        #     self.fields['part_number_show'].widget.attrs.update(
+        #         {'class': 'LTR-RTL w-100 rounded font-size-11 text-center narrow-input',
+        #          'autocomplete': 'off', 'list': f'lst_part_number_show__{idx}',
+        #          'value': appearance_or_real_part_number(qi.goods_code_fk,
+        #                                                  qi.quotation.customer_party_id),
+        #          'type': 'text'
+        #          })
+        #     self.fields['quantity'].widget.attrs.update(
+        #         {'onkeyup': 'check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)',
+        #          'class': 'narrow-input LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity',
+        #          'type': 'text', 'value': qi.quantity,
+        #          })
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['is_bazar'].widget.attrs['class'] = 'checkbox_is_bazar'
