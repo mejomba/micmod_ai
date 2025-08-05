@@ -99,8 +99,8 @@
             "deadlines": [0],
             "form_constraints": [{
               "group": "sales_user",
-              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer", "packing_json"],
-              "read": []
+              "hide": ["final_check", "official_factor_send_with_this_factor", "deliver_to_customer", "packing_json"],
+              "read": ["checker", "collecting_start_time", "wh_user"]
             }],
             "formset_constraints": [
               {
@@ -141,14 +141,16 @@
               "read": [ "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document"]
             }],
             "formset_constraints": [
+
+              {
+                "group": "wh_admin",
+                "hide": [],
+                "read": ["goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+              },
               {
                 "group": "accounting_user",
                 "hide": [],
                 "read": ["quantity"]
-              },
-              {
-                "hide": [],
-                "read": []
               }
             ]
           },
