@@ -138,6 +138,10 @@
  <td class="align-middle">
      <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
  </td>
+<!-- SUPPLY STATUS -->
+ <td class="align-middle">
+     <div class="">{{ form.instance.supply_status|default_if_none:"-" }}</div>
+ </td>
 <!-- FINAL PRICE -->
 <td class=" font-size-12 replace-digits">
         <div class="price_method text-center persian-digit" disabled="disabled" value="{{ form.price_method.value }}" name="price_method">{% get_price_method form.price_method.value %}</div>
