@@ -47,6 +47,7 @@ import openpyxl
 from .models import ExtraData
 
 from .models import LogError
+from services.payment_service import create_or_update_payment
 
 
 class BaseView(UserPassesTestMixin,
@@ -732,7 +733,8 @@ class BaseView(UserPassesTestMixin,
                                           obj=new_obj,
                                           input_prefix='file'
                                           )
-                    new_obj.save_payment(self.request)
+                    create_or_update_payment(self.request, new_obj)
+                    # new_obj.save_payment(self.request)
 
                     """***NEW***"""
                     if form.has_comment:
@@ -746,6 +748,7 @@ class BaseView(UserPassesTestMixin,
                     """***NEW***"""
 
                 except Exception as e:
+                    # form.instance.errors = e
                     LogError.save_db(self.request, e, __file__)
                     print('error: ', e.__traceback__.tb_lineno, e)
 
@@ -812,7 +815,8 @@ class BaseView(UserPassesTestMixin,
 
                     for d in new_details:
                         d.save_comment(self.request, CommentsForm)
-                        d.save_payment(self.request)
+                        create_or_update_payment(self.request, d)
+                        # d.save_payment(self.request)
                         # ToDo make dynamic
                         # app_label = d._meta.app_label
                         # model_name = d._meta.model_name

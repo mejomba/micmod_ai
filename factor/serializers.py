@@ -15,12 +15,12 @@ class FactorItemSerializer(CustomFieldModelSerializer):
 
 class FactorSerializer(CustomFieldModelSerializer):
     # factoritem_set = FactorItemSerializer(many=True)
-    jafar = SerializerMethodField()
+    factor_items = SerializerMethodField()
 
     class Meta:
         model = Factor
         fields = '__all__'
 
-    def get_jafar(self, obj, **kwargs):
+    def get_factor_items(self, obj, **kwargs):
         qs = obj.factoritem_set.all()
         return FactorItemSerializer(qs, many=True).data

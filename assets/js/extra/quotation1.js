@@ -1073,6 +1073,7 @@ function set_price2(target, data=null) {
         final_price.style.backgroundColor = "#fff";   // ظاهر غیرقابل ویرایش
         final_price.style.cursor = "auto";
         elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', 'sales_admin')
+        final_price.value = round_rial(numberWithCommas(final_price.value).replaceAll(',', ''))
     } else {
         price_json && price_json.forEach(function (item){
             if (item.unique_title === selected_method){
@@ -1303,6 +1304,7 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
+    debugger
     const currency = parseInt(document.getElementById('id_currency_ref').value)
     if (currency != 1){
         return x
