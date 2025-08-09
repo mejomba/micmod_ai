@@ -16,7 +16,8 @@ from requests.structures import LookupDict
 import urllib.parse
 import pandas as pd
 from io import BytesIO
-
+import string
+import random
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -534,3 +535,10 @@ def reduce_getattr(function, sequence, initial=_initial_missing):
             break
 
     return value
+
+
+def set_secret_id():
+    chars = random.choices(string.ascii_uppercase, k=2)
+    num = random.randint(1000, 9999)
+    return ''.join(chars) + str(num)
+

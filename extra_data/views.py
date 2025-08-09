@@ -20,7 +20,7 @@ from micmod_base.forms import QuotationForm, QuotationItemFormset
 from sepidar.models import APILogs, Device
 from sepidar.scripts.sepidar_classes import Urls
 from tools.import_data import set_items_sepidar_id_from_sepidar
-from tools.utils import show_error
+from tools.utils import show_error, set_secret_id
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
     ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm, AccountingUserForm, \
     CustomerGroupUserForm
@@ -464,6 +464,15 @@ class CustomerView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
         return context
+
+    def form_valid(self, form):
+        x = super().form_valid(form)
+        if self.request.user.is_superuser:
+            for idx, item in enumerate(self.model.objects.all()):
+                item.secret_id = set_secret_id()
+                item.save()
+                print(idx)
+        return x
 
     # def post(self, request, pk=-1):
     #     self.object = self.model.objects.get(pk=pk)

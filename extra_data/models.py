@@ -2,7 +2,7 @@ import uuid
 
 import jdatetime
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q, Sum
 from django.utils import timezone
 import os
@@ -18,7 +18,7 @@ from django.apps import apps
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
-from tools.utils import to_jalali_date
+from tools.utils import to_jalali_date, set_secret_id
 from translator import get_text as _
 from sepidar.models import BaseData
 from tools.form_tools import select_cquery
@@ -841,6 +841,7 @@ class Customer(AbsBaseModel):
         ("suspicious", "مشکوک الوصول"),
         ("valid", "معتبر"),
     )
+    secret_id = models.CharField(max_length=6, null=True, blank=True, unique=True)
     sepidar_dl_id = models.BigIntegerField(verbose_name=_('sepidar_id'), null=True, blank=True, unique=True)
     sepidar_dl_code = models.BigIntegerField(verbose_name=_('sepidar_code'), null=True, blank=True, unique=True)
     sepidar_party_id = models.BigIntegerField(verbose_name=_('sepidar_party_id'), null=True, blank=True, unique=True)
@@ -918,6 +919,24 @@ class Customer(AbsBaseModel):
     # customer_debts = models.CharField(max_length=255, verbose_name=_('customer_debts'), null=True, blank=True)
     risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
     shop_id = models.BigIntegerField(_('shop_id'), null=True, blank=True)
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        if not self.pk:
+            for _ in range(10):
+                self.secret_id = set_secret_id()
+                try:
+                    super().save(force_insert=False, force_update=False, using=None, update_fields=None)
+                    break
+                except IntegrityError as e:
+                    print(self.pk, e)
+                    continue
+        else:
+            super().save(force_insert=False, force_update=False, using=None, update_fields=None)
+
+
+
 
     @staticmethod
     def get_list(text):

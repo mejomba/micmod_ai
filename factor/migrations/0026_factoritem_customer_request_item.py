@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('micmod_base', '0081_alter_quotation_customer_request_and_more'),
-        ('factor', '0025_alter_factor_official_factor_send_with_this_factor'),
+        ('factor', '0025_factor_collecting_end_time'),
     ]
 
     operations = [
