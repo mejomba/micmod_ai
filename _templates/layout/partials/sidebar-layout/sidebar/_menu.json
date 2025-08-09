@@ -81,13 +81,6 @@
             },
             {
               "icon": "burger-menu",
-              "title": "customer-request",
-              "path_key": "custoemr_request/list",
-              "direct_link": "/micmod_base/customer_request/list",
-              "count": "micmod_base.quotation:get_qs_count"
-            },
-            {
-              "icon": "burger-menu",
               "title": "past_list",
               "path_key": "quotationitem/past/quotationitems/",
               "direct_link": "/micmod_base/quotationitem/past/quotationitems"

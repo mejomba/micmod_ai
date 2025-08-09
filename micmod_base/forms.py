@@ -28,7 +28,7 @@ class QuotationForm(CustomBaseModelForm):
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
                   "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type', 'is_direct',
-                  'sales_admin_confirm', 'description_sales', ]
+                  'sales_admin_confirm', 'description_sales', 'customer_request']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -247,7 +247,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
                   'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
-                  'selected_price_code', 'price_json', 'sales_description', 'supply_status',
+                  'selected_price_code', 'price_json', 'sales_description', 'supply_status', 'customer_request_item',
                   #'bazar_selected_price_code', 'trade_selected_price_code'
                   ]
         widgets = {
@@ -414,7 +414,7 @@ qi_fields = [
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
     'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json',
-    'sales_description', 'supply_status',  #'bazar_selected_price_code', 'trade_selected_price_code'
+    'sales_description', 'supply_status', 'customer_request_item',  #'bazar_selected_price_code', 'trade_selected_price_code'
     ]
 
 
