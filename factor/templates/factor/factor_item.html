@@ -56,10 +56,11 @@
         <span>---</span>
     {% endfor %}
 </div>
-<div class="bg-white rounded border p-5 pb-20 mb-20">
+<div class="bg-white rounded border pb-20 mb-20 row">
     <!-- factor header -->
 
-    <div class="bg-white sticky-top overflow-hidden" id="factor-header" style="top: 10px; z-index: 100; height: fit-content; max-height: 400px; transition: all ease 0.5s;">
+<div class="sticky-top bg-white">
+    <div class="overflow-hidden col" id="factor-header" style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
         <div class="row row-cols-4 bg-white">
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
@@ -150,7 +151,7 @@
             {% render_field_by_order form form.official_factor_send_with_this_factor form.packing_json label='on-border' %}
             <div class="col-3 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
-                <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"accounting_user" %} disabled {% endif %}>
+                <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"wh_user" %} disabled {% endif %}>
                     {% for item in form.wh_user.field.queryset %}
                         {% if item in form.initial.wh_user %}
                             <option value="{{ item.pk }}" selected>{{ item }}</option>
@@ -162,7 +163,7 @@
             </div>
             <div class="col-3 on-border">
                 <label style="z-index: 100 !important;">کاربر مالی</label>
-                <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"wh_user" %} disabled {% endif %}>
+                <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"accounting_user" %} disabled {% endif %}>
                     {% for item in form.checker.field.queryset %}
                         {% if item in form.initial.checker %}
                             <option value="{{ item.pk }}" selected>{{ item }}</option>
@@ -175,11 +176,11 @@
         </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
-<span class="factor-header-toggle btn btn-sm btn-secondary" onclick="factor_header_toggle(event)">بستن</span>
+    <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
 
 
     <!-- items header -->
-    <div class="sticky-top text-center mt-5" style="top: 110px; z-index: 100;">
+    <div class="text-center">
         <div class="row">
             <!--quotation item header-->
             <div class="col-3 py-2 bg-light-info rounded-right">
@@ -237,7 +238,7 @@
             </div>
         </div>
     </div>
-
+</div>
     <!-- row per item -->
     <div id="sortable-container">
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
@@ -795,6 +796,7 @@ setTimeout(factor_calculate_price_all_rows, 1000)
     function factor_header_toggle(event){
         debugger
             const factor_header = document.querySelector("#factor-header")
+            const factor_item_header = document.querySelector("#factor-item-header")
             const factorHeaderToggle = event.currentTarget
         if (factor_header.style.height === "0px" || factor_header.style.height === "") {
             factor_header.style.height = `${factor_header.scrollHeight}px`;
@@ -803,11 +805,13 @@ setTimeout(factor_calculate_price_all_rows, 1000)
             }
 
             if (factorHeaderOpen) {
-                factorHeaderToggle.innerText = 'باز کردن';
+                factorHeaderToggle.innerText = ' نمایش اطلاعات سربرگ';
                 factorHeaderOpen = !factorHeaderOpen
+                factor_item_header.style.top = 0
             } else {
-                factorHeaderToggle.innerText = 'بستن';
+                factorHeaderToggle.innerText = 'مخفی کردن اطلاعات سربرگ';
                 factorHeaderOpen = !factorHeaderOpen;
+                factor_item_header.style.top = `${factor_header.scrollHeight}px`;
             }
         }
 
