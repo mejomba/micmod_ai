@@ -1,4 +1,6 @@
 import datetime
+from django.utils import timezone
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -59,11 +61,17 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
+        if self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST:
+            self.object.collecting_end_time = None
+            self.object.extra_data.request = self.request
+            self.object.save()
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        if self.object is None:
-            pass
+        if self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST:
+            self.form.instance.collecting_end_time = timezone.now()
+
         res = super().form_valid(form)
         if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
@@ -143,6 +151,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object:
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
+            self.object.collecting_start_time = datetime2jalali(self.object.collecting_start_time).strftime('%y/%m/%d-%H:%M')
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
         context['submit_copy'] = False
@@ -176,16 +185,16 @@ def search_factor_view(request, *args, **kwargs):
             q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     q_filter &= Q(last_work_flow__current_state_name='مرحله نهایی')
     if not search_by:
-        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') & \
+        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی')& \
                    (Q(customer_party_id__title__icontains=q_str) | \
                    Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
                    Q(customer_party_id__sepidar_dl_code__icontains=q_int) | Q(customer_party_id__sepidar_party_id__icontains=int) | \
                    Q(pk=q_int) | Q(quotation__goods_code_fk__sku__icontains=q_str) | Q(last_work_flow__creator_user__username__icontains=q_str))
     if 'search_id' in search_by and len(search_by) == 1:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
-        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, **q_required).order_by('-id').distinct()
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, sales_admin_confirm=True, **q_required).order_by('-id').distinct()
     else:
-        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, sales_admin_confirm=True,**q_required).order_by('-id').distinct()
     # quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
@@ -254,7 +263,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
                     'wf_access': True,
                     'from_user': None,
                     'to_user': to_user, #self.get_flow_user(flow_user_groups[self.state_index + 1]), #request.user.__class__.objects.get(pk=59), #._meta.model.objects.get(pk=21),
-                    'state': 'فاکتور اولیه',
+                    'state': 'پیش‌نویس',
                     'state_index': 0,
                     'belong_to_group': 'sales_user',
                     'action': 'create',

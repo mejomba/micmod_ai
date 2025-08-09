@@ -1,15 +1,36 @@
+{% load i18n %}
 {% load factor_tags %}
 {% load humanize %}
 {% load jalali_tags %}
 {% load more_tags %}
 {% load core_tags %}
+{% load accounts_tag %}
 
 <div class="mt-5 mb-2">
                             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
                         </div>
 {{ form_s.management_form }}
 {{ form_s.non_form_errors }}
+
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
 {{ form.media }}
+<style>
+    .select2-selection--multiple{
+        padding-right: 5px !important;
+        padding-top: 7px !important;
+    }
+    .select2-selection__clear{
+        color: red !important;
+    }
+    .select2-selection__choice{
+        padding-right: 3px !important;
+    }
+    .select2-container--default[dir="rtl"] .select2-selection--multiple .select2-selection__choice__remove{
+        border-left: none;
+    }
+</style>
+
+
 
 <div class="mt-10 mb-2  bg-light-warning py-2 px-3 rounded font-size-15" style="width: fit-content">
 <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
@@ -37,7 +58,8 @@
 </div>
 <div class="bg-white rounded border p-5 pb-20 mb-20">
     <!-- factor header -->
-    <div class="mb-3 pb-2 bg-white sticky-top" style="top: 10px; z-index: 100">
+
+    <div class="bg-white sticky-top overflow-hidden" id="factor-header" style="top: 10px; z-index: 100; height: fit-content; max-height: 400px; transition: all ease 0.5s;">
         <div class="row row-cols-4 bg-white">
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
@@ -105,11 +127,14 @@
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">تخفیف نوع ۱</span>
-                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">
+                        {% render_field_by_order form form.official_value %}
+{#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">درصد تخفیف روی همه</span>
-                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">
+{#                        {{ form.self_discount }}#}
+                        {% render_field_by_order form form.self_discount %}
+{#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">#}
                     </span>
                 </div>
             </div>
@@ -119,38 +144,42 @@
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
-                {% render_field_by_order form form.wh_user form.collecting_start_time form.official_factor_send_with_this_factor form.checker form.packing_json form.deliver_type label='on-border' %}
+        <div class="row row-cols-6 mt-4">
+            {% render_field_by_order form form.collecting_start_time %}
+            {% render_field_by_order form form.deliver_type label='on-border' %}
+            {% render_field_by_order form form.official_factor_send_with_this_factor form.packing_json label='on-border' %}
+            <div class="col-3 on-border">
+                <label style="z-index: 100 !important;">کاربر انبار</label>
+                <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"accounting_user" %} disabled {% endif %}>
+                    {% for item in form.wh_user.field.queryset %}
+                        {% if item in form.initial.wh_user %}
+                            <option value="{{ item.pk }}" selected>{{ item }}</option>
+                        {% else %}
+                            <option value="{{ item.pk }}">{{ item }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
             </div>
+            <div class="col-3 on-border">
+                <label style="z-index: 100 !important;">کاربر مالی</label>
+                <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if request.user|has_group:"wh_user" %} disabled {% endif %}>
+                    {% for item in form.checker.field.queryset %}
+                        {% if item in form.initial.checker %}
+                            <option value="{{ item.pk }}" selected>{{ item }}</option>
+                        {% else %}
+                            <option value="{{ item.pk }}">{{ item }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
-{#        <input type="hidden" value="{{ quotation.is_official }}" name="is_official">#}
-{#        <input type="hidden" value="{{ quotation.official_value }}" name="official_value">#}
-{#        <input type="hidden" value="{{ quotation.self_discount }}" name="self_discount">#}
     </div>
-{#<div class="row">#}
-{#    <div class="d-flex flex-column gap-2">#}
-{#    <div class="col-3">#}
-{#        <span class="d-flex">#}
-{#            {% render_field_by_order form form.is_official label='in-line' %}#}
-{#        </span>#}
-{#    </div>#}
-{#    <div class="col-2">#}
-{#        <span class="d-flex">#}
-{#            <span class="me-3 bold w-35">تخفیف نوع ۱</span>#}
-{#            <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
-{#        </span>#}
-{#    </div>#}
-{#    <div class="col-2">#}
-{#        <span class="d-flex">#}
-{#            <span class="me-3 bold w-50">درصد تخفیف روی همه</span>#}
-{#            <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.self_discount.html_name }}" value="{{ form.instance.self_discount }}">#}
-{#        </span>#}
-{#    </div>#}
-{#    </div>#}
-{#</div>#}
+<span class="factor-header-toggle btn btn-sm btn-secondary" onclick="factor_header_toggle(event)">بستن</span>
+
 
     <!-- items header -->
-    <div class="sticky-top text-center" style="top: 110px; z-index: 100;">
+    <div class="sticky-top text-center mt-5" style="top: 110px; z-index: 100;">
         <div class="row">
             <!--quotation item header-->
             <div class="col-3 py-2 bg-light-info rounded-right">
@@ -271,6 +300,7 @@
                     <span class="col-1 text-center gap-1">
                         <span class=" cursor-pointer">
                             <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor_item.instance.goods_code.sku }}" >
+{#                            {% render_field_by_order factor_item factor_item.goods_code %}#}
                         </span>
                         <div class="mt-1">
                             {% get_comment_user_list factor_item request.user size=25 obj_rel=qi %}
@@ -282,6 +312,7 @@
                         <input class="LTR-RTL w-100 rounded font-size-11 text-center"
                                    name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" list="lst_part_number_show"
                                    value="{{ factor_item.instance.part_number_show }}" autocomplete="off">
+{#                        {% render_field_by_order factor_item factor_item.part_number_show %}#}
                         {{ form_s.part_number_show.errors }}
                             <datalist id="lst_part_number_show">
                                 {% for items_list in factoritem_qi_pair.3.list %}
@@ -301,6 +332,7 @@
                     </span>
                     <span class="col-1 text-center px-0">
                         <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+{#                        {% render_field_by_order factor_item factor_item.quantity %}#}
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center">
@@ -431,6 +463,7 @@
                     </span>
                     <span class="col-1 text-center px-1">
                         <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+{#                    {% render_field_by_order factor_item factor_item.quantity %}#}
                         <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
                     </span>
                     <span class="col-2 text-center px-1">
@@ -757,4 +790,25 @@ setTimeout(factor_calculate_price_all_rows, 1000)
             })
         }
     }
+
+    let factorHeaderOpen = true;
+    function factor_header_toggle(event){
+        debugger
+            const factor_header = document.querySelector("#factor-header")
+            const factorHeaderToggle = event.currentTarget
+        if (factor_header.style.height === "0px" || factor_header.style.height === "") {
+            factor_header.style.height = `${factor_header.scrollHeight}px`;
+            } else {
+                factor_header.style.height = 0;
+            }
+
+            if (factorHeaderOpen) {
+                factorHeaderToggle.innerText = 'باز کردن';
+                factorHeaderOpen = !factorHeaderOpen
+            } else {
+                factorHeaderToggle.innerText = 'بستن';
+                factorHeaderOpen = !factorHeaderOpen;
+            }
+        }
+
 </script>

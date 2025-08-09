@@ -3,14 +3,19 @@ from django.forms import inlineformset_factory
 
 from django import forms
 from django_select2.forms import ModelSelect2MultipleWidget
-from jalali_date.fields import JalaliDateField
-from jalali_date.widgets import AdminJalaliDateWidget
+from jalali_date.fields import JalaliDateField, JalaliDateTimeField, SplitJalaliDateTimeField
+from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
 from accounts.models import User
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem
 from order.models import Order
 from translator import get_text as _
+from django.utils.html import format_html
+
+
+class x (AdminSplitJalaliDateTime):
+    template_name = 'core/partial/jalali_split_datetime.html'
 
 
 class UserSelectWidget(ModelSelect2MultipleWidget):
@@ -59,9 +64,15 @@ class FactorModelForm(CustomBaseModelForm):
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
+        self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
+        self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
+
         self.make_hidden(['q'])
-        self.fields['collecting_start_time'] = JalaliDateField(label=_('collecting_start_time'),
-                                                      widget=AdminJalaliDateWidget(
+        # self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('date time'),
+        #     widget=AdminSplitJalaliDateTime # required, for decompress DatetimeField to JalaliDateField and JalaliTimeField
+        # )
+        self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
+                                                      widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
                                                                  'size': '10'}), required=False
                                                       )
@@ -72,7 +83,9 @@ class FactorModelForm(CustomBaseModelForm):
             self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
                                                                                                  Q(groups__name='accounting_admin')).distinct(), required=False)
         else:
-            self.make_disable(['checker'])
+            self.fields['checker'] = forms.ModelMultipleChoiceField(
+                queryset=User.objects.filter(Q(groups__name='accounting_user') |
+                                             Q(groups__name='accounting_admin')).distinct(), required=False, disabled=True)
 
         self.make_hidden(form_constraint_hide or [])
         self.make_hidden(formset_constraint_hide or [])
@@ -125,6 +138,24 @@ class FactorItemModelForm(CustomBaseModelForm):
             #     formset_constraint_read = formset_constraint[self.form_state][0].get('read')
             #     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
+        # self.fields['goods_code'].widget = forms.TextInput(
+        #     attrs={'class': 'narrow-input LTR-RTL w-100 rounded text-center font-size-11',
+        #            'value': self.instance.goods_code.sku if self.instance.goods_code else '', 'type': 'text'
+        #            })
+        # qis = self.instance.factor.q.quotation.all() if self.instance.pk else []
+        # for idx, qi in enumerate(qis):
+        #     self.fields['part_number_show'].widget.attrs.update(
+        #         {'class': 'LTR-RTL w-100 rounded font-size-11 text-center narrow-input',
+        #          'autocomplete': 'off', 'list': f'lst_part_number_show__{idx}',
+        #          'value': appearance_or_real_part_number(qi.goods_code_fk,
+        #                                                  qi.quotation.customer_party_id),
+        #          'type': 'text'
+        #          })
+        #     self.fields['quantity'].widget.attrs.update(
+        #         {'onkeyup': 'check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)',
+        #          'class': 'narrow-input LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity',
+        #          'type': 'text', 'value': qi.quantity,
+        #          })
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['is_bazar'].widget.attrs['class'] = 'checkbox_is_bazar'

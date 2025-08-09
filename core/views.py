@@ -459,13 +459,19 @@ class BaseView(UserPassesTestMixin,
                     elif self.state_index is not None and self.state_index + 1 == wf_len:
                         to_user = self.get_flow_user(current_state_group) if self.has_flow else None
                     elif self.state_index is not None:
-                        to_user = self.get_flow_user(next_state_group) if self.has_flow else None
+                        if self.model.__name__.lower() == 'quotation':
+                            to_user = self.request.user if self.has_flow else None
+                        else:
+                            to_user = self.get_flow_user(next_state_group) if self.has_flow else None
 
             except Exception as e:
                 print('error: ', __file__, e.__traceback__.tb_lineno, e)
                 to_user = None
 
             if self.has_flow:
+                # fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
+                # self.wf_access2 = wf_access2 = fci
+
                 # self.wf_access = wf_access = from_user_ == self.request.user or self.request.user.is_superuser or \
                 #     FlowAdminGroup.is_admin_of_group(self.request.user, current_state_group, model=self.model) or \
                 #     (bool(set(belong_to_groups) & set(self.request.user.groups.values_list('name', flat=True))) and
@@ -478,7 +484,7 @@ class BaseView(UserPassesTestMixin,
 
                 fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
                 self.wf_access, self.wf_access2 = (self.wf_access, fci)
-                wf_access, wf_access2 = (wf_access, fci)
+                # wf_access, wf_access2 = (wf_access, fci)
 
                 # if self.object.cancel:
                 #     self.wf_access = False

@@ -99,8 +99,8 @@
             "deadlines": [0],
             "form_constraints": [{
               "group": "sales_user",
-              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer", "packing_json"],
-              "read": []
+              "hide": ["final_check", "official_factor_send_with_this_factor", "deliver_to_customer", "packing_json"],
+              "read": ["checker", "collecting_start_time", "wh_user"]
             }],
             "formset_constraints": [
               {
@@ -133,22 +133,24 @@
               {
               "group": "wh_admin",
               "hide": ["packing_json"],
-              "read": ["deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["self_discount", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer"],
-              "read": ["need_financial_approval", "final_check", "need_factor_document"]
+              "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_start_time"],
+              "read": [ "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document"]
             }],
             "formset_constraints": [
+
+              {
+                "group": "wh_admin",
+                "hide": [],
+                "read": ["goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+              },
               {
                 "group": "accounting_user",
                 "hide": [],
                 "read": ["quantity"]
-              },
-              {
-                "hide": [],
-                "read": []
               }
             ]
           },
@@ -158,7 +160,7 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "wh_user",
-              "hide": ["packing_json"],
+              "hide": ["packing_json", "collecting_end_time"],
               "read": ["need_factor_document"]
             }],
             "formset_constraints": [
@@ -174,7 +176,7 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "wh_user",
-              "hide": ["packing_json"],
+              "hide": ["packing_json", "collecting_end_time"],
               "read": ["need_factor_document"]
             }],
             "formset_constraints": [
