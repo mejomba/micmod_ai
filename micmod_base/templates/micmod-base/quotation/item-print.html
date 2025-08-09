@@ -136,7 +136,10 @@
 {% endwith %}
 <!-- LEAD TIME -->
  <td class="align-middle">
-     <div class="">{{ form.instance.lead_time|default_if_none:"-" }}</div>
+     <div class="font-size-12">
+         بازرگانی: {{ form.instance.lead_time|default_if_none:"-" }}</div>
+     <div class="font-size-12">
+         فروش: {{ form.instance.supply_status|default_if_none:"-" }}</div>
  </td>
 <!-- SUPPLY STATUS -->
  <td class="align-middle">

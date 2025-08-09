@@ -18,13 +18,7 @@
 
 {% block form_content %}
 
-    <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
-    <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
-    <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
-
-    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
-        خروجی اکسل
-    </button>
+    <span>{{ form.customer_request }}</span>
 
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
@@ -86,8 +80,19 @@
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-12">
-                                                            {% render_field_group form.addition form.tax label_type='on-border '%}
-                                                            <div class="d-none">{{ form.market_grade }}</div>
+                                                            <div class="row row-cols-3">
+                                                                {% render_field_by_order form form.addition form.tax label='on-border '%}
+                                                            <div class="col on-border">
+                                                            <label>تنظیمات قیمت</label>
+                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">
+                                                                    <option value="1">پیشفرض</option>
+                                                                    {% for q_price_setting in q_price_settings %}
+                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                                <div class="d-none">{{ form.market_grade }}</div>
+                                                            </div>
                                                         </div>
                                                     </div>
 {#                                                </div>#}
@@ -103,7 +108,6 @@
                                                     <div class="row">
                                                         <div class="col-sm-6">
                                                             {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
-                                                            {% get_comment_user_list form request.user %}
                                                         </div>
                                                         <div class="col-sm-6 ms-sm-auto rounded">
                                                             {% get_customer form.instance.customer_code as customer %}
@@ -122,7 +126,7 @@
                                                         <a href="{% url 'extra_data:customer.update' pk=customer.pk %}" target="_blank">صفحه اطلاعات مشتری</a>
                                                         {% endif %}
 
-                                                            {% if request.user.pk == 21 or request.user.is_superuser or customer.change_marketer_rel.last.to_marketer.current_user == request.user %}
+                                                            {% if request.user|has_group:"sales_admin" or customer.change_marketer_rel.first.to_marketer.current_user == request.user %}
                                                                 <div class="row row-cols-2" id="id_customer_accounting_info_container"></div>
                                                                 {% endif %}
                                                             </div>
@@ -172,9 +176,10 @@
             {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
             {% include 'core/partial/empty_modal_sm.html' %}
-<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}">
+<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
                 {# this tag maybe need to close #}
-                        </div>
+
             {% endblock form_content %}
 {% block before_button %}
     {% include "micmod-base/base/create_info_bar.html" %}

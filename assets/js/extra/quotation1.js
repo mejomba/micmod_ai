@@ -40,6 +40,7 @@ function setPriceWithAjax(e, elem=null, price_code=''){
                     'id_payment_method': document.getElementById('id_payment_method').value,
                     'id_market_grade': document.getElementById('id_market_grade').value,
                     'id_customer_grade': document.getElementById('id_customer_grade').value,
+                    'price_setting': document.querySelector('#q_price_setting').value,
                     'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     'trade_price_code': tradePriceCodeValue,
                     'bazar_price_code': bazarPriceCodeValue,
@@ -99,6 +100,7 @@ $(document).ready(function () {
                     'id_payment_method': document.getElementById('id_payment_method').value,
                     'id_market_grade': document.getElementById('id_market_grade').value,
                     'id_customer_grade': document.getElementById('id_customer_grade').value,
+                    'price_setting': document.querySelector('#q_price_setting').value,
                     'quantity': elem.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     // 'trade_price_code': tradePriceCode,
                     // 'bazar_price_code': bazarPriceCode,
@@ -362,6 +364,7 @@ function set_item_classes(item, idx=null) {
                         id_payment_method: document.getElementById('id_payment_method').value,
                         id_market_grade: document.getElementById('id_market_grade').value,
                         id_customer_grade: document.getElementById('id_customer_grade').value,
+                        'price_setting': document.querySelector('#q_price_setting').value,
                         quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     }
                 },
@@ -398,6 +401,7 @@ function set_item_classes(item, idx=null) {
                         id_payment_method: document.getElementById('id_payment_method').value,
                         id_market_grade: document.getElementById('id_market_grade').value,
                         id_customer_grade: document.getElementById('id_customer_grade').value,
+                        'price_setting': document.querySelector('#q_price_setting').value,
                         quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                     }
                 },
@@ -710,6 +714,7 @@ function get_price_data(code, party_id, item) {
                 id_payment_method: document.getElementById('id_payment_method').value,
                 id_market_grade: document.getElementById('id_market_grade').value,
                 id_customer_grade: document.getElementById('id_customer_grade').value,
+                price_setting: document.querySelector('#q_price_setting').value,
                 quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
                 'trade_price_code': tradePriceCodeValue,
                 'bazar_price_code': bazarPriceCodeValue,
@@ -747,6 +752,7 @@ function get_all_price_data(code, party_id, item, selected_price_code=null, pric
                 id_payment_method: document.getElementById('id_payment_method').value,
                 id_market_grade: document.getElementById('id_market_grade').value,
                 id_customer_grade: document.getElementById('id_customer_grade').value,
+                price_setting: document.querySelector('#q_price_setting').value,
                 quantity: item.querySelector('[id*="quantity"]').value.replaceAll(',', ''),
             },
         cache: true,
@@ -1067,6 +1073,7 @@ function set_price2(target, data=null) {
         final_price.style.backgroundColor = "#fff";   // ظاهر غیرقابل ویرایش
         final_price.style.cursor = "auto";
         elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', 'sales_admin')
+        final_price.value = round_rial(numberWithCommas(final_price.value).replaceAll(',', ''))
     } else {
         price_json && price_json.forEach(function (item){
             if (item.unique_title === selected_method){
@@ -1297,6 +1304,7 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
+    debugger
     const currency = parseInt(document.getElementById('id_currency_ref').value)
     if (currency != 1){
         return x

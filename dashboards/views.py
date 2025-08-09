@@ -56,9 +56,10 @@ class BIView(View):
         bi_obj = BIReport.objects.filter(pk=pk).first()
         url = bi_obj.url if bi_obj else ''
 
-        if bi_filter := generate_powerbi_filter(request.user.bi_filter):
-            # url += "&filter=" + bi_filter
-            url += bi_filter
+        if request.user:
+            if bi_filter := generate_powerbi_filter(request.user.bi_filter):
+                # url += "&filter=" + bi_filter
+                url += bi_filter
 
         host = request.META.get('HTTP_HOST')
         if host.split(':')[0] == '94.182.194.120':

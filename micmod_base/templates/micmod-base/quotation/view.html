@@ -28,6 +28,19 @@
         خروجی اکسل
     </button>
 
+
+    <div id="" class="d-flex gap-5 align-items-center">
+        <input type="text" id="id_customer_request_search" placeholder="جستجوی درخواست..." class="narrow-input">
+
+        <div id="customer_request_search_result" class="d-flex gap-5 align-items-center">
+
+        </div>
+
+    </div>
+
+    <div id="id_customer_request_select2"></div>
+    <span>{{ form.customer_request }}</span>
+
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -88,8 +101,19 @@
                                                             {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-12">
-                                                            {% render_field_group form.addition form.tax label_type='on-border '%}
-                                                            <div class="d-none">{{ form.market_grade }}</div>
+                                                            <div class="row row-cols-3">
+                                                                {% render_field_by_order form form.addition form.tax label='on-border '%}
+                                                            <div class="col on-border">
+                                                            <label>تنظیمات قیمت</label>
+                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">
+                                                                    <option value="1">پیشفرض</option>
+                                                                    {% for q_price_setting in q_price_settings %}
+                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                                <div class="d-none">{{ form.market_grade }}</div>
+                                                            </div>
                                                         </div>
                                                     </div>
 {#                                                </div>#}
@@ -106,6 +130,7 @@
                                                         <div class="col-sm-6">
                                                             {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
                                                             {% get_comment_user_list form request.user %}
+                                                            {% get_payment_list form request.user %}
                                                         </div>
                                                         <div class="col-sm-6 ms-sm-auto rounded">
                                                             {% get_customer form.instance.customer_code as customer %}
@@ -174,9 +199,10 @@
             {% include 'core/partial/empty_modal.html' %}
             {% include 'core/partial/empty_modal_lg.html' %}
             {% include 'core/partial/empty_modal_sm.html' %}
-<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}">
+<div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+<div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
                 {# this tag maybe need to close #}
-                        </div>
+
             {% endblock form_content %}
 {% block before_button %}
     {% include "micmod-base/base/create_info_bar.html" %}
@@ -521,6 +547,60 @@ function lastUpdate() {
 
 setTimeout(get_customer_accounting_info, 1500)
 
+const id_customer_request_search = document.querySelector('#id_customer_request_search')
+id_customer_request_search && id_customer_request_search.addEventListener('keyup', function(event){
+    const pk = event.currentTarget.value
+    let url =  `/micmod_base/customer-requests/${pk}`
+    const customer_request_search_result = $('#customer_request_search_result')
+    let html = ""
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            debugger
+            if (!data.customer){
+                html = `
+                <div class="d-flex gap-2">
+                    <span>درخواست</span>
+                    <span>${data.id}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span>مشتری:</span>
+                    <span>${data.customer} (${data.customer_phone})</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span>تاریخ درخواست</span>
+                    <span>${data.request_date}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span>تعداد ردیف:</span>
+                    <span>${data.items.length}</span>
+                </div>
+                <a href="/micmod_base/quotation_from_customer_request/${data.id}/" class="btn btn-sm btn-bordered btn-outline-secondary">مشاهده</a>
+                <span class="text-danger">مشتری این درخواست ناشناس است</span>`
+            } else {
+
+            }
+
+
+            customer_request_search_result.html(html)
+        },
+        error: function (err) {
+            debugger
+            console.log(err)
+            if (err.status === 404){
+                html = 'درخواست یافت نشد'
+            } else {
+                html = 'خطا...'
+            }
+            customer_request_search_result.html(html)
+        },
+    }); // end ajax
+})
 </script>
 
 

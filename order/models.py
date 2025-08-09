@@ -8,7 +8,7 @@ from core.models import BaseModel, BaseModeWF
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier
 # from factor.models import FactorItem
-from micmod_base.models import QuotationItem
+from micmod_base.models import QuotationItem, CustomerRequestItem
 from translator import get_text as _
 from workflow.models import WorkFlow
 from tools import const
@@ -76,6 +76,8 @@ class Order(BaseModeWF):
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='currency_ref', null=True, blank=True)
     order_m2m = models.ManyToManyField('self', through='OrderOrder', related_name='order_items',
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
+    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                              related_name='customer_order_items')
 
     def __str__(self):
         if self.final_item:

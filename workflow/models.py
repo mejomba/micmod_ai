@@ -6,6 +6,8 @@ from core.models_contenttype import BaseContentType
 from accounts.models import User
 from notifications.models import Messages
 from django.apps import apps
+
+from services.notify_service import notify_wf_to_shop
 from translator import get_text as _
 
 from inspect import stack
@@ -50,6 +52,13 @@ class WorkFlow(BaseContentType):
 
     def __str__(self):
         return f'{self.current_state_name}'
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        x = super().save(force_insert=False, force_update=False, using=None, update_fields=None)
+        # notify_wf_to_shop(self)
+        return x
 
     def submit_flow(self):
         pass

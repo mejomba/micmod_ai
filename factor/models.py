@@ -9,7 +9,7 @@ from accounts.models import User
 from core.models import BaseModel, BaseManager, BaseModeWF
 from extra_data.models import Item
 from micmod_base.base import SLSDoc, DeliveryTime
-from micmod_base.models import Quotation, SaleType, QuotationItem
+from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
 from order.models import Order
 from tools.utils import show_error, round_rial
 
@@ -59,6 +59,7 @@ class Factor(SLSDoc):
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
     checker = models.ManyToManyField(User, related_name='factor_checker', verbose_name=_('چک کننده'))
     packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
+    customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_factor_items', null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):
         # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
@@ -157,6 +158,8 @@ class FactorItem(BaseModel):
     #                                             verbose_name=_('supply_locations'))
     discount_per_item = models.FloatField(_('discount_per_item'), null=True, blank=True)
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
+    customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                              related_name='customer_factor_items')
 
     objects = FactorItemManager()
 

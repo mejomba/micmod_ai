@@ -15,13 +15,20 @@ from django.urls import reverse
 from django.views import View
 from jalali_date import datetime2jalali
 from jalali_date.templatetags.jalali_tags import to_jalali
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from core.permissions import HasShopPermission
+from factor.serializers import FactorSerializer
+from micmod_base.serializers import CustomerRequestSerializer
 from translator import get_text as _
 
 from core.views import BaseView, Base
 from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm
 from factor.models import Factor, FactorItem
-from micmod_base.models import Quotation, QuotationItem
+from micmod_base.models import Quotation, QuotationItem, CustomerRequest
 from tools.utils import to_jalali_date, show_error
 import json
 
@@ -363,3 +370,23 @@ class DirectFactorView(View):
         url = reverse('micmod_base:quotations.create')
         url += '?direct'
         return redirect(url)
+
+
+class CustomerRequestFactorViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasShopPermission]
+    queryset = Factor.objects.all().order_by('-created_date')
+    serializer_class = FactorSerializer
+    http_method_names = ['get']
+
+    @action(detail=False, methods=['get'], url_path='by-request/(?P<customer_request_id>[^/.]+)')
+    def list_by_request(self, request, customer_request_id=None):
+        queryset = self.get_queryset().filter(customer_request_id=customer_request_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})

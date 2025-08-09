@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'customer-requests', CustomerRequestViewSet, basename='customer-request')
+router.register(r'customer-request-quotation', CustomerRequestQuotationViewSet, basename='customer-quotation')
 
 app_name = "micmod_base"
 urlpatterns = [
@@ -57,7 +58,9 @@ urlpatterns = [
     path('get_model_fields_config/', get_model_fields_config, name='get.model.fields.config'),
     path('ajax/customer_accounting_info/', get_customer_accounting_info, name='get_customer_accounting_info'),
     # path('api/', ExportQuotation.as_view(), name='api'),
-    path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
-    # path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
-    path('customer_request_list_datatable/', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
+    # path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
+    path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
+    path('customer_request/list/', CustomerRequestList.as_view(), name="customer_request.list"),
+    path('customer_request/list/datatable', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
+    path('quotation_from_customer_request/<int:pk>/', QuotationFromCustomerRequestView.as_view(), name="quotation_from_customer_request.view"),
 ]

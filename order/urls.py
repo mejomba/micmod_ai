@@ -1,9 +1,18 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, PaymentItemDataTableListView
 
+from .views import CustomerRequestOrderViewSet
+
+router = DefaultRouter()
+router.register(r'customer-request-order', CustomerRequestOrderViewSet, basename='customer-order')
+
+
 app_name = 'order'
 urlpatterns = [
+    path('', include(router.urls)),
     #  order
     path('view/', views.OrderView.as_view(), name='order.view'),
     path('view/<int:pk>/', views.OrderView.as_view(), name='order.view'),

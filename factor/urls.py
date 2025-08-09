@@ -1,9 +1,16 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
 from . import views
+from .views import CustomerRequestFactorViewSet
+
+router = DefaultRouter()
+router.register(r'customer-request-factor', CustomerRequestFactorViewSet, basename='customer-factor')
 
 app_name = 'factor'
 
 urlpatterns = [
+    path('', include(router.urls)),
     path('view/', views.FactorView.as_view(), name='factor.view'),
     path('view/<int:pk>/', views.FactorView.as_view(), name='factor.view'),
     path('direct/', views.DirectFactorView.as_view(), name='factor.direct'),

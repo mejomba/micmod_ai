@@ -3,19 +3,25 @@ import json
 
 import jdatetime
 from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
+from django.views.generic import DetailView, UpdateView
 from jalali_date.templatetags.jalali_tags import to_jalali
 from datetime import timezone, timedelta, datetime
 
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from werkzeug.exceptions import MethodNotAllowed
 
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
+from core.permissions import HasShopPermission
 from dw.models import DimCustomer
-from extra_data.models import Item
+from extra_data.models import Item, PriceSettings
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
 from sepidar.models import APILogs
@@ -24,9 +30,9 @@ from sepidar.scripts.sepidar_classes import Urls
 import uuid
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, modelformset_factory
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseBadRequest
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.conf import settings
 from jalali_date import datetime2jalali
@@ -34,7 +40,8 @@ from jalali_date import datetime2jalali
 from changelog.models import ChangeLog
 from inquiry.forms import InquiryResultForm
 from micmod_base.base import CurrencyExchange
-from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, QuotationItemFormset, InquiryResultFormset, TimeForm
+from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, \
+    QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
 from tools import const
 from tools.import_data import import_customers_from_sepidar
@@ -53,7 +60,8 @@ from django.urls import reverse
 import re
 from rest_framework import viewsets
 from .models import CustomerRequest
-from .serializers import CustomerRequestSerializer
+from .serializers import CustomerRequestSerializer, QuotationSerializer, CustomerQuotationSerializer
+
 
 def generate_direct_factor(request, quotation: Quotation):
     factor_data = {
@@ -406,6 +414,13 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         if factors and factors.exists():
             context['form'].enable = False
             context['factors'] = factors
+
+        ps = PriceSettings.objects.none()
+        for user_group in self.request.user.groups.values_list('name', flat=True):
+            ps |= PriceSettings.objects.filter(Q(permission_json__group__icontains=user_group))
+        ps |= PriceSettings.objects.filter(
+            Q(permission_json__user__icontains='all') | Q(permission_json__user__icontains=self.request.user.username))
+        context['q_price_settings'] = ps
         return context
 
 
@@ -1486,10 +1501,69 @@ def get_customer_accounting_info(request, *args, **kwargs):
     return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
 
 
+class CustomerRequestView(LoginRequiredMixin, View):
+    queryset = CustomerRequest.objects.all()
+    template_name = 'micmod-base/customer_request/view.html'
+    # form_struct = {
+    #     'form': CustomerRequestForm,
+    #     'childes': [
+    #         {
+    #             'form': CustomerRequestItemForm,
+    #             'childes': [{}]
+    #         },
+    #     ]
+    # }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationItemsFormPendingView')
+
+    def get(self, request, pk, *args, **kwargs):
+        self.object = CustomerRequest.objects.filter(pk=pk).prefetch_related('items')
+        context = {'object': self.object}
+
+        return render(request, self.template_name, context)
+
+
 class CustomerRequestViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = CustomerRequest.objects.all().order_by('-request_date')
+    # permission_classes = [IsAuthenticated, HasShopPermission]
+    # queryset = CustomerRequest.objects.all().order_by('-request_date')
     serializer_class = CustomerRequestSerializer
+    
+    def get_queryset(self):
+        q = self.request.GET.get('q')
+        if q:
+            return qs.filter(pk=q)
+        return CustomerRequest.objects.all().order_by('-request_date')
+
+    @action(detail=False, methods=['get'], url_path='by-customer/(?P<customer_id>[^/.]+)')
+    def list_by_customer(self, request, customer_id=None):
+        queryset = self.get_queryset().filter(customer=customer_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})
+
+class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasShopPermission]
+    queryset = Quotation.objects.all().order_by('-request_date')
+    serializer_class = CustomerQuotationSerializer
+    http_method_names = ['get']
+
+    @action(detail=False, methods=['get'], url_path='by-request/(?P<customer_request_id>[^/.]+)')
+    def list_by_request(self, request, customer_request_id=None):
+        queryset = self.get_queryset().filter(customer_request_id=customer_request_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({'detail': 'url with "pk" required'})
 
 
 class CustomerRequestList(LoginRequiredMixin,View):
@@ -1502,14 +1576,14 @@ class CustomerRequestList(LoginRequiredMixin,View):
 class CustomerRequestDatatableView(AjaxDatatableView):
     model = CustomerRequest
     title = 'customer request'
-    initial_order = [["id", "desc"], ]
+    initial_order = [["pk", "desc"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        # {'name': 'pk', 'visible': True, 'title': _('شماره سند'), 'className': 'py-1 border currency-search'},
+        {'name': 'pk', 'visible': True, 'title': _('شماره درخواست'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, 'title': 'شناسه'},
         {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'expire_date', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
@@ -1526,14 +1600,119 @@ class CustomerRequestDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
 
-        row['quotation__pk'] = obj.quotation.pk if obj.quotation else ''
-        row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
-        row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
-        row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
-        row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
-        row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
-        row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
-        row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
-        row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
-        row['fee'] = obj.fee if obj else ''
+        row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
+        # row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
+        # row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
+        # row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
+        # row['quotation__customer_party_id'] = obj.quotation.customer_party_id.pk if obj.quotation.customer_party_id else ''
+        # row['goods_code_fk__purchase_group'] = obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else ''
+        # row['goods_code_fk__sale_group'] = obj.goods_code_fk.sale_group.title if obj.goods_code_fk.sale_group else ''
+        # row['quotation__sale_type'] = obj.quotation.sale_type.title if obj.goods_code_fk else ''
+        # row['quotation__currency_ref'] = obj.quotation.currency_ref.title if obj.quotation else ''
+        # row['fee'] = obj.fee if obj else ''
 
+
+class QuotationFromCustomerRequestView(View):
+    template_name = 'micmod-base/customer_request/view.html'
+    conflict_template_name = 'micmod-base/quotation/conflict_view.html'
+    post_conflict_template_name = 'micmod-base/quotation/conflict_post_view.html'
+    form_class = QuotationForm
+    model = CustomerRequest
+    wf_last_step_is_open = True
+    has_flow = True
+    form_struct = {
+        'form': QuotationForm,
+        'childes': [
+            {
+                'form': QuotationItemFormset,
+                'childes': [{'form': InquiryResultForm}]
+            },
+        ]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationsView')
+
+    has_formset = True
+    formset_form = QuotationItemForm2
+    formset_model = QuotationItem
+    formset_fk_field = 'quotation'
+    related_name_fk = 'quotation'
+
+    def get(self, request, pk, *args, **kwargs):
+        context = dict()
+        from workflow.forms import WorkFlowModelForm
+        flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'QuotationsView')
+        context['flow_state_index'] = 0
+        context['flow_state_list'] = flow_config.get('flow_state_list')
+        context['flow_state_list'].append('مرحله نهایی')
+        """if flow object don't exist select user from group (normally for create step)"""
+        group = flow_config.get('flow_users_groups')[1]
+        flow_belong_to_group = WorkFlowModelForm._meta.model.objects.filter(belong_to_group=group)
+        user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
+        if flow_belong_to_group:
+            last_wf_user = flow_belong_to_group.order_by('id').last().from_user
+            next_users = user_list.filter(id__gt=last_wf_user.id).order_by('id')
+            if next_users:
+                to_user = next_users.first()
+            else:
+                to_user = user_list.first()
+        else:
+            to_user = user_list.first()
+        context['workflow_form'] = WorkFlowModelForm(
+            content_type_model=Quotation,
+            initial={
+                'wf_access': True,
+                'from_user': None,
+                'to_user': to_user,
+                'state': 'پیش فاکتور اولیه',
+                'state_index': 0,
+                'belong_to_group': 'sales_user',
+                'action': 'create',
+                'deadline': None,
+                'flow_config': flow_config,
+                'create': True
+            },
+            current_user=request.user,
+        )
+
+        cr = get_object_or_404(CustomerRequest, pk=pk)
+        Q_fields = [
+            "title", "code", "currency_ref", "status", "request_date", "expiration_date", "customer_code",
+            "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
+            "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
+            "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type', 'is_direct',
+            'sales_admin_confirm', 'description_sales', 'customer_request'
+        ]
+
+        QI_fields = [
+            'index', 'customer_goods_name', 'customer_goods_code', 'quantity', 'itemid', 'price_target',
+            'delivery_time', 'goods_code', 'goods_code_alt', 'price_method', 'final_price',
+            'goods_name', 'stock_amount', 'goods_avg_price', 'goods_price_sheet1', 'goods_price_sheet2',
+            'goods_price_sheet3', 'discount_per_item',
+            'goods_sheet_date', 'goods_market_date', 'goods_price_market', 'goods_avg_count',
+            'goods_name_alt', 'goods_last_sale', 'goods_last_price', 'goods_total_sales',
+            'stock_amount_res', 'goods_min_price', 'goods_max_price', 'trade_price_code', 'bazar_price_code',
+            'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'local_price_inquiry_done',
+            'need_local_price_inquiry', 'foreign_price_inquiry_done', 'need_foreign_price_inquiry', 'description',
+            'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
+            'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
+            'selected_price_code', 'price_json', 'sales_description', 'supply_status', 'customer_request_item',
+            ]
+
+        form = QuotationForm(data={ 'self_discount': 0})
+        QuotationItemFormset = modelformset_factory(
+            QuotationItem,
+            extra=2,
+            fields=qi_fields,
+        )
+        formset_initial = [
+            {'goods_code': 1, 'quantity': 10},
+            {'goods_code': 2, 'quantity': 20},
+        ]
+        formset = QuotationItemFormset(queryset=QuotationItem.objects.none(), initial=formset_initial, prefix='quotation')
+
+        context['form'] = form
+        context['formset'] = formset
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pass

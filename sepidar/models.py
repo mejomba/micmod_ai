@@ -99,7 +99,7 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
                 s = float(customer_code)
                 dl_filter = f" and dl.Code={customer_code}"
             except:
-                dl_filter = " and dl.title like N'%%" + customer_code.replace('ی','ي').replace("ك", "ک") + "%%'"
+                dl_filter = " and dl.title like N'%%" + customer_code.replace('ی', 'ي').replace("ک", "ك") + "%%'"
         item_filter = ""
         if item_code:
             try:
@@ -118,7 +118,7 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
         #         item_filter = " and Item.title like N'%%" + item_code.replace('ی', 'ي').replace("ك", "ک") + "%%'"
         g_p = kwargs.get('g_p')
         if g_p:
-            g_p = str(g_p).lower().replace('ی', 'ي').replace("ك", "ک")
+            g_p = str(g_p).lower().replace('ی', 'ي').replace("ک", "ك")
         qry = f"""
 select top 3000
         docs.Date,docs.Number,docs.coef,docs.doc_type,docs.Fee,docs.itemId,docs.NetPrice,docs.NetPriceInBaseCurrency,docs.Price,docs.PriceInBaseCurrency,docs.Quantity,docs.Rate
@@ -694,7 +694,9 @@ class APILogs(core.models.AbsBaseModel):
     api_response = models.JSONField(verbose_name=_('api_response'), null=True, blank=True)
 
     @staticmethod
-    def new_call( url, device: Device = Device.objects.all().first(), method: Method = Method.Get, data=None, save=True):
+    def new_call( url, device: Device, method: Method = Method.Get, data=None, save=True):
+        if not device:
+            device = Device.objects.all().first()
         _user = device.user
         headers = _user.create_headers()
         url = _user.get_absolute_url(url)

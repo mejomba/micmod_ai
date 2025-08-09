@@ -1,0 +1,12 @@
+{% load more_tags %}
+
+<a href="#" onclick="delete_obj(event)" target="_blank" class="delete-payment text-danger tooltip_ py-3" data-url="{% url 'core:delete.confirm' %}?model={{ obj|model_name }}&object_id={{ obj.pk }}&app_label={{ obj|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+    <span class="tooltiptext">حذف</span>
+    <i class="ki-duotone ki-trash fs-2 text-danger">
+        <span class="path1"></span>
+        <span class="path2"></span>
+        <span class="path3"></span>
+        <span class="path4"></span>
+        <span class="path5"></span>
+    </i>
+</a>

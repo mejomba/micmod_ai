@@ -491,11 +491,15 @@ function initializeDatepickers(elem_id=null) {
     if(elem_id){
         elem_id.forEach(function (id){
             console.log(elem_id, $(`#${id}`))
-            $(`#${id}`).datepicker({
+            try {
+                $(`#${id}`).datepicker({
                 dateFormat: 'yy-mm-dd',
                 changeMonth: true,
                 changeYear: true,
-            });
+                });
+            } catch (e) {
+                console.log(e)
+            }
         })
     }
 }

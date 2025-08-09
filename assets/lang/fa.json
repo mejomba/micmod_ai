@@ -702,5 +702,7 @@
     "document_management": "مدیریت اسناد",
     "customer_group_user_list_or_create": "گروه کارشناس",
     "portal_current_user": "کاربر فعلی پرتال",
-    "wh_user": "کارشناس انبار"
+    "wh_user": "کارشناس انبار",
+    "customer-request": "درخواست مشتری",
+    "portal_current_user": "کاربر فعلی پرتال"
 }
