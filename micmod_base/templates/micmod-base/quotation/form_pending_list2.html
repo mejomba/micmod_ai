@@ -28,8 +28,9 @@
                 <div class="rounded p-2 d-flex align-items-center h-40px">
                     <div class="col ms-4">
                         <span class="me-2">کد مشتری:</span>
-                        <span>{{ form_lists.0.instance.quotation.customer_code }}</span>
-                        ({% get_customer_from_pg form_lists.0.instance.quotation.customer_code as customer %} {{ customer.title }})
+{#                        <span>{{ form_lists.0.instance.quotation.customer_code }}</span>#}
+                        <span>{{ form_lists.0.instance.quotation.customer_party_id.secret_id }}</span>
+{#                        ({% get_customer_from_pg form_lists.0.instance.quotation.customer_code as customer %} {{ customer.title }})#}
                     </div>
                     <div class="col">
                         <span class="me-2">کد سپیدار:</span>

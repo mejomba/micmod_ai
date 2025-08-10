@@ -123,6 +123,7 @@
                                             </h3>
                                             <div class="row">
                                                 <div class="">
+                                                {% if request.user|has_group:"sales_userr" %}
                                                     <div class="row">
                                                         <div class="col-sm-6">
                                                             {% render_field_by_order form form.customer_code form.customer_grade form.description form.description_sales form.cancel label='on-border' margin_b=3 %}
@@ -152,6 +153,9 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    {% else %}
+                                                        {{ object.customer_party_id.secret_id }}
+                                                {% endif %}
                                                 </div>
                                             </div>
                                         </div>
