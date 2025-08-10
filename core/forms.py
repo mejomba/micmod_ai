@@ -92,6 +92,10 @@ class CustomBaseModelForm(forms.ModelForm):
             self.fields[f].required = True
 
     def make_disable(self, fields: List):
+        if '__all__' in fields:
+            for field_name, field in self.fields.items():
+                field.disabled = True
+            return
         for field_name, field in self.fields.items():
             if field_name in fields:
                 field.disabled = True

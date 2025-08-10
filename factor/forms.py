@@ -63,6 +63,7 @@ class FactorModelForm(CustomBaseModelForm):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
+        self.make_hidden(['packing_json'])
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
         self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
@@ -91,6 +92,8 @@ class FactorModelForm(CustomBaseModelForm):
         self.make_hidden(formset_constraint_hide or [])
         self.make_disable(form_constraint_read or [])
         self.make_disable(formset_constraint_read or [])
+        # if not access:
+        #     self.make_disable(self.fields)
 
 
 class FactorItemModelForm(CustomBaseModelForm):
@@ -131,31 +134,8 @@ class FactorItemModelForm(CustomBaseModelForm):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
 
-            # if form_constraint:
-            #     form_constraint_read = form_constraint[self.form_state].get('read')
-            #     form_constraint_hide = form_constraint[self.form_state].get('hide')
-            # if formset_constraint:
-            #     formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-            #     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
-        # self.fields['goods_code'].widget = forms.TextInput(
-        #     attrs={'class': 'narrow-input LTR-RTL w-100 rounded text-center font-size-11',
-        #            'value': self.instance.goods_code.sku if self.instance.goods_code else '', 'type': 'text'
-        #            })
-        # qis = self.instance.factor.q.quotation.all() if self.instance.pk else []
-        # for idx, qi in enumerate(qis):
-        #     self.fields['part_number_show'].widget.attrs.update(
-        #         {'class': 'LTR-RTL w-100 rounded font-size-11 text-center narrow-input',
-        #          'autocomplete': 'off', 'list': f'lst_part_number_show__{idx}',
-        #          'value': appearance_or_real_part_number(qi.goods_code_fk,
-        #                                                  qi.quotation.customer_party_id),
-        #          'type': 'text'
-        #          })
-        #     self.fields['quantity'].widget.attrs.update(
-        #         {'onkeyup': 'check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)',
-        #          'class': 'narrow-input LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity',
-        #          'type': 'text', 'value': qi.quantity,
-        #          })
+
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['is_bazar'].widget.attrs['class'] = 'checkbox_is_bazar'
@@ -168,6 +148,8 @@ class FactorItemModelForm(CustomBaseModelForm):
         self.make_hidden(formset_constraint_hide or [])
         self.make_disable(form_constraint_read or [])
         self.make_disable(formset_constraint_read or [])
+        if not access:
+            self.make_disable(self.fields)
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',

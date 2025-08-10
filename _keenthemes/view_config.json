@@ -139,6 +139,11 @@
               "group": "accounting_user",
               "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_start_time"],
               "read": [ "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document"]
+            },
+            {
+              "group": "sales_user",
+              "hide": [],
+              "read": ["__all__"]
             }],
             "formset_constraints": [
 

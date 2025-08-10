@@ -11,6 +11,7 @@ from extra_data.models import Item
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
 from order.models import Order
+from tools import const
 from tools.utils import show_error, round_rial
 
 from translator import get_text as _
@@ -117,7 +118,28 @@ class Factor(SLSDoc):
     @classmethod
     def get_qs(cls, request, lst=False, groups_list=None):
         q = request.POST.get('q')
-        qs = cls.objects.get_access_object(request.user, q=q, lst=False)
+        qs = cls.objects.none()
+        comm_filter = Q(is_deleted=False)
+        wh_filter = Q(last_work_flow__current_state_name__in=const.WH_FACTOR_STATES) | Q(wh_user__id__in=[request.user.pk])
+        sales_filter = Q()
+        trade_filter = ''
+        bazar_filter = ''
+        accounting_filter = Q(last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES) | Q(checker__id__in=[request.user.pk])
+
+        if request.user.base_group == 'wh':
+            total_filter = comm_filter & wh_filter
+            qs = cls.objects.filter(total_filter)
+        if request.user.base_group == 'sales':
+            qs |= Factor.objects.filter()
+        if request.user.base_group == 'trade':
+            qs |= Factor.objects.filter()
+        if request.user.base_group == 'bazar':
+            qs |= Factor.objects.filter()
+        if request.user.base_group == 'accounting':
+            qs |= Factor.objects.filter()
+        if request.user.is_superuser:
+            qs |= Factor.objects.filter()
+        # qs = cls.objects.get_access_object(request.user, q=q, lst=False)
         return qs
 
     @property

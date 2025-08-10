@@ -92,7 +92,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
                 'from_user': self.request.user,
-                'to_user': get_user_model().objects.filter(groups__name='accounting_user').first(),
+                'to_user': get_user_model().objects.filter(groups__name='wh_user').first(),
                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
                 'object_id': self.object.pk,
             }
@@ -309,6 +309,7 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains'},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
         {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'orderable':True, 'lookup_field': '__icontains', 'className': 'border'},
+        {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable':True, 'lookup_field': '__current_state_name__icontains', 'className': 'border'},
         {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
         {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
         {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True, 'className': 'border'},

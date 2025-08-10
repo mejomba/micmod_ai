@@ -25,7 +25,7 @@ class WorkFlowModelForm(CustomBaseModelForm):
             flow_config = self.initial.get('flow_config')
             flow_user_groups = flow_config.get('flow_users_groups', [])
             state_index = self.initial.get('state_index')
-            flow_user_group_previous = flow_user_groups[state_index - 1]
+            flow_user_group_previous = flow_user_groups[state_index - 1] if state_index else None
             flow_user_group_current = flow_user_groups[state_index]
             flow_user_group_next = flow_user_groups[state_index + 1] if state_index < len(flow_user_groups) - 1 else flow_user_groups[state_index]
             if isinstance(flow_user_group_previous, list):
@@ -39,7 +39,7 @@ class WorkFlowModelForm(CustomBaseModelForm):
             if isinstance(belong_to_group, list):
                 belong_to_group = belong_to_group[0]
 
-            current_user_groups = current_user.groups.values_list('name', flat=True)
+            # current_user_groups = current_user.groups.values_list('name', flat=True)
             self.owner_user = self.initial.get('from_user')
 
             self.fields['deadline'] = JalaliDateField(label=_('deadline'), widget=AdminJalaliDateWidget, required=False)
