@@ -489,7 +489,11 @@ class BaseView(UserPassesTestMixin,
                 # if self.object.cancel:
                 #     self.wf_access = False
 
-            deadline = datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index][0]) if isinstance(self.flow_config.get('flow_deadline')[self.state_index], list) else datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index])
+            try:
+                deadline = datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index][0]) if isinstance(self.flow_config.get('flow_deadline')[self.state_index], list) else datetime.timedelta(days=self.flow_config.get('flow_deadline')[self.state_index])
+            except Exception as e:
+                deadline = datetime.timedelta(days=1)
+                print(e)
 
             if self.has_flow:
                 if flow := self.get_flow(self.object):
