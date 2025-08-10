@@ -7,6 +7,7 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
+from django.db import IntegrityError
 from django.http import JsonResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -469,9 +470,15 @@ class CustomerView(LoginRequiredMixin, BaseView):
         x = super().form_valid(form)
         if self.request.user.is_superuser:
             for idx, item in enumerate(self.model.objects.all()):
-                item.secret_id = set_secret_id()
-                item.save()
-                print(idx)
+                for _ in range(5):
+                    try:
+                        item.secret_id = set_secret_id()
+                        item.save()
+                        print(idx)
+                        break
+                    except IntegrityError as e:
+                        print(e)
+                        continue
         return x
 
     # def post(self, request, pk=-1):
