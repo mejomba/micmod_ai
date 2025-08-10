@@ -17,7 +17,7 @@ from django.db import models, connection
 from django.conf import settings
 from accounts.templatetags.accounts_tag import has_groups,has_permission
 from core.models import BaseManager
-from extra_data.models import Customer
+from extra_data.models import Customer, PriceSettings
 from tools import utils
 from tools.myjalali import Persian
 from tools.utils import show_error, diff_time, to_jalali_date
@@ -140,6 +140,7 @@ class Quotation(SLSDoc):
     force_inquiry = models.BooleanField(verbose_name=_('force_inquiry'), default=False)
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
     is_direct = models.BooleanField(default=False, null=True, blank=True)
+    q_price_setting = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='quotation_price_settings', null=True, blank=True)
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'

@@ -1,9 +1,11 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from accounts.mixins import FormFieldAccessMixin
+from extra_data.models import PriceSettings
 from inquiry.forms import InquiryResultForm
 from inquiry.models import InquiryResult, PriceInquiryResult
 from micmod_base.base import CurrencyExchange, Currency
@@ -28,7 +30,7 @@ class QuotationForm(CustomBaseModelForm):
                   "customer_party_id", "customer_grade", "delivery_time", "payment_method", "market_grade",
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
                   "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type', 'is_direct',
-                  'sales_admin_confirm', 'description_sales', 'customer_request']
+                  'sales_admin_confirm', 'description_sales', 'customer_request', 'q_price_setting']
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),
@@ -64,6 +66,15 @@ class QuotationForm(CustomBaseModelForm):
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
 
         super(QuotationForm, self).__init__(*args, **kwargs)
+        ps = PriceSettings.objects.none()
+        for user_group in request.user.groups.values_list('name', flat=True):
+            ps |= PriceSettings.objects.filter(Q(permission_json__group__icontains=user_group))
+        ps |= PriceSettings.objects.filter(
+            Q(permission_json__user__icontains='all') | Q(permission_json__user__icontains=request.user.username))
+
+        self.fields['q_price_setting'] = forms.ModelChoiceField(widget=forms.Select(attrs={'class': 'mb-1 w-100 form-control'}), queryset=ps)
+        self.fields['q_price_setting'].widget.attrs['onchange'] = 'refresh_prices()'
+
         self.fields['request_date'] = JalaliDateField(label=_('request_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True
                                                       )

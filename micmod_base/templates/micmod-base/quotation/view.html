@@ -101,13 +101,15 @@
                                                             <div class="row row-cols-3">
                                                                 {% render_field_by_order form form.addition form.tax label='on-border '%}
                                                             <div class="col on-border">
-                                                            <label>تنظیمات قیمت</label>
-                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">
-                                                                    <option value="1">پیشفرض</option>
-                                                                    {% for q_price_setting in q_price_settings %}
-                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>
-                                                                    {% endfor %}
-                                                                </select>
+                                                            {% render_field_by_order form form.q_price_setting label='on-border '%}
+{#                                                            <label>تنظیمات قیمت</label>#}
+
+{#                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">#}
+{#                                                                    <option value="1">پیشفرض</option>#}
+{#                                                                    {% for q_price_setting in q_price_settings %}#}
+{#                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>#}
+{#                                                                    {% endfor %}#}
+{#                                                                </select>#}
                                                             </div>
                                                                 <div class="d-none">{{ form.market_grade }}</div>
                                                             </div>
