@@ -466,34 +466,20 @@ class CustomerView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         return context
 
-    def form_valid(self, form):
-        x = super().form_valid(form)
-        if self.request.user.is_superuser:
-            for idx, item in enumerate(self.model.objects.all()):
-                for _ in range(5):
-                    try:
-                        item.secret_id = set_secret_id()
-                        item.save()
-                        print(idx)
-                        break
-                    except IntegrityError as e:
-                        print(e)
-                        continue
-        return x
-
-    # def post(self, request, pk=-1):
-    #     self.object = self.model.objects.get(pk=pk)
-    #     form = self.form_struct.get('form')(self.request.POST, instance=self.object)
-    #     if form.is_valid():
-    #         self.object = form.save()
-    #     return HttpResponseRedirect(self.get_success_url)
     # def form_valid(self, form):
-    #     res = super().form_valid(form)
-    #     return res
-        # instance = form.save(commit=False)
-        # instance.save()
-        # form.save_m2m()
-        # return HttpResponseRedirect(self.get_success_url())
+    #     x = super().form_valid(form)
+    #     if self.request.user.is_superuser:
+    #         for idx, item in enumerate(self.model.objects.all()):
+    #             for _ in range(5):
+    #                 try:
+    #                     item.secret_id = set_secret_id()
+    #                     item.save()
+    #                     print(idx)
+    #                     break
+    #                 except IntegrityError as e:
+    #                     print(e)
+    #                     continue
+    #     return x
 
 
 class CustomerListView(LoginRequiredMixin, generic.ListView):
