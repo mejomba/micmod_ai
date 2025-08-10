@@ -62,14 +62,22 @@ class FactorView(LoginRequiredMixin, BaseView):
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
-        if self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST:
+        try:
+            condition = self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST
+        except Exception as e:
+            condition = False
+        if condition:
             self.object.collecting_end_time = None
             self.object.extra_data.request = self.request
             self.object.save()
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        if self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST:
+        try:
+            condition = self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST
+        except Exception as e:
+            condition = False
+        if condition:
             self.form.instance.collecting_end_time = timezone.now()
 
         res = super().form_valid(form)

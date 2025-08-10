@@ -126,6 +126,7 @@
           "path_key": "order",
           "permission": {
             "groups": [
+              "sales_user",
               "trade_user",
               "sales_admin",
               "mac",

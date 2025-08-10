@@ -222,6 +222,7 @@ class Order(BaseModeWF):
                 "editor_user": factor_item.extra_data.request.user,
                 'is_bazar': factor_item.is_bazar,
                 'is_wh': False,
+                'commitment_date_to_customer': factor_item.qi.supply_date,
                 'transportation_method': factor_item.qi.get_price_method_type
             }
         o1 = cls.objects.create(**data_base)
@@ -241,23 +242,23 @@ class Order(BaseModeWF):
             "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
         wf = WorkFlow.objects.create(**flow_data)
-        flow_data = {
-            "wf_status": 3,  # next
-            "action": 'ایجاد خودکار',
-            "flow_name": 'سفارش',
-            "state": const.WF__ORDER__FIRST_STATE,
-            "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
-            "belong_to_group": 'order_admin',
-            "object_id": o1.pk,
-            "content_type": ContentType.objects.get_for_model(o1),
-            "creator_user": data_base.get('creator_user'),
-            "editor_user": data_base.get('editor_user'),
-            "from_user": data_base.get('editor_user'),
-            "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
-            "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
-        }
+        # flow_data = {
+        #     "wf_status": 3,  # next
+        #     "action": 'ایجاد خودکار',
+        #     "flow_name": 'سفارش',
+        #     "state": const.WF__ORDER__FIRST_STATE,
+        #     "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
+        #     "belong_to_group": 'order_admin',
+        #     "object_id": o1.pk,
+        #     "content_type": ContentType.objects.get_for_model(o1),
+        #     "creator_user": data_base.get('creator_user'),
+        #     "editor_user": data_base.get('editor_user'),
+        #     "from_user": data_base.get('editor_user'),
+        #     "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
+        #     "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
+        # }
 
-        wf = WorkFlow.objects.create(**flow_data)
+        # wf = WorkFlow.objects.create(**flow_data)
         o1.last_work_flow = wf
         if o2 is not None:
             factor_item.supply_locations = o1
