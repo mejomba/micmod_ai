@@ -704,5 +704,6 @@
     "portal_current_user": "کاربر فعلی پرتال",
     "wh_user": "کارشناس انبار",
     "customer-request": "درخواست مشتری",
-    "q_price_setting": "تنظیمات قیمت"
+    "q_price_setting": "تنظیمات قیمت",
+    "supply_date": "زمان تعهد"
 }

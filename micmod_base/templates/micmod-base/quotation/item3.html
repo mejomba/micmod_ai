@@ -433,7 +433,8 @@
             <span class="sepidar_stock_info cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
             <span class="w-20 ms-8">{{ form_s.sales_description }}</span>
             <span class="ms-2">
-                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}
+{#                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}#}
+                {% render_field_by_order form_s form_s.supply_date margin_b=0 %}
             </span>
 {#        {{ form_s.supply_status }}#}
             {% if form_s.instance.task_start or form_s.instance.task_start2 %}

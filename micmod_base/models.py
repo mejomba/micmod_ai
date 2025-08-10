@@ -542,6 +542,7 @@ class SupplyStatus(AbsBaseModel):
 
 
 class QuotationItem(BaseModel):
+    supply_date = models.DateField(_('supply_date'), null=True, blank=True)
     supply_status = models.ForeignKey(SupplyStatus, verbose_name=_('supply_status'), on_delete=models.DO_NOTHING, null=True, blank=True)
     sales_description = models.CharField(_('sales_description'), max_length=255, null=True, blank=True)
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='customer_quotation_items')
