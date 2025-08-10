@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 import requests
-from jalali_core import JalaliToGregorian
+# from jalali_core import JalaliToGregorian
 from datetime import datetime
 
 
@@ -20,8 +20,8 @@ def create_or_update_payment(request, obj, portal_payment=None):
     if total_amount:
         g_from_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_from_date')
         g_to_date = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-g_to_date')
-        gregorian_g_from_date = JalaliToGregorian(*list(map(int, g_from_date.split('-')))) if g_from_date else None
-        gregorian_g_to_date = JalaliToGregorian(*list(map(int, g_to_date.split('-')))) if g_to_date else None
+        # gregorian_g_from_date = JalaliToGregorian(*list(map(int, g_from_date.split('-')))) if g_from_date else None
+        # gregorian_g_to_date = JalaliToGregorian(*list(map(int, g_to_date.split('-')))) if g_to_date else None
         description = request.POST.get(f'{app_label}__{model_name}__{ctt_id}__{obj_id}-description')
         file_prefix = f'{app_label}__{model_name}__{ctt_id}__{obj_id}-file'
         content_type = ContentType.objects.get_for_model(obj._meta.model)
@@ -46,8 +46,8 @@ def create_or_update_payment(request, obj, portal_payment=None):
         response = requests.post(url, json=api_payload)
 
         payment_data = {
-            "g_from_date": datetime(*gregorian_g_from_date.getGregorianList()) if gregorian_g_from_date else None,
-            "g_to_date": datetime(*gregorian_g_to_date.getGregorianList()) if gregorian_g_to_date else None,
+            # "g_from_date": datetime(*gregorian_g_from_date.getGregorianList()) if gregorian_g_from_date else None,
+            # "g_to_date": datetime(*gregorian_g_to_date.getGregorianList()) if gregorian_g_to_date else None,
             "description": description,
             "total_amount": total_amount,
             "content_type": content_type,
