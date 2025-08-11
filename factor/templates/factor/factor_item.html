@@ -60,7 +60,7 @@
     <!-- factor header -->
 
 <div class="sticky-top bg-white">
-    <div class="overflow-hidden col" id="factor-header" style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
+    <div class="overflow-hidden col pt-2" id="factor-header" style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
         <div class="row row-cols-4 bg-white">
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
@@ -141,7 +141,7 @@
             </div>
             <div class="col-4">
                 <div class="row row-cols-2">
-                    {% render_field_by_order form form.need_financial_approval form.to_be_collected form.final_check form.require_official_factor_with_delivery  form.deliver_to_customer form.need_factor_document label='on-border' %}
+                    {% render_field_by_order form form.need_financial_approval form.accounting_confirm form.to_be_collected form.final_check form.require_official_factor_with_delivery  form.deliver_to_customer form.need_factor_document label='on-border' %}
                 </div>
             </div>
         </div>
@@ -149,7 +149,7 @@
             {% render_field_by_order form form.collecting_start_time %}
             {% render_field_by_order form form.deliver_type form.deliver_method label='on-border' %}
             {% render_field_by_order form form.official_factor_send_with_this_factor form.packing_json label='on-border' %}
-            <div class="col-3 on-border">
+            <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
                 <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"wh_user" %} disabled {% endif %}>
                     {% for item in form.wh_user.field.queryset %}
@@ -161,7 +161,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-3 on-border">
+            <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر مالی</label>
                 <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"accounting_user" %} disabled {% endif %}>
                     {% for item in form.checker.field.queryset %}
@@ -816,4 +816,17 @@ setTimeout(factor_calculate_price_all_rows, 1000)
         }
 
         setTimeout(readOnlyInput, 2000)
+</script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="{% static 'js/local/flatpicker.js' %}"></script>
+
+<script>
+flatpickr("#id_collecting_start_time_1", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i:S",  // HH:MM:SS
+    time_24hr: true,
+    enableSeconds: false
+});
 </script>

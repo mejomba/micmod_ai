@@ -164,6 +164,10 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         context['submit_copy'] = False
 
+        # طبق صورت جلسه فاکتور اگه نیاز به تایید مالی باشد اما تایید مالی انجام نشده باشد اجازه عبور از مرحله جمع آوری ندارد
+        if self.object and self.state_index == 3 and (self.object.need_financial_approval and not self.object.accounting_confirm):
+            context['allow_next'] = False
+
         return context
 
 

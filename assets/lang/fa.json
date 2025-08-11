@@ -711,5 +711,6 @@
     "PICKUP_IN_PERSON":  "تحویل حضوری",
     "CUSTOM": "ویژه",
     "PAKE": "پیک",
-    "deliver-method": "روش ارسال"
+    "deliver-method": "روش ارسال",
+    "accounting_confirm": "تایید مالی شد"
 }
