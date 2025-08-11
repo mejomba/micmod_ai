@@ -44,7 +44,7 @@ class SepidarApiCall:
         cls.headers = cls.get_header()
 
     @classmethod
-    def login(cls, username='ali', password='1234'):
+    def login(cls, username='ali', password='123456'):
         url = cls.endpoints.get('login')
         data = {'username': username, 'password': password}
         res = requests.post(url, data=data)
