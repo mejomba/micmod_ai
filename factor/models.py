@@ -130,7 +130,8 @@ class Factor(SLSDoc):
             total_filter = comm_filter & wh_filter
             qs = cls.objects.filter(total_filter)
         if request.user.base_group == 'sales':
-            qs |= Factor.objects.filter()
+            # total_filter = comm_filter & wh_filter
+            qs = cls.objects.get_access_object(request.user, q=q, lst=False)
         if request.user.base_group == 'trade':
             qs |= Factor.objects.filter()
         if request.user.base_group == 'bazar':

@@ -126,7 +126,8 @@ class PaymentOrderDatatableView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         q = request.POST.get('q')
-        qs = self.model.objects.get_access_object(request.user, q=q)
+        user_groups = request.user.groups.filter(name__startswith='payment__')
+        qs = self.model.objects.get_access_object(request.user, q=q, groups_list=user_groups)
         qs = self.model.objects.filter(pk__in=[i.pk for i in qs])
         if q == 'pay':
             qs = qs.filter(is_paid=True)
