@@ -147,7 +147,7 @@
         </div>
         <div class="row row-cols-6 mt-4">
             {% render_field_by_order form form.collecting_start_time %}
-            {% render_field_by_order form form.deliver_type label='on-border' %}
+            {% render_field_by_order form form.deliver_type form.deliver_method label='on-border' %}
             {% render_field_by_order form form.official_factor_send_with_this_factor form.packing_json label='on-border' %}
             <div class="col-3 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
