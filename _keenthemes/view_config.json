@@ -166,7 +166,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json", "collecting_end_time"],
-              "read": ["need_factor_document"]
+              "read": ["need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
@@ -182,7 +182,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json", "collecting_end_time"],
-              "read": ["need_factor_document"]
+              "read": ["need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
@@ -198,7 +198,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json"],
-              "read": ["need_factor_document"]
+              "read": ["need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
@@ -214,7 +214,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json"],
-              "read": ["need_factor_document"]
+              "read": ["need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
