@@ -61,7 +61,7 @@ class Factor(SLSDoc):
     checker = models.ManyToManyField(User, related_name='factor_checker', verbose_name=_('چک کننده'))
     packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_factor_items', null=True, blank=True)
-    deliver_method = models.ForeignKey('Delivery', related_name='deliver_method', null=True, blank=True, on_delete=models.DO_NOTHING)
+    deliver_method = models.ForeignKey('Delivery', related_name='deliver_method', null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name=_('deliver_method'))
 
     def is_need_sales_admin_confirmation(self):
         # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
@@ -480,11 +480,17 @@ class Delivery(BaseModeWF):
     TIPAX = 'TIPAX'
     PICKUP = 'PICKUP'
     CUSTOM = 'CUSTOM'
-    DELIVERY_TYPE_CHOICES = ((POST, 'Post'), (TIPAX, 'TIPAX'), (PICKUP, 'PICKUP IN PERSON'), (CUSTOM, 'CUSTOM'))
+    PAKE = 'PAKE'
+    DELIVERY_TYPE_CHOICES = ((POST, _('Post')), (TIPAX, _('TIPAX')), (PICKUP, _('PICKUP_IN_PERSON')), (CUSTOM, _('CUSTOM')) , (PAKE, _('PAKE')))
 
     # factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, related_name='factor_delivery')
     type = models.CharField(max_length=250, verbose_name=_('delivery_type'), choices=DELIVERY_TYPE_CHOICES)
-    tracking_number = models.CharField(max_length=250, verbose_name=_('tracking_number'))
-    delivery_date = models.DateField(verbose_name=_('delivery_date'))
+    base_cost = models.PositiveBigIntegerField(_('base_cost'), default=0)
+    extra_cost = models.PositiveBigIntegerField(_('extra_cost'), default=0)
+    tracking_number = models.CharField(max_length=250, verbose_name=_('tracking_number'), null=True, blank=True )
+    delivery_date = models.DateField(verbose_name=_('delivery_date'), null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.get_type_display()}'
 
 

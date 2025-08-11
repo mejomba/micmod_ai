@@ -8,7 +8,7 @@ from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
 from accounts.models import User
 from core.forms import CustomBaseModelForm
-from factor.models import Factor, FactorItem
+from factor.models import Factor, FactorItem, Delivery
 from order.models import Order
 from translator import get_text as _
 from django.utils.html import format_html
@@ -163,3 +163,13 @@ FactorItemFormset = inlineformset_factory(
     extra=0,
     fields=factor_item_fields,
 )
+
+
+class DeliveryForm(CustomBaseModelForm):
+
+    class Meta:
+        model = Delivery
+        exclude = ['group', 'delivery_date', 'tracking_number']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)\

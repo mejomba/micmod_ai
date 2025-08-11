@@ -26,8 +26,8 @@ from micmod_base.serializers import CustomerRequestSerializer
 from translator import get_text as _
 
 from core.views import BaseView, Base
-from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm
-from factor.models import Factor, FactorItem
+from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm
+from factor.models import Factor, FactorItem, Delivery
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
 from tools.utils import to_jalali_date, show_error
 import json
@@ -399,3 +399,73 @@ class CustomerRequestFactorViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return JsonResponse({'detail': 'url with "pk" required'})
+
+
+class DeliveryList(LoginRequiredMixin, BaseView):
+    model = Delivery
+    template_name = 'factor/delivery.html'
+    success_message = 'ذخیره شد'
+    form_struct = {
+        'form': DeliveryForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('factor:delivery.view')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class DeliveryDatatableView(AjaxDatatableView):
+    model = Delivery
+    title = 'deliver method'
+    initial_order = [["id", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    def get_columns(self, fields):
+        res = [AjaxDatatableView.render_row_tools_column_def()]
+        for field in fields:
+            col = dict()
+            col['className'] = 'py-3'
+            col['lookup_field'] = '__icontains'
+            col['defaultContent'] = ''
+            col['orderable'] = True
+            col['searchable'] = True
+            col['name'] = field if isinstance(field, str) else None
+            col['visible'] = True
+            if isinstance(field, dict):
+                for key in field.keys():
+                    col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('name'))
+            res.append(col)
+        return res
+
+    def get_column_defs(self, request):
+        cols = [
+            {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'guide-search mxw-50px'},
+            {'name': 'type', },
+            # {'name': 'tracking_number', 'title': "<div class='px-3' style='width:40px;'>کد رهگیری </div>",},
+            # {'name': 'delivery_date', 'title': "<div class='px-3' style='width:40px;'>تاریخ ارسال</div>"},
+            {'name': 'base_cost', 'title': "<div class='px-3' style='width:40px;'>هزینه پایه</div>"},
+            {'name': 'extra_cost', 'title': "<div class='px-3' style='width:40px;'>هزینه اضافی</div>"},
+        ]
+
+        return self.get_columns(cols)
+
+    def customize_row(self, row, obj):
+        x = super().customize_row(row, obj)
+        row['type'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('factor:delivery.update', args=(obj.id,)),
+            obj.get_type_display() if obj.type else '_'
+        )

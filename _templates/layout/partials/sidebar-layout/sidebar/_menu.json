@@ -117,6 +117,12 @@
               "path_key": "factor/list",
               "link": "factor:factor.list",
               "count": "factor.factor:get_qs_count"
+            },
+            {
+              "icon": "burger-menu",
+              "title": "deliver-method",
+              "path_key": "factor/delivery",
+              "link": "factor:delivery.view"
             }
           ]
         },

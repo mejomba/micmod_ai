@@ -19,4 +19,7 @@ urlpatterns = [
     path('ajax/get_quotation_items_for_factor/<int:pk>/', views.get_quotation_items_for_factor, name='factor.get_quotation_items_for_factor'),
     path('factor/list/datatable/', views.FactorListDatatable.as_view(), name='factor.list.datatable'),
     path('factor/print/<int:id>/', views.print_view, name='factor.print'),
+    path('delivery/', views.DeliveryList.as_view(), name='delivery.view'),
+    path('delivery/<int:pk>/', views.DeliveryList.as_view(), name='delivery.update'),
+    path('delivery/datatable/', views.DeliveryDatatableView.as_view(), name='delivery.datatable'),
 ]

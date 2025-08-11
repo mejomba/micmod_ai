@@ -705,5 +705,11 @@
     "wh_user": "کارشناس انبار",
     "customer-request": "درخواست مشتری",
     "q_price_setting": "تنظیمات قیمت",
-    "supply_date": "زمان تعهد"
+    "supply_date": "زمان تعهد",
+    "Post":  "پست",
+    "TIPAX": "تیپاکس",
+    "PICKUP_IN_PERSON":  "تحویل حضوری",
+    "CUSTOM": "ویژه",
+    "PAKE": "پیک",
+    "deliver-method": "روش ارسال"
 }
