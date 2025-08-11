@@ -1075,16 +1075,12 @@ span .select2-selection{
   background-color: #f1ecfe;
   color: #2e2b33;
   text-align: center;
-  /*padding: 5px 0;*/
   border-radius: 6px;
   border: 1px solid #0c0c0c;
-
-  /* Position the tooltip text */
   position: absolute;
   z-index: 1000;
-  bottom: 125%;
   left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-105%);
   opacity: 0;
   transition: opacity 0.3s;
     font-size: 1.2rem;
@@ -1092,14 +1088,14 @@ span .select2-selection{
 
 /* Tooltip arrow */
 .tooltip_ .tooltiptext-fit::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #555 transparent transparent transparent;
+  /*content: "";*/
+  /*position: absolute;*/
+  /*top: 100%;*/
+  /*left: 50%;*/
+  /*margin-left: -5px;*/
+  /*border-width: 5px;*/
+  /*border-style: solid;*/
+  /*border-color: #555 transparent transparent transparent;*/
 }
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip_:hover .tooltiptext-fit {
