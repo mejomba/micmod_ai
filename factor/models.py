@@ -76,47 +76,6 @@ class Factor(SLSDoc):
     def get_qs_count(cls, user):
         return len(cls.objects.get_access_object(user, q='active', quotation=False))
 
-    # def generate_order_per_factor_item(self):
-    #     for fi in self.factoritem_set.all():
-    #         order_rel = ''
-    #         data_base = {
-    #             "order_title": "خودکار توسط سیستم",
-    #             "status": "1",
-    #             "item": fi.qi.goods_code_fk,
-    #             # "customer": fi.qi.quotation.customer_party_id,
-    #             # "transportation_method": "",
-    #             "production_lead_time": fi.qi.lead_time,
-    #             # "trade_commitment_date": "",
-    #             # "commitment_date_to_customer": "",
-    #             "quantity": fi.quantity,
-    #             # "description_sale": "",
-    #             # "order_type": "",
-    #             # "sales_admin_confirmation": "",
-    #             "cancel": False,
-    #             "is_over": False,
-    #             "qi": fi.qi,
-    #         }
-    #         data_rel = {
-    #             "order_title": "خودکار توسط سیستم",
-    #             "status": "1",
-    #             "item": fi.qi.goods_code_fk,
-    #             # "customer": fi.qi.quotation.customer_party_id,
-    #             # "transportation_method": "",
-    #             "production_lead_time": fi.qi.lead_time,
-    #             # "trade_commitment_date": "",
-    #             # "commitment_date_to_customer": "",
-    #             "quantity": fi.quantity,
-    #             # "description_sale": "",
-    #             # "order_type": "",
-    #             # "sales_admin_confirmation": "",
-    #             "cancel": False,
-    #             "is_over": False,
-    #             "qi": fi.qi,
-    #         }
-    #         if fi.supply_locations.remaining_quantity >= fi.quantity:
-    #             ...
-    #         order_base = Order.create_with_rel(data_base=data_base, data_rel=data_rel)
-
     @classmethod
     def get_qs(cls, request, lst=False, groups_list=None):
         q = request.POST.get('q')
