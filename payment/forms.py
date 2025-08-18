@@ -34,6 +34,7 @@ class PaymentOrderModelForm(CustomBaseModelForm):
             attrs={'class': 'jalali_date-date underline_dash_border', 'size': '10'}), required=False)
         self.fields['description'].widget.attrs['rows'] = 2
         self.fields['currency_type'].widget.attrs['class'] = "underline_dash_border text-center mini-select p-0"
+        self.fields['currency_type'].widget.attrs['onchange'] = "change_currency_type(event)"
 
         self.fields['request_date'].initial = timezone.now()
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None

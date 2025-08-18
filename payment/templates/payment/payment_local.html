@@ -291,6 +291,34 @@
         el.focus();
         el.setSelectionRange(0, 0);
     }
+
+    function change_currency_type(event){
+        let amount = $("#id_toman_amount").val();
+        $.ajax({
+            url: "{% url 'payment:toman.amount' %}",
+            type: "POST",
+            data: {
+                'amount': amount,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.amount_in_words) {
+                    const id_currency_type = document.querySelector('#id_currency_type')
+                    let amountInWords = response.amount_in_words + " " + id_currency_type.value // " ریال "
+                    $("#num_amount").removeClass('my-6')
+                    $("#toman").removeClass('d-none')
+                    $("#id_toman_amount_text").val(amountInWords);
+                }
+                else {
+                    $("#toman").addClass('d-none')
+                }
+            },
+            error: function() {
+                $("#toman").addClass('d-none')
+                console.log();
+            }
+        }); // ajax
+    }
      $(document).ready(function() {
          String.prototype.insert = function(index, string) {
             if (index > 0) {
@@ -312,7 +340,8 @@
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " ریال "
+                        const id_currency_type = document.querySelector('#id_currency_type')
+                        let amountInWords = response.amount_in_words + " " + id_currency_type.value // " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
@@ -338,7 +367,8 @@
                 },
                 success: function(response) {
                     if (response.amount_in_words) {
-                        let amountInWords = response.amount_in_words + " ریال "
+                        const id_currency_type = document.querySelector('#id_currency_type')
+                        let amountInWords = response.amount_in_words + " " + id_currency_type.value // " ریال "
                         $("#num_amount").removeClass('my-6')
                         $("#toman").removeClass('d-none')
                         $("#id_toman_amount_text").val(amountInWords);
