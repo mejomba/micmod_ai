@@ -588,7 +588,7 @@ function defaultFormatRepoDL(repo) {
     }
     var $container = $(`
         <div class='d-flex'>
-        <span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
+        <span class="bg-light-success rounded px-1 me-3 text-primary">${repo.id}</span>
         <span>${repo.text}</span>
         </div>
     `);

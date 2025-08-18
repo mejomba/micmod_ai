@@ -4,6 +4,7 @@ from django.forms import DateInput
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
 from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
+from files.models import UploadType
 from tools.utils import show_error
 from translator import get_text as _
 
@@ -48,6 +49,8 @@ class CustomBaseModelForm(forms.ModelForm):
     enable = True
     form_state = None
     change_data_for_validation = False
+    image_upload_type = False
+    file_upload_type = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,11 +58,23 @@ class CustomBaseModelForm(forms.ModelForm):
             for idx in range(1, self.image_groups + 1):
                 self.fields['image_{idx}'.format(idx=idx)] = forms.ImageField(widget=forms.FileInput(attrs={'multiple': 'off'}),
                                                                               label=f' تصاویر گروه{idx}', required=False)
+                if self.image_upload_type:
+                    self.fields['image_{idx}_upload_type'.format(idx=idx)] = forms.ModelChoiceField(
+                        queryset=UploadType.objects.all(),
+                        required=False,
+                        empty_label=f""
+                    )
 
         if self.file_groups:
             for idx in range(1, self.file_groups + 1):
                 self.fields[f'file_{idx}'] = forms.FileField(widget=forms.FileInput(attrs={'multiple': 'on', 'accept': 'file'}),
                                                              label=f' فایل(ها) پیوست{idx}', required=False)
+                if self.file_upload_type:
+                    self.fields['file_{idx}_upload_type'.format(idx=idx)] = forms.ModelChoiceField(
+                        queryset=UploadType.objects.all(),
+                        required=False,
+                        empty_label="---"
+                    )
 
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):

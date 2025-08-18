@@ -43,10 +43,10 @@
                          <span class="path1"></span>
                          <span class="path2"></span>
                         </i>
-                            ایجاد راهنمای جدید
+                            ایجاد سند جدید
                         </a>
                     {% else %}
-                        <span>ایجاد راهنمای </span>
+                        <span>ایجاد سند </span>
                         <span class="text-danger">جدید</span>
                         </div>
                     {% endif %}
@@ -56,6 +56,7 @@
                 <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
                 {% render_field_by_order form form.section_id form.title form.description label='on-border' %}
                 {% render_field_by_order form form.file_1 label='on-border' %}
+
             </div>
             <div class="">
                 <div class="row row-cols-4">
@@ -91,9 +92,10 @@
 
     <script language="javascript">
         $(document).ready(function () {
-            let q, url;
+            debugger
+            let type, url;
             url = new URL(window.location);
-            q = url.searchParams.get("sku");
+            type = url.searchParams.get("type");
             AjaxDatatableViewUtils.initialize_table(
                 $('#guides_list'),
                 "{% url 'guides:guides.datatable' %}",
@@ -112,7 +114,7 @@
                     ]
                 }, {
                     // extra_data
-                    sku: q
+                    type: type
                 },
             );
 

@@ -22,4 +22,5 @@ urlpatterns = [
     path('delivery/', views.DeliveryList.as_view(), name='delivery.view'),
     path('delivery/<int:pk>/', views.DeliveryList.as_view(), name='delivery.update'),
     path('delivery/datatable/', views.DeliveryDatatableView.as_view(), name='delivery.datatable'),
+    path('wh/packing/', views.WhPacking.as_view(), name='wh.packing'),
 ]

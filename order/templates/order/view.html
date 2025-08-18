@@ -191,7 +191,10 @@
                                 <span class="mx-1">از</span>
                                 <span class="s-05">{{ order.payment_info.2|floatformat:"-3g"|intcomma }}</span>
                             </div>
-
+                            <a href="{% url 'order:order.payment.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن پرداخت جدید
+                                +
+                            </a>
 {#                            <div class="progress">#}
 {#                                <div class="progress-bar text-black" role="progressbar" style="width: {{ pay_in_percent }}%" aria-valuenow="{{ pay_in_percent }}"#}
 {#                                     aria-valuemin="0" aria-valuemax="100">{{ pay_in_percent }}%</div>#}
@@ -295,6 +298,10 @@
                                 <span class="mx-1">از</span>
                                 <span class="s-05">{{ order.gio_info.2|floatformat:"-3g"|intcomma }}</span>
                             </div>
+                            <a href="{% url 'order:gio.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن GIO جدید
+                                +
+                            </a>
                         </div>
                 </div>
                     {% if gio_items %}
@@ -345,6 +352,10 @@
                                 <span class="mx-1">از</span>
                                 <span class="s-05">{{ order.packing_info.2|floatformat:"-3g"|intcomma }}</span>
                             </div>
+                            <a href="{% url 'order:packing.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن PACKING جدید
+                                +
+                            </a>
                         </div>
                     </div>
 

@@ -20,7 +20,7 @@ from core.models import BaseManager
 from extra_data.models import Customer, PriceSettings
 from tools import utils
 from tools.myjalali import Persian
-from tools.utils import show_error, diff_time, to_jalali_date
+from tools.utils import show_error, diff_time, to_jalali_date, timer
 
 from translator import get_text as _
 from workflow.models import WorkFlow
@@ -208,9 +208,6 @@ class Quotation(SLSDoc):
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
             foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
             all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
-            # else:
-            #     local_price_inquiry = cls.objects.filter(local_price_condition).distinct().count()
-            #     foreign_price_inquiry = cls.objects.filter(foreign_price_condition).distinct().count()
             res[sale_user].append(all_user_quotation)
             res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
                                    local_price_inquiry_not_responded, foreign_price_inquiry_not_responded,
@@ -240,19 +237,6 @@ class Quotation(SLSDoc):
             return utils.progress_value(wf.created_date, timezone.now(), total_hour)
         else:
             return 0
-
-    @classmethod
-    def today_quotation_pending(cls, request, **kwargs):
-        user_groups_name = request.user.groups.values_list('name', flat=True) if hasattr(request,
-                                                                                         'user') else request.groups.values_list(
-            'name', flat=True)
-        quotations_record_lst = list()
-
-        trade_user_filter = Q(foreign_price_inquiry_done=True) & Q(need_foreign_price_inquiry=False) | \
-                            Q(foreign_price_inquiry_done=False) & Q(need_foreign_price_inquiry=True)
-
-        bazar_user_filter = Q(local_price_inquiry_done=True) & Q(need_local_price_inquiry=False) | \
-                            Q(local_price_inquiry_done=False) & Q(need_local_price_inquiry=True)
 
     @classmethod
     def quotation_pending(cls, request, **kwargs):
@@ -292,7 +276,6 @@ class Quotation(SLSDoc):
             qs = Quotation.objects.filter(**f).order_by('-last_update_date')
         else:
             qs = Quotation.objects.all().order_by('-last_update_date')
-        # qs = qs.order_by('force_inquiry', 'workflows__created_date')
         for q in qs:
             if hasattr(request, 'user') and request.user.is_superuser and (q.is_inquiry_state or request_path == past_path):
                 if extra_filter is not None:
@@ -308,10 +291,6 @@ class Quotation(SLSDoc):
                     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
                 elif extra_filter is not None and extra_filter.get('goods_code'):
                     qis = q.quotation.filter(trade_user_filter, **extra_filter)
-                # elif extra_filter is not None and extra_filter.get('goods_code') and extra_filter.get('my_quotations'):
-                #     trade_extra_filter = Q(assigned_trade_user=request.user) | Q(assigned_trade_user2=request.user)
-                #     qis = q.quotation.filter(trade_user_filter, trade_extra_filter)
-                #     qis = qis.filter(goods_code=extra_filter.get('goods_code'))
                 elif extra_filter is not None and extra_filter.get('my_inquiry_not_started'):
                     trade_extra_filter = (Q(assigned_trade_user=request.user) & Q(task_start=False)) | \
                                          (Q(assigned_trade_user2=request.user) & Q(task_start2=False))
@@ -496,14 +475,7 @@ class Quotation(SLSDoc):
         sum_price = sum([qi.row_price for qi in self.quotation.all()])
         tax = sum([qi.tax for qi in self.quotation.all()])
         discount = sum([qi.discount_value for qi in self.quotation.all()])
-        # sum_price = self.sum_prices
-
-        # tax = self.tax_amount
         additions = self.addition or 0
-        # if self.self_discount:
-        #     discount = sum_price - ((self.self_discount / 100) * sum_price)
-        # else:
-        #     discount = 0
 
         total = sum_price + additions - discount + tax
 
@@ -681,30 +653,6 @@ class QuotationItem(BaseModel):
             'fields': ['goods_code', 'goods_name', 'quantity', 'fee', 'created_date', 'goods_last_price', 'goods_q_last_price', 'discount_per_item'],
             'labels': ['کد کالا', 'نام کالا', 'تعداد', 'قیمت نهایی', 'تاریخ ایجاد', 'آخرین فاکتور', 'آخرین پیش‌فاکتور', 'تخفیف در هر ردیف']
         }
-        # queryset = []
-        # fields = []
-        # labels = []
-        # # model = apps.get_model(app_label, model_name)
-        # for field in cls._meta.get_fields():
-        #     if hasattr(field, 'verbose_name'):
-        #         fields.append(field.name)
-        #         labels.append(field.verbose_name)
-        #     else:
-        #         fields.append(field.name)
-        #         labels.append(field.name)
-        # config_json = {
-        #     'fields': fields,
-        #     'labels': labels
-        # }
-        # if filter_str:
-        #     for filtr in filter_str:  # filter_str = [{'id':'4559'}, {'sku':'7589'}, ...]
-        #         for k, v in filtr.items():
-        #             # x = getattr(self, k, None)
-        #             queryset = model.objects.filter(**{k: v})
-        # else:
-        #     queryset = model.objects.all()
-        #
-        # return queryset, config_json
 
     @property
     def lead_time_day(self):
@@ -725,29 +673,6 @@ class QuotationItem(BaseModel):
                 b = ''
         return b
 
-    # @property
-    # def appearance_or_real_part_number(self):
-    #     try:
-    #         customer = self.quotation.customer_party_id
-    #         item = self.goods_code_fk
-    #         customer_part_number = self.qi.all().first() #CustomerPartNumber.objects.filter(customer=customer, item=item).order_by('id').last()
-    #         if customer_part_number:
-    #             return customer_part_number.part_number_show
-    #         else:
-    #             return self.goods_code_fk.part_number
-    #     except Exception as e:
-    #         ...
-
-    # @property
-    # def appearance_or_real_part_number_(self):
-    #     try:
-    #         l = [("", "--------", "selected")]
-    #         for item in self.qi.all():
-    #             l.append((item.pk, item.part_number_show, ''))
-    #         return {'list': l}
-    #     except Exception as e:
-    #         ...
-
     @property
     def not_over(self):
         factored_count = 0
@@ -762,30 +687,7 @@ class QuotationItem(BaseModel):
         is_order_wh_incomplete = False
         related_supply_locations = []
         for fi in self.qi.all() if self.pk else []:
-            # if fi.supply_locations.order_m2m.exists():
-            #     for oo in fi.supply_locations.order_m2m.all():
-            #         related_supply_locations.append(
-            #             {
-            #                 fi.factor.pk: {
-            #                     fi.pk: (fi.supply_locations.is_wh, oo.pk, oo.quantity,
-            #                             oo.estimate_arrive_at)
-            #                 }
-            #             }
-            #         )
-            #
-            #         related_supply_locations.append(
-            #             {
-            #                 fi.factor.pk: {
-            #                     fi.pk: (fi.supply_locations.is_wh, fi.supply_locations.pk, fi.supply_locations.quantity,
-            #                             fi.supply_locations.estimate_arrive_at)
-            #                 }
-            #             }
-            #         )
-            #     related_supply_locations = (fi.pk, fi.supply_locations.pk, fi.supply_locations.quantity,
-            #                                 fi.supply_locations.estimate_arrive_at)
             related_supply_locations.append((fi.factor.pk, fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at))
-        # related_supply_locations = [(fi.supply_locations.pk, fi.supply_locations.quantity, fi.supply_locations.estimate_arrive_at) for fi in self.qi.all() if self.pk]
-        # related_supply_locations = self.qi.all()[0].supply_locations if self.pk else False
 
         q_wh = 0
         q_order = 0
@@ -808,23 +710,6 @@ class QuotationItem(BaseModel):
                                 q_order += oo.quantity
                     else:
                         q_order += fi.supply_locations.quantity
-                    # if fi.supply_locations.is_wh:
-                    #     q_wh += fi.supply_locations.quantity
-                    # elif not fi.supply_locations.is_wh:
-                    #     if fi.supply_locations.cancel:
-                    #         for oo in fi.supply_locations.order_base_items.all():
-                    #             q_order += oo.quantity
-                    #     elif not fi.supply_locations.cancel:
-                    #         q_order += fi.supply_locations.quantity
-
-                    # if wh_supply_location and is_over:
-                    #     is_wh_complete = True  # فاکتور قطعی
-                    # elif wh_supply_location and not is_over:
-                    #     is_wh_incomplete = True  # فاکتور ناقص
-                    # elif not wh_supply_location and is_over:
-                    #     is_order_complete = True
-                    # elif not wh_supply_location and not is_over:
-                    #     is_order_incomplete = True
                 sum_quantity = sum([q_wh, q_order])
                 if q_wh and q_order and sum_quantity >= self.quantity:
                     is_order_wh_complete = True
@@ -1134,6 +1019,8 @@ class QuotationItem(BaseModel):
     def fee_(self):
         if self.final_price:
             return self.final_price
+        if not self.price_method:
+            return None
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
             return self.final_price or 0

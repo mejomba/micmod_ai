@@ -380,6 +380,7 @@ class NoUserBaseModel(models.Model):
         input_prefix = kwargs.get('input_prefix')
         fk = kwargs.get('fk')
 
+
         for i in range(file_groups):
             if input_prefix:
                 file_input_name = f'{input_prefix}_{i+1}'
@@ -395,9 +396,10 @@ class NoUserBaseModel(models.Model):
                 related_name = fk
                 file_input_name = f'{related_name}-{form_idx}-file_{i+1}'
             files = request.FILES.getlist(file_input_name)
+            upload_type = request.POST.get(f'{related_name}-{form_idx}-file_{i + 1}')
 
             for file in files:
-                file_model.objects.create(path=file, content_object=obj, group=i+1)
+                file_model.objects.create(path=file, content_object=obj, group=i+1, upload_type=upload_type)
 
 
     def compare(self, old_obj=None, excluded_keys=None):

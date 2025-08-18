@@ -5,7 +5,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from core.models import BaseContentType, BaseAbsContentType
+from core.models import BaseContentType, BaseAbsContentType, AbsBaseModel
 from translator import get_text as _
 
 
@@ -29,12 +29,21 @@ def uploaded_file_path(instance, filename: str):
     return os.path.join('uploads/file/', name)
 
 
+class UploadType(AbsBaseModel):
+    title = models.CharField(max_length=32)
+
+    def __str__(self):
+        return f'{self.title}'
+
+
 class Image(BaseAbsContentType):
     path = models.FileField(verbose_name=_('image'), upload_to=uploaded_image_path)
     alt = models.CharField(verbose_name=_('alt'), max_length=64, null=True, blank=True)
     group = models.SmallIntegerField(verbose_name=_('image group'), null=True, blank=True)
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
+    upload_type = models.ForeignKey(UploadType, on_delete=models.DO_NOTHING, related_name='upload_images', null=True,
+                                    blank=True)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()
@@ -61,6 +70,7 @@ class Image(BaseAbsContentType):
 class File(BaseAbsContentType):
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path)
     group = models.SmallIntegerField(verbose_name=_('file group'), null=True, blank=True)
+    upload_type = models.ForeignKey(UploadType, on_delete=models.DO_NOTHING, related_name='upload_files', null=True, blank=True)
 
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING)
     object_id = models.PositiveIntegerField()

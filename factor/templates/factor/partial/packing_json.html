@@ -1,10 +1,190 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+<style>
+    table {
+  border-collapse: collapse;
+  width: 100%;
+}
+    tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+    tr {
+  border-bottom: 1px solid #ddd;
+}
+
+
+
+
+</style>
+
+
+
+<table class="w-100" style="text-align: left">
+    <tbody id="id_packing-table-body">
+        <tr>
+            <th class="pe-3 ps-1">ردیف</th>
+            <th class="pe-3">کد کالا</th>
+            <th class="pe-3">تعداد</th>
+            <th class="pe-3">نام پگ</th>
+            <th class="pe-3">وضعیت</th>
+        </tr>
+        {% for factor_item in factor_items %}
+        <tr class="tr-body">
+            <td class="d-none bg-warning" id="row_id-{{ forloop.counter }}">
+                <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
+            </td>
+            <td class="ps-1" id="row-{{ forloop.counter }}">
+                <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
+            </td>
+            <td id="sku-{{ forloop.counter }}">
+                <input type="text" value="{{ factor_item.goods_code }}" style="max-width: 100px" class="narrow-input">
+            </td>
+
+            <td id="quantity-{{ forloop.counter }}" class="text-right">
+                <input type="text" name="qtt-{{ forloop.counter }}" value="{{ factor_item.quantity }}" class="narrow-input w-75">
+            </td>
+
+            <td id="pack_name-{{ forloop.counter }}" class="text-right">
+                <input type="text" name="packing_name" class="narrow-input w-75">
+            </td>
+
+            <td>
+                <select id="id_packing_status-{{ forloop.counter }}" class="narrow-input">
+                    <option>----------</option>
+                    <option value="checked">چک شد</option>
+                    <option value="other">یچیز دیگه</option>
+                </select>
+            </td>
+            <td>
+                <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                    <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                     <span class="path4"></span>
+                     <span class="path5"></span>
+                    </i>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="btn btn-sm btn-secondary mt-1" onclick="addWhPackingRow()">
+    افزودن ردیف
+</div>
+<div class="mt-10">
+    <div  class="btn btn-sm btn-success" onclick="update_wh_packing_json(event)" data-bs-dismiss="modal">تایید</div>
+    <div  class="btn btn-sm btn-danger" data-bs-dismiss="modal">لغو</div>
+    <div class="float-end btn btn-sm disabled">آپلود اکسل</div>
+</div>
+<div class="bg-light-info p-2 rounded mt-2 d-flex align-items-start gap-2">
+
+        <i class="ki-duotone ki-information fs-1 text-info">
+         <span class="path1"></span>
+         <span class="path2"></span>
+         <span class="path3"></span>
+        </i>
+    <span>
+        پس از تایید
+        <q>ذخیره پیش نویس</q>
+        انجام دهید تا اطلاعات ذخیره شود.
+    </span>
+</div>
+
+
+<script>
+
+    function remove_wh_packing_row(event){
+        debugger
+        if (event.currentTarget.classList.contains("delete-row-btn")) {
+            let row = event.target.closest("tr");
+            if (row) row.remove();
+        }
+    }
+
+function loadPackingJSON() {
+    let packingInput = document.querySelector("textarea[name='packing_json']");
+    if (!packingInput || !packingInput.value) return;
+
+    try {
+        let data = JSON.parse(packingInput.value);
+        let tbody = document.getElementById("id_packing-table-body");
+
+        Object.keys(data).forEach(packingName => {
+            data[packingName].forEach(item => {
+                debugger
+                // پیدا کردن ردیفی که packing_name برابر باشه
+                let existingRow = [...tbody.querySelectorAll(".tr-body")].find(tr => {
+                    let row_id = tr.querySelector(`[id^='row_id-'] input`);
+                    //let input = tr.querySelector(`[name^='packing_name']`);
+                    //return input && input.value === packingName;
+                    return row_id && row_id.value == item.row_id;
+                });
+
+                if (existingRow) {
+                    // اگر ردیف وجود داشت، مقداردهی کن
+                    existingRow.querySelector(`[id^='row_id'] input`).value = item.row_id || "";
+                    existingRow.querySelector(`[id^='row'] input`).value = item.row || "";
+                    existingRow.querySelector(`[id^='sku'] input`).value = item.sku || "";
+                    existingRow.querySelector(`[id^='pack_name-'] input`).value = packingName || "";
+                    let select = existingRow.querySelector(`select[id^='id_packing_status']`);
+                    if (select) select.value = item.status || "";
+                    let quantityInput = existingRow.querySelector(`[name^='qtt-']`);
+                    if (quantityInput) quantityInput.value = item.quantity || "";
+                } else {
+                    // اگر ردیف نبود، بساز
+                    let rowNumber = tbody.querySelectorAll("tr").length + 1;
+                    let tr = document.createElement("tr");
+                    tr.classList.add('tr-body')
+                    tr.id = `row-${rowNumber}`;
+                    tr.innerHTML = `
+                    <tr class="tr-body">
+                    <td class="d-none bg-warning" id="row_id-${rowNumber}">
+                        <input type="text" value="${item.row_id || ""}" style="max-width: 45px" class="narrow-input">
+                    </td>
+                    <td class="ps-1" id="row-${rowNumber}">
+                        <input type="text" value="${item.row || ""}" style="max-width: 45px" class="narrow-input">
+                    </td>
+                    <td id="sku-${rowNumber}">
+                        <input type="text" value="${item.sku || ""}" style="max-width: 100px" class="narrow-input">
+                    </td>
+
+                    <td id="quantity-${rowNumber}" class="text-right">
+                        <input type="text" name="qtt-${rowNumber}" value="${item.quantity || ""}" class="narrow-input w-75">
+                    </td>
+
+                    <td id="pack_name-${rowNumber}" class="text-right">
+                        <input type="text" name="packing_name" value="${packingName}" class="narrow-input w-75">
+                    </td>
+
+                    <td>
+                        <select id="id_packing_status-${rowNumber}" class="narrow-input">
+                            <option>----------</option>
+                            <option value="checked" ${item.status === "checked" ? "selected" : ""}>چک شد</option>
+                            <option value="other" ${item.status === "other" ? "selected" : ""}>یچیز دیگه</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                            <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                             <span class="path5"></span>
+                            </i>
+                        </div>
+                    </td>
+                </tr>
+                `;
+                    tbody.appendChild(tr);
+                }
+            });
+        });
+
+    } catch (e) {
+        console.error("Invalid packing_json format", e);
+    }
+}
+
+loadPackingJSON()
+</script>

@@ -132,13 +132,13 @@
             "form_constraints": [
               {
               "group": "wh_admin",
-              "hide": ["packing_json"],
-              "read": ["accounting_confirm","self_discount", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor"],
+              "read": ["is_official","official_value","self_discount", "accounting_confirm","self_discount", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
-              "read": ["deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
+              "read": ["is_official","official_value","self_discount", "deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             },
             {
               "group": "sales_user",
@@ -149,12 +149,12 @@
               {
                 "group": "wh_admin",
                 "hide": [],
-                "read": ["goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+                "read": ["is_official","official_value","self_discount", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
               },
               {
                 "group": "accounting_user",
                 "hide": [],
-                "read": ["quantity"]
+                "read": ["is_official","official_value","self_discount", "quantity"]
               }
             ]
           },
@@ -164,13 +164,13 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "wh_user",
-              "hide": ["packing_json", "collecting_end_time"],
-              "read": ["accounting_confirm", "need_factor_document", "deliver_type"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","packing_json", "collecting_end_time"],
+              "read": ["is_official","official_value","self_discount", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
             },
             {
               "group": "accounting_user",
               "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
-              "read": ["deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "read": ["is_official","official_value","self_discount", "deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],
             "formset_constraints": [
@@ -186,8 +186,8 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "wh_user",
-              "hide": ["packing_json", "collecting_end_time"],
-              "read": ["need_factor_document", "deliver_type"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time"],
+              "read": ["is_official","official_value","self_discount", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
             }],
             "formset_constraints": [
               {
@@ -203,7 +203,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json"],
-              "read": ["need_factor_document", "deliver_type"]
+              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
@@ -214,12 +214,12 @@
           },
           {
             "state": "تایید تحویل",
-            "groups": ["wh_user"],
+            "groups": ["official_factor_send_with_this_factor","wh_user"],
             "deadlines": [1],
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json"],
-              "read": ["need_factor_document", "deliver_type"]
+              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
@@ -245,8 +245,8 @@
             "group": "sales_user",
             "deadline": 0,
             "form_constraint": {
-              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
-              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade", "cancel"]
+              "hide": ["sales_admin_confirmation", "order_m2m", "cancel", "sales_admin_cancel", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],
+              "read": ["production_lead_time", "trade_commitment_date", "supplier_trade"]
             },
             "formset_constraint": [
               {

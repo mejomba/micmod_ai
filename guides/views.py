@@ -30,7 +30,10 @@ class GuidesList(LoginRequiredMixin, BaseView):
     }
 
     def get_success_url(self):
-        return reverse_lazy('guides:guides.view')
+        url = reverse_lazy('guides:guides.view')
+        if self.request.GET.get('type'):
+            url += f"?type={self.request.GET.get('type')}"
+        return url
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -68,12 +71,29 @@ class GuidesDatatableView(AjaxDatatableView):
     def get_column_defs(self, request):
         cols = [
             {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'guide-search mxw-50px'},
+            {'name': 'section_id', },
             {'name': 'title', },
             {'name': 'description', 'title': "<div class='px-3' style='width:40px;'>توضیحات</div>",},
             {'name': 'file_1', 'title': "<div class='px-3' style='width:40px;'>فایل</div>", "searchable": False},
         ]
 
         return self.get_columns(cols)
+
+    def get_initial_queryset(self, request=None):
+        q = self.request.POST.get('type')
+        filter_dict = dict()
+
+        if q == 'shenasname_farayand':
+            filter_dict = {
+                "section_id": "shenasname_farayand"
+            }
+        else:
+            filter_dict = {
+                "section_id__in": ["quotation", "payment_order"]
+            }
+
+        qs = Guides.objects.filter(**filter_dict)
+        return qs
 
     def customize_row(self, row, obj):
         x = super().customize_row(row, obj)

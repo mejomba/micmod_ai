@@ -9,6 +9,7 @@ from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 from accounts.models import User
 from core.forms import CustomBaseModelForm
 from factor.models import Factor, FactorItem, Delivery
+from files.models import File
 from order.models import Order
 from translator import get_text as _
 from django.utils.html import format_html
@@ -26,7 +27,11 @@ class UserSelectWidget(ModelSelect2MultipleWidget):
         "email__icontains",
     ]
 
+
 class FactorModelForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 2
+
     class Meta:
         model = Factor
         exclude = ['factor_self', 'guid', 'status', 'group', ]
@@ -63,7 +68,7 @@ class FactorModelForm(CustomBaseModelForm):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
-        self.make_hidden(['packing_json'])
+        # self.make_hidden(['packing_json'])
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
         self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
@@ -123,12 +128,12 @@ class FactorItemModelForm(CustomBaseModelForm):
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
-            if form_constraint:
+            if request and not request.user.is_superuser and form_constraint:
                 for item in form_constraint[self.form_state]:
                     if item.get('group') in request.user.groups.values_list('name', flat=True):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
-            if formset_constraint:
+            if request and not request.user.is_superuser and formset_constraint:
                 for item in formset_constraint[self.form_state]:
                     if item.get('group') in request.user.groups.values_list('name', flat=True):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')

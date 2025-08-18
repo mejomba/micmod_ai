@@ -6,6 +6,7 @@ from django.db import models
 from django.http import JsonResponse
 
 from core.models import AbsBaseModel, BaseModeWF, BaseContentType
+from micmod_base.base import Currency
 from translator import get_text as _
 
 
@@ -24,11 +25,13 @@ class CreditCard(BaseModeWF):
 
 class PaymentOrder(BaseModeWF):
     SOURCE_CHOICES = (('1','تنخواه مالی'), ('2', 'پرداخت مستقیم'))
+    CURRENCY_CHOICE = (('ریال', 'ریال'), ('دلار', 'دلار'))
     FORMAL_CHOICE = (('1', 'غیر رسمی'), ('2', 'رسمی رسول رفیع'), ('3', 'رسمی رهاورد'))
     request_date = models.DateField(verbose_name=_('request_date'))
     payment_date = models.DateField(verbose_name=_('payment_date'), null=True, blank=True)
     # amount = models.PositiveBigIntegerField(verbose_name=_('amount'), default=1)
     amount = models.CharField(max_length=16, verbose_name=_('amount'), default=1)
+    currency_type = models.CharField(default='ریال', max_length=8, choices=CURRENCY_CHOICE)
     behalf = models.CharField(verbose_name=_('for_'), max_length=255)
     pay_to = models.CharField(verbose_name=_('pay_to'), max_length=255, null=True, blank=True)
     from_source = models.ForeignKey('PaymentSource', verbose_name=_('from_source'), on_delete=models.DO_NOTHING, null=True, blank=True)

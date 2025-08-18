@@ -806,6 +806,25 @@
               "link": "guides:guides.view"
             }
           ]
+        },
+       {
+          "permission": {
+            "permissions": [
+              "guides.view_guides_shenasname_farayand"
+            ]
+          },
+          "title": "شناسنامه فرآیند",
+          "icon": "question",
+          "path_key": "shenasname_farayand",
+          "menus": [
+            {
+              "icon": "message-add",
+              "title": "list/create",
+              "path_key": "shenasname_farayand/",
+              "link": "guides:guides.view",
+              "q": "type=shenasname_farayand"
+            }
+          ]
         }
        ]
     }

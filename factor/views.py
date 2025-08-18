@@ -1,6 +1,6 @@
 import datetime
 from django.utils import timezone
-
+from django.contrib import messages
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -54,6 +54,26 @@ class FactorView(LoginRequiredMixin, BaseView):
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
 
+    def send_factor_to_sepidar(self):
+        if "insert to sepidar success" and True:
+            self.object.sepidar_number = 1# "response.sepidar_number"
+            self.object.extra_data.request = self.request
+            self.object.final_check = True
+            self.object.save()
+            messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
+        else:
+            if 'next' in self.request.POST:
+                self.object.last_work_flow = self.object.workflows.all().order_by('-id')[1]
+                self.object.final_check = False
+                self.object.extra_data.request = self.request
+                self.object.save()
+                self.object.workflows.all().order_by('id').last().delete()
+            else:
+                self.object.final_check = False
+                self.object.extra_data.request = self.request
+                self.object.save()
+            messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+
     def get_success_url(self):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
@@ -79,7 +99,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             condition = False
         if condition:
             self.form.instance.collecting_end_time = timezone.now()
-
+        obj_before_save = self.object
         res = super().form_valid(form)
         if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
@@ -100,11 +120,16 @@ class FactorView(LoginRequiredMixin, BaseView):
                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
                 'from_user': self.request.user,
-                'to_user': get_user_model().objects.filter(groups__name='wh_user').first(),
+                'to_user': get_user_model().objects.filter(groups__name='wh_admin').first(),
                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
                 'object_id': self.object.pk,
             }
             self.save_flow(self.request, **wf_data)
+        if 'next' in self.request.POST and self.state_index == 4:
+            self.send_factor_to_sepidar()
+
+        if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
+            self.send_factor_to_sepidar()
         return res
 
     # def is_need_sales_admin_confirmation(self):
@@ -118,6 +143,7 @@ class FactorView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['f_warning'] = []
         if not self.object:
             return context
         context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation()
@@ -127,7 +153,15 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['quotation'] = self.object.q if self.object else None
         qis = self.object.q.quotation.all() if self.object else None
         FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
-        context['form_s'] = FactorItemFormset(instance=self.object)
+        context['form_s'] = FactorItemFormset(instance=self.object, form_kwargs={
+                                                  "constraint": {
+                                                      "wf_access": self.wf_access,
+                                                      'form_state': self.state_index,
+                                                      'request': self.request,
+                                                      'form_constraint': self.flow_config.get("flow_form_constraint"),
+                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
+                                                      }
+                                              })
 
         exclude_qi = set()
         context['factoritem_qi_pair'] = []
@@ -166,7 +200,19 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         # طبق صورت جلسه فاکتور اگه نیاز به تایید مالی باشد اما تایید مالی انجام نشده باشد اجازه عبور از مرحله جمع آوری ندارد
         if self.object and self.state_index == 3 and (self.object.need_financial_approval and not self.object.accounting_confirm):
+            context['f_warning'].append('نیاز به تایید مالی دارد.')
             context['allow_next'] = False
+
+        if self.object:
+            factoritems = (
+                self.object.factoritem_set
+                .select_related('supply_locations')
+                .all()
+            )
+
+            if self.object and self.state_index == 3 and not all(x.supply_locations.is_all_arrival for x in factoritems):
+                context['allow_next'] = False
+                context['f_warning'].append('سفارش در راه دارد')
 
         return context
 
@@ -197,7 +243,7 @@ def search_factor_view(request, *args, **kwargs):
             q_filter |= Q(quotation__goods_code_fk__part_number__icontains=q_str)
     q_filter &= Q(last_work_flow__current_state_name='مرحله نهایی')
     if not search_by:
-        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی')& \
+        q_filter = Q(last_work_flow__current_state_name='مرحله نهایی') & \
                    (Q(customer_party_id__title__icontains=q_str) | \
                    Q(customer_party_id__sepidar_dl_id__icontains=q_int) | \
                    Q(customer_code__icontains=q_str) | Q(sepidar_number__icontains=q_int) | \
@@ -206,7 +252,7 @@ def search_factor_view(request, *args, **kwargs):
     if 'search_id' in search_by and len(search_by) == 1:  # 1403.12.11 آقای حاجی نژاد گفتن اگر شناسه پیش فاکتور را زد بدون در نظر گرفتن مراحل همه پیش فاکتور ها را نمایش دهد
         quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(pk=q_int, sales_admin_confirm=True, **q_required).order_by('-id').distinct()
     else:
-        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, sales_admin_confirm=True,**q_required).order_by('-id').distinct()
+        quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, sales_admin_confirm=True, **q_required).order_by('-id').distinct()
     # quotations = Quotation.objects.get_access_object(request.user, lst=False).filter(q_filter, **q_required).order_by('-id').distinct()
     res = dict()
     res['items'] = []
@@ -473,3 +519,15 @@ class DeliveryDatatableView(AjaxDatatableView):
             reverse('factor:delivery.update', args=(obj.id,)),
             obj.get_type_display() if obj.type else '_'
         )
+
+
+class WhPacking(View):
+    template_name = 'factor/partial/packing_json.html'
+
+    def get(self, request, *args, **kwargs):
+        pk = self.request.GET.get('pk')
+        factor = Factor.objects.prefetch_related('factoritem_set').get(pk=pk)
+        factor_items = factor.factoritem_set.all()
+        context = {'factor_items': factor_items}
+        html = render_to_string(self.template_name, context, request)
+        return JsonResponse({'res': html})

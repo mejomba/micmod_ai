@@ -596,6 +596,10 @@ a .next {
 .answer.close {
     max-height: 0;
 }
+.mini-select {
+    appearance: none;
+    font-size: 0.9rem;
+}
 /*================================*/
 input:disabled, textarea:disabled, select:disabled {
     border: none;

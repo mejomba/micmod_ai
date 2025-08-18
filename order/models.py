@@ -152,11 +152,20 @@ class Order(BaseModeWF):
     @property
     def packing_info(self):
         final_quantity = self.final_quantity
+        if self.is_bazar:
+            return final_quantity, final_quantity, final_quantity
         total_arrived_wh = total_arrived_wh_in_percent = None
-        total_arrived_wh, total_arrived_wh_in_percent = self.packing_item_order.aggregate(
+        total_arrived_wh, total_arrived_wh_in_percent = self.packing_item_order.filter().aggregate(
             total_arrived_wh=Sum("arrived_quantity"),
             total_arrived_wh_in_precent=Sum("arrived_quantity")/self.final_quantity*100).values()
         return int(total_arrived_wh_in_percent or 0), int(total_arrived_wh or 0), final_quantity
+
+    @property
+    def is_all_arrival(self):
+        _, in_wh, final_quantity = self.packing_info
+        if in_wh == final_quantity:
+            return True
+        return False
 
     @property
     def final_po_number(self):
@@ -266,10 +275,7 @@ class Order(BaseModeWF):
             remaining_quantity = o2.remaining_quantity
             oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=min(factor_item.quantity, o1.quantity, remaining_quantity, factor_item.reserve_count),
                                            sepidar_wh_code=sepidar_wh_code)
-            # if remaining_quantity >= o1.quantity:
-            #     oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=o1.quantity, sepidar_wh_code=sepidar_wh_code)
-            # else:
-            #     oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=remaining_quantity, sepidar_wh_code=sepidar_wh_code)
+        o1.extra_data.request = factor_item.extra_data.request
         o1.save()
         return o1
 

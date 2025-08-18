@@ -403,6 +403,7 @@ class Item(BaseModel):
 
     @property
     def supply_locations_(self):
+        """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
         import re
         res = []

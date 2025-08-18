@@ -11,6 +11,7 @@ class Guides(BaseModel):
     SECTION_CHOICES = (
         ('quotation', 'پیش فاکتور'),
         ('payment_order', 'دستور پرداخت'),
+        ('shenasname_farayand', 'شناسنامه فرآیند'),
     )
     section_id = models.CharField(max_length=100, choices=SECTION_CHOICES, null=True, blank=True)
     title = models.CharField(max_length=255, verbose_name=_('title'))

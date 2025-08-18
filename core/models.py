@@ -508,9 +508,10 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
                 related_name = fk
                 file_input_name = f'{related_name}-{form_idx}-file_{i + 1}'
             files = request.FILES.getlist(file_input_name)
+            upload_type = request.POST.get(f'{file_input_name}_upload_type')
 
             for file in files:
-                file_model.objects.create(path=file, content_object=obj, group=i + 1)
+                file_model.objects.create(path=file, content_object=obj, group=i + 1, upload_type_id=upload_type)
 
     @staticmethod
     def save_image(request, image_groups, image_model, obj, form_idx=0, *args, **kwargs):

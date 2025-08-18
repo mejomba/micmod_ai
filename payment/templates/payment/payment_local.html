@@ -111,7 +111,10 @@
                         <input dir="rtl" onfocus="cursor_end(this)" type="text" class="underline_dash_border s-1 text-center comma-seperator" id="id_toman_amount" {% if form.fields.amount.disabled %} disabled {% endif %} name="{{ form.amount.name }}" {% if form.amount.value != None %}value="{{ form.amount.value }}"{% endif %}>
                         {{ form.amount.errors }}
                     </div>
-                    <span class="w-5">ریال بابت</span>
+                    <span class="w-5">
+                        {% render_field_by_order form form.currency_type %}
+                    </span>
+                    <span>بابت</span>
                     <div class="w-75 mb-3">
 {#                        <input type="text" class="underline_dash_border text-center bold" {% if form.fields.behalf.disabled %} disabled {% endif %} name="{{ form.behalf.name }}" {% if form.behalf.value != None %}value="{{ form.behalf.value|stringformat:'s' }}"{% endif %}>#}
                     <textarea rows="2" class="underline_dash_border text-center" {% if form.fields.behalf.disabled %} disabled {% endif %} name="{{ form.behalf.name }}" style="resize: none; overflow-y: hidden">
@@ -200,6 +203,10 @@
             </div>
             <div class="mt-5">
                 {% render_field_by_order form form.description label='on-border' margin_b=0 %}
+                <div class="mt-3 d-flex gap-2">
+                    <span>ایجاد کننده: </span>
+                    <span>{{ form.instance.creator_user|default_if_none:"-" }}</span>
+                </div>
             </div>
         </div>
     </div>
