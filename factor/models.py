@@ -55,7 +55,7 @@ class Factor(SLSDoc):
     final_check = models.BooleanField(default=False, verbose_name=_('چک نهایی'))
     require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('الزام ارسال فاکتور رسمی همراه بار'))
     official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
-    deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('نوع ارسال'))
+    deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('deliver_type'))
     deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
     checker = models.ManyToManyField(User, related_name='factor_checker', verbose_name=_('چک کننده'))

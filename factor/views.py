@@ -49,6 +49,7 @@ class FactorView(LoginRequiredMixin, BaseView):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
     has_flow = True
     has_formset = True
+    wf_last_step_is_open = True
     formset_form = FactorItemFormset
     formset_model = FactorItem
     formset_fk_field = 'factoritem_set'
@@ -211,7 +212,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             )
 
             if self.object and self.state_index == 3 and not all(x.supply_locations.is_all_arrival for x in factoritems):
-                context['allow_next'] = False
+                context['allow_next'] = True
                 context['f_warning'].append('سفارش در راه دارد')
 
         return context
@@ -363,6 +364,8 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'), 'lookup_field': '__to_user__username__icontains'},
         {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains'},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
@@ -393,6 +396,8 @@ class FactorListDatatable(AjaxDatatableView):
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
         row['q__payment_method'] = obj.q.payment_method if obj.q else ''
+        row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
+        row['checker'] = " ".join([x.username for x in obj.checker.all()])
 
 
 def print_view(request,id=-1):

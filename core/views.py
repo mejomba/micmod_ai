@@ -161,9 +161,9 @@ class BaseView(UserPassesTestMixin,
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
-            self.flow_config['flow_form_constraint'].append({"hide": [], "read": []})
+            self.flow_config['flow_form_constraint'].append([{"hide": [], "read": []}])
             self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
-            self.flow_config['flow_deadline'].append(0)
+            self.flow_config['flow_deadline'].append([0])
             self.flow_config['append_last_step'] = True
 
             self.state_index = self.get_flow_index(self.object)
@@ -447,7 +447,7 @@ class BaseView(UserPassesTestMixin,
                     previous_state_groups = flow_user_groups[self.state_index - 1] if self.state_index > 0 else None
                     previous_state_group = previous_state_groups[0] if isinstance(previous_state_groups, list) else [previous_state_groups]
 
-                    next_state_groups = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
+                    next_state_groups = flow_user_groups[self.state_index + 1] if self.state_index < wf_len - 1 else None
                     next_state_group = next_state_groups[0] if isinstance(next_state_groups, list) else [next_state_groups]
 
                     if current_state_group == next_state_group and current_state_group == previous_state_group:

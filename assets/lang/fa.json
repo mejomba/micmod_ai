@@ -712,5 +712,7 @@
     "CUSTOM": "ویژه",
     "PAKE": "پیک",
     "deliver-method": "روش ارسال",
+    "deliver_typed": "روش تحویل",
+    "deliver_method": "روش ارسال",
     "accounting_confirm": "تایید مالی شد"
 }
