@@ -1,4 +1,6 @@
 import datetime
+
+from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
 from django.contrib import messages
 from ajax_datatable import AjaxDatatableView
@@ -19,8 +21,10 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from simple_history.models import HistoricalRecords
 
 from core.permissions import HasShopPermission
+from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
 from translator import get_text as _
@@ -93,7 +97,26 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.save()
         return super().post(request, *args, **kwargs)
 
+    def disconnect_history(self, model):
+        for (receiver_key, receiver) in post_save.receivers:
+            if hasattr(receiver, "__self__") and isinstance(receiver.__self__, HistoricalRecords):
+                hist_obj = receiver.__self__
+                if 'factor' in str(hist_obj.cls):
+                    post_save.disconnect(receiver, sender=model)
+
+        # for receiver in m2m_changed.receivers[:]:
+        #     if "update_change_reason" in str(receiver) or "update_change_reason" in str(receiver[1]):
+        #         m2m_changed.disconnect(receiver[1], sender=model)
+
+    # @staticmethod
+    # def reconnect_history(model):
+    #     from simple_history import register
+    #     register(model)
+
     def form_valid(self, form):
+        self.disconnect_history(Factor)
+        self.disconnect_history(FactorItem)
+
         try:
             condition = self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST
         except Exception as e:
@@ -131,16 +154,11 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
             self.send_factor_to_sepidar()
-        return res
 
-    # def is_need_sales_admin_confirmation(self):
-    #     # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
-    #     #         self.object.factoritem_set.all()])
-    #     for fis in self.object.factoritem_set.all():
-    #         if fis.qi.fee != fis.price or fis.goods_code_fk != fis.goods_code:
-    #             return True
-    #     return False
-        # return x
+        # self.reconnect_history(Factor)
+        # self.reconnect_history(FactorItem)
+        self.object.save()
+        return res
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

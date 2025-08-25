@@ -112,6 +112,7 @@ THIRD_PARTY_APPS = [
     'sslserver',
     'django_json_widget',
     'drf_spectacular',
+    'simple_history',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -144,6 +145,7 @@ MIDDLEWARE = [
     # entering two-factor credentials.
     "allauth_2fa.middleware.AllauthTwoFactorMiddleware",
     # "accounts.middleware.middleware.UserRoleMiddleware",
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [

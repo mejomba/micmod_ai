@@ -85,7 +85,7 @@ def get_menus():
 @register.simple_tag
 def get_bi_menus(user):
     from dashboards.models import BIReport
-    reports = BIReport.objects.filter(user_list=user)
+    reports = BIReport.objects.filter(user_list=user).order_by('id')
     menus = []
     m = []
     for report in reports:
