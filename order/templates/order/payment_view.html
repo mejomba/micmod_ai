@@ -45,14 +45,15 @@
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
         </div>
+            <div class="my-5">
+                {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+                </div>
             <div class="table-responsive p-2" dir="ltr">
                 <table id="payment_item_list" width="100%" class="m-table table-striped table-bordered w-100">
                     <caption class="caption-top font-size-20 bold text-black">ردیف های پرداخت</caption>
 
                 </table>
-                <div class="mt-5">
-                {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
-                </div>
+
             </div>
 {#        {% table_responsive form.instance.payment_item.all 'po_number_trade|PO NO.,supplier_trade|Supplier,price_trade|Price' title='ردیف های پکینگ' %}#}
         </div>
