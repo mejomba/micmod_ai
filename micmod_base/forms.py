@@ -139,6 +139,7 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['customer_grade'].widget.attrs['onchange'] = 'refresh_prices()'
         self.fields['is_official'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
         self.fields['official_value'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
+        self.fields['official_value'].widget.attrs['required'] = 'required'
         self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
 
 
