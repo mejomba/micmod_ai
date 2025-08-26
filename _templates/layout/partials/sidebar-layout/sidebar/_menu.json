@@ -710,7 +710,7 @@
       ]
     },
     {
-      "title": "trade_transportation_method",
+      "title": "trade_transportation",
       "icon": "cheque",
       "path_key": "trade_transportation_method.view",
       "permission": {
@@ -721,9 +721,15 @@
       "menus": [
         {
           "icon": "burger-menu",
-          "title": "list/create",
+          "title": "trade_transportation_method-list/create",
           "path_key": "transportation/trade_transportation_method/view",
           "link": "transportation:trade_transportation_method.view"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "trade_transportation_calender-list/create",
+          "path_key": "transportation/transportation_calender/view",
+          "link": "transportation:transportation_calender.view"
         }
       ]
     },

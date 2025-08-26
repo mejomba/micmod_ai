@@ -83,6 +83,8 @@ class CustomBaseModelForm(forms.ModelForm):
             if isinstance(self.fields[field].widget, DateTimeInput):
                 # self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
                 self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=False)
+            if isinstance(self.fields[field].widget, DateInput):
+                self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget(attrs={'class': 'form-control'}), required=False)
 
         try:
             if self.fields.get('creator_user') or self.fields.get('editor_user'):

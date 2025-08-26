@@ -71,3 +71,10 @@ class TradeTransportationMethod(BaseModel):
     def __str__(self):
         return f'{self.title} ({self.get_origin_area_display()}--{self.currency_type.title})'
 
+
+class TransportationCalender(BaseModel):
+    start_time = models.DateField(null=True, blank=True)
+    arrive_time = models.DateField(null=True, blank=True)
+    capacity_kg = models.DecimalField(max_digits=12, decimal_places=2)
+    shipment_type = models.CharField(choices=TransportationMethod)
+    description = models.TextField(null=True, blank=True)
