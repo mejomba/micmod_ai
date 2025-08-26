@@ -30,7 +30,7 @@
     }
 </style>
 
-<div class="bg-success">{{ obj.history.all.count }}</div>
+{#<div class="bg-success">{{ obj.history.all.count }}</div>#}
 
 <div class="mt- mb-2  bg-light-warning py-2 px-3 rounded font-size-15" style="width: fit-content; margin-top: 0px">
 <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
@@ -313,7 +313,7 @@
     <!-- row per item -->
     <div id="sortable-container" {% if request.user|has_group:"wh_user" or request.user|has_group:"accounting_user" %} data-readonlyinput="true" {% endif %}>
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
-        <div class="bg-warning">{{ factor_item.instance.history.all.count }}</div>
+{#        <div class="bg-warning">{{ factor_item.instance.history.all.count }}</div>#}
     <div class="sortable-item">
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
