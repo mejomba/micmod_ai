@@ -300,7 +300,7 @@ class Order(BaseModeWF):
         return "-"
 
     @property
-    def order_type(self):
+    def order_method(self):
         if self.is_wh:
             return 'رزرو انبار'
         if self.is_bazar:
