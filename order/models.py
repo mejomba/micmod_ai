@@ -299,6 +299,15 @@ class Order(BaseModeWF):
         from django.utils import safestring
         return "-"
 
+    @property
+    def order_type(self):
+        if self.is_wh:
+            return 'رزرو انبار'
+        if self.is_bazar:
+            return 'سفارش بازار'
+        if not self.is_bazar and not self.is_wh:
+            return 'سفارش خارجی'
+
 
 class OrderOrder(BaseModel):
     sepidar_wh_map = {

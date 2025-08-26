@@ -131,6 +131,7 @@ class OrderDataTableListView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
         {'name': 'order_title', 'orderable': True, 'visible': True, },
+        {'name': 'order_type', 'orderable': False, 'visible': True, 'searchable': False},
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},
         {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
@@ -152,36 +153,36 @@ class OrderDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = super().get_initial_queryset(request)
+        qs = self.model.get_qs(self.request, lst=False)  # super().get_initial_queryset(request)
         if request.user.is_superuser:
             return qs
 
-
-        # qs = self.model.get_qs(self.request, lst=False)
-
         q = request.POST.get('q')
-        user_groups = request.user.base_group #groups.values_list('name', flat=True).exclude(name='base_user')
-        if user_groups == 'trade':
+        user_group = request.user.base_group
+        if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
-        elif user_groups == 'bazar':
+        elif user_group == 'bazar':
             user_groups = request.user.groups.filter(name='bazar_user')
-        elif user_groups == 'sales':
-            user_groups = request.user.groups.filter(name='sales_user')
+        else:
+            user_groups = None
+        # elif user_groups == 'sales':
+        #     user_groups = request.user.groups.filter(name='sales_user')
+        if user_groups:
+            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+        else:
+            qs = self.model.get_qs(self.request, lst=False)
 
         if q == 'all':
-            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+            qs = qs
         elif q == 'dependent':
             qs = qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
         elif q == 'sales_admin':
             qs = qs.filter(cancel=False, last_work_flow__current_state_name='تایید مدیر فروش')
-        elif q == 'bazar_user' or 'bazar_user' in user_groups:
+        elif user_groups and (q == 'bazar_user' or 'bazar_user' in user_groups):
             qs = qs.filter(is_bazar=True)
-        elif q == 'all':
-            qs = qs
         elif q == 'not_complete':
             not_complete_order = Q()
-            qs = self.model.get_qs(self.request, lst=False)
-            qs = qs.filter(cancel=True)
+            qs = self.model.get_qs(self.request, lst=False).filter(cancel=True)
             for order in qs:
                 not_complete = 0
                 for item in order.order_base_items.all():
@@ -191,23 +192,22 @@ class OrderDataTableListView(AjaxDatatableView):
                     not_complete_order |= Q(id=order.id)
             return Order.objects.filter(not_complete_order) if not_complete_order else Order.objects.none()
         elif q == 'is_wh':
-            return qs.filter(is_wh=True)
-
+            qs = qs.filter(is_wh=True)
         elif q == 'is_trade':
-            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
-            return qs.filter(is_wh=False, is_bazar=False, cancel=False).filter(~Q(last_work_flow__current_state_name='تایید مدیر فروش') & ~Q(last_work_flow__current_state_name='پیش نویس'))
+            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+            # return qs.filter(is_wh=False, is_bazar=False, cancel=False).filter(~Q(last_work_flow__current_state_name='تایید مدیر فروش') & ~Q(last_work_flow__current_state_name='پیش نویس'))
 
-        if request.user.groups.filter(name='trade_user'):
-            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
-            return qs.filter(is_wh=False, is_bazar=False, cancel=False)
+        # if request.user.groups.filter(name='trade_user'):
+        #     return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+        #     return qs.filter(is_wh=False, is_bazar=False, cancel=False)
 
-
-        else:
-            return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
-            return qs
+        # else:
+        #     return self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+        #     return qs
         return qs
 
     def customize_row(self, row, obj):
+        row['order_type'] = f'<span>{obj.order_type}</span>'
         row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
         row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
@@ -257,10 +257,11 @@ class OrderDataTableListView(AjaxDatatableView):
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
-                {'name': 'order_title', 'orderable': True, 'visible': True, },
+                {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'order_type', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
-                {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
+                {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
