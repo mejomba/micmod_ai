@@ -58,12 +58,35 @@ class QuotationForm(CustomBaseModelForm):
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
+            # if form_constraint:
+            #     for item in form_constraint[self.form_state]:
+            #         if item.get('group') in request.user.groups.values_list('name', flat=True):
+            #             form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
+            #             form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
+            # if formset_constraint:
+            #     for item in formset_constraint[self.form_state]:
+            #         if item.get('group') in request.user.groups.values_list('name', flat=True):
+            #             formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
+            #             formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
+
             if form_constraint:
-                form_constraint_read = form_constraint[self.form_state].get('read')
-                form_constraint_hide = form_constraint[self.form_state].get('hide')
+                if isinstance(form_constraint[self.form_state], list):
+                    for item in form_constraint[self.form_state]:
+                        if item.get('group') in request.user.groups.values_list('name', flat=True):
+                            form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
+                            form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
+                else:
+                    form_constraint_read = form_constraint[self.form_state].get('read')
+                    form_constraint_hide = form_constraint[self.form_state].get('hide')
             if formset_constraint:
-                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+                if isinstance(formset_constraint[self.form_state], list):
+                    for item in formset_constraint[self.form_state]:
+                        if item.get('group') in request.user.groups.values_list('name', flat=True):
+                            formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
+                            formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
+                else:
+                    formset_constraint_read = formset_constraint[self.form_state][0].get('read')
+                    formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
 
         super(QuotationForm, self).__init__(*args, **kwargs)
         ps = PriceSettings.objects.none()
@@ -143,11 +166,25 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                 access = kwargs.get('constraint').get('wf_access')
                 kwargs.pop('constraint')  # remove unnecessary kwargs
             if form_constraint:
-                form_constraint_read = form_constraint[self.form_state].get('read')
-                form_constraint_hide = form_constraint[self.form_state].get('hide')
+                if isinstance(form_constraint[self.form_state], list):
+                    for item in formset_constraint[self.form_state]:
+                        if item.get('group') in request.user.groups.values_list('name', flat=True):
+                            formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
+                            formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
+                else:
+                    form_constraint_read = form_constraint[self.form_state].get('read')
+                    form_constraint_hide = form_constraint[self.form_state].get('hide')
             if formset_constraint:
-                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+                if isinstance(formset_constraint[self.form_state], list):
+                    for item in formset_constraint[self.form_state]:
+                        if item.get('group') in request.user.groups.values_list('name', flat=True):
+                            formset_constraint_read = item.get(
+                                'read')  # formset_constraint[self.form_state][0].get('read')
+                            formset_constraint_hide = item.get(
+                                'hide')  # formset_constraint[self.form_state][0].get('hide')
+                else:
+                    formset_constraint_read = formset_constraint[self.form_state][0].get('read')
+                    formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
 
         super(QuotationItemForm2, self).__init__(*args, **kwargs)
         self.fields['goods_sheet_date'] = JalaliDateField(label=_('goods_sheet_date'), required=False,
