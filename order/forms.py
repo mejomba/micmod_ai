@@ -247,6 +247,9 @@ class GIOItemForm(CustomBaseModelForm):
 
 
 class OrderPaymentForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
+
     class Meta:
         model = OrderPayment
         exclude = ['group']
@@ -278,12 +281,12 @@ class OrderPaymentForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['from_date'] = JalaliDateField(label=_('from_date'),
-                                                   widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
-        self.fields['to_date'] = JalaliDateField(label=_('to_date'),
-                                                   widget=AdminJalaliDateWidget(
-                                                       attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
-                                                   required=False)
+        # self.fields['from_date'] = JalaliDateField(label=_('from_date'),
+        #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+        # self.fields['to_date'] = JalaliDateField(label=_('to_date'),
+        #                                            widget=AdminJalaliDateWidget(
+        #                                                attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
+        #                                            required=False)
         self.fields['description'].widget.attrs['rows'] = 3
 
         if request and request.user.is_superuser:
@@ -302,8 +305,6 @@ class OrderPaymentForm(CustomBaseModelForm):
 
 
 class OrderPaymentItemForm(CustomBaseModelForm):
-    file_model = File
-    file_groups = 1
 
     class Meta:
         model = OrderPaymentItem

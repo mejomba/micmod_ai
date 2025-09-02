@@ -9,7 +9,7 @@
         transition: width 0.7s ease;
     }
 </style>
-<form action="{% if form.instance.pk %}{% url 'order:order.paymentitem.update' form.instance.pk %}{% else %}{% url 'order:order.paymentitem.view' %}{% endif %}" method="POST" id="payment-item-form" enctype="multipart/form-data">
+<form class="bg-gray-100" action="{% if form.instance.pk %}{% url 'order:order.paymentitem.update' form.instance.pk %}{% else %}{% url 'order:order.paymentitem.view' %}{% endif %}" method="POST" id="payment-item-form" enctype="multipart/form-data">
     <h5>ردیف پرداخت به ازای هر سفارش</h5>
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         {% csrf_token %}
@@ -17,9 +17,12 @@
             <div class="d-none" name="order_placeholder">{{ form.instance.order|default_if_none:'' }}</div>
             <div class="col-8">
                 {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
-                <div class="row row-cols-4">
-                    {% render_field_by_order form form.payment form.order form.from_date form.to_date form.total_amount form.exchange_rate label='on-border' %}
-                    {% render_field_by_order form form.quantity form.bank form.destination_currency form.file_1 label='on-border' %}
+{#                <div class="row row-cols-4">#}
+{#                    {% render_field_by_order form form.payment form.order form.total_amount form.exchange_rate label='on-border' %}#}
+{#                    {% render_field_by_order form form.destination_currency  label='on-border' %}#}
+{#                </div>#}
+                <div class="row row-cols-2">
+                    {% render_field_by_order form form.payment form.order form.total_amount label='on-border' %}
                 </div>
             </div>
             <div class="col-4">

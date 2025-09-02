@@ -363,6 +363,7 @@ class Item(BaseModel):
     #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     site_urls = models.JSONField(default=list, verbose_name='مراجع مشابه', null=True, blank=True)
+    # item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
     @property
@@ -414,10 +415,10 @@ class Item(BaseModel):
             # for k, v in api_res.items():
                 # code, qty = k, v
                 # code = re.search(r'(code: (\d+))', code).group(2)
-            for code, stock_qty in api_res.items():
+            for name_code, stock_qty in api_res.items():
                 if stock_qty:
-                    sepidar_wh_code = re.search(r'(code: (\d+))', code).group(2)
-                    sepidar_wh_name = re.search(r'(.*)\(code.*\)', code).group(1)
+                    sepidar_wh_name = name_code[0]  # re.search(r'(.*)\(code.*\)', code).group(1)
+                    sepidar_wh_code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                     # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                     # todo get wh__order from db, show reserve and stock_quantity
                     quantity_sum = \

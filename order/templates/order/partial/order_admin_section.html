@@ -1,8 +1,8 @@
 {% load more_tags %}
 
 <div class="row">
-    <div class="col-9">
-        <div class="row row-cols-3 align-items-baseline">
+    <div class="col-12">
+        <div class="row row-cols-5 align-items-baseline">
         <div class="d-none sale-edit-section">
             {{ form.local_sepidar_wh_code }}
             {{ form.order_m2m }}
@@ -31,23 +31,44 @@
             {{ form.description_mac }}
         </div>
             <div class="col-8"><div id="id_item_select2"></div></div>
-            {% render_field_by_order form form.quantity label='on-border' %}
-            {% render_field_by_order form form.order_title form.transportation_method label='on-border' margin_b=5 %}
-            {% render_field_by_order form form.commitment_date_to_customer form.order_type label='on-border' %}
+            {# trade edit section #}
+            {% render_field_by_order form form.order_number form.po_number_trade form.quantity_trade form.price_trade form.currency label='on-border' %}
+            {% render_field_by_order form form.supplier_trade form.production_lead_time form.trade_commitment_date label='on-border' margin_b=5 %}
+            {% render_field_by_order form form.order_type form.mohandes_confirmation form.apply_mac label='on-border' %}
+            {% render_field_by_order form form.description_trade label='on-border' %}
+            {% render_field_by_order form label='on-border' %}
+            {% render_field_by_order form form.item_trade form.qi label='on-border' %}
+
+            {% render_field_by_order form label='on-border' %}
+            {% render_field_by_order form form.order_title label='on-border' margin_b=5 %}
+            {% render_field_by_order form label='on-border' %}
+
+
+            {# sales edit section #}
+            {% render_field_by_order form label='on-border' %}
+            {% render_field_by_order form form.quantity label='on-border' margin_b=5 %}
+            {% render_field_by_order form form.commitment_date_to_customer label='on-border' %}
             <div class="col-8 t">
-                <div class="d-flex">
-                    {% render_field_by_order form form.sales_admin_cancel form.currency form.price_trade label='on-border' %}
-{#                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">#}
-{#                        {% render_field_by_order form form.cancel label='on-border' %}#}
-{#                    </div>#}
+                <div class="d-flex pb-20">
+                    {% render_field_by_order form form.sales_admin_cancel form.is_bazar label='on-border' %}
                 </div>
-                </div>
-{#            {% render_field_by_order form form.item form.qi label='on-border' %}#}
+            </div>
+
+            <div class="col-3">
+                {% render_field_by_order form form.description_sale label='on-border' %}
+            </div>
+
+
+            {# mac edit section #}
+            <div class="col-6">
+                <div id="id_item_trade_select2"></div>
+            </div>
+            {% render_field_by_order form form.quantity_mac form.po_number_mac form.supplier_mac label='on-border' %}
+            {% render_field_by_order form form.price_mac form.transportation_method form.description_mac label='on-border' margin_b=5 %}
+            {% render_field_by_order form form.qi label='on-border' %}
         </div>
     </div>
-    <div class="col-3">
-        {% render_field_by_order form form.description_sale label='on-border' %}
-    </div>
+
     <div class="sales-readable-field bg-light-info"></div>
     {% if form.instance.local_sepidar_wh_code %}
         <div class="">

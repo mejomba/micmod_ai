@@ -135,7 +135,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},
         {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
-        {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
+        {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
@@ -154,8 +154,8 @@ class OrderDataTableListView(AjaxDatatableView):
 
     def get_initial_queryset(self, request=None):
         qs = self.model.get_qs(self.request, lst=False)  # super().get_initial_queryset(request)
-        if request.user.is_superuser:
-            return qs
+        # if request.user.is_superuser:
+        #     return qs
 
         q = request.POST.get('q')
         user_group = request.user.base_group
@@ -163,6 +163,8 @@ class OrderDataTableListView(AjaxDatatableView):
             user_groups = request.user.groups.filter(name='trade_user')
         elif user_group == 'bazar':
             user_groups = request.user.groups.filter(name='bazar_user')
+            qs = self.model.objects.filter(is_bazar=True)
+            return qs
         else:
             user_groups = None
         # elif user_groups == 'sales':
@@ -191,10 +193,12 @@ class OrderDataTableListView(AjaxDatatableView):
                 if res < 0:
                     not_complete_order |= Q(id=order.id)
             return Order.objects.filter(not_complete_order) if not_complete_order else Order.objects.none()
+        elif q == 'bazar_user':
+            qs = qs.filter(is_bazar=True)
         elif q == 'is_wh':
             qs = qs.filter(is_wh=True)
         elif q == 'is_trade':
-            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups).filter(is_wh=False, is_bazar=False)
             # return qs.filter(is_wh=False, is_bazar=False, cancel=False).filter(~Q(last_work_flow__current_state_name='تایید مدیر فروش') & ~Q(last_work_flow__current_state_name='پیش نویس'))
 
         # if request.user.groups.filter(name='trade_user'):
@@ -238,21 +242,39 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'id', 'title': "شناسه", 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': True, 'visible': True, 'title': "عنوان سفارش"},
-                {'name': 'last_work_flow', 'title': 'وضعیت', 'visible': True, 'orderable': True,
-                 'lookup_field': '__current_state_name__icontains'},
-                {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True,
-                 'lookup_field': '__sku__icontains'},
-                {'name': 'part_number_s', 'orderable': True, 'title': 'پارت نامبر', 'visible': True,
-                 'lookup_field': '__part_number__icontains'},
-                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True,
-                 'lookup_field': '__title__icontains'},
-                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
-                 'lookup_field': '__icontains'},
+                {'name': 'last_work_flow', 'title': 'وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'part_number_s', 'orderable': True, 'title': 'پارت نامبر', 'visible': True, 'lookup_field': '__part_number__icontains'},
+                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات فروش'},
             ]
-        else:
+        elif self.request.user.base_group == 'sales':
+            self.column_defs = [
+                AjaxDatatableView.render_row_tools_column_def(),
+                {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
+                {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False, },
+                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
+                {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
+                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
+                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
+                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
+                {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
+                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+            ]
+        elif self.request.user.base_group == 'trade':
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
@@ -265,7 +287,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
-                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
@@ -273,7 +295,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
-                # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
                 {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
             ]
@@ -712,7 +733,8 @@ class PaymentItemDataTableListView(AjaxDatatableView):
         {'name': 'order__price_trade', 'visible': True, 'title': 'Price', 'className': '', },
         {'name': 'order_total_price', 'visible': True, 'title': 'Total', 'className': '', },
 
-        {'name': 'destination_currency', 'visible': True, 'title': 'Destination Currency', 'className': '', },
+        # {'name': 'destination_currency', 'visible': True, 'title': 'Destination Currency', 'className': '', },
+        {'name': 'payment__currency', 'visible': True, 'title': 'Destination Currency', 'className': '', 'lookup_field': '__title__icontains',  },
         {'name': 'order__currency', 'visible': True, 'title': 'Currency', 'className': '', 'lookup_field': '__title__icontains', },
         {'name': 'exchange_rate', 'visible': True, 'title': 'Rate', 'className': '', },
         {'name': 'total_amount', 'visible': True, 'title': 'Amount', 'className': '', },
@@ -733,14 +755,11 @@ class PaymentItemDataTableListView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        # row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-        #     reverse('order:order.paymentitem.update', args=(obj.id,)),
-        #     obj.id if obj.id else 'بدون عنوان'
-        # )
         row['order__order_number'] = '<a class="fw-bold" href="%s">%s</a>' % (
             reverse('order:order.paymentitem.update', args=(obj.id,)),
             obj.order.order_number if obj.order else '_'
         )
+        row['payment__currency'] = f'{obj.payment.currency}' if obj.payment else '_'
         row['order__supplier_trade'] = f'{obj.order.supplier_trade}' if obj.order.supplier_trade else '_'
 
         row['order__po_number_trade'] = f'{obj.order.po_number_trade}' if obj.order.po_number_trade else '_'

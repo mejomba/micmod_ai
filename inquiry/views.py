@@ -1228,11 +1228,12 @@ def get_item(request):
                                             })
                                 else:
                                     for k, v in item["rmb_final_price"].items():
+                                        price = v.get('price') if isinstance(v, dict) else v
                                         item['price_list'].append({
                                             'type': k.lower(),
                                             'ref': None,
                                             'iqref': price_inquiry_result.pk,
-                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'value': round(price, 3) if price > 1 else round(price, 5),
                                             'title': price_inquiry_result.select_title(k),
                                             'access_type': None,
                                             'unique_title': k,  # + '*',

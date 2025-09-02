@@ -45,10 +45,10 @@
 {#description#}
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row row-cols-5">
-        {% render_field_by_order form form.packing_number form.shipment_type form.bl_number form.departure_date label='on-border' %}
-        {% render_field_by_order form form.arrival_date form.sales_manager_needed form.sales_manager_check_date label='on-border' %}
-        {% render_field_by_order form form.delivery_to_salehi_date form.cl_90_date form.cl_10_date form.cl_100_date label='on-border' %}
-        {% render_field_by_order form form.arrive_to_wh_date form.estimated_delivery_date form.sum_qty form.sum_arrived_qty label='on-border' %}
+        {% render_field_by_order form form.packing_number form.shipment_type form.bl_number form.sales_manager_needed form.sales_manager_check_date label='on-border' %}
+{#        {% render_field_by_order form form.departure_date form.arrival_date label='on-border' %}#}
+{#        {% render_field_by_order form form.delivery_to_salehi_date form.cl_90_date form.cl_10_date form.cl_100_date form.arrive_to_wh_date label='on-border' %}#}
+        {% render_field_by_order form form.estimated_delivery_date form.sum_qty form.sum_arrived_qty label='on-border' %}
 {#        {% render_field_by_order form form.sum_qty form.sum_arrived_qty form.tp_method form.pack_date form.bl_number form.sales_manager_needed label='on-border' %}#}
         <div class="col-12">
             <div class="row">

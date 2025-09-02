@@ -132,6 +132,10 @@ class Order(BaseModeWF):
         return s
 
     @property
+    def remaining_amount(self):
+        return self.total_price - self.total_paid
+
+    @property
     def payment_info(self):
         total_price = self.total_price
         pay_in_percent = total_pay = is_complete = None
@@ -494,6 +498,10 @@ class OrderPayment(BaseModeWF):
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
     description = models.TextField(_('description'), null=True, blank=True)
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                 related_name='payments')
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
 
 
 class OrderPaymentItem(BaseModeWF):
@@ -505,9 +513,9 @@ class OrderPaymentItem(BaseModeWF):
     quantity = models.FloatField(verbose_name='payment_quantity', null=True, blank=True)
 
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
-    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='destination_currency')
+    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='destination_currency', null=True, blank=True)
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='base_currency')
-    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
 
 
@@ -518,6 +526,7 @@ class ACNT(BaseModeWF):
     is_blocked = models.BooleanField(default=False)
     block_date = models.DateField(null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
+    sepidar_code = ...
 
     def __str__(self):
         return f'{self.info_bank} {self.currency.title_en}'

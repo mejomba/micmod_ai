@@ -257,7 +257,7 @@
           },
           {
             "state": "تایید مدیر فروش",
-            "group": "order_admin",
+            "group": "sales_admin",
             "deadline": 3,
             "form_constraint": {
               "hide": ["sales_admin_confirmation", "order_m2m", "is_over", "price", "price_trade", "price_mac", "mohandes_confirmation", "apply_mac"],

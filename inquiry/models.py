@@ -90,6 +90,7 @@ class PriceInquiryResult(BaseModel):
     trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'),
                                                     on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
+    address = models.TextField(_("address"), null=True, blank=True)
     # trade_expire = models.SmallIntegerField(default=1000)
 
     def __init__(self,*args, **kwargs):

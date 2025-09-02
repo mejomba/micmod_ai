@@ -4,6 +4,7 @@ import json
 import jdatetime
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.template import TemplateDoesNotExist, loader
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
@@ -44,6 +45,7 @@ from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchang
     QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
 from tools import const
+from tools.datatable import CustomAjaxDatatableView
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
 from translator import get_text as _
@@ -1066,13 +1068,16 @@ def get_sku(request):
         return JsonResponse({})
 
 
-class QuotationListDatatable(AjaxDatatableView):
+class QuotationListDatatable(CustomAjaxDatatableView):
     model = Quotation
     title = 'currency_list'
     initial_order = [["pk", "desc"], ]
     length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
+
+    # def get_render_row_details_template_name(self, request, *args, **kwargs):
+    #     return 'quotation_quik_edit.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),

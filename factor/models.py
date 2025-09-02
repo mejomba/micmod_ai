@@ -269,10 +269,10 @@ class FactorItem(BaseModel):
         res = SepidarApiCall.get_stock_quantity([self.goods_code.sepidar_id_0])
         res = res.get('res')
         if res:
-            for code, quantity in res.items():
-                code = re.search(r'(code: (\d+))', code).group(2)
+            for name_code, quantity in res.items():
+                code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                 wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
-                if code == wh_code:
+                if int(code) == int(wh_code):
                     return min([float(quantity), float(self.quantity), self.reserve_count])
                 # if self.pk is None:
                 #     if code == wh_code:
@@ -340,11 +340,12 @@ class FactorItem(BaseModel):
                     'commitment_date_to_customer': self.qi.supply_date,
                     "creator_user": self.extra_data.request.user,
                     "editor_user": self.extra_data.request.user,
-                    'is_bazar': self.is_bazar,
+                    'is_bazar': False,
                     'is_wh': True
                 }
-                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)
-                o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
+                # o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)
+                # o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
+                o1 = Order.create_with_rel(data_base=data_base, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
                 self.supply_locations = o1
         elif self.pk:
             if not self.quantity:

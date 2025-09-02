@@ -60,7 +60,8 @@ class FactorView(LoginRequiredMixin, BaseView):
     related_name_fk = 'factoritem_set'
 
     def send_factor_to_sepidar(self):
-        if "insert to sepidar success" and True:
+        res = 'call_api()'
+        if res and True:
             self.object.sepidar_number = 1# "response.sepidar_number"
             self.object.extra_data.request = self.request
             self.object.final_check = True
@@ -322,7 +323,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     context['flow_state_list'] = flow_config.get('flow_state_list')
     context['flow_state_list'].append('مرحله نهایی')
     """if flow object don't exist select user from group (normally for create step)"""
-    group = flow_config.get('flow_users_groups')[1]
+    group = flow_config.get('flow_users_groups')[1][0]
     flow_belong_to_group = WorkFlowModelForm._meta.model.objects.filter(belong_to_group=group)
     user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
     if flow_belong_to_group:
