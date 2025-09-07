@@ -973,6 +973,17 @@ class JsonTemplateResponseMixin:
 
 
 class CommentsFormView(View):
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name:
+            return self.__class__.get_view(view_name)(self, request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    @classmethod
+    def get_view(cls, view_name):
+        return getattr(cls, view_name, 'get')
+
     def get(self, request, *args, **kwargs):
         from django.apps import apps
         from comments.models import CommentSeen
@@ -1076,6 +1087,9 @@ class CommentsFormView(View):
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
+
+    def get_comment_for_user(self, request, *args, **kwargs):
+        pass
 
 
 class PaymentFormView(View):
