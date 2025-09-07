@@ -1,0 +1,110 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+<style>
+    .select2-dropdown--below{
+        transition: width 0.7s ease;
+    }
+</style>
+    <div class="position-relative rounded shadow-sm my-2 pb-3 pt-6 px-3 border {% if counter|divisibleby:'2' %} bg-gray-10 {% else %} bg-white {% endif %}">
+        <div class="row item">
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+            <div class="d-none" name="order_placeholder-{{ counter }}">{{ form.instance.order.select2_placeholder|default_if_none:'' }}</div>
+                <div class="row row-cols-3">
+                    <div class="col-5">
+                        <div class="row row-cols-2">
+                            <div class="col on-border mb-3">
+                                <div id="id_order_select2-{{ counter }}" class="list-selector" style="width: 100%"></div>
+                                <label for="id_order_select2-{{ counter }}">سفارش</label>
+                            </div>
+                            {% render_field_by_order form form.total_amount label='on-border' %}
+                        </div>
+                        <div class="row">
+                            <div class="col-10">
+                                {% render_field_by_order form form.description label='on-border' %}
+                            </div>
+                            <div class="col-2">
+                                <div class="form-check form-check-custom form-check-danger form-check-solid">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ counter }}-DELETE" id="id_payment_item-{{ counter }}-DELETE">
+                                    <label class="form-check-label" for="id_payment_item-{{ counter }}-DELETE">
+                                        حذف
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-7">
+                        <div id="id_detail" class="row row-cols-4">
+                            <div class="d-flex gap-2">
+                                <span>عنوان</span>
+                                <span id="order-title">{{ form.instance.order.title|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مبلغ سفارش</span>
+                                <span id="order-remained-payment">{{ form.instance.order.total_price|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>کل پرداخت شده</span>
+                                <span id="order-quantity">{{ form.instance.order.total_paid|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مانده برای پرداخت</span>
+                                <span id="order-quantity">{{ form.instance.order.remaining_amount|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد کل</span>
+                                <span id="order-quantity">{{ form.instance.order.quantity|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد مانده</span>
+                                <span id="order-quantity">{{ form.instance.order.remained_quantity|default_if_falsy:'-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+            <div class="row-counter badge d-none" style="position: relative">
+                <span class="counter">{{ counter|add:"1" }}</span>
+            </div>
+
+        </div>
+{#        <a class="tooltip_ cursor-pointer" onclick="change_log_with_modal(this)"#}
+{#            data-bs-toggle="modal"#}
+{#            data-bs-target="#id_kt_empty_modal_lg"#}
+{#            data-model_name="{{ form.instance|model_name }}"#}
+{#            data-object_id="{{ form.instance.pk }}"#}
+{#            data-app_name="{{ form.instance|app_label }}"#}
+{#            name="name_change_log">#}
+{#            <span class="tooltiptext">تاریخچه تغییرات</span>#}
+{#            <i class="ki-duotone ki-book-open fs-3 text-primary">#}
+{#             <span class="path1"></span>#}
+{#             <span class="path2"></span>#}
+{#             <span class="path3"></span>#}
+{#             <span class="path4"></span>#}
+{#            </i>#}
+{#        </a>#}
+{#        <a href="#" target="_blank" class="me-3 delete-payment-item text-danger tooltip_" onclick="delete_with_modal(this)" data-url=/core/delete/?model={{ form.instance|model_name }}&object_id={{ form.instance.pk }}&app_label={{ form.instance|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">#}
+{#            <span class="tooltiptext">حذف</span>#}
+{#            <i class="ki-duotone ki-trash fs-3 text-danger">#}
+{#                <span class="path1"></span>#}
+{#                <span class="path2"></span>#}
+{#                <span class="path3"></span>#}
+{#                <span class="path4"></span>#}
+{#                <span class="path5"></span>#}
+{#            </i>#}
+{#        </a>#}
+    </div>
+
+
+<script>
+
+</script>

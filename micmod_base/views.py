@@ -1533,6 +1533,7 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerRequestSerializer
     
     def get_queryset(self):
+        qs = super().get_queryset()
         q = self.request.GET.get('q')
         if q:
             return qs.filter(pk=q)

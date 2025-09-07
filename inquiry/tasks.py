@@ -46,9 +46,9 @@ def update_components():
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
 
         df = pd.DataFrame(components_lst)
-        excel_file_path = "components_list.xlsx"
-        df.to_excel(excel_file_path, index=False, sheet_name="Portal_list")
-        print(f"Data written to {excel_file_path}")
+        # excel_file_path = "components_list.xlsx"
+        # df.to_excel(excel_file_path, index=False, sheet_name="Portal_list")
+        # print(f"Data written to {excel_file_path}")
 
         g_sheet = GSheet("1SCuCSTYl4xZpY6aFYy54lMRLFvxX4WLaQRLWirYIKVQ")
         g_sheet.clear_rows('Portal_list')

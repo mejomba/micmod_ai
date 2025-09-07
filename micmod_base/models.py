@@ -598,6 +598,7 @@ class QuotationItem(BaseModel):
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
     is_over = models.BooleanField(_('is_over'), default=False)
     price_json = models.JSONField(_('price_json'), null=True, blank=True)
+    sepidar_id = models.BigIntegerField(null=True, blank=True)
 
     objects = QuotationItemManager()
 

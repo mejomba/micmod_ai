@@ -363,7 +363,7 @@ class Item(BaseModel):
     #                                                 on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     site_urls = models.JSONField(default=list, verbose_name='مراجع مشابه', null=True, blank=True)
-    # item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
+    item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
     @property

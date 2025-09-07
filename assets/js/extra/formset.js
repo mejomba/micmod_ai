@@ -47,6 +47,7 @@ window.addEventListener('load', (event) => {
     let extraFormIndices = [];
 
     function addForm(headerData) {
+        debugger
         // create DocumentFragment from template
         const formFragment = templateForm.content.cloneNode(true);
         // a django form is rendered as_table (default), as_ul, or as_p, so
@@ -57,15 +58,10 @@ window.addEventListener('load', (event) => {
             // replace the __prefix__ placeholders from the empty form by the
             // actual form index
             //  elementInnerHtml = element.innerHTML
-            elementInnerHtml = element.innerHTML.replace(
-                /(?<=\w+-)(0)(?=-\w+)/g,
-                '__prefix__');
-             elementInnerHtml = elementInnerHtml.replace(
-                /(?<=\w+_)(rel-__prefix__)(?=-\w+)/g,
-                'rel-0');
-            elementInnerHtml = elementInnerHtml.replace(
-                /(?<=\w+-)(__prefix__)(?=-\w+)/g,
-                nextFormIndex.toString());
+            elementInnerHtml = element.innerHTML.replace(/(?<=\w+-)(0)(?=-\w+)/g, '__prefix__');
+             elementInnerHtml = elementInnerHtml.replace(/(?<=\w+_)(rel-__prefix__)(?=-\w+)/g, 'rel-0');
+            elementInnerHtml = elementInnerHtml.replace(/__prefix__/g, nextFormIndex.toString());
+            elementInnerHtml = elementInnerHtml.replace(/__counter__/g, nextFormIndex.toString());
             element.innerHTML = elementInnerHtml
             // /(?<=\w+-)(__prefix__|\d+)(?=-\w+)/g,
 
@@ -189,6 +185,7 @@ window.addEventListener('load', (event) => {
     }
 
     function updateTotalFormCount(event) {
+        debugger
         // note we could simply do initialForms + extraFormIndices.length
         // to get the total form count, but that does not work if we have
         // validation errors on forms that were added dynamically

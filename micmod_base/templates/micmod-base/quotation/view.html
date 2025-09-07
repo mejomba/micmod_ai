@@ -211,7 +211,9 @@
     {% include "micmod-base/base/create_info_bar.html" %}
 {% endblock before_button %}
 {% block form_footer_extra %}
+    <span style="position: relative; bottom: 6px;">
 {% include "core/partial/add_formset_button.html" %}
+    </span>
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
     </div>

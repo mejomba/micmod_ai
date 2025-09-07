@@ -233,6 +233,52 @@
       "attr1":2,
       "att":3
     },
+  "PaymentView":
+    {
+      "workflow":
+      {
+      "name":"create payment",
+      "action":"create",
+        "list": [
+          {
+            "state": "پیش نویس",
+            "group": "trade_user",
+            "deadline": 0,
+            "form_constraint": [
+              {
+              "hide": [],
+              "read": []
+              }
+            ],
+            "formset_constraint":[
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          },
+          {
+            "state": "پرداخت",
+            "group": "order_payment_user",
+            "deadline": 0,
+            "form_constraint": [
+              {
+              "hide": [],
+              "read": []
+              }
+            ],
+            "formset_constraint":[
+              {
+                "hide": [],
+                "read": []
+              }
+            ]
+          }
+        ]
+      },
+      "attr1":2,
+      "att":3
+    },
   "OrderView":
     {
       "workflow":

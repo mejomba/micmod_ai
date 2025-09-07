@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF
+from core.models import BaseModel, BaseModeWF, BaseManager
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier
 # from factor.models import FactorItem
@@ -177,7 +177,10 @@ class Order(BaseModeWF):
 
     @property
     def final_item(self):
-        return self.item_trade
+        if self.item_trade:
+            return self.item_trade
+        else:
+            return self.item
 
     @property
     def computed_price(self):
@@ -311,6 +314,10 @@ class Order(BaseModeWF):
             return 'سفارش بازار'
         if not self.is_bazar and not self.is_wh:
             return 'سفارش خارجی'
+
+    @property
+    def select2_placeholder(self):
+        return f'{self.pk} - {self.final_item} - {self.final_item.part_number}'
 
 
 class OrderOrder(BaseModel):
@@ -504,6 +511,11 @@ class OrderPayment(BaseModeWF):
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
 
 
+class OrderPaymentItemManager(BaseManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False).order_by('id')
+
+
 class OrderPaymentItem(BaseModeWF):
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
     payment = models.ForeignKey(OrderPayment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
@@ -517,6 +529,11 @@ class OrderPaymentItem(BaseModeWF):
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='base_currency')
     exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
+
+    objects = OrderPaymentItemManager()
+
+    class Meta:
+        ordering = ['created_date']
 
 
 class ACNT(BaseModeWF):

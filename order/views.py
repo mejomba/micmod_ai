@@ -22,7 +22,8 @@ from micmod_base.models import QuotationItem
 from tools.utils import is_ajax
 from workflow.models import WorkFlow
 # from order.models import OrderItem
-from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, OrderPaymentItemForm
+from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
+    OrderPaymentItemForm, OrderPaymentItemFormSet
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
 from translator import get_text as _
 from .serializers import OrderSerializer
@@ -589,16 +590,24 @@ class PaymentView(LoginRequiredMixin, BaseView):
     template_name = 'order/payment_view.html'
     form_class = OrderPaymentForm
     model = OrderPayment
-    # wf_last_step_is_open = True
-    # has_flow = True
+    wf_last_step_is_open = True
+    has_flow = True
+    has_formset = True
+    formset_form = OrderPaymentItemFormSet
+    formset_model = OrderPaymentItem
+    formset_fk_field = 'payment'
+    related_name_fk = 'payment_item'
     success_message = 'با موفقیت ذخیره شد'
     form_struct = {
         'form': OrderPaymentForm,
         'childes': [
-            {},
+            {
+                'form': OrderPaymentItemFormSet,
+                'childes': [{}]
+            },
         ]
     }
-    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
+    flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PaymentView')
 
     def get_success_url(self):
         return reverse_lazy('order:order.payment.update', kwargs={'pk': self.object.pk})
