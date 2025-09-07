@@ -720,5 +720,6 @@
     "deliver-method": "روش ارسال",
     "deliver_typed": "روش تحویل",
     "deliver_method": "روش ارسال",
-    "accounting_confirm": "تایید مالی شد"
+    "accounting_confirm": "تایید مالی شد",
+    "shop_id": "کد فروشگاه آنلاین"
 }
