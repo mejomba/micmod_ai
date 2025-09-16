@@ -365,6 +365,11 @@ class Item(BaseModel):
     site_urls = models.JSONField(default=list, verbose_name='مراجع مشابه', null=True, blank=True)
     objects = BaseManager(is_public=True)
 
+    @staticmethod
+    def get_list(text):
+        res = Item.objects.filter(pk=text)
+        return res
+
     @property
     def order_inway(self):
         return DimOrder.order_inway(self.sku)
@@ -919,7 +924,7 @@ class Customer(AbsBaseModel):
 
     # customer_debts = models.CharField(max_length=255, verbose_name=_('customer_debts'), null=True, blank=True)
     risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
-    shop_id = models.BigIntegerField(_('shop_id'), null=True, blank=True)
+    shop_id = models.BigIntegerField(_('shop_id'), null=True, blank=True, unique=True)
 
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
@@ -941,7 +946,7 @@ class Customer(AbsBaseModel):
 
     @staticmethod
     def get_list(text):
-        res = Customer.objects.filter(sepidar_dl_code=text)
+        res = Customer.objects.filter(Q(sepidar_dl_code=text) | Q(shop_id__exact=text))
             # ('default').raw(f"""
         # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
         return res
