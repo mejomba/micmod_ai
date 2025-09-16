@@ -566,8 +566,11 @@ class QuotationItem(BaseModel):
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
+    foreign_price_inquiry_done_date = models.DateTimeField(verbose_name=_('foreign_price_inquiry_done_data'), null=True, blank=True)
+
     need_local_price_inquiry = models.BooleanField(verbose_name=_('need_local_price_inquiry'), default=False)
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
+    local_price_inquiry_done_date = models.DateTimeField(verbose_name=_('local_price_inquiry_done_date'), null=True, blank=True)
 
     description = models.CharField(max_length=200, null=True, blank=True, verbose_name=_('description'))
     trade_price_code = models.ForeignKey('inquiry.PriceInquiryResult', on_delete=models.DO_NOTHING, verbose_name=_('trade_price_code'), related_name='trade_quotation_rel', null=True, blank=True)

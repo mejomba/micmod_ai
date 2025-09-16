@@ -11,7 +11,7 @@ from django.db.models.functions import Cast
 from django.utils import timezone
 from django.views.generic import DetailView, UpdateView
 from jalali_date.templatetags.jalali_tags import to_jalali
-from datetime import timezone, timedelta, datetime
+from datetime import timedelta, datetime
 
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -346,6 +346,21 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+
+                sepidar_qis = api_res[1].get('Items')
+                from django.db.models import Case, When, Value
+                self.object.quotation.all().update(
+                    sepidar_id=Case(
+                        *[
+                            When(Q(quantity=d['quantity']), Q(goods_code_fk__sepidar_id_0=d['itemid']), then=Value(d['quotationitemid']))
+                            for d in sepidar_qis
+                        ]
+                    )
+                )
+                # portal_qis = self.object.quotation.all()
+                # for pqi, sqi in zip(portal_qis, sepidar_qis):
+                #     pqi.sepidar_id = sqi.get("QuotationItemID")
+                #     pqi.save()
                 # self.object.save()
                 if api_res[0] >= 400:
                     from django.contrib import messages
@@ -906,6 +921,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
+                obj.foreign_price_inquiry_done_date = timezone.now()
                 # obj.extra_data.request = self.request
                 # obj.save()
             # elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
@@ -913,6 +929,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 # obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
+                obj.local_price_inquiry_done_date = timezone.now()
                 # obj.extra_data.request = self.request
                 # obj.save()
             # elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
@@ -1533,7 +1550,7 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerRequestSerializer
     
     def get_queryset(self):
-        qs = super().get_queryset()
+        # qs = super().get_queryset()
         q = self.request.GET.get('q')
         if q:
             return qs.filter(pk=q)

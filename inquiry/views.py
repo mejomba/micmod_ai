@@ -1363,6 +1363,7 @@ def get_items(request):
                 item['price_list'] = []
                 try:
                     sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
+                    item['moq'] = sku_item.batch_count
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
@@ -1506,6 +1507,7 @@ def get_items(request):
                 item['id'] = item_.pk
                 item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
+                item['moq'] = item_.batch_count
                 # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
                 # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
                 # item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales

@@ -367,6 +367,16 @@ class Item(BaseModel):
     objects = BaseManager(is_public=True)
 
     @property
+    def reserved_count_in_portal(self):
+        from order.models import Order
+        from factor.models import FactorItem
+        r = Order.objects.filter(is_wh=True).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
+        if r < 0:
+            return 0
+        else:
+            return r
+
+    @property
     def order_inway(self):
         return DimOrder.order_inway(self.sku)
 

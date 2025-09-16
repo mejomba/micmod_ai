@@ -27,6 +27,7 @@ from core.permissions import HasShopPermission
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
+from sepidar.api_call import SepidarApiCall
 from translator import get_text as _
 
 from core.views import BaseView, Base
@@ -60,8 +61,8 @@ class FactorView(LoginRequiredMixin, BaseView):
     related_name_fk = 'factoritem_set'
 
     def send_factor_to_sepidar(self):
-        res = 'call_api()'
-        if res and True:
+        res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
+        if res:
             self.object.sepidar_number = 1# "response.sepidar_number"
             self.object.extra_data.request = self.request
             self.object.final_check = True
@@ -166,7 +167,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['f_warning'] = []
         if not self.object:
             return context
-        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation()
+        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
         context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object

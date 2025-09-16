@@ -16,22 +16,32 @@
             {% endfor %}
             <div class="d-none" name="order_placeholder-{{ counter }}">{{ form.instance.order.select2_placeholder|default_if_none:'' }}</div>
                 <div class="row row-cols-3">
-                    <div class="col-5">
+                    <div class="col-6">
                         <div class="row row-cols-2">
-                            <div class="col on-border mb-3">
+                            <div class="col-9 on-border mb-3">
                                 <div id="id_order_select2-{{ counter }}" class="list-selector" style="width: 100%"></div>
                                 <label for="id_order_select2-{{ counter }}">سفارش</label>
                             </div>
+                            <div class="col-3">
                             {% render_field_by_order form form.total_amount label='on-border' %}
+                            </div>
                         </div>
                         <div class="row">
-                            <div class="col-10">
+                            <div class="col-6">
                                 {% render_field_by_order form form.description label='on-border' %}
                             </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.file_1 label='on-border' %}
+                                {% for file in form.instance.files.all %}
+                                    <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                        <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                                    </a>
+                                {% endfor %}
+                            </div>
                             <div class="col-2">
-                                <div class="form-check form-check-custom form-check-danger form-check-solid">
+                                <div class="form-check form-check-custom form-check-danger">
                                     <input class="form-check-input" type="checkbox" name="payment_item-{{ counter }}-DELETE" id="id_payment_item-{{ counter }}-DELETE">
-                                    <label class="form-check-label" for="id_payment_item-{{ counter }}-DELETE">
+                                    <label class="ms-1" for="id_payment_item-{{ counter }}-DELETE">
                                         حذف
                                     </label>
                                 </div>
@@ -40,9 +50,9 @@
                     </div>
 
 
-                    <div class="col-7">
+                    <div class="col-6">
                         <div id="id_detail" class="row row-cols-4">
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 mb-2">
                                 <span>عنوان</span>
                                 <span id="order-title">{{ form.instance.order.title|default_if_falsy:'-' }}</span>
                             </div>

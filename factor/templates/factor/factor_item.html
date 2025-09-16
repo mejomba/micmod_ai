@@ -159,6 +159,7 @@
                 </div>
             </div>
             {% render_field_by_order form form.official_factor_send_with_this_factor label='on-border' %}
+        {% if not form.wh_user.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
                 <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"wh_user" %} disabled {% endif %}>
@@ -171,6 +172,9 @@
                     {% endfor %}
                 </select>
             </div>
+        {% endif %}
+
+        {% if not form.checker.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر مالی</label>
                 <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"accounting_user" %} disabled {% endif %}>
@@ -183,6 +187,7 @@
                     {% endfor %}
                 </select>
             </div>
+        {% endif %}
 
         {% if request.user|has_group:"accounting_user" %}
             <div class="col-2 on-border d-flex flex-column">

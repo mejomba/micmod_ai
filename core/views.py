@@ -798,33 +798,52 @@ class BaseView(UserPassesTestMixin,
                             # fs_obj.save()
                             # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
-                            if self.formset.form.image_model and self.formset.form.image_groups:
-                                """save formset image and file"""
-                                fs_obj.save_image(
-                                    request=self.request,
-                                    image_groups=self.formset.form.image_groups,
-                                    image_model=self.formset.form.image_model,
-                                    obj=fs_obj,
-                                    fk=self.related_name_fk,
-                                    form_idx=idx,
-                                )
-                            if self.formset.form.file_model and self.formset.form.file_groups:
-                                fs_obj.save_file(
-                                    request=self.request,
-                                    file_groups=self.formset.form.file_groups,
-                                    file_model=self.formset.form.file_model,
-                                    obj=fs_obj,
-                                    fk=self.related_name_fk,
-                                    form_idx=idx,
-                                )
+                            # if self.formset.form.image_model and self.formset.form.image_groups:
+                            #     """save formset image and file"""
+                            #     fs_obj.save_image(
+                            #         request=self.request,
+                            #         image_groups=self.formset.form.image_groups,
+                            #         image_model=self.formset.form.image_model,
+                            #         obj=fs_obj,
+                            #         fk=self.related_name_fk,
+                            #         form_idx=idx,
+                            #     )
+                            # if self.formset.form.file_model and self.formset.form.file_groups:
+                            #     fs_obj.save_file(
+                            #         request=self.request,
+                            #         file_groups=self.formset.form.file_groups,
+                            #         file_model=self.formset.form.file_model,
+                            #         obj=fs_obj,
+                            #         fk=self.related_name_fk,
+                            #         form_idx=idx,
+                            #     )
 
                     """save formset log"""
                     new_details = getattr(new_obj, self.related_name_fk, None)
                     if new_details:
                         new_details = list(new_details.all())
 
-                    for d in new_details:
+                    for idx, d in enumerate(new_details):
                         d.save_comment(self.request, CommentsForm)
+                        if self.formset.form.image_model and self.formset.form.image_groups:
+                            """save formset image and file"""
+                            d.save_image(
+                                request=self.request,
+                                image_groups=self.formset.form.image_groups,
+                                image_model=self.formset.form.image_model,
+                                obj=d,
+                                fk=self.related_name_fk,
+                                form_idx=idx,
+                            )
+                        if self.formset.form.file_model and self.formset.form.file_groups:
+                            d.save_file(
+                                request=self.request,
+                                file_groups=self.formset.form.file_groups,
+                                file_model=self.formset.form.file_model,
+                                obj=d,
+                                fk=self.related_name_fk,
+                                form_idx=idx,
+                            )
                         create_or_update_payment(self.request, d)
                         # d.save_payment(self.request)
                         # ToDo make dynamic
@@ -1024,6 +1043,9 @@ class CommentsFormView(View):
             obj = model.objects.filter(pk=object_id).first()
         if model.__name__.lower() == 'quotation':
             customer = getattr(obj, 'customer_party_id', None)
+            sku = None
+        if model.__name__.lower() == 'customer':
+            customer = obj
             sku = None
         # if model.__name__.lower() == 'factor':
         #     customer = getattr(obj.q, 'customer_party_id', None)

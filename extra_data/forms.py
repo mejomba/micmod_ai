@@ -47,6 +47,8 @@ class HsForm(CustomBaseModelForm):
 
 
 class CustomerForm(CustomBaseModelForm):
+    has_comment = True
+
     class Meta:
         model = Customer
         fields = ['title', 'type', 'national_code', 'name', 'last_name', 'email', 'website', 'phone', 'customer_field',

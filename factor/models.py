@@ -147,6 +147,7 @@ class FactorItem(BaseModel):
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
                                               related_name='customer_factor_items')
+    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
 
     objects = FactorItemManager()
 
@@ -273,7 +274,8 @@ class FactorItem(BaseModel):
                 code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                 wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
                 if int(code) == int(wh_code):
-                    return min([float(quantity), float(self.quantity), self.reserve_count])
+                    x = quantity - self.goods_code.reserved_count_in_portal
+                    return min([float(x) if x > 0 else 0, float(self.quantity), self.reserve_count])
                 # if self.pk is None:
                 #     if code == wh_code:
                 #         return min([int(quantity), int(self.quantity)])
@@ -343,9 +345,9 @@ class FactorItem(BaseModel):
                     'is_bazar': False,
                     'is_wh': True
                 }
-                # o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)
-                # o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
-                o1 = Order.create_with_rel(data_base=data_base, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
+                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)
+                o1 = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
+                # o1 = Order.create_with_rel(data_base=data_base, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]))
                 self.supply_locations = o1
         elif self.pk:
             if not self.quantity:

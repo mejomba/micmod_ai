@@ -99,7 +99,7 @@
             "deadlines": [0],
             "form_constraints": [{
               "group": "sales_user",
-              "hide": ["accounting_confirm","final_check", "official_factor_send_with_this_factor", "deliver_to_customer", "packing_json"],
+              "hide": ["accounting_confirm","final_check", "official_factor_send_with_this_factor", "deliver_to_customer", "packing_json", "wh_user", "checker"],
               "read": ["checker", "collecting_start_time", "wh_user"]
             }],
             "formset_constraints": [
@@ -246,7 +246,7 @@
             "deadline": 0,
             "form_constraint": [
               {
-              "hide": [],
+              "hide": ["bank"],
               "read": []
               }
             ],

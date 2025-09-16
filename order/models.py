@@ -510,6 +510,19 @@ class OrderPayment(BaseModeWF):
     exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
 
+    @property
+    def total_payment(self):
+        return sum(p.total_amount for p in self.payment_item.all())
+
+    @property
+    def total_amount_percent(self):
+        return self.total_payment / self.total_amount
+
+    @property
+    def total_payment_and_percent(self):
+        total_payment = self.total_payment
+        return total_payment, round((total_payment / self.total_amount) * 100, 2)
+
 
 class OrderPaymentItemManager(BaseManager):
     def get_queryset(self):

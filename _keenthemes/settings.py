@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import datetime
-import os
+import os, signal
 from datetime import timedelta
 
 from dotenv import load_dotenv
@@ -201,7 +201,12 @@ if os.environ.get('IS_DOCKER'):
             }
 else:
     sql_db_options = {'driver': 'ODBC Driver 17 for SQL Server',}
+print("MAIN DB: ", os.environ.get('SHOP_DB') or os.environ.get('PG_NAME'))
+# if os.environ.get("SHOP_DB") == 'poshop':
 
+user_input = 'y' if os.environ.get("IS_DOCKER") == '1' else input(f'continue with {os.environ.get("SHOP_DB") or os.environ.get("PG_NAME")} DB Y/n: ')
+if user_input.lower() == 'n':
+    os.kill(os.getpid(), signal.CTRL_C_EVENT)
 DATABASES = {
     # 'default': {
     #     'ENGINE': 'mssql',
@@ -214,7 +219,7 @@ DATABASES = {
     # },
     'default': {
         'ENGINE': os.environ.get('PG_ENGIN'),
-        'NAME': os.environ.get('PG_NAME'),
+        'NAME': os.environ.get('SHOP_DB') or os.environ.get('PG_NAME'),
         'USER': os.environ.get('PG_USER'),
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),

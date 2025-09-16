@@ -314,6 +314,7 @@ function set_item_classes(item, idx=null) {
         $(item).find('.goods_code').on("select2:select", function (e) {
             const elem = findAncestor(e.target, "item")
             const data = e.params.data;
+            document.querySelector('#moq').innerHTML = data.moq
             set_price_data(data, elem, e.target, true, idx)
             display_price(elem)
             generate_price_method_select_option(elem)
@@ -1248,6 +1249,7 @@ function newFormatRepoItem(repo) {
         "<div>" + repo.id + "</div>" +
         "<div> " + numberWithCommas(repo.stock_qty, 0) + " </div>" +
         "<div> " + numberWithCommas(repo.stock_qty_res, 0) + " </div>" +
+        "<div> " + "MOQ: " + repo.moq + " </div>" +
         "</div>" +
         "<div class='w-30 border-end pe-1'>" +
         "<div >" + repo.text + "</div>" +

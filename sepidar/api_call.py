@@ -19,87 +19,94 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         pass
 
     @classmethod
-    def get_invoice_data(cls, obj, invoice_item_data):
+    def get_invoice_data(cls, obj, request=None, invoice_item_data=None):
+
+        if invoice_item_data is None:
+            invoice_item_data = cls._get_invoice_item_data(obj)
+
         invoice_data = {
             "invoice_items": invoice_item_data,
             # "partyaddressref": None,  # calculate in base
-            "priceinbasecurrency": None,  # calculate in save
-            "date": obj.created_date,
+            "priceinbasecurrency": 0,  # calculate in save
+            "date": obj.created_date.isoformat(),
             "shouldcontrolcustomercredit": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
             "additionfactorinbasecurrency_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
-            "customerrealname_en": None,  # calculate in save
-            "netpriceinbasecurrency": None,  # calculate in save
-            # "currencyref": None,  # calculate in base
-            "additioninbasecurrency": None,  # calculate in save
+            "customerrealname_en": 'jafar',  # calculate in save
+            "netpriceinbasecurrency": 0,  # calculate in save
+            "currencyref": obj.q.currency_ref.sepidar_id,  # calculate in base
+            # "additioninbasecurrency": None,  # calculate in save
             "additionfactorinbasecurrency_vatineffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
             # "discount": None,  # calculate in base
-            "quotationref": obj.q,
-            "lastmodifier": obj.editor_user.sepidar_code,
-            "taxinbasecurrency": None,  # calculate in save
+            "quotationref": obj.q.sepidar_quotation_id,
+            "lastmodifier": 1, # obj.editor_user.sepidar_code,
+            # "taxinbasecurrency": None,  # calculate in save
             # "number": None,  # calculate in base
-            # "version": None,  # calculate in base
-            "slref": None,  # از آقای مختاری سوال شود
-            "creationdate": timezone.now(),  # calculate in base
-            # "duty": None,  # calculate in base
+            "version": 1,  # calculate in base
+            "slref": 420,  # از آقای مختاری سوال شود
+            "creationdate": timezone.now().isoformat(),  # calculate in base
+            "duty": None,  # calculate in base
             "guid": None,
             "deliverylocationref": 1,  # بر اساس داده های سپیدار همه 1 بودن
-            # "taxpayerbillissuedatetime": None,
+            "taxpayerbillissuedatetime": None,
             "orderref": None,
-            "rate": 1,
+            "rate": obj.rate or 1,
             # بعدا مکانیزم طوری شود که ریت به صورت روزانه توسط ادمین اپدیت شود در جدول کارنسی و اینجا ملزم ار ان گرفته شود و نده
             "settlementtype": 1,
-            "creator": obj.creator_user.sepidar_code,
-            "customerpartyref": obj.customer.sepidar_party_id,
+            "creator": obj.creator_user.sepidar_code or 1,
+            "customerpartyref": obj.q.customer_party_id_id,
             "baseoninventorydelivery": 1,  # 0-1 هست
-            # "voucherref": None,
+            # "voucherref": None, base
             "agreementref": None,
             "additionfactor_vatineffective": 0,
             "description": obj.description,
-            # "customerrealname": None,  # calculate in save
+            "customerrealname": 'جعفر',  # calculate in save
             "addition": obj.q.addition,
-            "dutyinbasecurrency": None,  # calculate in save
-            "fiscalyearref": None,  # calculate in base
-            # "price": None,  # محاسبه از تمام ردیف ها
+            # "dutyinbasecurrency": None,  # calculate in save
+            "fiscalyearref": 46,  # calculate in base
+            "price": 0,  # محاسبه از تمام ردیف ها
             # "netprice": None,  # محاسبه میشه
             # "tax": None,  # محاسبه از تمام ردیف ها
             # "discountinbasecurrency": None,  # calculate in save
-            # "lastmodificationdate": None,  # calculate in base
-            "saletyperef": None,
+            "lastmodificationdate": obj.last_update_date.isoformat(),  # calculate in base
+            "saletyperef": 2 #obj.q.sale_type,
         }
 
         return invoice_data
 
     @classmethod
-    def get_invoice_item_data(cls, obj):
+    def _get_invoice_item_data(cls, obj):
         invoice_item_data = list()
         for fi in obj.factoritem_set.all():
+            invoice_formated_description = 'توضیحات فرمت شده___'
+            invoice_formated_description_en = 'formated description___'
+            fi.description = ''
             d = {
                 "rowid": fi.index,
                 "tracingref": None,  # معمولا نال
-                "quantity": fi.quantity,
+                "quantity": fi.quantity,  # check with sepidar quantity
                 "secondaryquantity": None,  # معمولا نال
                 "fee": fi.price,  # unit price
                 "price": fi.row_price,  # total per row
-                # "priceinbasecurrency": 126000000.0,  # calculate in save
+                "priceinbasecurrency": 11111.0,  # calculate in save
                 "discount": fi.discount_value,
-                # "discountinbasecurrency": 0.0,  # calculate in save
-                # "priceinfodiscountrate": 0.0,  # معمولا صفر
+                "discountinbasecurrency": 0.0,  # calculate in save
+                "priceinfodiscountrate": 0.0,  # معمولا صفر
                 "customerdiscountrate": 0.0,  # از اقای مختاری و فروش سوال شود
                 "addition": 0.0,  # از اقای مختاری و فروش سوال شود
-                # "additioninbasecurrency": 0.0,  # calculate in save از آقای مختاری
-                # "tax": 0.0,  # calculate in save از آقای مختاری
-                # "taxinbasecurrency": 0.0,  # calculate in save از آقای مختاری
-                # "duty": 0.0,  # calculate in save از آقای مختاری
-                # "dutyinbasecurrency": 0.0,  # calculate in save از آقای مختاری
-                # "netpriceinbasecurrency": 126000000.0,  # calculate in save
-                # "rate": 1.0,  # نده و در سیو از اینویس بگیرش
-                # "description": null,
-                # "description_en": null,
-                # "priceinfopricediscount": 0.0,  # سوال شود
-                # "priceinfopercentdiscount": 0.0,  # سوال شود
-                # "customerdiscount": 0.0,  # سوال شود
+                "additioninbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "tax": 0.0,  # calculate in save از آقای مختاری
+                "taxinbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "duty": 0.0,  # calculate in save از آقای مختاری
+                "dutyinbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "netpriceinbasecurrency": 126000000.0,  # calculate in save
+                "rate": fi.factor.rate,  # نده و در سیو از اینویس بگیرش
+                "description": f'{fi.description}' or f'{invoice_formated_description}',
+                "description_en": f'{fi.description}' or f'{invoice_formated_description_en}',
+                "priceinfopricediscount": 0.0,  # سوال شود calculate in save
+                "priceinfopercentdiscount": 0.0,  # سوال شود calculate in save
+                "customerdiscount": 0.0,  # سوال شود calculate in save
                 "productpackquantity": None,
                 "aggregateamountdiscountrate": 0.0,
                 "aggregateamountpricediscount": 0.0,
@@ -109,9 +116,8 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "additionfactorinbasecurrency_vateffective": 0.0,
                 "additionfactor_vatineffective": 0.0,
                 "additionfactorinbasecurrency_vatineffective": 0.0,
-                # "invoiceref": 71115,  # calculate in base
                 "itemref": fi.goods_code.sepidar_id_0,
-                "stockref": fi.get_sepidar_stock_code_from_selected_supply_location(),
+                "stockref": 2, # fi.get_sepidar_stock_code_from_selected_supply_location(),
                 "quotationitemref": fi.qi.sepidar_id,
                 "discountinvoiceitemref": None,
                 "productpackref": None,
@@ -366,32 +372,33 @@ class SepidarApiCall:
         return out
 
     @classmethod
-    def factor_to_sepidar(cls, obj, update=False):
+    def factor_to_sepidar(cls, obj, request=None, update=False):
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('invoice')
         if update:
             data = {}
         else:
-            voucher_item_data = cls.data.get_voucher_item_data(obj)
-            voucher_data = cls.data.get_voucher_data(obj, voucher_item_data)
-            inventory_delivery_item_data = cls.data.get_inventory_delivery_item_data(obj)
-            inventory_delivery_data = cls.data.get_inventory_delivery_data(obj, inventory_delivery_item_data)
-            invoice_item_data = cls.data.get_invoice_item_data(obj)
-            invoice_data = cls.data.get_invoice_data(obj, invoice_item_data)
-            extra_data_data = cls.data.get_extra_data_data()
+            # voucher_item_data = cls.data.get_voucher_item_data(obj)
+            # voucher_data = cls.data.get_voucher_data(obj, voucher_item_data)
+            # inventory_delivery_item_data = cls.data.get_inventory_delivery_item_data(obj)
+            # inventory_delivery_data = cls.data.get_inventory_delivery_data(obj, inventory_delivery_item_data)
+            # invoice_item_data = cls.data._get_invoice_item_data(obj)
+            invoice_data = cls.data.get_invoice_data(obj, request, invoice_item_data=None)
+            # extra_data_data = cls.data.get_extra_data_data()
 
-            data = {
-                "voucher_item_data": voucher_item_data,
-                "voucher_data": voucher_data,
-                "inventory_delivery_item_data": inventory_delivery_item_data,
-                "inventory_delivery_data": inventory_delivery_data,
-                "invoice_item_data": invoice_item_data,
-                "invoice_data": invoice_data,
-                "extra_data_data": extra_data_data,
-            }
-            res = requests.post(endpoint, data=data)
+            # data = {
+            #     "voucher_item_data": voucher_item_data,
+            #     "voucher_data": voucher_data,
+            #     "inventory_delivery_item_data": inventory_delivery_item_data,
+            #     "inventory_delivery_data": inventory_delivery_data,
+            #     "invoice_item_data": invoice_item_data,
+            #     "invoice_data": invoice_data,
+            #     "extra_data_data": extra_data_data,
+            # }
+
+            res = requests.post(endpoint, json=invoice_data, headers=cls.headers)
             if res.ok:
-                pass
+                return True
             else:
                 return 'error'
 

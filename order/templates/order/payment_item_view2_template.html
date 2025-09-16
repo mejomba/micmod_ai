@@ -16,17 +16,22 @@
             {% endfor %}
             <div class="d-none" name="order_placeholder-{{ counter }}">{{ form.instance.order.select2_placeholder|default_if_none:'' }}</div>
                 <div class="row row-cols-3">
-                    <div class="col-5">
+                    <div class="col-6">
                         <div class="row row-cols-2">
-                            <div class="col on-border mb-3">
+                            <div class="col-9 on-border mb-3">
                                 <div id="id_order_select2-__counter__" class="list-selector" style="width: 100%"></div>
                                 <label for="id_order_select2-__counter__">سفارش</label>
                             </div>
+                            <div class="col-3">
                             {% render_field_by_order form form.total_amount label='on-border' %}
+                            </div>
                         </div>
                         <div class="row">
-                            <div class="col-10">
+                            <div class="col-6">
                                 {% render_field_by_order form form.description label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.file_1 label='on-border' %}
                             </div>
                             <div class="col-2">
                                 <div class="form-check form-check-custom form-check-danger form-check-solid">
@@ -39,7 +44,7 @@
                         </div>
                     </div>
 
-                    <div class="col-7">
+                    <div class="col-6">
                         <div id="id_detail" class="row row-cols-4">
                             ...
                         </div>

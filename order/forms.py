@@ -305,6 +305,8 @@ class OrderPaymentForm(CustomBaseModelForm):
 
 
 class OrderPaymentItemForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
 
     class Meta:
         model = OrderPaymentItem
