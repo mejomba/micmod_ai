@@ -577,3 +577,8 @@ def merge_dict_common_key(x, y):
     except Exception as e:
         show_error(e, __file__)
     return merged
+
+
+@register.filter
+def get_total_qty_cri(dictionary, key):
+    return dictionary.get(key)

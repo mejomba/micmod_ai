@@ -10,6 +10,11 @@ urlpatterns = [
         view=get_customers,
         name="customers_list",
     ),
+    path(
+        "customers_for_shop_list",
+        view=get_customers_for_shop,
+        name="customers_for_shop_list",
+    ),
     path("items_list", view=get_items, name="get_items"),
     path("items_list2", view=get_items2, name="get_items2", ),
     path("item_list2", view=get_item2, name="get_items2",),

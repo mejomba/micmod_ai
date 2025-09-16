@@ -89,7 +89,7 @@ class CustomerRequest(AbsBaseModel):
     request_date = models.DateTimeField(_('request_date'), null=True, blank=True)
     expire_date = models.DateTimeField(_('expire_date'), null=True, blank=True)
     customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True,
-                                 to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
+                                          to_field='sepidar_party_id', on_delete=models.DO_NOTHING)
     customer_shop = models.BigIntegerField(null=True, blank=True)
     customer_phone = models.CharField(_('customer_phone'), max_length=16)
     cart_id = models.BigIntegerField(_('cart_id'))

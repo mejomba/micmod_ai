@@ -26,6 +26,8 @@ from django.contrib.auth.models import Permission
 from .scripts.sepidar_classes import Urls
 import re
 
+
+from extra_data.models import Customer
 # Create your views here.
 
 def test_get(request):
@@ -53,6 +55,29 @@ def get_customers(request):
     obj['total_count'] = count
     return JsonResponse(obj, safe=False)
 
+def get_customers_for_shop(request):
+    q = request.GET.get('q', None)
+    obj = {}
+    count = 0
+    if q:
+
+        if q.isdigit():
+            customer_filter = Q(sepidar_dl_id__icontains=q) | Q(sepidar_dl_code__icontains=q) | Q(
+                sepidar_party_id__icontains=q)| Q(shop_id__icontains=q)
+        else:
+            customer_filter = Q(title__icontains=q) | Q(name__icontains=q) | Q(last_name__icontains=q)
+        res = Customer.objects.filter(customer_filter).filter(active=True)
+        obj['items'] = []
+        for dl in res:
+            item = {}
+            item['id'] = dl.sepidar_dl_code
+            item['text'] = dl.title
+            item['pid'] = dl.sepidar_party_id
+            item['sepidar_party_id'] = dl.sepidar_party_id
+            obj['items'].append(item)
+            count += 1
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
     # q = request.GET.get('q', None)
     # map_table = {
     #     '': '',

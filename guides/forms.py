@@ -43,6 +43,7 @@ class GuidesForm(CustomBaseModelForm):
                 allowed_type = [
                     "quotation",
                     "payment_order",
+                    "inquiry"
                 ]
 
             self.fields['section_id'].choices = [

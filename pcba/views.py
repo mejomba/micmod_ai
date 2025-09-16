@@ -1,3 +1,4 @@
+import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -8,7 +9,8 @@ from django.urls import reverse_lazy, reverse
 from django.views import View
 
 from core.views import BaseView
-from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm, ProductionDayActivitiesForm, ItemReceiptForm
+from pcba.forms import ContractForm, CustomerItemReceiptForm, ProjectItemListForm, ProductionDayActivitiesForm, \
+    ItemReceiptForm, TimeForm
 from pcba.models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
 from tools.utils import show_error, is_ajax, to_jalali_date
 from translator import get_text as _
@@ -285,6 +287,7 @@ class ProductionDayActivityList(LoginRequiredMixin,View):
         greeting = {}
         greeting['heading'] = _("production_day_activity")
         greeting['pageview'] = _("pcba")
+        greeting['time_form'] = TimeForm()
         return render(request, 'pcba/partial/production_day_activities_datatable.html', greeting)
 
 
@@ -332,6 +335,15 @@ class ProductionDayActivityListDatatable(AjaxDatatableView):
             qs = qs
         elif q == 'delivery':
             qs = qs.filter(Q(activity=ProductionDayActivities.DELIVERY) & Q(factor_number=None))
+        if is_ajax(self.request):
+            from_time = request.POST.get('from_time', None)
+            to_time = request.POST.get('to_time', None)
+            form_time_g = jdatetime.datetime.strptime(from_time, "%Y-%m-%d").togregorian() if from_time else None
+            to_time_g = jdatetime.datetime.strptime(to_time, "%Y-%m-%d").togregorian() if to_time else None
+            if from_time and to_time:
+                qs = qs.filter(Q(created_date__gte=form_time_g) & Q(created_date__lte=to_time_g))
+        # if q == 'time_filter' and from_time and to_time:
+        #     qs = qs.filter(Q(created_date__gte=from_time) & Q(created_date__lte=to_time))
         return qs
 
 
@@ -374,6 +386,7 @@ class ProductionDayActivitiesView(LoginRequiredMixin, BaseView):
                                                                    'constraint': {'request': self.request}
                                                                },
                                                           instance=self.object, contract=contract)
+            context['time_form'] = TimeForm()
         return context
 
     def get(self, request, *args, **kwargs):

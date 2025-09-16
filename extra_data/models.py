@@ -366,6 +366,11 @@ class Item(BaseModel):
     item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
+    @staticmethod
+    def get_list(text):
+        res = Item.objects.filter(pk=text)
+        return res
+
     @property
     def reserved_count_in_portal(self):
         from order.models import Order
@@ -952,7 +957,7 @@ class Customer(AbsBaseModel):
 
     @staticmethod
     def get_list(text):
-        res = Customer.objects.filter(sepidar_dl_code=text)
+        res = Customer.objects.filter(Q(sepidar_dl_code=text) | Q(shop_id__exact=text))
             # ('default').raw(f"""
         # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
         return res

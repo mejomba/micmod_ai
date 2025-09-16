@@ -3,6 +3,7 @@ import json
 
 import jdatetime
 from django.apps import apps
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.template import TemplateDoesNotExist, loader
 from django.template.loader import render_to_string
@@ -22,7 +23,7 @@ from comments.forms import CommentsForm
 from core.models import BaseModelAuto
 from core.permissions import HasShopPermission
 from dw.models import DimCustomer
-from extra_data.models import Item, PriceSettings
+from extra_data.models import Item, PriceSettings, Customer
 from factor.forms import FactorItemModelForm, FactorModelForm
 from order.models import Order
 from sepidar.models import APILogs
@@ -51,7 +52,7 @@ from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
 from translator import get_text as _
 from django.views import View
 
-from micmod_base.models import Quotation, QuotationItem
+from micmod_base.models import Quotation, QuotationItem, SaleType, CustomerRequestItem
 from core.views import BaseView, Base
 from django.contrib.contenttypes.models import ContentType
 
@@ -888,6 +889,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
         form_filter = PendingFormFilter()
         context['form_filter'] = form_filter
         context['app_name'] = self.request.resolver_match.app_name
+        context['section_id'] = 'inquiry'
         # context['my_inquiry_not_started'] = my_inquiry_not_started
         # context['inquiry_not_started_count'] = inquiry_not_started_count
         return render(request, self.template_name, context)
@@ -1539,9 +1541,115 @@ class CustomerRequestView(LoginRequiredMixin, View):
 
     def get(self, request, pk, *args, **kwargs):
         self.object = CustomerRequest.objects.filter(pk=pk).prefetch_related('items')
-        context = {'object': self.object}
+        customer_request_item = self.object.first().items.all()
+        total_qty_dict = dict()
+        for cri in customer_request_item:
+            total_qty = QuotationItem.objects.filter(customer_request_item=cri).aggregate(total=Sum('quantity'))['total'] or 0
+            total_qty_dict[cri.pk] = total_qty
+        context = {'object': self.object, 'total_qty': total_qty_dict}
 
         return render(request, self.template_name, context)
+
+    def post(self, request, pk, *args, **kwargs):
+        from django.utils import timezone
+        try:
+            customer = request.POST.get("customer")
+            customer_shop = request.POST.get("customer_shop")
+            customer_request = get_object_or_404(CustomerRequest, pk=pk)
+            selected_items = request.POST.getlist('selected_items')
+            # customer_item_request = get_object_or_404(CustomerRequest, pk=self.object.pk)
+            customer_instance = None
+            if customer:
+                customer_instance = Customer.objects.get(sepidar_party_id=customer)
+            elif customer_shop:
+                customer_instance = Customer.objects.get(shop_id=customer_shop)
+            if not customer_instance.shop_id:
+                customer_instance.shop_id = customer_request.customer_shop
+                customer_instance.extra_data.request = self.request
+                customer_instance.save()
+            sale_type = SaleType.objects.get(id=2)
+
+            quotation = Quotation.objects.create(
+                creator_user=self.request.user,
+                editor_user=self.request.user,
+                customer_party_id=customer_instance,
+                request_date=timezone.now(),
+                expiration_date=timezone.now(),
+                sale_type=sale_type,
+                customer_request=customer_request,
+                customer_code=customer_instance.sepidar_dl_code
+            )
+
+            flow_data = {
+                "wf_status": 5,  # first draft
+                "action": 'ایجاد خودکار',
+                "flow_name": 'quotation',
+                "state": const.WF__QUOTATION__FIRST_STATE,
+                "wf_description": const.WF__QUOTATION__FIRST_WF_DESCRIPTION,
+                "belong_to_group": 'sales_user',
+                "object_id": quotation.pk,
+                "content_type": ContentType.objects.get_for_model(quotation),
+                "creator_user": self.request.user,
+                "editor_user": self.request.user,
+                "from_user": self.request.user,
+                "to_user": self.request.user,
+                # get_user_model().objects.filter(groups__name='order_admin').first(),
+                "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
+            }
+            wf = WorkFlow.objects.create(**flow_data)
+            quotation.last_work_flow = wf
+            quotation.extra_data.request = self.request
+            quotation.save()
+
+            total_rows = int(request.POST.get("total_rows", 0))
+            for index in range(total_rows):
+                if str(index) not in selected_items:
+                    continue
+                goods_code = request.POST.get(f"id_item-{index}")
+                goods_code_instance = Item.objects.get(id=goods_code)
+                quantity = float(request.POST.get(f"id_quantity-{index}", 0))
+                customer_request_item_id = request.POST.get(f"customer_request_item_id-{index}")
+                customer_sku = request.POST.get(f"customer_sku-{index}")
+                customer_part_number = request.POST.get(f"customer_part_number-{index}")
+                customer_description = request.POST.get(f"customer_description-{index}")
+                customer_request_item_instance = None
+                if customer_request_item_id:
+                    customer_request_item_instance = CustomerRequestItem.objects.get(pk=customer_request_item_id)
+                if not goods_code and quantity:
+                    break
+                # if quantity >= customer_request_item_instance.quantity:
+                #     customer_request_item_instance.is_over = True
+                #     customer_request_item_instance.extra_data = self.request
+                #     customer_request_item_instance.save()
+
+                customer_request_item_instance.product_id = goods_code
+                customer_request_item_instance.extra_data = self.request
+                customer_request_item_instance.save()
+
+                QuotationItem.objects.create(
+                    creator_user=self.request.user,
+                    editor_user=self.request.user,
+                    quotation=quotation,
+                    goods_code_fk=goods_code_instance,
+                    goods_code=goods_code_instance,
+                    quantity=float(quantity) if quantity else 0,
+                    customer_request_item=customer_request_item_instance,
+                    customer_goods_code=customer_sku,
+                    customer_goods_name=customer_part_number,
+                )
+
+
+
+
+        except Exception as e:
+            # messages.warning(request, f"ردیف {index + 1} ذخیره نشد: {e}")
+            messages.error(request, f"خطا در ذخیره پیش‌فاکتور: {e}")
+            return redirect(request.path)
+
+        messages.success(request, "پیش‌فاکتور با موفقیت ساخته شد.")
+        url = reverse("micmod_base:quotations.view", kwargs={"pk": quotation.pk})
+        return redirect(url)
+
 
 
 class CustomerRequestViewSet(viewsets.ModelViewSet):
@@ -1609,11 +1717,14 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('شماره درخواست'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, 'title': 'شناسه'},
         {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'expire_date', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
-        {'name': 'customer', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__pk__icontains'},
-        {'name': 'customer_phone', 'visible': True, 'title': 'کارشناس', 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        {'name': 'cart_id', 'visible': True, 'title': 'کد کالا', 'orderable': True, 'lookup_field': '__sku__icontains'},
-        {'name': 'request_extra_data', 'visible': True, 'title': 'کالا', 'orderable': True, 'lookup_field': '__icontains'},
+        {'name': 'expire_date', 'visible': True, 'title': _('تاریخ انقضا'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
+        {'name': 'customer_code', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False,
+         'lookup_field': '__sepidar_dl_code__icontains'},
+        {'name': 'customer_title', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__icontains'},
+        {'name': 'customer_shop', 'visible': True, 'title': _('مشتری فروشگاه'), 'className': 'py-1 border', 'orderable': False},
+        {'name': 'customer_phone', 'visible': True, 'title': 'تلفن مشتری', 'orderable': True,},
+        {'name': 'cart_id', 'visible': True, 'title': 'شناسه کارت', 'orderable': True},
+        # {'name': 'request_extra_data', 'visible': True, 'title': 'کالا', 'orderable': True},
     ]
 
     def get_initial_queryset(self, request=None):
@@ -1624,6 +1735,10 @@ class CustomerRequestDatatableView(AjaxDatatableView):
     def customize_row(self, row, obj):
 
         row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
+        row['customer_title'] = obj.customer.title if obj.customer else ''
+        row['customer_code'] = obj.customer.sepidar_dl_code if obj.customer else ''
+        # row['customer_shop_title'] = obj.shop if obj.customer_shop else ''
+        # row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
         # row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
         # row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''
         # row['quotation'] = obj.quotation.customer_party_id.title if obj.quotation.customer_party_id else ''
