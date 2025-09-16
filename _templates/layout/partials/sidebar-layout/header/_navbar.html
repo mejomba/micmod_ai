@@ -5,7 +5,7 @@
 <div class="app-navbar flex-lg-shrink-0">
 
     {#    lan#}
-    <div class="mt-2 me-2"><span class="d-none">{% guide_for_each_model section_id as guide_id%}</span>
+    <div class="mt-2 me-2"><span class="d-none">{% guide_for_each_model section_id request.user as guide_id%}</span>
             {% if guide_id %}
             	<a href="{% url 'guides:guides.update' guide_id %}" target="_blank">
                     <i class="ki-duotone ki-question fs-2x " data-bs-toggle="tooltip" data-bs-placement="left" title="راهنما">
