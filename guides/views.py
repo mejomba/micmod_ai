@@ -73,7 +73,8 @@ class GuidesDatatableView(AjaxDatatableView):
             {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'guide-search mxw-50px'},
             {'name': 'section_id', },
             {'name': 'title', },
-            {'name': 'description', 'title': "<div class='px-3' style='width:40px;'>توضیحات</div>",},
+            {'name': 'team',  'title': "<div class='px-3' style='width:40px;'>تیم</div>"},
+            {'name': 'description', 'title': "<div class='px-3' style='width:40px;'>توضیحات</div>"},
             {'name': 'file_1', 'title': "<div class='px-3' style='width:40px;'>فایل</div>", "searchable": False},
         ]
 
@@ -89,7 +90,7 @@ class GuidesDatatableView(AjaxDatatableView):
             }
         else:
             filter_dict = {
-                "section_id__in": ["quotation", "payment_order"]
+                "section_id__in": ["quotation", "payment_order", 'inquiry']
             }
 
         qs = Guides.objects.filter(**filter_dict)
