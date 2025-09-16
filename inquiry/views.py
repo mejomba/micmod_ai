@@ -651,6 +651,7 @@ class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = self.form_class(initial={'currency': 1, 'request':self.request})
+        context['section_id'] = 'inquiry'
         return context
 
 
