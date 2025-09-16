@@ -60,6 +60,7 @@ urlpatterns = [
     # path('api/', ExportQuotation.as_view(), name='api'),
     # path("customer_request/view/", view=CurrencyExchangeView.as_view(), name="currency_exchange"),
     path("customer_request/view/<int:pk>/", view=CustomerRequestView.as_view(), name="customer_request.view"),
+    path("customer_request/view/", view=CustomerRequestView.as_view(), name="customer_request.create"),
     path('customer_request/list/', CustomerRequestList.as_view(), name="customer_request.list"),
     path('customer_request/list/datatable', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
     path('quotation_from_customer_request/<int:pk>/', QuotationFromCustomerRequestView.as_view(), name="quotation_from_customer_request.view"),
