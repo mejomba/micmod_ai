@@ -6,7 +6,7 @@ from django_select2 import forms as s2forms
 from files.models import File
 from translator import get_text as _
 
-from core.forms import CustomBaseModelForm
+from core.forms import CustomBaseModelForm, CustomBaseForm
 from .models import Contract, CustomerItemReceipt, ProjectItemList, ProductionDayActivities, ItemsInCustomerReceipt
 
 
@@ -195,3 +195,17 @@ class ProductionDayActivitiesForm(CustomBaseModelForm):
         if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
             self.make_hidden(['factor_number'])
             self.make_disable(['factor_number'])
+
+
+class TimeForm(CustomBaseForm):
+    from_time = forms.DateField(required=False)
+    to_time = forms.DateField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(TimeForm, self).__init__(*args, **kwargs)
+        self.fields['from_time'] = JalaliDateField(label=_('from_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['to_time'] = JalaliDateField(label=_('to_time'), widget=AdminJalaliDateWidget, required=False)
+        self.fields['from_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('from_time'), 'required': False})
+        self.fields['to_time'].widget.attrs.update(
+            {'class': 'jalali_date-date form-control', 'placeholder': _('to_time'), 'required': False})
