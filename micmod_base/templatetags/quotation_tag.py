@@ -1,5 +1,6 @@
 from django import template
 
+from extra_data.models import Item
 from sepidar.models import Dl
 from micmod_base.base import *
 
@@ -25,6 +26,14 @@ def get_customer(customer_id):
     #         customer = customer[0]
             # return customer
 
+@register.simple_tag
+def get_item(item_id):
+    if item_id:
+        item = Item.get_list(item_id)
+        if len(item) > 0:
+            item = item[0]
+            return item
+        return None
 @register.simple_tag
 def get_customer_from_pg(customer_id):
     from extra_data.models import Customer
