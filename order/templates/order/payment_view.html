@@ -31,37 +31,88 @@
 
 {% block form_content %}
 {% csrf_token %}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
 
-{#    <div class="mb-2">#}
-{#        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}#}
-{#    </div>#}
+    <div class="mb-2">
+        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+    </div>
 
 
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
-        {% render_field_by_order form form.from_date form.to_date form.total_amount  label='on-border' %}
+        {% render_field_by_order form form.total_amount form.bank form.currency form.exchange_rate label='on-border' %}
+
+        <div class="col">
+            {% render_field_by_order form form.file_1 label='on-border' %}
+            {% for file in form.instance.files.all %}
+                <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                    <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                </a>
+            {% endfor %}
+        </div>
+
         <div class="col-12">
             <div class="row">
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
+{#            <div class="row" id="order-messages"></div>#}
         </div>
-            <div class="table-responsive p-2" dir="ltr">
-                <table id="payment_item_list" width="100%" class="m-table table-striped table-bordered w-100">
-                    <caption class="caption-top font-size-20 bold text-black">ردیف های پرداخت</caption>
 
-                </table>
-                <div class="mt-5">
-                {% include 'core/partial/components/plus_new.html' with id_='payment_item' obj=form.instance url_='order:order.paymentitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
-                </div>
-            </div>
-{#        {% table_responsive form.instance.payment_item.all 'po_number_trade|PO NO.,supplier_trade|Supplier,price_trade|Price' title='ردیف های پکینگ' %}#}
+        <div class="d-flex gap-2 align-items-end">
+{#            {{ form.instance.total_payment }}#}
+{#            {{ form.instance.total_amount }}#}
+            {% with form.instance.total_payment_and_percent as payment %}
+                {% if payment.1 == 100 %}
+                    <i class="ki-duotone ki-double-check-circle text-success fs-1">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                    </i>
+                {% else %}
+                    <i class="ki-duotone ki-information-2 text-warning fs-1">
+                     <span class="path1"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                    </i>
+                {% endif %}
+
+                <span class="text-black font-size-16">{{ payment.0 }}</span>
+                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>
+                <span>پرداخت شده از </span>
+                <span class="text-black font-size-16">{{ form.instance.total_amount }}</span>
+                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>
+
+                <span class="rounded py-1 px-2 bg-primary text-white  ms-5">% {{ payment.1 }}</span>
+
+            {% endwith %}
         </div>
+
+        <template id="id_formset_empty_form">
+            {% include 'order/payment_item_view2_template.html' with form=formset.empty_form %}
+        </template>
+
+            <div class="mt-5 px-2 bg-gray-200 mb-16" id="id_formset_container">
+                <h5 class="mt-8 mb-4">ردیف های پرداخت به ازای سفارش های مختلف </h5>
+            {% for form_s in formset.forms %}
+                {% include 'order/payment_item_view2.html' with form=form_s counter=forloop.counter0 %}
+            {% endfor %}
+            </div>
     </div>
 
     {% include 'core/partial/empty_modal.html' %}
     {% include 'core/partial/empty_modal_lg.html' %}
     {% include 'core/partial/empty_modal_sm.html' %}
 {% endblock form_content %}
+
+{% block form_footer_extra %}
+    <span style="position: relative; bottom: 6px;">
+    {% include "core/partial/add_formset_button.html" %}
+    </span>
+{% endblock form_footer_extra %}
 
 {% block extra_js %}
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
@@ -84,7 +135,8 @@
             beforeSend: block_main_container,
             success: function (data) {
                 html = data['res'];
-                modal_lg_body.html(html);
+                $("#add-row").html(html);
+                {#modal_lg_body.html(html);#}
                 initializeDatepickers(['id_g_from_date', 'id_g_to_date']);
             },
             error: function () {
@@ -145,10 +197,10 @@
                 bFilter: true,
                 dom: 'Blfrtip',
                 buttons: [
-                    'copyHtml5',
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5'
+                    {#'copyHtml5',#}
+                    {#'excelHtml5',#}
+                    {#'csvHtml5',#}
+                    {#'pdfHtml5'#}
                 ]
             }, {
                 // extra_data
@@ -157,10 +209,161 @@
         );
     });
     </script>
-<script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
-    <script src="{% static 'js/local/jszip.min.js' %}"></script>
-    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
-    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
-    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+{#    <script src="{% static 'js/local/jszip.min.js' %}"></script>#}
+{#    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>#}
+{#    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>#}
+{#    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>#}
+{#    <script src="{% static 'js/extra/quotation1.js' %}"></script>#}
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <script>
+    function set_item_classes(item, idx){
+        debugger
+        const select2_element = `#id_order_select2-${idx}`
+        const order_select2_placeholder = "انتخاب سفارش"
+        $(select2_element).select2({
+            ajax: {
+                url: '/core/select2/order/order/order_title/?view_name=order_in_paymnet_item',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    return {q: data.term, page: data.page}
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            placeholder: {
+                text: '' || order_select2_placeholder
+            },
+            allowClear: false,
+            templateResult: defaultFormatRepoDL,
+            templateSelection: defaultFormatRepoSelection
+        });
+        $(select2_element).on("select2:select", function (e) {
+            debugger
+            const data = e.params.data;
+            const element_to_show = "select2-" + "id_order" + `_select2-${idx}-container`
+            findAncestor(document.querySelector(select2_element), 'item').querySelector('[id$="-order"]').value = data['id']
+            {#$(document).find("#id_order").val(data['id'])#}
+            document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+
+            let order_item_information = `
+                            <div class="d-flex gap-2">
+                                <span>عنوان</span>
+                                <span id="order-title">${data['title']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مبلغ سفارش</span>
+                                <span id="order-remained-payment">${data['total_price']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>کل پرداخت شده</span>
+                                <span id="order-quantity">${data['total_paid']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مانده برای پرداخت</span>
+                                <span id="order-quantity">${data['remaining_amount']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد کل</span>
+                                <span id="order-quantity">${numberWithCommas(data['quantity'])}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد مانده</span>
+                                <span id="order-quantity">${data['remained_quantity']}</span>
+                            </div>
+            `
+            findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
+        })
+    }
+
+        try {
+            debugger
+            let order_select2_placeholder
+            document.querySelectorAll('.list-selector').forEach(function (item, idx){
+                debugger
+                order_select2_placeholder = document.querySelector(`[name=order_placeholder-${idx}]`).innerText || "انتخاب سفارش"
+                const select2_element = `#id_order_select2-${idx}`
+                $(select2_element).select2({
+                    ajax: {
+                        url: '/core/select2/order/order/order_title/?view_name=order_in_paymnet_item',
+                        dataType: "json",
+                        type: "GET",
+                        data: function (data) {
+                            return {q: data.term, page: data.page}
+                        },
+                        processResults: function (data, params) {
+                            params.page = params.page || 1;
+                            return {
+                                results: data.items,
+                                pagination: {
+                                    more: (params.page * 30) < data.total_count
+                                }
+                            };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 1,
+                    placeholder: {
+                        text: '' || order_select2_placeholder
+                    },
+                    allowClear: false,
+                    templateResult: defaultFormatRepoDL,
+                    templateSelection: defaultFormatRepoSelection
+                });
+                $(select2_element).on("select2:select", function (e) {
+                    debugger
+                    debugger
+                    const data = e.params.data;
+                    const element_to_show = "select2-" + "id_order" + `_select2-${idx}-container`
+                    findAncestor(document.querySelector(select2_element), 'item').querySelector('[id$="-order"]').value = data['id']
+                    {#$(select2_element).find('[id$="-order"]').val(data['id'])#}
+                    document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
+
+                    let order_item_information = `
+            <div class="d-flex gap-2">
+                                <span>عنوان</span>
+                                <span id="order-title">${data['title']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مبلغ سفارش</span>
+                                <span id="order-remained-payment">${data['total_price']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>کل پرداخت شده</span>
+                                <span id="order-quantity">${data['total_paid']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>مانده برای پرداخت</span>
+                                <span id="order-quantity">${data['remaining_amount']}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد کل</span>
+                                <span id="order-quantity">${numberWithCommas(data['quantity'])}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span>تعداد مانده</span>
+                                <span id="order-quantity">${data['remained_quantity']}</span>
+                            </div>
+            `
+            findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
+                })
+            })
+        } catch (e) {
+            console.log(e)
+            {#order_select2_placeholder = document.querySelector('[name="order_placeholder"]').innerText || "انتخاب سفارش"#}
+            {#select2_generate('#id_order_select2', '#id_order', '/core/select2/order/order/order_title/', order_select2_placeholder)#}
+        }
+    </script>
 {% endblock extra_js %}

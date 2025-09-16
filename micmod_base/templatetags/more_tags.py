@@ -142,6 +142,70 @@ def app_label(obj):
 
 
 @register.inclusion_tag('core/partial/comment_user_list.html')
+def get_comment_for_customer_and_sku_list(form, current_user, cancel=None, comment_type=None, size=None, obj_rel=None,
+                                          view_name=None):
+    customer = sku = None
+    model = form.instance._meta.model
+    if form.instance.pk:
+        if model.__name__.lower() == 'quotationitem':
+            customer = getattr(form.instance.quotation, 'customer_party_id', None)
+            sku = getattr(form.instance, 'goods_code_fk', None)
+        if model.__name__.lower() == 'quotation':
+            customer = getattr(form.instance, 'customer_party_id', None)
+            sku = None
+        if model.__name__.lower() == 'customer':
+            customer = form.instance
+            sku = None
+
+    for_sku = Q(sku=sku) & Q(for_sku=True)
+    for_customer = Q(customer=customer) & Q(for_customer=True)
+
+    unseen_comment = list()
+    comments_info = list()
+    unseen_comment_count = 0
+    creator_users = dict()
+
+    comments = customer.comments.all()
+    comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True, is_deleted=False)
+    comment_seen = CommentSeen.objects.all()
+
+    for comment in comments:
+        try:
+            if comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = True
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                comments_info.append([comment,
+                                     comment.creator_user,
+                                     comment.creator_user.profile.get_user_image])
+
+            if not comment_seen.filter(creator_user=current_user, comment=comment, editor_user=current_user).exists():
+                comment.seen = False
+                comments_info.append([comment,
+                                      comment.creator_user,
+                                      comment.creator_user.profile.get_user_image])
+                creator_users[comment.creator_user] = comment.creator_user.profile.get_user_image
+                unseen_comment.append(comment)
+                unseen_comment_count += 1
+        except Exception as e:
+            creator_users[comment.creator_user] = '/assets/media/auth/no_image.png'
+
+        if comments_info:
+            comments_info.reverse()
+
+    context = {'comments_info': comments_info,
+               'size': size,
+               # 'comment_rel': comment_rel,
+               'obj_rel': obj_rel,
+               'obj': form.instance,
+               'unseen_comment_count': unseen_comment_count,
+               'cancel': cancel,
+               'user': current_user,
+               'comment_type': comment_type if comment_type else 'comment',
+               'view_name': view_name or ''}
+    return context
+
+
+@register.inclusion_tag('core/partial/comment_user_list.html')
 def get_comment_user_list(form, current_user, cancel=None, comment_type=None, size=None, obj_rel=None):
     customer = sku = None
     model = form.instance._meta.model
@@ -154,12 +218,12 @@ def get_comment_user_list(form, current_user, cancel=None, comment_type=None, si
             sku = None
     for_sku = Q(sku=sku) & Q(for_sku=True)
     for_customer = Q(customer=customer) & Q(for_customer=True)
-    unseen_comment = list()
 
+    unseen_comment = list()
     comments_info = list()
     unseen_comment_count = 0
-
     creator_users = dict()
+
     if form and current_user.base_group != 'trade' and not current_user.is_superuser:
         obj = form.instance
         comments = obj.comments.all().filter(~Q(comment_title="C"), ~Q(comment_title="Q")) if obj else None

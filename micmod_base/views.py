@@ -5,13 +5,14 @@ import jdatetime
 from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.template import TemplateDoesNotExist, loader
 from django.template.loader import render_to_string
 from django.db.models import Q, QuerySet, CharField, Count, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
 from django.views.generic import DetailView, UpdateView
 from jalali_date.templatetags.jalali_tags import to_jalali
-from datetime import timezone, timedelta, datetime
+from datetime import timedelta, datetime
 
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -45,6 +46,7 @@ from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchang
     QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
 from tools import const
+from tools.datatable import CustomAjaxDatatableView
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
 from translator import get_text as _
@@ -345,6 +347,21 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                 self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+
+                sepidar_qis = api_res[1].get('Items')
+                from django.db.models import Case, When, Value
+                self.object.quotation.all().update(
+                    sepidar_id=Case(
+                        *[
+                            When(Q(quantity=d['quantity']), Q(goods_code_fk__sepidar_id_0=d['itemid']), then=Value(d['quotationitemid']))
+                            for d in sepidar_qis
+                        ]
+                    )
+                )
+                # portal_qis = self.object.quotation.all()
+                # for pqi, sqi in zip(portal_qis, sepidar_qis):
+                #     pqi.sepidar_id = sqi.get("QuotationItemID")
+                #     pqi.save()
                 # self.object.save()
                 if api_res[0] >= 400:
                     from django.contrib import messages
@@ -906,6 +923,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
 
             if self.request.POST.get('foreign_price_inquiry_done'):
                 obj.foreign_price_inquiry_done = True
+                obj.foreign_price_inquiry_done_date = timezone.now()
                 # obj.extra_data.request = self.request
                 # obj.save()
             # elif obj.need_foreign_price_inquiry and not self.request.POST.get('foreign_price_inquiry_done'):
@@ -913,6 +931,7 @@ class QuotationItemFormPending2(LoginRequiredMixin, View):
                 # obj.save()
             if self.request.POST.get('local_price_inquiry_done'):
                 obj.local_price_inquiry_done = True
+                obj.local_price_inquiry_done_date = timezone.now()
                 # obj.extra_data.request = self.request
                 # obj.save()
             # elif self.request.POST.get('need_local_price_inquiry') and not self.request.POST.get('local_price_inquiry_done'):
@@ -1068,13 +1087,16 @@ def get_sku(request):
         return JsonResponse({})
 
 
-class QuotationListDatatable(AjaxDatatableView):
+class QuotationListDatatable(CustomAjaxDatatableView):
     model = Quotation
     title = 'currency_list'
     initial_order = [["pk", "desc"], ]
     length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
+
+    # def get_render_row_details_template_name(self, request, *args, **kwargs):
+    #     return 'quotation_quik_edit.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
@@ -1636,6 +1658,7 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerRequestSerializer
     
     def get_queryset(self):
+        # qs = super().get_queryset()
         q = self.request.GET.get('q')
         if q:
             return qs.filter(pk=q)

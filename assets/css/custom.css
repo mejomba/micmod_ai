@@ -7,6 +7,12 @@
   font-family: persian-digit;
   src: url(../fonts/Samim-FD.woff);
 }
+.bg-gray-10{
+    background-color: #f7f8fc;
+}
+.bg-order-item-new{
+    background-color: #f7fcf8 !important;
+}
 .factor-alert {
   /*--bs-alert-bg: transparent;*/
   --bs-alert-padding-x: 1rem;

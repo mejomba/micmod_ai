@@ -20,7 +20,8 @@
                     {% render_field_by_order form form.order form.part_number label='on-border' %}
                 </div>
                 <div class="row row-cols-3">
-                    {% render_field_by_order form form.quantity form.arrived_quantity form.price form.packing label='on-border' %}
+                    <span class="d-none">{{ form.packing }}</span>
+                    {% render_field_by_order form form.quantity form.arrived_quantity form.price label='on-border' %}
                     {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand label='on-border' %}
                 </div>
             </div>

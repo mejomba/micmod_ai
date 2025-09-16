@@ -2,20 +2,272 @@ from typing import Optional
 import jdatetime
 import requests
 from django.conf import settings
+from django.utils import timezone
+
+
+class SingletonMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class SepidarDataFactory(metaclass=SingletonMeta):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def get_invoice_data(cls, obj, request=None, invoice_item_data=None):
+
+        if invoice_item_data is None:
+            invoice_item_data = cls._get_invoice_item_data(obj)
+
+        invoice_data = {
+            "invoice_items": invoice_item_data,
+            # "partyaddressref": None,  # calculate in base
+            "priceinbasecurrency": 0,  # calculate in save
+            "date": obj.created_date.isoformat(),
+            "shouldcontrolcustomercredit": 1,  # بر اساس داده های سپیدار همه 1 بودن
+            "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
+            "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
+            "additionfactorinbasecurrency_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
+            "customerrealname_en": 'jafar',  # calculate in save
+            "netpriceinbasecurrency": 0,  # calculate in save
+            "currencyref": obj.q.currency_ref.sepidar_id,  # calculate in base
+            # "additioninbasecurrency": None,  # calculate in save
+            "additionfactorinbasecurrency_vatineffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
+            # "discount": None,  # calculate in base
+            "quotationref": obj.q.sepidar_quotation_id,
+            "lastmodifier": 1, # obj.editor_user.sepidar_code,
+            # "taxinbasecurrency": None,  # calculate in save
+            # "number": None,  # calculate in base
+            "version": 1,  # calculate in base
+            "slref": 420,  # از آقای مختاری سوال شود
+            "creationdate": timezone.now().isoformat(),  # calculate in base
+            "duty": None,  # calculate in base
+            "guid": None,
+            "deliverylocationref": 1,  # بر اساس داده های سپیدار همه 1 بودن
+            "taxpayerbillissuedatetime": None,
+            "orderref": None,
+            "rate": obj.rate or 1,
+            # بعدا مکانیزم طوری شود که ریت به صورت روزانه توسط ادمین اپدیت شود در جدول کارنسی و اینجا ملزم ار ان گرفته شود و نده
+            "settlementtype": 1,
+            "creator": obj.creator_user.sepidar_code or 1,
+            "customerpartyref": obj.q.customer_party_id_id,
+            "baseoninventorydelivery": 1,  # 0-1 هست
+            # "voucherref": None, base
+            "agreementref": None,
+            "additionfactor_vatineffective": 0,
+            "description": obj.description,
+            "customerrealname": 'جعفر',  # calculate in save
+            "addition": obj.q.addition,
+            # "dutyinbasecurrency": None,  # calculate in save
+            "fiscalyearref": 46,  # calculate in base
+            "price": 0,  # محاسبه از تمام ردیف ها
+            # "netprice": None,  # محاسبه میشه
+            # "tax": None,  # محاسبه از تمام ردیف ها
+            # "discountinbasecurrency": None,  # calculate in save
+            "lastmodificationdate": obj.last_update_date.isoformat(),  # calculate in base
+            "saletyperef": 2 #obj.q.sale_type,
+        }
+
+        return invoice_data
+
+    @classmethod
+    def _get_invoice_item_data(cls, obj):
+        invoice_item_data = list()
+        for fi in obj.factoritem_set.all():
+            invoice_formated_description = 'توضیحات فرمت شده___'
+            invoice_formated_description_en = 'formated description___'
+            fi.description = ''
+            d = {
+                "rowid": fi.index,
+                "tracingref": None,  # معمولا نال
+                "quantity": fi.quantity,  # check with sepidar quantity
+                "secondaryquantity": None,  # معمولا نال
+                "fee": fi.price,  # unit price
+                "price": fi.row_price,  # total per row
+                "priceinbasecurrency": 11111.0,  # calculate in save
+                "discount": fi.discount_value,
+                "discountinbasecurrency": 0.0,  # calculate in save
+                "priceinfodiscountrate": 0.0,  # معمولا صفر
+                "customerdiscountrate": 0.0,  # از اقای مختاری و فروش سوال شود
+                "addition": 0.0,  # از اقای مختاری و فروش سوال شود
+                "additioninbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "tax": 0.0,  # calculate in save از آقای مختاری
+                "taxinbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "duty": 0.0,  # calculate in save از آقای مختاری
+                "dutyinbasecurrency": 0.0,  # calculate in save از آقای مختاری
+                "netpriceinbasecurrency": 126000000.0,  # calculate in save
+                "rate": fi.factor.rate,  # نده و در سیو از اینویس بگیرش
+                "description": f'{fi.description}' or f'{invoice_formated_description}',
+                "description_en": f'{fi.description}' or f'{invoice_formated_description_en}',
+                "priceinfopricediscount": 0.0,  # سوال شود calculate in save
+                "priceinfopercentdiscount": 0.0,  # سوال شود calculate in save
+                "customerdiscount": 0.0,  # سوال شود calculate in save
+                "productpackquantity": None,
+                "aggregateamountdiscountrate": 0.0,
+                "aggregateamountpricediscount": 0.0,
+                "aggregateamountpercentdiscount": 0.0,
+                "orderitemref": None,
+                "additionfactor_vateffective": 0.0,
+                "additionfactorinbasecurrency_vateffective": 0.0,
+                "additionfactor_vatineffective": 0.0,
+                "additionfactorinbasecurrency_vatineffective": 0.0,
+                "itemref": fi.goods_code.sepidar_id_0,
+                "stockref": 2, # fi.get_sepidar_stock_code_from_selected_supply_location(),
+                "quotationitemref": fi.qi.sepidar_id,
+                "discountinvoiceitemref": None,
+                "productpackref": None,
+                "discountitemgroupref": None,
+            }
+            invoice_item_data.append(d)
+
+        return invoice_item_data
+
+    @classmethod
+    def get_voucher_data(cls, obj, voucher_item_data):
+        voucher_data = {
+            # "VoucherId": "",
+            # "Number": "", base
+            "voucher_items": voucher_item_data,
+            "Date": timezone.now(),
+            "ReferenceNumber": None,  # ?
+            "SecondaryNumber": None,  # ?
+            "State": 1,  # 1, 2 ?
+            "Type": 1,  # 1,2,3,4,5,6 ?
+            "FiscalYearRef": "",  # base
+            "Description": "",  # base
+            "Description_En": "",  # base
+            # "Version": "",  # base
+            "Creator": obj.creator_user.sepidar_code,
+            "CreationDate": timezone.now(),
+            "LastModifier": obj.editor_user.sepidar_code,
+            "LastModificationDate": obj.last_update_date,
+            "DailyNumber": "",  # base
+            "IssuerSystem": "",  # ?
+            "IsMerged": 0,  # همه رکورد ها 0 بودن
+            "MergedIssuerSystem": None  # همه null بودن
+        }
+
+        return voucher_data
+
+    @classmethod
+    def get_voucher_item_data(cls, obj):
+        voucher_item_data = [
+            {
+                # "VoucherRef": "",
+                "RowNumber": '1',
+                "AccountSLRef": "?",
+                "DLRef": obj.customer.sepidar_party_id,
+                "Debit": 1,
+                "Credit": 0,
+                "CurrencyRef": obj.q.sale_type.currency.number if obj.q.sale_type.currency.title != 'ریال' else None,
+                "CurrencyRate": obj.currency_rate if getattr(obj, 'currency_rate', None) else None,
+                "CurrencyDebit": "",  # مبلغ غیر ریالی فاکتور
+                "CurrencyCredit": "",  # مبلغ غیر ریالی فاکتور
+                "TrackingNumber": "",  # ?
+                "TrackingDate": "",  # ?
+                "IssuerEntityName": "SG.Sales.InvoiceManagement.Common.DsInvoice, SG.Sales.InvoiceManagement.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "IssuerEntityRef": "",  # ?
+                "Description": "",  # calculate in save
+                "Description_En": "",  # calculate in save
+            },
+            {
+                # "VoucherRef": "",
+                "RowNumber": '2',
+                "AccountSLRef": "?",
+                "DLRef": None,
+                "Debit": 0,
+                "Credit": 1,
+                "CurrencyRef": obj.q.sale_type.currency.number if obj.q.sale_type.currency.title != 'ریال' else None,
+                "CurrencyRate": obj.currency_rate if getattr(obj, 'currency_rate', None) else None,
+                "CurrencyDebit": "",  # مبلغ غیر ریالی فاکتور
+                "CurrencyCredit": "",  # مبلغ غیر ریالی فاکتور
+                "TrackingNumber": "",  # ?
+                "TrackingDate": "",  # ?
+                "IssuerEntityName": "SG.Sales.InvoiceManagement.Common.DsInvoice, SG.Sales.InvoiceManagement.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                "IssuerEntityRef": "",  # ?
+                "Description": "",  # calculate in save
+                "Description_En": "",  # calculate in save
+            }
+        ]
+
+        return voucher_item_data
+
+    @classmethod
+    def get_inventory_delivery_data(cls):
+        return
+
+    @classmethod
+    def get_inventory_delivery_item_data(cls, obj):
+        inventory_delivery_item_data = list()
+        for fi in obj.factoritem_set.all():
+            d = {
+                # "InventoryDeliveryItemID": "",  # pk
+                # "InventoryDeliveryRef": "",  # FK to parent
+                "IsReturn": 0,  # 0, 1
+                "RowNumber": fi.index,
+                # "BaseInvoiceItem": fi.pk,  # ردیف فاکتور سپیدار
+                "BaseInventoryDeliveryItem": "",
+                "BaseReturnedInvoiceItem": "",
+                "ItemRef": "",
+                "TracingRef": "",
+                "Quantity": "",
+                "SecondaryQuantity": "",
+                "RemainingQuantity": "",
+                "RemainingSecondaryQuantity": "",
+                "SLAccountRef": "",
+                "Price": "",
+                "Description": "",
+                "Description_En": "",
+                "Version": "",
+                "ProductOrderRef": "",
+                "ParityCheck": "",
+                "QuotationItemRef": "",
+                "WeighingRef": "",
+                "ItemRequestItemRef": "",
+                "ItemDescription": "",
+                "Fee": ""
+            }
+            inventory_delivery_item_data.append(d)
+
+        return inventory_delivery_item_data
+
+    @classmethod
+    def get_extra_data_data(cls):
+        return
 
 
 class SepidarApiCall:
+    data = SepidarDataFactory()
     protocol = settings.SEPIDAR_CUSTOM_API_PROTOCOL  # http
     host = settings.SEPIDAR_CUSTOM_API_HOST  # '192.168.1.80'
     port = settings.SEPIDAR_CUSTOM_API_PORT  # '3030'
     token = ''
     headers = {}
     endpoints = {
-        'login': f'{protocol}://{host}:{port}/api_log/token/',
-        'stock_quantity': f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary/',
-        'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
-        'receipt_item': f'{protocol}://{host}:{port}/sepidar_api/inventoryreceiptitem/',
-        'receipt': f'{protocol}://{host}:{port}/sepidar_api/inventoryreceipt/',
+        "v1": {
+            'login': f'{protocol}://{host}:{port}/api_log/token/',
+            'stock_quantity': f'{protocol}://{host}:{port}/sepidar_api/itemstocksummary/',
+            'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
+            'receipt_item': f'{protocol}://{host}:{port}/sepidar_api/inventoryreceiptitem/',
+            'receipt': f'{protocol}://{host}:{port}/sepidar_api/inventoryreceipt/',
+            'invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-invoice/',
+        },
+        "v2": {
+            'login': f'{protocol}://{host}:{port}/api_log/token/',
+            'stock_quantity': f'{protocol}://{host}:{port}/api2/itemstocksummary/',
+            'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
+            'receipt_item': f'{protocol}://{host}:{port}/api2/inventoryreceiptitem/',
+            'receipt': f'{protocol}://{host}:{port}/api2/inventoryreceipt/',
+            'invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-invoice/',
+            'voucher': f'{protocol}://{host}:{port}/api2/sepidar_api-voucher/',
+            'extra_data': f'{protocol}://{host}:{port}/api2/sepidar_api-extradata/',
+            'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
+        },
     }
 
     @classmethod
@@ -45,7 +297,7 @@ class SepidarApiCall:
 
     @classmethod
     def login(cls, username='ali', password='123456'):
-        url = cls.endpoints.get('login')
+        url = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('login')
         data = {'username': username, 'password': password}
         res = requests.post(url, data=data)
         if res.ok:
@@ -59,13 +311,17 @@ class SepidarApiCall:
         cls.setup()
         if year is None:
             year = jdatetime.date.today().year
-        endpoint = cls.endpoints.get('stock_quantity')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
         endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}'
         res = requests.get(endpoint, headers=cls.headers)
         out = dict()
         if res.ok:
             response = res.json()
-            r = {item.get('stockref_str'): item.get('quantity') for item in response.get('results') if float(item.get('quantity')) > 0}
+            if settings.SEPIDAR_CUSTOM_API_VERSION == 'v1':
+                r = {item.get('stockref_str'): item.get('quantity') for item in response.get('results') if float(item.get('quantity')) > 0}
+            else:
+                r = {(item.get('fk_strs').get('stockref'), item.get('stockref')): item.get('quantity') for item in response.get('results') if
+                     float(item.get('quantity')) > 0}
             out['res'] = r
 
         return out
@@ -73,7 +329,7 @@ class SepidarApiCall:
     @classmethod
     def get_all_items(cls, page=0):
         cls.setup()
-        endpoint = cls.endpoints.get('all_items')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('all_items')
         if page:
             endpoint = endpoint + f'?page={page}'
         res = requests.get(endpoint, headers=cls.headers)
@@ -90,7 +346,7 @@ class SepidarApiCall:
     @classmethod
     def get_receipt_item(cls, item_ref):
         cls.setup()
-        endpoint = cls.endpoints.get('receipt_item')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('receipt_item')
         endpoint += f'?itemref={item_ref}'
         res = requests.get(endpoint, headers=cls.headers)
         out = dict()
@@ -104,7 +360,7 @@ class SepidarApiCall:
     @classmethod
     def get_receipt(cls, pk):
         cls.setup()
-        endpoint = cls.endpoints.get('receipt')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('receipt')
         endpoint += f'?inventoryreceiptid={pk}'
         res = requests.get(endpoint, headers=cls.headers)
         out = dict()
@@ -114,3 +370,36 @@ class SepidarApiCall:
             if result:
                 out = result[0]
         return out
+
+    @classmethod
+    def factor_to_sepidar(cls, obj, request=None, update=False):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('invoice')
+        if update:
+            data = {}
+        else:
+            # voucher_item_data = cls.data.get_voucher_item_data(obj)
+            # voucher_data = cls.data.get_voucher_data(obj, voucher_item_data)
+            # inventory_delivery_item_data = cls.data.get_inventory_delivery_item_data(obj)
+            # inventory_delivery_data = cls.data.get_inventory_delivery_data(obj, inventory_delivery_item_data)
+            # invoice_item_data = cls.data._get_invoice_item_data(obj)
+            invoice_data = cls.data.get_invoice_data(obj, request, invoice_item_data=None)
+            # extra_data_data = cls.data.get_extra_data_data()
+
+            # data = {
+            #     "voucher_item_data": voucher_item_data,
+            #     "voucher_data": voucher_data,
+            #     "inventory_delivery_item_data": inventory_delivery_item_data,
+            #     "inventory_delivery_data": inventory_delivery_data,
+            #     "invoice_item_data": invoice_item_data,
+            #     "invoice_data": invoice_data,
+            #     "extra_data_data": extra_data_data,
+            # }
+
+            res = requests.post(endpoint, json=invoice_data, headers=cls.headers)
+            if res.ok:
+                return True
+            else:
+                return 'error'
+
+

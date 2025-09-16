@@ -210,7 +210,7 @@
 <div class="container" dir="rtl">
     <div class="row row-cols-3">
         <div class="col">
-            <p class="mt-10">{% num_to_fa_words data.sum_prices %} ریال</p>
+            <p class="mt-10">{% num_to_fa_words data.sum_prices %} {{ form.instance.currency_ref.title }}</p>
         </div>
         <div class="col"></div>
         <div class="col border border-dark">

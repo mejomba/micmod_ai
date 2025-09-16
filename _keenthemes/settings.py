@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import datetime
-import os
+import os, signal
 from datetime import timedelta
 
 from dotenv import load_dotenv
@@ -112,6 +112,7 @@ THIRD_PARTY_APPS = [
     'sslserver',
     'django_json_widget',
     'drf_spectacular',
+    'simple_history',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -144,6 +145,7 @@ MIDDLEWARE = [
     # entering two-factor credentials.
     "allauth_2fa.middleware.AllauthTwoFactorMiddleware",
     # "accounts.middleware.middleware.UserRoleMiddleware",
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -199,7 +201,12 @@ if os.environ.get('IS_DOCKER'):
             }
 else:
     sql_db_options = {'driver': 'ODBC Driver 17 for SQL Server',}
+print("MAIN DB: ", os.environ.get('SHOP_DB') or os.environ.get('PG_NAME'))
+# if os.environ.get("SHOP_DB") == 'poshop':
 
+user_input = 'y' if os.environ.get("IS_DOCKER") == '1' else input(f'continue with {os.environ.get("SHOP_DB") or os.environ.get("PG_NAME")} DB Y/n: ')
+if user_input.lower() == 'n':
+    os.kill(os.getpid(), signal.CTRL_C_EVENT)
 DATABASES = {
     # 'default': {
     #     'ENGINE': 'mssql',
@@ -212,7 +219,7 @@ DATABASES = {
     # },
     'default': {
         'ENGINE': os.environ.get('PG_ENGIN'),
-        'NAME': os.environ.get('PG_NAME'),
+        'NAME': os.environ.get('SHOP_DB') or os.environ.get('PG_NAME'),
         'USER': os.environ.get('PG_USER'),
         'PASSWORD': os.environ.get('PG_PASSWORD'),
         'HOST': os.environ.get('PG_HOST'),
@@ -734,16 +741,17 @@ AJAX_DATATABLE_DISABLE_QUERYSET_OPTIMIZATION = False  # default False
 AJAX_DATATABLE_STRIP_HTML_TAGS = True  # default True
 
 # // SEPIDAR_CUSTOM_API_SETTINGS
-SEPIDAR_CUSTOM_API_PROTOCOL = 'http'
-SEPIDAR_CUSTOM_API_HOST = '192.168.1.80'
-SEPIDAR_CUSTOM_API_PORT = '8888'
-SEPIDAR_STOCK_NUMBER = 46
+SEPIDAR_CUSTOM_API_PROTOCOL = os.environ.get('SEPIDAR_CUSTOM_API_PROTOCOL')
+SEPIDAR_CUSTOM_API_HOST = os.environ.get('SEPIDAR_CUSTOM_API_HOST')
+SEPIDAR_CUSTOM_API_PORT = os.environ.get('SEPIDAR_CUSTOM_API_PORT')
+SEPIDAR_STOCK_NUMBER = os.environ.get('SEPIDAR_STOCK_NUMBER')
+SEPIDAR_CUSTOM_API_VERSION = 'v2'
 # AQYVp4^icl8F
 
 SESSION_COOKIE_AGE = 120960000  # 200 weeks
 
 PUBLIC_TRADE_TRANSPORTATION_METHOD = ["ALL"]
 
-SHOP_PROTOCOL = 'http'
-SHOP_HOST = '192.168.1.27'
-SHOP_PORT = '8001'
+SHOP_PROTOCOL = os.environ.get('SHOP_PROTOCOL')
+SHOP_HOST = os.environ.get('SHOP_HOST')
+SHOP_PORT = os.environ.get('SHOP_PORT')

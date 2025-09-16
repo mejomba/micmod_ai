@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF
+from core.models import BaseModel, BaseModeWF, BaseManager
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier
 # from factor.models import FactorItem
@@ -132,6 +132,10 @@ class Order(BaseModeWF):
         return s
 
     @property
+    def remaining_amount(self):
+        return self.total_price - self.total_paid
+
+    @property
     def payment_info(self):
         total_price = self.total_price
         pay_in_percent = total_pay = is_complete = None
@@ -173,7 +177,10 @@ class Order(BaseModeWF):
 
     @property
     def final_item(self):
-        return self.item_trade
+        if self.item_trade:
+            return self.item_trade
+        else:
+            return self.item
 
     @property
     def computed_price(self):
@@ -298,6 +305,19 @@ class Order(BaseModeWF):
     def estimate_arrive_at(self):
         from django.utils import safestring
         return "-"
+
+    @property
+    def order_method(self):
+        if self.is_wh:
+            return 'رزرو انبار'
+        if self.is_bazar:
+            return 'سفارش بازار'
+        if not self.is_bazar and not self.is_wh:
+            return 'سفارش خارجی'
+
+    @property
+    def select2_placeholder(self):
+        return f'{self.pk} - {self.final_item} - {self.final_item.part_number}'
 
 
 class OrderOrder(BaseModel):
@@ -485,6 +505,28 @@ class OrderPayment(BaseModeWF):
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
     description = models.TextField(_('description'), null=True, blank=True)
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                 related_name='payments')
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
+
+    @property
+    def total_payment(self):
+        return sum(p.total_amount for p in self.payment_item.all())
+
+    @property
+    def total_amount_percent(self):
+        return self.total_payment / self.total_amount
+
+    @property
+    def total_payment_and_percent(self):
+        total_payment = self.total_payment
+        return total_payment, round((total_payment / self.total_amount) * 100, 2)
+
+
+class OrderPaymentItemManager(BaseManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False).order_by('id')
 
 
 class OrderPaymentItem(BaseModeWF):
@@ -496,10 +538,15 @@ class OrderPaymentItem(BaseModeWF):
     quantity = models.FloatField(verbose_name='payment_quantity', null=True, blank=True)
 
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
-    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='destination_currency')
+    destination_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='destination_currency', null=True, blank=True)
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='base_currency')
-    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'), null=True, blank=True)
     total_amount = models.FloatField(_('total_amount'))
+
+    objects = OrderPaymentItemManager()
+
+    class Meta:
+        ordering = ['created_date']
 
 
 class ACNT(BaseModeWF):
@@ -509,6 +556,7 @@ class ACNT(BaseModeWF):
     is_blocked = models.BooleanField(default=False)
     block_date = models.DateField(null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
+    sepidar_code = ...
 
     def __str__(self):
         return f'{self.info_bank} {self.currency.title_en}'

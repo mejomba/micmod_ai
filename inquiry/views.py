@@ -1229,11 +1229,12 @@ def get_item(request):
                                             })
                                 else:
                                     for k, v in item["rmb_final_price"].items():
+                                        price = v.get('price') if isinstance(v, dict) else v
                                         item['price_list'].append({
                                             'type': k.lower(),
                                             'ref': None,
                                             'iqref': price_inquiry_result.pk,
-                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'value': round(price, 3) if price > 1 else round(price, 5),
                                             'title': price_inquiry_result.select_title(k),
                                             'access_type': None,
                                             'unique_title': k,  # + '*',
@@ -1363,6 +1364,7 @@ def get_items(request):
                 item['price_list'] = []
                 try:
                     sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
+                    item['moq'] = sku_item.batch_count
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
@@ -1506,6 +1508,7 @@ def get_items(request):
                 item['id'] = item_.pk
                 item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
+                item['moq'] = item_.batch_count
                 # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
                 # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
                 # item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales

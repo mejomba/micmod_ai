@@ -1,4 +1,6 @@
 import datetime
+
+from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
 from django.contrib import messages
 from ajax_datatable import AjaxDatatableView
@@ -19,10 +21,13 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from simple_history.models import HistoricalRecords
 
 from core.permissions import HasShopPermission
+from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
+from sepidar.api_call import SepidarApiCall
 from translator import get_text as _
 
 from core.views import BaseView, Base
@@ -49,13 +54,15 @@ class FactorView(LoginRequiredMixin, BaseView):
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
     has_flow = True
     has_formset = True
+    wf_last_step_is_open = True
     formset_form = FactorItemFormset
     formset_model = FactorItem
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
 
     def send_factor_to_sepidar(self):
-        if "insert to sepidar success" and True:
+        res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
+        if res:
             self.object.sepidar_number = 1# "response.sepidar_number"
             self.object.extra_data.request = self.request
             self.object.final_check = True
@@ -92,7 +99,26 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.save()
         return super().post(request, *args, **kwargs)
 
+    def disconnect_history(self, model):
+        for (receiver_key, receiver) in post_save.receivers:
+            if hasattr(receiver, "__self__") and isinstance(receiver.__self__, HistoricalRecords):
+                hist_obj = receiver.__self__
+                if 'factor' in str(hist_obj.cls):
+                    post_save.disconnect(receiver, sender=model)
+
+        # for receiver in m2m_changed.receivers[:]:
+        #     if "update_change_reason" in str(receiver) or "update_change_reason" in str(receiver[1]):
+        #         m2m_changed.disconnect(receiver[1], sender=model)
+
+    # @staticmethod
+    # def reconnect_history(model):
+    #     from simple_history import register
+    #     register(model)
+
     def form_valid(self, form):
+        self.disconnect_history(Factor)
+        self.disconnect_history(FactorItem)
+
         try:
             condition = self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST
         except Exception as e:
@@ -130,23 +156,18 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
             self.send_factor_to_sepidar()
-        return res
 
-    # def is_need_sales_admin_confirmation(self):
-    #     # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
-    #     #         self.object.factoritem_set.all()])
-    #     for fis in self.object.factoritem_set.all():
-    #         if fis.qi.fee != fis.price or fis.goods_code_fk != fis.goods_code:
-    #             return True
-    #     return False
-        # return x
+        # self.reconnect_history(Factor)
+        # self.reconnect_history(FactorItem)
+        self.object.save()
+        return res
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['f_warning'] = []
         if not self.object:
             return context
-        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation()
+        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
         context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object
@@ -211,7 +232,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             )
 
             if self.object and self.state_index == 3 and not all(x.supply_locations.is_all_arrival for x in factoritems):
-                context['allow_next'] = False
+                context['allow_next'] = True
                 context['f_warning'].append('سفارش در راه دارد')
 
         return context
@@ -303,7 +324,7 @@ def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     context['flow_state_list'] = flow_config.get('flow_state_list')
     context['flow_state_list'].append('مرحله نهایی')
     """if flow object don't exist select user from group (normally for create step)"""
-    group = flow_config.get('flow_users_groups')[1]
+    group = flow_config.get('flow_users_groups')[1][0]
     flow_belong_to_group = WorkFlowModelForm._meta.model.objects.filter(belong_to_group=group)
     user_list = get_user_model().objects.filter(groups__name__in=[group]).distinct().order_by('id')
     if flow_belong_to_group:
@@ -363,6 +384,8 @@ class FactorListDatatable(AjaxDatatableView):
         {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
         {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
+        {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
         {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'), 'lookup_field': '__to_user__username__icontains'},
         {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains'},
         {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
@@ -393,6 +416,8 @@ class FactorListDatatable(AjaxDatatableView):
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
         row['q__payment_method'] = obj.q.payment_method if obj.q else ''
+        row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
+        row['checker'] = " ".join([x.username for x in obj.checker.all()])
 
 
 def print_view(request,id=-1):

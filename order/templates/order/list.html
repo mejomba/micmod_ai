@@ -36,7 +36,7 @@
 
             <select id="filter-orders" class="form-select">
                 <option value="">استفاده از فیلتر</option>
-                <option value="all" {% if request.GET.q == "all" %}selected{% endif %}>همه</option>
+                <option value="all" {% if request.GET.q == "all" %}selected{% endif %}>همه (سفارش خارجی/داخلی و رزرو انبار)</option>
                 <option value="not_complete" {% if request.GET.q == "not_complete" %}selected{% endif %}>تکمیل نشده ها</option>
             {% if  request.user.is_superuser %}
             	<option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
@@ -52,16 +52,16 @@
                     <option value="sales_admin" {% if request.GET.q == "sales_admin" %}selected{% endif %}>نیاز به بررسی مدیر فروش</option>
                 {% endif %}
 
-                {% if group.name == 'bazar_user' or group.name == 'sales_admin' %}
-                  <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>بازار</option>
+                {% if group.name == 'bazar_user' or group.name == 'sales_user' %}
+                  <option value="bazar_user" {% if request.GET.q == "bazar_user" %}selected{% endif %}>فقط سفارش بازار</option>
                 {% endif %}
 
                 {% if group.name == 'sales_user' or group.name == 'wh_user' %}
-                  <option value="is_wh" {% if request.GET.q == "is_wh" %}selected{% endif %}>رزرو انبار</option>
+                  <option value="is_wh" {% if request.GET.q == "is_wh" %}selected{% endif %}>فقط رزرو انبار</option>
                 {% endif %}
 
-                {% if group.name == 'trade_user' %}
-                  <option value="is_trade" {% if request.GET.q == "is_trade" %}selected{% endif %}>سفارش خارج</option>
+                {% if group.name == 'trade_user' or group.name == 'sales_user' %}
+                  <option value="is_trade" {% if request.GET.q == "is_trade" %}selected{% endif %}>فقط سفارش خارج</option>
                 {% endif %}
 
             {% endfor %}

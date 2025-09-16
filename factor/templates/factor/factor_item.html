@@ -30,7 +30,7 @@
     }
 </style>
 
-
+{#<div class="bg-success">{{ obj.history.all.count }}</div>#}
 
 <div class="mt- mb-2  bg-light-warning py-2 px-3 rounded font-size-15" style="width: fit-content; margin-top: 0px">
 <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
@@ -106,6 +106,7 @@
                     </span>
                 </div>
             </div>
+            <span class="d-none">{{ form.packing_json }}</span>
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
                     <span class="d-flex">
@@ -151,7 +152,6 @@
             </div>
         </div>
         <div class="row row-cols-6 mt-4">
-{#            {% render_field_by_order form form.collecting_start_time %}#}
             <div class="col-3">
                 <div class="row row-cols-3">
                     {% render_field_by_order form form.collecting_start_time %}
@@ -159,7 +159,7 @@
                 </div>
             </div>
             {% render_field_by_order form form.official_factor_send_with_this_factor label='on-border' %}
-        <span class="d-none">{{ form.packing_json }}</span>
+        {% if not form.wh_user.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
                 <select class="form-select form-select-solid" name="wh_user" id="wh_user" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"wh_user" %} disabled {% endif %}>
@@ -172,6 +172,9 @@
                     {% endfor %}
                 </select>
             </div>
+        {% endif %}
+
+        {% if not form.checker.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر مالی</label>
                 <select class="form-select form-select-solid" name="checker" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple" {% if not request.user|has_group:"accounting_user" %} disabled {% endif %}>
@@ -184,28 +187,29 @@
                     {% endfor %}
                 </select>
             </div>
+        {% endif %}
 
         {% if request.user|has_group:"accounting_user" %}
             <div class="col-2 on-border d-flex flex-column">
-                <label for="">اسناد مثبته مالی</label>
+                <label for="">اسناد مالی</label>
                 {% render_field_by_order form form.file_1 margin_b=0 %}
                 <div class="d-flex gap-3" style="position: absolute; top: 50px;">
                     {% for file in form.instance.files.all %}
                         {% if file.group == 1 %}
                             <a href="{{ file.path.url }}" target="_blank" class="me-1">
-                                <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                                <i class="fas fs-2 fa-file icon-lg"></i>
                             </a>
                         {% endif %}
                     {% endfor %}
                 </div>
             </div>
             {% else %}
-            <div class="col-2 mt-3 d-flex gap-2">
-                <span>اسناد حسابداری:</span>
+            <div class="col-1 d-flex gap-2">
+                <span>اسناد مالی:</span>
                 {% for file in form.instance.files.all %}
                     {% if file.group == 1 %}
                         <a href="{{ file.path.url }}" target="_blank" class="me-1">
-                            <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                            <i class="fas fs-2 fa-file icon-lg"></i>
                         </a>
                     {% endif %}
                 {% endfor %}
@@ -215,24 +219,24 @@
         {% if request.user|has_group:"wh_user" %}
             <div class="col-2 on-border d-flex flex-column">
                 <label for="">اسناد انبار</label>
-                {% render_field_by_order form form.file_2 margin_b=3 %}
-                <div class="d-flex gap-3">
+                {% render_field_by_order form form.file_2 margin_b=0 %}
+                <div class="d-flex gap-3" style="position: absolute; top: 50px;">
                     {% for file in form.instance.files.all %}
                         {% if file.group == 2 %}
                             <a href="{{ file.path.url }}" target="_blank" class="me-1">
-                                <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                                <i class="fas fs-2 fa-file icon-lg"></i>
                             </a>
                         {% endif %}
                     {% endfor %}
                 </div>
             </div>
             {% else %}
-            <div class="d-flex gap-2">
+            <div class="col-1 mt-3 d-flex gap-2">
             <span>اسناد انبار:</span>
                 {% for file in form.instance.files.all %}
                     {% if file.group == 2 %}
                         <a href="{{ file.path.url }}" target="_blank" class="me-1">
-                            <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                            <i class="fas fs-2 fa-file icon-lg"></i>
                         </a>
                     {% endif %}
                 {% endfor %}
@@ -240,12 +244,18 @@
         {% endif %}
 
         {% if request.user|has_group:"wh_user" and flow_state_index == 4 %}
-               <div href="#" class="" onclick="init_packing_json_modal(event)" data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
-                   <span class="cursor-pointer mb-5 text-primary">
-                       افزودن پکینگ
-                   </span>
-               </div>
-            {% endif %}
+           <div href="#" class="col-1" onclick="init_packing_json_modal(event)" data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
+               <span class="cursor-pointer mb-5 text-primary">
+                   <i class="ki-duotone ki-element-plus fs-3x" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="پکینگ">
+                     <span class="path1 {% if form.instance.packing_json %} text-info {% endif %}"></span>
+                     <span class="path2"></span>
+                     <span class="path3"></span>
+                     <span class="path4"></span>
+                     <span class="path5"></span>
+                    </i>
+               </span>
+           </div>
+        {% endif %}
         </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
@@ -308,6 +318,7 @@
     <!-- row per item -->
     <div id="sortable-container" {% if request.user|has_group:"wh_user" or request.user|has_group:"accounting_user" %} data-readonlyinput="true" {% endif %}>
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
+{#        <div class="bg-warning">{{ factor_item.instance.history.all.count }}</div>#}
     <div class="sortable-item">
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
@@ -1021,6 +1032,14 @@ setTimeout(factor_calculate_price_all_rows, 1000)
     <script src="{% static 'js/local/flatpicker.js' %}"></script>
 
 <script>
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
 flatpickr("#id_collecting_start_time_1", {
     enableTime: true,
     noCalendar: true,

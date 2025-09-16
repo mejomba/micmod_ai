@@ -26,7 +26,11 @@
         {% if form.instance.supply_date %}
             <div class="font-size-11">{{ form.instance.supply_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</div>
         {% else %}
-            <div class="font-size-11">موجود</div>
+            {% if form.instance.row_price %}
+                <div class="font-size-11">موجود</div>
+            {% else %}
+                <div class="font-size-11">-</div>
+            {% endif %}
         {% endif %}
     </td>
 <!-- SALES DESCRIPTION -->

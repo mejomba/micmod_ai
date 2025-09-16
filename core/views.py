@@ -161,9 +161,9 @@ class BaseView(UserPassesTestMixin,
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
-            self.flow_config['flow_form_constraint'].append({"hide": [], "read": []})
+            self.flow_config['flow_form_constraint'].append([{"hide": [], "read": []}])
             self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
-            self.flow_config['flow_deadline'].append(0)
+            self.flow_config['flow_deadline'].append([0])
             self.flow_config['append_last_step'] = True
 
             self.state_index = self.get_flow_index(self.object)
@@ -447,7 +447,7 @@ class BaseView(UserPassesTestMixin,
                     previous_state_groups = flow_user_groups[self.state_index - 1] if self.state_index > 0 else None
                     previous_state_group = previous_state_groups[0] if isinstance(previous_state_groups, list) else [previous_state_groups]
 
-                    next_state_groups = flow_user_groups[self.state_index + 1] if self.state_index < wf_len else None
+                    next_state_groups = flow_user_groups[self.state_index + 1] if self.state_index < wf_len - 1 else None
                     next_state_group = next_state_groups[0] if isinstance(next_state_groups, list) else [next_state_groups]
 
                     if current_state_group == next_state_group and current_state_group == previous_state_group:
@@ -798,33 +798,52 @@ class BaseView(UserPassesTestMixin,
                             # fs_obj.save()
                             # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
-                            if self.formset.form.image_model and self.formset.form.image_groups:
-                                """save formset image and file"""
-                                fs_obj.save_image(
-                                    request=self.request,
-                                    image_groups=self.formset.form.image_groups,
-                                    image_model=self.formset.form.image_model,
-                                    obj=fs_obj,
-                                    fk=self.related_name_fk,
-                                    form_idx=idx,
-                                )
-                            if self.formset.form.file_model and self.formset.form.file_groups:
-                                fs_obj.save_file(
-                                    request=self.request,
-                                    file_groups=self.formset.form.file_groups,
-                                    file_model=self.formset.form.file_model,
-                                    obj=fs_obj,
-                                    fk=self.related_name_fk,
-                                    form_idx=idx,
-                                )
+                            # if self.formset.form.image_model and self.formset.form.image_groups:
+                            #     """save formset image and file"""
+                            #     fs_obj.save_image(
+                            #         request=self.request,
+                            #         image_groups=self.formset.form.image_groups,
+                            #         image_model=self.formset.form.image_model,
+                            #         obj=fs_obj,
+                            #         fk=self.related_name_fk,
+                            #         form_idx=idx,
+                            #     )
+                            # if self.formset.form.file_model and self.formset.form.file_groups:
+                            #     fs_obj.save_file(
+                            #         request=self.request,
+                            #         file_groups=self.formset.form.file_groups,
+                            #         file_model=self.formset.form.file_model,
+                            #         obj=fs_obj,
+                            #         fk=self.related_name_fk,
+                            #         form_idx=idx,
+                            #     )
 
                     """save formset log"""
                     new_details = getattr(new_obj, self.related_name_fk, None)
                     if new_details:
                         new_details = list(new_details.all())
 
-                    for d in new_details:
+                    for idx, d in enumerate(new_details):
                         d.save_comment(self.request, CommentsForm)
+                        if self.formset.form.image_model and self.formset.form.image_groups:
+                            """save formset image and file"""
+                            d.save_image(
+                                request=self.request,
+                                image_groups=self.formset.form.image_groups,
+                                image_model=self.formset.form.image_model,
+                                obj=d,
+                                fk=self.related_name_fk,
+                                form_idx=idx,
+                            )
+                        if self.formset.form.file_model and self.formset.form.file_groups:
+                            d.save_file(
+                                request=self.request,
+                                file_groups=self.formset.form.file_groups,
+                                file_model=self.formset.form.file_model,
+                                obj=d,
+                                fk=self.related_name_fk,
+                                form_idx=idx,
+                            )
                         create_or_update_payment(self.request, d)
                         # d.save_payment(self.request)
                         # ToDo make dynamic
@@ -973,6 +992,17 @@ class JsonTemplateResponseMixin:
 
 
 class CommentsFormView(View):
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name:
+            return self.__class__.get_view(view_name)(self, request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    @classmethod
+    def get_view(cls, view_name):
+        return getattr(cls, view_name, 'get')
+
     def get(self, request, *args, **kwargs):
         from django.apps import apps
         from comments.models import CommentSeen
@@ -1013,6 +1043,9 @@ class CommentsFormView(View):
             obj = model.objects.filter(pk=object_id).first()
         if model.__name__.lower() == 'quotation':
             customer = getattr(obj, 'customer_party_id', None)
+            sku = None
+        if model.__name__.lower() == 'customer':
+            customer = obj
             sku = None
         # if model.__name__.lower() == 'factor':
         #     customer = getattr(obj.q, 'customer_party_id', None)
@@ -1076,6 +1109,9 @@ class CommentsFormView(View):
         x = render_to_string('core/partial/form.html', context)
 
         return JsonResponse({'res': x})
+
+    def get_comment_for_user(self, request, *args, **kwargs):
+        pass
 
 
 class PaymentFormView(View):
@@ -1492,6 +1528,31 @@ class Select2BaseSearch(View):
                 item['id'] = x.pk
                 item['text'] = getattr_recursive(x, title)
                 # item['text'] = getattr(x, title)
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
+    def order_in_paymnet_item(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        title = title.split('__')
+        if q:
+            qs = model.objects.filter(pk=q)
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr_recursive(x, title)
+                item['title'] = x.title,
+                item['total_price'] = x.total_price,
+                item['total_paid'] = x.total_paid,
+                item['remaining_amount'] = x.remaining_amount,
+                item['quantity'] = x.final_quantity,
+                item['remained_quantity'] = x.remaining_quantity,
                 obj['items'].append(item)
                 count += 1
         obj['total_count'] = count

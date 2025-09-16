@@ -604,7 +604,7 @@
     "is_formal": "رسمی",
     "receive_doc": "اسناد پرداخت (مالی)",
     "pay_doc": "اسناد مثبته (درخواست کننده)",
-    "total_amount": "مجموع مبلغ",
+    "total_amount": "مبلغ پرداختی",
     "from_date": "از تاریخ",
     "to_date": "تا تاریخ",
     "is_paid": "پرداخت شد",
@@ -688,7 +688,13 @@
     "order_final_price": "قیمت نهایی خرید",
     "price_expire_date": "اعتبار استعلام (روز به عدد)",
     "trade_transportation_method": "روش های حمل",
+    "trade_transportation": "حمل و نقل",
     "list/create": "لیست/ایجاد",
+    "trade_transportation_calender-list/create": "تقویم حمل و نقل لیست/ایجاد",
+    "trade_transportation_method-list/create": "روش های حمل لیست/ایجاد",
+    "shipment_type": "نوع حمل",
+    "start_time": "شروع حرکت",
+    "arrive_time": "زمان رسیدن",
     "package_list_or_create": "پکیج",
     "sales_admin_confirm": "تایید مدیر فروش",
     "accounting_user": "کاربر مالی",
@@ -712,5 +718,8 @@
     "CUSTOM": "ویژه",
     "PAKE": "پیک",
     "deliver-method": "روش ارسال",
-    "accounting_confirm": "تایید مالی شد"
+    "deliver_typed": "روش تحویل",
+    "deliver_method": "روش ارسال",
+    "accounting_confirm": "تایید مالی شد",
+    "shop_id": "کد فروشگاه آنلاین"
 }
