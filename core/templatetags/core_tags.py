@@ -2,6 +2,7 @@ import datetime
 import json
 import re
 
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django import template
@@ -322,7 +323,10 @@ def typename(obj):
 
 
 @register.simple_tag()
-def guide_for_each_model(section_id):
-    guide = Guides.objects.filter(section_id=section_id).first()
+def guide_for_each_model(section_id, user):
+    guide = Guides.objects.filter(
+        Q(section_id=section_id) &
+        (Q(team=user.base_group) if user else Q())
+    ).first()
     return guide.id if guide else None
 
