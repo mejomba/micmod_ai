@@ -127,7 +127,7 @@
                         <label class="card-title-desc text-center bold mt-1 ms-1"
                                data-key="stock_amount">موجودی:</label>
                         {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 d-none">
                             <span> MOQ: </span>
                             <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|default_if_falsy:'-' }}</span>
                         </div>
