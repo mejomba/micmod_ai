@@ -260,7 +260,19 @@
             {#$(document).find("#id_order").val(data['id'])#}
             document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
 
+            let x = "";
+            for (const other_payment_item of data.other_payments){
+                x += `<span class="d-flex gap-2 bg-light-info px-2 rounded">
+                    <span>در پرداخت شماره</span>
+                    <span>${ other_payment_item.payment }</span>
+                    <span>مبلغ</span>
+                    <span>${ other_payment_item.total_amount }</span>
+                    <span>${ other_payment_item.currency }</span>
+                </span>`
+            }
+
             let order_item_information = `
+                        <div class="row row-cols-4">
                             <div class="d-flex gap-2">
                                 <span>عنوان</span>
                                 <span id="order-title">${data['title']}</span>
@@ -285,6 +297,10 @@
                                 <span>تعداد مانده</span>
                                 <span id="order-quantity">${data['remained_quantity']}</span>
                             </div>
+                        </div>
+                        <div class="d-flex gap-6 mt-4 text-info">
+                            ${x}
+                        </div>
             `
             findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
         })
@@ -333,8 +349,20 @@
                     {#$(select2_element).find('[id$="-order"]').val(data['id'])#}
                     document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
 
+                    let x="";
+                    for (const other_payment_item of data.other_payments){
+                        x += `<span class="d-flex gap-2 bg-light-info px-2 rounded">
+                            <span>در پرداخت شماره</span>
+                            <span>${ other_payment_item.payment }</span>
+                            <span>مبلغ</span>
+                            <span>${ other_payment_item.total_amount }</span>
+                            <span>${ other_payment_item.currency }</span>
+                        </span>`
+                    }
+
                     let order_item_information = `
-            <div class="d-flex gap-2">
+                        <div class="row row-cols-4">
+                            <div class="d-flex gap-2">
                                 <span>عنوان</span>
                                 <span id="order-title">${data['title']}</span>
                             </div>
@@ -358,6 +386,10 @@
                                 <span>تعداد مانده</span>
                                 <span id="order-quantity">${data['remained_quantity']}</span>
                             </div>
+                        </div>
+                        <div class="d-flex gap-6 mt-4 text-info">
+                            ${x}
+                        </div>
             `
             findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
                 })
