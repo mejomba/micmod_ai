@@ -1553,6 +1553,7 @@ class Select2BaseSearch(View):
                 item['remaining_amount'] = x.remaining_amount,
                 item['quantity'] = x.final_quantity,
                 item['remained_quantity'] = x.remaining_quantity,
+                item['other_payments'] = x.where_is_other_payment
                 obj['items'].append(item)
                 count += 1
         obj['total_count'] = count
