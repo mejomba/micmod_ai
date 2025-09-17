@@ -91,6 +91,10 @@ class Order(BaseModeWF):
         text = f'{self.last_work_flow.current_state_name}'
         return text
 
+    @property
+    def where_is_other_payment(self):
+        return [{'payment': x.payment.pk, 'total_amount': x.total_amount, 'currency': x.payment.currency.title_en} for x in self.order_payment_items.all()]
+
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
