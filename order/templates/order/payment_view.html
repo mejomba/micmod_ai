@@ -65,7 +65,8 @@
         <div class="d-flex gap-2 align-items-end">
 {#            {{ form.instance.total_payment }}#}
 {#            {{ form.instance.total_amount }}#}
-            {% with form.instance.total_payment_and_percent as payment %}
+        {% if form.instance.pk %}
+        {% with form.instance.total_payment_and_percent as payment %}
                 {% if payment.1 == 100 %}
                     <i class="ki-duotone ki-double-check-circle text-success fs-1">
                      <span class="path1"></span>
@@ -89,6 +90,7 @@
                 <span class="rounded py-1 px-2 bg-primary text-white  ms-5">% {{ payment.1 }}</span>
 
             {% endwith %}
+        {% endif %}
         </div>
 
         <template id="id_formset_empty_form">

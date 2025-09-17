@@ -512,7 +512,10 @@ class OrderPayment(BaseModeWF):
 
     @property
     def total_payment(self):
-        return sum(p.total_amount for p in self.payment_item.all())
+        if self.pk:
+            return sum(p.total_amount for p in self.payment_item.all())
+        else:
+            return 0
 
     @property
     def total_amount_percent(self):
@@ -520,8 +523,11 @@ class OrderPayment(BaseModeWF):
 
     @property
     def total_payment_and_percent(self):
-        total_payment = self.total_payment
-        return total_payment, round((total_payment / self.total_amount) * 100, 2)
+        if self.pk:
+            total_payment = self.total_payment
+            return total_payment, round((total_payment / self.total_amount) * 100, 2)
+        else:
+            return 0
 
 
 class OrderPaymentItemManager(BaseManager):
