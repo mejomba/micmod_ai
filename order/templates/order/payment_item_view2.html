@@ -51,30 +51,43 @@
 
 
                     <div class="col-6">
-                        <div id="id_detail" class="row row-cols-4">
-                            <div class="d-flex gap-2 mb-2">
-                                <span>عنوان</span>
-                                <span id="order-title">{{ form.instance.order.title|default_if_falsy:'-' }}</span>
+                        <div id="id_detail">
+                            <div class="row row-cols-4">
+                                <div class="d-flex gap-2 mb-2">
+                                    <span>عنوان</span>
+                                    <span id="order-title">{{ form.instance.order.title|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>مبلغ سفارش</span>
+                                    <span id="order-remained-payment">{{ form.instance.order.total_price|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>کل پرداخت شده</span>
+                                    <span id="order-quantity">{{ form.instance.order.total_paid|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>مانده برای پرداخت</span>
+                                    <span id="order-quantity">{{ form.instance.order.remaining_amount|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>تعداد کل</span>
+                                    <span id="order-quantity">{{ form.instance.order.quantity|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>تعداد مانده</span>
+                                    <span id="order-quantity">{{ form.instance.order.remained_quantity|default_if_falsy:'-' }}</span>
+                                </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                <span>مبلغ سفارش</span>
-                                <span id="order-remained-payment">{{ form.instance.order.total_price|default_if_falsy:'-' }}</span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <span>کل پرداخت شده</span>
-                                <span id="order-quantity">{{ form.instance.order.total_paid|default_if_falsy:'-' }}</span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <span>مانده برای پرداخت</span>
-                                <span id="order-quantity">{{ form.instance.order.remaining_amount|default_if_falsy:'-' }}</span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <span>تعداد کل</span>
-                                <span id="order-quantity">{{ form.instance.order.quantity|default_if_falsy:'-' }}</span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <span>تعداد مانده</span>
-                                <span id="order-quantity">{{ form.instance.order.remained_quantity|default_if_falsy:'-' }}</span>
+                            <div class="d-flex gap-6 mt-4 text-info">
+                                {% for other_payment_item in form.instance.order.where_is_other_payment %}
+                                    <span class="d-flex gap-2 bg-light-info px-2 rounded">
+                                        <span>در پرداخت شماره</span>
+                                        <span>{{ other_payment_item.payment }}</span>
+                                        <span>مبلغ</span>
+                                        <span>{{ other_payment_item.total_amount }}</span>
+                                        <span>{{ other_payment_item.currency }}</span>
+                                    </span>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
