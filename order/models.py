@@ -93,7 +93,7 @@ class Order(BaseModeWF):
 
     @property
     def where_is_other_payment(self):
-        return [{'payment': x.payment.pk, 'total_amount': x.total_amount, 'currency': x.payment.currency.title_en} for x in self.order_payment_items.all()]
+        return [{'payment': x.payment.pk, 'total_amount': x.total_amount, 'currency': x.payment.currency.title_en if x.payment.currency else None} for x in self.order_payment_items.all()]
 
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
