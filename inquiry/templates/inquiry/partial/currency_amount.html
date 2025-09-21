@@ -1,0 +1,147 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load more_tags %}
+
+{% block title %}ارز{% endblock title %}
+{% block extra_css %}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css"/>
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css"/>
+
+    <style>
+        span.select2-selection__rendered {
+            direction: ltr !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+
+{% endblock content %}
+{% block form_content %}
+    {% csrf_token %}
+    <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded py-3 mb-10">
+        <div class="col-12">
+            <div class="py-1 d-flex mb-3">
+                <div class="badge badge-light-info d-flex gap-1 ">
+                    <span data-key="status"></span>
+                    <span>:</span>
+                    {% if form.instance.pk %}
+
+                        <span class="text-danger">بروز رسانی</span>
+                        <span>{{ form.instance.pk }}</span>
+                        </div>
+                        <a href="{% url 'inquiry:currency_amount.view' %}" class="ms-8 hover-link pe-5 border rounded text-info px-4 bg-light-info d-flex align-items-center gap-2">
+                        <i class="ki-duotone ki-plus-circle fs-2 text-info">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                        </i>
+                            ایجاد نرخ ارز جدید
+                        </a>
+                    {% else %}
+                        <span>ایجاد سند </span>
+                        <span class="text-danger">جدید</span>
+                        </div>
+                    {% endif %}
+
+            </div>
+            <div class="row align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
+                <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">
+                {% render_field_by_order form form.currency form.customs form.open_rate form.new_order form.talar label='on-border' %}
+
+            </div>
+            <div class="">
+                <div class="row row-cols-6">
+                    <div class="col"></div>
+                    <div class="col"></div>
+                    <div class="col"></div>
+                    <div class="col"></div>
+                    <div class="col"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="row">
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive p-2 mb-15">
+        <table id="currency_amount_list" width="100%" class="m-table table-bordered w-100">
+
+        </table>
+    </div>
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+{% block extra_js %}
+    <script src="{% static 'js/base_define.js' %}"></script>
+
+    <script language="javascript">
+        $(document).ready(function () {
+            debugger
+            let url;
+            url = new URL(window.location);
+            AjaxDatatableViewUtils.initialize_table(
+                $('#currency_amount_list'),
+                "{% url 'inquiry:currency_amount.datatable' %}",
+                {
+                    processing: true,
+                    autoWidth: false,
+                    full_row_select: false,
+                    scrollX: false,
+                    bFilter: true,
+                    dom: 'Blfrtip',
+                    buttons: [
+                        'copyHtml5',
+                        'excelHtml5',
+                        'csvHtml5',
+                        'pdfHtml5'
+                    ]
+                }, {
+                    sku: "q"
+                },
+            );
+        });
+
+        {#function delete_inquiry(event){#}
+        {#    const modal_sm_body = $('#id-empty-modal-body-sm')#}
+        {#    custom_ajax_get('', event.currentTarget.dataset.url, modal_sm_body)#}
+        //}
+
+        {#function filter_guide(){#}
+        {#    const pathParts = window.location.pathname.split('/').filter(Boolean);#}
+        {#    const guide_id = pathParts[pathParts.length - 1];#}
+        {#    const guideSearch = document.querySelector('.guide-search>input')#}
+        {##}
+        {#    const parsed = parseInt(guide_id, 10);#}
+        {#    guideSearch.value = isNaN(parsed) ? '' : parsed;#}
+        {##}
+        {#    var event = new Event('change');#}
+        {#    guideSearch.dispatchEvent(event);#}
+        //}
+        {##}
+        {#setTimeout(filter_guide, 1000)#}
+        {##}
+        {#addCommaSeperator(true, 4, '-')#}
+
+    </script>
+
+    <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
+    <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+    {{ form.media.js }}
+
+{% endblock extra_js %}
