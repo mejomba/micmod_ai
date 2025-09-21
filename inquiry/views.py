@@ -29,6 +29,7 @@ from sepidar.models import Item as sepidar_item
 from changelog.models import ChangeLog
 from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
+from tools.datatable import CustomAjaxDatatableView
 from transportation.models import TradeTransportationMethod
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm, CurrencyAmountForm
@@ -2044,7 +2045,7 @@ def get_last_receipt_from_sepidar(request, *args, **kwargs):
 
 class CurrencyAmountList(LoginRequiredMixin, BaseView):
     model = CurrencyAmount
-    template_name = 'inquiry/partial/currency_amount.html'
+    template_name = 'inquiry/currency_amount.html'
     success_message = 'ذخیره شد'
     form_struct = {
         'form': CurrencyAmountForm,
@@ -2066,7 +2067,7 @@ class CurrencyAmountList(LoginRequiredMixin, BaseView):
         return context
 
 
-class CurrencyAmountDatatableView(AjaxDatatableView):
+class CurrencyAmountDatatableView(CustomAjaxDatatableView):
     model = CurrencyAmount
     title = 'currency amount'
     initial_order = [["id", "desc"], ]
@@ -2074,37 +2075,18 @@ class CurrencyAmountDatatableView(AjaxDatatableView):
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
-    def get_columns(self, fields):
-        res = [AjaxDatatableView.render_row_tools_column_def()]
-        for field in fields:
-            col = dict()
-            col['className'] = 'py-3'
-            col['lookup_field'] = '__icontains'
-            col['defaultContent'] = ''
-            col['orderable'] = True
-            col['searchable'] = True
-            col['name'] = field if isinstance(field, str) else None
-            col['visible'] = True
-            if isinstance(field, dict):
-                for key in field.keys():
-                    col[key] = field[key]
-            if not col.get('title'):
-                col['title'] = _(col.get('currency'))
-            res.append(col)
-        return res
-
     def get_column_defs(self, request):
         cols = [
             {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'mxw-50px'},
             {'name': 'pk', 'visible': False,},
             {'name': 'currency', 'visible': True, 'title': _('نوع ارز'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains' },
             {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
-            {'name': 'open_rate',  'title': "<div class='px-3' style='width:40px;'>یو آزاد</div>"},
+            {'name': 'open_rate',  'title': "<div class='px-3' style='width:40px;' data-key='items'>یو آزاد</div>"},
             {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
             {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
         ]
 
-        return self.get_columns(cols)
+        return cols # self.get_columns(cols)
 
     def get_initial_queryset(self, request=None):
         qs = CurrencyAmount.objects.all()
