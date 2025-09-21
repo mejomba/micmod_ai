@@ -53,5 +53,8 @@ urlpatterns = [
     path('transportation_method/title/', views.get_transportation_method_title, name='transportation.title'),
     path('supplier/region/', views.get_supplier_region, name='supplier.region'),
     path('trade_transportation_method/json/', views.get_trade_transportation_method_json, name='get_trade_transportation_method_json'),
-    path('pg_backup/', views.pg_backup, name='pg_backup')
+    path('pg_backup/', views.pg_backup, name='pg_backup'),
+    path('currency_amount/', views.CurrencyAmountList.as_view(), name='currency_amount.view'),
+    path('currency_amount/<int:pk>/', views.CurrencyAmountList.as_view(), name='currency_amount.update'),
+    path('currency_amount/datatable/', views.CurrencyAmountDatatableView.as_view(), name='currency_amount.datatable'),
 ]

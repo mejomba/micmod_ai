@@ -7,7 +7,7 @@ from files.models import File, Image
 from micmod_base.base import Currency
 from tools.utils import show_error, c_get
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
-    InquiryResultVariant
+    InquiryResultVariant, CurrencyAmount
 from extra_data.models import Item, PriceSettings
 
 from translator import get_text as _
@@ -384,3 +384,23 @@ class SupplierModelForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         kwargs.pop('constraint', None)
         super(SupplierModelForm, self).__init__(*args, **kwargs)
+
+
+class CurrencyAmountForm(CustomBaseModelForm):
+
+    class Meta:
+        model = CurrencyAmount
+        exclude = ['group']
+
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #
+    #     request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
+    #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
+    #         request = access = c.get('request')
+    #
+    #     # if request:
+    #     #     if not request.user.is_superuser:
+    #     #         self.make_disable(self.fields)
+

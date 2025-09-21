@@ -31,8 +31,9 @@ from micmod_base.base import Currency
 from sepidar.models import Item as SepidarItem, Dl
 from transportation.models import TradeTransportationMethod
 from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, SalesPriceInqueryLogForm, \
-    InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm
-from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry
+    InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm, CurrencyAmountForm
+from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry, \
+    CurrencyAmount
 from extra_data.models import Item, PriceSettings, ItemWeight
 from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
@@ -2038,3 +2039,81 @@ def get_last_receipt_from_sepidar(request, *args, **kwargs):
     else:
         res = dict()
     return JsonResponse(res)
+
+
+
+class CurrencyAmountList(LoginRequiredMixin, BaseView):
+    model = CurrencyAmount
+    template_name = 'inquiry/partial/currency_amount.html'
+    success_message = 'ذخیره شد'
+    form_struct = {
+        'form': CurrencyAmountForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_url(self):
+        url = reverse_lazy('inquiry:currency_amount.view')
+        return url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class CurrencyAmountDatatableView(AjaxDatatableView):
+    model = CurrencyAmount
+    title = 'currency amount'
+    initial_order = [["id", "desc"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    def get_columns(self, fields):
+        res = [AjaxDatatableView.render_row_tools_column_def()]
+        for field in fields:
+            col = dict()
+            col['className'] = 'py-3'
+            col['lookup_field'] = '__icontains'
+            col['defaultContent'] = ''
+            col['orderable'] = True
+            col['searchable'] = True
+            col['name'] = field if isinstance(field, str) else None
+            col['visible'] = True
+            if isinstance(field, dict):
+                for key in field.keys():
+                    col[key] = field[key]
+            if not col.get('title'):
+                col['title'] = _(col.get('currency'))
+            res.append(col)
+        return res
+
+    def get_column_defs(self, request):
+        cols = [
+            {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'mxw-50px'},
+            {'name': 'pk', 'visible': False,},
+            {'name': 'currency', 'visible': True, 'title': _('نوع ارز'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains' },
+            {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
+            {'name': 'open_rate',  'title': "<div class='px-3' style='width:40px;'>یو آزاد</div>"},
+            {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
+            {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
+        ]
+
+        return self.get_columns(cols)
+
+    def get_initial_queryset(self, request=None):
+        qs = CurrencyAmount.objects.all()
+        return qs
+
+    def customize_row(self, row, obj):
+        x = super().customize_row(row, obj)
+        row['currency'] = '<a class="fw-bold" href="%s">%s</a>' % (
+            reverse('inquiry:currency_amount.update', args=(obj.id,)),
+            obj.currency.title if obj.currency else '_'
+        )
+

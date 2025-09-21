@@ -704,3 +704,14 @@ class AllowedInquiry(BaseModel):
 
     def __str__(self):
         return f'{self.title}'
+
+
+class CurrencyAmount(BaseModel):
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='currency_amount')
+    customs = models.CharField(max_length=25, verbose_name=_('customs'))
+    open_rate = models.CharField(max_length=25, verbose_name=_('open_rate'))
+    new_order = models.CharField(max_length=25, verbose_name=_('new_order'))
+    talar = models.CharField(max_length=25, verbose_name=_('talar'))
+
+    def __str__(self):
+        return f'{self.currency.title}'
