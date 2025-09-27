@@ -721,5 +721,8 @@
     "deliver_typed": "روش تحویل",
     "deliver_method": "روش ارسال",
     "accounting_confirm": "تایید مالی شد",
-    "shop_id": "کد فروشگاه آنلاین"
+    "shop_id": "کد فروشگاه آنلاین",
+    "open_rate": "یو آزاد",
+    "new_order": "یو سفارش جدید",
+    "talar": "یو تالار"
 }
