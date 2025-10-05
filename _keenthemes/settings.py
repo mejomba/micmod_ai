@@ -146,6 +146,7 @@ MIDDLEWARE = [
     "allauth_2fa.middleware.AllauthTwoFactorMiddleware",
     # "accounts.middleware.middleware.UserRoleMiddleware",
     'simple_history.middleware.HistoryRequestMiddleware',
+    'core.middleware.RequestTimingMiddleware'
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -755,3 +756,39 @@ PUBLIC_TRADE_TRANSPORTATION_METHOD = ["ALL"]
 SHOP_PROTOCOL = os.environ.get('SHOP_PROTOCOL')
 SHOP_HOST = os.environ.get('SHOP_HOST')
 SHOP_PORT = os.environ.get('SHOP_PORT')
+
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '[{asctime}] {levelname} {name}: {message}',
+#             'style': '{',
+#             'datefmt': '%Y-%m-%d %H:%M:%S',
+#         },
+#         'request_timing': {
+#             'format': '[{asctime}] xxxxxx {levelname} {message}',
+#             'style': '{',
+#             'datefmt': '%H:%M:%S',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'django.log'),
+#             'formatter': 'verbose',
+#         },
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'request_timing',
+#         },
+#     },
+#     'root': {
+#         'handlers': ['console', 'file'],
+#         'level': 'DEBUG',
+#     },
+# }
+
+# $env:SHOP_DB="poshop"
