@@ -203,7 +203,7 @@
             "form_constraints": [{
               "group": "wh_user",
               "hide": ["packing_json"],
-              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type"]
+              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type", "accounting_confirm", "need_financial_approval", "to_be_collected", "collecting_start_time"]
             }],
             "formset_constraints": [
               {
