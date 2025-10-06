@@ -124,7 +124,7 @@
                 <div class="d-flex">
                     <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
                     <div class="w-50 replace-digits">
-                        <label class="card-title-desc text-center bold mt-1 ms-1"
+                        <label class="card-title-desc text-center bold ms-1"
                                data-key="stock_amount">موجودی:</label>
                         {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
                         <div class="d-flex gap-2 d-non">
@@ -269,33 +269,6 @@
                     {% if request.user|has_one_group:'sales_user, sales_admin' %}
                     <div id="id_display_price_container"></div>
                     {% endif %}
-{#                    <div class="card-text bold">استعلام قیمت </div>#}
-{#                    <div class="d-flex ">#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center">تاریخ</div>#}
-{#                            <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>#}
-{#                            <div name="market_expire_date" style="width: 450px;"></div>#}
-{#                            <div name="trade_expire_date" style="width: 250px;"></div>#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center">بازار</div>#}
-{#                                {% render_field_by_order nested nested.goods_price_market no_input=True %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_exp_title">2 تا 3 هفته</div>#}
-{#                                {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_air_title">3 تا 5 هفته</div>#}
-{#                                {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_sea_title">12 تا 14 هفته</div>#}
-{#                                {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
                         <span class="d-none">{{ form_s.price_json }}</span>
 {#                    </div>#}
                 </div>
@@ -312,7 +285,6 @@
                         </div>
                     </div>
                 </div>
-{#                <div class="bg-danger">{{ nested }}</div>#}
                 <div>
                     <div class="sepidar_stock_info_result"></div>
                 </div>
@@ -323,9 +295,6 @@
                         <div class="">
                             <div class="d-flex mt-2 ">
                                 <div class="text-center w-100">
-{#                                    {% render_field_by_order form_s form_s.price_method label='on-border' %}#}
-{#                                    {{ form_s.price_method }}#}
-{#                                    <span class="d-none" data-previous_price_method="{{ form_s.instance.price_method }}"></span>#}
                                     <span class="d-none" data-previous_price_method="{{ form_s.instance.get_old_price_method_type }}"></span>
                                     <div class="col on-border  mb-3 ">
                                         <div class="form-group" id="div_price_method">
@@ -451,7 +420,6 @@
         </div>
 <div class="position-absolute d-none" id="comment-form-group__{{ form_s.instance.pk }}">
 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form_s.instance.pk }}"></div>
-{#    <div class="d-non bg-danger market_expire_limit_days" data-market_expire_limit_days="{{ nested.instance.price_expire_date }}"></div>#}
 </div>
         </div>
     </div>
