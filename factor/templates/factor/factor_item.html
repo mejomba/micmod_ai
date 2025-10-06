@@ -130,18 +130,22 @@
                 </div>
             </div>
             <div class="col-2">
-                <div class="d-flex flex-column gap-2">
+                <div class="d-flex flex-column gap-1">
                     <span class="d-flex">
-                        {% render_field_by_order form form.is_official label='in-line' %}
+                        <span class="me-3 bold w-40">نوع ارز:</span>
+                        <span>{{ quotation.currency_ref }}</span>
+                    </span>
+                    <span class="d-flex">
+                        {% render_field_by_order form form.is_official label='in-line' margin_b=1 %}
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">تخفیف نوع ۱</span>
-                        {% render_field_by_order form form.official_value %}
+                        {% render_field_by_order form form.official_value margin_b=1 %}
 {#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
                     </span>
                     <span class="d-flex">
                         <span class="me-3 bold w-55">درصد تخفیف روی همه</span>
-                        {% render_field_by_order form form.self_discount %}
+                        {% render_field_by_order form form.self_discount margin_b=1 %}
                     </span>
                 </div>
             </div>
@@ -316,7 +320,7 @@
     </div>
 </div>
     <!-- row per item -->
-    <div id="sortable-container" {% if request.user|has_group:"wh_user" or request.user|has_group:"accounting_user" %} data-readonlyinput="true" {% endif %}>
+    <div id="sortable-container" {% if not request.user|has_group:"sales_user" %} data-readonlyinput="true" {% endif %}>
     {% for qi, factor_item, first_empty, part_list, is_part_diff in factoritem_qi_pair %}
 {#        <div class="bg-warning">{{ factor_item.instance.history.all.count }}</div>#}
     <div class="sortable-item">
@@ -377,7 +381,7 @@
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
                         <span class=" cursor-pointer">
-                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor_item.instance.goods_code.sku }}" >
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ factor_item.instance.goods_code.sku }}" >
 {#                            {% render_field_by_order factor_item factor_item.goods_code %}#}
                         </span>
                         <div class="mt-1">
@@ -511,7 +515,7 @@
                 <div class="row py-2 align-items-center">
                     <span class="col-1 text-center px-1">
                         <span class=" cursor-pointer">
-                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ qi.goods_code_fk.sku }}" >
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ qi.goods_code_fk.sku }}" >
                         </span>
 {#                        <div class="mt-1">#}
 {#                            {% get_comment_user_list form_s request.user size=25 %}#}
@@ -885,6 +889,7 @@ function factor_calculate_price(target, direct_target=null) {
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
+    debugger
 
     // price
     let price = final_price ? parseFloat(final_price.innerHTML.replaceAll(',', '')) : NaN
@@ -899,6 +904,10 @@ function factor_calculate_price(target, direct_target=null) {
     net_price = price * qty
     net_price_after_tax_discount = net_price
 
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    //row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
+    row_discount_base_percentage = net_price * (selfDiscountValue/100)
+
     if (isOfficial && isOfficial.checked){
         tax = 10
         if (isOfficialValue){
@@ -911,9 +920,7 @@ function factor_calculate_price(target, direct_target=null) {
     }
 
 
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
-    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
-
+    debugger
     totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
     if (tax){
         const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
@@ -923,6 +930,7 @@ function factor_calculate_price(target, direct_target=null) {
     }
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
+        debugger
         net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
         taxValue = parseInt(taxValue)
         totalDiscount = parseInt(totalDiscount)
@@ -1026,6 +1034,18 @@ setTimeout(factor_calculate_price_all_rows, 1000)
         }
 
         setTimeout(readOnlyInput, 500)
+
+function get_supply_locations(event){
+        debugger
+        const elem = event.currentTarget
+        elem.innerHTML = '<option value="" class="font-size-10">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</option>'
+        const row = findAncestor(elem, 'sortable-item')
+        const goods_code = row.querySelector('input[name$="-goods_code"]').value
+        const factor_item_pk = row.querySelector('input[id^="id_factoritem_set-"][id$="-id"]')?.value
+        const url = window.location.origin + `/factor/ajax/get_supply_locations/${goods_code}/${factor_item_pk || 0}`
+        custom_ajax_get(null, url, $(elem))
+    }
+
 </script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">

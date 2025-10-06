@@ -24,6 +24,7 @@ from rest_framework.response import Response
 from simple_history.models import HistoricalRecords
 
 from core.permissions import HasShopPermission
+from extra_data.models import Item
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
@@ -34,7 +35,7 @@ from core.views import BaseView, Base
 from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm
 from factor.models import Factor, FactorItem, Delivery
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
-from tools.utils import to_jalali_date, show_error
+from tools.utils import to_jalali_date, show_error, timer
 import json
 
 
@@ -63,10 +64,22 @@ class FactorView(LoginRequiredMixin, BaseView):
     def send_factor_to_sepidar(self):
         res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
         if res:
-            self.object.sepidar_number = 1# "response.sepidar_number"
+            self.object.sepidar_number = res.get('number')
+            self.object.sepidar_id = res.get('invoiceid')
             self.object.extra_data.request = self.request
             self.object.final_check = True
             self.object.save()
+
+            """ save sepidar InvoiceItemID for fi """
+            fis = list(self.object.factoritem_set.all())
+            lookup = {(d["quantity"], d["itemref"]): d["invoiceitemid"] for d in res.get('invoice_items')}
+
+            for item in fis:
+                key = (item.quantity, item.goods_code.sepidar_id_0)
+                if key in lookup:
+                    item.sepidar_id = lookup[key]
+
+            FactorItem.objects.bulk_update(fis, ["sepidar_id"])
             messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
         else:
             if 'next' in self.request.POST:
@@ -556,3 +569,13 @@ class WhPacking(View):
         context = {'factor_items': factor_items}
         html = render_to_string(self.template_name, context, request)
         return JsonResponse({'res': html})
+
+
+def get_supply_locations(request, sku, factor_item_pk, *args, **kwargs):
+
+    item = Item.objects.filter(sku=sku).first()
+    context = dict()
+    context['locations'] = item.supply_locations_ if item else ['', '']
+    context['factor_item'] = FactorItem.objects.filter(pk=factor_item_pk).first()
+    html = render_to_string('factor/partial/ajax_supply_locations.html', context)
+    return JsonResponse({'res': html})
