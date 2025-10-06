@@ -1382,7 +1382,7 @@ function calculate_price(target) {
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
-
+debugger
     // price
     let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
     if (isNaN(price)) {
@@ -1393,6 +1393,9 @@ function calculate_price(target) {
     // net_price = (price - row_discount_amount) * qty
     net_price = price * qty
     net_price_after_tax_discount = net_price
+
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
 
     if (isOfficial && isOfficial.checked){
         tax = 10
@@ -1406,12 +1409,9 @@ function calculate_price(target) {
     }
 
 
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
-    row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
-
     totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
     if (tax){
-        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
+        // const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
         taxValue = (net_price - totalDiscount) * (tax/100)
     } else {
         taxValue = 0
@@ -1419,7 +1419,6 @@ function calculate_price(target) {
 
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
-        net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
         taxValue = parseInt(taxValue)
         totalDiscount = parseInt(totalDiscount)
         elem.querySelector('[name*="MAC"]').innerHTML = numberWithCommas(net_price)
