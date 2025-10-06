@@ -375,8 +375,9 @@ class Item(BaseModel):
     def reserved_count_in_portal(self):
         from order.models import Order
         from factor.models import FactorItem
-        r = Order.objects.filter(is_wh=True).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
-        if r < 0:
+        # r = Order.objects.filter(is_wh=True).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
+        r = Order.objects.filter(is_wh=True, is_deleted=False, item=self).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
+        if not r or r < 0:
             return 0
         else:
             return r
@@ -436,12 +437,16 @@ class Item(BaseModel):
                     sepidar_wh_code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                     # wh = WH.objects.get(sepidar_wh_code=1)  # stock_qty.wh_code
                     # todo get wh__order from db, show reserve and stock_quantity
-                    quantity_sum = \
-                    self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
-                        total_sum=Sum('quantity'))['total_sum'] or 0
+                    # quantity_sum = \
+                    # self.factor_goods_code.filter(supply_location__startswith=f'wh__{sepidar_wh_code}').aggregate(
+                    #     total_sum=Sum('quantity'))['total_sum'] or 0
+                    quantity_sum = self.reserved_count_in_portal
                     if stock_qty.is_integer():
                         qty = int(stock_qty)
-                        res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد:{(qty - quantity_sum):,})'))
+                        if qty - quantity_sum < 0:
+                            res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد: منفی{int(abs(qty - quantity_sum)):,})'))
+                        else:
+                            res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد:{int(qty - quantity_sum):,})'))
                     else:
                         qty = stock_qty
                         res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}'))
@@ -459,12 +464,12 @@ class Item(BaseModel):
                         remaining_quantity = o.remaining_quantity
                         if remaining_quantity > 0:
                             res.append((str(o.pk),
-                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} کل) - (مانده {remaining_quantity:0.20g})"))
+                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})"))
             else:
                 remaining_quantity = o.remaining_quantity
                 if remaining_quantity > 0:
                     res.append((str(o.pk),
-                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.quantity:0.20g}) - (مانده {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
+                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
 
             # remaining_quantity = o.remaining_quantity
             # if remaining_quantity > 0:
@@ -656,11 +661,11 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
 
     def save(self):
         if self.id is None:
-            self.id = self.sku
+            # self.id = int(self.sku) if self.sku else None
             super(Item,self).save()
             from tools.import_data import reset_seq
             reset_seq(self._meta.model)
-            self.sku = self.id
+            self.sku = str(self.id) if self.id else None
             super().save()
         else:
             super(Item, self).save()
