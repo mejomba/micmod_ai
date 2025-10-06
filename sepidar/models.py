@@ -303,8 +303,58 @@ where dl.code = '{code}'
         return qs.extra(where=[sql])
 
 
-# class DLManager(models.Manager):
-#     def
+class InventoryPurchaseInvoice(models.Model):
+    InventoryPurchaseInvoiceID = models.BigIntegerField(primary_key=True)
+
+    @classmethod
+    def get_buy_history_list(cls, param):
+
+        creator_code = param.get('creator_code')
+        item_code = param.get('item_code')
+        part = param.get('part')
+
+        # if not (creator_code or item_code or part):
+        #     return None
+        dl_filter = ""
+        part_filter = ""
+        if creator_code:
+            try:
+                s = float(creator_code)
+                dl_filter = f" and u.UserID={creator_code}"
+            except:
+                dl_filter = " and u.Name like N'%%" + creator_code.replace('ی', 'ي').replace("ک", "ك") + "%%'"
+        item_filter = ""
+        if item_code:
+            try:
+                s = float(item_code)
+                item_filter = f" and item.Code='{item_code}'"
+            except:
+                pass
+
+        if part:
+            part_filter = " and item.title like N'%%" + part.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+
+
+        "str".replace('ی', 'ي').replace("ک", "ك")
+        condition = ''
+        qry = f"""
+            select top(5000) ipi.InventoryPurchaseInvoiceID, ipi.Number number, ipi.Date, cu.Title currencytitle, ipi.CurrencyRate currencyrate, 
+            ipii.Quantity, ipii.Fee, dl.Title, dl.Code, item.Code, item.Title, u.Name creator
+    From [Micromodern1].[INV].[InventoryPurchaseInvoice] as ipi
+    LEFT JOIN [Micromodern1].[INV].[InventoryPurchaseInvoiceItem] as ipii on ipii.InventoryPurchaseInvoiceRef = ipi.InventoryPurchaseInvoiceID
+    LEFT JOIN [Micromodern1].ACC.DL as dl on dl.DLId = ipi.VendorDLRef
+    LEFT JOIN [Micromodern1].INV.Item as item on item.ItemID = ipii.ItemRef
+    LEFT JOIN [Micromodern1].GNR.Currency as cu on cu.CurrencyID = ipi.CurrencyRef
+    LEFT JOIN [Micromodern1].[FMK].[User] as u on u.UserID = ipi.Creator
+    where 1=1 {dl_filter} 
+          {item_filter}
+          {part_filter}
+
+    order by ipi.InventoryPurchaseInvoiceID desc
+            """
+
+        qs = cls.objects.using('sepidar').raw(qry)
+        return qs
 
 class SalesHistory(models.Model):
     # id = models.BigIntegerField(primary_key=True)

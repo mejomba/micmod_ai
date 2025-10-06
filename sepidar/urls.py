@@ -22,5 +22,6 @@ urlpatterns = [
     path(r"dl/accounting", view=SuppliersAccountingList.as_view(), name="dl.accounting"),
     path(r"ajax/sales_history/", view=AjaxSalesHistory.as_view(), name="ajax_sales_history"),
     path(r"sales_history/", view=SalesHistory.as_view(), name="sales_history"),
+    path(r"buy_history/", view=BuyHistory.as_view(), name="buy_history"),
     path(r"api_call/", view=test_get, name="test_get"),
     ]

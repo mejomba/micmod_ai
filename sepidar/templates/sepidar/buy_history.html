@@ -1,0 +1,154 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load jalali_tags %}
+{% load humanize %}
+
+{% block title %}تاریخچه خرید{% endblock title %}
+{% block extra_css %}
+    <!-- Responsive Table css -->
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css"/>
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+{% endblock %}
+
+{% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    <div class="main-content">
+
+        <div class="page-content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="my-2">
+                        <form class="" method="get" action="">
+                            <div class="row row-cols-5">
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="creator_code"
+                                   value="{{ creator_code }}" placeholder="کد کارشناس / عنوان کارشناس">
+                                </div>
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="item_code" value="{{ item_code }}"
+                                   placeholder="کد کالا">
+                                </div>
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="part" value="{{ part }}"
+                                   placeholder="پارت نامبر">
+                                </div>
+{#                                <div class="col ps-0 pe-5">#}
+{#                                    <input class="form-control mx-2" type="text" name="g_p" value="{{ g_p }}"#}
+{#                                   placeholder="گروه خرید">#}
+{#                                </div>#}
+{#                                <div class="col">#}
+{#                                    <div class="row">#}
+{#                                        <div class="col-4 p-0">#}
+{#                                            <input type="radio" name="doc_type" value="invoice" id='doc_type_invoice'>#}
+{#                                            <label for="doc_type_invoice" class="col-form-label text-center mx-2">فقط فاکتور</label>#}
+{#                                        </div>#}
+{#                                        <div class="col-5 p-0">#}
+{#                                            <input type="radio" name="doc_type" value="quotation" id='doc_type_quotation'>#}
+{#                                            <label for="doc_type_quotation" class="col-form-label text-center mx-2">فقط پیش فاکتور</label>#}
+{#                                        </div>#}
+                                            <div class="col-2 p-0">
+                                                <input class="btn btn-primary px-5" type="submit" value="Filter">
+                                            </div>
+{#                                        </div>#}
+{#                                </div>#}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">مرور خرید</h4>
+                                <div class="table-rep-plugin">
+                                    <div>
+                                        <table id="datatable-buttons"
+                                               class="m-table table-striped table-bordered w-100"
+                                                data-order='[[0,"asc"],[ 2, "desc" ]]' data-page-length='25' paging='false' >
+                                            <thead>
+                                            <tr>
+                                                <th data-key="Number">شماره سند</th>
+                                                <th data-key="date">تاریخ</th>
+                                                <th data-key="sales_user_group">کارشناس</th>
+                                                <th data-key="item_code">کد کالا</th>
+                                                <th data-key="item_title">کالا</th>
+                                                <th data-key="Quantity">تعداد</th>
+                                                <th data-key="Fee">فی</th>
+                                                <th data-key="currency">ارز</th>
+                                                <th data-key="Rate">نرخ ارز</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in list %}
+                                                <tr>
+                                                    <td>{{ item.number }}</td>
+                                                    <td>{{ item.Date|to_jalali:'%Y/%m/%d' }}</td>
+
+                                                    <td>{{ item.creator }}</td>
+                                                    <td>{{ item.Code }}</td>
+                                                    <td>{{ item.Title }}</td>
+                                                    <td>{{ item.Quantity|floatformat:0|intcomma }}</td>
+                                                    <td>{{ item.Fee|floatformat:2|intcomma }}</td>
+                                                    <td>{{ item.currencytitle }}</td>
+                                                    <td>{{ item.currencyrate|floatformat:2|intcomma }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container-fluid -->
+        </div>
+        <!-- End Page-content -->
+
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+    <!-- Required datatable js -->
+    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+    <!-- Buttons examples -->
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+
+    <!-- Responsive examples -->
+    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+    <!-- Datatable init js -->
+    <script src="{% static 'js/pages/datatables.init.js' %}"></script>
+
+    <script>
+       // $('#datatable-buttons').DataTable({
+       //     paging: false
+        //});
+        //hide the second and third columns
+        {#debugger#}
+        {#dt.orderable = false#}
+        {#dt.columns([1,2]).visible(false);#}
+    </script>
+
+{% endblock extra_js %}
