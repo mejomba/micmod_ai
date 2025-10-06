@@ -54,9 +54,9 @@
         <span class="ms-8 bg-light-danger text-danger px-2 rounded">تمام قیمت ها به ریال میباشد</span>
 
             </div>
-            <div class="row align-items-end px-1 bg-white rounded py-3" id="ajax_aria">
+            <div class="row align-items-end px-1 bg-white rounded py-3 w-50" id="ajax_aria">
 {#                <input type="hidden" value="{{ form.instance.pk }}" name="obj_pk">#}
-                {% render_field_by_order form form.currency form.customs form.open_rate form.new_order form.talar label='on-border' %}
+                {% render_field_by_order form form.currency form.open_rate label='on-border' %}
 
             </div>
 {#            <div class="">#}

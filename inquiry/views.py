@@ -2079,11 +2079,11 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
         cols = [
             {'name': 'id', 'title': "<div class='px-3' style='max-width:20px;'>شناسه</div>", 'className': 'mxw-50px'},
             {'name': 'pk', 'visible': False,},
-            {'name': 'currency', 'visible': True, 'title': _('نوع ارز'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__title__icontains' },
-            {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
+            {'name': 'currency', 'visible': True, 'title': _('نوع ارز'),  'orderable': False, 'lookup_field': '__title__icontains' },
+            # {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
             {'name': 'open_rate',  'title': "<div class='px-3' style='width:40px;' data-key='items'>یو آزاد</div>"},
-            {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
-            {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
+            # {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
+            # {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
         ]
 
         return cols # self.get_columns(cols)
@@ -2098,4 +2098,5 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
             reverse('inquiry:currency_amount.update', args=(obj.id,)),
             obj.currency.title if obj.currency else '_'
         )
+        row['open_rate'] = "{:,}".format(int(obj.open_rate))
 
