@@ -4,6 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.contrib import messages
+from django.db.models import F, Sum, FloatField
 
 from accounts.models import User
 from core.models import BaseModel, BaseManager, BaseModeWF
@@ -39,6 +40,7 @@ class Factor(SLSDoc):
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
     # sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
+    sepidar_id = models.BigIntegerField(_('sepidar_id'), null=True, blank=True)
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
     factor_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='factor_rel', null=True, blank=True)
@@ -123,8 +125,28 @@ class Factor(SLSDoc):
 
         # return sum_price
 
+    @property
+    def get_price(self):
+        obj = Factor.objects.filter(pk=self.pk).annotate(
+            total=Sum(F('factoritem__price') * F('factoritem__quantity'), output_field=FloatField())).first()
+        if obj:
+            return obj.total
+        else:
+            return 0
+
+    @property
+    def sum_tax(self):
+        s = sum([x.tax for x in self.factoritem_set.all()])
+        return s
+
+    @property
+    def sum_discount(self):
+        s = sum([x.discount_value for x in self.factoritem_set.all()])
+        return s
+
 
 class FactorItem(BaseModel):
+    sepidar_id = models.BigIntegerField(null=True, blank=True)
     history = HistoricalRecords()
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))
     factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, verbose_name=_('factor'))
@@ -151,6 +173,11 @@ class FactorItem(BaseModel):
 
     objects = FactorItemManager()
 
+    def customerdiscountrate(self, row_price, discount):
+        """calculate discount rate in % for customer"""
+        out = (discount / row_price) * 100
+        return round(out, 2)
+
     @property
     def row_price(self):
         price = self.price or 0
@@ -159,6 +186,7 @@ class FactorItem(BaseModel):
         return row_price
 
     def fee_(self):
+        return self.price
         iqr = self.qi.quotation_item_rel.all().last()
         if iqr is None:
             return self.price or 0
@@ -214,7 +242,7 @@ class FactorItem(BaseModel):
     def discount_tuple(self):
         try:
             net_price = self.net_price
-            row_discount = self.quantity * self.qi.discount_per_item
+            row_discount = self.quantity * (self.discount_per_item or 0)
             row_discount_base_percentage = net_price * (self.factor.self_discount / 100) if self.pk else 0
             tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
                     1 - ((100 + settings.TAX_VALUE - self.factor.official_value) / (100 + settings.TAX_VALUE)))
@@ -261,10 +289,11 @@ class FactorItem(BaseModel):
 
     def get_sepidar_stock_code_from_selected_supply_location(self):
         sp = self.supply_location.split('__')
-        wh_code = sp[1] if len(sp) >= 2 else -1
+        wh_code = sp[1] if len(sp) >= 2 else 0
         return wh_code
 
     def quantity_for_wh_order(self):
+        """calculate quantity base on min(fi.quantity, sepidar_wh_quantity, reserve_quantity)"""
         from sepidar.api_call import SepidarApiCall
         import re
         res = SepidarApiCall.get_stock_quantity([self.goods_code.sepidar_id_0])
@@ -276,12 +305,6 @@ class FactorItem(BaseModel):
                 if int(code) == int(wh_code):
                     x = quantity - self.goods_code.reserved_count_in_portal
                     return min([float(x) if x > 0 else 0, float(self.quantity), self.reserve_count])
-                # if self.pk is None:
-                #     if code == wh_code:
-                #         return min([int(quantity), int(self.quantity)])
-                # elif self.pk:
-                #     if code == wh_code:
-                #         return min([int(quantity), int(self.quantity)])
 
     def selected_order(self):
         """
@@ -296,13 +319,18 @@ class FactorItem(BaseModel):
             select_order = select_wh = select_bazar = False
         else:
             try:
-                if int(self.supply_location) != self.supply_locations.pk:
+                if not self.supply_locations and self.supply_location.isdigit():
+                    select_order = True
+                    unselect = select_wh = select_bazar = False
+                elif self.supply_locations and int(self.supply_location) != self.supply_locations.pk:
                     select_order = True
                     unselect = select_wh = select_bazar= False
+                elif '__' in self.supply_location:
+                    select_wh = True
+                    unselect = select_order = select_bazar = False
                 else:
                     deselect_bazar = True
             except Exception as e:
-                # if self.supply_location.__icontains__('__'):
                 select_wh = True
                 unselect = select_order = no_change = False
 
@@ -386,7 +414,20 @@ class FactorItem(BaseModel):
                 o1 = Order.create_with_rel(o2=o2, factor_item=self)
                 # self.supply_locations = o1
             elif select_wh:
-                pass
+                """
+                x = fi.reserve_count - order_rel.quantity
+                order_rel.quantity += x
+                
+                oo = oo.order_base == fi.supply_location
+                oo.quantity = fi.reserve_count
+                """
+                oo = self.supply_locations.order_base_items.first()
+                order_rel = oo.order_rel if oo else None
+                order_rel.quantity += self.quantity_for_wh_order() - oo.quantity
+                oo.quantity = self.reserve_count
+
+                order_rel.save()
+                oo.save()
 
         super().save(force_insert, force_update, using, update_fields)
         total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
