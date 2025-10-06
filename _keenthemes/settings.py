@@ -39,7 +39,8 @@ SECRET_KEY = 'django-insecure-blehs+vjho@s4qug%9ferf0-tucvbr9#_1k2!#ebs4u68@)ss+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+CSRF_TRUSTED_ORIGINS=os.environ.get('CSRF_TRUSTED_ORIGINS','').split(',')
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 
 # Application definition
