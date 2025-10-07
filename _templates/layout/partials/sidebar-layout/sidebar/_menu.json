@@ -47,6 +47,17 @@
         {
           "permission": {
             "permissions": [
+              "sepidar.view_inventorypurchaseinvoice"
+            ]
+          },
+          "title": "buy_history",
+          "icon": "book",
+          "link": "sepidar:buy_history",
+          "path_key": "buy_history"
+        },
+        {
+          "permission": {
+            "permissions": [
               "micmod_base.view_quotation"
             ]
           },
