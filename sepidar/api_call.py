@@ -238,6 +238,8 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             duty = 0  # fi.duty
             fi.description = ''
             stockref = fi.get_sepidar_stock_code_from_selected_supply_location()
+            if stockref == 0:
+                raise StockRefNotFoundError("فاکتور با محل تامین از نوع سفارش قبل از رسید شدن کالا در انبار قابل ارسال به سپیدار نیست.")
             if not stockref:
                 raise StockRefNotFoundError()
             d = {
@@ -428,6 +430,7 @@ class SepidarApiCall:
             'extra_data': f'{protocol}://{host}:{port}/api2/sepidar_api-extradata/',
             'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
             'inventory_purchase_invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorypurchaseinvoice/',
+            'party': f'{protocol}://{host}:{port}/api2/party/',
         },
     }
 
@@ -505,6 +508,20 @@ class SepidarApiCall:
     @classmethod
     def create_dl(cls):
         pass
+
+    @classmethod
+    def get_party(cls, party_id):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('party')
+        endpoint += f'?partyid={party_id}'
+        res = requests.get(endpoint, headers=cls.headers)
+        out = dict()
+        if res.ok:
+            response = res.json()
+            result = response.get('results')
+            if result:
+                out = result[0]
+        return out
 
     @classmethod
     def get_receipt_item(cls, item_ref):

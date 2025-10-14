@@ -23,12 +23,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from simple_history.models import HistoricalRecords
 
+from core.exceptions import StockRefNotFoundError
 from core.permissions import HasShopPermission
 from extra_data.models import Item
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
 from sepidar.api_call import SepidarApiCall
+from sepidar.models import Dl
 from translator import get_text as _
 
 from core.views import BaseView, Base
@@ -61,38 +63,61 @@ class FactorView(LoginRequiredMixin, BaseView):
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
 
-    def send_factor_to_sepidar(self):
-        res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
-        if res:
-            self.object.sepidar_number = res.get('number')
-            self.object.sepidar_id = res.get('invoiceid')
+    def after_sepidar_error(self):
+        if 'next' in self.request.POST:
+            self.object.last_work_flow = self.object.workflows.all().order_by('-id')[1]
+            self.object.final_check = False
             self.object.extra_data.request = self.request
-            self.object.final_check = True
+            self.object.save()
+            self.object.workflows.all().order_by('id').last().delete()
+        else:
+            self.object.final_check = False
+            self.object.extra_data.request = self.request
             self.object.save()
 
-            """ save sepidar InvoiceItemID for fi """
-            fis = list(self.object.factoritem_set.all())
-            lookup = {(d["quantity"], d["itemref"]): d["invoiceitemid"] for d in res.get('invoice_items')}
+    def send_factor_to_sepidar(self):
+        customer = self.object.q.customer_party_id
+        if not customer.active:
+            messages.error(self.request, f'مشتری در پرتال غیر فعال است.')
+            self.after_sepidar_error()
+            return
 
-            for item in fis:
-                key = (item.quantity, item.goods_code.sepidar_id_0)
-                if key in lookup:
-                    item.sepidar_id = lookup[key]
-
-            FactorItem.objects.bulk_update(fis, ["sepidar_id"])
-            messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
-        else:
-            if 'next' in self.request.POST:
-                self.object.last_work_flow = self.object.workflows.all().order_by('-id')[1]
-                self.object.final_check = False
+        res = SepidarApiCall.get_party(customer.sepidar_party_id)
+        if not res.get('iscustomer'):
+            messages.error(self.request, f'مشتری در سپیدار فعال نیست.')
+            self.after_sepidar_error()
+            return
+        try:
+            res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
+            if res:
+                self.object.sepidar_number = res.get('number')
+                self.object.sepidar_id = res.get('invoiceid')
                 self.object.extra_data.request = self.request
+                self.object.final_check = True
                 self.object.save()
-                self.object.workflows.all().order_by('id').last().delete()
+
+                """ save sepidar InvoiceItemID for fi """
+                fis = list(self.object.factoritem_set.all())
+                lookup = {(d["quantity"], d["itemref"]): d["invoiceitemid"] for d in res.get('invoice_items')}
+
+                for item in fis:
+                    key = (item.quantity, item.goods_code.sepidar_id_0)
+                    if key in lookup:
+                        item.sepidar_id = lookup[key]
+
+                FactorItem.objects.bulk_update(fis, ["sepidar_id"])
+                messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
+                return
             else:
-                self.object.final_check = False
-                self.object.extra_data.request = self.request
-                self.object.save()
-            messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+                self.after_sepidar_error()
+                messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+                return
+        except StockRefNotFoundError as e:
+            self.after_sepidar_error()
+            messages.error(self.request, f'{e}')
+        except Exception as e:
+            self.after_sepidar_error()
+            messages.error(self.request, f'{e}')
 
     def get_success_url(self):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
