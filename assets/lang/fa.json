@@ -727,5 +727,6 @@
     "talar": "یو تالار",
     "buy_history": "مرور خرید",
     "discount": "تخفیف",
-    "currency": "واحد پول"
+    "currency": "واحد پول",
+    "buy_factor_quantity_in_sepidar": "تعداد در فاکتور خرید سپیدار"
 }

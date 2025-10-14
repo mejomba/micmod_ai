@@ -41,6 +41,7 @@
 </div>
 
 <div class="mt-1 d-flex gap-2">
+<span class="btn btn-primary d-none">ارسال فاکتور به سپیدار</span>
     {% if is_need_sales_admin_confirmation %}
         <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger" style="width: fit-content; background-color: #fff6f6">
             این فاکتور نیاز به تایید مدیر فروش دارد
@@ -260,6 +261,7 @@
                </span>
            </div>
         {% endif %}
+
         </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>

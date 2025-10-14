@@ -366,6 +366,7 @@ class BazarOrderDataTableListView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
         {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
+        {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
         {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
         {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
         {'name': 'part_number_s', 'orderable': True, 'title': 'نام کالا', 'visible': True,
@@ -376,11 +377,13 @@ class BazarOrderDataTableListView(AjaxDatatableView):
          'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
         {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': 'فاکتور خرید', },
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': '<div class="px-0">فاکتور خرید</div>', },
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = self.model.objects.filter(is_bazar=True, is_deleted=False) # super().get_initial_queryset(request)
+        qs = self.model.objects.filter(is_bazar=True, is_deleted=False).filter(
+            Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)
+        )
         return qs
 
     def customize_row(self, row, obj):
@@ -389,8 +392,7 @@ class BazarOrderDataTableListView(AjaxDatatableView):
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
         row['order_method'] = f'<span>{obj.order_method}</span>'
         row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
-        row[
-            'qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event);calculate_price()" >➕</span>'
@@ -969,7 +971,7 @@ class SubmitBuyFactor(View):
         grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
         res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
         if hasattr(res, 'errors'):
-            messages.error(self.request, res.get('errors'))
+            # messages.error(self.request, res.get('errors'))
             return JsonResponse({'res': 'fail'})
 
         elif res.get('valid'):
@@ -989,12 +991,13 @@ class SubmitBuyFactor(View):
                 order_pk = value.get('portal_order_id')
                 o = Order.objects.filter(pk=order_pk).first()
                 o.buy_factors.append({str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                 o.editor_user = self.request.user
                 o.save()
 
-            messages.success(self.request, f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}')
+            # messages.success(self.request, f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}')
             return JsonResponse({'res': f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}'})
         else:
-            messages.error(self.request, 'خطا در ارسال به سپیدار')
+            # messages.error(self.request, 'خطا در ارسال به سپیدار')
             return JsonResponse({'res': res}, status=400)
 
