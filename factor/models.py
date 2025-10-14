@@ -423,8 +423,10 @@ class FactorItem(BaseModel):
                 """
                 oo = self.supply_locations.order_base_items.first()
                 order_rel = oo.order_rel if oo else None
-                order_rel.quantity += self.quantity_for_wh_order() - oo.quantity
-                oo.quantity = self.reserve_count
+                order_rel.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                # oo.quantity = self.reserve_count
+                oo.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                oo.sepidar_wh_code = self.supply_location.split('__')[1]
 
                 order_rel.save()
                 oo.save()

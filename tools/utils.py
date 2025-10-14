@@ -542,3 +542,14 @@ def set_secret_id():
     num = random.randint(1000, 9999)
     return ''.join(chars) + str(num)
 
+
+def grouped_value(obj, /, *, target_suffixes):
+    from collections import defaultdict
+
+    grouped = defaultdict(dict)
+    for key, value in obj.items():
+        if key.endswith(target_suffixes):
+            form_index = key.split('-')[1]
+            field_name = key.split('-')[-1]
+            grouped[form_index][field_name] = value
+    return grouped

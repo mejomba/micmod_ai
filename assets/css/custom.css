@@ -562,6 +562,91 @@ a .next {
     gap: 10px;
 }
 /*================ accordion formset ===================*/
+
+    /* استایل کلی اکاردئون */
+    .accordion-container {
+        width: 100%;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        padding: 10px;
+        font-family: sans-serif;
+        z-index: 9999;
+        max-width: 1200px !important;
+        margin: auto !important;
+    }
+
+    /* هر لایه */
+    .accordion-item {
+        direction: ltr;
+        margin: 4px 0;
+        width: 100%;
+    }
+
+    /* عنوان هر بخش */
+    .accordion-header {
+        direction: ltr;
+        cursor: pointer;
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-weight: 600;
+        color: #333;
+        display: flex;
+        align-items: center;
+        transition: background 0.2s ease;
+    }
+
+    .accordion-header:hover {
+        background: #e9ecef;
+    }
+
+    /* محتوای داخلی */
+    .accordion-content {
+        display: none;
+        margin-top: 4px;
+        margin-left: 15px;
+        border-left: 2px solid #d0d0d0;
+        padding-left: 8px;
+        animation: fadeIn 0.2s ease;
+    }
+
+    /* آیکون باز و بسته */
+    .accordion-icon {
+        font-size: 14px;
+        color: #888;
+        transition: transform 0.2s ease;
+        margin: 0 5px;
+    }
+
+    .accordion-header.open .accordion-icon {
+        transform: rotate(90deg);
+        color: #007bff;
+    }
+
+    /* انیمیشن محو شدن */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* استایل مقدارهای primitive */
+    .accordion-value {
+        color: #be1f1f;
+        background: #fafafa;
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin: 2px 0;
+        font-size: 13px;
+    }
+
+/*================ accordion formset ===================*/
 .question-btn {
   font-weight: 500;
   text-align: right;

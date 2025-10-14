@@ -78,6 +78,7 @@ class Order(BaseModeWF):
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
                                               related_name='customer_order_items')
+    buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
 
     def __str__(self):
         if self.final_item:

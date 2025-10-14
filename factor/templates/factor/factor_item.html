@@ -1044,6 +1044,7 @@ function get_supply_locations(event){
         const factor_item_pk = row.querySelector('input[id^="id_factoritem_set-"][id$="-id"]')?.value
         const url = window.location.origin + `/factor/ajax/get_supply_locations/${goods_code}/${factor_item_pk || 0}`
         custom_ajax_get(null, url, $(elem))
+        elem.blur();
     }
 
 </script>

@@ -2,6 +2,7 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.contrib import messages
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404
@@ -19,15 +20,16 @@ from rest_framework.response import Response
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
 from micmod_base.models import QuotationItem
+from sepidar.api_call import SepidarApiCall
 from tools.utils import is_ajax
 from workflow.models import WorkFlow
 # from order.models import OrderItem
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
-    OrderPaymentItemForm, OrderPaymentItemFormSet
+    OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorItemForm, BazarBuyFactorForm, PurchaseItemFormSet
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
 from translator import get_text as _
 from .serializers import OrderSerializer
-
+import json
 
 # def factor_order_item(request, sku, quantity):
 #     items = get_object_or_404(QuotationItem, goods_code=sku)
@@ -112,6 +114,55 @@ class OrderView(LoginRequiredMixin, BaseView):
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
             context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
             # context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).annotate(Sum(')).order_by('-id')
+        return context
+
+
+class BazarOrderView(LoginRequiredMixin, View):
+    template_name = 'order/bazar_view.html'
+    form_class = OrderForm
+    model = Order
+    # wf_last_step_is_open = True
+    has_flow = False
+    form_struct = {
+        'form': OrderForm,
+        'childes': [
+            {},
+        ]
+    }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:bazar_order.view', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        invoice_form = BazarBuyFactorForm(request.POST)
+        item_formset = PurchaseItemFormSet(request.POST)
+
+        if invoice_form.is_valid() and item_formset.is_valid():
+            invoice_data = invoice_form.cleaned_data
+            items_data = [f.cleaned_data for f in item_formset if f.cleaned_data]
+            print(invoice_data, items_data)
+            # اینجا می‌تونی پردازش دلخواه رو انجام بدی
+            return self.get_success_url()
+        return super().post(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        invoice_form = BazarBuyFactorForm()
+        item_formset = PurchaseItemFormSet()
+
+        context = {
+            'form': invoice_form,
+            'formset': item_formset,
+        }
+        return render(request, self.template_name, context)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
         return context
 
 
@@ -301,6 +352,48 @@ class OrderDataTableListView(AjaxDatatableView):
             ]
 
         return super().get_column_defs(request)
+
+
+class BazarOrderDataTableListView(AjaxDatatableView):
+    model = Order
+    title = 'order_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[10, 25, 50, -1], [10, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+    show_column_filters = True
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
+        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
+        {'name': 'part_number_s', 'orderable': True, 'title': 'نام کالا', 'visible': True,
+         'lookup_field': '__part_number__icontains', 'className': 'partnumber'},
+        {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
+         'lookup_field': '__icontains'},
+        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': 'فاکتور خرید', },
+    ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.filter(is_bazar=True, is_deleted=False) # super().get_initial_queryset(request)
+        return qs
+
+    def customize_row(self, row, obj):
+        from tools.utils import to_jalali_date
+        row['created_date'] = to_jalali_date(obj.created_date)
+        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
+        row['order_method'] = f'<span>{obj.order_method}</span>'
+        row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+        row[
+            'qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
+        row['estimated_arrive_date'] = obj.estimate_arrive_at
+        row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event);calculate_price()" >➕</span>'
 
 
 class OrderAction(ListView):
@@ -866,3 +959,42 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return JsonResponse({'detail': 'url with "pk" required'})
+
+
+class SubmitBuyFactor(View):
+    def post(self, request, *args, **kwargs):
+        from tools import utils
+        body = self.request.body or '{}'
+        data = json.loads(body)
+        grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+        res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+        if hasattr(res, 'errors'):
+            messages.error(self.request, res.get('errors'))
+            return JsonResponse({'res': 'fail'})
+
+        elif res.get('valid'):
+            buy_factor_number = res.get('number')
+            buy_factor_id = res.get('buy_factor_id')
+            lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+            """
+            lookup output like this:
+            lookup = {
+                (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+            }
+            """
+            buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+            for key, value in lookup.items():
+                buy_factor_item = buy_factor_items.get(key)
+                inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                order_pk = value.get('portal_order_id')
+                o = Order.objects.filter(pk=order_pk).first()
+                o.buy_factors.append({str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                o.editor_user = self.request.user
+                o.save()
+
+            messages.success(self.request, f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}')
+            return JsonResponse({'res': f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}'})
+        else:
+            messages.error(self.request, 'خطا در ارسال به سپیدار')
+            return JsonResponse({'res': res}, status=400)
+
