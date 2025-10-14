@@ -80,9 +80,10 @@ class SaleType(AbsBaseModel):
     month = models.ForeignKey(Month,verbose_name=_('month'), on_delete=models.DO_NOTHING, related_name='sale_types')
     currency = models.ForeignKey(Currency,verbose_name=_('currency'),on_delete=models.DO_NOTHING, related_name='sale_types')
     extra_percentage = models.IntegerField(verbose_name=_('extra_percentage'), default=0)
+    sepidar_id = models.BigIntegerField(null=True, blank=True, unique=True)
 
     def __str__(self):
-        return f'{self.title}'
+        return f'{self.title} - {self.currency}'
 
 
 class CustomerRequest(AbsBaseModel):
@@ -1084,6 +1085,7 @@ class QuotationItem(BaseModel):
 
     @property
     def fee(self):
+        return self.final_price
         if self.quotation.is_official:
             official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
             total_ = (100 - (official_value)) / 100

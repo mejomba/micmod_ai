@@ -247,8 +247,9 @@ class BaseView(UserPassesTestMixin,
         self.get_form_kwargs()
         if self.has_flow:
             try:
-                flow_obj = self.get_flow(self.object).order_by('id').last()
-                if 'draft' in self.request.POST and flow_obj.wf_status == 1:
+                f = self.get_flow(self.object)
+                flow_obj = f.order_by('id').last() if f else None
+                if flow_obj and 'draft' in self.request.POST and flow_obj.wf_status == 1:
                     wfform = self.workflow_form(data=self.request.POST, initial=self.wf_initial,
                                                 content_type_model=self.model, current_user=self.request.user,
                                                 instance=flow_obj)
@@ -452,7 +453,7 @@ class BaseView(UserPassesTestMixin,
 
                     if current_state_group == next_state_group and current_state_group == previous_state_group:
                         to_user = last_flow_objs.last().to_user if last_flow_objs else self.request.user
-                    if current_state_group == next_state_group and previous_state_group is None:
+                    elif current_state_group == next_state_group and previous_state_group is None:
                         to_user = self.request.user
                     elif self.state_index is not None and 'back' in self.request.POST:
                         to_user = self.get_flow_user(previous_state_group) if self.has_flow else None
@@ -585,6 +586,7 @@ class BaseView(UserPassesTestMixin,
         return kwargs
 
     def form_valid(self, form):
+        wf_obj = None
         if form.is_valid():
             """save main form"""
             # old_obj = self.model.objects.filter(Q(id=self.kwargs.get(f'{self.flow_model._meta.pk.name}')) | Q(id=self.kwargs.get('id'))).first()
@@ -889,7 +891,10 @@ class BaseView(UserPassesTestMixin,
                     # wf_obj.save_user(self.request)
                 # form.instance.pk = None
                 try:
-                    new_obj.last_work_flow = wf_obj
+                    if wf_obj:
+                        new_obj.last_work_flow = wf_obj
+                    else:
+                        new_obj.last_work_flow = last_flow_obj
                     new_obj.save()
                 except Exception as e:
                     new_obj.last_work_flow = last_flow_obj

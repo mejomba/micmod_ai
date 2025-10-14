@@ -349,15 +349,18 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
 
                 sepidar_qis = api_res[1].get('Items')
-                from django.db.models import Case, When, Value
-                self.object.quotation.all().update(
-                    sepidar_id=Case(
-                        *[
-                            When(Q(quantity=d['quantity']), Q(goods_code_fk__sepidar_id_0=d['itemid']), then=Value(d['quotationitemid']))
-                            for d in sepidar_qis
-                        ]
-                    )
-                )
+
+                """ save sepidar QuotationItemID for qi """
+                items = list(self.object.quotation.all())
+                lookup = {(d["Quantity"], d["ItemRef"]): d["QuotationItemID"] for d in sepidar_qis}
+
+                for item in items:
+                    key = (item.quantity, item.goods_code.sepidar_id_0)
+                    if key in lookup:
+                        item.sepidar_id = lookup[key]
+
+                QuotationItem.objects.bulk_update(items, ["sepidar_id"])
+
                 # portal_qis = self.object.quotation.all()
                 # for pqi, sqi in zip(portal_qis, sepidar_qis):
                 #     pqi.sepidar_id = sqi.get("QuotationItemID")
@@ -1091,7 +1094,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
     model = Quotation
     title = 'currency_list'
     initial_order = [["pk", "desc"], ]
-    length_menu = [[6, 10, 15, -1], [6, 10, 15, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[6, 10, 15, 50, -1], [6, 10, 15, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
@@ -1100,7 +1103,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'factor_create', 'visible': True, 'searchable': False, 'title': '<div class="px-0">ایجاد فاکتور</div>', 'className': 'py-1 border currency-search'},
+        {'name': 'factor_create', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0">ایجاد فاکتور</div>', 'className': 'py-1 border currency-search'},
         {'name': 'pk', 'visible': True, 'title': _('code'), 'className': 'py-1 border currency-search'},
         {'name': 'id', 'visible': False, },
         {'name': 'title', 'visible': True, 'title': _('title'), 'className': 'py-1 border', 'lookup_field': '__icontains', 'searchable': False},
@@ -1178,7 +1181,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        row['factor_create'] = f'<a class="fw-bold" href="{reverse("factor:factor.view")}?q_id={obj.id}" target="_blank"><i class="ki-duotone ki-plus-circle fs-2"><span class="path1"></span><span class="path2"></span></i></a>'
+        row['factor_create'] = f'<a class="fw-bold" href="{reverse("factor:factor.view")}?q_id={obj.id}" target="_blank"><i class="ki-duotone ki-plus-circle fs-2"><span class="path1"></span><span class="path2"></span></i></a>' if obj.sales_admin_confirm else "نیاز به تایید مدیر فروش"
 
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)

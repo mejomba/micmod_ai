@@ -157,8 +157,9 @@ class FactorItemModelForm(CustomBaseModelForm):
             self.make_disable(self.fields)
 
 
-factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code',
-                      'part_number_show', 'price', 'supply_location', 'supply_locations', 'is_bazar', 'reserve_count'
+factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code', 'price',
+                      'part_number_show', 'supply_location', 'supply_locations', 'is_bazar', 'reserve_count',
+                      'discount_per_item',
                       ]
 
 FactorItemFormset = inlineformset_factory(

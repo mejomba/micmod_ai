@@ -11,7 +11,7 @@ def supply_locations(item: "models.Item", prefix, counter, factor_item=None):
         item = models.Item.objects.filter(sku=item).first()
     # if factor_item:
     #     factor_item.quantity
-    context['locations'] = item.supply_locations_ if item else ['', '']
+    # context['locations'] = item.supply_locations_ if item else ['', '']
     context['prefix'] = prefix
     context['counter'] = counter
     context['factor_item'] = factor_item

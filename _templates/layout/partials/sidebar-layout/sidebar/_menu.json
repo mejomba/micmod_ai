@@ -47,6 +47,17 @@
         {
           "permission": {
             "permissions": [
+              "sepidar.view_inventorypurchaseinvoice"
+            ]
+          },
+          "title": "buy_history",
+          "icon": "book",
+          "link": "sepidar:buy_history",
+          "path_key": "buy_history"
+        },
+        {
+          "permission": {
+            "permissions": [
               "micmod_base.view_quotation"
             ]
           },
@@ -766,6 +777,12 @@
           "title": "list/create",
           "path_key": "accounting_user/",
           "link": "extra_data:accounting_user"
+        },
+        {
+          "icon": "burger-menu",
+          "title": "currency_amount",
+          "path_key": "currency_amount.view/",
+          "link": "inquiry:currency_amount.view"
         }
       ]
     },

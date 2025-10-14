@@ -13,7 +13,7 @@ import sepidar.models
 from core.views import BaseView
 from micmod_base.base import is_valid
 from .froms import DeviceForm
-from .models import Dl,Item,Device,APILogs
+from .models import Dl, Item, Device, APILogs, InventoryPurchaseInvoice
 from jalali_date.templatetags.jalali_tags import to_jalali
 from django.shortcuts import render, redirect
 # from tools.google_sheet import price_wb
@@ -376,7 +376,7 @@ class SuppliersAccountingList(LoginRequiredMixin,View):
         return all((True if x in char_set else False for x in m_str))
 
 
-class SalesHistory(LoginRequiredMixin,View):
+class SalesHistory(LoginRequiredMixin, View):
     def get(self, requset):
         # if not has_groups(request.user,['trade_user','accounting_user']):
         #     return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
@@ -389,6 +389,21 @@ class SalesHistory(LoginRequiredMixin,View):
         print(context)
         context['list'] = Dl.get_sales_history_list(self.request.GET)
         return render(self.request,'sepidar/sales_history.html',context)
+
+
+class BuyHistory(LoginRequiredMixin, View):
+    def get(self, requset):
+        # if not has_groups(request.user,['trade_user','accounting_user']):
+        #     return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
+        context = {}
+        context['customer_code'] = requset.GET.get('customer_code',"")
+        context['item_code'] = requset.GET.get('item_code',"")
+        context['part'] = requset.GET.get('part',"")
+        context['g_p'] = requset.GET.get('g_p',"")
+        context['doc_type'] = requset.GET.get('doc_type',"")
+        print(context)
+        context['list'] = InventoryPurchaseInvoice.get_buy_history_list(self.request.GET)
+        return render(self.request,'sepidar/buy_history.html', context)
 
 
 class MessageView(BaseView):

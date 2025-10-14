@@ -1,6 +1,4 @@
 import importlib
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.forms import generic_inlineformset_factory
 from django.core import serializers
@@ -13,15 +11,10 @@ from django.db.models.functions import Coalesce
 from django.forms import fields_for_model
 from django.utils import timezone
 
-# from comments.models import Comments
-# from files.models import File, Image
 from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q, Sum, Value, F, Count
 from accounts.models import User
-from tools.utils import c_get as c_get
 from workflow.models import WorkFlow
-
-# from accounts.models import User
 
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
@@ -628,18 +621,18 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
         from additions.models import Additions
         from micmod_base.base import Currency
 
-        addition_title = request.POST.get('addition_title')
-        addition_description = request.POST.get('addition_description')
-        addition_count = request.POST.get('addition_count')
-        addition_currency = request.POST.get('addition_currency')
+        addition_title = request.POST.get('addition_title', "no title")
+        addition_description = request.POST.get('addition_description', "no description")
+        addition_count = request.POST.get('addition_count', 0)
+        addition_currency = request.POST.get('addition_currency', 1)
         currency = Currency.objects.get(pk=int(addition_currency))
         contenttype = ContentType.objects.get_for_model(self._meta.model)
 
         addition = Additions.objects.create(addition_title=addition_title,
                                             addition_description=addition_description,
-                                            addition_count=addition_count,
+                                            addition_count=addition_count or 0,
                                             addition_currency=currency,
-                                            contenttype=contenttype,
+                                            content_type=contenttype,
                                             object_id=self.pk,
                                             )
         addition.extra_data.request = request
