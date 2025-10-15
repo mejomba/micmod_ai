@@ -29,6 +29,9 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         price = obj.get('total_price') or 0
         tax = obj.get('tax') or 0
         duty = obj.get('duty') or 0
+        supplier = obj.get('supplier')
+        if not supplier:
+            return
         discount = obj.get('discount') or 0
         addition = obj.get('addition') or 0
         rate, price, tax, duty, discount, addition = map(int, (rate, price, tax, duty, discount, addition))
@@ -37,7 +40,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
 
         data = {
             "version": 1,
-            "vendordlref": 3,
+            "vendordlref": supplier,
             "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
             "date": timezone.now().date().isoformat(),
             "currencyref": currency,

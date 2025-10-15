@@ -19,7 +19,9 @@
     <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
-
+    .select2-container{
+        min-width: 15em !important;
+    }
     </style>
 {% endblock %}
 
@@ -53,8 +55,12 @@
 
                                 <fieldset>
                                     <legend>فاکتور خرید</legend>
-                                    <div class="row row-cols-4" id="buy-factor-header">
-                                    {% render_field_by_order form form.currency form.rate form.tax form.discount label='on-border' %}
+                                    <div class="row row-cols-3" id="buy-factor-header">
+                                        <span class="d-none">
+                                            {{ form.currency }}
+                                            {{ form.rate }}
+                                        </span>
+                                    {% render_field_by_order form form.bazar_supplier form.tax form.discount label='on-border' %}
                                         <input type="hidden" name="total_price">
                                         </div>
                                 </fieldset>
@@ -269,6 +275,7 @@
         const container = document.getElementById('buy-form-inputs');
         const inputs = container.querySelectorAll('input');
         const currency = container.querySelector('#id_currency').value
+        const supplier = document.querySelector('#id_bazar_supplier').value
         const itemform = document.querySelector('.item-form')
         const data = {};
         inputs.forEach(input => {
@@ -279,7 +286,7 @@
             data[input.name] = value;
         });
         data['currency'] = currency
-        console.log(data)
+        data['supplier'] = supplier
         custom_ajax_post_data(JSON.stringify(data), '/order/ajax/submit_buy_factor/', $('#ajax-response'))
     })
 
@@ -401,6 +408,6 @@
     <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
-
+    {{ form.media }}
 
 {% endblock extra_js %}

@@ -114,6 +114,8 @@ THIRD_PARTY_APPS = [
     'django_json_widget',
     'drf_spectacular',
     'simple_history',
+    'dal',
+    'dal_select2',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',

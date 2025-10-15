@@ -44,6 +44,7 @@ from tools.form_tools import get_choice_field
 from .tasks import update_price_list, update_components, db_backup, cleanup_filesystem
 
 from tools.utils import round_price
+from dal import autocomplete
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -2100,3 +2101,10 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
         )
         row['open_rate'] = "{:,}".format(int(obj.open_rate))
 
+
+class SupplierAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Supplier.objects.filter(base_group='bazar', is_deleted=False)
+        if self.q:
+            qs = qs.filter(title__icontains=self.q)
+        return qs
