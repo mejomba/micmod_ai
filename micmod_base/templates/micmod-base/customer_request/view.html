@@ -24,7 +24,7 @@
             {% csrf_token %}
             <input type="hidden" name="customer" id="id_customer">
             <input type="hidden" name="customer_shop" value="{{ obj.customer_shop }}">
-                <div class="row mb-3 py-10 shadow-lg rounded">
+                <div class="row mb-3 py-10 shadow rounded" style="transform: scale(1.09)">
                     <div class="col">
                         <label class="form-label fw-bold mt-5">تاریخ درخواست:</label>
                         <div class="bg-secondary p-2 rounded text-black mb-1">{{ obj.request_date|to_jalali:'%Y/%m/%d' }}</div>

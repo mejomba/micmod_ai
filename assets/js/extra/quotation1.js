@@ -831,7 +831,7 @@ function generate_price_method_select_option(row, price_json=null, idx=null){
 }
 
 function display_price(row){
-
+    const final_price = row.querySelector('input[name*="-final_price"]')
     const display_price_container = row.querySelector('#id_display_price_container')
     const display_last_sale_price_container = row.querySelector('#customer-last-sales')
     const price_json = JSON.parse(row.querySelector('textarea[name$="-price_json"]')?.value || 0) || []
@@ -870,6 +870,10 @@ function display_price(row){
                 </div>`)
             }
         })
+        debugger
+        checkPrice(row)
+        final_price.addEventListener('keyup', () => checkPrice(row));
+
         // const html = price_json.map(function (item){
         // return `<div class="row row-cols-4 mx-1 hover-link">
         //             <span class="col-4">${item.unique_title}</span>
@@ -1101,6 +1105,7 @@ function set_price2(target, data=null) {
             elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', '----------')
         }
     }
+    checkPrice(elem)
     // calculate_price(elem)
 }
 
@@ -1706,5 +1711,62 @@ function toggle_submit_buttons(status){
         submit_buttons.forEach(function (submit_button){
             submit_button.classList.add('disabled')
         })
+    }
+}
+
+
+function checkPrice(row=null) {
+    debugger;
+    let prices = []
+    const diff_price_alert = row.querySelector('.diff_price_alert')
+    const final_price = row.querySelector('input[name*="-final_price"]')
+    const price_json = JSON.parse(row.querySelector('textarea[name$="-price_json"]')?.value || 0) || []
+    price_json.forEach(function (item){
+            console.log(item)
+            if (item.unique_title !== 'goods_last_price' && item.unique_title !== 'goods_q_last_price'){
+                prices.push(item.value)
+            }
+        })
+
+    // اگر هیچ قیمت دیگری وجود ندارد یا مقدار عددی نیست
+    if (prices.length === 0 || isNaN(final_price.value)) {
+        final_price.classList.remove('border-danger');
+        // diff_price_alert.classList.remove('badge-danger');
+        diff_price_alert.textContent = ''
+        return;
+    }
+
+    const numericFinalPrice = parseFloat(final_price.value);
+    const numericPrices = prices.map(p => parseFloat(p)).filter(p => !isNaN(p));
+
+    numericPrices.push(numericFinalPrice);
+    numericPrices.sort((a, b) => a - b);
+
+    const idx = numericPrices.indexOf(numericFinalPrice);
+    let diff = 0;
+
+    if (idx === 0 && numericPrices.length > 1) {
+        diff = ((numericPrices[1] - numericPrices[0]) / numericPrices[0]) * 100;
+    } else if (idx === numericPrices.length - 1 && numericPrices.length > 1) {
+        diff = ((numericPrices[idx] - numericPrices[idx - 1]) / numericPrices[idx - 1]) * 100;
+    }
+
+    // ✅ حالا بررسی اختلاف
+    if (Math.abs(diff) > 10) {
+        final_price.classList.add('border-danger');
+        diff_price_alert.classList.remove('d-none');
+        // diff_price_alert.classList.add('badge');
+        // diff_price_alert.classList.add('badge-danger');
+        // diff_price_alert.classList.add('rounded');
+        diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۱۰٪ است.';
+
+    }
+    else {
+        final_price.classList.remove('border-danger');
+        // diff_price_alert.classList.remove('badge');
+        // diff_price_alert.classList.remove('badge-danger');
+        // diff_price_alert.classList.remove('rounded');
+        diff_price_alert.classList.add('d-none');
+        diff_price_alert.textContent = ''
     }
 }
