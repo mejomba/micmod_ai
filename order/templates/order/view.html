@@ -68,9 +68,16 @@
 {% block form_content %}
 {% csrf_token %}
 
-    <div class="mb-2">
-        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
-    </div>
+    {% if not form.instance.is_wh %}
+        <div class="mb-2">
+            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+        </div>
+        {% else %}
+        <div class="p-3">
+        <span>رزرو انبار</span>
+        <span>{{ form.instance.pk }}</span>
+        </div>
+    {% endif %}
 
 
 {% for hidden in form.hidden_fields %}
@@ -85,6 +92,9 @@
             <span name="item_placeholder" class="d-none">{{ form.instance.item.sku }} - {{ form.instance.item.part_number }}</span>
             {% if request.user.is_superuser %}
                 {% include 'order/partial/order_admin_section.html' with form=form %}
+            {% elif request.user|has_group:'sales_user' and form.instance.is_wh %}
+                {% include 'order/partial/wh_reserve_detail.html' with form=form %}
+                {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}
             {% elif request.user|has_group:'sales_user' %}
                 {% include 'order/partial/order_sales_edit_section.html' with form=form %}
                 {% include 'order/partial/order_sales_order_rel_section.html' with form=form %}

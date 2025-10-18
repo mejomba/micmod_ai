@@ -30,8 +30,15 @@
                     </a>
                 {% endfor %}
             {% else %}
-                {{ factor_item.supply_locations.order_text_in_factor }}
-                {{ factor_item.supply_locations.estimate_arrive_at }}
+                <div class="d-flex gap-1">
+                    {% if factor_item.supply_locations.pk %}
+                        <a href="{% url 'order:order.view' factor_item.supply_locations.pk %}" class="hover-link"
+                           target="_blank">
+                            {{ factor_item.supply_locations.order_text_in_factor }}
+                        </a>
+                        {{ factor_item.supply_locations.estimate_arrive_at }}
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>

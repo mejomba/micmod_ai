@@ -19,6 +19,7 @@ from rest_framework.response import Response
 
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
+from factor.models import Factor, FactorItem
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
 from sepidar.api_call import SepidarApiCall
@@ -1095,3 +1096,46 @@ class SubmitBuyFactor(View):
             # messages.error(self.request, 'خطا در ارسال به سپیدار')
             return JsonResponse({'res': res}, status=400)
 
+
+class OrderOfFactor(View):
+    template = 'order/order_of_factors.html'
+    def get(self, request, pk, *args, **kwargs):
+        factor_items = (
+            FactorItem.objects
+            .select_related('supply_locations')  # join با جدول Order
+            .filter(factor_id=pk)
+        )
+
+        forms = []
+        for fi in factor_items:
+            if fi.supply_locations.cancel:
+                form = {fi.supply_locations.pk: [OrderForm(instance=x) for x in fi.supply_locations.order_m2m.all()]}
+            else:
+                form = OrderForm(instance=fi.supply_locations)
+            forms.append(form)
+
+        context = dict()
+        context['factor_items'] = factor_items
+        context['forms'] = forms
+
+        return render(request, self.template, context)
+
+    def post(self, request, pk, *args, **kwargs):
+        order = Order.objects.get(pk=pk)
+        data = json.loads(self.request.body or {})
+        form = OrderForm(data=data, instance=order)
+        form_fields = set(form.fields.keys())
+        provided_fields = set(data.keys())
+        missing_fields = form_fields - provided_fields
+
+        # مقدار None برای فیلدهای غایب نمی‌ذاریم (برخلاف رفتار پیش‌فرض فرم)
+        for field in missing_fields:
+            form.fields.pop(field)
+
+        if form.is_valid():
+            form.instance.extra_data.request = self.request
+            obj = form.save()
+            form = OrderForm(instance=obj)
+        html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form})
+
+        return JsonResponse({'res': html})

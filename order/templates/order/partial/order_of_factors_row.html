@@ -1,0 +1,52 @@
+{% load jalali_tags %}
+{% load more_tags %}
+
+<tr class="{% if order_form.instance.is_wh %} bg-light-success {% elif order_form.instance.is_bazar %} bg-light-info {% else %} bg-light-primary {% endif %}">
+    <th scope="row">{{ order_form.instance.index|add:1 }}</th>
+    <td>
+        <span class="order_id">{{ order_form.instance.pk }}</span>
+    </td>
+    <td>
+        {{ order_form.instance.item }} <br>
+        {% if order_form.instance.final_item != order_form.instance.item %}
+            <span class="text-info bold">{{ order_form.instance.final_item }}</span>
+        {% endif %}
+
+    </td>
+    <td>
+        {{ order_form.instance.item.part_number }} <br>
+        {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
+            <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
+        {% endif %}
+    </td>
+    <td>
+        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+        <span class="input d-none">{{ order_form.quantity }}</span> <br>
+        {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+            <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+        {% endif %}
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
+        <span class="input d-none">{{ order_form.commitment_date_to_customer }}</span> <br>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.transportation_method|default_if_none:"بازار" }}</span>
+        <span class="input d-none">{{ order_form.transportation_method }}</span>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
+        <span class="input d-none">{{ order_form.description_sale }}</span> <br>
+    </td>
+    <td>
+        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.order_type }}</span>
+        <span class="input d-none">{{ order_form.order_type }}</span> <br>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-success" onclick="update_supply_location(event)">ذخیره</button>
+        <span id="msg">ذخیره شد ✅</span>
+    </td>
+</tr>

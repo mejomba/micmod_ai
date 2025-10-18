@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
-    PaymentItemDataTableListView, SubmitBuyFactor
+    PaymentItemDataTableListView, SubmitBuyFactor, OrderOfFactor
 
 from .views import CustomerRequestOrderViewSet
 
@@ -58,4 +58,6 @@ urlpatterns = [
     path('paymentitem/update/<int:pk>/', PaymentItemView.as_view(), name='order.paymentitem.update'),
 
     path('ajax/submit_buy_factor/', SubmitBuyFactor.as_view(), name='submit_buy_factor'),
+
+    path('order_of_factor/<int:pk>/', OrderOfFactor.as_view(), name='order_of_factor'),
 ]

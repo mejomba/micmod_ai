@@ -1015,3 +1015,10 @@ class WH(BaseModel):
 
     def __str__(self):
         return f'{self.sepidar_wh_code} : {self.backend_name} : {self.front_name}'
+
+
+class ItemPrice(BaseModel):
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True, blank=True)
+    air = models.FloatField(null=True, blank=True)
+    sea = models.FloatField(null=True, blank=True)
+    express = models.FloatField(null=True, blank=True)

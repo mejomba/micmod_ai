@@ -202,6 +202,8 @@ class FactorView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if not self.object:
+            context['allow_next'] = False
         context['f_warning'] = []
         if not self.object:
             return context

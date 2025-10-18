@@ -72,6 +72,8 @@ class OrderForm(CustomBaseModelForm):
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
+        if self.instance.is_bazar:
+            self.make_hidden(['transportation_method', 'order_type'])
         if request and request.user.base_group == 'trade':
             self.make_required(['price_trade'])
 

@@ -266,6 +266,9 @@
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
     <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
+    {% if form.instance.pk %}
+        <a href="{% url 'order:order_of_factor' form.instance.pk %}" target="_blank" class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">محل تامین های این فاکتور</a>
+    {% endif %}
 
 
     <!-- items header -->
