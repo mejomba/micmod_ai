@@ -121,8 +121,7 @@ def update_price_list():
         qty_10_99 = None
         qty_100_999 = None
         qty_1000_ = None
-        # items = Item.objects.all()
-        items = Item.objects.filter(sku__icontains='12')
+        items = Item.objects.all()
         g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
         print('gsheet created')
         # i=0
