@@ -13,7 +13,8 @@ class Guides(BaseModel):
         ('quotation', 'پیش فاکتور'),
         ('payment_order', 'دستور پرداخت'),
         ('shenasname_farayand', 'شناسنامه فرآیند'),
-        ('inquiry', 'استعلام')
+        ('inquiry', 'استعلام'),
+        ('factor', 'فاکتور'),
     )
     TEAM_CHOICES = (
         ('trade', 'بازرگانی'),

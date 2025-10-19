@@ -180,6 +180,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['f_warning'] = []
         if not self.object:
             return context
+        context['section_id'] = 'factor'
         context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
         context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
