@@ -1,0 +1,157 @@
+{% load jalali_tags %}
+{% load accounts_tag %}
+{% load more_tags %}
+{% load order_tags %}
+
+        <thead class="bold">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">کد محل تامین</th>
+            <th scope="col">کد کالا</th>
+            <th scope="col">پارت نامبر</th>
+            <th scope="col">موجودی/تعداد</th>
+            <th scope="col">تعداد موثر/رزرو</th>
+            <th scope="col">تاریخ تعهد به مشتری</th>
+            <th scope="col">روش حمل</th>
+            <th scope="col">توضیحات فروش</th>
+            <th scope="col">نوع سفارش</th>
+            <th scope="col">عملیات</th>
+        </tr>
+        </thead>
+        <tbody id="main-content">
+        {% for order_form in forms %}
+            {% if order_form.items %}
+                {% for main_order, nested_orders in order_form.items %}
+                    <tr class="group bg-warning cursor-pointer">
+                        <td colspan="11" onclick="toggleGroup('{{ main_order.pk }}')">
+                            <div class="d-flex gap-5">
+                                <span class="hover-link">📦 محل تامین {{ main_order.pk }} (میتواند شامل یک یا چند محل تامین دیگر باشد)</span>
+                                <div class="bg-gray-100 rounded px-2">
+                                    <span class="mx-1">تعداد در فاکتور</span>
+                                    <span class="bold">{{ main_order.quantity|floatformat:"-2g" }}</span>
+                                </div>
+                                <div class="bg-light-success rounded px-2">
+                                    <span>تامین شده</span>
+                                    <span class="bold">{{ main_order.total_supply_qty|floatformat:"-2g" }}</span>
+                                </div>
+                                <div class="bg-danger text-white rounded px-2">
+                                    <span>نیاز به تامین</span>
+                                    <span class="bold">{{ main_order.needed_qty|floatformat:"-2g" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for foo, oo in nested_orders %}
+                        <tr class="ms-5 child group-{{ main_order.pk }}">
+                        <input type="hidden" name="itemid" value="{{ foo.instance.item.sepidar_id_0 }}">
+                        <input type="hidden" name="main_order_pk" value="{{ main_order.pk }}">
+                            <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
+                            <th scope="row">
+                            <i class="ki-duotone ki-star text-warning"></i>
+                                <span class="badge {% if foo.instance.is_wh %} badge-light-success {% elif foo.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">
+                                    <span class="me-2">رزرو</span>
+                                    {{ oo.get_wh_name }}
+                                </span>
+                            </th>
+                            <td>
+                                <span class="order_id">{{ foo.instance.pk }}</span>
+                            </td>
+                            <td>
+                                {{ foo.instance.item }} <br>
+                                {% if foo.instance.final_item != foo.instance.item %}
+                                    <span class="text-info bold">{{ foo.instance.final_item }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ foo.instance.item.part_number }} <br>
+                                {% if foo.instance.item.part_number != foo.instance.final_item.part_number %}
+                                    <span class="text-info bold">{{ foo.instance.item.part_number }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                            <span class="label">{{ foo.instance.quantity }}</span>
+                                <span class="input d-none">{{ foo.quantity }}</span> <br>
+                                {% if foo.instance.quantity != foo.instance.final_quantity %}
+                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
+                                {% endif %}
+                            </td>
+                            {% get_order_pair foo.instance main_order.pk as order_pair %}
+                            <td>
+                            <span class="label">{{ order_pair.quantity }}</span>
+                                {% if foo.instance.quantity != foo.instance.final_quantity %}
+                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                            <span class="label pe-16 py-1">{{ foo.instance.commitment_date_to_customer|to_jalali }}</span>
+                            </td>
+                            <td>
+                            <span class="label pe-5 py-1">{{ foo.instance.transportation_method|default_if_none:"------" }}</span>
+                            </td>
+                            <td>
+                            <span class="label">{{ foo.instance.description_sale|default_if_falsy:'-----' }}</span>
+                            </td>
+                            <td>
+                            <span class="label">{{ foo.instance.order_type }}</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-success disabled">ذخیره
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <tr>
+                <input type="hidden" name="itemid" value="{{ order_form.instance.item.sepidar_id_0 }}">
+                <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
+                <th scope="row">
+                    <span class="badge {% if order_form.instance.is_wh %} badge-light-success {% elif order_form.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">{{ order_form.instance.order_method }}</span>
+                </th>
+                <td>
+                    <span class="order_id">{{ order_form.instance.pk }}</span>
+                </td>
+                <td>
+                    {{ order_form.instance.item }} <br>
+                    {% if order_form.instance.final_item != order_form.instance.item %}
+                        <span class="text-info bold">{{ order_form.instance.final_item }}</span>
+                    {% endif %}
+
+                </td>
+                <td>
+                    {{ order_form.instance.item.part_number }} <br>
+                    {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
+                        <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label">{{ order_form.instance.quantity }}</span>
+                    {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label p-5">{{ order_form.instance.quantity }}</span>
+                    {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label p-5">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
+                </td>
+                <td>
+                    <span class="label pe-5 py-2">{{ order_form.instance.transportation_method|default_if_none:"-----" }}</span>
+                </td>
+                <td>
+                    <span class="label p-5">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
+                </td>
+                <td>
+                    <span class="label">{{ order_form.instance.order_type }}</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-success disabled">ذخیره</button>
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        </tbody>

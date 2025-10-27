@@ -4,12 +4,18 @@
 {% load jalali_tags %}
 {% load accounts_tag %}
 {% load more_tags %}
+{% load order_tags %}
 
 {% block content %}
 
     <style>
         td {
             text-align: right
+        }
+
+        .child th {
+            padding-right: 10px !important; /* میزان تورفتگی */
+            {#background-color: #c52121; /* برای تمایز */#}
         }
 
         #msg {
@@ -43,161 +49,88 @@
             <h5 class="bg-light-success px-1 rounded text-success">رزروهای انبار</h5>
             <h5>)</h5>
         </div>
-    </div>
-    <table class="table table-hover table-bordered">
-        <thead class="bold">
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">کد محل تامین</th>
-            <th scope="col">کد کالا</th>
-            <th scope="col">پارت نامبر</th>
-            <th scope="col">تعداد</th>
-            <th scope="col">تعداد موثر</th>
-            <th scope="col">تاریخ تعهد به مشتری</th>
-            <th scope="col">روش حمل</th>
-            <th scope="col">توضیحات فروش</th>
-            <th scope="col">نوع سفارش</th>
-            <th scope="col">عملیات</th>
-        </tr>
-        </thead>
-        <tbody id="main-content">
-        {% for order_form in forms %}
-            {% if order_form.items %}
-                {% for main_order_pk, nested_orders in order_form.items %}
-                    <tr class="group bg-warning cursor-pointer hover-link">
-                        <td colspan="10" onclick="toggleGroup('{{ main_order_pk }}')">📦 محل تامین {{ main_order_pk }} (میتواند شامل یک یا چند محل تامین دیگر باشد)</td>
-                    </tr>
-                    {% for foo in nested_orders %}
-                        <tr class="ms-5 child group-{{ main_order_pk }} {% if foo.instance.is_wh %} bg-light-success {% elif foo.instance.is_bazar %} bg-light-info {% else %} bg-light-primary {% endif %}">
-                            <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
-                            <th scope="row">*</th>
-                            <td>
-                                <span class="order_id">{{ foo.instance.pk }}</span>
-                            </td>
-                            <td>
-                                {{ foo.instance.item }} <br>
-                                {% if foo.instance.final_item != foo.instance.item %}
-                                    <span class="text-info bold">{{ foo.instance.final_item }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ foo.instance.item.part_number }} <br>
-                                {% if foo.instance.item.part_number != foo.instance.final_item.part_number %}
-                                    <span class="text-info bold">{{ foo.instance.item.part_number }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.quantity }}</span>
-                                <span class="input d-none">{{ foo.quantity }}</span> <br>
-                                {% if foo.instance.quantity != foo.instance.final_quantity %}
-                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.quantity }}</span>
-                                <span class="input d-none">{{ foo.quantity }}</span> <br>
-                                {% if foo.instance.quantity != foo.instance.final_quantity %}
-                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.commitment_date_to_customer|to_jalali }}</span>
-                                <span class="input d-none">{{ foo.commitment_date_to_customer|default_if_falsy:"------" }}</span> <br>
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.transportation_method|default_if_none:"بازار" }}</span>
-                                <span class="input d-none">{{ foo.transportation_method }}</span>
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.description_sale|default_if_falsy:'-----' }}</span>
-                                <span class="input d-none">{{ foo.description_sale }}</span> <br>
-                            </td>
-                            <td>
-                            <span class="label"
-                                  onclick="toggle_display(event)">{{ foo.instance.order_type }}</span>
-                                <span class="input d-none">{{ foo.order_type }}</span> <br>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-success" onclick="update_supply_location(event)">ذخیره
-                                </button>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% endfor %}
-            {% else %}
-                <tr class="{% if order_form.instance.is_wh %} bg-light-success {% elif order_form.instance.is_bazar %} bg-light-info {% else %} bg-light-primary {% endif %}">
-                <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
-                <th scope="row">{{ order_form.instance.index|add:1 }}</th>
-                <td>
-                    <span class="order_id">{{ order_form.instance.pk }}</span>
-                </td>
-                <td>
-                    {{ order_form.instance.item }} <br>
-                    {% if order_form.instance.final_item != order_form.instance.item %}
-                        <span class="text-info bold">{{ order_form.instance.final_item }}</span>
-                    {% endif %}
-
-                </td>
-                <td>
-                    {{ order_form.instance.item.part_number }} <br>
-                    {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
-                        <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
-                    <span class="input d-none">{{ order_form.quantity }}</span> <br>
-                    {% if order_form.instance.quantity != order_form.instance.final_quantity %}
-                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="label"
-                          onclick="toggle_display(event)">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
-                    <span class="input d-none">{{ order_form.commitment_date_to_customer|default_if_falsy:'------' }}</span> <br>
-                </td>
-                <td>
-                    <span class="label"
-                          onclick="toggle_display(event)">{{ order_form.instance.transportation_method|default_if_none:"بازار" }}</span>
-                    <span class="input d-none">{{ order_form.transportation_method }}</span>
-                </td>
-                <td>
-                    <span class="label"
-                          onclick="toggle_display(event)">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
-                    <span class="input d-none">{{ order_form.description_sale }}</span> <br>
-                </td>
-                <td>
-                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.order_type }}</span>
-                    <span class="input d-none">{{ order_form.order_type }}</span> <br>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-success" onclick="update_supply_location(event)">ذخیره</button>
-                </td>
-            </tr>
+        <div class="d-flex gap-5">
+            {% if access %}
+                <div>
+                    <span>مشتری:</span>
+                    <span>ینتبیس بت سی</span>
+                </div>
             {% endif %}
-        {% endfor %}
-        </tbody>
+            <div>
+                <span>کارشناس:</span>
+                <span>یسنبیسب</span>
+            </div>
+        </div>
+    </div>
+
+    <table class="table">
+    {% if access %}
+        {% include 'order/partial/order_of_factors_full_access.html' with forms=forms %}
+    {% else %}
+        {% include 'order/partial/order_of_factors_limit_access.html' with forms=forms %}
+    {% endif %}
     </table>
 
     <script>
         function update_supply_location(event) {
             debugger
             const target = event.currentTarget
+            const action = target.dataset.submit_action
             const row = target.closest('tr')
-            const order_id = row.querySelector('.order_id').textContent
+            const main_order_pk = row.dataset.main_order
+            let order_id = row.querySelector('.order_id')
+            if (order_id.tagName === 'SELECT'){order_id = order_id.value} else {order_id = order_id.textContent}
             const inputs = row.querySelectorAll("input, select, textarea");
             const data = {};
+            data['submit_action'] = action
 
             inputs.forEach(input => {
                 data[input.name] = input.value;
             });
 
-            custom_ajax_post_data(JSON.stringify(data), `/order/order_of_factor/${order_id}/`, row)
+            $.ajax({
+                type: 'POST',
+                url: `/order/order_of_factor/${order_id}/`,
+                dataType: 'json',
+                data: JSON.stringify(data),
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                cache: false,
+                processData: false,
+                contentType: false,
+                beforeSend: block_main_container,
+                success: function (data) {
+                    if (row) {
+                        debugger
+                        html = data['res'];
+                        row.innerHTML = html
+
+                        const need_supply_element = document.querySelector(`#row-${main_order_pk}-need-supply`)
+                        const supplied_element = document.querySelector(`#row-${main_order_pk}-supplied`)
+                        const need_supply = data['need_supply']
+                        const supplied = data['supplied']
+
+                        if (need_supply_element) {
+                            if (need_supply === 0) {
+                                need_supply_element.parentElement.classList.add('d-none')
+                            } else {
+                                need_supply_element.parentElement.classList.remove('d-none')
+                            }
+                            need_supply_element.innerHTML = need_supply
+                        }
+                        if (supplied_element) {supplied_element.innerHTML = supplied}
+                    }
+                },
+                error: function (data) {
+                    debugger
+                    // createAccordion(data.responseJSON['res'], jsonContainer)
+                    initJsonAccordion(data.responseJSON['res'])
+                },
+                complete: release_main_container
+            }); // end ajax
+
+            {#custom_ajax_post_data(JSON.stringify(data), `/order/order_of_factor/${order_id}/`, row)#}
             setTimeout(function () {
                 row.querySelector('#msg').classList.add('fade-out')
             }, 1000)
@@ -207,15 +140,107 @@
             event.currentTarget.classList.add('d-none')
             event.currentTarget.nextElementSibling.classList.remove('d-none')
         }
-    </script>
 
-
-    <script>
         function toggleGroup(groupName) {
             document.querySelectorAll('.group-' + groupName).forEach(tr => {
                 tr.style.display = tr.style.display === 'none' ? '' : 'none';
             });
         }
 
+        function get_stock_quantity(){
+            const rows = document.querySelectorAll('tr')
+            custom_ajax_get(null, `/core/api_call/sepidar/SepidarApiCall/get_stock_quantity/?itemref=${sku}`)
+        }
+
+        function add_order_order_row(event){
+            debugger
+            const target = event.currentTarget
+            target.classList.add('d-none')
+            const row = target.closest('tr')
+            const main_order_pk = row.dataset.main_order
+            let other_available_orders;
+
+            $.ajax({
+                type: 'GET',
+                url: `/order/other_available_orders/${main_order_pk}/`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    debugger
+                    other_available_orders = data['res'];
+                    let html = `
+                            <tr class="ms-5 child group-${main_order_pk}" data-main_order="${main_order_pk}">
+                                <input type="hidden" name="main_order_pk" value="${main_order_pk}">
+                                <input type="hidden" name="order_order" value="1">
+                                <th scope="row">
+
+                                    <svg onclick="add_order_order_row(event)" xmlns="http://www.w3.org/2000/svg" width="16"
+                                         height="16" fill="currentColor" class="bi bi-cart-plus cursor-pointer"
+                                         viewBox="0 0 16 16">
+                                        <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
+                                        <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zm3.915 10L3.102 4h10.796l-1.313 7zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="transform: rotateX(180deg)"
+                                         width="16" height="16" fill="currentColor" class="bi bi-arrow-90deg-left"
+                                         viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                              d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>
+                                    </svg>
+                                    <span>محل تامین جدید</span>
+                                </th>
+                                <td>
+                                    ${other_available_orders}
+                                </td>
+
+                            </tr>
+                            `
+                    $(row).after(html);
+                },
+            });
+
+
+            //row.nextElementSibling.classList.remove('d-none')
+        }
+
+        function get_order_order_data(event){
+            debugger
+            const target = event.currentTarget
+            const order_pk = target.value
+            const row = target.closest('tr')
+            $.ajax({
+                type: 'GET',
+                url: `/order/get_order_order/${order_pk}/?main_order=${row.dataset.main_order}`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    debugger
+                    let html = data['res'];
+                    $(row).append(html);
+                },
+            });
+        }
+
+        function submit_order_order(event) {
+            event.preventDefault()
+            debugger
+            const order_quantity = event.currentTarget.parentElement.querySelector('.order_order_quantity')
+            if (order_quantity) {
+                if (parseFloat(removeCommaSeperator(order_quantity.value)) > parseFloat(removeCommaSeperator(need_quantity.innerText))) {
+                    console.log('confirm modal')
+                }
+            }
+            let post_data = JSON.stringify({
+                "order_base_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_base').innerText),
+                "order_rel_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_rel').innerText),
+                "quantity": parseFloat(removeCommaSeperator(order_quantity.value))
+            })
+            const url = '/order/ajax/order_order/add/'
+            const order_order_report_element = document.querySelector('#order_order_report_ajax')
+            custom_ajax_post_data(post_data, url, order_order_report_element, false)
+        }
     </script>
 {% endblock content %}

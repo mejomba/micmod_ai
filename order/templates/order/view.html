@@ -68,14 +68,15 @@
 {% block form_content %}
 {% csrf_token %}
 
-    {% if not form.instance.is_wh %}
+    {% if not form.instance.cancel %}
         <div class="mb-2">
             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
         </div>
         {% else %}
         <div class="p-3">
-        <span>رزرو انبار</span>
+        <span>محل تامین </span>
         <span>{{ form.instance.pk }}</span>
+        <span>میتواند شامل یک یا چند محل تامین دیگر باشد. جهت تامین از سفارش های دیگر میتوانید از جدول سمت چپ استفاده کنید.</span>
         </div>
     {% endif %}
 
@@ -224,8 +225,8 @@
                             <div class="col-1">Bank Info</div>
                             <div class="col-1">Paid amount</div>
                             <div class="col-1">Refrence</div>
-                            <div class="col-1">Files</div>
                             <div class="col-1">description</div>
+                            <div class="col-1">Files</div>
                         </div>
                     {% endif %}
 
@@ -265,15 +266,22 @@
                             <div class="col-1 py-2">
                                 <span>{{ payment_item.refrence|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-1 py-2 ">
-                                {% for file in payment_item.files.all %}
-                                <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
-                                {% empty %}
-                                    <span>-</span>
-                                {% endfor %}
-                            </div>
                             <div class="col-1">
                                 {{ payment_item.description|default_if_none:"-" }}
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <div class="row row-cols-2">
+                                    <div class="col">
+                                        {% for file in payment_item.files.all %}
+                                        <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                                        {% empty %}
+                                            <span>-</span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col">
+                                        <a href="{% url 'order:order.payment.update' payment_item.payment.pk %}" target="_blank">مشاهده</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -337,7 +345,9 @@
                             <div class="col-3 py-2 ">
                                 <span>{{ gio.description|default_if_none:"-" }}</span>
                             </div>
-                            <div class="col-4"></div>
+                            <div class="col-4">
+                                <a href="{% url 'order:gio.update' gio.gio.pk %}" target="_blank">مشاهده</a>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -428,7 +438,9 @@
 {#                                <span>{{ packing_item.order.last_work_flow.current_state_name|default_if_none:"-"  }}</span>#}
 {#                                <span>{{ packing_item.order.quantity|default_if_none:"-"  }}</span>#}
 {#                            </div>#}
-                            <div class="col-3"></div>
+                            <div class="col-3">
+                                <a href="{% url 'order:packing.update' packing_item.packing.pk %}" target="_blank">مشاهده</a>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>

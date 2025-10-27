@@ -185,6 +185,12 @@
                   "title": "list",
                   "path_key": "order/payment/list",
                   "link": "order:order.payment.list"
+                },
+                {
+                  "icon": "burger-menu",
+                  "title": "ACNT",
+                  "path_key": "order/acnt/list",
+                  "link": "order:acnt.view"
                 }
               ]
             }

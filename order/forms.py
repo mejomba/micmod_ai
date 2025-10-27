@@ -109,6 +109,8 @@ class OrderForm(CustomBaseModelForm):
                 self.make_disable(self.fields)
                 self.enable = False
 
+        if self.instance.cancel:
+            self.make_disable(self.fields)
 
 class PackingForm(CustomBaseModelForm):
     class Meta:
@@ -248,6 +250,7 @@ class GIOItemForm(CustomBaseModelForm):
         gio = self.initial.get('gio')
         if gio:
             self.fields['gio'].queryset = self.fields['gio'].queryset.filter(id=getattr(gio, 'pk', gio))
+            self.make_hidden(['gio'])
 
 
 class OrderPaymentForm(CustomBaseModelForm):
@@ -467,3 +470,9 @@ class TradeBuyFactorItemForm(CustomBaseForm):
 
 
 TradePurchaseItemFormSet = formset_factory(TradeBuyFactorItemForm, extra=1)
+
+
+class ACNTForm(CustomBaseModelForm):
+    class Meta:
+        model = OrderPayment
+        exclude = ['group']

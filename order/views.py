@@ -27,8 +27,8 @@ from tools.utils import is_ajax
 from workflow.models import WorkFlow
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
-    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet
-from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
+    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm
+from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT
 from translator import get_text as _
 from .serializers import OrderSerializer
 import json
@@ -1099,7 +1099,12 @@ class SubmitBuyFactor(View):
 
 class OrderOfFactor(View):
     template = 'order/order_of_factors.html'
+
     def get(self, request, pk, *args, **kwargs):
+        if '__' in pk:
+            pk = pk.split('__')[1]
+        else:
+            pk = int(pk)
         factor_items = (
             FactorItem.objects
             .select_related('supply_locations')  # join با جدول Order
@@ -1108,8 +1113,19 @@ class OrderOfFactor(View):
 
         forms = []
         for fi in factor_items:
+            form = dict()
+            oo_list = list()
             if fi.supply_locations.cancel:
-                form = {fi.supply_locations.pk: [OrderForm(instance=x) for x in fi.supply_locations.order_m2m.all()]}
+                form[fi.supply_locations] = []
+                m2m = fi.supply_locations.order_m2m.distinct()
+                for x in m2m:
+                    oo = OrderOrder.objects.filter(order_base=fi.supply_locations, order_rel=x, is_deleted=False).first()
+                    if not oo:
+                        continue
+                    x.oo = oo
+                    form[fi.supply_locations].append((OrderForm(instance=x), oo))
+
+                # form = {fi.supply_locations: [OrderForm(instance=x) for x in fi.supply_locations.order_m2m.all()]}
             else:
                 form = OrderForm(instance=fi.supply_locations)
             forms.append(form)
@@ -1118,24 +1134,330 @@ class OrderOfFactor(View):
         context['factor_items'] = factor_items
         context['forms'] = forms
 
+        if self.request.user == factor_items.first().creator_user:
+            context['access'] = True
+
         return render(request, self.template, context)
 
+    def delete_order_order(self):
+        pair_quantity = int(float((self.data.get('pair_quantity', 0))))
+        main_order_pk = int(float((self.data.get('main_order_pk', 0))))
+        main_order = Order.objects.filter(pk=main_order_pk).first()
+        order = Order.objects.filter(pk=self.pk).first()
+
+        if order.is_wh and main_order.order_m2m.exists():
+
+            oo = OrderOrder.objects.filter(order_base_id=main_order_pk, order_rel_id=self.pk).first()
+            oo.is_deleted = True
+            oo.extra_data.request = self.request
+            oo.save()
+            order.is_deleted = True
+            order.extra_data.request = self.request
+            order.save()
+        else:
+            oo = OrderOrder.objects.filter(order_base_id=main_order_pk, order_rel_id=self.pk).first()
+            oo.is_deleted = True
+            oo.extra_data.request = self.request
+            oo.save()
+
+        # form = OrderForm(instance=order_rel)
+        # html = render_to_string('order/partial/order_of_factors_row.html', context={})
+
+        return JsonResponse({'res': ""})
+
     def post(self, request, pk, *args, **kwargs):
-        order = Order.objects.get(pk=pk)
+        wh_code = None
         data = json.loads(self.request.body or {})
-        form = OrderForm(data=data, instance=order)
-        form_fields = set(form.fields.keys())
-        provided_fields = set(data.keys())
-        missing_fields = form_fields - provided_fields
+        self.data = data
+        if '__' in pk:
+            self.wh_code = int(pk.split('__')[1])
+        else:
+            self.pk = int(pk)
 
-        # مقدار None برای فیلدهای غایب نمی‌ذاریم (برخلاف رفتار پیش‌فرض فرم)
-        for field in missing_fields:
-            form.fields.pop(field)
+        if self.wh_code:
+            """process wh oo"""
+            pair_quantity = int(float((self.data.get('pair_quantity', 0))))
+            main_order_pk = int(float((self.data.get('main_order_pk', 0))))
+            Order.objects.create({
+                'item': main_order_obj.item
+            })
+            self.save_order_order()
+        else:
+            pair_quantity = int(float((self.data.get('pair_quantity', 0))))
+            main_order_pk = int(float((self.data.get('main_order_pk', 0))))
 
-        if form.is_valid():
-            form.instance.extra_data.request = self.request
-            obj = form.save()
-            form = OrderForm(instance=obj)
-        html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form})
+            if self.data.get('submit_action', '') == 'delete':
+                res = self.delete_order_order()
+                return res
 
+            if 'order_order' in self.data:
+                res = self.save_order_order()
+                main_order = res.get('main_order')
+                oo = res.get('oo')
+                order_rel = res.get('order_rel')
+
+                form = OrderForm(instance=order_rel)
+                html = render_to_string('order/partial/order_of_factors_row.html',
+                                        {'order_form': form, 'order_pair': oo, 'main_order': main_order}
+                                        )
+
+                return JsonResponse(
+                    {'res': html, 'need_supply': main_order.needed_qty, 'supplied': main_order.total_supply_qty})
+
+            if (pair_quantity or pair_quantity == 0) and main_order_pk:
+                """update pair order"""
+                data.pop('quantity')
+                main_order = Order.objects.filter(pk=main_order_pk).first()
+                order = Order.objects.filter(pk=pk).first()
+                main_order_qty = main_order.quantity if main_order else 0
+                total_supply_qty = main_order.total_supply_qty
+                needed_qty = main_order_qty - total_supply_qty
+
+                oo = OrderOrder.objects.filter(order_base_id=main_order_pk, order_rel_id=pk).first()
+                if oo:
+                    max_needed_qty = oo.quantity + needed_qty
+
+                    order.oo = oo
+                    if oo.sepidar_wh_code:
+                        real_sepidar_wh_quantity = order.sepidar_wh_item_pair_quantity  # if order.is_wh else order.quantity
+                        free_sepidar_wh_quantity = real_sepidar_wh_quantity - order.item.reserved_count_in_portal + oo.quantity
+
+                        oo.quantity = min(pair_quantity, free_sepidar_wh_quantity, max_needed_qty)
+                        order.quantity = min(pair_quantity, max_needed_qty, free_sepidar_wh_quantity)
+                    else:
+                        related_order_remaining_quantity = order.remaining_quantity  # if order.is_wh else order.quantity
+                        free_related_order_quantity = related_order_remaining_quantity + oo.quantity
+
+                        oo.quantity = min(pair_quantity, free_related_order_quantity, max_needed_qty)
+                        # order.quantity = min(pair_quantity, max_needed_qty, free_related_order_quantity)
+
+                    oo.extra_data.request = self.request
+                    order.extra_data.request = self.request
+                    order.save()
+                    oo.save()
+
+                    form = OrderForm(data=data, instance=order)
+                    form_fields = set(form.fields.keys())
+                    provided_fields = set(data.keys())
+                    missing_fields = form_fields - provided_fields
+
+                    # مقدار None برای فیلدهای غایب نمی‌ذاریم (برخلاف رفتار پیش‌فرض فرم)
+                    for field in missing_fields:
+                        form.fields.pop(field)
+
+                    if form.is_valid():
+                        form.instance.extra_data.request = self.request
+                        obj = form.save()
+                        form = OrderForm(instance=obj)
+
+                    html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form, 'order_pair': oo, 'main_order': main_order})
+
+                    return JsonResponse({'res': html, 'need_supply': main_order.needed_qty, 'supplied': main_order.total_supply_qty})
+            else:
+                """update independent order"""
+                order = Order.objects.get(pk=pk)
+                form = OrderForm(data=data, instance=order)
+                form_fields = set(form.fields.keys())
+                provided_fields = set(data.keys())
+                missing_fields = form_fields - provided_fields
+
+                # مقدار None برای فیلدهای غایب نمی‌ذاریم (برخلاف رفتار پیش‌فرض فرم)
+                for field in missing_fields:
+                    form.fields.pop(field)
+
+                if form.is_valid():
+                    form.instance.extra_data.request = self.request
+                    obj = form.save()
+                    form = OrderForm(instance=obj)
+                html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form})
+
+                return JsonResponse({'res': html})
+
+    def save_order_order(self):
+        main_order_pk = self.data.get('main_order_pk')
+        order_rel_pk = self.data.get('order_rel_pk')
+        main_order = Order.objects.filter(pk=main_order_pk).first()
+        order_rel = Order.objects.filter(pk=order_rel_pk).first()
+        pair_quantity = float(self.data.get('pair_quantity'))
+
+        total_supply_qty = main_order.total_supply_qty
+        main_order_qty = main_order.quantity if main_order else 0
+        needed_qty = main_order_qty - total_supply_qty
+        from django.db.models import Sum
+
+        order_rel_used_quantity = order_rel.order_rel_items.aggregate(total=Sum('quantity'))['total'] or 0
+
+        order_rel_max_available_qty = order_rel.quantity - order_rel_used_quantity
+
+        oo = OrderOrder.objects.filter(order_base=main_order, order_rel=order_rel)
+        oo_quantity = 0
+        if oo:
+            oo_quantity = oo.first().quantity
+
+        order_order_data = {
+            'order_base': main_order,
+            'order_rel': order_rel,
+            'creator_user': self.request.user,
+            'editor_user': self.request.user,
+            'quantity': min((pair_quantity + oo_quantity), order_rel_max_available_qty, needed_qty)
+        }
+
+
+        if oo:
+            oo = oo.update(**order_order_data)
+        else:
+            oo = OrderOrder.objects.create(**order_order_data)
+        return {'oo': oo, 'main_order': main_order, 'order_rel': order_rel}
+
+    def save_order_as_wh(self):
+        pair_quantity = self.data.get('pair_quantity')
+        Order.objects.create()
+
+
+def other_available_orders(request, main_order_pk, *args, **kwargs):
+    main_order = Order.objects.get(pk=main_order_pk)
+    item = main_order.item
+    illegal_order_ids = [x.order_rel.pk for x in main_order.order_base_items.all()] if main_order.pk else []
+    illegal_order_ids.append(main_order.pk)
+    other_orders = main_order.__class__.objects.filter(item=item).exclude(pk__in=illegal_order_ids)
+    stock_qty_api = SepidarApiCall.get_stock_quantity([item.sepidar_id_0]) if item else {}
+    api_res = stock_qty_api.get('res')
+    res = []
+    if api_res:
+        for name_code, stock_qty in api_res.items():
+            if stock_qty:
+                sepidar_wh_name = name_code[0]
+                sepidar_wh_code = name_code[1]
+                quantity_sum = item.reserved_count_in_portal
+                if stock_qty.is_integer():
+                    qty = int(stock_qty)
+                    if qty - quantity_sum < 0:
+                        res.append(
+                            {sepidar_wh_code: f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد: منفی{int(abs(qty - quantity_sum)):,})'})
+                    else:
+                        res.append({sepidar_wh_code: f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد:{int(qty - quantity_sum):,})'})
+                else:
+                    res.append({sepidar_wh_code: (f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}')})
+
+
+    context = dict({'other_wh': res})
+    context['other_orders'] = other_orders
+
+    html = render_to_string('order/partial/other_available_orders.html', context)
+    return JsonResponse({'res': html})
+
+
+def get_order_order(request, order_pk, *args, **kwargs):
+    from types import SimpleNamespace
+    wh_code = None
+    main_order_pk = int(request.GET.get('main_order', 0))
+    main_order_obj = Order.objects.get(pk=main_order_pk)
+    context = dict()
+
+    if "__" in order_pk:
+        wh_code = int(order_pk.split('__')[1])
+        # res = SepidarApiCall.get_stock_item_pair_quantity([main_order_obj.item.sepidar_id_0], wh_code)
+        # if res:
+        #     res = res.get('results')[0].get('quantity')
+
+    if wh_code:
+        """process wh reservation"""
+        initial_data = {
+            "item": main_order_obj.item,
+            "quantity": 5,
+            "transportation_method": None,
+            "order_type": None
+        }
+        x = OrderForm(initial=initial_data, data=initial_data)
+        x = OrderForm(data=initial_data)
+
+
+        x = SimpleNamespace()
+        x.instance = SimpleNamespace()
+        x.instance.final_item = main_order_obj.final_item
+        x.instance.item = main_order_obj.item
+        x.instance.sepidar_wh_quantity = '-'
+        x.instance.final_item.part_number = main_order_obj.item.part_number
+        x.instance.quantity = 10
+
+        context['order_form'] = x
+
+        html = render_to_string('order/partial/selected_other_order.html', context)
         return JsonResponse({'res': html})
+    else:
+        """process order reservation"""
+        order = Order.objects.get(pk=order_pk)
+        item = order.item
+
+        form = OrderForm(instance=order)
+        context['order_form'] = form
+
+        html = render_to_string('order/partial/selected_other_order.html', context)
+        return JsonResponse({'res': html})
+
+
+class ACNTView(LoginRequiredMixin, BaseView):
+    template_name = 'order/acnt_list.html'
+    form_class = ACNTForm
+    model = ACNT
+    form_struct = {
+        'form': ACNTForm,
+        'childes': [
+            {},
+        ]
+    }
+
+    def get_success_url(self):
+        return reverse_lazy('order:acnt.update', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        x = super().post(request, *args, **kwargs)
+        if is_ajax(request):
+            return JsonResponse({'res': 'success'})
+        else:
+            return x
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs)
+
+
+class ACNTListView(LoginRequiredMixin, View):
+    """
+    sku list view
+    """
+    model = ACNT
+    template_name = 'order/acnt_list.html'
+    context_object_name = 'items'
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+        return render(request, self.template_name, context)
+
+
+class ACNTDataTableListView(AjaxDatatableView):
+    model = ACNT
+    title = 'ACNT'
+    initial_order = [["created_date", "des"], ]
+    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
+        {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
+        {'name': 'info_bank', 'visible': True, 'title': _('info_bank'), 'className': 'py-1',},
+        {'name': 'currency', 'visible': True, 'title': _('currency'), 'className': 'py-1', },
+        {'name': 'first_amount', 'title': _('first_amount'), 'className': 'py-1', },
+        {'name': 'is_blocked', 'orderable': True, 'visible': True, },
+        {'name': 'description', 'orderable': True, 'visible': True, },
+        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user')},
+        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user')},
+        {'name': 'created_date', 'orderable': True, 'visible': True, },
+    ]
+
+    def customize_row(self, row, obj):
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('order:acnt.update', args=(obj.id,)),
+            obj.id if obj.id else 'بدون عنوان'
+        )

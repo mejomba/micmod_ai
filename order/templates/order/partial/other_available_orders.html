@@ -1,0 +1,12 @@
+<select name="order_rel_pk" class="order_id" onchange="get_order_order_data(event)">
+    <option value="">- - - - - - - - - -</option>
+{% for wh in other_wh %}
+    {% for wh_code, wh_description in wh.items %}
+        <option value="wh__{{ wh_code }}">{{ wh_description }}</option>
+    {% endfor %}
+{% endfor %}
+
+{% for other_order in other_orders %}
+    <option value="{{ other_order.pk }}">{{ other_order }}</option>
+{% endfor %}
+</select>

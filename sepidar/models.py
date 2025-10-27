@@ -109,7 +109,7 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
                 pass
 
         if part:
-            part_filter = " and Item.title like N'%%" + part.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+            part_filter = " and Item.title like N'%%" + part.replace('ی', 'ي').replace("ك", "ک").replace('%', '%%') + "%%'"
         # if item_code:
         #     try:
         #         s = float(item_code)
@@ -543,6 +543,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
 
     @staticmethod
     def get_items(text, party_id=''):
+        text = text.replace('%', '%%')
         qry =f"""
  item.Code AS code,item.ItemID as itemid, item.Title AS title, invoice_1.Date AS f_date_cust, invoice_1.Fee AS f_fee_cust, invoice_1.qty AS f_qty_cust, 
     						 invoice_2.avg_fee AS avg_price, invoice_2.min_fee AS min_price,invoice_2.max_fee AS max_price,

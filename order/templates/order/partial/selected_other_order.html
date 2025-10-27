@@ -1,0 +1,59 @@
+{% load jalali_tags %}
+{% load more_tags %}
+
+
+    <td>
+        {{ order_form.instance.item }} <br>
+        {% if order_form.instance.final_item != order_form.instance.item %}
+            <span class="text-info bold">{{ order_form.instance.final_item }}</span>
+        {% endif %}
+
+    </td>
+    <td>
+        {{ order_form.instance.item.part_number }} <br>
+        {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
+            <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
+        {% endif %}
+    </td>
+    <td>
+{#        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>#}
+    <span>{{ order_form.instance.sepidar_wh_quantity|default_if_none:order_form.instance.quantity }}</span>
+        <span class="input d-none">{{ order_form.quantity }}</span> <br>
+        {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+            <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+        {% endif %}
+    </td>
+    <td>
+{#        {% if order_pair.quantity %}#}
+            <span class="label" onclick="toggle_display(event)">0</span>
+{#        {% else %}#}
+{#            <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>#}
+{#        {% endif %}#}
+        <span class="input d-none"><input type="number" class="form-control" name="pair_quantity"
+                                          value="0"></span> <br>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
+        <span class="input d-none">{{ order_form.commitment_date_to_customer }}</span> <br>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.transportation_method|default_if_none:"بازار" }}</span>
+        <span class="input d-none">{{ order_form.transportation_method }}</span>
+    </td>
+    <td style="max-width: 250px">
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
+        <span class="input d-none">{{ order_form.description_sale }}</span> <br>
+    </td>
+    <td>
+        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.order_type }}</span>
+        <span class="input d-none">{{ order_form.order_type }}</span> <br>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
+        <button class="btn btn-sm btn-danger" data-submit_action="delete" onclick="update_supply_location(event)">انصراف</button>
+        <span id="msg">ذخیره شد ✅</span>
+    </td>
+</tr>

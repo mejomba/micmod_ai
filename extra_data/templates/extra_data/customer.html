@@ -66,7 +66,9 @@
                     {% render_field_by_order form form.shop_id label='on-border' %}
                 </div>
                 <div class="col-2">
+                    {% if form.instance.pk %}
                     {% get_comment_for_customer_and_sku_list form request.user view_name='get_comment_for_user' %}
+                    {% endif %}
                 </div>
             </div>
         </div>

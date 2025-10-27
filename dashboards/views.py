@@ -67,5 +67,5 @@ class BIView(View):
         parsed = urlparse(url)
         encoded_query = quote(parsed.query, safe="=&:")
         valid_url = urlunparse(parsed._replace(query=encoded_query))
-        context = {'url': valid_url}
+        context = {'url': valid_url, 'title': bi_obj.name}
         return render(request, 'dashboards/bi_report.html', context)

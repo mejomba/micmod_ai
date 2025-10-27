@@ -94,6 +94,9 @@ class BaseView(UserPassesTestMixin,
         super().__init__()
         self.extra_data = ExtraData()
 
+    def get_allow_perms(self):
+        return None
+
     def test_func(self):
         if not self.model:
             raise ImproperlyConfigured(f'''BaseView need model attribute''')

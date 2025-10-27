@@ -728,5 +728,6 @@
     "buy_history": "مرور خرید",
     "discount": "تخفیف",
     "currency": "واحد پول",
-    "buy_factor_quantity_in_sepidar": "تعداد در فاکتور خرید سپیدار"
+    "buy_factor_quantity_in_sepidar": "تعداد در فاکتور خرید سپیدار",
+    "need_financial_approval": "نیاز به تایید مالی"
 }

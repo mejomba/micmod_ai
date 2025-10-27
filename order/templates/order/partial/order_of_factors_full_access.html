@@ -1,0 +1,235 @@
+{% load jalali_tags %}
+{% load accounts_tag %}
+{% load more_tags %}
+{% load order_tags %}
+
+
+        <thead class="bold">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">کد محل تامین</th>
+            <th scope="col">کد کالا</th>
+            <th scope="col">پارت نامبر</th>
+            <th scope="col">تعداد/موجودی</th>
+            <th scope="col">تعداد موثر/رزرو</th>
+            <th scope="col">تاریخ تعهد به مشتری</th>
+            <th scope="col">روش حمل</th>
+            <th scope="col">توضیحات فروش</th>
+            <th scope="col">نوع سفارش</th>
+            <th scope="col">عملیات</th>
+        </tr>
+        </thead>
+        <tbody id="main-content">
+        {% for order_form in forms %}
+            {% if order_form.items %}
+                {% for main_order, nested_orders in order_form.items %}
+                    <tr class="group bg-warning cursor-pointer" id='row-{{ main_order.pk }}'>
+                        <td colspan="11" onclick="toggleGroup('{{ main_order.pk }}')" class="rounded">
+                            <div class="d-flex gap-5">
+                                <span class="hover-link">📦 محل تامین {{ main_order.pk }} (میتواند شامل یک یا چند محل تامین دیگر باشد)</span>
+                                <div class="bg-gray-100 rounded px-2">
+                                    <span class="mx-1">تعداد در فاکتور</span>
+                                    <span class="bold">{{ main_order.quantity|floatformat:"-2g" }}</span>
+                                </div>
+                                <div class="bg-light-success rounded px-2">
+                                    <span>تامین شده</span>
+                                    <span class="bold" id="row-{{ main_order.pk }}-supplied">{{ main_order.total_supply_qty|floatformat:"-2g" }}</span>
+                                </div>
+
+                                    <div class="bg-danger text-white rounded px-2 {% if not main_order.needed_qty %} d-none {% endif %}">
+                                        <span>نیاز به تامین</span>
+                                        <span class="bold" id="row-{{ main_order.pk }}-need-supply">{{ main_order.needed_qty|floatformat:"-2g" }}</span>
+                                    </div>
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% for foo, oo in nested_orders %}
+                        <tr class="ms-5 child group-{{ main_order.pk }}" data-main_order="{{ main_order.pk }}">
+                        <input type="hidden" name="main_order_pk" value="{{ main_order.pk }}">
+                            <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
+                            <th scope="row">
+                            {% if forloop.last and main_order.is_other_orders_available %}
+                                <svg onclick="add_order_order_row(event)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart-plus cursor-pointer" viewBox="0 0 16 16">
+                                  <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
+                                  <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zm3.915 10L3.102 4h10.796l-1.313 7zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+                                </svg>
+                                {% else %}
+                                <svg width="16" height="16" style="visibility:hidden"></svg>
+                            {% endif %}
+
+                            <svg xmlns="http://www.w3.org/2000/svg" style="transform: rotateX(180deg)" width="16" height="16" fill="currentColor" class="bi bi-arrow-90deg-left" viewBox="0 0 16 16">
+                              <path fill-rule="evenodd" d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>
+                            </svg>
+                                <span class="badge {% if foo.instance.is_wh %} badge-light-success {% elif foo.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">
+                                    <span class="me-2">رزرو</span>
+                                    {{ oo.get_wh_name }}
+                                </span>
+                            </th>
+                            <td>
+{#                                {{ oo.get_wh_name }}#}
+                                <span class="order_id">{{ foo.instance.pk }}</span>
+                            </td>
+                            <td>
+                                {{ foo.instance.item }} <br>
+                                {% if foo.instance.final_item != foo.instance.item %}
+                                    <span class="text-info bold">{{ foo.instance.final_item }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ foo.instance.item.part_number }} <br>
+                                {% if foo.instance.item.part_number != foo.instance.final_item.part_number %}
+                                    <span class="text-info bold">{{ foo.instance.item.part_number }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+{#                            <span class="label" id="x">{{ foo.instance.quantity }}</span>#}
+                            <span>{{ foo.instance.sepidar_wh_quantity }}</span>
+                                <span class="input d-none">{{ foo.quantity }}</span> <br>
+                                {% if foo.instance.quantity != foo.instance.final_quantity %}
+                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
+                                {% endif %}
+                            </td>
+                            {% get_order_pair foo.instance main_order.pk as order_pair %}
+                            <td>
+                            <span class="label"
+                                  onclick="toggle_display(event)">{{ order_pair.quantity }}</span>
+                                <span class="input d-none"><input type="number" class="form-control" name="pair_quantity" value="{{ order_pair.quantity }}"></span> <br>
+                                {% if foo.instance.quantity != foo.instance.final_quantity %}
+                                    <br><span class="text-info bold">{{ foo.instance.final_quantity }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                            <span class="label p-5 py-1"
+                                  onclick="toggle_display(event)">{{ foo.instance.commitment_date_to_customer|to_jalali }}</span>
+                                <span class="input d-none">{{ foo.commitment_date_to_customer|default_if_falsy:"------" }}</span> <br>
+                            </td>
+                            <td>
+                            <span class="label p-5 py-1"
+                                  onclick="toggle_display(event)">{{ foo.instance.transportation_method|default_if_none:"------" }}</span>
+                                <span class="input d-none">{{ foo.transportation_method }}</span>
+                            </td>
+                            <td style="max-width: 250px">
+                            <span class="label"
+                                  onclick="toggle_display(event)">{{ foo.instance.description_sale|default_if_falsy:'-----' }}</span>
+                                <span class="input d-none">{{ foo.description_sale }}</span> <br>
+                            </td>
+                            <td>
+                            <span class="label"
+                                  onclick="toggle_display(event)">{{ foo.instance.order_type }}</span>
+                                <span class="input d-none">{{ foo.order_type }}</span> <br>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
+                                <button class="btn btn-sm btn-danger" data-submit_action="delete" onclick="update_supply_location(event)">حذف</button>
+                            </td>
+                        </tr>
+                        {% if forloop.last %}
+
+
+
+
+
+
+
+
+{#                            <tr class="ms-5 d-none child group-{{ main_order.pk }}" data-main_order="{{ main_order.pk }}">#}
+{#                                <input type="hidden" name="main_order_pk" value="{{ main_order.pk }}">#}
+{#                                <input type="hidden" name="editor_user" value="{{ request.user.pk }}">#}
+{#                                <th scope="row">#}
+{##}
+{#                                    <svg onclick="add_order_order_row(event)" xmlns="http://www.w3.org/2000/svg" width="16"#}
+{#                                         height="16" fill="currentColor" class="bi bi-cart-plus cursor-pointer"#}
+{#                                         viewBox="0 0 16 16">#}
+{#                                        <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>#}
+{#                                        <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zm3.915 10L3.102 4h10.796l-1.313 7zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>#}
+{#                                    </svg>#}
+{#                                    <svg xmlns="http://www.w3.org/2000/svg" style="transform: rotateX(180deg)"#}
+{#                                         width="16" height="16" fill="currentColor" class="bi bi-arrow-90deg-left"#}
+{#                                         viewBox="0 0 16 16">#}
+{#                                        <path fill-rule="evenodd"#}
+{#                                              d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>#}
+{#                                    </svg>#}
+{#                                    <span>محل تامین جدید</span>#}
+{#                                </th>#}
+{#                                <td>#}
+{#                                    {% other_available_orders main_order %}#}
+{#                                </td>#}
+{##}
+{#                            </tr>#}
+
+
+
+
+
+
+
+
+
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <tr>
+                <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
+                <input type="hidden" name="itemid" value="{{ order_form.instance.item.sepidar_id_0 }}">
+                <th scope="row">
+                    <span class="badge {% if order_form.instance.is_wh %} badge-light-success {% elif order_form.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">{{ order_form.instance.order_method }}</span>
+                </th>
+                <td>
+                    <span class="order_id">{{ order_form.instance.pk }}</span>
+                </td>
+                <td>
+                    {{ order_form.instance.item }} <br>
+                    {% if order_form.instance.final_item != order_form.instance.item %}
+                        <span class="text-info bold">{{ order_form.instance.final_item }}</span>
+                    {% endif %}
+
+                </td>
+                <td>
+                    {{ order_form.instance.item.part_number }} <br>
+                    {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
+                        <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+                    <span class="input d-none">{{ order_form.quantity }}</span> <br>
+                    {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+                    <span class="input d-none">{{ order_form.quantity }}</span> <br>
+                    {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="label p-5"
+                          onclick="toggle_display(event)">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
+                    <span class="input d-none">{{ order_form.commitment_date_to_customer|default_if_falsy:'------' }}</span> <br>
+                </td>
+                <td>
+                    <span class="label p-5 py-1"
+                          onclick="toggle_display(event)">{{ order_form.instance.transportation_method|default_if_none:"------" }}</span>
+                    <span class="input d-none">{{ order_form.transportation_method }}</span>
+                </td>
+                <td>
+                    <span class="label"
+                          onclick="toggle_display(event)">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
+                    <span class="input d-none">{{ order_form.description_sale }}</span> <br>
+                </td>
+                <td>
+                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.order_type }}</span>
+                    <span class="input d-none">{{ order_form.order_type }}</span> <br>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
+                    <button class="btn btn-sm btn-danger" data-submit_action="delete" onclick="update_supply_location(event)">حذف</button>
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        </tbody>

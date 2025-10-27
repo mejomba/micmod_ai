@@ -18,6 +18,7 @@ import pandas as pd
 from io import BytesIO
 import string
 import random
+from django.conf import settings
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -553,3 +554,14 @@ def grouped_value(obj, /, *, target_suffixes):
             field_name = key.split('-')[-1]
             grouped[form_index][field_name] = value
     return grouped
+
+
+class DaxCall:
+
+    @classmethod
+    def customer_dax(cls):
+        url = "http://192.168.1.80:8070/etls/get-dax/2/"
+        headers = {"Authorization": f"Token {settings.TOKEN_8070}"}
+        import requests
+        res = requests.get(url, headers=headers)
+        return res.json()

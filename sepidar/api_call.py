@@ -433,7 +433,7 @@ class SepidarApiCall:
             'extra_data': f'{protocol}://{host}:{port}/api2/sepidar_api-extradata/',
             'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
             'inventory_purchase_invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorypurchaseinvoice/',
-            'party': f'{protocol}://{host}:{port}/api2/party/',
+            'party': f'{protocol}://{host}:{port}/api2/sepidar_api-party/',
         },
     }
 
@@ -449,7 +449,8 @@ class SepidarApiCall:
 
     @classmethod
     def set_token(cls):
-        cls.token = cls.get_token()
+        from django.core.cache import cache
+        cls.token = cache.get_or_set('sepidar_jwt_access_token', cls.get_token(), timeout=9000)
 
     @classmethod
     def get_header(cls):
@@ -496,6 +497,21 @@ class SepidarApiCall:
         return out
 
     @classmethod
+    def get_stock_item_pair_quantity(cls, itemref, stock, year: Optional[str] = None, *args, **kwargs):
+        cls.setup()
+        if year is None:
+            year = jdatetime.date.today().year
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
+        endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}&stockref__stockid={stock}'
+        res = requests.get(endpoint, headers=cls.headers)
+        out = dict()
+        if res.ok:
+            response = res.json()
+            return response
+
+        return None
+
+    @classmethod
     def get_all_items(cls, page=0):
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('all_items')
@@ -509,8 +525,14 @@ class SepidarApiCall:
         return None
 
     @classmethod
-    def create_dl(cls):
-        pass
+    def dl_to_sepidar(cls, request, customer):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('party')
+        data = {
+            "name": customer.name,
+            "type": customer.type
+        }
+        res = requests.post(endpoint, json=data, headers=cls.headers)
 
     @classmethod
     def get_party(cls, party_id):

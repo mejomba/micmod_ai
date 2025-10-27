@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
-    PaymentItemDataTableListView, SubmitBuyFactor, OrderOfFactor
+    PaymentItemDataTableListView, SubmitBuyFactor, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
+    ACNTListView, ACNTDataTableListView
 
 from .views import CustomerRequestOrderViewSet
 
@@ -57,7 +58,17 @@ urlpatterns = [
     path('paymentitem/view/', PaymentItemView.as_view(), name='order.paymentitem.view'),
     path('paymentitem/update/<int:pk>/', PaymentItemView.as_view(), name='order.paymentitem.update'),
 
+    #  ACNT
+    path('acnt/view/', ACNTView.as_view(), name='acnt.view'),
+    path('acnt/view/<int:pk>/', ACNTView.as_view(), name='acnt.update'),
+    path('acnt/list/', ACNTListView.as_view(), name='acnt.list'),
+    path('acnt/list/datatable/', ACNTDataTableListView.as_view(), name='acnt.list.datatable'),
+    # path('payment_item/list/datatable/', PaymentItemDataTableListView.as_view(), name='order.payment_item.list.datatable'),
+
     path('ajax/submit_buy_factor/', SubmitBuyFactor.as_view(), name='submit_buy_factor'),
 
-    path('order_of_factor/<int:pk>/', OrderOfFactor.as_view(), name='order_of_factor'),
+    path('order_of_factor/<str:pk>/', OrderOfFactor.as_view(), name='order_of_factor'),
+
+    path('other_available_orders/<int:main_order_pk>/', other_available_orders, name='other_available_orders'),
+    path('get_order_order/<str:order_pk>/', get_order_order, name='get_order_order'),
 ]

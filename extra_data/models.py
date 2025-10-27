@@ -837,6 +837,26 @@ def uploaded_image_path(instance, filename: str):
     return os.path.join('uploads/icons/customer/', name)
 
 
+class Ostan(models.Model):
+    name = models.CharField(max_length=127)
+    amar_code = models.CharField(max_length=50, null=True, blank=True)
+
+
+class Shahrestan(models.Model):
+    name = models.CharField(max_length=127)
+    ostan = models.ForeignKey(Ostan, on_delete=models.DO_NOTHING)
+    amar_code = models.CharField(max_length=50, null=True, blank=True)
+
+
+class CustomerAddress(models.Model):
+    customer = models.ForeignKey('Customer', on_delete=models.DO_NOTHING)
+    ostan = models.ForeignKey(Ostan, on_delete=models.DO_NOTHING)
+    shahrestan = models.ForeignKey(Shahrestan, on_delete=models.DO_NOTHING)
+    text = models.TextField()
+    zip_code = models.CharField(max_length=10, null=True, blank=True)
+    is_main = models.BooleanField(default=False)
+
+
 class Customer(AbsBaseModel):
     RISK_STATUS_CHOICE = (
         ("low risk", "کم ریسک"),

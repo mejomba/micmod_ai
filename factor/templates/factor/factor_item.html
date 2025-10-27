@@ -263,6 +263,8 @@
         {% endif %}
 
         </div>
+    {{ quotation.customer_party_id.province }}
+    {{ quotation.customer_party_id.address }}
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
     <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
@@ -420,7 +422,7 @@
                     <span class="col-1 text-center px-0">
                         <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
 {#                        {% render_field_by_order factor_item factor_item.quantity %}#}
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" >
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" {% if factor_item.instance.pk %} disabled {% endif %}>
                     </span>
                     <span class="col-2 text-center">
                         <div class="d-flex flex-column">
