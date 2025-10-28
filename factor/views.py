@@ -447,6 +447,7 @@ class FactorListDatatable(AjaxDatatableView):
             self.cols.append({'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True, 'className': 'border'},)
             self.cols.append({'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},)
 
+        self.remove_duplicate_col()
         return self.cols
 
     def get_initial_queryset(self, request=None):
@@ -470,6 +471,8 @@ class FactorListDatatable(AjaxDatatableView):
 
     def wh_column_defs(self, request):
         for col in [
+            {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
+             'searchable': True, 'className': 'border'},
             {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
@@ -527,6 +530,16 @@ class FactorListDatatable(AjaxDatatableView):
              'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
         ]
         return self.cols
+
+    def remove_duplicate_col(self):
+        seen = set()
+        unique_cols = []
+        for col in self.cols:
+            name = col.get('name')
+            if name not in seen:
+                unique_cols.append(col)
+                seen.add(name)
+        self.cols = unique_cols
 
 
 def print_view(request,id=-1):
