@@ -38,6 +38,10 @@
     <div>
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
         </div>
+    <div>
+    <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
+        </div>
+
     <div class="row">
         <div class="col">
         </div>
@@ -174,7 +178,7 @@
             </tr>
             </thead>
             {% for form_ in formset %}
-            <tbody class="border border-dark">
+            <tbody class="border border-dark" id="row_element">
             <tr>
                 {% if form.instance.q.currency_ref.id == 1 %}
                     {% include "factor/factor_item_print.html" with form=form_ digit=0 %}
@@ -299,6 +303,175 @@
 <br>
 <br>
 <br>
+<div id="result-container">
+            </div>
 {% block extra_js %}
     <script src="{% static 'js/base.js' %}"></script>
+{#    <script>#}
+{#        document.getElementById('calculate-button').addEventListener('click', function() {#}
+{#            debugger#}
+{#            const printWindow = window.open('', '_blank', 'width=800,height=600');#}
+{#            const rows = document.querySelectorAll('[id^="id_goods_code-"]'); // همه ردیف‌ها#}
+{##}
+{#            const resultContainer = document.getElementById('result-container');#}
+{##}
+{#              rows.forEach(rowEl => {#}
+{#                  debugger#}
+{#                const rowId = rowEl.id.replace('id_goods_code-', '');#}
+{##}
+{#                const productCode = document.getElementById(`id_goods_code-${rowId}`)?.innerText?.trim() || '-';#}
+{#                const totalQuantityStr = document.getElementById(`id_quantity-${rowId}`)?.innerText?.trim() || '0';#}
+{#                const qtyPerPackageStr = document.getElementById(`id_batch_count-${rowId}`)?.innerText?.trim() || '0';#}
+{##}
+{#                const totalQuantity = parseInt(totalQuantityStr, 10);#}
+{#                const qtyPerPackage = parseInt(qtyPerPackageStr, 10);#}
+{##}
+{#                // بررسی مقادیر#}
+{#                if (isNaN(totalQuantity) || isNaN(qtyPerPackage) || totalQuantity <= 0) return;#}
+{##}
+{#                let finalQtyPerPackage = qtyPerPackage;#}
+{#                let specialCaseMessage = '';#}
+{##}
+{#                if (qtyPerPackage === 0) {#}
+{#                    finalQtyPerPackage = totalQuantity;#}
+{#                    specialCaseMessage = `<p class="text-warning">⚠️ به دلیل صفر بودن تعداد در بسته، مقدار برابر با ${finalQtyPerPackage} در نظر گرفته شد.</p>`;#}
+{#              }#}
+{##}
+{##}
+{#            const fullPackagesCount = Math.floor(totalQuantity / finalQtyPerPackage);#}
+{#            const remainder = totalQuantity % finalQtyPerPackage;#}
+{##}
+{#            const packageBreakdown = [];#}
+{#            for (let i = 0; i < fullPackagesCount; i++) packageBreakdown.push(finalQtyPerPackage);#}
+{#            if (remainder > 0) packageBreakdown.push(remainder);#}
+{##}
+{#            const breakdownString = packageBreakdown.join(' + ');#}
+{##}
+{#            const outputHTML = `#}
+{#                <div style="border:1px dashed #ccc; margin-bottom:15px; padding:10px; border-radius:8px;">#}
+{#                    <h4>کالا: ${productCode}</h4>#}
+{#                    <p><strong>تعداد کل:</strong> ${totalQuantity}</p>#}
+{#                    <p><strong>تعداد در هر بسته:</strong> ${qtyPerPackage}</p>#}
+{#                    ${specialCaseMessage}#}
+{#                    <p><strong>بسته‌های کامل:</strong> ${fullPackagesCount}</p>#}
+{#                    <p><strong>باقی‌مانده:</strong> ${remainder}</p>#}
+{#                    <p><strong>تفکیک بسته‌ها:</strong> ${breakdownString}</p>#}
+{#                </div>#}
+{#            `;#}
+{##}
+{#        resultContainer.innerHTML = outputHTML;#}
+{##}
+{#        printWindow.document.open();#}
+{#        printWindow.document.write(`#}
+{#            <html><head><meta charset="utf-8"><title>پرینت ${productCode}</title></head><body>${outputHTML}</body></html>#}
+{#        `);#}
+{#        printWindow.document.close();#}
+{#        printWindow.focus();#}
+{#        printWindow.print();#}
+{#    });#}
+{# });#}
+{#    </script>#}
+
+    <div id="result-container" style="display:none;"></div>
+
+<script>
+document.getElementById('calculate-button').addEventListener('click', function() {
+    debugger
+    const rows = document.querySelectorAll('[id^="id_goods_code-"]'); // همه ردیف‌ها
+
+    // ✅ متغیر برای جمع کردن همه خروجی‌ها
+    let allHTML = '';
+
+    rows.forEach(rowEl => {
+        const rowId = rowEl.id.replace('id_goods_code-', '');
+
+        const productCode = document.getElementById(`id_goods_code-${rowId}`)?.innerText?.trim() || '-';
+        const totalQuantityStr = document.getElementById(`id_quantity-${rowId}`)?.innerText?.trim() || '0';
+        const qtyPerPackageStr = document.getElementById(`id_batch_count-${rowId}`)?.innerText?.trim() || '0';
+
+        const totalQuantity = parseInt(totalQuantityStr, 10);
+        const qtyPerPackage = parseInt(qtyPerPackageStr, 10);
+
+        // بررسی صحت مقادیر
+        if (isNaN(totalQuantity) || isNaN(qtyPerPackage) || totalQuantity <= 0) return;
+
+        let finalQtyPerPackage = qtyPerPackage;
+        let specialCaseMessage = '';
+
+        if (qtyPerPackage === 0) {
+            finalQtyPerPackage = totalQuantity;
+            specialCaseMessage = `<p class="text-warning">⚠️ به دلیل صفر بودن تعداد در بسته، مقدار برابر با ${finalQtyPerPackage} در نظر گرفته شد.</p>`;
+        }
+
+        const fullPackagesCount = Math.floor(totalQuantity / finalQtyPerPackage);
+        const remainder = totalQuantity % finalQtyPerPackage;
+
+        const packageBreakdown = [];
+        for (let i = 0; i < fullPackagesCount; i++) packageBreakdown.push(finalQtyPerPackage);
+        if (remainder > 0) packageBreakdown.push(remainder);
+
+        const breakdownString = packageBreakdown.join(' + ');
+
+        // ✅ هر ردیف را به متن کل اضافه می‌کنیم
+        allHTML += `
+            <div style="border:1px dashed #ccc; margin-bottom:15px; padding:10px; border-radius:8px;">
+                <h4>کالا: ${productCode}</h4>
+                <p><strong>تعداد کل:</strong> ${totalQuantity}</p>
+                <p><strong>تعداد در هر بسته:</strong> ${qtyPerPackage}</p>
+                ${specialCaseMessage}
+                <p><strong>بسته‌های کامل:</strong> ${fullPackagesCount}</p>
+                <p><strong>تفکیک بسته‌ها:</strong> ${breakdownString}</p>
+            </div>
+        `;
+    });
+
+    // ✅ نتیجه نهایی را فقط در یک تب نمایش بده
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+        alert('مرورگر اجازه باز کردن تب جدید را نداد. لطفاً پاپ‌آپ‌ها را فعال کنید.');
+        return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+        <html dir="rtl" lang="fa">
+        <head>
+            <meta charset="utf-8">
+            <title>پرینت فاکتور</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    padding: 20px;
+                    direction: rtl;
+                    background: #fff;
+                    color: #333;
+                }
+                h2 {
+                    text-align: center;
+                    border-bottom: 2px solid #999;
+                    padding-bottom: 8px;
+                }
+                .text-warning {
+                    color: red;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>جزئیات بسته‌بندی فاکتور</h2>
+            ${allHTML}
+            <script>
+                // ✅ بستن خودکار تب بعد از پرینت
+                window.onafterprint = function() { window.close(); };
+                window.print();
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+});
+</script>
+
+
+
 {% endblock extra_js %}

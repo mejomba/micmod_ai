@@ -13,7 +13,7 @@
     </td>
 <!-- GOODS CODE -->
     <td class="">
-        <div class="font-size-10 replace-digits">{{ form.instance.goods_code|default_if_none:"" }}</div>
+        <div class="font-size-10 replace-digits" id="id_goods_code-{{ form.instance.pk }}">{{ form.instance.goods_code|default_if_none:"" }}</div>
     </td>
 <!-- GOODS NAME -->
     <td class="">
@@ -21,7 +21,12 @@
     </td>
 <!-- QUANTITY -->
     <td class="font-size-10 replace-digits">
-        <div class="bold text-center font-size-10" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+        <div class="bold text-center font-size-10" name="quantity" id="id_quantity-{{ form.instance.pk }}">{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
+        <div class="bold text-center font-size-10" name="batch_count"><span class="font-size-8" style="font-weight: bold"> تعداد در بسته: </span><span id="id_batch_count-{{ form.instance.pk }}">{{ form.instance.goods_code.batch_count|default_if_none:0 }}</span></div>
+        <div>
+{#    <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>#}
+        </div>
+
         <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
     </td>
 {#    <td class="font-size-10 replace-digits">#}
