@@ -8,7 +8,7 @@ from django.db.models import F, Sum, FloatField
 
 from accounts.models import User
 from core.models import BaseModel, BaseManager, BaseModeWF
-from extra_data.models import Item
+from extra_data.models import Item, CustomerAddress
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
 from order.models import Order
@@ -30,6 +30,7 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
+    address = models.ForeignKey(CustomerAddress, on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name=_('address'))
     history = HistoricalRecords()
     DELIVER_TYPE_CHOICES = (('in_person', _('in_person')), ('delivery', _('delivery')))
     q = models.ForeignKey(Quotation, verbose_name=_('q'), related_name='q', on_delete=models.DO_NOTHING)
@@ -421,13 +422,13 @@ class FactorItem(BaseModel):
                 oo = oo.order_base == fi.supply_location
                 oo.quantity = fi.reserve_count
                 """
-                oo = self.supply_locations.order_base_items.first()
-                order_rel = oo.order_rel if oo else None
-                order_rel.quantity += self.quantity_for_wh_order() - oo.quantity
-                oo.quantity = self.reserve_count
-
-                order_rel.save()
-                oo.save()
+                # oo = self.supply_locations.order_base_items.first()
+                # order_rel = oo.order_rel if oo else None
+                # order_rel.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                # oo.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                # oo.sepidar_wh_code = self.supply_location.split('__')[1]
+                # order_rel.save()
+                # oo.save()
 
         super().save(force_insert, force_update, using, update_fields)
         total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor

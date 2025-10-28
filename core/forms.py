@@ -31,10 +31,10 @@ class CustomBaseForm(forms.Form):
     #     for f in fields:
     #         self.fields[f].required = False
 
-    # def make_disable(self, fields: List):
-    #     for field_name, field in self.fields.items():
-    #         if field_name in fields:
-    #             field.disabled = True
+    def make_disable(self, fields: List):
+        for field_name, field in self.fields.items():
+            if field_name in fields:
+                field.disabled = True
 
 class CustomBaseModelForm(forms.ModelForm):
     image_groups = None

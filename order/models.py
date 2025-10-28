@@ -1,3 +1,4 @@
+import jdatetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -9,6 +10,7 @@ from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier
 # from factor.models import FactorItem
 from micmod_base.models import QuotationItem, CustomerRequestItem
+from sepidar.api_call import SepidarApiCall
 from translator import get_text as _
 from workflow.models import WorkFlow
 from tools import const
@@ -78,6 +80,8 @@ class Order(BaseModeWF):
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
                                               related_name='customer_order_items')
+    buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
+    buy_factor_quantity_in_sepidar = models.FloatField(verbose_name=_('buy_factor_quantity_in_sepidar'), null=True, blank=True)
 
     def __str__(self):
         if self.final_item:
@@ -85,6 +89,73 @@ class Order(BaseModeWF):
         else:
             return f'{self.pk}'
         return f'{self.pk} -- {self.last_work_flow.current_state_name} -- {self.quantity} / {self.remaining_quantity}'
+
+    def is_other_orders_available(self):
+        illegal_order_ids = [x.order_rel.pk for x in self.order_base_items.all()] if self.pk else []
+        illegal_order_ids.append(self.pk)
+        return True
+        return self.__class__.objects.filter(item=self.item).exclude(pk__in=illegal_order_ids).exists()
+
+    @property
+    def sepidar_wh_quantity(self):
+        if not hasattr(self, 'oo'):
+            return None
+        """ WARN__: this function has massive execution time"""
+        year = jdatetime.date.today().year
+        res = []
+        stock_qty_api = SepidarApiCall.get_stock_quantity([self.item.sepidar_id_0], year) if self.is_wh else {}
+        api_res = stock_qty_api.get('res')
+        if api_res:
+            for name_code, stock_qty in api_res.items():
+                if stock_qty:
+                    sepidar_wh_name = name_code[0]  # re.search(r'(.*)\(code.*\)', code).group(1)
+                    sepidar_wh_code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
+                    # todo get wh__order from db, show reserve and stock_quantity
+                    if self.oo.sepidar_wh_code == sepidar_wh_code:
+                        quantity_sum = self.item.reserved_count_in_portal
+                        if stock_qty.is_integer():
+                            qty = int(stock_qty)
+                            if qty - quantity_sum < 0:
+                                res.append(f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد: منفی{int(abs(qty - quantity_sum)):,})')#, int(qty - quantity_sum))
+                            else:
+                                res.append(f'☑️ {sepidar_wh_name} (کل:{qty:,}) - (آزاد:{int(qty - quantity_sum):,})')
+                        else:
+                            qty = stock_qty
+                            res.append((f'wh__{sepidar_wh_code}', f'☑️ {sepidar_wh_name} {stock_qty}'))
+
+        for o in self.item.order_set.filter(cancel=False).order_by('-quantity'):
+            if o.cancel:
+                for oo in o.order_base_items.all():
+                    if oo.sepidar_wh_code:
+                        res.append(
+                            ((f'wh__{oo.sepidar_wh_code}__{o.pk}'), f"رزرو انبار {o.pk} ام ({oo.quantity:0.20g})"))
+                    else:
+                        remaining_quantity = o.remaining_quantity
+                        if remaining_quantity > 0:
+                            res.append(f"🧺 {o.last_work_flow.current_state_name} ({o.quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})")
+            else:
+                remaining_quantity = o.remaining_quantity
+                if remaining_quantity > 0:
+                    res.append(f"🧺 {o.last_work_flow.current_state_name} (کل {o.quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}")
+
+        if not res:
+            return None
+
+        return res[0]
+
+    @property
+    def sepidar_wh_item_pair_quantity(self):
+        if not hasattr(self, 'oo'):
+            return None
+        """ WARN__: this function has massive execution time"""
+        year = jdatetime.date.today().year
+        stock_qty_api = SepidarApiCall.get_stock_item_pair_quantity([self.item.sepidar_id_0], self.oo.sepidar_wh_code, year)
+        if stock_qty_api:
+            if stock_qty_api.get('results'):
+                return stock_qty_api.get('results')[0].get('quantity')
+
+        return None
+
 
     @property
     def order_text_in_factor(self):
@@ -162,7 +233,21 @@ class Order(BaseModeWF):
         final_quantity = self.final_quantity
         if self.is_bazar:
             return final_quantity, final_quantity, final_quantity
-        total_arrived_wh = total_arrived_wh_in_percent = None
+        total_arrived_wh = total_arrived_wh_in_percent = 0
+        x = []
+        if self.cancel:
+            for oo in self.order_base_items.all():
+                if oo.sepidar_wh_code:
+                    total_arrived_wh += oo.quantity
+                else:
+                    arrived_wh, arrived_wh_in_percent = oo.order_rel.packing_item_order.filter().aggregate(
+                    total_arrived_wh=Sum("arrived_quantity"),
+                    total_arrived_wh_in_precent=Sum("arrived_quantity") / self.final_quantity * 100).values()
+
+                    total_arrived_wh += (arrived_wh or 0)
+                    total_arrived_wh_in_percent += (arrived_wh_in_percent or 0)
+            return int(total_arrived_wh_in_percent or 0), int(total_arrived_wh or 0), final_quantity
+
         total_arrived_wh, total_arrived_wh_in_percent = self.packing_item_order.filter().aggregate(
             total_arrived_wh=Sum("arrived_quantity"),
             total_arrived_wh_in_precent=Sum("arrived_quantity")/self.final_quantity*100).values()
@@ -193,6 +278,16 @@ class Order(BaseModeWF):
     def total_pay_percent(self):
         x = (self.total_paid / self.total_price) * 100
         return int(x)
+
+    @property
+    def needed_qty(self):
+        s = self.total_supply_qty - self.quantity
+        return abs(s)
+
+    @property
+    def total_supply_qty(self):
+        s = self.order_base_items.aggregate(total=Sum('quantity'))['total'] or 0
+        return s
 
     def description(self):
         sepidar_wh = None
@@ -396,7 +491,10 @@ class OrderOrder(BaseModel):
 
     @property
     def get_wh_name(self):
-        return self.sepidar_wh_map.get(self.sepidar_wh_code)
+        name = self.sepidar_wh_map.get(self.sepidar_wh_code)
+        if not name:
+            name = 'سفارش'
+        return name
         # if self.sepidar_wh_code == 1:
         #     return 'مرکزی'
         # else:

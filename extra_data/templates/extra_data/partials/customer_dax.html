@@ -1,0 +1,7 @@
+
+{% for title, value in dax.items %}
+
+    <div class="col">{{ title }}</div>
+    <div class="col">{{ value|floatformat:'-2g' }}</div>
+
+{% endfor %}

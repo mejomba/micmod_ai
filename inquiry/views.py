@@ -44,6 +44,7 @@ from tools.form_tools import get_choice_field
 from .tasks import update_price_list, update_components, db_backup, cleanup_filesystem
 
 from tools.utils import round_price
+from dal import autocomplete
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -1336,6 +1337,7 @@ def get_items(request):
     id_market_grade = request.GET.get('id_market_grade', None)
     id_customer_grade = request.GET.get('id_customer_grade', None)
     id_customer_grade = id_customer_grade.split(',')[-1] if id_customer_grade else None
+    id_price_setting = int(request.GET.get('price_setting')) if request.GET.get('price_setting') else -1
     quantity = request.GET.get('quantity', None)
     reps = [["ي", "ی"], ["ك", "ک"]]
     obj = {}
@@ -1374,7 +1376,9 @@ def get_items(request):
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
                     price_inquiry_result_bazar: PriceInquiryResult = old_sku_item.bazar_price if old_sku_item else None
                     if price_inquiry_result:
-                        price_setting = price_inquiry_result.price_settings
+                        price_setting = PriceSettings.objects.filter(
+                            pk=id_price_setting).first() if id_price_setting > 0 else price_inquiry_result.price_settings
+                        # price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(
                             quantity=quantity,
                             customer_grade=id_customer_grade,
@@ -1528,7 +1532,9 @@ def get_items(request):
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
                     price_inquiry_result_bazar: PriceInquiryResult = sku_item.bazar_price if sku_item else None
                     if price_inquiry_result:
-                        price_setting = price_inquiry_result.price_settings
+                        price_setting = PriceSettings.objects.filter(
+                            pk=id_price_setting).first() if id_price_setting > 0 else price_inquiry_result.price_settings
+                        # price_setting = price_inquiry_result.price_settings
                         price_inquiry_result.set_discount_params(
                             quantity=quantity,
                             customer_grade=id_customer_grade,
@@ -1957,6 +1963,22 @@ def pg_backup(request, *args, **kwargs):
                 'PORT': os.environ.get('PG_PORT'),
                 'BACKUP_PATH': os.environ.get('BACKUP_PATH')
             },
+            'shop_db245': {
+                'NAME': 'shop_db',
+                'USER': os.environ.get('PG_USER_245'),
+                'PASSWORD': os.environ.get('PG_PASSWORD_245'),
+                'HOST': os.environ.get('PG_HOST_245'),
+                'PORT': os.environ.get('PG_PORT_245'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
+            'product_db245': {
+                'NAME': 'product_db',
+                'USER': os.environ.get('PG_USER_245'),
+                'PASSWORD': os.environ.get('PG_PASSWORD_245'),
+                'HOST': os.environ.get('PG_HOST_245'),
+                'PORT': os.environ.get('PG_PORT_245'),
+                'BACKUP_PATH': os.environ.get('BACKUP_PATH')
+            },
         }
         for k, v in db_config_for_backup.items():
             res = db_backup(v)
@@ -2100,3 +2122,10 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
         )
         row['open_rate'] = "{:,}".format(int(obj.open_rate))
 
+
+class SupplierAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Supplier.objects.filter(base_group='bazar', is_deleted=False)
+        if self.q:
+            qs = qs.filter(title__icontains=self.q)
+        return qs

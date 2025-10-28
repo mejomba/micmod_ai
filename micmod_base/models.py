@@ -1085,7 +1085,7 @@ class QuotationItem(BaseModel):
 
     @property
     def fee(self):
-        return self.final_price
+        return self.final_price or 0
         if self.quotation.is_official:
             official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
             total_ = (100 - (official_value)) / 100

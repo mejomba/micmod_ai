@@ -6,10 +6,12 @@ from jalali_date.widgets import AdminJalaliDateWidget
 
 from files.models import File
 from inquiry.models import Supplier
+from micmod_base.base import Currency
 from translator import get_text as _
 
-from core.forms import CustomBaseModelForm
+from core.forms import CustomBaseModelForm, CustomBaseForm
 from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
+from dal import autocomplete
 
 
 class OrderForm(CustomBaseModelForm):
@@ -70,6 +72,8 @@ class OrderForm(CustomBaseModelForm):
 
         if self.instance.cancel:
             self.make_disable(['quantity'])
+        if self.instance.is_bazar:
+            self.make_hidden(['transportation_method', 'order_type'])
         if request and request.user.base_group == 'trade':
             self.make_required(['price_trade'])
 
@@ -105,6 +109,8 @@ class OrderForm(CustomBaseModelForm):
                 self.make_disable(self.fields)
                 self.enable = False
 
+        if self.instance.cancel:
+            self.make_disable(self.fields)
 
 class PackingForm(CustomBaseModelForm):
     class Meta:
@@ -244,6 +250,7 @@ class GIOItemForm(CustomBaseModelForm):
         gio = self.initial.get('gio')
         if gio:
             self.fields['gio'].queryset = self.fields['gio'].queryset.filter(id=getattr(gio, 'pk', gio))
+            self.make_hidden(['gio'])
 
 
 class OrderPaymentForm(CustomBaseModelForm):
@@ -371,7 +378,7 @@ class OrderPaymentItemForm(CustomBaseModelForm):
             self.fields['payment'].queryset = self.fields['payment'].queryset.filter(id=getattr(payment, 'pk', payment))
 
 
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, formset_factory
 from .models import OrderPayment, OrderPaymentItem
 
 order_payment_item_fields = ['order', 'payment', 'description', 'total_amount']
@@ -384,3 +391,88 @@ OrderPaymentItemFormSet = inlineformset_factory(
     can_delete=True,
     fields=order_payment_item_fields
 )
+
+
+class BazarBuyFactorForm(CustomBaseForm):
+    bazar_supplier = forms.ModelChoiceField(
+        queryset=Supplier.objects.filter(base_group='bazar', is_deleted=False),
+        widget=autocomplete.ModelSelect2(url='inquiry:supplier-autocomplete'),
+        label=_('supplier')
+    )
+    currency = forms.ChoiceField(label="currency_ref", initial='1')
+    rate = forms.FloatField(label="Exchange Rate", initial=1)
+    tax = forms.FloatField(label="Tax", required=False)
+    discount = forms.FloatField(label="Discount", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # مقدار choices رو از مدل می‌خونیم: [(value, label), ...]
+        self.fields['currency'].choices = [
+            (str(c.sepidar_id), c.title) for c in Currency.objects.all()
+        ]
+
+        self.make_disable(['currency', 'rate'])
+        self.fields['tax'].widget.attrs['onkeyup'] = 'calculate_price()'
+        self.fields['discount'].widget.attrs['onkeyup'] = 'calculate_price()'
+
+
+class BazarBuyFactorItemForm(CustomBaseForm):
+    item = forms.IntegerField(label='item')
+    portal_order_id = forms.IntegerField(widget=forms.HiddenInput, label='portal_order_id')
+    itemref = forms.IntegerField(widget=forms.HiddenInput, label='itemref')
+    price = forms.FloatField(label="Price", required=True)
+    quantity = forms.IntegerField(label="Quantity", required=True)
+    discount = forms.FloatField(label="discount", required=False)
+    addition = forms.FloatField(label="Addition", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['addition'].widget.attrs['onkeyup'] = 'calculate_price()'
+
+
+BazarPurchaseItemFormSet = formset_factory(BazarBuyFactorItemForm, extra=1)
+
+
+class TradeBuyFactorForm(CustomBaseForm):
+    trade_supplier = forms.ModelChoiceField(
+        queryset=Supplier.objects.all(),
+        widget=autocomplete.ModelSelect2(url='inquiry:supplier-autocomplete')
+    )
+    currency = forms.ChoiceField(label="currency_ref", initial='1')
+    rate = forms.FloatField(label="Exchange Rate", initial=1)
+    tax = forms.FloatField(label="Tax", required=False)
+    discount = forms.FloatField(label="Discount", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # مقدار choices رو از مدل می‌خونیم: [(value, label), ...]
+        self.fields['currency'].choices = [
+            (str(c.sepidar_id), c.title) for c in Currency.objects.all()
+        ]
+
+        self.make_disable(['currency', 'rate'])
+        self.fields['tax'].widget.attrs['onkeyup'] = 'calculate_price()'
+        self.fields['discount'].widget.attrs['onkeyup'] = 'calculate_price()'
+
+
+class TradeBuyFactorItemForm(CustomBaseForm):
+    item = forms.IntegerField(label='item')
+    portal_order_id = forms.IntegerField(widget=forms.HiddenInput, label='portal_order_id')
+    itemref = forms.IntegerField(widget=forms.HiddenInput, label='itemref')
+    price = forms.FloatField(label="Price", required=True)
+    quantity = forms.IntegerField(label="Quantity", required=True)
+    discount = forms.FloatField(label="discount", required=False)
+    addition = forms.FloatField(label="Addition", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['addition'].widget.attrs['onkeyup'] = 'calculate_price()'
+
+
+TradePurchaseItemFormSet = formset_factory(TradeBuyFactorItemForm, extra=1)
+
+
+class ACNTForm(CustomBaseModelForm):
+    class Meta:
+        model = OrderPayment
+        exclude = ['group']

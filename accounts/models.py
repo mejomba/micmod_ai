@@ -33,6 +33,7 @@ class User(AbstractUser):
     is_bi_user = models.BooleanField(default=False, verbose_name=_('is_bi_user'))
     z_index = models.IntegerField(null=True, blank=True, verbose_name=_('z_index'))
     bi_filter = models.JSONField(default=list, null=True, blank=True)
+    external_access = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'auth_user'

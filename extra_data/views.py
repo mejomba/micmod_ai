@@ -18,10 +18,11 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from micmod_base.forms import QuotationForm, QuotationItemFormset
+from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Device
 from sepidar.scripts.sepidar_classes import Urls
 from tools.import_data import set_items_sepidar_id_from_sepidar
-from tools.utils import show_error, set_secret_id
+from tools.utils import show_error, set_secret_id, DaxCall
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
     ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm, AccountingUserForm, \
     CustomerGroupUserForm
@@ -710,6 +711,8 @@ class CustomerContractView(LoginRequiredMixin, BaseView):
 class CustomerSepidarInsertView(View):
     def post(self, request, *args, **kwargs):
         customer = Customer.objects.filter(pk=kwargs.get('pk')).first()
+        SepidarApiCall.dl_to_sepidar(self.request, customer)
+        return
         if customer:
             '''send customer to sepidar'''
             device = Device.objects.all().first()
@@ -1018,3 +1021,30 @@ class CustomerGroupUserDatatableView(AjaxDatatableView):
             obj.title if obj.title else '_'
         )
         row['current_user__username'] = obj.current_user.username if obj.current_user else ''
+
+
+def get_customer_dax(request, customer_id):
+    """فقط باید چک بشه ایدی ارسالی درست است الان روی sepidar_party_id """
+    # daxs = DaxCall()
+    daxs_data = DaxCall.customer_dax()
+    matches = [dax for dax in daxs_data if dax.get('dim_customer[dl_id]') == customer_id]
+    if matches:
+        data = dict()
+        for k, v in matches[0].items():
+            if 'dl_id' in k:
+                continue
+            else:
+                data[k[1:-1]] = v
+        context = {'dax': data}
+        html = render_to_string('extra_data/partials/customer_dax.html', context, request)
+        return JsonResponse({'res': html}, safe=False)
+    return JsonResponse({'err': 'no data found'})
+    #
+    # for dax in daxs_data:
+    #     customer_dl_id = dax.get('dim_customer[dl_id]')
+    #     if customer_dl_id == customer_id:
+    #         return JsonResponse(customer_dl_id, safe=False)
+    #     else:
+    #         return JsonResponse({'err': 'no data found'})
+
+

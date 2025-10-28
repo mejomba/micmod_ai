@@ -355,7 +355,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                 lookup = {(d["Quantity"], d["ItemRef"]): d["QuotationItemID"] for d in sepidar_qis}
 
                 for item in items:
-                    key = (item.quantity, item.goods_code.sepidar_id_0)
+                    key = (item.quantity, item.goods_code_fk.sepidar_id_0)
                     if key in lookup:
                         item.sepidar_id = lookup[key]
 

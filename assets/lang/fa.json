@@ -725,5 +725,9 @@
     "open_rate": "یو آزاد",
     "new_order": "یو سفارش جدید",
     "talar": "یو تالار",
-    "buy_history": "مرور خرید"
+    "buy_history": "مرور خرید",
+    "discount": "تخفیف",
+    "currency": "واحد پول",
+    "buy_factor_quantity_in_sepidar": "تعداد در فاکتور خرید سپیدار",
+    "need_financial_approval": "نیاز به تایید مالی"
 }

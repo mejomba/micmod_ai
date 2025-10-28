@@ -1,0 +1,413 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load accounts_tag %}
+{% load more_tags %}
+
+{% block title %}سفارش{% endblock title %}
+{% block extra_css %}
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+    .select2-container{
+        min-width: 15em !important;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+        <span>
+            <select id="filter-orders" class="form-select">
+                <option value="">استفاده از فیلتر</option>
+            </select>
+        </span>
+        </div>
+
+    </div>
+        <div class="main-content " id="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <div class="row row-cols-2">
+                        <div class="col">
+{#                            <div class="container-fluid">#}
+                                <div class="table-responsive p-2">
+                                    <table id="bazar_order_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                    </table>
+                                </div>
+{#                            </div>#}
+                        </div>
+                        <div class="col">
+                            <div class="card px-2 py-5" id="buy-form-inputs">
+
+                                <fieldset>
+                                    <legend>فاکتور خرید</legend>
+                                    <div class="row row-cols-3" id="buy-factor-header">
+                                        <span class="d-none">
+                                            {{ form.currency }}
+                                            {{ form.rate }}
+                                        </span>
+                                    {% render_field_by_order form form.bazar_supplier form.tax form.discount label='on-border' %}
+                                        <input type="hidden" name="total_price">
+                                        </div>
+                                </fieldset>
+
+                                <fieldset id="items-area" class="mt-10">
+                                    <legend>ردیف‌های فاکتور</legend>
+                                    {{ formset.management_form }}
+                                    <div id="formset-container">
+                                        {% for form_s in formset %}
+                                            <div class="item-form row pt-5 mb-1 ms-0">
+                                                <div class="col-12">
+                                                    <div class="row delete">
+                                                        {% render_field_by_order form_s form_s.portal_order_id form_s.itemref form_s.item form_s.quantity form_s.price form_s.discount form_s.addition label='on-border' margin_b=0%}
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="show_partnumber"></div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <span>&nbsp;</span>
+
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <button type="button" id="submit-buy-factor" class="btn btn-primary mt-5 me-5">ثبت</button>
+                                            <span id="ajax-response"></span>
+                                        </div>
+                                        <div class="row row-cols-2 w-30">
+                                            <div class="col">
+                                                <div>کل</div>
+                                                <div>تحفیف</div>
+                                                <div>اضافات</div>
+                                                <div>مالیات</div>
+                                                <hr>
+                                                <div>خالص</div>
+                                            </div>
+                                            <div class="col">
+                                                <div id="total-calculated">-</div>
+                                                <div id="discount-calculated">-</div>
+                                                <div id="addition-calculated">-</div>
+                                                <div id="tax-calculated">-</div>
+                                                <hr>
+                                                <div id="netprice-calculated">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+        {% include 'core/partial/empty_modal_lg.html' %}
+        </div>
+        <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+
+<script language="javascript">
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
+        AjaxDatatableViewUtils.initialize_table(
+            $('#bazar_order_list'),
+            "{% url 'order:bazar_order.list.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+                q:q
+            },
+        );
+
+        $('#bazar_order_list').on('draw.dt', function (){
+            sync_datatable()
+        }) // end on draw.dt
+
+    }); // end ready
+
+    function sync_datatable(){
+        const table_skus = document.querySelectorAll('.item')
+        const form_skus = document.querySelectorAll('input[name$="-item"]')
+        table_skus.forEach(item => {
+            const sku = item.textContent.trim()
+            const match = Array.from(form_skus).find(i => i.value.trim() === sku)
+            const target = item.closest('tr').querySelector('.action')
+
+            if (match && sku && target){
+                target.innerHTML = '&#x2713;'
+                target.classList.add('text-success', 'font-size-20')
+            } else if (target) {
+                target.innerHTML = '➕'
+                target.classList.remove('text-success')
+            }
+        }) // end forEach
+    }
+    function bazar_buy_factor(event) {
+        const target = event.currentTarget
+        target.innerHTML = '&#x2713;'
+        target.classList.add('text-success', 'font-size-20')
+        const row = target.closest('tr')
+        const formsetContainer = document.getElementById('formset-container');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        const order_id = row.querySelector('.id').innerHTML
+        const quantity = row.querySelector('.quantity').innerHTML
+        const itemref = row.querySelector('.itemref').innerHTML
+        const item = row.querySelector('.item').innerHTML
+        const partnumber = row.querySelector('.partnumber').innerText
+
+        let totalForms = parseInt(totalFormsInput.value);
+        const firstForm = formsetContainer.querySelector('.item-form');
+        const newForm = firstForm.cloneNode(true); // کل فرم را کپی می‌کنیم
+        newForm.classList.remove('d-none')
+        newForm.querySelector('.show_partnumber').innerHTML = partnumber
+
+        // پاک ‌کردن مقدار فیلدها و تغییر نام و id
+        const inputs = newForm.querySelectorAll('input');
+        inputs.forEach(function (input, idx) {
+            let value;
+            if (input.name.endsWith('quantity')) {value = parseFloat(quantity)}
+            if (input.name.endsWith('price')) {value = 'قیمت وارد کنید'}
+            if (input.name.endsWith('itemref')) {value = itemref}
+            if (input.name.endsWith('item')) {value = item}
+            if (input.name.endsWith('portal_order_id')) {value = order_id}
+
+            const name = input.name.replace(/\d+/, totalForms);
+            const id = 'id_' + name;
+            input.name = name;
+            input.id = id;
+            input.value = value;
+
+            // اضافه کردن event listener برای تغییر مقدار
+            input.addEventListener('keyup', calculate_price);
+        });
+
+        formsetContainer.appendChild(newForm);
+        totalFormsInput.value = totalForms + 1;
+
+        // ساخت دکمه حذف
+        const removeBtn = document.createElement('span');
+        removeBtn.classList.add('remove-row', 'col-1'); // کلاس‌های دلخواه بوت‌استرپ یا سفارشی
+
+        // قرار دادن آیکون داخل دکمه
+        removeBtn.innerHTML = `
+            <i class="ki-duotone ki-trash text-danger fs-2x cursor-pointer">
+                <span class="path1"></span>
+                <span class="path2"></span>
+                <span class="path3"></span>
+                <span class="path4"></span>
+                <span class="path5"></span>
+            </i>
+        `;
+
+        // افزودن event حذف
+        removeBtn.addEventListener('click', function() {
+            newForm.remove(); // حذف ردیف فرم از DOM
+
+            const formset = document.querySelector('#formset-container');
+            const rows = formset.querySelectorAll('.item-form')
+            totalForms = -1
+
+            rows.forEach(function (row, idx) {
+                totalForms += 1
+                {#const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');#}
+                row.querySelectorAll('input').forEach(function (input){
+                    let value;
+                    const name = input.name.replace(/\d+/, totalForms);
+                    const id = 'id_' + name;
+                    input.name = name;
+                    input.id = id;
+                })
+            });
+
+            // در صورت نیاز تعداد فرم‌ها را هم کاهش بده:
+            const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+            totalFormsInput.value = parseInt(totalForms) + 1;
+            sync_datatable()
+            calculate_price()
+        });
+
+        newForm.querySelector('.delete').appendChild(removeBtn);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const formsetContainer = document.getElementById('formset-container');
+        const forms = formsetContainer.querySelectorAll('.item-form');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+
+        // مخفی کردن تمام فرم‌های اولیه
+        forms.forEach(form => form.classList.add('d-none'));
+    });
+
+    const submitBuyFactor = document.querySelector("#submit-buy-factor")
+    submitBuyFactor && submitBuyFactor.addEventListener('click', function (){
+        const container = document.getElementById('buy-form-inputs');
+        const inputs = container.querySelectorAll('input');
+        const currency = container.querySelector('#id_currency').value
+        const supplier = document.querySelector('#id_bazar_supplier').value
+        const itemform = document.querySelector('.item-form')
+        const data = {};
+        inputs.forEach(input => {
+            let value = input.value.trim();
+            if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {
+                value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار
+            }
+            data[input.name] = value;
+        });
+        data['currency'] = currency
+        data['supplier'] = supplier
+        custom_ajax_post_data(JSON.stringify(data), '/order/ajax/submit_buy_factor/', $('#ajax-response'))
+    })
+
+    function calculate_price(){
+        console.log('calculate price')
+        const submitBuyFactor = document.querySelector("#submit-buy-factor")
+        const total_calculated_element = document.querySelector('#total-calculated')
+        const discount_calculated_element = document.querySelector('#discount-calculated')
+        const addition_calculated_element = document.querySelector('#addition-calculated')
+        const tax_calculated_element = document.querySelector('#tax-calculated')
+        const netprice_calculated_element = document.querySelector('#netprice-calculated')
+
+        const formset_container = document.querySelector('#formset-container')
+        const buy_factor_header = document.querySelector('#buy-factor-header')
+        let item_form = [];
+        if (formset_container){item_form = formset_container.querySelectorAll('.item-form')}
+        let all_tax, all_discount = 0
+        if (buy_factor_header){
+            all_tax = buy_factor_header.querySelector('#id_tax').value
+            all_discount = buy_factor_header.querySelector('#id_discount').value
+        }
+        let total_row_price = 0;
+        let total_row_discount = 0;
+        let total_row_addition = 0;
+        let price_object = {
+            "factor_header": {
+                "all_tax": all_tax,
+                "all_discount": all_discount
+            }
+        }
+
+        {#item_form.forEach(function (row){#}
+        {#    const row_quantity = parseFloat(row.querySelector('input[id$="-quantity"]')?.value) || 0#}
+        {#    const row_unit_price = parseFloat(row.querySelector('input[id$="-price"]')?.value) || 0#}
+        {#    const row_discount = parseFloat(row.querySelector('input[id$="-discount"]')?.value) || 0#}
+        {#    const row_addition = parseFloat(row.querySelector('input[id$="-addition"]')?.value) || 0#}
+        {#    const row_itemref = parseFloat(row.querySelector('input[id$="-itemref"]')?.value) || 0#}
+        {##}
+        {#    const row_price = (row_quantity * row_unit_price)#}
+        {#    const row_price_after_discount = row_price - row_discount#}
+        {#    // جمع‌کردن کل قیمت‌ها و تخفیف‌ها#}
+        {#    total_row_price += row_price;#}
+        {#    total_row_discount += row_discount;#}
+        {#    total_row_addition += row_addition#}
+        {##}
+        {#    if ((!row_quantity || !row_price) && row_itemref) {#}
+        {#        row.style.backgroundColor = '#ffbbbb'; // قرمز ملایم برای هشدار#}
+        {#        submitBuyFactor.classList.add('d-none')#}
+        {#        document.querySelector('#ajax-response').innerHTML = 'ردیف های مشخص شده را اصلاح کنید.'#}
+        {##}
+        {#    } else {#}
+        {#        row.style.backgroundColor = ''; // اگر کامل بود، رنگ پیش‌فرض برگرده#}
+        {#        submitBuyFactor.classList.remove('d-none')#}
+        {#        document.querySelector('#ajax-response').innerHTML = ''#}
+        {#    }#}
+        //}) // end forEach
+
+        let hasError = false; // برای تشخیص اینکه break اتفاق افتاده یا نه
+
+        for (const row of item_form) {
+            const row_quantity = parseFloat(row.querySelector('input[id$="-quantity"]')?.value) || 0;
+            const row_unit_price = parseFloat(row.querySelector('input[id$="-price"]')?.value) || 0;
+            const row_discount = parseFloat(row.querySelector('input[id$="-discount"]')?.value) || 0;
+            const row_addition = parseFloat(row.querySelector('input[id$="-addition"]')?.value) || 0;
+            const row_itemref = parseFloat(row.querySelector('input[id$="-itemref"]')?.value) || 0;
+
+            const row_price = (row_quantity * row_unit_price);
+            const row_price_after_discount = row_price - row_discount;
+
+            // جمع کردن مقادیر کل فقط تا قبل از خطا
+            total_row_price += row_price;
+            total_row_discount += row_discount;
+            total_row_addition += row_addition;
+
+            if ((!row_quantity || !row_price) && row_itemref) {
+                row.style.backgroundColor = '#ffbbbb'; // قرمز ملایم برای هشدار
+                submitBuyFactor.classList.add('d-none');
+                document.querySelector('#ajax-response').innerHTML = 'ردیف‌های مشخص‌شده را اصلاح کنید.';
+                hasError = true;
+                break; // خروج از حلقه
+            } else {
+                row.style.backgroundColor = ''; // اگر کامل بود، رنگ پیش‌فرض برگرده
+            }
+        }
+
+        // فقط اگر break اتفاق نیفتاد (یعنی خطایی وجود نداشت)
+        if (!hasError) {
+            submitBuyFactor.classList.remove('d-none');
+            document.querySelector('#ajax-response').innerHTML = '';
+        }
+
+        const _toNumber = v => parseFloat(v) || 0;
+
+        all_tax = _toNumber(price_object.factor_header.all_tax);
+        all_discount = _toNumber(price_object.factor_header.all_discount);
+        const net_price = _toNumber(total_row_price) - _toNumber(total_row_discount) - _toNumber(all_discount) + _toNumber(all_tax) + _toNumber(total_row_addition);
+        total_calculated_element.innerHTML = formatNumber(total_row_price) || '0'
+        discount_calculated_element.innerHTML = formatNumber(total_row_discount + all_discount) || '0'
+        addition_calculated_element.innerHTML = formatNumber(total_row_addition) || '0'
+        tax_calculated_element.innerHTML = formatNumber(all_tax) || '0'
+        netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'
+
+        document.querySelector('input[name="total_price"]').value = total_row_price
+    }
+
+    function formatNumber(num) {
+        return num.toLocaleString('us-EN'); // یا 'fa-IR' برای فارسی
+    }
+</script>
+
+
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+{#    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>#}
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+    {{ form.media }}
+
+{% endblock extra_js %}

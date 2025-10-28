@@ -114,6 +114,8 @@ THIRD_PARTY_APPS = [
     'django_json_widget',
     'drf_spectacular',
     'simple_history',
+    'dal',
+    'dal_select2',
 ]
 # INSTALLED_APPS = [
 #     'django.contrib.admin',
@@ -147,7 +149,8 @@ MIDDLEWARE = [
     "allauth_2fa.middleware.AllauthTwoFactorMiddleware",
     # "accounts.middleware.middleware.UserRoleMiddleware",
     'simple_history.middleware.HistoryRequestMiddleware',
-    'core.middleware.RequestTimingMiddleware'
+    'core.middleware.RequestTimingMiddleware',
+    'core.middleware.InternalIPRestrictionMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -793,3 +796,4 @@ SHOP_PORT = os.environ.get('SHOP_PORT')
 # }
 
 # $env:SHOP_DB="poshop"
+TOKEN_8070 = os.environ.get('TOKEN_8070')

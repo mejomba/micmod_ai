@@ -1,0 +1,73 @@
+{% load jalali_tags %}
+{% load more_tags %}
+
+<tr class="{% if order_form.instance.is_wh %} bg-light-success {% elif order_form.instance.is_bazar %} bg-light-info {% else %} bg-light-primary {% endif %}">
+    <input type="hidden" name="main_order_pk" value="{{ main_order.pk }}">
+    <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
+    <th scope="row">
+    <svg xmlns="http://www.w3.org/2000/svg" style="transform: rotateX(180deg)" width="16" height="16" fill="currentColor" class="bi bi-arrow-90deg-left" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>
+    </svg>
+        <span class="badge {% if order_form.instance.is_wh %} badge-light-success {% elif order_form.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">
+            <span class="me-2">رزرو</span>
+            {{ order_pair.get_wh_name }}
+        </span>
+    </th>
+    <td>
+        <span class="order_id">{{ order_form.instance.pk }}</span>
+    </td>
+    <td>
+        {{ order_form.instance.item }} <br>
+        {% if order_form.instance.final_item != order_form.instance.item %}
+            <span class="text-info bold">{{ order_form.instance.final_item }}</span>
+        {% endif %}
+
+    </td>
+    <td>
+        {{ order_form.instance.item.part_number }} <br>
+        {% if order_form.instance.item.part_number != order_form.instance.final_item.part_number %}
+            <span class="text-info bold">{{ order_form.instance.item.part_number }}</span>
+        {% endif %}
+    </td>
+    <td>
+{#        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>#}
+    <span>{{ order_form.instance.sepidar_wh_quantity|default_if_none:order_form.instance.quantity }}</span>
+        <span class="input d-none">{{ order_form.quantity }}</span> <br>
+        {% if order_form.instance.quantity != order_form.instance.final_quantity %}
+            <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if order_pair.quantity %}
+            <span class="label" onclick="toggle_display(event)">{{ order_pair.quantity }}</span>
+        {% else %}
+            <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+        {% endif %}
+        <span class="input d-none"><input type="number" class="form-control" name="pair_quantity"
+                                          value="{{ order_pair.quantity }}"></span> <br>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.commitment_date_to_customer|to_jalali }}</span>
+        <span class="input d-none">{{ order_form.commitment_date_to_customer }}</span> <br>
+    </td>
+    <td>
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.transportation_method|default_if_none:"بازار" }}</span>
+        <span class="input d-none">{{ order_form.transportation_method }}</span>
+    </td>
+    <td style="max-width: 250px">
+        <span class="label"
+              onclick="toggle_display(event)">{{ order_form.instance.description_sale|default_if_falsy:'-----' }}</span>
+        <span class="input d-none">{{ order_form.description_sale }}</span> <br>
+    </td>
+    <td>
+        <span class="label" onclick="toggle_display(event)">{{ order_form.instance.order_type }}</span>
+        <span class="input d-none">{{ order_form.order_type }}</span> <br>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
+        <button class="btn btn-sm btn-danger" data-submit_action="delete" onclick="update_supply_location(event)">خذف</button>
+        <span id="msg">ذخیره شد ✅</span>
+    </td>
+</tr>

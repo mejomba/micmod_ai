@@ -57,4 +57,7 @@ urlpatterns = [
     path('currency_amount/', views.CurrencyAmountList.as_view(), name='currency_amount.view'),
     path('currency_amount/<int:pk>/', views.CurrencyAmountList.as_view(), name='currency_amount.update'),
     path('currency_amount/datatable/', views.CurrencyAmountDatatableView.as_view(), name='currency_amount.datatable'),
+
+    # dal auto complete
+    path('supplier-autocomplete/', views.SupplierAutocomplete.as_view(), name='supplier-autocomplete'),
 ]

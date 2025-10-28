@@ -236,6 +236,7 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
         contentType: false,
         beforeSend: block_main_container,
         success: function (data) {
+            debugger
             if(element) {
                 html = data['res'];
                 try {
@@ -253,8 +254,10 @@ function custom_ajax_post_data(post_data, url, element=null, reload_page=null) {
                 }, 500)
             }
         },
-        error: function () {
-
+        error: function (data) {
+            debugger
+            // createAccordion(data.responseJSON['res'], jsonContainer)
+            initJsonAccordion(data.responseJSON['res'])
         },
         complete: release_main_container
     }); // end ajax

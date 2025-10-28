@@ -18,6 +18,7 @@ import pandas as pd
 from io import BytesIO
 import string
 import random
+from django.conf import settings
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -542,3 +543,25 @@ def set_secret_id():
     num = random.randint(1000, 9999)
     return ''.join(chars) + str(num)
 
+
+def grouped_value(obj, /, *, target_suffixes):
+    from collections import defaultdict
+
+    grouped = defaultdict(dict)
+    for key, value in obj.items():
+        if key.endswith(target_suffixes):
+            form_index = key.split('-')[1]
+            field_name = key.split('-')[-1]
+            grouped[form_index][field_name] = value
+    return grouped
+
+
+class DaxCall:
+
+    @classmethod
+    def customer_dax(cls):
+        url = "http://192.168.1.80:8070/etls/get-dax/2/"
+        headers = {"Authorization": f"Token {settings.TOKEN_8070}"}
+        import requests
+        res = requests.get(url, headers=headers)
+        return res.json()

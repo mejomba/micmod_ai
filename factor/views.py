@@ -23,12 +23,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from simple_history.models import HistoricalRecords
 
+from core.exceptions import StockRefNotFoundError
 from core.permissions import HasShopPermission
 from extra_data.models import Item
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
 from sepidar.api_call import SepidarApiCall
+from sepidar.models import Dl
 from translator import get_text as _
 
 from core.views import BaseView, Base
@@ -61,38 +63,68 @@ class FactorView(LoginRequiredMixin, BaseView):
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
 
-    def send_factor_to_sepidar(self):
-        res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
-        if res:
-            self.object.sepidar_number = res.get('number')
-            self.object.sepidar_id = res.get('invoiceid')
+    allow_perms = [f'{model._meta.app_label}.view_{model._meta.model_name}',
+                f'{model._meta.app_label}.add_{model._meta.model_name}',
+                f'{model._meta.app_label}.change_{model._meta.model_name}',
+                f'{model._meta.app_label}.delete_{model._meta.model_name}',
+                f'{model._meta.app_label}.factor_send_or_delivery_{model._meta.model_name}'
+                ]
+
+    def after_sepidar_error(self):
+        if 'next' in self.request.POST:
+            self.object.last_work_flow = self.object.workflows.all().order_by('-id')[1]
+            self.object.final_check = False
             self.object.extra_data.request = self.request
-            self.object.final_check = True
+            self.object.save()
+            self.object.workflows.all().order_by('id').last().delete()
+        else:
+            self.object.final_check = False
+            self.object.extra_data.request = self.request
             self.object.save()
 
-            """ save sepidar InvoiceItemID for fi """
-            fis = list(self.object.factoritem_set.all())
-            lookup = {(d["quantity"], d["itemref"]): d["invoiceitemid"] for d in res.get('invoice_items')}
+    def send_factor_to_sepidar(self):
+        customer = self.object.q.customer_party_id
+        if not customer.active:
+            messages.error(self.request, f'مشتری در پرتال غیر فعال است.')
+            self.after_sepidar_error()
+            return
 
-            for item in fis:
-                key = (item.quantity, item.goods_code.sepidar_id_0)
-                if key in lookup:
-                    item.sepidar_id = lookup[key]
-
-            FactorItem.objects.bulk_update(fis, ["sepidar_id"])
-            messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
-        else:
-            if 'next' in self.request.POST:
-                self.object.last_work_flow = self.object.workflows.all().order_by('-id')[1]
-                self.object.final_check = False
+        res = SepidarApiCall.get_party(customer.sepidar_party_id)
+        if not res.get('iscustomer'):
+            messages.error(self.request, f'مشتری در سپیدار فعال نیست.')
+            self.after_sepidar_error()
+            return
+        try:
+            res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
+            if res:
+                self.object.sepidar_number = res.get('number')
+                self.object.sepidar_id = res.get('invoiceid')
                 self.object.extra_data.request = self.request
+                self.object.final_check = True
                 self.object.save()
-                self.object.workflows.all().order_by('id').last().delete()
+
+                """ save sepidar InvoiceItemID for fi """
+                fis = list(self.object.factoritem_set.all())
+                lookup = {(d["quantity"], d["itemref"]): d["invoiceitemid"] for d in res.get('invoice_items')}
+
+                for item in fis:
+                    key = (item.quantity, item.goods_code.sepidar_id_0)
+                    if key in lookup:
+                        item.sepidar_id = lookup[key]
+
+                FactorItem.objects.bulk_update(fis, ["sepidar_id"])
+                messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
+                return
             else:
-                self.object.final_check = False
-                self.object.extra_data.request = self.request
-                self.object.save()
-            messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+                self.after_sepidar_error()
+                messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+                return
+        except StockRefNotFoundError as e:
+            self.after_sepidar_error()
+            messages.error(self.request, f'{e}')
+        except Exception as e:
+            self.after_sepidar_error()
+            messages.error(self.request, f'{e}')
 
     def get_success_url(self):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
@@ -167,8 +199,8 @@ class FactorView(LoginRequiredMixin, BaseView):
         if 'next' in self.request.POST and self.state_index == 4:
             self.send_factor_to_sepidar()
 
-        if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
-            self.send_factor_to_sepidar()
+        # if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
+        #     self.send_factor_to_sepidar()
 
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
@@ -177,6 +209,8 @@ class FactorView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if not self.object:
+            context['allow_next'] = False
         context['f_warning'] = []
         if not self.object:
             return context
@@ -245,8 +279,8 @@ class FactorView(LoginRequiredMixin, BaseView):
                 .all()
             )
 
-            if self.object and self.state_index == 3 and not all(x.supply_locations.is_all_arrival for x in factoritems):
-                context['allow_next'] = True
+            if self.object and self.state_index >= 0 and not all(x.supply_locations.is_all_arrival for x in factoritems):
+                context['allow_next'] = False
                 context['f_warning'].append('سفارش در راه دارد')
 
         return context
@@ -392,27 +426,29 @@ class FactorListDatatable(AjaxDatatableView):
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
-    column_defs = [
-        AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'pk', 'visible': False, 'className': 'currency-search'},
-        {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
-        {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'},
-        {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'), 'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
-        {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
-        {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains', 'searchable': True, 'className': 'border'},
-        {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'), 'lookup_field': '__to_user__username__icontains'},
-        {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains'},
-        {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},
-        {'name': 'delivery_time', 'visible': True, 'searchable': True ,'title': _('delivery_time'), 'orderable':True, 'lookup_field': '__icontains', 'className': 'border'},
-        {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable':True, 'lookup_field': '__current_state_name__icontains', 'className': 'border'},
-        {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
-        {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
-        {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True, 'className': 'border'},
-        {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
-        {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
-        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True, 'lookup_field': '__icontains', 'className': 'border'},
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cols = self.base_cols()
 
-    ]
+    def get_column_defs(self, request):
+        if self.request.user.is_superuser:
+            self.wh_column_defs(request)
+            self.sales_column_defs(request)
+
+        if self.request.user.base_group == 'wh':
+            self.wh_column_defs(request)
+        elif self.request.user.base_group == 'sales':
+            self.sales_column_defs(request)
+        else:
+            self.cols.append({'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'})
+            self.cols.append({'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains', 'className': 'border'})
+            self.cols.append({'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True, 'lookup_field': '__title__icontains', 'className': 'border'},)
+            self.cols.append({'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},)
+            self.cols.append({'name': 'delivery_time', 'visible': True, 'searchable': True, 'title': _('delivery_time'), 'orderable': True, 'lookup_field': '__icontains', 'className': 'border'},)
+            self.cols.append({'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True, 'className': 'border'},)
+            self.cols.append({'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},)
+
+        return self.cols
 
     def get_initial_queryset(self, request=None):
         qs = self.model.get_qs(self.request, lst=False)
@@ -432,6 +468,66 @@ class FactorListDatatable(AjaxDatatableView):
         row['q__payment_method'] = obj.q.payment_method if obj.q else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
+
+    def wh_column_defs(self, request):
+        for col in [
+            {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
+             'lookup_field': '__current_state_name__icontains', 'className': 'border'},
+            {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
+            {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+             'lookup_field': '__icontains', 'className': 'border'},
+        ]:
+            self.cols.append(col)
+        return self.cols
+
+    def sales_column_defs(self, request):
+        for col in [
+            {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
+             'lookup_field': '__current_state_name__icontains', 'className': 'border'},
+            {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'className': 'border'},
+            {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+             'lookup_field': '__icontains', 'className': 'border'},
+            {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains',
+             'className': 'border'},
+            {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True,
+             'lookup_field': '__title__icontains', 'className': 'border'},
+            {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True,
+             'className': 'border'},
+            {'name': 'delivery_time', 'visible': True, 'searchable': True, 'title': _('delivery_time'),
+             'orderable': True, 'lookup_field': '__icontains', 'className': 'border'},
+            {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True,
+             'className': 'border'},
+            {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True,
+             'searchable': True, 'className': 'border'},
+        ]:
+            self.cols.append(col)
+        return self.cols
+
+    def base_cols(self):
+        self.cols = [
+            AjaxDatatableView.render_row_tools_column_def(),
+            {'name': 'pk', 'visible': False, 'className': 'currency-search'},
+            {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
+            {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'),
+             'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+        ]
+        return self.cols
 
 
 def print_view(request,id=-1):

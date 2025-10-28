@@ -65,5 +65,6 @@ urlpatterns = [
     path('customer_group_user/', CustomerGroupUserView.as_view(), name='customer_group_user'),
     path('customer_group_user/<int:pk>/', CustomerGroupUserView.as_view(), name='customer_group_user.update'),
     path('customer_group_user/datatable/', CustomerGroupUserDatatableView.as_view(), name='customer_group_user.datatable'),
+    path('get_customer_dax/<int:customer_id>', views.get_customer_dax, name='get_customer_dax'),
 
 ]
