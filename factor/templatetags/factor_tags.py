@@ -5,7 +5,7 @@ register = template.Library()
 
 
 @register.inclusion_tag('factor/partial/supply_locations.html')
-def supply_locations(item: "models.Item", prefix, counter, factor_item=None):
+def supply_locations(item: "models.Item", prefix, counter, factor_item=None, user=None):
     context = dict()
     if not isinstance(item, models.Item):
         item = models.Item.objects.filter(sku=item).first()
@@ -15,4 +15,5 @@ def supply_locations(item: "models.Item", prefix, counter, factor_item=None):
     context['prefix'] = prefix
     context['counter'] = counter
     context['factor_item'] = factor_item
+    context['user'] = user
     return context

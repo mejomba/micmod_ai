@@ -48,7 +48,11 @@
 
     {% if obj %}
         <div>
-        {% include 'factor/factor_item.html' with form_s=form_s quotation=quotation %}
+        {% if request.user.base_group == 'wh' %}
+            {% include 'factor/wh_factor_items.html' with form_s=form_s quotation=quotation %}
+        {% else %}
+            {% include 'factor/factor_item.html' with form_s=form_s quotation=quotation %}
+        {% endif %}
         </div>
     {% else %}
         <!-- search quotation-->
