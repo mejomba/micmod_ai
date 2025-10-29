@@ -1090,7 +1090,16 @@ class SubmitBuyFactor(View):
                     o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                     o.editor_user = self.request.user
                     o.save()
-                return JsonResponse({'res': f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}'})
+                new_btn = """
+                <button 
+                    type="button" 
+                    id="submit-buy-factor" 
+                    class="btn btn-secondary mt-5 me-5"
+                    onclick="window.location.href = window.location.href">
+                    جدید
+                </button>
+                """
+                return JsonResponse({'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span>'}, status=201)
             else:
                 return JsonResponse({'res': res}, status=400)
         except Exception as e:
