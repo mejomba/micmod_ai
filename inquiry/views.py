@@ -2138,7 +2138,9 @@ class SupplierAutocomplete(autocomplete.Select2ListView):
         if q:
             reps = [["ي", "ی"], ["ك", "ک"]]
             for rep in reps:
-                filtered_ky = {k: v.replace(rep[0], rep[1]) for k, v in filtered.items()}
+                filtered_ky = {k: v.replace('ي', 'ی')
+                                    .replace('ك', 'ک')
+                                    .strip() for k, v in filtered.items()}
 
             filtered = {
                 k: v for k, v in filtered_ky.items()
