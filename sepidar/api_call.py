@@ -30,6 +30,9 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         tax = obj.get('tax') or 0
         duty = obj.get('duty') or 0
         supplier = obj.get('supplier')
+        creator = request.user.sepidar_code
+        if not creator:
+            raise Exception("کاربر کد سپیدار ندارد")
         if not supplier:
             return
         discount = obj.get('discount') or 0
@@ -55,7 +58,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "totalwithholdingtaxamount": None,  # همیشه null بجز یک رکورد Todo
             "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
             "fiscalyearref": fisicalyearref,
-            "creator": 1,  # Todo
+            "creator": creator,  # Todo
             "creationdate": timezone.now().date().isoformat(),
             "lastmodifier": 1,  # Todo
             "lastmodificationdate": timezone.now().date().isoformat(),
@@ -434,6 +437,7 @@ class SepidarApiCall:
             'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
             'inventory_purchase_invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorypurchaseinvoice/',
             'party': f'{protocol}://{host}:{port}/api2/sepidar_api-party/',
+            'bazar_supplier': f'{protocol}://{host}:{port}/api2/sepidar_api-party?isvendor=1',
         },
     }
 
@@ -609,7 +613,7 @@ class SepidarApiCall:
         if update:
             data = {}
         else:
-            inventory_purchase_invoice_data = cls.data.get_inventory_purchase_invoice_data(obj, request=None)
+            inventory_purchase_invoice_data = cls.data.get_inventory_purchase_invoice_data(obj, request=request)
 
             res = requests.post(endpoint, json=inventory_purchase_invoice_data, headers=cls.headers)
             if res.ok:
@@ -639,3 +643,14 @@ class SepidarApiCall:
                 return {
                     "errors": "خطا",
                 }
+
+    @classmethod
+    def get_bazar_supplier(cls, request):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
+        res = requests.get(endpoint, headers=cls.headers)
+        if res.ok:
+            res = {x.get('dlref'): x.get('name') for x in res.json().get('results')}
+            return res
+
+        return dict()

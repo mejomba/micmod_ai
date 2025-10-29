@@ -396,7 +396,9 @@ OrderPaymentItemFormSet = inlineformset_factory(
 class BazarBuyFactorForm(CustomBaseForm):
     bazar_supplier = forms.ModelChoiceField(
         queryset=Supplier.objects.filter(base_group='bazar', is_deleted=False),
-        widget=autocomplete.ModelSelect2(url='inquiry:supplier-autocomplete'),
+        widget=autocomplete.ModelSelect2(url='inquiry:supplier-autocomplete', attrs={
+                    'data-autocomplete-delay': 1000,
+                }),
         label=_('supplier')
     )
     currency = forms.ChoiceField(label="currency_ref", initial='1')
