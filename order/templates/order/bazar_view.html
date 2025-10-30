@@ -291,6 +291,7 @@
     })
 
     function calculate_price(){
+        debugger
         console.log('calculate price')
         const submitBuyFactor = document.querySelector("#submit-buy-factor")
         const total_calculated_element = document.querySelector('#total-calculated')
@@ -317,32 +318,6 @@
                 "all_discount": all_discount
             }
         }
-
-        {#item_form.forEach(function (row){#}
-        {#    const row_quantity = parseFloat(row.querySelector('input[id$="-quantity"]')?.value) || 0#}
-        {#    const row_unit_price = parseFloat(row.querySelector('input[id$="-price"]')?.value) || 0#}
-        {#    const row_discount = parseFloat(row.querySelector('input[id$="-discount"]')?.value) || 0#}
-        {#    const row_addition = parseFloat(row.querySelector('input[id$="-addition"]')?.value) || 0#}
-        {#    const row_itemref = parseFloat(row.querySelector('input[id$="-itemref"]')?.value) || 0#}
-        {##}
-        {#    const row_price = (row_quantity * row_unit_price)#}
-        {#    const row_price_after_discount = row_price - row_discount#}
-        {#    // جمع‌کردن کل قیمت‌ها و تخفیف‌ها#}
-        {#    total_row_price += row_price;#}
-        {#    total_row_discount += row_discount;#}
-        {#    total_row_addition += row_addition#}
-        {##}
-        {#    if ((!row_quantity || !row_price) && row_itemref) {#}
-        {#        row.style.backgroundColor = '#ffbbbb'; // قرمز ملایم برای هشدار#}
-        {#        submitBuyFactor.classList.add('d-none')#}
-        {#        document.querySelector('#ajax-response').innerHTML = 'ردیف های مشخص شده را اصلاح کنید.'#}
-        {##}
-        {#    } else {#}
-        {#        row.style.backgroundColor = ''; // اگر کامل بود، رنگ پیش‌فرض برگرده#}
-        {#        submitBuyFactor.classList.remove('d-none')#}
-        {#        document.querySelector('#ajax-response').innerHTML = ''#}
-        {#    }#}
-        //}) // end forEach
 
         let hasError = false; // برای تشخیص اینکه break اتفاق افتاده یا نه
 

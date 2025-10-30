@@ -1061,40 +1061,49 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
 class SubmitBuyFactor(View):
     def post(self, request, *args, **kwargs):
         from tools import utils
-        body = self.request.body or '{}'
-        data = json.loads(body)
-        grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
-        res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
-        if hasattr(res, 'errors'):
-            # messages.error(self.request, res.get('errors'))
-            return JsonResponse({'res': 'fail'})
+        try:
+            body = self.request.body or '{}'
+            data = json.loads(body)
+            grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+            res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+            if hasattr(res, 'errors'):
+                # messages.error(self.request, res.get('errors'))
+                return JsonResponse({'res': 'fail'})
 
-        elif res.get('valid'):
-            buy_factor_number = res.get('number')
-            buy_factor_id = res.get('buy_factor_id')
-            lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
-            """
-            lookup output like this:
-            lookup = {
-                (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
-            }
-            """
-            buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
-            for key, value in lookup.items():
-                buy_factor_item = buy_factor_items.get(key)
-                inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
-                order_pk = value.get('portal_order_id')
-                o = Order.objects.filter(pk=order_pk).first()
-                o.buy_factors.append({str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
-                o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
-                o.editor_user = self.request.user
-                o.save()
-
-            # messages.success(self.request, f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}')
-            return JsonResponse({'res': f'فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}'})
-        else:
-            # messages.error(self.request, 'خطا در ارسال به سپیدار')
-            return JsonResponse({'res': res}, status=400)
+            elif res and res.get('valid'):
+                buy_factor_number = res.get('number')
+                buy_factor_id = res.get('buy_factor_id')
+                lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+                """
+                lookup output like this:
+                lookup = {
+                    (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+                }
+                """
+                buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+                for key, value in lookup.items():
+                    buy_factor_item = buy_factor_items.get(key)
+                    inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                    order_pk = value.get('portal_order_id')
+                    o = Order.objects.filter(pk=order_pk).first()
+                    o.buy_factors.append({str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                    o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
+                    o.editor_user = self.request.user
+                    o.save()
+                new_btn = """
+                <button 
+                    type="button" 
+                    id="submit-buy-factor" 
+                    class="btn btn-secondary mt-5 me-5"
+                    onclick="window.location.href = window.location.href">
+                    جدید
+                </button>
+                """
+                return JsonResponse({'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span>'}, status=201)
+            else:
+                return JsonResponse({'res': res}, status=400)
+        except Exception as e:
+            return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
 
 class OrderOfFactor(View):
@@ -1178,6 +1187,7 @@ class OrderOfFactor(View):
             """process wh oo"""
             pair_quantity = int(float((self.data.get('pair_quantity', 0))))
             main_order_pk = int(float((self.data.get('main_order_pk', 0))))
+            main_order_obj = Order.objects.get(pk=main_order_pk)
             Order.objects.create({
                 'item': main_order_obj.item
             })

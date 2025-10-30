@@ -2130,9 +2130,28 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
         row['open_rate'] = "{:,}".format(int(obj.open_rate))
 
 
-class SupplierAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
-        qs = Supplier.objects.filter(base_group='bazar', is_deleted=False)
-        if self.q:
-            qs = qs.filter(title__icontains=self.q)
-        return qs
+class SupplierAutocomplete(autocomplete.Select2ListView):
+
+    def get_list(self):
+        import re
+        data = SepidarApiCall.get_bazar_supplier(self.request)
+        q = self.q
+
+        filtered = {
+            k: v for k, v in data.items()
+            if len(re.findall(r'[A-Za-z]', v)) <= 2
+        }
+
+        if q:
+            reps = [["ي", "ی"], ["ك", "ک"]]
+            for rep in reps:
+                filtered_ky = {k: v.replace('ي', 'ی')
+                                    .replace('ك', 'ک')
+                                    .strip() for k, v in filtered.items()}
+
+            filtered = {
+                k: v for k, v in filtered_ky.items()
+                if q.lower() in v.lower() and k is not None
+            }
+
+        return [(k, v) for k, v in filtered.items()]
