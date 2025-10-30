@@ -1038,7 +1038,7 @@ def get_customer_dax(request, customer_id):
         context = {'dax': data}
         html = render_to_string('extra_data/partials/customer_dax.html', context, request)
         return JsonResponse({'res': html}, safe=False)
-    return JsonResponse({'err': 'no data found'})
+    return JsonResponse({'res': 'no data found'})
     #
     # for dax in daxs_data:
     #     customer_dl_id = dax.get('dim_customer[dl_id]')
