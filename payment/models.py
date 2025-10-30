@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.http import JsonResponse
 
+from accounts.models import User
 from core.models import AbsBaseModel, BaseModeWF, BaseContentType
 from micmod_base.base import Currency
 from translator import get_text as _
@@ -48,6 +49,7 @@ class PaymentOrder(BaseModeWF):
     force = models.BooleanField(_('force'), default=False)
     description = models.TextField(_('description'), null=True, blank=True)
     credit_card = models.ForeignKey(CreditCard, on_delete=models.DO_NOTHING, related_name='payments', null=True, blank=True)
+    assigned_accounting_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='assigned_accounting_user', null=True, blank=True, verbose_name=_('assigned_accounting_user'))
 
     def __str__(self):
         return f'دستور پرداخت ({self.id})'
