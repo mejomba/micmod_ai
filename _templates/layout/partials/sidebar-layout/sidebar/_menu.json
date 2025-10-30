@@ -505,6 +505,12 @@
           "icon": "burger-menu",
           "path_key": "sku/list",
           "link": "extra_data:sku.list"
+        },
+        {
+          "title": "item_weight",
+          "icon": "burger-menu",
+          "path_key": "extra_data/item_weight/view/",
+          "link": "extra_data:item_weight.list"
         }
       ]
     },

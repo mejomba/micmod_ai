@@ -127,12 +127,15 @@
                         <label class="card-title-desc text-center bold ms-1"
                                data-key="stock_amount">موجودی:</label>
                         {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
-                        <div class="d-flex gap-2 d-non">
-                            <span> تعداد در بسته: </span>
-                            <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:'-' }}</span>
-                        </div>
+
                     </div>
                     <div>{% render_field_by_order nested nested.description label='on-border' %}</div>
+                </div>
+                <div class="d-flex gap-2 mb-1 d-non">
+                    <span> تعداد در بسته: </span>
+                    <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>
                 </div>
                 <div class="d-flex mt-3">
                     <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>

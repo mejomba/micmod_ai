@@ -1378,6 +1378,8 @@ def get_items(request):
                 try:
                     sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
                     item['moq'] = sku_item.batch_count
+                    item['moq_box'] = sku_item.count_in_box
+                    item['moq_main_box'] = sku_item.count_in_main_box
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
@@ -1534,6 +1536,8 @@ def get_items(request):
                 item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 item['moq'] = item_.batch_count
+                item['moq_box'] = item.count_in_box
+                item['moq_main_box'] = item.count_in_main_box
                 try:
                     sku_item: Item = item_
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
@@ -1697,6 +1701,8 @@ class AjaxInquiryResultListData(View):
         # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
         # if not sku:
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
+        part_number = '---'
+        sku_id = 0
         if sku:
             try:
                 parent = sku.parent
@@ -1709,9 +1715,11 @@ class AjaxInquiryResultListData(View):
                 else:
                     return JsonResponse(
                         {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': '-'})
+                part_number = sku.part_number
+                sku_id = sku.id
             except:
                 pass
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})
+        return JsonResponse({'sku_name': part_number, 'item_weight': None, 'item_id': sku_id, 'parent': None})
 
 
 # Todo ino yadet nare shanbe
