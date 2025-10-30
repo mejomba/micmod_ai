@@ -1027,6 +1027,8 @@ def get_customer_dax(request, customer_id):
     """فقط باید چک بشه ایدی ارسالی درست است الان روی sepidar_party_id """
     # daxs = DaxCall()
     daxs_data = DaxCall.customer_dax()
+    if not daxs_data:
+        return JsonResponse({'res': 'no data found'})
     matches = [dax for dax in daxs_data if dax.get('dim_customer[dl_id]') == customer_id]
     if matches:
         data = dict()
