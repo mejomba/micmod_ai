@@ -727,7 +727,7 @@
             "deadline": 0,
             "form_constraint": {
               "hide": [],
-              "read": ["manager_confirmation", "accounting", "from_source", "is_paid"]
+              "read": ["manager_confirmation", "accounting", "from_source", "is_paid", "assigned_accounting_user"]
             },
             "formset_constraint": [
               {
