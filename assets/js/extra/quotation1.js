@@ -843,8 +843,7 @@ function display_price(row){
 
     if (display_price_container) {
         price_json.forEach(function (item){
-            row.querySelector('#lead_time_text').innerText = item.lead_time
-            console.log(item)
+            if(item.lead_time){row.querySelector('#lead_time_text').innerText = item.lead_time}
             if (item.unique_title === 'goods_last_price' || item.unique_title === 'goods_q_last_price'){
                 last_sale_price_list.push(`<div class="row row-cols-4 mx-1 hover-link" id=id_${item.unique_title}>
                     <span class="col-3 p-0">
