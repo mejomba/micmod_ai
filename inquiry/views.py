@@ -1536,8 +1536,9 @@ def get_items(request):
                 item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 item['moq'] = item_.batch_count
-                item['moq_box'] = item.count_in_box
-                item['moq_main_box'] = item.count_in_main_box
+                item['moq_box'] = item_.count_in_box
+                item['moq_main_box'] = item_.count_in_main_box
+                item['price_list'] = []
                 try:
                     sku_item: Item = item_
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
@@ -1553,11 +1554,96 @@ def get_items(request):
                             currency=id_currency_ref,
                             price_setting=price_setting
                         )
+                        trade_transportation_method_obj = TradeTransportationMethod.objects.filter(
+                            pk__in=price_inquiry_result.trade_transportation_method_json.values()) if price_inquiry_result.trade_transportation_method_json else None
+                        if trade_transportation_method_obj:
+                            trade_transportation_method_obj |= TradeTransportationMethod.objects.filter(
+                                Q(access_type__isnull=False) | Q(title__in=['air', 'sea', 'express']))
+                        else:
+                            trade_transportation_method_obj = TradeTransportationMethod.objects.filter(
+                                Q(access_type__isnull=False) | Q(title__in=['air', 'sea', 'express']))
                         item["price_settings"] = price_setting.pk
                         if str(id_currency_ref) == str(1):  # rial
                             item["rial_final_price"] = price_inquiry_result.rial_final_price
                             item["rial_final_price_new_order"] = price_inquiry_result.rial_final_price_new_order
+                            if trade_transportation_method_obj:
+                                for ttm in trade_transportation_method_obj:
+                                    if ttm.title in item['rial_final_price']:
+                                        v = item['rial_final_price'][ttm.title]
+                                        item['price_list'].append({
+                                            'type': ttm.method.lower(),
+                                            'ref': ttm.pk,
+                                            'value': round(v.get('price'), 3) if v.get('price') > 1 else round(
+                                                v.get('price'), 5),
+                                            'title': price_inquiry_result.select_title(ttm.method),
+                                            'access_type': ttm.access_type,
+                                            'unique_title': ttm.title,
+                                            'date': to_jalali(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
+                                        })
+                            else:
+                                for k, v in item["rial_final_price"].items():
+                                    if isinstance(v, dict):
+                                        v = v.get('price')
+                                    item['price_list'].append({
+                                        'type': k.lower(),
+                                        'ref': None,
+                                        'value': v,
+                                        'title': price_inquiry_result.select_title(k),
+                                        'access_type': None,
+                                        'unique_title': k,  # + '*',
+                                        'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
+                                        'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                        # when inquiry submit
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
+                                    })
                         elif str(id_currency_ref) == str(2):  # rmb
+                            item['rmb_final_price'] = price_inquiry_result.rmb_final_price
+                            if trade_transportation_method_obj:
+                                for ttm in trade_transportation_method_obj:
+                                    if ttm.title in item['rial_final_price']:
+                                        v = item['rmb_final_price'][ttm.title]
+                                        item['price_list'].append({
+                                            'type': ttm.method.lower(),
+                                            'ref': ttm.pk,
+                                            'iqref': price_inquiry_result.pk,
+                                            'value': round(v, 3) if v > 1 else round(v, 5),
+                                            'title': price_inquiry_result.select_title(ttm.method),
+                                            'access_type': ttm.access_type,
+                                            'unique_title': ttm.title,
+                                            'date': to_jalali(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                            # when inquiry submit
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
+                                        })
+                            else:
+                                for k, v in item["rmb_final_price"].items():
+                                    price = item['rmb_final_price'][k].get('price')
+                                    item['price_list'].append({
+                                        'type': k.lower(),
+                                        'ref': None,
+                                        'iqref': price_inquiry_result.pk,
+                                        'value': round(price, 3) if price > 1 else round(price, 5),
+                                        'title': price_inquiry_result.select_title(k),
+                                        'access_type': None,
+                                        'unique_title': k,  # + '*',
+                                        'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
+                                        'jdate': to_jalali_date(price_inquiry_result.last_update_date),
+                                        # when inquiry submit
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
+                                    })
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
                     else:
