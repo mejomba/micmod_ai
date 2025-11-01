@@ -353,9 +353,12 @@
                             </div>
 
                             <div class="col-3 parent-class text-start">
-                                <div class="d-flex">
+                                <div class="d-flex flex-column">
                                     <div class=" d-flex flex-column justify-content-between">
                                         {% supply_locations factor_item.instance.goods_code form_s.prefix forloop.counter0 factor_item.instance request.user %}
+                                    </div>
+                                    <div>
+                                        {{ factor_item.instance.goods_code.location_in_wh|default_if_none:'-' }}
                                     </div>
                                 </div>
                             </div>
