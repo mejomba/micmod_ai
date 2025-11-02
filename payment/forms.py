@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from jalali_date.fields import JalaliDateTimeField, JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
@@ -43,6 +44,11 @@ class PaymentOrderModelForm(CustomBaseModelForm):
                 self.form_state = c.get('form_state')
             elif kwargs.get('constraint'):
                 self.form_state = kwargs.get('constraint').get('form_state')
+
+        self.fields['assigned_accounting_user'].queryset = (
+            get_user_model().objects.filter(groups__name='accounting_user')
+            .order_by('username')
+        )
 
         if self.form_state is not None:
             if self.form_state >= 1:

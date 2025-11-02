@@ -560,6 +560,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
             {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains',
              'className': 'w-20'},
+            {'name': 'lead_time', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'purchase_group', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'active', 'className': 'w-7px'},
             {'name': 'price', 'className': 'w-15px'},
@@ -1038,6 +1039,8 @@ def get_item(request):
                                             'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
                                             'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
                             else:
                                 for k, v in item["rial_final_price"].items():
@@ -1052,7 +1055,9 @@ def get_item(request):
                                         'unique_title': k,  # '*',
                                         'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                        'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
                                     })
 
                         elif str(id_currency_ref) == str(2):  # rmb
@@ -1075,7 +1080,9 @@ def get_item(request):
                                             'unique_title': ttm.title,
                                             'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
@@ -1090,7 +1097,9 @@ def get_item(request):
                                         'unique_title': k,  #+ '*',
                                         'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                        'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
                                     })
 
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
@@ -1121,7 +1130,9 @@ def get_item(request):
                             'date': item["price_update_date"],  # when inquiry submit
                             'jdate': to_jalali_date(price_inquiry_result_bazar.price_update_date),  # when inquiry submit
                             'seen': to_jalali(timezone.now()),  # when sales user see the price
-                            "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat(),
+                            'lead_time': '',
+                            'variant_show': price_inquiry_result_bazar.variant_show,
                         })
                     else:
                         item["goods_price_market"] = None
@@ -1189,6 +1200,8 @@ def get_item(request):
                                                 'jdate': to_jalali_date(price_inquiry_result.last_update_date),
                                                 # when inquiry submit
                                                 'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                                'lead_time': price_inquiry_result.lead_time,
+                                                'variant_show': price_inquiry_result.variant_show,
                                             })
                                 else:
                                     for k, v in item["rial_final_price"].items():
@@ -1204,7 +1217,9 @@ def get_item(request):
                                             'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),
                                             # when inquiry submit
-                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
 
                             elif str(id_currency_ref) == str(2):  # rmb
@@ -1228,7 +1243,9 @@ def get_item(request):
                                                 'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                                 'jdate': to_jalali_date(price_inquiry_result.last_update_date),
                                                 # when inquiry submit
-                                                'seen': to_jalali(timezone.now())  # when sales user see the price
+                                                'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                                'lead_time': price_inquiry_result.lead_time,
+                                                'variant_show': price_inquiry_result.variant_show,
                                             })
                                 else:
                                     for k, v in item["rmb_final_price"].items():
@@ -1244,7 +1261,9 @@ def get_item(request):
                                             'date': price_inquiry_result.last_update_date,  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),
                                             # when inquiry submit
-                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
 
                             item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
@@ -1296,20 +1315,10 @@ def get_item(request):
                                 'jdate': to_jalali_date(price_inquiry_result_bazar.price_update_date),
                                 # when inquiry submit
                                 'seen': to_jalali(timezone.now()),  # when sales user see the price
-                                "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                                "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat(),
+                                'lead_time': '',
+                                'variant_show': price_inquiry_result_bazar.variant_show,
                             })
-                            # price_setting = price_inquiry_result_bazar.price_settings
-                            # price_inquiry_result_bazar.set_discount_params(
-                            #     quantity=quantity,
-                            #     customer_grade=id_customer_grade,
-                            #     payment_method=id_payment_method,
-                            #     currency=id_currency_ref,
-                            #     price_setting=price_setting
-                            # )
-                            # item["goods_price_market"] = price_inquiry_result_bazar.bazar_price
-                            # item["goods_market_date"] = to_jalali(price_inquiry_result_bazar.price_update_date,
-                            #                                       "%Y-%m-%d")
-                            # item["price_expire_date"] = price_inquiry_result_bazar.bazar_expire_date.isoformat()
                             item['is_bazar'] = True
                         else:
                             item["goods_price_market"] = None
@@ -1369,6 +1378,8 @@ def get_items(request):
                 try:
                     sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
                     item['moq'] = sku_item.batch_count
+                    item['moq_box'] = sku_item.count_in_box
+                    item['moq_main_box'] = sku_item.count_in_main_box
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
@@ -1412,7 +1423,9 @@ def get_items(request):
                                             'unique_title': ttm.title,
                                             'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
                             else:
                                 for k, v in item["rial_final_price"].items():
@@ -1427,7 +1440,9 @@ def get_items(request):
                                         'unique_title': k,  #+ '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                        'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
                                     })
                         elif str(id_currency_ref) == str(2):  # rmb
                             item['rmb_final_price'] = price_inquiry_result.rmb_final_price
@@ -1445,7 +1460,9 @@ def get_items(request):
                                             'unique_title': ttm.title,
                                             'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                             'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                            'seen': to_jalali(timezone.now())  # when sales user see the price
+                                            'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                            'lead_time': price_inquiry_result.lead_time,
+                                            'variant_show': price_inquiry_result.variant_show,
                                         })
                             else:
                                 for k, v in item["rmb_final_price"].items():
@@ -1460,7 +1477,9 @@ def get_items(request):
                                         'unique_title': k,  # + '*',
                                         'date': to_jalali(price_inquiry_result.last_update_date),  # when inquiry submit
                                         'jdate': to_jalali_date(price_inquiry_result.last_update_date),  # when inquiry submit
-                                        'seen': to_jalali(timezone.now())  # when sales user see the price
+                                        'seen': to_jalali(timezone.now()),  # when sales user see the price
+                                        'lead_time': price_inquiry_result.lead_time,
+                                        'variant_show': price_inquiry_result.variant_show,
                                     })
                         item["price_update_date"] = to_jalali(price_inquiry_result.price_update_date, "%Y-%m-%d")
                     else:
@@ -1492,7 +1511,9 @@ def get_items(request):
                             'date': item["price_update_date"],  # when inquiry submit
                             'jdate': to_jalali_date(price_inquiry_result_bazar.price_update_date),  # when inquiry submit
                             'seen': to_jalali(timezone.now()),  # when sales user see the price
-                            "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat()
+                            "price_expire_date": price_inquiry_result_bazar.bazar_expire_date.isoformat(),
+                            'lead_time': '',
+                            'variant_show': price_inquiry_result_bazar.variant_show,
                         })
                     else:
                         item["goods_price_market"] = None
@@ -1515,18 +1536,8 @@ def get_items(request):
                 item['itemid'] = item_.sepidar_id_0
                 item['text'] = item_.part_number
                 item['moq'] = item_.batch_count
-                # item['f_date_cust'] = to_jalali(item_.f_date_cust, "%Y-%m-%d")  # goods_last_sale
-                # item['f_fee_cust'] = round_price(item_.f_fee_cust)  # goods_last_price
-                # item['f_qty_cust'] = round_price(item_.f_qty_cust)  # goods_total_sales
-                # item['q_date_cust'] = to_jalali(item_.quotation_date, "%Y-%m-%d")  # goods_q_last_sale
-                # item['q_fee_cust'] = round_price(item_.quotation_fee)  # goods_q_last_price
-                # item['q_qty_cust'] = item_.quotation_qty  # goods_q_total_sales
-                # item['f_qty_all'] = item_.f_qty_all
-                # item['min_price'] = round_price(item_.min_price)
-                # item['avg_price'] = round_price(item_.avg_price)
-                # item['max_price'] = round_price(item_.max_price)
-                # item['stock_qty'] = item_.stock_qty
-                # item['stock_qty_res'] = item_.stock_res_qty
+                item['moq_box'] = item.count_in_box
+                item['moq_main_box'] = item.count_in_main_box
                 try:
                     sku_item: Item = item_
                     price_inquiry_result: PriceInquiryResult = sku_item.price if sku_item else None
@@ -1690,6 +1701,8 @@ class AjaxInquiryResultListData(View):
         # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
         # if not sku:
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
+        part_number = '---'
+        sku_id = 0
         if sku:
             try:
                 parent = sku.parent
@@ -1702,9 +1715,11 @@ class AjaxInquiryResultListData(View):
                 else:
                     return JsonResponse(
                         {'sku_name': sku.part_number, 'item_weight': f'{username} ({sku.weight})', 'item_id': sku.id, 'parent': '-'})
+                part_number = sku.part_number
+                sku_id = sku.id
             except:
                 pass
-        return JsonResponse({'sku_name': sku.part_number, 'item_weight': None, 'item_id': sku.id, 'parent': None})
+        return JsonResponse({'sku_name': part_number, 'item_weight': None, 'item_id': sku_id, 'parent': None})
 
 
 # Todo ino yadet nare shanbe

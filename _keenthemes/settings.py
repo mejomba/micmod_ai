@@ -206,7 +206,12 @@ if os.environ.get('IS_DOCKER'):
             }
 else:
     sql_db_options = {'driver': 'ODBC Driver 17 for SQL Server',}
-print("MAIN DB: ", os.environ.get('SHOP_DB') or os.environ.get('PG_NAME'))
+DB_NAME = os.environ.get('SHOP_DB') or os.environ.get('PG_NAME')
+if DB_NAME == 'portal':
+    print("MAIN DB: ", f"********** \033[91m{DB_NAME.upper()}\033[0m **********")
+else:
+    print("MAIN DB: ", DB_NAME)
+
 # if os.environ.get("SHOP_DB") == 'poshop':
 
 user_input = 'y' if os.environ.get("IS_DOCKER") == '1' else input(f'continue with {os.environ.get("SHOP_DB") or os.environ.get("PG_NAME")} DB Y/n: ')

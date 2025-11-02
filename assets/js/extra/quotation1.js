@@ -314,7 +314,9 @@ function set_item_classes(item, idx=null) {
         $(item).find('.goods_code').on("select2:select", function (e) {
             const elem = findAncestor(e.target, "item")
             const data = e.params.data;
-            document.querySelector('#moq').innerHTML = data.moq
+            item.querySelector('#moq').innerHTML = data.moq || '-'
+            item.querySelector('#moq_box').innerHTML = data.moq_box || '-'
+            item.querySelector('#moq_main_box').innerHTML = data.moq_main_box || '-'
             set_price_data(data, elem, e.target, true, idx)
             display_price(elem)
             generate_price_method_select_option(elem)
@@ -841,6 +843,7 @@ function display_price(row){
 
     if (display_price_container) {
         price_json.forEach(function (item){
+            row.querySelector('#lead_time_text').innerText = item.lead_time
             console.log(item)
             if (item.unique_title === 'goods_last_price' || item.unique_title === 'goods_q_last_price'){
                 last_sale_price_list.push(`<div class="row row-cols-4 mx-1 hover-link" id=id_${item.unique_title}>
@@ -863,7 +866,7 @@ function display_price(row){
                 }
                 iqr_price_list.push(`<div class="row row-cols-4 mx-1 mb-1 hover-link">
                     <span class="col-12 p-0 font-size-11" name="price_expire_date"></span>
-                    <span class="col-5 px-1">${item.unique_title} ${access_type}</span>
+                    <span class="col-5 px-1">${item.unique_title} ${access_type} ${item?.variant_show || ''}</span>
                     <span class="col-3 p-0">${numberWithCommas(item.value)}</span>
                     <span class="col-2 p-0" name="price_update_date">${item.jdate}</span>
                     <span class="col-2 p-0">${item.title}</span>
@@ -938,7 +941,9 @@ function set_price_data(data, elem, target, single=null, idx=null) {
                             unique_title: item.unique_title,
                             date: item.date,
                             jdate: item.jdate,
-                            seen: item.seen
+                            seen: item.seen,
+                            lead_time: item.lead_time,
+                            variant_show: item.variant_show,
                         })
         })
 

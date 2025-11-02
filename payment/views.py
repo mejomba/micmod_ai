@@ -117,6 +117,8 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         {'name': 'created_date', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True,
          'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'assigned_accounting_user', 'visible': True, 'orderable': True,
+         'lookup_field': '__profile__first_name__icontains'},
         {'name': 'last_work_flow', 'title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True,
          'lookup_field': '__profile__first_name__icontains'},
@@ -139,6 +141,7 @@ class PaymentOrderDatatableView(AjaxDatatableView):
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
         row['request_date'] = '%s' % to_jalali_date(obj.request_date)
         row['payment_date'] = '%s' % to_jalali_date(obj.payment_date)
+        row['assigned_accounting_user'] = f"""{obj.assigned_accounting_user or '<span class="text-danger bold font-size-20">x</span>'}"""
 
 
 def num_to_fa_words(request):

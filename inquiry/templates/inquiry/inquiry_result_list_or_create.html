@@ -57,7 +57,7 @@
                 </span>
 
                 {% render_field_by_order form form.price form.inquiry_type margin_b=8 label='on-border' %}
-                {% render_field_by_order form form.currency_type form.description form.active form.update_price  form.item_weight margin_b=5 label='on-border' %}
+                {% render_field_by_order form form.currency_type form.description form.lead_time form.active form.update_price  form.item_weight margin_b=5 label='on-border' %}
 
                 <span class="d-none">
                 {% render_field_by_order form form.price_expire_date margin_b=5 label='on-border' %}
@@ -113,7 +113,7 @@
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.image_1 target='Image' crispy=True editable=True %}
                 {% include 'files/partial/modal_base_on_field.html' with obj=form.instance field=form.file_1 target='File' crispy=True editable=True %}
 
-                {% render_field_by_order form form.submit_for_qi form.active form.update_price label='on-border' margin_b=5 css='mt-10' %}
+                {% render_field_by_order form form.lead_time form.submit_for_qi form.active form.update_price label='on-border' margin_b=5 css='mt-10' %}
 
                 <span class="d-none">{{ form.variants_json }}</span>
 

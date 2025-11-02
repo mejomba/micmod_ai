@@ -729,5 +729,10 @@
     "discount": "تخفیف",
     "currency": "واحد پول",
     "buy_factor_quantity_in_sepidar": "تعداد در فاکتور خرید سپیدار",
-    "need_financial_approval": "نیاز به تایید مالی"
+    "need_financial_approval": "نیاز به تایید مالی",
+    "assigned_accounting_user": "کارشناس مالی",
+    "lead_time": "زمان تامین",
+    "count_in_box": "تعداد در جعبه",
+    "count_in_main_box": "تعداد در جعبه بزرگ",
+    "location_in_wh": "موقعیت در انبار"
 }

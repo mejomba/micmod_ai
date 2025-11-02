@@ -1027,6 +1027,8 @@ def get_customer_dax(request, customer_id):
     """فقط باید چک بشه ایدی ارسالی درست است الان روی sepidar_party_id """
     # daxs = DaxCall()
     daxs_data = DaxCall.customer_dax()
+    if not daxs_data:
+        return JsonResponse({'res': 'no data found'})
     matches = [dax for dax in daxs_data if dax.get('dim_customer[dl_id]') == customer_id]
     if matches:
         data = dict()
@@ -1038,7 +1040,7 @@ def get_customer_dax(request, customer_id):
         context = {'dax': data}
         html = render_to_string('extra_data/partials/customer_dax.html', context, request)
         return JsonResponse({'res': html}, safe=False)
-    return JsonResponse({'err': 'no data found'})
+    return JsonResponse({'res': 'no data found'})
     #
     # for dax in daxs_data:
     #     customer_dl_id = dax.get('dim_customer[dl_id]')

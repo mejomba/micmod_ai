@@ -91,7 +91,17 @@ class PriceInquiryResult(BaseModel):
                                                     on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     address = models.TextField(_("address"), null=True, blank=True)
+    lead_time = models.CharField(max_length=32, null=True, blank=True, verbose_name=_('lead_time'))
+
     # trade_expire = models.SmallIntegerField(default=1000)
+
+    @property
+    def variant_show(self):
+        l = []
+        for k, v in self.variants_json.items() if self.variants_json else []:
+            l.append(str(k) + ": " + str(v))
+        y = '|'.join(l)
+        return f'( {y} )' if y else ''
 
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
