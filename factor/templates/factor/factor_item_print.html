@@ -22,7 +22,9 @@
 <!-- QUANTITY -->
     <td class="font-size-10 replace-digits">
         <div class="bold text-center font-size-10" name="quantity" id="id_quantity-{{ form.instance.pk }}">{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
-        <div class="bold text-center font-size-10" name="batch_count"><span class="font-size-8" style="font-weight: bold"> تعداد در بسته: </span><span id="id_batch_count-{{ form.instance.pk }}">{{ form.instance.goods_code.batch_count|default_if_none:0 }}</span></div>
+        {% if request.user.base_group == 'wh' %}
+            <div class="bold text-center font-size-10" name="batch_count"><span class="font-size-8" style="font-weight: bold"> تعداد در بسته: </span><span id="id_batch_count-{{ form.instance.pk }}">{{ form.instance.goods_code.batch_count|default_if_none:0 }}</span></div>
+        {% endif %}
         <div>
 {#    <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>#}
         </div>
@@ -32,6 +34,7 @@
 {#    <td class="font-size-10 replace-digits">#}
 {#        <div class="bold text-center font-size-10" name="unit" >عدد</div>#}
 {#    </td>#}
+{% if not request.user.base_group == 'wh' %}
 <!-- GOODS LAST PRICE -->
     <td class="font-size-10 replace-digits">
 {#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}
@@ -42,5 +45,6 @@
         <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
         <div class="fee_en " name="fee">{{ form.instance.row_price|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
     </td>
+{% endif %}
 
 </tr>
