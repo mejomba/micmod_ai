@@ -1,0 +1,179 @@
+{% load more_tags %}
+
+<style>
+        .item_customer_receipt_list{
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link.active,
+        .nav-pills .show > .nav-link{
+            background-color: #061b66 !important;
+        }
+        ul.nav li::marker {
+            content: none;  /* یا display: none; */
+        }
+
+    </style>
+<div class="card card-custom mt-20 mb-10 shadow-sm">
+    <div class="card-header card-header-tabs-line">
+        <div class="card-toolbar">
+            <ul class="nav  nav-light-danger nav-bold font-size-15 nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" data-toggle="tab" href="#kt_tab_pane_basic_info">
+                        <i class="ki-duotone ki-book fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                        </i>
+                        <span class="nav-text">اطلاعات پایه</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_financial">
+                        <i class="ki-duotone ki-wrench fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                        <span class="nav-text">اطلاعات مالی</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_takmili">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+                        <span class="nav-text">اطلاعات تکمیلی</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link"  data-toggle="tab" href="#kt_tab_pane_contract">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+                        <span class="nav-text">قرارداد ها</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_customer_expert">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+                        <span class="nav-text">کارشناس مشتری</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_document">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+                        <span class="nav-text">مدارک و داکیومنت ها</span>
+                    </a>
+                </li>
+                <li class="nav-item rounded">
+                    <a class="nav-link" data-toggle="tab" href="#kt_tab_pane_customer_group">
+                        <i class="ki-duotone ki-element-plus fs-3">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                            <span class="path4"></span>
+                            <span class="path5"></span>
+                        </i>
+                        <span class="nav-text">تغییر کارشناس</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body py-0 px-4">
+        <div class="tab-content">
+            <div class="tab-pane show active" id="kt_tab_pane_basic_info" role="tabpanel" aria-labelledby="kt_tab_pane_basic_info">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    <div class="row row-cols-6 align-items-baseline">
+                        {% render_field_by_order form form.title form.type form.national_code form.name form.last_name form.email form.website form.phone form.official_name form.revival_date label='on-border' margin_b=4 %}
+                        <div class="d-flex col-4">
+                            {% render_field_by_order form form.meet_in_person form.active form.black_list label='on-border' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="kt_tab_pane_financial" role="tabpanel" aria-labelledby="kt_tab_pane_financial">
+                <div class="bg-white row rounded position-relative pt-10">
+                    <div class="mt-3">
+                        <a href="#" class="d-inline-block" target="_blank">
+                            <h1 class="border px-3 py-1 rounded" id="project_item_list"
+                                data-url="/pcba/project/item/list/?pk=80" data-bs-toggle="modal"
+                                data-bs-target="#id_kt_empty_modal_lg">+</h1>
+                        </a>
+                        اطلاعات مالی
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade show" id="kt_tab_pane_takmili" role="tabpanel" aria-labelledby="kt_tab_pane_takmili">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    اطلاعات تکمیلی
+                </div>
+            </div>
+            <div class="tab-pane fade show" id="kt_tab_pane_contract" role="tabpanel" aria-labelledby="kt_tab_pane_contract">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    قرارداد ها
+                </div>
+            </div>
+            <div class="tab-pane fade show" id="kt_tab_pane_document" role="tabpanel" aria-labelledby="kt_tab_pane_document">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    مدارک و داکیومنت ها
+                </div>
+            </div>
+            <div class="tab-pane fade show" id="kt_tab_pane_customer_group" role="tabpanel" aria-labelledby="kt_tab_pane_customer_group">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    کارشناس مشتری
+                </div>
+            </div>
+            <div class="tab-pane fade show" id="kt_tab_pane_customer_expert" role="tabpanel" aria-labelledby="kt_tab_pane_customer_expert">
+                <div class="bg-white row rounded pt-10 position-relative ">
+                    تغییر کارشناس
+                </div>
+            </div>
+        </div>
+    </div>
+    <span class="d-none" id="customer_name">
+
+	    (10774) -- شرکت وشکان پرتو
+
+</span>
+    <span class="d-none" id="goods_name">
+	(27124) -- PCBA TAHERMONTAGEI14030617 (PCB-4*11=44PCS) SMD
+
+</span>
+    <div class="col">
+        <div class="row">
+
+
+            <div class="col on-border  mb-3 ">
+
+
+                <label data-key="None" id="None" class="None"></label>
+                <div class="text-danger"></div>
+
+
+            </div>
+
+
+        </div>
+    </div>
+</div>

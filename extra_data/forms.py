@@ -76,6 +76,8 @@ class CustomerForm(CustomBaseModelForm):
         self.fields['z_max_credit_rafi'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
         self.fields['extra_credit'].widget = forms.TextInput(attrs={'class': 'form-control comma-seperator text-left LTR-RTL'})
 
+        self.fields['customer_field'] = forms.ModelMultipleChoiceField(queryset=CustomerFields.objects.all(), required=False)
+
     #
     #     if not access:
     #         self.make_disable(fields=self.fields)

@@ -64,7 +64,7 @@ class Factor(SLSDoc):
     deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
     checker = models.ManyToManyField(User, related_name='factor_checker', verbose_name=_('چک کننده'))
-    packing_json = models.JSONField(verbose_name=_('packing_json'), null=True, blank=True)
+    packing_json = models.JSONField(verbose_name=_('packing_json'), default=list, null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_factor_items', null=True, blank=True)
     deliver_method = models.ForeignKey('Delivery', related_name='deliver_method', null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name=_('deliver_method'))
     accounting_confirm = models.BooleanField(_('accounting_confirm'), default=False)
@@ -382,7 +382,9 @@ class FactorItem(BaseModel):
             if not self.quantity:
                 self.is_deleted = True
                 for oo in self.supply_locations.order_base_items.all():
-                    oo.delete()
+                    # oo.delete()
+                    oo.is_deleted = True
+                    oo.save()
                 self.supply_locations.is_deleted = True
                 self.supply_locations.save()
                 super().save(force_insert, force_update, using, update_fields)

@@ -107,7 +107,7 @@
                     </span>
                 </div>
             </div>
-            <span class="d-none">{{ form.packing_json }}</span>
+            <span class="d-non">{{ form.packing_json }}</span>
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
                     <span class="d-flex">
@@ -249,7 +249,7 @@
         {% endif %}
 
         {% if request.user|has_group:"wh_user" and flow_state_index == 4 %}
-           <div href="#" class="col-1" onclick="init_packing_json_modal(event)" data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
+           <div href="#" class="col-1" onclick="init_packing_json_modal(event)" data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                <span class="cursor-pointer mb-5 text-primary">
                    <i class="ki-duotone ki-element-plus fs-3x" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="پکینگ">
                      <span class="path1 {% if form.instance.packing_json %} text-info {% endif %}"></span>
@@ -600,6 +600,7 @@
     {% endfor %}
     </div>
 {% include 'core/partial/empty_modal.html' %}
+{% include 'core/partial/empty_modal_lg.html' %}
 </div>
 <div class="mt-20 pt-20"></div>
 <div class="mt-10 pt-10"></div>
@@ -613,7 +614,7 @@
     function init_packing_json_modal(event){
         debugger
         const url = event.currentTarget.dataset.url
-        const kt_empty_modal_body = $('#id-empty-modal-body')
+        const kt_empty_modal_body = $('#id-empty-modal-body-lg')
         custom_ajax_get(null, url, kt_empty_modal_body)
     }
 
@@ -639,13 +640,12 @@
             // تعداد (quantity)
             let quantity = parseInt(tr.querySelector("td[id^='quantity-'] input").value.trim());
 
+            // partnumber
+            let partnumber = tr.querySelector("td[id^='partnumber-'] input").value.trim();
+
             // نام پگ (pack_name)
             let packName = tr.querySelector("td[id^='pack_name-'] input").value.trim();
             if (!packName) return; // اگه نام پگ خالی بود، این ردیف رو رد کن
-
-            // وضعیت (status)
-            let status = tr.querySelector("select[id^='id_packing_status-']").value.trim();
-            if (!status || status === "----------") return; // اگه وضعیت انتخاب نشده بود، رد کن
 
             // اضافه کردن به آرایه داخل result
             if (!result[packName]) {
@@ -654,7 +654,7 @@
 
             result[packName].push({
                 sku: sku,
-                status: status,
+                partnumber: partnumber,
                 row: row,
                 row_id: row_id,
                 quantity: quantity
@@ -696,29 +696,36 @@
             <td id="sku-${newRowNumber}">
                 <input type="text" style="max-width: 100px" class="narrow-input">
             </td>
+            <td class="text-start" id="partnumber-${newRowNumber}">
+                <input type="text" value="" style="width: 650px" class="narrow-input">
+            </td>
             <td id="quantity-${newRowNumber}" class="text-right">
-                <input type="text" value="" class="narrow-input w-75">
+                <input type="text" value="" class="narrow-input" style="width: 100px">
             </td>
             <td id="pack_name-${newRowNumber}" class="text-right">
-                <input type="text" name="packing_name" class="narrow-input w-75">
+                <input type="text" name="packing_name" class="narrow-input" style="width: 200px">
             </td>
 
             <td>
-                <select id="id_packing_status-${newRowNumber}" class="narrow-input">
-                    <option>----------</option>
-                    <option value="checked">چک شد</option>
-                    <option value="other">یچیز دیگه</option>
-                </select>
-            </td>
-            <td>
-                <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
-                    <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
-                     <span class="path1"></span>
-                     <span class="path2"></span>
-                     <span class="path3"></span>
-                     <span class="path4"></span>
-                     <span class="path5"></span>
-                    </i>
+                <div class="d-flex gap-2 justify-content-end">
+                    <div onclick="duplicate_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-copy text-primary fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
+                    <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
                 </div>
             </td>
         `;

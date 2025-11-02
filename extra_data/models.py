@@ -852,11 +852,39 @@ class Shahrestan(models.Model):
 
 
 class CustomerAddress(models.Model):
+    class AddressType(models.TextChoices):
+        ACTIVITY_LOCATION = ("1", "محل فعالیت")
+        DELIVER_BILL = ("2", "ارسال صورتحساب")
+        DELIVER_ITEM = ("3", "ارسال کالا")
+        WH = ("4", "انبار")
+        HOUSE = ("5", "منزل")
+        OFFICIAL = ("6", "رسمی")
+        POSTI = ("7", "پستی")
+        OTHER = ("8", "سایر")
     customer = models.ForeignKey('Customer', on_delete=models.DO_NOTHING)
-    ostan = models.ForeignKey(Ostan, on_delete=models.DO_NOTHING)
-    shahrestan = models.ForeignKey(Shahrestan, on_delete=models.DO_NOTHING)
-    text = models.TextField()
+    location = models.ForeignKey(Province, on_delete=models.DO_NOTHING, null=True, blank=True)
+    address = models.TextField()
     zip_code = models.CharField(max_length=10, null=True, blank=True)
+    latitude = models.CharField(max_length=128, null=True, blank=True)
+    longitude = models.CharField(max_length=128, null=True, blank=True)
+    title = models.CharField(max_length=128, null=True, blank=True)
+    guid = models.CharField(max_length=128, null=True, blank=True)
+    is_main = models.BooleanField(default=False)
+    type = models.CharField(max_length=2, choices=AddressType.choices, default=AddressType.OFFICIAL)
+
+
+class CustomerPhone(models.Model):
+    class PhoneType(models.TextChoices):
+        OFFICE_PHONE = ("1", "تلفن دفتر")
+        MOBILE = ("2", "تلفن همراه")
+        HOME_PHONE = ("3", "تلفن منزل")
+        OTHER_PHONE = ("4", "تلفن سایر")
+        OFFICE_FAX = ("5", "دورنگار دفتر")
+        HOME_FAX = ("6", "دورنگار منزل")
+        OTHER_FAX = ("7", "دورنگار سایر")
+    customer = models.ForeignKey('Customer', on_delete=models.DO_NOTHING)
+    type = models.CharField(max_length=2, choices=PhoneType.choices, default=PhoneType.OFFICE_PHONE)
+    phone = models.CharField(max_length=20)
     is_main = models.BooleanField(default=False)
 
 

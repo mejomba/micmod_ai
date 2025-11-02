@@ -191,7 +191,8 @@
             }],
             "formset_constraints": [
               {
-                "hide": [],
+                "group": "wh_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
                 "read": []
               }
             ]

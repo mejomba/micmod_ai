@@ -22,46 +22,54 @@
         <tr>
             <th class="pe-3 ps-1">ردیف</th>
             <th class="pe-3">کد کالا</th>
+            <th class="pe-3">نام کالا</th>
             <th class="pe-3">تعداد</th>
             <th class="pe-3">نام پگ</th>
-            <th class="pe-3">وضعیت</th>
+{#            <th class="pe-3">وضعیت</th>#}
         </tr>
         {% for factor_item in factor_items %}
         <tr class="tr-body">
             <td class="d-none bg-warning" id="row_id-{{ forloop.counter }}">
                 <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
             </td>
-            <td class="ps-1" id="row-{{ forloop.counter }}">
+            <td class="ps-1 text-start" id="row-{{ forloop.counter }}">
                 <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
             </td>
-            <td id="sku-{{ forloop.counter }}">
+            <td class="text-start" id="sku-{{ forloop.counter }}">
                 <input type="text" value="{{ factor_item.goods_code }}" style="max-width: 100px" class="narrow-input">
             </td>
-
-            <td id="quantity-{{ forloop.counter }}" class="text-right">
-                <input type="text" name="qtt-{{ forloop.counter }}" value="{{ factor_item.quantity }}" class="narrow-input w-75">
+            <td class="text-start" id="partnumber-{{ forloop.counter }}">
+                <input type="text" value="{{ factor_item.goods_code.part_number }}" style="width: 650px" class="narrow-input">
             </td>
 
-            <td id="pack_name-{{ forloop.counter }}" class="text-right">
-                <input type="text" name="packing_name" class="narrow-input w-75">
+            <td id="quantity-{{ forloop.counter }}" class="text-right text-start">
+                <input type="text" name="qtt-{{ forloop.counter }}" value="{{ factor_item.quantity }}" style="width: 100px" class="narrow-input">
+            </td>
+
+            <td id="pack_name-{{ forloop.counter }}" class="text-right text-start">
+                <input type="text" name="packing_name" style="width: 200px" class="narrow-input">
             </td>
 
             <td>
-                <select id="id_packing_status-{{ forloop.counter }}" class="narrow-input">
-                    <option>----------</option>
-                    <option value="checked">چک شد</option>
-                    <option value="other">یچیز دیگه</option>
-                </select>
-            </td>
-            <td>
-                <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
-                    <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
-                     <span class="path1"></span>
-                     <span class="path2"></span>
-                     <span class="path3"></span>
-                     <span class="path4"></span>
-                     <span class="path5"></span>
-                    </i>
+                <div class="d-flex gap-2 justify-content-end">
+                    <div onclick="duplicate_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-copy text-primary fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
+                    <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
                 </div>
             </td>
         </tr>
@@ -102,6 +110,7 @@
     }
 
 function loadPackingJSON() {
+        debugger
     let packingInput = document.querySelector("textarea[name='packing_json']");
     if (!packingInput || !packingInput.value) return;
 
@@ -115,8 +124,6 @@ function loadPackingJSON() {
                 // پیدا کردن ردیفی که packing_name برابر باشه
                 let existingRow = [...tbody.querySelectorAll(".tr-body")].find(tr => {
                     let row_id = tr.querySelector(`[id^='row_id-'] input`);
-                    //let input = tr.querySelector(`[name^='packing_name']`);
-                    //return input && input.value === packingName;
                     return row_id && row_id.value == item.row_id;
                 });
 
@@ -125,9 +132,10 @@ function loadPackingJSON() {
                     existingRow.querySelector(`[id^='row_id'] input`).value = item.row_id || "";
                     existingRow.querySelector(`[id^='row'] input`).value = item.row || "";
                     existingRow.querySelector(`[id^='sku'] input`).value = item.sku || "";
+                    existingRow.querySelector(`[id^='partnumber'] input`).value = item.partnumber || "";
                     existingRow.querySelector(`[id^='pack_name-'] input`).value = packingName || "";
-                    let select = existingRow.querySelector(`select[id^='id_packing_status']`);
-                    if (select) select.value = item.status || "";
+                    {#let select = existingRow.querySelector(`select[id^='id_packing_status']`);#}
+                    {#if (select) select.value = item.status || "";#}
                     let quantityInput = existingRow.querySelector(`[name^='qtt-']`);
                     if (quantityInput) quantityInput.value = item.quantity || "";
                 } else {
@@ -148,30 +156,38 @@ function loadPackingJSON() {
                         <input type="text" value="${item.sku || ""}" style="max-width: 100px" class="narrow-input">
                     </td>
 
+                    <td class="text-start" id="partnumber-${rowNumber}">
+                        <input type="text" value="${item.partnumber || ""}" style="width: 650px" class="narrow-input">
+                    </td>
+
                     <td id="quantity-${rowNumber}" class="text-right">
-                        <input type="text" name="qtt-${rowNumber}" value="${item.quantity || ""}" class="narrow-input w-75">
+                        <input type="text" name="qtt-${rowNumber}" value="${item.quantity || ""}" class="narrow-input" style="width: 100px">
                     </td>
 
                     <td id="pack_name-${rowNumber}" class="text-right">
-                        <input type="text" name="packing_name" value="${packingName}" class="narrow-input w-75">
+                        <input type="text" name="packing_name" value="${packingName}" class="narrow-input" style="width: 200px">
                     </td>
 
                     <td>
-                        <select id="id_packing_status-${rowNumber}" class="narrow-input">
-                            <option>----------</option>
-                            <option value="checked" ${item.status === "checked" ? "selected" : ""}>چک شد</option>
-                            <option value="other" ${item.status === "other" ? "selected" : ""}>یچیز دیگه</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
-                            <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
-                             <span class="path1"></span>
-                             <span class="path2"></span>
-                             <span class="path3"></span>
-                             <span class="path4"></span>
-                             <span class="path5"></span>
-                            </i>
+                        <div class="d-flex gap-2 justify-content-end">
+                            <div onclick="duplicate_wh_packing_row(event)" class="delete-row-btn">
+                                <i class="ki-duotone ki-copy text-primary fs-2 cursor-pointer">
+                                 <span class="path1"></span>
+                                 <span class="path2"></span>
+                                 <span class="path3"></span>
+                                 <span class="path4"></span>
+                                 <span class="path5"></span>
+                                </i>
+                            </div>
+                            <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                                <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                                 <span class="path1"></span>
+                                 <span class="path2"></span>
+                                 <span class="path3"></span>
+                                 <span class="path4"></span>
+                                 <span class="path5"></span>
+                                </i>
+                            </div>
                         </div>
                     </td>
                 </tr>

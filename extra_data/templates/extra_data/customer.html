@@ -28,12 +28,33 @@
     <script src="{% static 'admin/js/SelectFilter2.js' %}" type="text/javascript" ></script>
 
     <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">
+    {{ form.media }}
     <style>
-
-    </style>
+    .select2-selection--multiple{
+        padding-right: 5px !important;
+        padding-top: 7px !important;
+    }
+    .select2-selection__clear{
+        color: red !important;
+    }
+    .select2-selection__choice{
+        padding: 3px 20px !important;
+        {#padding-left: 30px !important;#}
+    }
+    .select2-container--default[dir="rtl"] .select2-selection--multiple{
+        border-left: none;
+    }
+    .select2-selection__choice__remove {
+        padding: 3px !important;
+        left: -2px !important;
+        color: red !important;
+    }
+</style>
 {% endblock extra_css %}
 
 {% block form_content %}
+
+{#    {% include 'extra_data/customer_tabs.html' with form=form %}#}
 
     {% csrf_token %}
     {% if request.user.is_superuser and form.instance.pk %}
@@ -86,9 +107,22 @@
                 {% render_field_by_order form form.province form.address form.senf form.sub_senf form.introduction_method form.introducer form.marketer form.lat form.long label='on-border' margin_b=4 %}
             </div>
         </div>
-        <div class="col-7 d-flex flex-column">
+
+        <div class="col-7 on-border">
+            <label style="z-index: 100 !important;">customer field</label>
+            <select class="form-select form-select-solid" name="customer_field" id="customer_field" data-control="select2" data-close-on-select="false" data-placeholder="Select an option" data-allow-clear="false" multiple="multiple">
+                {% for item in form.customer_field.field.queryset %}
+                    {% if item in form.initial.customer_field %}
+                        <option value="{{ item.pk }}" selected>{{ item }}</option>
+                    {% else %}
+                        <option value="{{ item.pk }}">{{ item }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+
 {#            <div class="text-center">{{ form.customer_field.label }}</div>#}
-            {{ form.customer_field }}
+{#            {{ form.customer_field }}#}
         </div>
     </div>
     <div class="RTL-LTR row d-flex">
@@ -439,6 +473,7 @@
 
 {% block extra_js %}
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
 
 

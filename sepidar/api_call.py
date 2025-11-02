@@ -532,11 +532,143 @@ class SepidarApiCall:
     def dl_to_sepidar(cls, request, customer):
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('party')
+        """
+        type: [("1", "تلفن دفتر"), ("2", "تلفن همراه"), ("3", "منزل"), ("4", "سایر"), ("5", "دورنگار دفتر"),
+         ("6", "دورنگار منزل "), ("7", "دورنگار سایر"),]
+
+        """,
+        phones = [
+            {
+                "ismain": 1,
+                "type": 2, # تلفن همراه
+                "phone": customer.phone,
+                # "partyref": 10
+            } if customer.phone else {},
+        ]
+        related_persons = []
+        for customer_related in customer.customerexpert_set.all():
+            related_persons.append(
+                {
+                    "ismain": customer_related.is_main,
+                    "name": customer_related.name,
+                    "post": customer_related.position,
+                    "name_en": customer_related.name,
+                    "post_en": customer_related.position,
+                    "phone": customer_related.phone,
+                    "email": None,
+                    # "partyref": 10
+                }
+            )
+
+        addresses = [
+                {
+                    "ismain": 1,
+                    "type": 6,  # آدرس رسمی
+                    "address": customer.address,
+                    "zipcode": None,
+                    "address_en":  customer.address,
+                    "latitude": customer.lat,
+                    "longitude": customer.long,
+                    "title": None,
+                    "guid": None,
+                    # "partyref": 10,
+                    "locationref": None
+                }
+            ]
+        extradata = [
+                {
+                    "entitytypename": "SG.General.PartyManagement.Common.DsParty",
+                    "entityref": 10,
+                    "stringcolumn1": None,
+                    "stringcolumn2": None,
+                    "stringcolumn3": None,
+                    "stringcolumn4": None,
+                    "stringcolumn5": None,
+                    "stringcolumn6": None,
+                    "stringcolumn7": None,
+                    "stringcolumn8": None,
+                    "stringcolumn9": None,
+                    "stringcolumn10": None,
+                    "stringcolumn11": None,
+                    "stringcolumn12": None,
+                    "stringcolumn13": None,
+                    "stringcolumn14": None,
+                    "stringcolumn15": None,
+                    "note": "some note for test",
+                    "datecolumn1": None,
+                    "datecolumn2": None,
+                    "datecolumn3": None,
+                    "datecolumn4": None,
+                    "datecolumn5": None,
+                    "integercolumn1": None,
+                    "integercolumn2": None,
+                    "integercolumn3": None,
+                    "integercolumn4": None,
+                    "integercolumn5": None,
+                    "decimalcolumn1": None,
+                    "decimalcolumn2": None,
+                    "decimalcolumn3": None,
+                    "decimalcolumn4": None,
+                    "decimalcolumn5": None,
+                    "decimalcolumn6": None,
+                    "decimalcolumn7": None,
+                    "decimalcolumn8": None,
+                    "decimalcolumn9": None,
+                    "decimalcolumn10": None,
+                    "urlcolumn1": None,
+                    "urlcolumn2": None,
+                    "urlcolumn3": None,
+                    "urlcolumn4": None,
+                    "urlcolumn5": None
+                }
+            ]
+
         data = {
+            "type": customer.type,
+            "subtype": 7,  # سایر
             "name": customer.name,
-            "type": customer.type
+            "lastname": customer.last_name,
+            # "name_en": "",
+            "lastname_en": "",
+            "economiccode": None,  # Todo نیاز به افزودن
+            "identificationcode": customer.national_code,
+            "registrationcode": None,  # Todo نیاز به افزودن
+            "website": customer.website,
+            "email": customer.email,
+            "isinblacklist": customer.black_list,
+            "isvendor": False,
+            "isbroker": False,
+            "commissionrate": 0.0,
+            "brokeropeningbalance": None,
+            "brokeropeningbalancetype": 2,
+            "isemployee": False,
+            "iscustomer": True,
+            "discountrate": 0.0,
+            # "maximumcredit": customer.extra_credit,
+            "customercategoryfortax": 2,  # عادی
+            # "birthdate": None,
+            # "marriagedate": None,
+            "creator": request.user.sepidar_code,
+            "creationdate": customer.created_date.isoformat(),
+            "lastmodifier": customer.editor_user.pk,
+            "lastmodificationdate": customer.last_update_date.isoformat(),
+            "hascredit": False,
+            "creditcheckingtype": 3,
+            # "customerremaining": None,
+            # "brokergroupingref": None,
+            # "guid": None,
+            # "dlref": 12,
+            # "vendorgroupingref": null,
+            # "salespersonpartyref": null,
+            # "customergroupingref": 526,
+            "addresses": addresses,
+            "phone": phones,
+            "related_persons": related_persons,
+            "extra_data": extradata,
         }
         res = requests.post(endpoint, json=data, headers=cls.headers)
+        if res.ok:
+            return res
 
     @classmethod
     def get_party(cls, party_id):
