@@ -39,8 +39,10 @@
     <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
         </div>
     <div>
-    <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
-        </div>
+    {% if request.user.base_group == 'wh' %}
+        <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
+    {% endif %}
+    </div>
 
     <div class="row">
         <div class="col">
@@ -173,8 +175,10 @@
                 <th scope="col" >شرح کالا/ خدمت</th>
                 <th scope="col">تعداد/ مقدار</th>
 {#                <th scope="col">واحد</th>#}
-                <th scope="col">مبلغ واحد</th>
-                <th scope="col">مبلغ کل</th>
+                {% if not request.user.base_group == 'wh' %}
+                    <th scope="col">مبلغ واحد</th>
+                    <th scope="col">مبلغ کل</th>
+                {% endif %}
             </tr>
             </thead>
             {% for form_ in formset %}
@@ -191,7 +195,7 @@
         </table>
     </div>
 </div>
-
+{% if not request.user.base_group == 'wh' %}
 <div class="container" dir="rtl">
     <div class="row row-cols-3">
         <div class="col">
@@ -305,6 +309,7 @@
 <br>
 <div id="result-container">
             </div>
+{% endif %}
 {% block extra_js %}
     <script src="{% static 'js/base.js' %}"></script>
 {#    <script>#}
