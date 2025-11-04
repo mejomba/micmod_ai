@@ -1073,3 +1073,4 @@ class ItemPrice(BaseModel):
     air = models.FloatField(null=True, blank=True)
     sea = models.FloatField(null=True, blank=True)
     express = models.FloatField(null=True, blank=True)
+    price_update_date = models.DateTimeField(null=True, blank=True)

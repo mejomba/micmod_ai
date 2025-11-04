@@ -38,6 +38,7 @@ def update_price_db(objs):
             obj.sea = data["sea"]
             obj.express = data["express"]
             obj.last_update_date = timezone.now()
+            obj.price_update_date = data['price_update_date']
             to_update.append(obj)
         else:
             data['last_update_date'] = timezone.now()
@@ -50,7 +51,7 @@ def update_price_db(objs):
 
     # 5️⃣ آپدیت رکوردهای موجود
     if to_update:
-        ItemPrice.objects.bulk_update(to_update, ["air", "sea", "express"], batch_size=500)
+        ItemPrice.objects.bulk_update(to_update, ["air", "sea", "express", "price_update_date"], batch_size=500)
 
 
 @shared_task
@@ -108,7 +109,7 @@ def update_components():
 def update_price_list():
     if cache.get('task_is_running'):
         print('task is running')
-        return
+        # return
     try:
         cache.set('task_is_running', True, 300)
         print('task_started')
@@ -121,32 +122,36 @@ def update_price_list():
         qty_10_99 = None
         qty_100_999 = None
         qty_1000_ = None
-        items = Item.objects.all()
+        items = Item.objects.all().order_by('id')
         g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
         print('gsheet created')
         # i=0
         for idx, item in enumerate(items):
-            if item.price and item.price.rmb_final_price:
-                price = item.price.rmb_final_price
+            inquiry_obj = item.price
+            if inquiry_obj and inquiry_obj.rmb_final_price:
+                price = inquiry_obj.rmb_final_price
                 price = {k: round(v.get('price'), 5) for k, v in price.items()}
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
                 prices.append(price)
                 price_for_db.append(
-                    {'item': item, 'air': price.get('air'),
-                     'sea':price.get('sea'),
-                     'express': price.get('express')}
+                    {'item': item,
+                     'air': price.get('air'),
+                     'sea': price.get('sea'),
+                     'express': price.get('express'),
+                     "price_update_date": inquiry_obj.price_update_date
+                     }
                 )
                 if idx % 1000 == 0:
                     print(f'update_price_list count: {idx}: ', item.sku, price)
                 if not y_rate:
-                    y_rate = item.price.price_settings.free_rmb_rate
-                    chash_rial = item.price.price_settings.discount_based_payment_method[0]['rial_percentage']
-                    grade_a = item.price.price_settings.discount_based_customer[2]['percentage']
-                    qty_1_9 = item.price.price_settings.discount_based_quantity[0]['percentage']
-                    qty_10_99 = item.price.price_settings.discount_based_quantity[1]['percentage']
-                    qty_100_999 = item.price.price_settings.discount_based_quantity[2]['percentage']
-                    qty_1000_ = item.price.price_settings.discount_based_quantity[3]['percentage']
+                    y_rate = inquiry_obj.price_settings.free_rmb_rate
+                    chash_rial = inquiry_obj.price_settings.discount_based_payment_method[0]['rial_percentage']
+                    grade_a = inquiry_obj.price_settings.discount_based_customer[2]['percentage']
+                    qty_1_9 = inquiry_obj.price_settings.discount_based_quantity[0]['percentage']
+                    qty_10_99 = inquiry_obj.price_settings.discount_based_quantity[1]['percentage']
+                    qty_100_999 = inquiry_obj.price_settings.discount_based_quantity[2]['percentage']
+                    qty_1000_ = inquiry_obj.price_settings.discount_based_quantity[3]['percentage']
         else:
             update_price_db(price_for_db)
         if not prices:
