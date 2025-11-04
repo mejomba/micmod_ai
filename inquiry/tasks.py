@@ -109,7 +109,7 @@ def update_components():
 def update_price_list():
     if cache.get('task_is_running'):
         print('task is running')
-        # return
+        return
     try:
         cache.set('task_is_running', True, 300)
         print('task_started')
