@@ -57,8 +57,7 @@ class BIView(View):
         url = bi_obj.url if bi_obj else ''
 
         if request.user:
-            if bi_filter := generate_powerbi_filter(request.user.bi_filter):
-                # url += "&filter=" + bi_filter
+            if bi_filter := generate_powerbi_filter(request.user.bi_filter, pk):
                 url += bi_filter
 
         host = request.META.get('HTTP_HOST')

@@ -14,7 +14,7 @@ from django.utils import timezone
 from tools.utils import elapsed_time, to_jalali_date
 from django.db.models import Q, Sum, Value, F, Count
 from accounts.models import User
-from workflow.models import WorkFlow
+from workflow.models import WorkFlow, FlowAdminGroup
 
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
@@ -334,6 +334,41 @@ class BaseModelAuto:
 class BaseFunctions():
     def log_error(self, e):
         print('error: ', e.__traceback__.tb_lineno, e)
+
+    def state(self, flow_config, state_index, request, obj):
+        """
+        اگر کاربر به جریان کاری دسترسی داشت دکمه های بعدی و قبلی محاسبه میشوند
+        """
+        last_flow_objs = obj.last_work_flow
+        from_user_ = last_flow_objs.to_user
+        current_state_group = flow_config.get('flow_users_groups')[state_index]
+        belong_to_group = current_state_group
+        user = request.user
+
+        wf_access = from_user_ == user or user.is_superuser or \
+                                 FlowAdminGroup.is_admin_of_group(user, current_state_group, model=obj.__class__) or \
+                                 (belong_to_group in user.groups.values_list('name', flat=True) and (from_user_ == user or state_index == 0) and not last_flow_objs)
+
+        # fci = first_common_index(belong_to_groups, self.request.user.groups.values_list('name', flat=True))
+        # self.wf_access, self.wf_access2 = (self.wf_access, fci)
+
+        back_state = next_state = None
+        if wf_access:
+            state_len_1 = len(flow_config.get('flow_state_list')) - 1
+            if 0 < state_index < state_len_1:
+                back_state = flow_config.get('flow_state_list')[state_index - 1]
+                next_state = flow_config.get('flow_state_list')[state_index + 1]
+            elif state_index == state_len_1:
+                back_state = flow_config.get('flow_state_list')[state_index - 1]
+                next_state = None
+            elif state_index == 0:
+                back_state = None
+                next_state = flow_config.get('flow_state_list')[state_index + 1]
+
+        return back_state, next_state
+
+    def current_state_name(self, flow_config, state_index):
+        return flow_config.get('flow_state_list')[state_index]
 
 class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     def __init__(self, *args, **kwargs):

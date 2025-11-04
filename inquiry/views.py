@@ -380,13 +380,18 @@ class InquiryResultListView(BaseView):
         obj.user = self.request.user
         if obj:
             if obj.pk:
+                if self.request.user.base_group == 'bazar':
+                    obj.price_expire_date = obj.price_expire_date or 3
+                    obj.currency_type_id = 1
                 context.update({
                     'form': self.form_class(instance=obj)
                 })
             else:
                 if self.request.user.base_group == 'bazar':
                     obj.price_expire_date = 3
-                obj.currency_type_id = None
+                    obj.currency_type_id = 1
+                else:
+                    obj.currency_type_id = None
                 context.update({
                     'form': self.form_class(instance=obj)
                 })
@@ -1779,13 +1784,6 @@ class SupplierDataTableView(AjaxDatatableView):
 
 class AjaxInquiryResultListData(View):
     def get(self, request):
-        # x = dict()
-        # x.update(request.FILES)
-        # x.update(request.POST)
-        # form = PriceInquiryResult2CreateForm(initial=x).initial
-        # render_to_string('inquiry/partial/')
-        # sku = PriceInquiryResult.objects.filter(sku=request.GET.get('sku')).first()
-        # if not sku:
         sku = Item.objects.filter(sku=(request.GET.get('sku'))).first()
         part_number = '---'
         sku_id = 0

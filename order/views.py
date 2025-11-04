@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -9,6 +11,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
@@ -1106,10 +1109,13 @@ class SubmitBuyFactor(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
 
-class OrderOfFactor(View):
+class OrderOfFactor(BaseView):
     template = 'order/order_of_factors.html'
+    model = Order
 
     def get(self, request, pk, *args, **kwargs):
+        self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+        self.state_index = self.get_flow_index(self.object)
         if '__' in pk:
             pk = pk.split('__')[1]
         else:
@@ -1132,10 +1138,13 @@ class OrderOfFactor(View):
                     if not oo:
                         continue
                     x.oo = oo
+                    x.flow_config = self.flow_config
+                    x.state_pair = x.state(self.flow_config, self.get_flow_index(x), self.request, x)
                     form[fi.supply_locations].append((OrderForm(instance=x), oo))
 
                 # form = {fi.supply_locations: [OrderForm(instance=x) for x in fi.supply_locations.order_m2m.all()]}
             else:
+                fi.supply_locations.state_pair = fi.supply_locations.state(self.flow_config, self.get_flow_index(fi.supply_locations), self.request, fi.supply_locations)
                 form = OrderForm(instance=fi.supply_locations)
             forms.append(form)
 
@@ -1143,7 +1152,7 @@ class OrderOfFactor(View):
         context['factor_items'] = factor_items
         context['forms'] = forms
 
-        if self.request.user == factor_items.first().creator_user:
+        if self.request.user == factor_items.first().creator_user or factor_items.first().creator_user in self.request.user.team.all():
             context['access'] = True
 
         return render(request, self.template, context)
@@ -1174,10 +1183,70 @@ class OrderOfFactor(View):
 
         return JsonResponse({'res': ""})
 
+    def _go_next(self, obj):
+        self.state_index = self.get_flow_index(obj)
+        group_name = self.flow_config.get('flow_users_groups')[self.state_index]
+        next_group_name = self.flow_config.get('flow_users_groups')[self.state_index + 1]
+        flow_data = {
+            "wf_status": 3,  # next
+            "action": 'ایجاد',
+            "flow_name": 'سفارش',
+            "state": self.flow_config.get('flow_state_list')[self.state_index],
+            "wf_description": 'ارسال به مدیر فروش از لیست محل تامین های فاکتور',
+            "belong_to_group": group_name,
+            "object_id": obj.pk,
+            "content_type": ContentType.objects.get_for_model(obj),
+            "creator_user": self.request.user,
+            "editor_user": self.request.user,
+            "from_user": obj.last_work_flow.to_user,
+            "to_user": self.get_flow_user(next_group_name),
+            "current_state_name": obj.current_state_name(self.flow_config, self.state_index + 1),
+            "deadline": timezone.now() + timedelta(days=1)
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        obj.last_work_flow = wf
+        obj.save()
+        pass
+
+    def _go_back(self, obj):
+        self.state_index = self.get_flow_index(obj)
+        group_name = self.flow_config.get('flow_users_groups')[self.state_index]
+        back_group_name = self.flow_config.get('flow_users_groups')[self.state_index - 1]
+        flow_data = {
+            "wf_status": 2,  # back
+            "action": 'ایجاد',
+            "flow_name": 'سفارش',
+            "state": self.flow_config.get('flow_state_list')[self.state_index],
+            "wf_description": None,
+            "belong_to_group": group_name,
+            "object_id": obj.pk,
+            "content_type": ContentType.objects.get_for_model(obj),
+            "creator_user": self.request.user,
+            "editor_user": self.request.user,
+            "from_user": obj.last_work_flow.to_user,
+            "to_user": self.get_flow_user(back_group_name),
+            "current_state_name": obj.current_state_name(self.flow_config, self.state_index - 1),
+            "deadline": timezone.now() + timedelta(days=1)
+        }
+        wf = WorkFlow.objects.create(**flow_data)
+        obj.last_work_flow = wf
+        obj.save()
+        pass
+
+    def wf_action(self, obj):
+        if self.submit_action == 'next':
+            return self._go_next(obj)
+        elif self.submit_action == 'back':
+            return self._go_back(obj)
+
     def post(self, request, pk, *args, **kwargs):
-        wh_code = None
+        self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+        self.state_index = self.get_flow_index(self.object)
+        self.wh_code = None
         data = json.loads(self.request.body or {})
         self.data = data
+        self.submit_action = self.data.get('submit_action')
+
         if '__' in pk:
             self.wh_code = int(pk.split('__')[1])
         else:
@@ -1205,6 +1274,8 @@ class OrderOfFactor(View):
                 main_order = res.get('main_order')
                 oo = res.get('oo')
                 order_rel = res.get('order_rel')
+                self.wf_action(order_rel)
+                order_rel.state_pair = order_rel.state(self.flow_config, self.get_flow_index(order_rel), self.request, order_rel)
 
                 form = OrderForm(instance=order_rel)
                 html = render_to_string('order/partial/order_of_factors_row.html',
@@ -1258,10 +1329,11 @@ class OrderOfFactor(View):
                     if form.is_valid():
                         form.instance.extra_data.request = self.request
                         obj = form.save()
+                        self.wf_action(obj)
+                        form.instance.state_pair = form.instance.state(self.flow_config, self.get_flow_index(form.instance), self.request, form.instance)
                         form = OrderForm(instance=obj)
 
                     html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form, 'order_pair': oo, 'main_order': main_order})
-
                     return JsonResponse({'res': html, 'need_supply': main_order.needed_qty, 'supplied': main_order.total_supply_qty})
             else:
                 """update independent order"""
@@ -1278,9 +1350,10 @@ class OrderOfFactor(View):
                 if form.is_valid():
                     form.instance.extra_data.request = self.request
                     obj = form.save()
+                    self.wf_action(obj)
+                    obj.state_pair = obj.state(self.flow_config, self.get_flow_index(obj), self.request, obj)
                     form = OrderForm(instance=obj)
                 html = render_to_string('order/partial/order_of_factors_row.html', {'order_form': form})
-
                 return JsonResponse({'res': html})
 
     def save_order_order(self):

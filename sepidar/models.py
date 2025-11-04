@@ -340,12 +340,12 @@ class InventoryPurchaseInvoice(models.Model):
         qry = f"""
             select top(5000) ipi.InventoryPurchaseInvoiceID, ipi.Number number, ipi.Date, cu.Title currencytitle, ipi.CurrencyRate currencyrate, 
             ipii.Quantity, ipii.Fee, dl.Title, dl.Code, item.Code, item.Title, u.Name creator
-    From [Micromodern1].[INV].[InventoryPurchaseInvoice] as ipi
-    LEFT JOIN [Micromodern1].[INV].[InventoryPurchaseInvoiceItem] as ipii on ipii.InventoryPurchaseInvoiceRef = ipi.InventoryPurchaseInvoiceID
-    LEFT JOIN [Micromodern1].ACC.DL as dl on dl.DLId = ipi.VendorDLRef
-    LEFT JOIN [Micromodern1].INV.Item as item on item.ItemID = ipii.ItemRef
-    LEFT JOIN [Micromodern1].GNR.Currency as cu on cu.CurrencyID = ipi.CurrencyRef
-    LEFT JOIN [Micromodern1].[FMK].[User] as u on u.UserID = ipi.Creator
+    From [Micromodern1400].[INV].[InventoryPurchaseInvoice] as ipi
+    LEFT JOIN [Micromodern1400].[INV].[InventoryPurchaseInvoiceItem] as ipii on ipii.InventoryPurchaseInvoiceRef = ipi.InventoryPurchaseInvoiceID
+    LEFT JOIN [Micromodern1400].ACC.DL as dl on dl.DLId = ipi.VendorDLRef
+    LEFT JOIN [Micromodern1400].INV.Item as item on item.ItemID = ipii.ItemRef
+    LEFT JOIN [Micromodern1400].GNR.Currency as cu on cu.CurrencyID = ipi.CurrencyRef
+    LEFT JOIN [Micromodern1400].[FMK].[User] as u on u.UserID = ipi.Creator
     where 1=1 {dl_filter} 
           {item_filter}
           {part_filter}

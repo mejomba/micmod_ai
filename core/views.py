@@ -621,15 +621,6 @@ class BaseView(UserPassesTestMixin,
                     wf_obj.content_type = ContentType.objects.filter(app_label=old_obj._meta.app_label,
                                                                      model=old_obj._meta.model_name).first()
 
-                    # flow_items = self.get_flow(self.object).filter(wf_status=3).order_by('-id')
-                    # pad = 2 if self.state_index >= 2 else 1
-                    # for item in flow_items:
-                    #     if item.state == self.flow_config.get('flow_state_list')[self.state_index - pad]:
-                    #         wf_obj.to_user = item.to_user if pad >= 2 else item.from_user
-                    #         wf_obj.deadline = item.deadline
-                    #         print(__file__, '========= save as back')
-                    #         break
-                    # wf_obj.save_user(self.request)
                     wf_obj.wf_status = 2  # back
                     wf_obj.extra_data.request = self.request
                     wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index - 1]

@@ -503,16 +503,31 @@ def first_common_index(list1, list2):
             return index
     return None  # یعنی اشتراک ندارن
 
-def generate_powerbi_filter(filters):
+def generate_powerbi_filter(filters, report_id):
     parts = []
+    public_filter = []
+    specific_filter = []
     for f in filters:
-        dim = f["dim"]
-        field = f["field"]
-        value = f["field_value"]
+        if not f.get('report_id'):
+            dim = f["dim"]
+            field = f["field"]
+            value = f["field_value"]
+            encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
+            public_filter.append(f"{dim}/{field} eq {encoded_value}")
+        if f.get('report_id', 0) == report_id:
+            dim = f["dim"]
+            field = f["field"]
+            value = f["field_value"]
+            if all([dim, field, value]):
+                encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
+                specific_filter.append(f"{dim}/{field} eq {encoded_value}")
+            public_filter.clear()
+            break
 
         # اگر مقدار رشته‌ای باشه، در کوتیشن قرار بگیره و انکد بشه
-        encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
-        parts.append(f"{dim}/{field} eq {encoded_value}")
+        # encoded_value = value if isinstance(value, int) else urllib.parse.quote(f"'{value}'")
+        # parts.append(f"{dim}/{field} eq {encoded_value}")
+    parts = specific_filter or public_filter
     return "&filter=" + " and ".join(parts)
 
 
