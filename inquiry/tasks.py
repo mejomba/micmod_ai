@@ -45,13 +45,11 @@ def update_price_db(objs):
             data['created_date'] = timezone.now()
             to_create.append(ItemPrice(**data))
 
-    # 4️⃣ ایجاد رکوردهای جدید
     if to_create:
         ItemPrice.objects.bulk_create(to_create, batch_size=500)
 
-    # 5️⃣ آپدیت رکوردهای موجود
     if to_update:
-        ItemPrice.objects.bulk_update(to_update, ["air", "sea", "express", "price_update_date"], batch_size=500)
+        ItemPrice.objects.bulk_update(to_update, ["air", "sea", "express", "price_update_date", "last_update_date"], batch_size=500)
 
 
 @shared_task
