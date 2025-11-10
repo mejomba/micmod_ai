@@ -1181,7 +1181,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
             reverse('micmod_base:quotations.view', args=(obj.id,)),
             obj.title if obj.title else '_'
         )
-        row['factor_create'] = f'<a class="fw-bold" href="{reverse("factor:factor.view")}?q_id={obj.id}" target="_blank"><i class="ki-duotone ki-plus-circle fs-2"><span class="path1"></span><span class="path2"></span></i></a>' if obj.sales_admin_confirm else "نیاز به تایید مدیر فروش"
+        row['factor_create'] = f'<a class="fw-bold" href="{reverse("factor:factor.view")}?q_id={obj.id}" target="_blank"><i class="ki-duotone ki-plus-circle fs-2"><span class="path1"></span><span class="path2"></span></i></a>'
 
         row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['expiration_date'] = '%s' % to_jalali_date(obj.expiration_date)

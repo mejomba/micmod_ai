@@ -69,15 +69,18 @@ class Factor(SLSDoc):
     deliver_method = models.ForeignKey('Delivery', related_name='deliver_method', null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name=_('deliver_method'))
     accounting_confirm = models.BooleanField(_('accounting_confirm'), default=False)
     force_inquiry = models.BooleanField(_('force_inquiry'), default=False)
+    sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
+
 
     def is_need_sales_admin_confirmation(self):
-        # x = all([all((x.qi.fee != x.price, x.qi.goods_code_fk != x.goods_code)) for x in
-        #         self.object.factoritem_set.all()])
+        if not self.q.sales_admin_confirm:
+            return True
+
         for fis in self.factoritem_set.all():
-            if fis.qi.fee != fis.price or fis.goods_code != fis.qi.goods_code_fk:
+            if fis.qi.fee != fis.price:
                 return True
         return False
-        # return x
+
     @classmethod
     def get_qs_count(cls, user):
         return len(cls.objects.get_access_object(user, q='active', quotation=False))

@@ -174,10 +174,15 @@
                 <input type="hidden" name="editor_user" value="{{ request.user.pk }}">
                 <input type="hidden" name="itemid" value="{{ order_form.instance.item.sepidar_id_0 }}">
                 <th scope="row">
-                    <span class="badge {% if order_form.instance.is_wh %} badge-light-success {% elif order_form.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">{{ order_form.instance.order_method }}</span>
+                <div class="">
+                    <div class="badge {% if order_form.instance.is_wh %} badge-light-success {% elif order_form.instance.is_bazar %} badge-light-info {% else %} badge-light-primary {% endif %}">{{ order_form.instance.order_method }}</div>
+                    <div class="font-size-10">{{ order_form.instance.last_work_flow.current_state_name }}</div>
+                </div>
                 </th>
                 <td>
-                    <span class="order_id">{{ order_form.instance.pk }}</span>
+                    <span class="order_id">
+                        <a href="{% url 'order:order.view' order_form.instance.pk %}" target="_blank">{{ order_form.instance.pk }}</a>
+                    </span>
                 </td>
                 <td>
                     {{ order_form.instance.item }} <br>
@@ -228,34 +233,36 @@
                 <td class="text-end">
                     <div class="d-flex justify-content-around">
                         <div class="d-flex gap-1">
-                            <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
                             {% with order_form.instance.state_pair.1 as next %}
-                                {% if next %}
-                                    <div class="rounded bg-success text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="next" onclick="update_supply_location(event)">
-                                        <div>ارسال به</div>
-                                        <div>{{ next }}</div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
+                                {% with order_form.instance.state_pair.0 as back %}
+                                    {% if next %}
+                                        <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
+                                        <div class="rounded bg-success text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="next" onclick="update_supply_location(event)">
+                                            <div>ارسال به</div>
+                                            <div>{{ next }}</div>
+                                        </div>
+                                    {% endif %}
 
-                            {% with order_form.instance.state_pair.0 as back %}
-                                {% if back %}
-                                    <div class="rounded bg-danger text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="back" onclick="update_supply_location(event)">
-                                        <div>عودت به</div>
-                                        <div>{{ back }}</div>
+                                    {% if back %}
+                                        <div class="rounded bg-danger text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="back" onclick="update_supply_location(event)">
+                                            <div>عودت به</div>
+                                            <div>{{ back }}</div>
+                                        </div>
+                                    {% endif %}
+                        </div>
+                                    {% if next %}
+                                    <div>
+                                        <i class="ki-duotone ki-trash fs-2 text-danger cursor-pointer" data-submit_action="delete" onclick="update_supply_location(event)">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                            <span class="path3"></span>
+                                            <span class="path4"></span>
+                                            <span class="path5"></span>
+                                        </i>
                                     </div>
-                                {% endif %}
+                                    {% endif %}
+                                {% endwith %}
                             {% endwith %}
-                        </div>
-                        <div>
-                            <i class="ki-duotone ki-trash fs-2 text-danger cursor-pointer" data-submit_action="delete" onclick="update_supply_location(event)">
-                                <span class="path1"></span>
-                                <span class="path2"></span>
-                                <span class="path3"></span>
-                                <span class="path4"></span>
-                                <span class="path5"></span>
-                            </i>
-                        </div>
                     </div>
                 </td>
             </tr>
