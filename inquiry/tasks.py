@@ -13,23 +13,17 @@ from django.conf import settings
 
 
 def update_price_db(objs):
-    # data_list = [
-    #     {"item": "A1", "x": 1.1, "y": 2.2, "z": 3.3},
-    #     {"item": "A2", "x": 4.4, "y": 5.5, "z": 6.6},
-    #     # ...
-    # ]
-
-    # 1️⃣ استخراج تمام itemها از داده‌های ورودی
+    # استخراج تمام itemها از داده‌های ورودی
     item_values = [d["item"] for d in objs]
 
-    # 2️⃣ گرفتن تمام رکوردهای موجود از دیتابیس
+    # گرفتن تمام رکوردهای موجود از دیتابیس
     existing_qs = ItemPrice.objects.filter(item__in=item_values)
     existing_map = {obj.item: obj for obj in existing_qs}
 
     to_create = []
     to_update = []
 
-    # 3️⃣ تشخیص رکوردهای جدید و قدیمی
+    # تشخیص رکوردهای جدید و قدیمی
     for data in objs:
         item = data["item"]
         if item in existing_map:
@@ -39,6 +33,7 @@ def update_price_db(objs):
             obj.express = data["express"]
             obj.last_update_date = timezone.now()
             obj.price_update_date = data['price_update_date']
+            obj.is_sea_default = data['is_sea_default']
             to_update.append(obj)
         else:
             data['last_update_date'] = timezone.now()
@@ -137,7 +132,8 @@ def update_price_list():
                      'air': price.get('air'),
                      'sea': price.get('sea'),
                      'express': price.get('express'),
-                     "price_update_date": inquiry_obj.price_update_date
+                     "price_update_date": inquiry_obj.price_update_date,
+                     "is_sea_default": item.is_sea_default,
                      }
                 )
                 if idx % 1000 == 0:
@@ -152,7 +148,7 @@ def update_price_list():
                     qty_1000_ = inquiry_obj.price_settings.discount_based_quantity[3]['percentage']
         else:
             update_price_db(price_for_db)
-        if not prices:
+        if prices:
             g_sheet.clear_rows('portal_prices')
             g_sheet.update_rows('portal_prices', prices, 2)
             update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
@@ -178,7 +174,6 @@ def deactivate_old_bazar_price(expiration_in_day=3):
     prices.update({'active': False})
     for price in prices:
         price.active = False
-
 
 
 def create_essentials(db_config):
