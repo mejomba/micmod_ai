@@ -42,6 +42,9 @@ class Supplier(BaseModel):
     city = models.ForeignKey(SupplierCity,verbose_name=_('city'), on_delete=models.DO_NOTHING, null=True, blank=True)
     # trade_transportation_method = models.ForeignKey(TradeTransportationMethod, verbose_name=_('trade_transportation_method'), on_delete=models.DO_NOTHING, null=True, blank=True)
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
+    dlref = models.IntegerField(null=True, blank=True, unique=True)
+    partyid = models.IntegerField(null=True, blank=True, unique=True)
+    maximumcredit = models.BigIntegerField(null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):

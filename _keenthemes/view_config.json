@@ -126,6 +126,38 @@
             ]
           },
           {
+            "state": "تامین کالا",
+            "groups": ["sales_admin", "sales_user"],
+            "deadlines": [1],
+            "form_constraints": [{
+              "group": "sales_admin",
+              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer","packing_json"],
+              "read": ["accounting_confirm", "checker", "collecting_start_time", "wh_user"]
+            },
+            {
+              "group": "sales_user",
+              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer","packing_json"],
+              "read": ["accounting_confirm", "checker", "collecting_start_time", "wh_user"]
+            }],
+            "formset_constraints": [
+              {
+                "hide": [],
+                "read": [
+                  {
+                    "group": "sales_admin",
+                    "hide": [],
+                    "read": ["goods_code", "part_number", "quantity", "price"]
+                  },
+                  {
+                    "group": "sales_user",
+                    "hide": [],
+                    "read": ["goods_code", "part_number", "quantity", "price"]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "state": "تخصیص کارشناس انبار",
             "groups": ["wh_admin", "accounting_user"],
             "deadlines": [1, 1],
@@ -148,7 +180,7 @@
             "formset_constraints": [
               {
                 "group": "wh_admin",
-                "hide": [],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
                 "read": ["is_official","official_value","self_discount", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
               },
               {
@@ -175,7 +207,8 @@
             ],
             "formset_constraints": [
               {
-                "hide": [],
+                "group": "wh_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
                 "read": []
               }
             ]
@@ -208,7 +241,8 @@
             }],
             "formset_constraints": [
               {
-                "hide": [],
+                "group": "wh_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
                 "read": []
               }
             ]
@@ -224,7 +258,8 @@
             }],
             "formset_constraints": [
               {
-                "hide": [],
+                "group": "wh_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
                 "read": []
               }
             ]

@@ -3,8 +3,9 @@
 {% load quotation_tag %}
 {% load jalali_tags %}
 {% load accounts_tag %}
+{% load more_tags %}
 
-{% block title %}لیست حساب{% endblock title %}
+{% block title %}ACNT{% endblock title %}
 {% block extra_css %}
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -38,6 +39,17 @@
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                    <form action="" method="post">
+                        {% csrf_token %}
+                    <div class="row row-cols-4">
+                    {% render_field_by_order form form.info_bank form.currency form.first_amount form.description form.is_blocked form.block_date form.sepidar_code label='on-border' %}
+
+                    </div>
+                        <input type="submit" value="ثبت" class="btn btn-primary my-3">
+                        {% if form.instance.pk %}
+                            <a href="{% url 'order:acnt.view' %}" class="btn btn-success">جدید</a>
+                        {% endif %}
+                        </form>
                 <div class="row">
                             <div class="col-12">
                                 <div class="container-fluid">

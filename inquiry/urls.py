@@ -58,6 +58,8 @@ urlpatterns = [
     path('currency_amount/<int:pk>/', views.CurrencyAmountList.as_view(), name='currency_amount.update'),
     path('currency_amount/datatable/', views.CurrencyAmountDatatableView.as_view(), name='currency_amount.datatable'),
 
+    path('override_all_supplier_from_sepidar/', views.override_all_supplier_from_sepidar, name='override_all_supplier_from_sepidar'),
+
     # dal auto complete
     path('supplier-autocomplete/', views.SupplierAutocomplete.as_view(), name='supplier-autocomplete'),
 ]

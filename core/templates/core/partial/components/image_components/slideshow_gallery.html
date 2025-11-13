@@ -3,7 +3,7 @@
     <div class="container">
         <div class="bg-gray-300 text-primary bold text-center w-100 rounded-top-5 py-3 fs-1"
              data-key="{{ rma_title|default:'images' }}"> {{ rma_title|default:'images' }} </div>
-        {% if rma_images %}
+        {% if rma_images or rma_files %}
             <div id="image-gallery"
                  class="w-100 bg-light rounded-bottom-5 {{ rma_body_class|default:'mh-800px scroll-y' }}">
                 <div class="row row-cols-{{ rma_cols|default:'5' }}">
@@ -19,12 +19,30 @@
                         </div>
                     {% endfor %}
                 </div><!-- End row -->
+                <div class="d-flex border border-top">
+                    {% for file in sku.files.all %}
+                        <div class="text-center py-5 pe-4">
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ file.name }}">
+                                <i class="fas fs-2 fa-file icon-lg text-primary"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                    {% for file in rma_files %}
+                        <div class="text-center py-5 pe-4">
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ file.name }}">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div><!-- End row -->
             </div><!-- End image gallery -->
         {% else %}
             <div class="py-10 fs-3x text-center w-100">
                 {% include "core/partial/components/blank_data.html" %}
             </div>
         {% endif %}
+
+
     </div><!-- End container -->
 </section>
 

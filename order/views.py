@@ -878,18 +878,22 @@ class PaymentDataTableListView(AjaxDatatableView):
     initial_order = [["created_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
+    render_row_details_template_name = 'order_payment_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
         {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
-        {'name': 'from_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
-        {'name': 'to_date', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
+        # {'name': 'action', 'visible': True, 'title': _('action'), 'className': 'py-1', 'searchable': False},
+        {'name': 'last_work_flow', 'visible': True, 'title': _('status'), 'className': 'py-1', 'lookup_field': '__current_state_name__icontains',},
+        {'name': 'bank', 'visible': True, 'title': _('ACNT'), 'className': 'py-1', 'lookup_field': '__info_bank__icontains',},
         {'name': 'total_amount', 'title': _('total_amount'), 'className': 'py-1', },
+        {'name': 'currency', 'visible': True, 'title': _('currency'), 'className': 'py-1', },
+        {'name': 'exchange_rate', 'title': _('exchange_rate'), 'className': 'py-1', },
+        {'name': 'orders', 'orderable': True, 'visible': True, 'title': _('orders'),},
         {'name': 'description', 'orderable': True, 'visible': True, },
-        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user')},
-        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user')},
+        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user'), 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user'), 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
 
@@ -898,6 +902,8 @@ class PaymentDataTableListView(AjaxDatatableView):
             reverse('order:order.payment.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
+
+        row['orders'] = ', '.join([str(x.order.pk) for x in obj.payment_item.all()])
 
 
 class PaymentItemListView(LoginRequiredMixin, View):
@@ -1113,9 +1119,99 @@ class OrderOfFactor(BaseView):
     template = 'order/order_of_factors.html'
     model = Order
 
+    def setup(self, request, *args, **kwargs):
+        """Initialize attributes shared by all view methods."""
+        if hasattr(self, "get") and not hasattr(self, "head"):
+            self.head = self.get
+        self.request = request
+        self.args = args
+        self.kwargs = kwargs
+        self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+        self.object = Order.objects.get(pk=kwargs.get('pk'))
+        self.state_index = self.get_flow_index(self.object)
+
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs.get('pk') == '0':
+            return self.list(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        orders = self.model.objects.filter(pk__gt=100)
+        forms = []
+        for order in orders:
+            form = dict()
+            self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+            self.state_index = self.get_flow_index(order)
+            if order.cancel:
+                form[order] = []
+                m2m = order.order_m2m.distinct()
+                for x in m2m:
+                    oo = OrderOrder.objects.filter(order_base=order, order_rel=x,
+                                                   is_deleted=False).first()
+                    if not oo:
+                        continue
+                    x.oo = oo
+                    x.flow_config = self.flow_config
+                    x.state_pair = x.state(self.flow_config, self.get_flow_index(x), self.request, x)
+                    form[order].append((OrderForm(instance=x), oo))
+            else:
+                order.state_pair = order.state(self.flow_config,
+                                               self.get_flow_index(order),
+                                               self.request, order)
+                form = OrderForm(instance=order)
+
+            forms.append(form)
+
+        context = dict()
+        context['factor_items'] = orders
+        context['forms'] = forms
+        context['access'] = True
+
+        # if self.request.user == factor_items.first().creator_user or factor_items.first().creator_user in self.request.user.team.all():
+        #     context['access'] = True
+
+        return render(request, self.template, context)
+
+        factor_items = (
+            FactorItem.objects
+            .select_related('supply_locations')
+        )
+
+        forms = []
+        for fi in factor_items:
+            form = dict()
+            oo_list = list()
+            if fi.supply_locations.cancel:
+                form[fi.supply_locations] = []
+                m2m = fi.supply_locations.order_m2m.distinct()
+                for x in m2m:
+                    oo = OrderOrder.objects.filter(order_base=fi.supply_locations, order_rel=x,
+                                                   is_deleted=False).first()
+                    if not oo:
+                        continue
+                    x.oo = oo
+                    x.flow_config = self.flow_config
+                    x.state_pair = x.state(self.flow_config, self.get_flow_index(x), self.request, x)
+                    form[fi.supply_locations].append((OrderForm(instance=x), oo))
+            else:
+                fi.supply_locations.state_pair = fi.supply_locations.state(self.flow_config,
+                                                                           self.get_flow_index(fi.supply_locations),
+                                                                           self.request, fi.supply_locations)
+                form = OrderForm(instance=fi.supply_locations)
+            forms.append(form)
+
+        context = dict()
+        context['factor_items'] = factor_items
+        context['forms'] = forms
+
+        if self.request.user == factor_items.first().creator_user or factor_items.first().creator_user in self.request.user.team.all():
+            context['access'] = True
+
+
+        return render(request, self.template, context)
+
     def get(self, request, pk, *args, **kwargs):
         self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
-        self.state_index = self.get_flow_index(self.object)
         if '__' in pk:
             pk = pk.split('__')[1]
         else:
@@ -1141,8 +1237,6 @@ class OrderOfFactor(BaseView):
                     x.flow_config = self.flow_config
                     x.state_pair = x.state(self.flow_config, self.get_flow_index(x), self.request, x)
                     form[fi.supply_locations].append((OrderForm(instance=x), oo))
-
-                # form = {fi.supply_locations: [OrderForm(instance=x) for x in fi.supply_locations.order_m2m.all()]}
             else:
                 fi.supply_locations.state_pair = fi.supply_locations.state(self.flow_config, self.get_flow_index(fi.supply_locations), self.request, fi.supply_locations)
                 form = OrderForm(instance=fi.supply_locations)
@@ -1192,7 +1286,7 @@ class OrderOfFactor(BaseView):
             "action": 'ایجاد',
             "flow_name": 'سفارش',
             "state": self.flow_config.get('flow_state_list')[self.state_index],
-            "wf_description": 'ارسال به مدیر فروش از لیست محل تامین های فاکتور',
+            "wf_description": 'ارسال به مرحله بعد از لیست محل تامین های فاکتور',
             "belong_to_group": group_name,
             "object_id": obj.pk,
             "content_type": ContentType.objects.get_for_model(obj),
@@ -1217,7 +1311,7 @@ class OrderOfFactor(BaseView):
             "action": 'ایجاد',
             "flow_name": 'سفارش',
             "state": self.flow_config.get('flow_state_list')[self.state_index],
-            "wf_description": None,
+            "wf_description": 'عودت از لیست محل تامین های فاکتور',
             "belong_to_group": group_name,
             "object_id": obj.pk,
             "content_type": ContentType.objects.get_for_model(obj),

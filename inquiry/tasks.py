@@ -27,16 +27,10 @@ ORDER BY ItemRef;
 
 
 def update_price_db(objs):
-    # data_list = [
-    #     {"item": "A1", "x": 1.1, "y": 2.2, "z": 3.3},
-    #     {"item": "A2", "x": 4.4, "y": 5.5, "z": 6.6},
-    #     # ...
-    # ]
-
-    # 1️⃣ استخراج تمام itemها از داده‌های ورودی
+    # استخراج تمام itemها از داده‌های ورودی
     item_values = [d["item"] for d in objs]
 
-    # 2️⃣ گرفتن تمام رکوردهای موجود از دیتابیس
+    # گرفتن تمام رکوردهای موجود از دیتابیس
     existing_qs = ItemPrice.objects.filter(item__in=item_values)
     existing_map = {obj.item: obj for obj in existing_qs}
 
@@ -58,11 +52,9 @@ def update_price_db(objs):
             # data['created_date'] = timezone.now()
             to_create.append(ItemPrice(**data))
 
-    # 4️⃣ ایجاد رکوردهای جدید
     if to_create:
         ItemPrice.objects.bulk_create(to_create, batch_size=500)
 
-    # 5️⃣ آپدیت رکوردهای موجود
     if to_update:
         ItemPrice.objects.bulk_update(to_update, keys, batch_size=500)
 
@@ -122,7 +114,7 @@ def update_components():
 def update_price_list():
     if cache.get('task_is_running'):
         print('task is running')
-        # return
+        return
     try:
         from extra_data.models import Item
         items_sepidar_quantity =  get_sepidar_quantity()
@@ -200,7 +192,6 @@ def deactivate_old_bazar_price(expiration_in_day=3):
     prices.update({'active': False})
     for price in prices:
         price.active = False
-
 
 
 def create_essentials(db_config):
