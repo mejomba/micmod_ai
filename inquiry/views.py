@@ -1,4 +1,4 @@
-import json
+import re
 import datetime
 import threading
 
@@ -1761,12 +1761,14 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title', 'country', 'city', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
+            'title', 'country', 'city', 'sepidar_dl_id', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
         ])
         # cols['created_date']['searchable'] = False
         return cols
 
     def get_initial_queryset(self, request=None):
+        if request.user.is_superuser:
+            return self.model.objects.all()
         qs = self.model.objects.filter(base_group=self.request.user.base_group)
         # param: str = self.request.POST.get('title')
         # if param:
@@ -2247,3 +2249,24 @@ class SupplierAutocomplete(autocomplete.Select2ListView):
             }
 
         return [(k, v) for k, v in filtered.items()]
+
+
+def override_all_supplier_from_sepidar(request, *args, **kwargs):
+    res = SepidarApiCall.get_all_supplier(request)
+    for s in res:
+        partyid = s.get('partyid')
+        name = s.get('name')
+        dlref = s.get('dlref')
+        maximumcredit = s.get('maximumcredit')
+        base_group = 'bazar' if len(re.findall(r'[A-Za-z]', name)) <= 2 else 'trade'
+        if Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).exists():
+            obj = Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).update({'title': name, partyid: partyid,
+                                                                                        maximumcredit: maximumcredit,
+                                                                                        base_group: base_group})
+            obj.extra_data.request = request
+            obj.save()
+        else:
+            obj = Supplier.objects.create(title=name, partyid=partyid, dlref=dlref, maximumcredit=maximumcredit, base_group=base_group)
+            obj.extra_data.request = request
+            obj.save()
+    Supplier.objects.create()

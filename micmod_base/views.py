@@ -350,22 +350,18 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                 sepidar_qis = api_res[1].get('Items')
 
-                """ save sepidar QuotationItemID for qi """
-                items = list(self.object.quotation.all())
-                lookup = {(d["Quantity"], d["ItemRef"]): d["QuotationItemID"] for d in sepidar_qis}
+                if sepidar_qis:
+                    """ save sepidar QuotationItemID for qi """
+                    lookup = {(d["Quantity"], d["ItemRef"]): d["QuotationItemID"] for d in sepidar_qis}
+                    items = list(self.object.quotation.all())
 
-                for item in items:
-                    key = (item.quantity, item.goods_code_fk.sepidar_id_0)
-                    if key in lookup:
-                        item.sepidar_id = lookup[key]
+                    for item in items:
+                        key = (item.quantity, item.goods_code_fk.sepidar_id_0)
+                        if key in lookup:
+                            item.sepidar_id = lookup[key]
 
-                QuotationItem.objects.bulk_update(items, ["sepidar_id"])
+                    QuotationItem.objects.bulk_update(items, ["sepidar_id"])
 
-                # portal_qis = self.object.quotation.all()
-                # for pqi, sqi in zip(portal_qis, sepidar_qis):
-                #     pqi.sepidar_id = sqi.get("QuotationItemID")
-                #     pqi.save()
-                # self.object.save()
                 if api_res[0] >= 400:
                     from django.contrib import messages
 

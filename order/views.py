@@ -878,18 +878,22 @@ class PaymentDataTableListView(AjaxDatatableView):
     initial_order = [["created_date", "des"], ]
     length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
-    render_row_details_template_name = 'sku_list_detail.html'
+    render_row_details_template_name = 'order_payment_list_detail.html'
 
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, 'title': _('id'), 'className': 'py-1',},
         {'name': 'pk', 'visible': True, 'title': _('id'), 'className': 'py-1',},
-        {'name': 'from_date', 'visible': True, 'title': _('gio_date'), 'className': 'py-1',},
-        {'name': 'to_date', 'visible': True, 'title': _('total_quantity'), 'className': 'py-1', },
+        # {'name': 'action', 'visible': True, 'title': _('action'), 'className': 'py-1', 'searchable': False},
+        {'name': 'last_work_flow', 'visible': True, 'title': _('status'), 'className': 'py-1', 'lookup_field': '__current_state_name__icontains',},
+        {'name': 'bank', 'visible': True, 'title': _('ACNT'), 'className': 'py-1', 'lookup_field': '__info_bank__icontains',},
         {'name': 'total_amount', 'title': _('total_amount'), 'className': 'py-1', },
+        {'name': 'currency', 'visible': True, 'title': _('currency'), 'className': 'py-1', },
+        {'name': 'exchange_rate', 'title': _('exchange_rate'), 'className': 'py-1', },
+        {'name': 'orders', 'orderable': True, 'visible': True, 'title': _('orders'),},
         {'name': 'description', 'orderable': True, 'visible': True, },
-        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user')},
-        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user')},
+        {'name': 'creator_user', 'orderable': True, 'visible': True, 'title': _('creator_user'), 'lookup_field': '__profile__first_name__icontains'},
+        {'name': 'editor_user', 'orderable': True, 'visible': True, 'title': _('editor_user'), 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
 
@@ -898,6 +902,8 @@ class PaymentDataTableListView(AjaxDatatableView):
             reverse('order:order.payment.update', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
+
+        row['orders'] = ', '.join([str(x.order.pk) for x in obj.payment_item.all()])
 
 
 class PaymentItemListView(LoginRequiredMixin, View):

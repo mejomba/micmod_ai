@@ -1,10 +1,17 @@
-from typing import Optional
+from typing import Optional, TypedDict, List
 import jdatetime
 import requests
 from django.conf import settings
 from django.utils import timezone
 from core.exceptions import StockRefNotFoundError
 from tools import utils
+
+
+class SupplierType(TypedDict):
+    partyid: int
+    name: str
+    dlref: str | None
+    maximumcredit: int | None
 
 
 class SingletonMeta(type):
@@ -409,8 +416,21 @@ class SepidarDataFactory(metaclass=SingletonMeta):
     #     return
 
 
+class SepidarResponseManager(metaclass=SingletonMeta):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def supplier_default_response(res):
+        res = [{'partyid': x.get('partyid'), 'name': x.get('name').replace('ي', 'ی').replace('ك', 'ک'), 'dlref': x.get('dlref'),
+                'maximumcredit': x.get('maximumcredit')}
+               for x in res.json().get('results')]
+        return res
+
+
 class SepidarApiCall:
     data = SepidarDataFactory()
+    response_manager = SepidarResponseManager()
     protocol = settings.SEPIDAR_CUSTOM_API_PROTOCOL  # http
     host = settings.SEPIDAR_CUSTOM_API_HOST  # '192.168.1.80'
     port = settings.SEPIDAR_CUSTOM_API_PORT  # '3030'
@@ -786,3 +806,29 @@ class SepidarApiCall:
             return res
 
         return dict()
+
+    @classmethod
+    def get_all_supplier(cls, request, response_function=None) -> List[SupplierType]:
+        cls.setup()
+        results = []
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
+        res = requests.get(endpoint, headers=cls.headers)
+        if res.ok:
+            res = getattr(cls.response_manager, (response_function or 'supplier_default_response'))(res)
+            return res
+
+        return list(dict())
+
+    @classmethod
+    def get_supplier_by_partyid(cls, partyid, request, response_function=None) -> List[SupplierType]:
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
+        endpoint += f'&partyid={partyid}'
+        res = requests.get(endpoint, headers=cls.headers)
+        if res.ok:
+            res = [{'partyid': x.get('partyid'), 'name': x.get('name'), 'dlref': x.get('dlref'),
+                    'maximumcredit': x.get('maximumcredit')}
+                   for x in res.json().get('results')]
+            return res
+
+        return list(dict())

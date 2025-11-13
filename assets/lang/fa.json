@@ -734,5 +734,6 @@
     "lead_time": "زمان تامین",
     "count_in_box": "تعداد در جعبه",
     "count_in_main_box": "تعداد در جعبه بزرگ",
-    "location_in_wh": "موقعیت در انبار"
+    "location_in_wh": "موقعیت در انبار",
+    "t-bazar-order": "سفارش های بازار"
 }

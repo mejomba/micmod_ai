@@ -521,6 +521,7 @@ function ajax_delete(elms) {
 
 function select2_generate(select2_element, target_element, url, placeholder, id_field='id', minimumInputLength=null,
                           formatRepoDL=null, formatRepoSelection=null, afterSelect=null) {
+    console.log('formatRepoDL', formatRepoDL)
     let select2_container_width;
     // target_element => '#target_element'
     $(select2_element).select2({

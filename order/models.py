@@ -665,7 +665,7 @@ class ACNT(BaseModeWF):
     is_blocked = models.BooleanField(default=False)
     block_date = models.DateField(null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
-    sepidar_code = ...
+    sepidar_code = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.info_bank} {self.currency.title_en}'
