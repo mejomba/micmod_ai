@@ -261,6 +261,10 @@
                </span>
            </div>
         {% endif %}
+        <div class="col-sm-6">
+            {% get_comment_user_list form request.user obj_rel=form.instance.q %}
+            <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+        </div>
 
         </div>
     {{ quotation.customer_party_id.province }}
@@ -838,7 +842,8 @@
                     commentCounter.innerHTML = '0'
                 })
             }
-            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}/MAMAD=AKBAR`} else {comment_url += `?comment_type=${comment_type}`}
+            debugger
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
             custom_ajax_get(comment_form, comment_url, comment_element)
         }) // end eventListener
     }) // end forEach
