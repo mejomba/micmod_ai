@@ -6,10 +6,24 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from extra_data.models import Item, ItemPrice
+from sepidar.models import Item as SepItem
 from inquiry.models import PriceInquiryResult
 from tools.google_sheet import GSheet
 
 from django.conf import settings
+
+def get_sepidar_quantity():
+    items = SepItem.objects.raw("""
+SELECT 
+    ItemRef AS code,
+    SUM(Quantity) AS quantity
+FROM inv.ItemStockSummary
+WHERE StockRef IN (2,19,24,50,51,53,54,69,70,74,75,76,77,78,84,85) and FiscalYearRef = (select max(FiscalYearId) from fmk.FiscalYear)
+GROUP BY ItemRef
+ORDER BY ItemRef;  
+    """,using="sepidar")
+    print(len(items))
+    return {item.code: float(item.quantity) for item in items}
 
 
 def update_price_db(objs):
@@ -22,29 +36,27 @@ def update_price_db(objs):
 
     to_create = []
     to_update = []
+    keys = ['air', 'sea', 'express', "price_update_date", "is_sea_default", "part_number", "purchase_group", "sales_group", "sepidar_quantity", ]
 
-    # تشخیص رکوردهای جدید و قدیمی
+    # 3️⃣ تشخیص رکوردهای جدید و قدیمی
     for data in objs:
         item = data["item"]
         if item in existing_map:
             obj = existing_map[item]
-            obj.air = data["air"]
-            obj.sea = data["sea"]
-            obj.express = data["express"]
-            obj.last_update_date = timezone.now()
-            obj.price_update_date = data['price_update_date']
-            obj.is_sea_default = data['is_sea_default']
+            for key in keys:
+                setattr(obj, key, data.get(key))
+            # obj.last_update_date = timezone.now()
             to_update.append(obj)
         else:
-            data['last_update_date'] = timezone.now()
-            data['created_date'] = timezone.now()
+            # data['last_update_date'] = timezone.now()
+            # data['created_date'] = timezone.now()
             to_create.append(ItemPrice(**data))
 
     if to_create:
         ItemPrice.objects.bulk_create(to_create, batch_size=500)
 
     if to_update:
-        ItemPrice.objects.bulk_update(to_update, ["air", "sea", "express", "price_update_date", "last_update_date"], batch_size=500)
+        ItemPrice.objects.bulk_update(to_update, keys, batch_size=500)
 
 
 @shared_task
@@ -104,6 +116,8 @@ def update_price_list():
         print('task is running')
         return
     try:
+        from extra_data.models import Item
+        items_sepidar_quantity =  get_sepidar_quantity()
         cache.set('task_is_running', True, 300)
         print('task_started')
         prices = []
@@ -134,10 +148,12 @@ def update_price_list():
                      'express': price.get('express'),
                      "price_update_date": inquiry_obj.price_update_date,
                      "is_sea_default": item.is_sea_default,
+                     "part_number": item.part_number ,
+                     "purchase_group": item.purchase_group.title if item.purchase_group else "",
+                     "sales_group": item.sale_group.title if item.sale_group else "",
+                     "sepidar_quantity": items_sepidar_quantity.get(item.sepidar_id_0),
                      }
                 )
-                if idx % 1000 == 0:
-                    print(f'update_price_list count: {idx}: ', item.sku, price)
                 if not y_rate:
                     y_rate = inquiry_obj.price_settings.free_rmb_rate
                     chash_rial = inquiry_obj.price_settings.discount_based_payment_method[0]['rial_percentage']
@@ -146,9 +162,11 @@ def update_price_list():
                     qty_10_99 = inquiry_obj.price_settings.discount_based_quantity[1]['percentage']
                     qty_100_999 = inquiry_obj.price_settings.discount_based_quantity[2]['percentage']
                     qty_1000_ = inquiry_obj.price_settings.discount_based_quantity[3]['percentage']
-        else:
-            update_price_db(price_for_db)
+            if idx % 1000 == 0:
+                print(f'update_price_list count: {len(prices)}, products_checked {idx}: ', item.sku, price)
         if prices:
+            print(f'final update_price_list count: {len(prices)}')
+            update_price_db(price_for_db)
             g_sheet.clear_rows('portal_prices')
             g_sheet.update_rows('portal_prices', prices, 2)
             update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')

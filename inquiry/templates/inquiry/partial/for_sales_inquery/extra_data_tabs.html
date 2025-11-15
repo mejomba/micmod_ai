@@ -22,7 +22,7 @@
                 {% endif %}
                 {% include "core/partial/components/key_value_text.html" with rma_key="batch_type" rma_value=sku.batch_type rma_class="d-flex py-3" %}
                 {% include "core/partial/components/key_value_text.html" with rma_key="weight_in_1000" rma_value=trade_price.weight rma_class="d-flex py-3" %}
-                {% include "core/partial/components/image_components/slideshow_gallery.html" with rma_images=sku.images.all rma_body_class="mh-450px scroll" rma_cols=4 %}
+                {% include "core/partial/components/image_components/slideshow_gallery.html" with rma_files=trade_price.files.all rma_images=sku.images.all sku=sku rma_title='تصاویر و فایل ها' rma_body_class="mh-450px scroll" rma_cols=4 %}
                 {% include "core/partial/components/related_source.html" with rma_related_sources=sku.site_urls rma_body_class="mh-450px scroll" rma_cols=4 %}
             </div>
         {% endif %}

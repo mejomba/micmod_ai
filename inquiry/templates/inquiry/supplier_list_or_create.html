@@ -34,6 +34,9 @@
                     <span class="text-danger">جدید</span>
                 </div>
             </div>
+        <div class="ms-10">
+                    <span class="" onclick="update_all_supplier_from_sepidar(event)" data-url="{% url 'inquiry:override_all_supplier_from_sepidar' %}">بروز کردن از سپیدار</span>
+                </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
                 <input type="hidden" name="base_group" value="{{ user.base_group|default_if_falsy:"" }}">
                 {% render_field_by_order form form.title form.country form.city label='on-border' %}
@@ -73,16 +76,6 @@
             supplierSearch.dispatchEvent(event);
             })
 
-        {#id_name.on("change", function (e) {#}
-        {#    const tableData = document.querySelector('#supplier_list')#}
-        {#    if (tableData){#}
-        {#        if (tableData.getElementsByTagName('td')[0].innerText == "No data available in table"){#}
-        {#            $('#main-form :input').prop('disabled', true)#}
-        {#            $(this).prop('disabled', false)#}
-        {#        }#}
-        {#    }#}
-        //})
-
         AjaxDatatableViewUtils.initialize_table(
             $('#supplier_list'),
             "{% url 'inquiry:supplier.datatable' %}",
@@ -109,50 +102,6 @@
     });
     </script>
 
-{#    <script>#}
-{#        function set_item_classes() {#}
-{#        }#}
-{##}
-{#        window.addEventListener('DOMContentLoaded', function (e) {#}
-{##}
-{#            function f(){#}
-{#                document.querySelectorAll('td').forEach(function (td){#}
-{#                    td.style.setProperty("padding", "0", "important");#}
-{#                })#}
-{#                const FreeRMBbtn = document.querySelectorAll('.free_rmb')#}
-{#                const FreeRMBNewbtn = document.querySelectorAll('.free_rmb_new')#}
-{#                FreeRMBbtn.forEach(function (btn){#}
-{#                    btn.addEventListener('click', function (e) {#}
-{#                        btn.parentElement.nextElementSibling.classList.remove('d-none')#}
-{#                        btn.parentElement.nextElementSibling.nextElementSibling.classList.add('d-none')#}
-{#                    })#}
-{#                })#}
-{#                FreeRMBNewbtn.forEach(function (btn){#}
-{#                    btn.addEventListener('click', function (e) {#}
-{#                        btn.parentElement.nextElementSibling.classList.add('d-none')#}
-{#                        btn.parentElement.nextElementSibling.nextElementSibling.classList.remove('d-none')#}
-{#                    })#}
-{#                })#}
-{#            }#}
-{##}
-{#            const targetNode = document.getElementById("supplier_list");#}
-{#            const config = { attributes: true, childList: true, subtree: true };#}
-{#            const callback = (mutationList, observer) => {#}
-{#            for (const mutation of mutationList) {#}
-{#                  if (mutation.type === "childList") {#}
-{#                    f()#}
-{#                  } else if (mutation.type === "attributes") {#}
-                      {#f()#}
-{#                  }#}
-{#                }#}
-{#            };#}
-{#            const observer = new MutationObserver(callback);#}
-{#            observer.observe(targetNode, config);#}
-{#            window.setTimeout(f, 1500)#}
-{#        })#}
-{#    </script>#}
-
-{#    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>#}
     <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
     <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
 
@@ -168,5 +117,30 @@
 
     <script>
 
+    function update_all_supplier_from_sepidar(event){
+        const target = event.currentTarget
+        const url = target.dataset.url
+        $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        {#data: post_data,#}
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        cache: false,
+        processData: false,
+        contentType: false,
+        beforeSend: block_main_container,
+        success: function (data) {
+            debugger
+            const res = data['res']
+        },
+        error: function (data) {
+            console.log()
+        },
+        complete: release_main_container
+    }); // end ajax
+    }
     </script>
 {% endblock extra_js %}

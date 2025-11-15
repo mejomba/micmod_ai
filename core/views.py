@@ -1558,6 +1558,34 @@ class Select2BaseSearch(View):
         obj['total_count'] = count
         return JsonResponse(obj, safe=False)
 
+    def order_in_gio_item(self, request, app_name, model_name, title, *args, **kwargs):
+        q = request.GET.get('q', None)
+        obj = {}
+        count = 0
+        from django.apps import apps
+        model = apps.get_model(app_name, model_name)
+        title = title.split('__')
+        if q:
+            qs = model.objects.filter(pk=q).filter(last_work_flow__current_state_name__icontains='gio')
+            obj['items'] = []
+            for x in qs:
+                item = {}
+                item['id'] = x.pk
+                item['text'] = getattr_recursive(x, title)
+                item['title'] = x.title,
+                item['total_price'] = x.total_price,
+                item['total_paid'] = x.total_paid,
+                item['remaining_amount'] = x.remaining_amount,
+                item['quantity'] = x.final_quantity,
+                item['can_gio'] = item['total_price'] == item['total_paid']
+
+                # item['remained_quantity'] = x.remaining_quantity,
+                # item['other_payments'] = x.where_is_other_payment
+                obj['items'].append(item)
+                count += 1
+        obj['total_count'] = count
+        return JsonResponse(obj, safe=False)
+
 
 class GenericApiCall(View):
 

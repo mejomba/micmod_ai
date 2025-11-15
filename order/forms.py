@@ -10,7 +10,7 @@ from micmod_base.base import Currency
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm, CustomBaseForm
-from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem
+from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT
 from dal import autocomplete
 
 
@@ -476,5 +476,9 @@ TradePurchaseItemFormSet = formset_factory(TradeBuyFactorItemForm, extra=1)
 
 class ACNTForm(CustomBaseModelForm):
     class Meta:
-        model = OrderPayment
+        model = ACNT
         exclude = ['group']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1
