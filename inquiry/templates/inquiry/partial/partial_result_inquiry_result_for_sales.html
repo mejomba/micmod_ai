@@ -26,7 +26,10 @@
                         {% include 'core/partial/components/key_value_text.html' with rma_value=sku.part_number rma_class='text-end me-2 min-h-30px px-3' %}
                         {% include 'core/partial/components/key_value_text.html' with rma_value=sku.purchase_group rma_class='text-end me-2 min-h-30px fw-bold px-3' %}
                         {% include "core/partial/components/key_value_text.html" with rma_key="item_in_batch" rma_value=sku.batch_count rma_class="d-flex justify-content-center align-items-center" %}
-                        <span class="bold d-non">اولویت: {{ trade_price.sku.items_raked.first|default_if_none:'-' }}</span>
+                        {% include "core/partial/components/key_value_text.html" with rma_key="item_in_box" rma_value=sku.count_in_box rma_class="d-flex justify-content-center align-items-center" %}
+                        {% include "core/partial/components/key_value_text.html" with rma_key="item_in_main_box" rma_value=sku.count_in_main_box rma_class="d-flex justify-content-center align-items-center" %}
+                        <span class="bold d-non">اولویت: {{ trade_price.sku.items_raked.first|default_if_none:'-' }}</span><br>
+                        <span class="bold d-non">زمان تامین: {{ trade_price.lead_time|default_if_none:'-' }}</span>
                     </div>
                 </a>
             </li>
