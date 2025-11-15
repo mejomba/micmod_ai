@@ -17,14 +17,14 @@
 
 
 
-<table class="w-100" style="text-align: left">
+<table class="w-100" id="print_packing" style="text-align: left">
     <tbody id="id_packing-table-body">
         <tr>
             <th class="pe-3 ps-1">ردیف</th>
             <th class="pe-3">کد کالا</th>
             <th class="pe-3">نام کالا</th>
             <th class="pe-3">تعداد</th>
-            <th class="pe-3">نام پگ</th>
+            <th class="pe-3">نام پک</th>
 {#            <th class="pe-3">وضعیت</th>#}
         </tr>
         {% for factor_item in factor_items %}
@@ -82,6 +82,7 @@
 <div class="mt-10">
     <div  class="btn btn-sm btn-success" onclick="update_wh_packing_json(event)" data-bs-dismiss="modal">تایید</div>
     <div  class="btn btn-sm btn-danger" data-bs-dismiss="modal">لغو</div>
+     <span class="noprint button btn btn-sm btn-primary btn-bordered mb-5 mt-5" id="print-button">پرینت</span>
     <div class="float-end btn btn-sm disabled d-none">آپلود اکسل</div>
 </div>
 <div class="bg-light-info p-2 rounded mt-2 d-flex align-items-start gap-2">
@@ -204,3 +205,78 @@ function loadPackingJSON() {
 
 loadPackingJSON()
 </script>
+<script>
+
+document.getElementById('print-button').addEventListener('click', function() {
+
+    debugger
+    const data = JSON.parse(document.getElementById('id_packing_json')?.value)
+  // ساخت جدول از JSON
+  let tableHTML = `
+    <table border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; width: 100%; text-align: center; direction: rtl;">
+      <thead style="background:#eee;">
+        <tr>
+          <th>#</th>
+          <th>کد کالا</th>
+          <th>نام کالا</th>
+          <th>تعداد</th>
+          <th>نام پک</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  Object.entries(data).forEach(([groupName, items]) => {
+      debugger
+  items.forEach(item => {
+
+    tableHTML += `
+      <tr>
+        <td>${item.row}</td>
+        <td>${item.sku}</td>
+        <td>${item.partnumber}</td>
+        <td>${item.quantity}</td>
+        <td>${groupName}</td>
+      </tr>
+    `;
+  });
+});
+
+  tableHTML += `
+      </tbody>
+    </table>
+  `;
+
+  // باز کردن پنجره جدید و پرینت جدول
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  printWindow.document.open();
+  printWindow.document.write(`
+    <html dir="rtl">
+      <head>
+        <meta charset="utf-8">
+        <title>چاپ اطلاعات</title>
+        <style>
+          body { font-family: sans-serif; padding: 20px; direction: rtl; }
+          table { border: 1px solid #333; }
+          th, td { border: 1px solid #555;}
+          td { font-size: 10px}
+        </style>
+      </head>
+      <body>
+        <h2 style="text-align:center;">گزارش اطلاعات کالا</h2>
+        ${tableHTML}
+        <script>
+            // ✅ بستن خودکار تب بعد از پرینت
+            window.onafterprint = function() { window.close(); };
+            window.print();
+        <\/script>
+
+
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+});
+</script>
+
