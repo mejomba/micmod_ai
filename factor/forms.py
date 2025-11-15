@@ -31,6 +31,7 @@ class UserSelectWidget(ModelSelect2MultipleWidget):
 class FactorModelForm(CustomBaseModelForm):
     file_model = File
     file_groups = 2
+    has_comment = True
 
     class Meta:
         model = Factor
