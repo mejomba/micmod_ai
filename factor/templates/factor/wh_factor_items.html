@@ -273,6 +273,10 @@
                </span>
                     </div>
                 {% endif %}
+            <div class="col-sm-6">
+            {% get_comment_user_list form request.user obj_rel=form.instance.q %}
+            <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+        </div>
 
             </div>
             {{ quotation.customer_party_id.province }}
