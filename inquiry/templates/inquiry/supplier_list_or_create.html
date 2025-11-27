@@ -28,18 +28,73 @@
     {% csrf_token %}
     <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded">
         <div class="col-12">
-            <div class="py-1 d-flex mb-3">
-                <div class="badge badge-light-info d-flex gap-1 px-3">
-                    <span>ایجاد تامین کننده </span>
-                    <span class="text-danger">جدید</span>
-                </div>
+            <div class="py-1 d-flex mb-3 justify-content-between align-items-start gap-4">
+                    {% if form.instance.pk %}
+                        <div class="d-flex">
+                        <div class="badge badge-light-info d-flex gap-1 px-3">
+                            <span>بروز رسانی</span>
+                            <span class="ms-2 text-info">{{ form.instance }}</span>
+                        </div>
+                        <a href="{% url 'inquiry:supplier.view' %}" class="ms-5 btn btn-sm btn-secondary">جدید</a>
+                        </div>
+                    {% else %}
+                        <div class="badge badge-light-info d-flex gap-1 px-3">
+                            <span>ایجاد تامین کننده </span>
+                            <span class="text-danger">جدید</span>
+                        </div>
+
+                        <div>
+                            <span class="btn btn-sm btn-primary" onclick="update_all_supplier_from_sepidar(event)" data-url="{% url 'inquiry:supplier.view' %}?view_name=create_supplier_from_sepidar" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="دریافت همه تامین کنندگان سپیدار که در پرتال وجود ندارند.">
+                                <i class="bi bi-arrow-down-circle fs-2"></i>
+                                دریافت جدیدها از سپیدار
+                            </span>
+
+                            {% if request.user.is_superuser %}
+                                <span class="btn btn-sm btn-primary" onclick="update_all_supplier_from_sepidar(event)" data-url="{% url 'inquiry:supplier.view' %}?view_name=override_all_supplier_from_sepidar">دریافت همه از سپیدار</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
             </div>
         <div class="ms-10">
-                    <span class="" onclick="update_all_supplier_from_sepidar(event)" data-url="{% url 'inquiry:override_all_supplier_from_sepidar' %}">بروز کردن از سپیدار</span>
+{#                    <span class="" onclick="update_all_supplier_from_sepidar(event)" data-url="{% url 'inquiry:supplier.view' %}?view_name=override_all_supplier_from_sepidar">بروز کردن از سپیدار</span>#}
                 </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
+            {% if request.user.is_superuser %}
+            {% render_field_by_order form form.base_group label='on-border' %}
+                {% else %}
                 <input type="hidden" name="base_group" value="{{ user.base_group|default_if_falsy:"" }}">
+            {% endif %}
+
                 {% render_field_by_order form form.title form.country form.city label='on-border' %}
+
+            <div class="btn-group mb-3" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="options" value="" id="option1" autocomplete="off" checked>
+                <label class="btn btn-sm btn-outline-secondary btn-bordered" for="option1">هیچکدام</label>
+
+                {% if form.instance.partyid %}
+                    <input type="radio" class="btn-check" name="options" id="option2" value="update_supplier_from_portal" autocomplete="off">
+                    <label class="btn btn-sm btn-outline-secondary btn-bordered" for="option2" data-bs-toggle="tooltip"
+                           data-bs-placement="top" data-bs-html="true"
+                           title="ارسال اطلاعات تامین کننده <span class='text-info bold'>{{ form.instance }}</span> به سپیدار.">
+                        ارسال
+                    </label>
+
+                    <input type="radio" class="btn-check" name="options" id="option3" value="update_supplier_from_sepidar" autocomplete="off">
+                    <label class="btn btn-sm btn-outline-secondary btn-bordered" for="option3" data-bs-toggle="tooltip"
+                           data-bs-placement="top" data-bs-html="true"
+                           title="دریافت اطلاعات تامین کننده <span class='text-info bold'>{{ form.instance }}</span> از سپیدار و بروزرسانی نسخه پرتال.">
+                        دریافت
+                    </label>
+                {% else %}
+                    <input type="radio" class="btn-check" name="options" id="option4" value="create_supplier_from_portal" autocomplete="off">
+                    <label class="btn btn-sm btn-outline-secondary btn-bordered" for="option4" data-bs-toggle="tooltip"
+                           data-bs-placement="top" data-bs-html="true"
+                           title="ارسال اطلاعات تامین کننده <span class='text-info bold'>{{ form.instance }}</span> به سپیدار.">
+                        ارسال
+                    </label>
+                {% endif %}
+            </div>
+
                 <span class="d-none">
                     {{ form.trade_transportation_method_json }}
                 </span>
@@ -58,6 +113,9 @@
 
         </table>
     </div>
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
 {% endblock form_content %}
 
 {% block extra_js %}

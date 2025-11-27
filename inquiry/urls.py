@@ -42,9 +42,9 @@ urlpatterns = [
     path('trade_all_prices/', views.trade_all_prices, name='trade_all_prices'),
     path('bazar_all_prices/', views.bazar_all_prices, name='bazar_all_prices'),
 
-    # path('supplier/view/', views.SupplierView.as_view(), name='supplier.view'),
+    path('supplier/view/', views.SupplierView.as_view(), name='supplier.view'),
     path('supplier/view/<int:pk>/', views.SupplierView.as_view(), name='supplier.detail_update'),
-    path('supplier/list/', views.SupplierListView.as_view(), name='supplier.list'),
+    # path('supplier/list/', views.SupplierListView.as_view(), name='supplier.list'),
     path('supplier_list_datatable/', views.SupplierDataTableView.as_view(), name='supplier.datatable'),
     path('ajax/inquiryresult/list/data/', views.AjaxInquiryResultListData.as_view(), name='ajax.inquiryresult'),
     path('ajax/count/', views.inquiry_count, name='inquiry.count'),
@@ -58,7 +58,7 @@ urlpatterns = [
     path('currency_amount/<int:pk>/', views.CurrencyAmountList.as_view(), name='currency_amount.update'),
     path('currency_amount/datatable/', views.CurrencyAmountDatatableView.as_view(), name='currency_amount.datatable'),
 
-    path('override_all_supplier_from_sepidar/', views.override_all_supplier_from_sepidar, name='override_all_supplier_from_sepidar'),
+    # path('override_all_supplier_from_sepidar/', views.override_all_supplier_from_sepidar, name='override_all_supplier_from_sepidar'),
 
     # dal auto complete
     path('supplier-autocomplete/', views.SupplierAutocomplete.as_view(), name='supplier-autocomplete'),

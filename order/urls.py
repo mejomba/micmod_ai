@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
-    PaymentItemDataTableListView, SubmitBuyFactor, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
+    PaymentItemDataTableListView, OrderAndSepidar, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
     ACNTListView, ACNTDataTableListView
 
 from .views import CustomerRequestOrderViewSet
@@ -65,7 +65,8 @@ urlpatterns = [
     path('acnt/list/datatable/', ACNTDataTableListView.as_view(), name='acnt.list.datatable'),
     # path('payment_item/list/datatable/', PaymentItemDataTableListView.as_view(), name='order.payment_item.list.datatable'),
 
-    path('ajax/submit_buy_factor/', SubmitBuyFactor.as_view(), name='submit_buy_factor'),
+    # path('ajax/submit_buy_factor/', OrderAndSepidar.as_view(), name='submit_buy_factor'),
+    path('ajax/order_and_sepidar/', OrderAndSepidar.as_view(), name='order_and_sepidar'),
 
     path('order_of_factor/<str:pk>/', OrderOfFactor.as_view(), name='order_of_factor'),
 

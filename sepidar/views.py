@@ -386,8 +386,11 @@ class SalesHistory(LoginRequiredMixin, View):
         context['part'] = requset.GET.get('part',"")
         context['g_p'] = requset.GET.get('g_p',"")
         context['doc_type'] = requset.GET.get('doc_type',"")
+        context['fisicalyearref'] = requset.GET.get('fisicalyearref')
         print(context)
         context['list'] = Dl.get_sales_history_list(self.request.GET)
+        if context['list']:
+            context['total_price'] = sum([(x.Fee*x.Quantity) for x in context['list']]) if len(context['list']) < 3000 else None
         return render(self.request,'sepidar/sales_history.html',context)
 
 

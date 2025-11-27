@@ -81,6 +81,15 @@ class SkuCreateForm(CustomBaseModelForm):
             if formset_constraint_read:
                 self.make_disable(formset_constraint_read)
 
+            if 'wh_user' in request.user.groups.values_list('name', flat=True):
+                for name, field in self.fields.items():
+                    if name not in ['image_1', 'image_2', 'file_1', 'batch_type', 'batch_count', 'count_in_box',
+                                    'count_in_main_box', 'location_in_wh']:
+                        field.widget.attrs['readonly'] = 'readonly'
+                        field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' bg-light-secondary'
+                        self.make_disable([name])
+                        self.make_optional([name])
+
         if not access:
             self.make_disable(self.fields)
             self.enable = False

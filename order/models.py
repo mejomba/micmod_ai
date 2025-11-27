@@ -265,6 +265,13 @@ class Order(BaseModeWF):
         return self.po_number_trade
 
     @property
+    def final_supplier(self):
+        if self.supplier_mac:
+            return self.supplier_mac
+        elif self.supplier_trade:
+            return self.supplier_trade
+
+    @property
     def final_item(self):
         if self.item_trade:
             return self.item_trade
@@ -388,7 +395,7 @@ class Order(BaseModeWF):
     @property
     def remaining_quantity(self):
         total_consumed_count = 0
-        total_count = self.quantity
+        total_count = self.final_quantity
         # if self.cancel:
         #     total_count = 0
         #     for oo in self.order_m2m.all():
@@ -602,6 +609,13 @@ class GIOItem(BaseModeWF):
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
     description = models.TextField(_('description'), null=True, blank=True)
 
+    def is_valid_for_sepidar(self):
+        supplier_trade = self.order.supplier_trade
+        if supplier_trade and supplier_trade.partyid and supplier_trade.dlref:
+            return True
+
+        return self.order.order_payment_items.exists()
+
 
 class OrderPayment(BaseModeWF):
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
@@ -610,8 +624,11 @@ class OrderPayment(BaseModeWF):
     description = models.TextField(_('description'), null=True, blank=True)
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='payments')
-    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'))
+    exchange_rate = models.FloatField(default=1.0, verbose_name=_('rate'), null=True, blank=True)
+    karmozd = models.FloatField(default=0, verbose_name=_('karmozd'))
+    karmozd_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,related_name='payments_karmozd')
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
+    vendor_party = models.ForeignKey(Supplier, on_delete=models.DO_NOTHING, related_name='vendor_party_payment')
 
     @property
     def total_payment(self):

@@ -81,7 +81,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                       widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
-                                                                 'size': '10'}), required=False
+                                                                 'size': '10'}), required=True if request and request.user.base_group == 'wh' else False
                                                       )
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)

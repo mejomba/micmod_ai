@@ -766,6 +766,10 @@ SHOP_PROTOCOL = os.environ.get('SHOP_PROTOCOL')
 SHOP_HOST = os.environ.get('SHOP_HOST')
 SHOP_PORT = os.environ.get('SHOP_PORT')
 
+PRODUCT_API_PROTOCOL = os.environ.get('PRODUCT_API_PROTOCOL')
+PRODUCT_API_HOST = os.environ.get('PRODUCT_API_HOST')
+PRODUCT_API_PORT = os.environ.get('PRODUCT_API_PORT')
+PRODUCT_API_VERSION = os.environ.get('PRODUCT_API_VERSION')
 
 # LOGGING = {
 #     'version': 1,

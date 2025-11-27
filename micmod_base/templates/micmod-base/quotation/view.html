@@ -504,7 +504,8 @@ function downloadExcel(event) {
             a.click();
             a.remove();
         },
-        error: function () {
+        error: function (err) {
+            console.log(err)
             alert('خطا در دانلود فایل');
         }
     });

@@ -162,9 +162,13 @@
                             <td>{{ inquiry_result.price_inquiry_file.demanded_quantity }}</td>
                             {% if request.user|has_groups:'trade_user,trade_admin,total_admin' %}
                             <td>{{ inquiry_result.price }}</td>
-                            {% else %}
+                            {% elif request.user|has_groups:'sales_user' %}
                             <td>
                                 <div> {{ inquiry_result.rial_final_price }}</div>
+                            </td>
+                            {% else %}
+                            <td>
+                                <div>-</div>
                             </td>
                             {% endif %}
                             <td class="{% if inquiry_result.active %}text-success fw-bold{% endif %}">{{ inquiry_result.active|yesno:"بله,خیر" }}</td>

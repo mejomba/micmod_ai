@@ -19,7 +19,7 @@ from queryable_properties.properties import queryable_property
 from tools.form_tools import get_dif_percentage
 from tools.utils import elapsed_time
 
-from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod
+from extra_data.models import Item, ItemWeight, PriceSettings, CalculationMethod, CustomerType
 from django.utils import timezone
 from django.conf import settings as dj_settings
 
@@ -36,6 +36,8 @@ class SupplierCity(AbsBaseModel):
 
 class Supplier(BaseModel):
     BASEGROUP = (("trade", _('trade')), ('bazar', _('bazar')))
+    type = models.CharField(choices=CustomerType.choices, verbose_name=_("type"), max_length=10,
+                            default=CustomerType.Company)
     title = models.CharField(max_length=100, verbose_name=_('supplier'), null=True, blank=True, unique=True)
     base_group = models.CharField(verbose_name=_('base_group'), choices=BASEGROUP, max_length=10, default='trade')
     country = models.CharField(verbose_name=_('country'), max_length=255, choices=CHOICE.supplier_country, null=True, blank=True)

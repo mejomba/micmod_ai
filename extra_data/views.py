@@ -21,6 +21,7 @@ from micmod_base.forms import QuotationForm, QuotationItemFormset
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Device
 from sepidar.scripts.sepidar_classes import Urls
+from services.product.api_call import ProductApiCall
 from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error, set_secret_id, DaxCall
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
@@ -166,12 +167,13 @@ class SkuUpdateView(LoginRequiredMixin,
             context['flow'] = flow.order_by('-id')
         # context['object_logs'] = ChangeLog.get_log(context['item'])
         context['app_name'] = self.request.resolver_match.app_name
-        if 'wh_user' in self.request.user.groups.values_list('name', flat=True):
-            for name, field in context['form'].fields.items():
-                if name not in ['image_1', 'image_2', 'file_1', 'batch_type', 'batch_count']:
-                    field.widget.attrs['readonly'] = 'readonly'
-                if name in ['is_sea_default', 'active_main_item', 'technical_confirm']:
-                    field.disabled = True
+        # if 'wh_user' in self.request.user.groups.values_list('name', flat=True):
+        #     for name, field in context['form'].fields.items():
+        #         if name not in ['image_1', 'image_2', 'file_1', 'batch_type', 'batch_count', 'count_in_box',
+        #                         'count_in_main_box', 'location_in_wh']:
+        #             field.widget.attrs['readonly'] = 'readonly'
+        #         if name in ['is_sea_default', 'active_main_item', 'technical_confirm']:
+        #             field.disabled = True
         return context
 
     def form_valid(self, form):
@@ -1050,3 +1052,18 @@ def get_customer_dax(request, customer_id):
     #         return JsonResponse({'err': 'no data found'})
 
 
+class ItemFromProductView(APIView):
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name')
+        if view_name and self.request.method == 'GET':
+            return getattr(self, view_name, 'get')(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, skus, response_function='default', *args, **kwargs):
+
+        return JsonResponse({'res': 'invalid view name'})
+
+    def get_image_and_datasheet(self, request, skus, response_function=None, *args, **kwargs):
+        response_function = self.request.GET.get('response_function')
+        res = ProductApiCall.get_product_by_skus(skus=skus, response_function=response_function)
+        return JsonResponse({'res': res})
