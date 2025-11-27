@@ -196,11 +196,15 @@
                 let filteredRows = table.rows({ search: 'applied' }).data();
                 let total = 0;
                 filteredRows.each(function(row){
-                    let price = parseFloat(row[1].replace(/,/g, '')) || 0;   // ستون فی
-                    let qty   = parseFloat(row[2].replace(/,/g, '')) || 0;   // ستون تعداد
+                    let price = parseFloat(row[11].replace(/,/g, '')) || 0;   // ستون فی
+                    let qty   = parseFloat(row[12].replace(/,/g, '')) || 0;   // ستون تعداد
+
+                    console.log(price, qty, price*qty)
 
                     total += price * qty;
                 });
+
+                console.log('========')
 
                 document.querySelector('#total-price-dt').innerHTML = numberWithCommas(total)
             });
