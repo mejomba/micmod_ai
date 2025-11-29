@@ -25,13 +25,25 @@
 {#    </div>#}
 
 
-    <div class="rounded shadow my-10 bg-white py-10 px-3">
+    <div class="rounded shadow my-10 bg-white py-10 px-3" id="block_container">
         <div class="row">
-        {% render_field_by_order form form.gio_date form.quantity  label='on-border' %}
+        {% render_field_by_order form form.gio_date form.quantity form.description  label='on-border' %}
         <div class="col-12">
-            <div class="row">
-                {% render_field_by_order form form.description label='on-border' %}
+{#            <div class="row">#}
+{#                {% render_field_by_order form form.description label='on-border' %}#}
+{#            </div>#}
+            <div id="to-sepidar-wrapper">
+
+                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">پیش نمایش ارسال به سپیدار</span>
+                <span id="to-sepidar" class="d-none btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor&gio_id={{ form.instance.pk }}" onclick="send_gio_to_sepidar(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>
+
+                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود. ردیف های GIO با توجه به تامین کنندگان انتخاب شده در سند پرداخت یا سفارش در فاکتور خرید های جداگانه ثبت خواهند شد. (تامین کننده سند پرداخت در اولویت است).</span>
+                <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded">
+                    وضعیت تامین کننده برای یک یا چند ردیف قابل تایید نیست.
+                </span>
             </div>
+
+            <div id="sepidar-preview"></div>
         </div>
 {#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
             <div class="" id="gio_item_container">
@@ -47,7 +59,7 @@
                                         <div class="col-2 ">سفارش</div>
                                         <div class="col-4">توضیحات</div>
                                         <div class="col-2">عملیات</div>
-                                        <div class="col-2"></div>
+                                        <div class="col-2">وضعیت</div>
                                     </div>
                                 {% endif %}
 
@@ -99,7 +111,19 @@
                                         </a>
                                     </span>
                                     </div>
-                                    <div class="col-2"></div>
+                                    <div class="col-2">
+                                        {% if gio.is_valid_for_sepidar %}
+                                            <i class="ki-duotone ki-check-circle text-success fs-1">
+                                             <span class="path1"></span>
+                                             <span class="path2"></span>
+                                            </i>
+                                            {% else %}
+                                            <i class="ki-duotone ki-cross-circle text-danger fs-1 invalid" data-bs-toggle="tooltip" data-bs-original-title="این سفارش، تامین کننده معتبر در سپیدار ندارد. تامین کننده را به سپیدار اضافه کنید یا سند پرداخت در پرتال برای سفارش ثبت کنید.">
+                                                <span class="path1"></span>
+                                                <span class="path2"></span>
+                                            </i>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             {% endfor %}
                             {% endwith %}
@@ -185,6 +209,52 @@
             custom_ajax_get('', this.dataset.url, modal_sm_body)
         })
     })
+
+    window.addEventListener('DOMContentLoaded', function (e){
+        const to_sepidar_wrapper = document.querySelector('#to-sepidar-wrapper')
+        const to_sepidar = document.querySelector('#to-sepidar')
+        const to_sepidar_err = document.querySelector('#to-sepidar-err')
+        const invalid_row = document.querySelectorAll('.invalid')
+
+        if (invalid_row.length > 0) {
+            to_sepidar.classList.add('d-none')
+            to_sepidar_err.classList.remove('d-none')
+        } else {
+            to_sepidar.classList.remove('d-none')
+            to_sepidar_err.classList.add('d-none')
+        }
+    })
+
+    function trade_buy_factor_to_sepidar_preview(event){
+        const preview_element = $('#sepidar-preview')
+        custom_ajax_get(null, event.currentTarget.dataset.url, preview_element)
+    }
+
+    function send_gio_to_sepidar(event){
+        let gio_data = {}
+        const url = event.currentTarget.dataset.url
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            dataType: 'json',
+            data: gio_data,
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                const res = data['res'];
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); // end ajax
+    }
 
     </script>
 {% endblock extra_js %}

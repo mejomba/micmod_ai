@@ -1,7 +1,7 @@
 import re
 import datetime
 import threading
-
+from django.contrib import messages
 from django.core.cache import cache
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -1382,9 +1382,10 @@ def get_items(request):
                 item['price_list'] = []
                 try:
                     sku_item = old_sku_item = Item.objects.filter(sku=item_.code).first()
-                    item['moq'] = sku_item.batch_count
-                    item['moq_box'] = sku_item.count_in_box
-                    item['moq_main_box'] = sku_item.count_in_main_box
+                    if sku_item:
+                        item['moq'] = sku_item.batch_count
+                        item['moq_box'] = sku_item.count_in_box
+                        item['moq_main_box'] = sku_item.count_in_main_box
                     if sku_item and sku_item.parent and sku_item.active_main_item:
                         sku_item = sku_item.parent
                         item['parent_sku'] = sku_item.sku
@@ -1687,6 +1688,9 @@ def get_items(request):
 
 
 class SupplierView(BaseView):
+    safe_methods = {"get", "override_all_supplier_from_sepidar",
+                    "create_supplier_from_sepidar", "update_supplier_from_sepidar",
+                    "create_supplier_from_portal", "update_supplier_from_portal"}
     model = Supplier
     form_struct = {
         'form': SupplierModelForm,
@@ -1698,9 +1702,135 @@ class SupplierView(BaseView):
     }
 
     template_name = 'inquiry/supplier_list_or_create.html'
+    supplier_key = ['partyid', 'name', 'dlref', 'maximumcredit', 'type']
+
+    def override_all_supplier_from_sepidar(self, request, *args, **kwargs):
+        """ override (create new or update if exist) any GNR.party.isvendor=1 in portal """
+        res = SepidarApiCall.get_all_supplier(request)
+        for s in res:
+            partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+            name = name.strip()
+            base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
+            data = {'title': name,
+                    'partyid': partyid,
+                    'dlref': dlref,
+                    'maximumcredit': maximumcredit,
+                    'base_group': base_group,
+                    'last_update_date': timezone.now(),
+                    'type': type}
+            try:
+                if Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).exists():
+                    """update exist record"""
+                    obj = Supplier.objects.get(Q(partyid=partyid) | Q(title__iexact=name))
+                    for att, value in data.items():
+                        setattr(obj, att, value)
+                    obj.extra_data.request = request
+                    obj.save()
+                else:
+                    """create new record"""
+                    obj = Supplier.objects.create(title=name, partyid=partyid, dlref=dlref, maximumcredit=maximumcredit,
+                                                  base_group=base_group)
+                    obj.extra_data.request = request
+                    obj.save()
+            except Exception as e:
+                return e
+
+    def create_supplier_from_sepidar(self, request, *args, **kwargs):
+        """ any GNR.party.isvendor=1 that is not in portal => create it """
+        try:
+            res = SepidarApiCall.get_all_supplier(request)
+            for s in res:
+                partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+                name = name.strip()
+                base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
+
+                if base_group == self.request.user.base_group or self.request.user.is_superuser:
+                    if Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).filter(is_deleted=False).exists():
+                        """ ignore update exist record """
+                    else:
+                        """create new record"""
+                        obj = Supplier.objects.create(title=name, partyid=partyid, dlref=dlref, maximumcredit=maximumcredit,
+                                                      base_group=base_group)
+                        obj.extra_data.request = request
+                        obj.save()
+        except Exception as e:
+            return JsonResponse({'res': str(e)})
+
+        return JsonResponse({'res': 'ok'})
+
+    def update_supplier_from_sepidar(self, request, *args, **kwargs):
+        """ update specific supplier (base it partyid) which exist in portal """
+        try:
+            res = SepidarApiCall.get_supplier_by_partyid(request=request, partyid=self.object.partyid)
+            for s in res:
+                partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+                name = name.strip()
+                base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
+                data = {'title': name,
+                        'partyid': partyid,
+                        'dlref': dlref,
+                        'maximumcredit': maximumcredit,
+                        'base_group': base_group,
+                        'last_update_date': timezone.now(),
+                        'type': type}
+
+                if base_group == self.request.user.base_group or self.request.user.is_superuser:
+                    """ update current supplier object """
+                    obj = self.object
+                    for att, value in data.items():
+                        setattr(obj, att, value)
+                    obj.extra_data.request = request
+                    obj.save()
+                    messages.success(self.request, f'تامین کننده "{self.object}" از سپیدار بروز شد')
+        except Exception as e:
+            return JsonResponse({'res': str(e)})
+
+        return JsonResponse({'res': 'ok'})
+
+    def create_supplier_from_portal(self, request, *args, **kwargs):
+        try:
+            """ if supplier does not have `partyid` => CREATE in sepidar """
+            res = SepidarApiCall.supplier_to_sepidar(self.object, self.request)
+            for item in res:
+                self.object.dlref = item.get('dlref')
+                self.object.partyid = item.get('partyid')
+            self.object.extra_data.request = self.request
+            self.object.save()
+            messages.success(self.request, f'تامین کننده {self.object} به سپیدار ارسال شد.')
+            return True
+        except Exception as e:
+            messages.error(self.request, f'Error...')
+            return False
+
+    def update_supplier_from_portal(self, request, *args, **kwargs):
+        try:
+            """ if supplier have `partyid` => UPDATE in sepidar """
+            res = SepidarApiCall.supplier_to_sepidar(self.object, self.request, update=True)
+            for item in res:
+                self.object.dlref = item.get('dlref')
+                self.object.partyid = item.get('partyid')
+            self.object.extra_data.request = self.request
+            self.object.save()
+            messages.success(self.request, f'تامین کننده {self.object} به سپیدار ارسال شد.')
+            return True
+        except Exception as e:
+            messages.error(self.request, f'Error...')
+            return False
+
+    def conflict_supplier(self, request, *args, **kwargs):
+        """ همه تامین کننده هایی که پارتی آی دی مشترک دارن اما در یک یا چند فیلد دیگر متفاوت هستن """
+        """ 
+        all supplier with same partyid and differ on other fields
+
+        output = [
+            [{key: s_val, key2: s_val2}, {key: p_val, key2: p_val2}],
+            [{key: s_val, key2: s_val2}, {key: p_val, key2: p_val2}]
+        ]
+        """
+        pass
 
     def get_success_url(self):
-        path = reverse_lazy('inquiry:supplier.list')
+        path = reverse_lazy('inquiry:supplier.view')
         # if self.object:
         #     path += f'?title={self.object.title}'
         self.success_url = path
@@ -1708,30 +1838,39 @@ class SupplierView(BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        context['app_name'] = 'inquiry'
         return context
+    
+    def form_valid(self, form):
+        print('inja')
+        x = super().form_valid(form)
+        sepidar_action = self.request.POST.get('options', "nothing")
+        if hasattr(self, sepidar_action):
+            sepidar_res = getattr(self, sepidar_action)(self.request)
+        return x
 
 
-class SupplierListView(BaseView):
-    model = Supplier
-    form_class = SupplierModelForm
-    template_name = 'inquiry/supplier_list_or_create.html'
-    success_url = '.'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        if cache.get(f'{self.request.user}__submit/copy'):
-            object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
-            context.update({
-                'form': self.form_class(initial=dict(map(lambda x: x, [('title', object_for_copy.name), ])))
-            })
-        else:
-            context.update({
-                'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
-            })
-        context['submit_copy'] = True
-        return context
+# class SupplierListView(BaseView):
+#     model = Supplier
+#     form_class = SupplierModelForm
+#     template_name = 'inquiry/supplier_list_or_create.html'
+#     success_url = '.'
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#
+#         if cache.get(f'{self.request.user}__submit/copy'):
+#             object_for_copy = self.model.objects.all().order_by('-last_update_date').first()
+#             context.update({
+#                 'form': self.form_class(initial=dict(map(lambda x: x, [('title', object_for_copy.name), ])))
+#             })
+#         else:
+#             context.update({
+#                 'form': self.form_class(initial=dict(map(lambda x: x, self.request.GET.items())))
+#             })
+#         context['submit_copy'] = True
+#         return context
 
 
 class SupplierDataTableView(AjaxDatatableView):
@@ -1761,7 +1900,7 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title', 'country', 'city', 'sepidar_dl_id', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
+            'title', 'country', 'city', 'partyid', 'dlref', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
         ])
         # cols['created_date']['searchable'] = False
         return cols
@@ -2233,7 +2372,7 @@ class SupplierAutocomplete(autocomplete.Select2ListView):
 
         filtered = {
             k: v for k, v in data.items()
-            if len(re.findall(r'[A-Za-z]', v)) <= 2
+            if len(re.findall(r'[\u0600-\u06FF]', v)) >= 1
         }
 
         if q:
@@ -2249,24 +2388,3 @@ class SupplierAutocomplete(autocomplete.Select2ListView):
             }
 
         return [(k, v) for k, v in filtered.items()]
-
-
-def override_all_supplier_from_sepidar(request, *args, **kwargs):
-    res = SepidarApiCall.get_all_supplier(request)
-    for s in res:
-        partyid = s.get('partyid')
-        name = s.get('name')
-        dlref = s.get('dlref')
-        maximumcredit = s.get('maximumcredit')
-        base_group = 'bazar' if len(re.findall(r'[A-Za-z]', name)) <= 2 else 'trade'
-        if Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).exists():
-            obj = Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).update({'title': name, partyid: partyid,
-                                                                                        maximumcredit: maximumcredit,
-                                                                                        base_group: base_group})
-            obj.extra_data.request = request
-            obj.save()
-        else:
-            obj = Supplier.objects.create(title=name, partyid=partyid, dlref=dlref, maximumcredit=maximumcredit, base_group=base_group)
-            obj.extra_data.request = request
-            obj.save()
-    Supplier.objects.create()

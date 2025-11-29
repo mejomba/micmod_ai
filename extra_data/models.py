@@ -369,6 +369,9 @@ class Item(BaseModel):
     item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
     objects = BaseManager(is_public=True)
 
+    def get_images(self):
+        pass
+    
     @staticmethod
     def get_list(text):
         res = Item.objects.filter(pk=text)

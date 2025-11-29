@@ -90,10 +90,12 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
         customer_code = kwargs.get('customer_code')
         item_code = kwargs.get('item_code')
         part = kwargs.get('part')
+        fisicalyearref = kwargs.get('fisicalyearref')
         if not (customer_code or item_code or kwargs.get('g_p') or part):
             return None
         dl_filter = ""
         part_filter = ""
+        fisicalyearref_filter = ""
         if customer_code:
             try:
                 s = float(customer_code)
@@ -110,12 +112,11 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
 
         if part:
             part_filter = " and Item.title like N'%%" + part.replace('ی', 'ي').replace("ك", "ک").replace('%', '%%') + "%%'"
-        # if item_code:
-        #     try:
-        #         s = float(item_code)
-        #         item_filter = f" and Item.Code={item_code}"
-        #     except:
-        #         item_filter = " and Item.title like N'%%" + item_code.replace('ی', 'ي').replace("ك", "ک") + "%%'"
+
+        if fisicalyearref:
+            fisicalyearref = int(fisicalyearref)
+            fisicalyearref_filter = f" and docs.FiscalYearRef={fisicalyearref}"
+
         g_p = kwargs.get('g_p')
         if g_p:
             g_p = str(g_p).lower().replace('ی', 'ي').replace("ک", "ك")
@@ -157,6 +158,7 @@ join [GNR].[Currency] as curr on curr.CurrencyID = docs.CurrencyRef
 where 1=1 {dl_filter} 
           {item_filter}
           {part_filter}
+          {fisicalyearref_filter}
           {" and g_p.Title like N'%%" + g_p +"%%'" if g_p else ''}
           {" and docs.doc_type like N'%%" + kwargs.get('doc_type') +"%%'" if kwargs.get('doc_type') else ''}
 

@@ -56,14 +56,14 @@
     function orderAfterSelectInGioItem(select2_element, target_element, id_field){
         $(select2_element).on("select2:select", function (e) {
             const data = e.params.data;
-            const gio_form = document.querySelector('#gio-item-form')
-            if (!data.can_gio){
-                gio_form.querySelector('input[type=submit]').classList.add('disabled')
-                gio_form.querySelector('input[type=submit]').value = "سفارش بدون پرداخت نمیتواند gio شود"
-            } else {
-                gio_form.querySelector('input[type=submit]').classList.remove('disabled')
-                gio_form.querySelector('input[type=submit]').value = "ثبت"
-            }
+            //const gio_form = document.querySelector('#gio-item-form')
+            //if (!data.can_gio){
+            //    gio_form.querySelector('input[type=submit]').classList.add('disabled')
+            //    gio_form.querySelector('input[type=submit]').value = "سفارش بدون پرداخت نمیتواند gio شود"
+            //} else {
+            //    gio_form.querySelector('input[type=submit]').classList.remove('disabled')
+            //    gio_form.querySelector('input[type=submit]').value = "ثبت"
+            //}
             const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
             $(document).find(target_element).val(data[id_field])
             document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text

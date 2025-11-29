@@ -26,11 +26,10 @@ class MessagesConsumer(AsyncConsumer):
             })
 
     async def websocket_disconnect(self, event):
-        await self.channel_layer.group_discard(
-            self.notify_group_id,
-            self.channel_name
-        )
-        raise StopConsumer()
+        try:
+            await self.channel_layer.group_discard(self.notify_group_id, self.channel_name)
+        finally:
+            raise StopConsumer()
 
     async def websocket_receive(self, event):
         text_data = event.get('text', None)

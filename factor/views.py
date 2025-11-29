@@ -172,6 +172,26 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.form.instance.collecting_end_time = timezone.now()
         obj_before_save = self.object
         res = super().form_valid(form)
+
+        if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 0:
+            # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله پیش نویس هستیم" and 'next':
+            next = "مرحله تایید مدیر فروش"
+            next = "مرحله تامین کالات"
+        elif 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 0:
+            # "بدون نیاز به تایید مدیر فروش" and "در مرحله پیش نویس هستیم" and "next":
+            next = "تاید مدیر فروش"
+        elif 'next' in self.request.POST and self.object.is_all_supplied and self.state_index == 1:
+            # "بدون نیاز به تامین کالا" and "در مرحله تایید مدیر فروش هستیم" and "next":
+            next = "تاید مدیر فروش"
+
+        if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 3:
+            # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله تخصیص کارشناس انبار هستیم" and 'back':
+            back = "مرحله تایید مدیر فروش"
+            back = "مرحله تامین کالات"
+        elif 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
+            # "بدون نیاز به تایید مدیر فروش" and "در مرحله تامین کالا هستیم" and "back":
+            back = "تاید مدیر فروش"
+
         if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
             # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
             last_wf_belong_to_sales_user_if_change = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
@@ -273,13 +293,13 @@ class FactorView(LoginRequiredMixin, BaseView):
             context['allow_next'] = False
 
         if self.object:
-            factoritems = (
-                self.object.factoritem_set
-                .select_related('supply_locations')
-                .all()
-            )
+            # factoritems = (
+            #     self.object.factoritem_set
+            #     .select_related('supply_locations')
+            #     .all()
+            # )
 
-            if self.object and self.state_index >= 0 and not all(x.supply_locations.is_all_arrival for x in factoritems):
+            if self.object and self.state_index >= 0 and not self.object.is_all_supplied:
                 context['f_warning'].append('سفارش در راه دارد')
                 if self.state_index == 2:
                     context['allow_next'] = False

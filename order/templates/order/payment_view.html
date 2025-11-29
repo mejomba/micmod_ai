@@ -44,7 +44,10 @@
 
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
-        {% render_field_by_order form form.total_amount form.bank form.currency form.exchange_rate label='on-border' %}
+        party: {{ form.instance.vendor_party.partyid }}
+        dl: {{ form.instance.vendor_party.dlref }}
+            <br>
+        {% render_field_by_order form form.total_amount form.currency form.vendor_party form.karmozd form.karmozd_currency label='on-border' %}
 
         <div class="col">
             {% render_field_by_order form form.file_1 label='on-border' %}
@@ -56,8 +59,23 @@
         </div>
 
         <div class="col-12">
-            <div class="row">
+            <div class="row row-cols-2">
                 {% render_field_by_order form form.description label='on-border' %}
+                <div class="col d-flex align-items-center justify-content-center bg-light-primary">
+
+                    <div class="text-center mt-10 d-none" id="to-sepidar-hint">
+                        <span>برای ارسال به سپیدار. پس از تکمیل اطلاعات، فرم را به مرحله پرداخت ارسال کنید تا پیش نمایش ارسال به سپیدار را مشاهده کنید.</span>
+                        <br>
+                        <span>پس از آن میتوانید اطلاعات را به سپیدار ارسال کنید.</span>
+                    </div>
+
+                    <div id="payment-for-order-to-sepidar-wrapper" class="d-none">
+                        <div id="payment-for-order-to-sepidar-body" >
+                            <span id="payment-for-order-to-sepidar-preview" onclick="payment_for_order_to_sepidar_preview(event)" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar_preview&payment_id={{ form.instance.pk }}" class="btn btn-sm btn-primary">پیش نمایش ارسال به سپیدار</span>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 {#            <div class="row" id="order-messages"></div>#}
         </div>
@@ -213,14 +231,105 @@
     </script>
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
-{#    <script src="{% static 'js/local/jszip.min.js' %}"></script>#}
-{#    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>#}
-{#    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>#}
-{#    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>#}
-{#    <script src="{% static 'js/extra/quotation1.js' %}"></script>#}
     <script src="{% static 'js/extra/formset.js' %}"></script>
 
     <script>
+
+    window.addEventListener('DOMContentLoaded', function (){
+        const current_state = document.querySelector('#id_state').value
+        const to_sepidar_hint = document.querySelector('#to-sepidar-hint')
+        const payment_for_order_to_sepidar_wrapper = document.querySelector('#payment-for-order-to-sepidar-wrapper')
+        const payment_for_order_to_sepidar_body = document.querySelector('#payment-for-order-to-sepidar-body')
+
+        if (current_state === 'پرداخت' || current_state === 'مرحله نهایی'){
+            to_sepidar_hint.classList.add('d-none')
+            payment_for_order_to_sepidar_wrapper.classList.remove('d-none')
+        } else {
+            to_sepidar_hint.classList.remove('d-none')
+            payment_for_order_to_sepidar_wrapper.classList.add('d-none')
+        }
+    })
+
+    function payment_for_order_to_sepidar_preview(event){
+        const target = event.currentTarget
+        const payment_for_order_to_sepidar_body = document.querySelector('#payment-for-order-to-sepidar-body')
+        const url = target.dataset.url
+        custom_ajax_get(null, url, $(payment_for_order_to_sepidar_body))
+    }
+
+    function submit_payment_for_order_to_sepidar(event){
+        const target = event.currentTarget
+        const payment_for_order_to_sepidar_body = document.querySelector('#payment-for-order-to-sepidar-body')
+        const url = target.dataset.url
+        const payment_id = target.dataset.payment_id
+
+        $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        data: JSON.stringify({payment_id: payment_id}),
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        cache: false,
+        processData: false,
+        contentType: false,
+        beforeSend: block_main_container,
+        success: function (data) {
+            const html = data['res'];
+            $('#payment-for-order-to-sepidar-wrapper').html(html);
+        },
+        error: function () {
+
+        },
+        complete: release_main_container
+    }); // end ajax
+    }
+
+    function prevent_change(event){
+        event.preventDefault()
+        alert('امکان تغییر واحد پول پس از ثبت سند وجود ندارد.')
+    }
+
+    function is_order_duplicate_in_payment_row(id){
+        let duplicate_count = 0;
+        const all_orders = document.querySelectorAll("input[id$='-order']")
+
+        all_orders.forEach(function (order){
+            if (order.value == id){
+                duplicate_count += 1
+            }
+        })
+
+        return duplicate_count >= 2
+    }
+
+    function is_order_currency_valid_in_payment_row(currency_ref_id){
+        return true
+        const selected_payment_currency = document.querySelector('#id_currency').value
+        debugger
+        if (currency_ref_id == selected_payment_currency){
+            return true
+        } else {
+            return false
+        }
+    }
+
+    function FormatRepoOrderInPaymentRow(repo) {
+        if (repo.loading) {
+            return repo.text;
+        }
+        var $container = $(`
+            <div class='d-flex gap-3'>
+            <span class="bg-light-success rounded px-1 me-3 text-primary">${repo.id}</span>
+            <span>${repo.text}</span>
+            <span class="bg-light-warning rounded px-1 text-dark">${repo.partnumber}</span>
+            <span>${repo.currency_ref_title}</span>
+            </div>
+        `);
+        return ($container)
+    }
+
     function set_item_classes(item, idx){
         debugger
         const select2_element = `#id_order_select2-${idx}`
@@ -249,15 +358,17 @@
                 text: '' || order_select2_placeholder
             },
             allowClear: false,
-            templateResult: defaultFormatRepoDL,
+            templateResult: FormatRepoOrderInPaymentRow,
             templateSelection: defaultFormatRepoSelection
         });
+
         $(select2_element).on("select2:select", function (e) {
             debugger
             const data = e.params.data;
+            console.log(data)
+
             const element_to_show = "select2-" + "id_order" + `_select2-${idx}-container`
             findAncestor(document.querySelector(select2_element), 'item').querySelector('[id$="-order"]').value = data['id']
-            {#$(document).find("#id_order").val(data['id'])#}
             document.querySelector(`[id*=${element_to_show}]`).querySelector('span').innerHTML = data.id + " " + data.text
 
             let x = "";
@@ -302,11 +413,58 @@
                             ${x}
                         </div>
             `
+            debugger
+                    if (is_order_duplicate_in_payment_row(data.id)){
+                        debugger
+                        const target_row = findAncestor(document.querySelector(select2_element), 'item')
+                        const error_element = document.querySelector('#global-error')
+                        {#target_row.querySelector("input[id$='-order']").remove()#}
+                        target_row.classList.add('d-none')
+                        target_row.querySelector("input[name$='DELETE']").checked = true;
+
+                            const error_html = `
+                        <div class="text-danger d-flex gap-2 mb-2">
+                            <i class="ki-duotone ki-information-5 text-danger fs-2">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                            </i>
+                            <span>سفارش</span>
+                            <span>${data.id}</span>
+                            <span>قبلا در این سند انتخاب شده است</span>
+                        </div>
+                        `
+                        target_row.insertAdjacentHTML('afterend', error_html)
+
+                    }
+                    if (!is_order_currency_valid_in_payment_row(data.currency_ref_id)){
+                        const target_row = findAncestor(document.querySelector(select2_element), 'item')
+                        const error_element = document.querySelector('#global-error')
+                        {#target_row.querySelector("input[id$='-order']").remove()#}
+                        target_row.classList.add('d-none')
+                        target_row.querySelector("input[name$='DELETE']").checked = true;
+
+                        const error_html = `
+                        <div class="text-danger d-flex gap-2 mb-2">
+                            <i class="ki-duotone ki-information-5 text-danger fs-2">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                            </i>
+                            <span>واحد پول انتخاب شده در</span>
+                            <span>سفارش</span>
+                            <span>${data.id}</span>
+                            <span>مطابق واحد پول انتخابی در سند پرداخت نیست.</span>
+                        </div>
+                        `
+                        target_row.insertAdjacentHTML('afterend', error_html)
+                    }
             findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
         })
     }
 
         try {
+        // select2 for exist row
             debugger
             let order_select2_placeholder
             document.querySelectorAll('.list-selector').forEach(function (item, idx){
@@ -340,6 +498,10 @@
                     templateResult: defaultFormatRepoDL,
                     templateSelection: defaultFormatRepoSelection
                 });
+                $(select2_element).on('select2:opening', function (e) {
+                    e.preventDefault()
+                    alert('امکان تغییر سفارش پس از ثبت پرداخت وجود ندارد.')
+                })
                 $(select2_element).on("select2:select", function (e) {
                     debugger
                     debugger
@@ -391,6 +553,20 @@
                             ${x}
                         </div>
             `
+                    if (is_order_duplicate_in_payment_row(data.id)){
+                        const target_row = findAncestor(document.querySelector(select2_element), 'item')
+                        const error_element = document.querySelector('#global-error')
+                        target_row.classList.add('d-none')
+                        target_row.querySelector("input[name$='DELETE']").checked = true;
+
+                            error_element.innerHTML = `
+                        <div class="text-danger bold">
+                            <span>سفارش</span>
+                            <span>${data.id}</span>
+                            <span>قبلا در این سند انتخاب شده است</span>
+                        </div>
+                        `
+                    }
             findAncestor(document.querySelector(select2_element), 'item').querySelector("#id_detail").innerHTML = order_item_information
                 })
             })

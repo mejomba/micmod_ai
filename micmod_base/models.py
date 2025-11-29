@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
 from collections import Counter
-from django.db.models import F, Sum, Subquery, OuterRef
+from django.db.models import F, Sum, Subquery, OuterRef, Count
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator
 from django.db.models import Q
@@ -227,6 +227,20 @@ class Quotation(SLSDoc):
     def get_qs(cls, request):
         q = request.POST.get('q')
         qs = cls.objects.get_access_object(request.user, q=q, quotation=True, lst=False).filter(is_direct=False)
+        if q == 'is_inquiry':
+            # f = Q(quotation__foreign_price_inquiry_done=True) & Q(quotation__need_foreign_price_inquiry=True) | \
+            #     Q(quotation__local_price_inquiry_done=True) & Q(quotation__need_local_price_inquiry=True)
+            # qs = qs.filter(f).distinct()
+
+            qs = qs.filter(Q(quotation__need_foreign_price_inquiry=True) | Q(quotation__need_local_price_inquiry=True), cancel=False, last_work_flow__current_state_name='استعلام قیمت').exclude(
+                        quotation__is_deleted=False,
+                        quotation__need_foreign_price_inquiry=True,
+                        quotation__foreign_price_inquiry_done=False
+                    ).exclude(
+                        quotation__is_deleted=False,
+                        quotation__need_local_price_inquiry=True,
+                        quotation__local_price_inquiry_done=False
+                    ).distinct()
         return qs
 
     @classmethod

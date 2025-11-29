@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
@@ -17,6 +17,7 @@ from django.views import View
 from django.views.generic import ListView
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -25,6 +26,7 @@ from core.views import BaseView, Base
 from factor.models import Factor, FactorItem
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
+from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
 from tools.utils import is_ajax
 from workflow.models import WorkFlow
@@ -1068,7 +1070,19 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
         return JsonResponse({'detail': 'url with "pk" required'})
 
 
-class SubmitBuyFactor(View):
+class OrderAndSepidar(View):
+    valid_view = ('trade_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar')
+    valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview')
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name')
+        if self.request.method != 'POST' and view_name not in self.valid_for_get:
+            return HttpResponseNotAllowed(["POST"])
+
+        if view_name and (view_name in self.valid_view or view_name in self.valid_for_get):
+            return getattr(self, view_name)(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         from tools import utils
         try:
@@ -1114,6 +1128,180 @@ class SubmitBuyFactor(View):
                 return JsonResponse({'res': res}, status=400)
         except Exception as e:
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
+
+    def trade_buy_factor_preview(self, request, *args, **kwargs):
+        buy_factor_contex = {}
+        html = render_to_string('order/partial/sepidar/trade_buy_factor_preview.html', context=buy_factor_contex)
+
+        return JsonResponse({'res': html})
+
+    def trade_buy_factor(self, request, *args, **kwargs):
+        from tools import utils
+        gio_id = self.request.GET.get('gio_id')
+        gio_object = GIO.objects.get(pk=gio_id)
+        gio_items = gio_object.gioitems.all()
+        per_supplier = {0: []}
+
+        for gioi in gio_items:
+            key = gioi.order.order_payment_items.first().payment.vendor_party.dlref
+            value = gioi.order
+
+            per_supplier.setdefault(key, []).append(value)
+
+        for s, order in per_supplier.items():
+            rows = [{f'row-{idx}-discount': 111,
+                     f'row-{idx}-itemref': x.item.sepidar_id_0,
+                     f'row-{idx}-quantity': x.quantity,
+                     f'row-{idx}-price': x.final_price,
+                     f'row-{idx}-addition': 555
+                     }
+                    for idx, x in enumerate(order)
+                    ]
+            obj = {
+                'currency': order[0].currency.sepidar_id,
+                'rate': 1, # Todo calculate this base on jalase
+                'total_price': 1234,
+                'tax': 111,
+                'duty': 222,
+                'supplier': s,
+                'discount': 333,
+                'addition': 444,
+            }
+
+            for row in rows:
+                obj.update(row)
+
+            buy_factor_contex = {}
+            render_to_string('order/partial/trade_buy_factor_preview.html', context=buy_factor_contex)
+            res = SepidarApiCall.buy_factor_to_sepidar(obj=obj, request=self.request)
+
+        try:
+            body = self.request.body or '{}'
+            # data = json.loads(body)
+            grouped = utils.grouped_value(obj, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+            # res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+
+            res = SepidarApiCall.buy_factor_to_sepidar(obj, request)
+            if hasattr(res, 'errors'):
+                # messages.error(self.request, res.get('errors'))
+                return JsonResponse({'res': 'fail'})
+
+            elif res and res.get('valid'):
+                buy_factor_number = res.get('number')
+                buy_factor_id = res.get('buy_factor_id')
+                lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+                """
+                lookup output like this:
+                lookup = {
+                    (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+                }
+                """
+                buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+                for key, value in lookup.items():
+                    buy_factor_item = buy_factor_items.get(key)
+                    inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                    order_pk = value.get('portal_order_id')
+                    o = Order.objects.filter(pk=order_pk).first()
+                    o.buy_factors.append(
+                        {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                    o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
+                    o.editor_user = self.request.user
+                    o.save()
+                new_btn = """
+                                <button 
+                                    type="button" 
+                                    id="submit-buy-factor" 
+                                    class="btn btn-secondary mt-5 me-5"
+                                    onclick="window.location.href = window.location.href">
+                                    جدید
+                                </button>
+                                """
+                return JsonResponse({
+                    'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span>'},
+                    status=201)
+            else:
+                return JsonResponse({'res': res}, status=400)
+        except Exception as e:
+            return JsonResponse({'res': {"error": e.args[0]}}, status=400)
+
+    def bazar_buy_factor(self, request, *args, **kwargs):
+        from tools import utils
+        try:
+            body = self.request.body or '{}'
+            data = json.loads(body)
+            grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+            res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+            if hasattr(res, 'errors'):
+                # messages.error(self.request, res.get('errors'))
+                return JsonResponse({'res': 'fail'})
+
+            elif res and res.get('valid'):
+                buy_factor_number = res.get('number')
+                buy_factor_id = res.get('buy_factor_id')
+                lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+                """
+                lookup output like this:
+                lookup = {
+                    (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+                }
+                """
+                buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+                for key, value in lookup.items():
+                    buy_factor_item = buy_factor_items.get(key)
+                    inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                    order_pk = value.get('portal_order_id')
+                    o = Order.objects.filter(pk=order_pk).first()
+                    o.buy_factors.append(
+                        {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                    o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
+                    o.editor_user = self.request.user
+                    o.save()
+                new_btn = """
+                        <button 
+                            type="button" 
+                            id="submit-buy-factor" 
+                            class="btn btn-secondary mt-5 me-5"
+                            onclick="window.location.href = window.location.href">
+                            جدید
+                        </button>
+                        """
+                return JsonResponse({
+                                        'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span>'},
+                                    status=201)
+            else:
+                return JsonResponse({'res': res}, status=400)
+        except Exception as e:
+            return JsonResponse({'res': {"error": e.args[0]}}, status=400)
+
+    def payment_for_order_to_sepidar_preview(self, request, *args, **kwargs):
+        payment_id = self.request.GET.get('payment_id')
+        payment = OrderPayment.objects.get(pk=payment_id)
+        payment_item = payment.payment_item.all()
+        currency_for_orders = [x.order.currency for x in payment.payment_item.all()]
+        is_multi_stage = not all(v == payment.currency for v in currency_for_orders)
+
+        if is_multi_stage:
+            ...
+        else:
+            ...
+
+        context = dict()
+        context['payment'] = payment
+
+        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_preview.html', context=context)
+
+        return JsonResponse({'res': html})
+
+    def payment_for_order_to_sepidar(self, request, *args, **kwargs):
+        from tools import utils
+        payment_id = self.request.GET.get('payment_id')
+        payment_object = OrderPayment.objects.get(pk=payment_id)
+        payment_items = payment_object.payment_item.all()
+        per_supplier = {0: []}
+        contex = {}
+        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_preview.html', context=contex)
+
+        return JsonResponse({'res': html})
 
 
 class OrderOfFactor(BaseView):

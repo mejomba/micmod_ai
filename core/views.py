@@ -89,10 +89,19 @@ class BaseView(UserPassesTestMixin,
     formset_l2 = None
     form = None
     submit_copy = None
+    safe_methods = set()
 
     def __init__(self):
         super().__init__()
         self.extra_data = ExtraData()
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name in self.__class__.safe_methods and hasattr(self, view_name):
+            method = getattr(self, view_name)
+            return method(request, *args, **kwargs)
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_allow_perms(self):
         return None
@@ -1547,12 +1556,15 @@ class Select2BaseSearch(View):
                 item['id'] = x.pk
                 item['text'] = getattr_recursive(x, title)
                 item['title'] = x.title,
+                item['partnumber'] = x.item.part_number,
                 item['total_price'] = x.total_price,
                 item['total_paid'] = x.total_paid,
                 item['remaining_amount'] = x.remaining_amount,
                 item['quantity'] = x.final_quantity,
                 item['remained_quantity'] = x.remaining_quantity,
                 item['other_payments'] = x.where_is_other_payment
+                item['currency_ref_id'] = x.currency.pk if x.currency else 0
+                item['currency_ref_title'] = x.currency.title if x.currency else 'نا مشخص'
                 obj['items'].append(item)
                 count += 1
         obj['total_count'] = count

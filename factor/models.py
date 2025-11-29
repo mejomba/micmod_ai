@@ -149,6 +149,15 @@ class Factor(SLSDoc):
         s = sum([x.discount_value for x in self.factoritem_set.all()])
         return s
 
+    @property
+    def is_all_supplied(self):
+        factoritems = (
+            self.factoritem_set
+            .select_related('supply_locations')
+            .all()
+        )
+        return all(x.supply_locations.is_all_arrival for x in factoritems)
+
 
 class FactorItem(BaseModel):
     sepidar_id = models.BigIntegerField(null=True, blank=True)

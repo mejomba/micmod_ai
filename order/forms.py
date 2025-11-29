@@ -218,9 +218,15 @@ class GIOForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(GIOForm, self).__init__(*args, **kwargs)
-        self.fields['gio_date'] = JalaliDateField(label=_('gio_date'),
-                                                   widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
-        self.fields['description'].widget.attrs['rows'] = 3
+        # self.fields['gio_date'] = JalaliDateField(label=_('gio_date'),
+        #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
+
+        self.fields['gio_date'] = forms.DateField(label=_('gio_date'),
+                                                  widget=forms.DateInput(
+                                                  attrs={'class': 'form-control', 'size': '10', 'type': 'date'}),
+                                                  required=True)
+
+        self.fields['description'].widget.attrs['rows'] = 1
 
         if request and request.user.is_superuser:
             if form_constraint_hide:
@@ -288,6 +294,15 @@ class OrderPaymentForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderPaymentForm, self).__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['currency'].widget.attrs.update({'onclick': 'prevent_change(event)'})
+            self.fields['karmozd_currency'].widget.attrs.update({'onclick': 'prevent_change(event)'})
+        qs = Supplier.objects.filter(base_group='trade', partyid__isnull=False, dlref__isnull=False)
+        self.fields['vendor_party'] = forms.ModelChoiceField(
+            queryset=qs,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            # initial=self.instance.vendor_party# or qs.first().pk if qs.first() else 0
+        )
         # self.fields['from_date'] = JalaliDateField(label=_('from_date'),
         #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
         # self.fields['to_date'] = JalaliDateField(label=_('to_date'),

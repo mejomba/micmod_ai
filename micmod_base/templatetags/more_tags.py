@@ -110,12 +110,20 @@ def show_modal(obj, field, target_model_name=None, editable=None):
 
 @register.filter
 def model_name(obj):
-    return obj._meta.model_name if obj else ""
+    try:
+        name = obj._meta.model_name if obj else ""
+    except Exception as e:
+        name = ""
+    return name
 
 
 @register.filter
 def app_label(obj):
-    return obj._meta.app_label if obj else ""
+    try:
+        label = obj._meta.app_label if obj else ""
+    except Exception as e:
+        label = ""
+    return label
 
 # @register.inclusion_tag('comment_tag.html')
 # def get_comments(obj, comment_form=None, button_text=None, button_style=None, comment_type=None):

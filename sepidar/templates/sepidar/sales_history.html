@@ -23,13 +23,12 @@
     <!-- Start right Content here -->
     <!-- ============================================================== -->
     <div class="main-content">
-
         <div class="page-content">
             <div class="container-fluid">
                 <div class="row">
                     <div class="my-2">
                         <form class="" method="get" action="">
-                            <div class="row row-cols-5">
+                            <div class="row row-cols-4">
                                 <div class="col p-0">
                                     <input class="form-control mx-2" type="text" name="customer_code"
                                    value="{{ customer_code }}" placeholder="کد مشتری / عنوان مشتری">
@@ -42,29 +41,41 @@
                                     <input class="form-control mx-2" type="text" name="part" value="{{ part }}"
                                    placeholder="پارت نامبر">
                                 </div>
-                                <div class="col ps-0 pe-5">
+                                <div class="col p-0 pe-3">
                                     <input class="form-control mx-2" type="text" name="g_p" value="{{ g_p }}"
                                    placeholder="گروه خرید">
                                 </div>
-                                <div class="col">
-                                    <div class="row">
-                                        <div class="col-4 p-0">
+                                <div class="col p-0">
+                                    <select class="form-control mx-2" name="fisicalyearref" id="fisicalyearref">
+                                        <option value="">----------</option>
+                                        <option value="46" {% if fisicalyearref == '46' %} selected {% endif %} >سال مالی 1404</option>
+                                        <option value="44" {% if fisicalyearref == '44' %} selected {% endif %} >سال مالی 1403</option>
+                                        <option value="42" {% if fisicalyearref == '42' %} selected {% endif %} >سال مالی 1402</option>
+                                        <option value="41" {% if fisicalyearref == '41' %} selected {% endif %} >سال مالی 1401</option>
+                                        <option value="31" {% if fisicalyearref == '31' %} selected {% endif %} >سال مالی 1400</option>
+                                        <option value="25" {% if fisicalyearref == '25' %} selected {% endif %} >سال مالی 1399</option>
+                                        <option value="23" {% if fisicalyearref == '23' %} selected {% endif %} >سال مالی 1398</option>
+                                        <option value="21" {% if fisicalyearref == '21' %} selected {% endif %} >سال مالی 1397</option>
+                                        <option value="14" {% if fisicalyearref == '14' %} selected {% endif %} >سال مالی 1396</option>
+                                        <option value="3" {% if fisicalyearref == '3' %} selected {% endif %} >سال مالی 1395</option>
+                                    </select>
+                                </div>
+                                <div class="col p-0">
+                                    <div class="d-flex align-items-baseline ps-4">
+                                        <div class="">
                                             <input type="radio" name="doc_type" value="invoice" id='doc_type_invoice'>
                                             <label for="doc_type_invoice" class="col-form-label text-center mx-2">فقط فاکتور</label>
                                         </div>
-                                        <div class="col-5 p-0">
+                                        <div class="">
                                             <input type="radio" name="doc_type" value="quotation" id='doc_type_quotation'>
                                             <label for="doc_type_quotation" class="col-form-label text-center mx-2">فقط پیش فاکتور</label>
                                         </div>
-                                            <div class="col-2 p-0">
-                                                <input class="btn btn-primary px-5" type="submit" value="Filter">
-                                            </div>
+                                        <div class="">
+                                            <input class="btn btn-sm btn-primary px-5" type="submit" value="Filter">
                                         </div>
+                                    </div>
                                 </div>
                             </div>
-
-
-
                         </form>
                     </div>
                 </div>
@@ -76,6 +87,14 @@
                                 <h4 class="card-title" data-key="sales_history">مرور فروش</h4>
 
                                 <div class="table-rep-plugin">
+                                <div class="d-flex flex-end gap-4">
+                                <span>جمع قیمت (تعداد * فی) تمام ردیف ها: </span>
+                                    {% if total_price %}
+                                        <span class="bold" id="total-price-dt">{{ total_price|floatformat:'-2g'|intcomma }}</span>
+                                    {% else %}
+                                        <span class="badge badge-light-warning">تعداد ردیف ها بیشتر یا کمتر از حد مجاز، فیلتر را تغییر دهید.</span>
+                                    {% endif %}
+                                </div>
                                     <div>
                                         <table id="datatable-buttons"
                                                class="m-table table-striped table-bordered w-100"
@@ -92,14 +111,9 @@
                                                 <th data-key="item_title">کالا</th>
                                                 <th data-key="purchase_group">گروه خرید</th>
                                                 <th data-key="sales_group">گروه فروش</th>
-                                                {#                                                        <th data-key="coef">ضریب سند</th>#}
                                                 <th data-key="sales_type">نوع فروش</th>
                                                 <th data-key="Quantity">تعداد</th>
                                                 <th data-key="Fee">فی</th>
-                                                {#                                                        <th data-key="Price">ارزش ردیف</th>#}
-                                                {#                                                        <th data-key="PriceInBaseCurrency">ارزش ریالی ردیف</th>#}
-                                                {#                                                        <th data-key="NetPrice">ارزش خالص ردیف</th>#}
-                                                {#                                                        <th data-key="NetPriceInBaseCurrency">ارزش ریالی خالص ریالی</th>#}
                                                 <th data-key="currency">ارز</th>
                                                 <th data-key="Rate">نرخ ارز</th>
                                             </tr>
@@ -175,6 +189,27 @@
         {#debugger#}
         {#dt.orderable = false#}
         {#dt.columns([1,2]).visible(false);#}
+        setTimeout(function (){
+            $('#datatable-buttons_filter input').on('keyup', function () {
+               debugger
+                let table = $('#datatable-buttons').DataTable();
+                let filteredRows = table.rows({ search: 'applied' }).data();
+                let total = 0;
+                filteredRows.each(function(row){
+                    let price = parseFloat(row[11].replace(/,/g, '')) || 0;   // ستون فی
+                    let qty   = parseFloat(row[12].replace(/,/g, '')) || 0;   // ستون تعداد
+
+                    console.log(price, qty, price*qty)
+
+                    total += price * qty;
+                });
+
+                console.log('========')
+
+                document.querySelector('#total-price-dt').innerHTML = numberWithCommas(total)
+            });
+        }, 3000)
+
     </script>
 
 {% endblock extra_js %}

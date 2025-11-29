@@ -747,7 +747,7 @@
           "icon": "burger-menu",
           "title": "list/create",
           "path_key": "inquiry/supplier/list/",
-          "link": "inquiry:supplier.list"
+          "link": "inquiry:supplier.view"
         }
       ]
     },

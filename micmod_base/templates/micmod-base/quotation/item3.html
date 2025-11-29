@@ -137,9 +137,18 @@
                     <span id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
                     <span id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>
                 </div>
-                <div class="d-flex mt-3">
-                    <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
-                    <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
+                <div class="d-flex gap-2">
+                    <span>اولویت: </span>
+                    <span>{{ form_s.instance.goods_code_fk.items_raked.first }}</span>
+                </div>
+                <div class="d-flex mt-4">
+                    <div class="w-35">
+{#                        <input value="{{ form_s.instance.customer_goods_code.sku }}" placeholder="کد کالا مشتری" type="text" name="quotation-{{ forloop.counter0 }}-customer_goods_code" maxlength="100" class="form-control narrow-input font-size-12" id="id_quotation-{{ forloop.counter0 }}-customer_goods_code">#}
+                        {% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}
+                    </div>
+                    <div class="w-65">
+                        {% render_field_by_order form_s form_s.customer_goods_name label='on-border' margin_b=1 %}
+                    </div>
                 </div>
                 <div>
                 </div>
@@ -149,8 +158,9 @@
                     </span>
                 {% endif %}
 
-                <div class="mt-2">
-                    {% render_field_by_order form_s form_s.price_target label='on-border' %}
+                <div class="mb-1">
+                    <input value="{{ form_s.instance.price_target|default_if_none:"" }}" type="text" placeholder="تارگت قیمت" name="quotation-{{ forloop.counter0 }}-price_target" class="form-control narrow-input" id="id_quotation-{{ forloop.counter0 }}-price_target">
+{#                    {% render_field_by_order form_s form_s.price_target label='on-border' %}#}
                 </div>
                 {% get_comment_user_list form_s request.user %}
 {#                {% get_payment_list form_s request.user %}#}

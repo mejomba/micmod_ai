@@ -49,7 +49,6 @@
                         </div>
                     </div>
 
-
                     <div class="col-6">
                         <div id="id_detail">
                             <div class="row row-cols-4">
@@ -59,7 +58,10 @@
                                 </div>
                                 <div class="d-flex gap-2">
                                     <span>مبلغ سفارش</span>
-                                    <span id="order-remained-payment">{{ form.instance.order.total_price|default_if_falsy:'-' }}</span>
+                                    <span id="order-remained-payment">
+                                        {{ form.instance.order.total_price|default_if_falsy:'-' }}
+                                        {{ form.instance.order.currency.title }}
+                                    </span>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <span>کل پرداخت شده</span>
@@ -71,11 +73,11 @@
                                 </div>
                                 <div class="d-flex gap-2">
                                     <span>تعداد کل</span>
-                                    <span id="order-quantity">{{ form.instance.order.quantity|default_if_falsy:'-' }}</span>
+                                    <span id="order-quantity">{{ form.instance.order.final_quantity|default_if_falsy:'-' }}</span>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <span>تعداد مانده</span>
-                                    <span id="order-quantity">{{ form.instance.order.remained_quantity|default_if_falsy:'-' }}</span>
+                                    <span id="order-quantity">{{ form.instance.order.remaining_quantity|default_if_falsy:'-' }}</span>
                                 </div>
                             </div>
                             <div class="d-flex gap-6 mt-4 text-info">
@@ -92,7 +94,6 @@
                         </div>
                     </div>
 
-
                 </div>
 
             <div class="row-counter badge d-none" style="position: relative">
@@ -100,31 +101,6 @@
             </div>
 
         </div>
-{#        <a class="tooltip_ cursor-pointer" onclick="change_log_with_modal(this)"#}
-{#            data-bs-toggle="modal"#}
-{#            data-bs-target="#id_kt_empty_modal_lg"#}
-{#            data-model_name="{{ form.instance|model_name }}"#}
-{#            data-object_id="{{ form.instance.pk }}"#}
-{#            data-app_name="{{ form.instance|app_label }}"#}
-{#            name="name_change_log">#}
-{#            <span class="tooltiptext">تاریخچه تغییرات</span>#}
-{#            <i class="ki-duotone ki-book-open fs-3 text-primary">#}
-{#             <span class="path1"></span>#}
-{#             <span class="path2"></span>#}
-{#             <span class="path3"></span>#}
-{#             <span class="path4"></span>#}
-{#            </i>#}
-{#        </a>#}
-{#        <a href="#" target="_blank" class="me-3 delete-payment-item text-danger tooltip_" onclick="delete_with_modal(this)" data-url=/core/delete/?model={{ form.instance|model_name }}&object_id={{ form.instance.pk }}&app_label={{ form.instance|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">#}
-{#            <span class="tooltiptext">حذف</span>#}
-{#            <i class="ki-duotone ki-trash fs-3 text-danger">#}
-{#                <span class="path1"></span>#}
-{#                <span class="path2"></span>#}
-{#                <span class="path3"></span>#}
-{#                <span class="path4"></span>#}
-{#                <span class="path5"></span>#}
-{#            </i>#}
-{#        </a>#}
     </div>
 
 
