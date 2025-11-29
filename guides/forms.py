@@ -44,7 +44,8 @@ class GuidesForm(CustomBaseModelForm):
                     "quotation",
                     "payment_order",
                     "inquiry",
-                    "factor"
+                    "factor",
+                    "order"
                 ]
 
             self.fields['section_id'].choices = [
