@@ -1853,3 +1853,23 @@ class QuotationFromCustomerRequestView(View):
 
     def post(self, request, *args, **kwargs):
         pass
+
+
+def item_order_quantity(request):
+    goods_code = request.GET.get('sku')
+    goods_code_fk = Item.objects.get(sepidar_id_0=goods_code)
+    quantity = []
+    free_quantity = []
+    order_list = []
+
+    for order in goods_code_fk.order_set.all():
+        if order.is_wh is False and order.is_bazar is False:
+            free_quantity.append(order.remaining_quantity)
+            quantity.append(order.quantity)
+            order_list.append(order.pk)
+
+    total_qty = sum(quantity)
+    total_free_qty = sum(free_quantity)
+    context = {'quantity': quantity, 'free_qty': free_quantity, 'total_qty': total_qty, 'total_free_qty': total_free_qty, 'order': order_list}
+    res = render_to_string('micmod-base/quotation/partial/item_order_quantity.html', context)
+    return JsonResponse({'res': res}, safe=False)
