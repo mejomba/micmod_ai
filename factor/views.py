@@ -690,3 +690,12 @@ def get_supply_locations(request, sku, factor_item_pk, *args, **kwargs):
     context['factor_item'] = FactorItem.objects.filter(pk=factor_item_pk).first()
     html = render_to_string('factor/partial/ajax_supply_locations.html', context)
     return JsonResponse({'res': html})
+
+
+def show_force_factor(request, *args, **kwargs):
+    user = request.user
+    if user.base_group == 'wh':
+        force_factor = Factor.objects.filter(force_inquiry=True)
+        force_factors_id = [f.pk for f in force_factor]
+        return JsonResponse({'res': force_factors_id, 'count': force_factor.count()})
+    return JsonResponse({''})

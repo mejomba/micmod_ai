@@ -24,4 +24,5 @@ urlpatterns = [
     path('delivery/datatable/', views.DeliveryDatatableView.as_view(), name='delivery.datatable'),
     path('wh/packing/', views.WhPacking.as_view(), name='wh.packing'),
     path('ajax/get_supply_locations/<int:sku>/<int:factor_item_pk>/', views.get_supply_locations, name='get_supply_locations'),
+    path('ajax/show_force_factor/', views.show_force_factor, name='show_force_factor'),
 ]
