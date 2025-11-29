@@ -265,7 +265,7 @@
                 </div>
             </div>
             <div class="col-lg-4 p-0 replace-digits" style="border-bottom: 1px solid #f1f1f2">
-                <div class="px-2 h-40">
+                <div class="px-2 h-35">
 
 
 
@@ -407,7 +407,15 @@
             <span class="ms-8">زمان تحویل: <span id="lead_time_text">{{ form_s.instance.lead_time|default_if_none:'-' }}</span></span>
             <span class="ms-8"><span>کارشناس ۱: </span> <span>{{ form_s.instance.assigned_trade_user|default_if_none:'-' }}</span></span>
             <span class="ms-8"><span>کارشناس ۲: </span> <span>{{ form_s.instance.assigned_trade_user2|default_if_none:'-' }}</span></span>
-            <span class="sepidar_stock_info cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event)">موجودی انبارها</span>
+            <span class="sepidar_stock_info tooltip_ cursor-pointer text-primary d-non ms-8" onclick="get_sepidar_stock_info(event)">
+                <span class="tooltiptext">موجودی انبارها</span>
+                <i class="ki-duotone ki-home fs-1"></i>
+            </span>
+            <span class="item_order_quantity tooltip_ cursor-pointer text-primary d-non ms-8" onclick="item_order_quantity(event)">
+                <span class="tooltiptext">موجودی سفارش ‌ها</span>
+                <i class="ki-duotone ki-handcart fs-1"></i>
+            </span>
+            <span class="d-none" id="id_quotation_row">{{ form_s.instance.pk }}</span>
             <span class="w-20 ms-8">{{ form_s.sales_description }}</span>
             <span class="ms-2">
 {#                {% render_field_by_order form_s form_s.supply_status margin_b=0 %}#}
