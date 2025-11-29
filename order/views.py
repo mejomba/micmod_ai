@@ -114,6 +114,7 @@ class OrderView(LoginRequiredMixin, BaseView):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
         context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
+        context['section_id'] = 'order'
         if self.state_index == 7:
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')

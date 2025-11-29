@@ -90,7 +90,7 @@ class GuidesDatatableView(AjaxDatatableView):
             }
         else:
             filter_dict = {
-                "section_id__in": ["quotation", "payment_order", 'inquiry', 'factor']
+                "section_id__in": ["quotation", "payment_order", 'inquiry', 'factor', 'order']
             }
 
         qs = Guides.objects.filter(**filter_dict)

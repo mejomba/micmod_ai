@@ -15,6 +15,7 @@ class Guides(BaseModel):
         ('shenasname_farayand', 'شناسنامه فرآیند'),
         ('inquiry', 'استعلام'),
         ('factor', 'فاکتور'),
+        ('order', 'سفارش'),
     )
     TEAM_CHOICES = (
         ('trade', 'بازرگانی'),
