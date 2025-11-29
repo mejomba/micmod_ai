@@ -36,8 +36,11 @@
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                    {% if request.user|has_group:"wh_admin" %}
+                    <div class="border border-success bg-light-success rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="forceFactorBox"></div>
+                    {% endif %}
                 <div class="row">
-                    <a href="{% url 'order:order_of_factor' 0 %}" target="_blank" class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">همه</a>
+{#                    <a href="{% url 'order:order_of_factor' 0 %}" target="_blank" class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">همه</a>#}
                             <div class="col-12">
                                 <div class="container-fluid">
                                     <div class="table-responsive p-2">
@@ -87,6 +90,49 @@
         );
     });
     </script>
+{#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
+
+<script>
+    function fetchForceFactor() {
+        $.ajax({
+            url: "/factor/ajax/show_force_factor/",
+            method: "GET",
+            success: function (data) {
+            const box = $("#forceFactorBox");
+            debugger
+
+            if (!data.res || data.count === 0) {
+                box.html("فاکتور فوری وجود ندارد");
+                return;
+            }
+
+            const links = data.res.map(id =>
+                `<a href="/factor/view/${id}" class="mx-1 text-success bold cursor-pointer hover-link">${id}</a>`
+            ).join("، ");
+
+            box.html(`
+                 <span class="text-success bold">فاکتورهای فوری:</span>
+                 <span class="">${links}</span>
+
+                <br>
+                <span class="text-success bold">تعداد: </span>
+                <span class="text-success bold">${data.count} </span>
+
+`);
+        },
+        error: function () {
+            console.log("Error loading force factors");
+        }
+    });
+}
+
+
+    fetchForceFactor();
+
+    // اجرا هر یک دقیقه
+    setInterval(fetchForceFactor, 300000);
+</script>
+
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
