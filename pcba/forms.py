@@ -3,7 +3,7 @@ from django.forms import inlineformset_factory
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from django_select2 import forms as s2forms
-from files.models import File
+from files.models import File, Image
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm, CustomBaseForm
@@ -37,6 +37,9 @@ class ProductionDayActivitiesFormCustomerWidget(s2forms.ModelSelect2Widget):
 
 
 class ContractForm(CustomBaseModelForm):
+    image_model = Image
+    image_groups = 1
+    has_image = True
 
     class Meta:
         model = Contract
