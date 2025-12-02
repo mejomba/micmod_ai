@@ -1483,8 +1483,8 @@ def export_quotation_items_to_excel(request, quotation_id):
 
     if request.method == 'POST':
         body = json.loads(request.body)
-        body.get('selected_fields').append('lead_time')
-        body.get('selected_labels').append('زمان تامین')
+        # body.get('selected_fields').append('lead_time')
+        # body.get('selected_labels').append('زمان تامین')
 
         excel_buffer = export_to_excel(qis, body)
 
