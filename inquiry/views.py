@@ -962,6 +962,9 @@ def get_item(request):
                 item['price_list'] = []
                 try:
                     item_obj = old_item_obj = Item.objects.filter(sku=q).first()
+                    item['moq'] = item_obj.batch_count
+                    item['moq_box'] = item_obj.count_in_box
+                    item['moq_main_box'] = item_obj.count_in_main_box
                     if item_obj and item_obj.parent and item_obj.active_main_item:
                         item_obj = item_obj.parent
 
@@ -1160,6 +1163,9 @@ def get_item(request):
                     item['text'] = item_.part_number
                     try:
                         item_obj: Item = item_
+                        item['moq'] = item_obj.batch_count
+                        item['moq_box'] = item_obj.count_in_box
+                        item['moq_main_box'] = item_obj.count_in_main_box
                         price_inquiry_result: PriceInquiryResult = PriceInquiryResult.objects.filter(
                             pk=trade_price_code).first() if (trade_price_code) else item_obj.price
                         price_inquiry_result_bazar: PriceInquiryResult = PriceInquiryResult.objects.filter(

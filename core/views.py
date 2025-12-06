@@ -14,7 +14,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.db.models.functions import Coalesce
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -1623,3 +1623,18 @@ class GenericApiCall(View):
             return 'default_template.html'
         else:
             return f'core/partial/sepidar_api_call/{template_name}.html'
+
+
+class DynamicViewRouter(View):
+    valid_view = tuple()
+    valid_for_get = tuple()
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name')
+        if self.request.method != 'POST' and view_name not in self.valid_for_get:
+            return HttpResponseNotAllowed(["POST"])
+
+        if view_name and (view_name in self.valid_view or view_name in self.valid_for_get):
+            return getattr(self, view_name)(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
