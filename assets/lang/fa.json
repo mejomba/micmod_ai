@@ -737,5 +737,15 @@
     "location_in_wh": "موقعیت در انبار",
     "item_in_main_box": "تعداد در جعبه اصلی",
     "item_in_box": "تعداد در جعبه",
-    "t-bazar-order": "سفارش های بازار"
+    "t-bazar-order": "سفارش های بازار",
+    "number": "شماره",
+    "creator": "ایجاد کننده",
+    "version": "نسخه",
+    "sumamount": "جمع مبالغ",
+    "currencyref": "نرخ",
+    "creationdate": "تاریخ ایجاد",
+    "lastmodifier": "ویرایش کننده",
+    "fiscalyearref": "سال مالی",
+    "debitcreditnoteid": "شناسه اعلامیه بدهکار بستانکار",
+    "lastmodificationdate": "تاریخ ویرایش"
 }

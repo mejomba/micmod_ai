@@ -1,4 +1,9 @@
-<div class="d-flex justify-content-center">
+{% if save_not_allowed %}
+    <div class="d-flex justify-content-center align-items-center  badge badge-outline badge-danger">
+    {{ not_allow_message }}
+    </div>
+{% else %}
+<div class="d-flex justify-content-center" id="global-action-button">
     {% if form.enable or wf_access2 %}
         {% if not submit_duplicate %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish and not submit_duplicate %}
@@ -23,7 +28,7 @@
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy_q" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% endif %}
         {% elif not has_flow and form and not submit_duplicate %}
-            <input type="submit" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
+            <input type="submit" id="main-submit-btn" class="btn btn-primary me-1 px-4" name="submit" value="ثبت"/>
             {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="{{ submit_copy_text}}" id="submit_copy"/>
             {% elif submit_copy_q %}
@@ -86,6 +91,7 @@
 
 
 </div>
+{% endif %}
 <span class="footer-toggle">&#10148;</span>
 {#{% endif %}#}
 <style>

@@ -1,3 +1,71 @@
-payment_for_order_to_sepidar_preview ...
 
-<span onclick="submit_payment_for_order_to_sepidar(event)" data-payment_id="{{ payment.pk }}" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar" class="btn btn-sm btn-success">ارسال به سپیدار</span>
+{% for group in groups %}
+    <div class="mb-3">
+        {% for g in group %}
+            <div class="border p-1">
+{#            {{ g.order.currency }} / {{ payment.currency }}#}
+            <span class="badge badge-info my-1">
+                <span class="me-2"> ردیف پرداخت متعلق به سفارش</span>
+                <span>{{ g.order.pk }}</span>
+            </span>
+            {% if g.order.currency != payment.currency %}
+                <div class="d-flex flex-column gap-2 mb-5">
+                    <span>
+                        <span>واحد پول مبدا</span>
+                        <span class="badge badge-light-danger">{{ payment.currency }}</span>
+                        <span>مطابق واحد پول انتخاب شده در سفارش</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        <span>نیست</span>
+                        <span>در ازای این سند. در سپیدار اسناد زیر ثبت خواهند شد.</span>
+                    </span>
+
+                    <div class="bg-light-warnin">
+                        <span class="bold">انتقال بین حساب:</span>
+                        <span>انتقال از حساب</span>
+                        <span>{{ payment.vendor_party }}</span>
+                        <span class="badge badge-light-danger">{{ payment.currency }}</span>
+                        <span>به حساب</span>
+                        <span>{{ payment.vendor_party }}</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                    </div>
+
+                    <div class="bg-light-warnin">
+                        <span class="bold">انتقال به حساب تامین کننده: </span>
+                        <span>انتقال از حساب</span>
+                        <span>{{ payment.vendor_party }}</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        <span>به حساب</span>
+                        <span>{{ g.order.final_supplier }}</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                    </div>
+
+                </div>
+                {% else %}
+                <div class="d-flex flex-column gap-2 mb-5">
+                    <span>
+                        <span>واحد پول مبدا</span>
+                        <span class="badge badge-light-success">{{ payment.currency }}</span>
+                        <span>مطابق واحد پول انتخاب شده در سفارش</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        <span>است</span>
+                        <span>در ازای این سند. در سپیدار اسناد زیر ثبت خواهند شد.</span>
+                    </span>
+
+                    <div class="bg-light-succes">
+                        <span class="bold">انتقال به حساب تامین کننده: </span>
+                        <span>انتقال از حساب</span>
+                        <span>{{ payment.vendor_party }}</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        <span>به حساب</span>
+                        <span>{{ g.order.final_supplier }}</span>
+                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                    </div>
+
+                </div>
+            {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endfor %}
+
+<span onclick="submit_payment_for_order_to_sepidar(event)" data-payment_id="{{ payment.pk }}" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar&payment_id={{ payment.pk }}" class="btn btn-sm btn-success">ارسال به سپیدار</span>
