@@ -530,6 +530,7 @@ class SupplyStatus(AbsBaseModel):
 
 
 class QuotationItem(BaseModel):
+    final_amount = models.FloatField(null=True, blank=True)
     supply_date = models.DateField(_('supply_date'), null=True, blank=True)
     supply_status = models.ForeignKey(SupplyStatus, verbose_name=_('supply_status'), on_delete=models.DO_NOTHING, null=True, blank=True)
     sales_description = models.CharField(_('sales_description'), max_length=255, null=True, blank=True)
@@ -878,7 +879,7 @@ class QuotationItem(BaseModel):
             all_tasks_qs = quotation_items.filter(user_filter)
             today_assigned = all_tasks_qs.filter(time_filter).count()
             today_task_start = all_tasks_qs.filter(task_start_filter, time_filter).count()
-            today_all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, time_filter).count()
+            today_all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter, foreign_price_inquiry_done_date__gte=yesterday, foreign_price_inquiry_done_date__lte=today).count()
             all_price_inquiry_done = all_tasks_qs.filter(price_inquiry_filter).count()
             all_tasks = all_tasks_qs.count()
             reminder_task = all_tasks_qs.filter(foreign_price_inquiry_done=False, need_foreign_price_inquiry=True, is_deleted=False, quotation__cancel=False).count()
