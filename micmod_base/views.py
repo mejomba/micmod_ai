@@ -53,7 +53,7 @@ from translator import get_text as _
 from django.views import View
 
 from micmod_base.models import Quotation, QuotationItem, SaleType, CustomerRequestItem
-from core.views import BaseView, Base
+from core.views import BaseView, Base, DynamicViewRouter
 from django.contrib.contenttypes.models import ContentType
 
 from workflow.forms import WorkFlowModelForm
@@ -1483,8 +1483,8 @@ def export_quotation_items_to_excel(request, quotation_id):
 
     if request.method == 'POST':
         body = json.loads(request.body)
-        body.get('selected_fields').append('lead_time')
-        body.get('selected_labels').append('زمان تامین')
+        # body.get('selected_fields').append('lead_time')
+        # body.get('selected_labels').append('زمان تامین')
 
         excel_buffer = export_to_excel(qis, body)
 
@@ -1874,3 +1874,33 @@ def item_order_quantity(request):
     context = {'quantity': quantity, 'free_qty': free_quantity, 'total_qty': total_qty, 'total_free_qty': total_free_qty, 'order': order_list}
     res = render_to_string('micmod-base/quotation/partial/item_order_quantity.html', context)
     return JsonResponse({'res': res}, safe=False)
+
+
+class MicModDynamicView(DynamicViewRouter):
+    valid_view = ('customer_item',)
+    valid_for_get = ('customer_item',)
+
+    def customer_item(self, request, *args, **kwargs):
+        import requests
+        customer = self.request.GET.get('customer', None)
+        customer_goods_name = self.request.GET.get('customer_goods_name', None)
+        qi = QuotationItem.objects.filter(quotation__customer_party_id=customer, customer_goods_name=customer_goods_name).order_by('-id').first()
+        if qi:
+            customer_goods_code = qi.customer_goods_code
+            item = qi.goods_code_fk
+
+
+            url = """inquiry/item_list/?q=606&party_id=5648&id_currency_ref=1&id_payment_method=6%2C2%20Month&id_market_grade=5%2CA&id_customer_grade=-1%2CA&price_setting=&quantity=6000&trade_price_code=&bazar_price_code="""
+            res = requests.get(f'http://127.0.0.1:8000/{url}')
+            if res.ok:
+                moq = item.batch_count
+                moq_box = item.count_in_box
+                moq_main_box = item.count_in_main_box
+                return JsonResponse({'customer_goods_code': customer_goods_code, 'sku': item.sku, 'moq': moq,
+                                     'moq_box': moq_box, 'moq_main_box': moq_main_box, 'data': res.json()
+                                     })
+
+        return JsonResponse({'res': 'fail'})
+
+
+

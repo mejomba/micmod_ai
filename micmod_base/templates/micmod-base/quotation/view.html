@@ -621,6 +621,70 @@ id_customer_request_search && id_customer_request_search.addEventListener('keyup
         },
     }); // end ajax
 })
+
+function selectGoodsCodeBasedOnCustomerCode(elem, data){
+    debugger
+            {#const data = e.params.data;#}
+
+            elem.querySelector('#moq').innerHTML = data.moq || '-'
+            elem.querySelector('#moq_box').innerHTML = data.moq_box || '-'
+            elem.querySelector('#moq_main_box').innerHTML = data.moq_main_box || '-'
+            set_price_data(data, elem, null, true, null)
+            display_price(elem)
+            generate_price_method_select_option(elem)
+            check_price_expire_date_array = []
+            document.querySelectorAll('.item').forEach(function (item){
+                check_quotation_price_market_before_save_permission2(item).every(Boolean) ? toggle_submit_buttons(true): toggle_submit_buttons(false)
+            })
+            setTimeout(show_expire_message_popup, 600)
+            calculate_price(elem)
+debugger
+            $(elem).find('input[id*="goods_code_fk"]').val(data['id'])
+            let m_url = "/inquiry/ajax/count/?sku=" + data['id']
+            $.ajax({
+                type: 'GET',
+                url: m_url,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    $(elem).find('#all_price_count').html(`(${data['res']})`)
+                },
+                error: function () {
+                    alert('خطا در دریافت استعلام قیمت')
+                }
+            });
+}
+function customerItem(event) {
+    debugger
+
+    const customer = document.querySelector('#customer_pid')?.innerText
+    const target = event.currentTarget.value
+    const url = `/micmod_base/dynamic_view/?view_name=customer_item&customer=${customer}&customer_goods_name=${target}`
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        beforeSend: block_main_container,
+        success: function (data) {
+            debugger
+            const elem = findAncestor(event.target, "item")
+            const price_data = data?.data?.items[0]
+            selectGoodsCodeBasedOnCustomerCode(elem, price_data)
+
+            console.log(data)
+        },
+        error: function (err) {
+            debugger
+            console.log(err)
+        },
+        complete: release_main_container
+    }); // end ajax
+}
 </script>
 
 

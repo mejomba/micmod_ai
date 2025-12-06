@@ -211,6 +211,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                                                                      queryset=PriceInquiryResult.inquiry_list(request.user, {'sku': self.instance.goods_code,'inquiry_type__base_group': 'bazar'}) if self.instance.goods_code else PriceInquiryResult.objects.none(),
                                                                      initial=self.instance.bazar_price_code if self.instance.bazar_price_code else None,
                                                                      )
+        self.fields['customer_goods_name'].widget.attrs['onchange'] = 'customerItem(event)'
         if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)

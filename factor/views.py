@@ -714,8 +714,8 @@ def get_supply_locations(request, sku, factor_item_pk, *args, **kwargs):
 
 def show_force_factor(request, *args, **kwargs):
     user = request.user
-    if user.base_group == 'wh':
+    if user.base_group == 'wh' or user.is_superuser:
         force_factor = Factor.objects.filter(force_inquiry=True)
         force_factors_id = [f.pk for f in force_factor]
         return JsonResponse({'res': force_factors_id, 'count': force_factor.count()})
-    return JsonResponse({''})
+    return JsonResponse({'res': ''}, safe=False)

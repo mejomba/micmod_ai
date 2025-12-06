@@ -65,4 +65,5 @@ urlpatterns = [
     path('customer_request/list/datatable', CustomerRequestDatatableView.as_view(), name="customer_request.list.datatable"),
     path('quotation_from_customer_request/<int:pk>/', QuotationFromCustomerRequestView.as_view(), name="quotation_from_customer_request.view"),
     path('item_order_quantity/', item_order_quantity, name="item_order_quantity"),
+    path('dynamic_view/', MicModDynamicView.as_view(), name="dynamic_view"),
 ]

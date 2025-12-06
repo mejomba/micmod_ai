@@ -64,9 +64,17 @@
 
                 <div class="col mt-3">
                     <div class="row row-cols-5">
-                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.finish label='on-border' %}
+                        {% render_field_by_order form form.pad_cost form.ic_pad_cost form.total_cost form.finish form.image_1 label='on-border' %}
                     </div>
                 </div>
+            <div class="" dir="ltr" id="image-wrapper">
+                    {% for pic in form.instance.images.all %}
+                        <a href="{{ pic.path.url }}" target="_blank" class="me-2 ">
+                            <img src="{{ pic.path.url }}" alt="pic" class="" width="60" height="60">
+                        </a>
+                    {% endfor %}
+                </div>
+
                 {{ form.errors }}
 
 
