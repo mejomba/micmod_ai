@@ -714,9 +714,27 @@ class GIOItemView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         order_id = self.request.POST.get('order')
-        if not self.object and GIOItem.objects.filter(order=order_id).exists():
+        gio_id = self.request.POST.get('gio')
+        quantity = float(self.request.POST.get('quantity', 0))
+        order = Order.objects.filter(pk=order_id).first()
+
+        order_quantity = order.final_quantity
+
+        if quantity > order_quantity:
+            messages.error(request, f'تعداد انتخابی در GIO نمیتواند بیشتر از تعداد ثبت شده در سفارش باشد. {quantity} > {order.final_quantity}')
+            return JsonResponse({'res': 'fail'})
+
+        if not self.object and GIOItem.objects.filter(order=order_id, gio_id=gio_id).exists():
             messages.error(request, f'سفارش {order_id} قبلا در این GIO ثبت شده است')
             return JsonResponse({'res': 'fail'})
+
+        gio_items = GIOItem.objects.filter(order_id=order_id).exclude(gio_id=gio_id)
+
+        if gio_items:
+            order_quantity_in_gio_items = gio_items.aggregate(sum_quantity=Sum('quantity'))['sum_quantity']
+            if quantity > (order.final_quantity - order_quantity_in_gio_items):
+                messages.error(request, f'''تعداد {order_quantity_in_gio_items} عدد از سفارش {order_id} در GIO(ها)ی {"و ".join([mark_safe(f"<a href={reverse('order:gio.update', kwargs={'pk': x.gio.pk})}>{x.gio.pk}</a>") for x in gio_items])} ثبت شده است''')
+                return JsonResponse({'res': 'fail'})
 
         x = super().post(request, *args, **kwargs)
         if is_ajax(request):

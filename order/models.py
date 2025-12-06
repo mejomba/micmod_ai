@@ -602,6 +602,9 @@ class GIO(BaseModeWF):
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)
 
+    def __str__(self):
+        return f'ID: {self.pk} ({self.gio_date}) '
+
 
 class GIOItem(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0)
