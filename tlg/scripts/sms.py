@@ -8,7 +8,10 @@ from django.conf import settings
 def send_sms(sender_phone: str, receiver_list: List, text: str):
     try:
         receiver_str = ','.join(receiver_list)
-        sender_obj = SMS.objects.filter(phone_number=sender_phone).first()
+        if not sender_phone:
+            sender_obj = SMS.objects.first()
+        else:
+            sender_obj = SMS.objects.filter(phone_number=sender_phone).first()
         if receiver_str and sender_obj:
             sms_config = {
                 "username": sender_obj.username,

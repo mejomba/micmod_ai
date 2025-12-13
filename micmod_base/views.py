@@ -45,6 +45,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, \
     QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
+from tlg.scripts.sms import send_sms
 from tools import const
 from tools.datatable import CustomAjaxDatatableView
 from tools.import_data import import_customers_from_sepidar
@@ -128,6 +129,10 @@ def generate_direct_factor(request, quotation: Quotation):
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
+        user_list = ['09114281403']
+
+        send_sms('', user_list, 'message_format')
+
         q = self.request.GET.get('q')
         greeting = {}
         greeting['heading'] = _("quotation")

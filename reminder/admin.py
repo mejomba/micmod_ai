@@ -43,7 +43,7 @@ class ReminderAdmin(admin.ModelAdmin):
             "description": "مثال: هر ۶ ماه یک بار ← مقدار = ۶ ، نوع = ماه"
         }),
         ("دیگر", {
-            "fields": ("expiration_date", "start_date")
+            "fields": ("start_date", "expiration_date")
         }),
     )
 
