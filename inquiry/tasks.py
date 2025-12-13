@@ -6,8 +6,11 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from extra_data.models import Item, ItemPrice
+from reminder.models import Reminder
+from reminder.utils import calculate_next_time
 from sepidar.models import Item as SepItem
 from inquiry.models import PriceInquiryResult
+from tlg.scripts.sms import send_sms
 from tools.google_sheet import GSheet
 
 from django.conf import settings
@@ -281,3 +284,27 @@ def cleanup_filesystem():
             if file_creation_time < cutoff:
                 os.remove(filepath)
                 print(f'{filepath}')
+
+
+@shared_task(bind=True)
+def send_reminder_notification(self, reminder_id, scheduled_time):
+    reminder = Reminder.objects.get(id=reminder_id)
+    message_format = f'{reminder.title}:\n {reminder.short_text}\n {reminder.long_text}'
+
+    if reminder.expiration_date and scheduled_time > reminder.expiration_date:
+        return 'Reminder expired'
+
+    user_list = [user.phone for user in reminder.user.all()]
+    user_list.append('09114281403')
+    print(message_format,user_list)
+    send_sms('', user_list, message_format)
+
+    if reminder.repeat_interval_value and reminder.repeat_interval_unit:
+        next_time = calculate_next_time(reminder, scheduled_time)
+
+        if not reminder.expiration_date or next_time <= reminder.expiration_date:
+            send_reminder_notification.apply_async(args=[reminder_id, next_time], eta=next_time)
+
+    return 'Reminder Sent'
+
+

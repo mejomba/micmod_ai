@@ -85,7 +85,9 @@ LOCAL_APPS = [
     'order',
     'pcba',
     'guides',
-    'reminder'
+    # 'reminder',
+    'reminder.apps.ReminderConfig'
+
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
