@@ -812,5 +812,9 @@ SEPIDAR_CONST_DATA = {
     'pardakhtani_vaset_arzi': 601,  # حسابهای پرداختنی واسط ارزی code:211002
     'hesab_pardakhtani': 404,  # حسابهای پرداختنی code:211001
     'karmozd_sarafi': 606,  # کارمزد صرافی code:611408
-    'fiscalyearref': 46
+    'transportation_vaset': 407,  # واسط کرایه حمل موجودی code:111507
+    'wh_to_wh_vaset': 496,  # واسط انتقال بین انبار code:111506
+    'fiscalyearref': 46,  # سال مالی جاری
+    'no_name_vendor': 111,  # تامین کننده هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند,
+    'before_central_wh_id': 25,  # shenzen کد انبار قبل از انبار مرکزی
 }
