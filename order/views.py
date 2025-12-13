@@ -37,6 +37,7 @@ from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, Order
 from translator import get_text as _
 from .serializers import OrderSerializer
 import json
+from collections import OrderedDict
 
 # def factor_order_item(request, sku, quantity):
 #     items = get_object_or_404(QuotationItem, goods_code=sku)
@@ -712,6 +713,29 @@ class GIOItemView(LoginRequiredMixin, BaseView):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.gio.pk})
 
     def post(self, request, *args, **kwargs):
+        order_id = self.request.POST.get('order')
+        gio_id = self.request.POST.get('gio')
+        quantity = float(self.request.POST.get('quantity', 0))
+        order = Order.objects.filter(pk=order_id).first()
+
+        order_quantity = order.final_quantity
+
+        if quantity > order_quantity:
+            messages.error(request, f'تعداد انتخابی در GIO نمیتواند بیشتر از تعداد ثبت شده در سفارش باشد. {quantity} > {order.final_quantity}')
+            return JsonResponse({'res': 'fail'})
+
+        if not self.object and GIOItem.objects.filter(order=order_id, gio_id=gio_id).exists():
+            messages.error(request, f'سفارش {order_id} قبلا در این GIO ثبت شده است')
+            return JsonResponse({'res': 'fail'})
+
+        gio_items = GIOItem.objects.filter(order_id=order_id).exclude(gio_id=gio_id)
+
+        if gio_items:
+            order_quantity_in_gio_items = gio_items.aggregate(sum_quantity=Sum('quantity'))['sum_quantity']
+            if quantity > (order.final_quantity - order_quantity_in_gio_items):
+                messages.error(request, f'''تعداد {order_quantity_in_gio_items} عدد از سفارش {order_id} در GIO(ها)ی {"و ".join([mark_safe(f"<a href={reverse('order:gio.update', kwargs={'pk': x.gio.pk})}>{x.gio.pk}</a>") for x in gio_items])} ثبت شده است''')
+                return JsonResponse({'res': 'fail'})
+
         x = super().post(request, *args, **kwargs)
         if is_ajax(request):
             return JsonResponse({'res': 'success'})
@@ -818,6 +842,9 @@ class PaymentView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        if self.object.sepidar_response:
+            context['save_not_allowed'] = True
+            context['not_allow_message'] = 'امکان ویرایش سندی که به سپیدار ارسال شده وجود ندارد'
         return context
 
 
@@ -1130,6 +1157,8 @@ class OrderAndSepidar(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
     def trade_buy_factor_preview(self, request, *args, **kwargs):
+        gio_id = self.request.GET.get('gio_id')
+        gio = GIO.objects.get(pk=gio_id)
         buy_factor_contex = {}
         html = render_to_string('order/partial/sepidar/trade_buy_factor_preview.html', context=buy_factor_contex)
 
@@ -1274,18 +1303,24 @@ class OrderAndSepidar(View):
             return JsonResponse({'res': {"error": e.args[0]}}, status=400)
 
     def payment_for_order_to_sepidar_preview(self, request, *args, **kwargs):
+        context = dict()
+
         payment_id = self.request.GET.get('payment_id')
         payment = OrderPayment.objects.get(pk=payment_id)
-        payment_item = payment.payment_item.all()
         currency_for_orders = [x.order.currency for x in payment.payment_item.all()]
-        is_multi_stage = not all(v == payment.currency for v in currency_for_orders)
 
-        if is_multi_stage:
-            ...
-        else:
-            ...
+        groups = OrderedDict()
+        for item in payment.payment_item.all():
+            groups.setdefault(item.order.currency, []).append(item)
 
-        context = dict()
+        context['groups'] = list()
+        if len(groups.values()) != 1:
+            return JsonResponse({'res': 'نوع ارز انتخابی در سفارش ها متفاوت است'})
+
+        for g in groups.values():
+            print(g)
+            context['groups'].append(g)
+
         context['payment'] = payment
 
         html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_preview.html', context=context)
@@ -1295,11 +1330,25 @@ class OrderAndSepidar(View):
     def payment_for_order_to_sepidar(self, request, *args, **kwargs):
         from tools import utils
         payment_id = self.request.GET.get('payment_id')
-        payment_object = OrderPayment.objects.get(pk=payment_id)
-        payment_items = payment_object.payment_item.all()
-        per_supplier = {0: []}
-        contex = {}
-        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_preview.html', context=contex)
+        payment = OrderPayment.objects.get(pk=payment_id)
+        context = dict()
+
+        groups = OrderedDict()
+        for item in payment.payment_item.all():
+            groups.setdefault(item.order.currency, []).append(item)
+
+        context['groups'] = list()
+        for g in groups.values():
+            print(g)
+            context['groups'].append(g)
+            res = SepidarApiCall.debtor_credit_note_to_sepidar(g, self.request)
+            if res[0]:
+                payment.sepidar_response = res[1]
+                payment.save()
+
+        context['payment'] = payment
+
+        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_response.html', context=context)
 
         return JsonResponse({'res': html})
 

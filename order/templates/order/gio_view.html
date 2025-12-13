@@ -34,10 +34,13 @@
 {#            </div>#}
             <div id="to-sepidar-wrapper">
 
-                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">پیش نمایش ارسال به سپیدار</span>
-                <span id="to-sepidar" class="d-none btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor&gio_id={{ form.instance.pk }}" onclick="send_gio_to_sepidar(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>
+                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>
 
-                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود. ردیف های GIO با توجه به تامین کنندگان انتخاب شده در سند پرداخت یا سفارش در فاکتور خرید های جداگانه ثبت خواهند شد. (تامین کننده سند پرداخت در اولویت است).</span>
+                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>
+                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>
+                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام 111 ثبت میشود.</span>
+
+
                 <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded">
                     وضعیت تامین کننده برای یک یا چند ردیف قابل تایید نیست.
                 </span>
@@ -47,6 +50,7 @@
         </div>
 {#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
             <div class="" id="gio_item_container">
+            <span></span>
                 <div class="bg-white row rounded border border-2 my-10 pt-10 mt-20 mx-2 position-relative">
                     <div class="col-12">
                         <h4 class="position-absolute" style="top: -10px">ردیف های GIO</h4>
@@ -67,10 +71,11 @@
                                 <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
                                     <div class="col-2 py-2">
                                         <span class="me-3"><b>{{ forloop.counter }})  </b></span>
-                                        <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
+                                        <span id="gio_item_quantity">{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-2 py-2 s-05">
                                         <span>{{ gio.order|default_if_none:"-" }}</span>
+{#                                        <span class="d-non" id="order_pk-{{ forloop.counter }}">{{ gio.order.pk }}</span>#}
                                     </div>
                                     <div class="col-4 py-2 ">
                                         <span>{{ gio.description|default_if_none:"-" }}</span>
@@ -151,6 +156,55 @@
     <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
 
     <script>
+    function check_gio_item_quantity_less_than_order(event){
+        const target = event.currentTarget
+        const quantity = target.value
+        const max_valid_quantity = document.querySelector('#max-valid-quantity')?.value
+        const quantity_warning = document.querySelector('#quantity-warning')
+        const submit_gio_item = document.querySelector('#submit-gio-item')
+        if (parseFloat(quantity) > parseFloat(max_valid_quantity)){
+            submit_gio_item.classList.add('disabled')
+            quantity_warning.classList.remove('d-none')
+        } else {
+            submit_gio_item.classList.remove('disabled')
+            quantity_warning.classList.add('d-none')
+        }
+
+    }
+
+    function check_gio_item_quantity_eq_to_qio(){
+        console.log('aaa')
+        const gio_quantity_input = document.querySelector('#id_quantity')
+        if (gio_quantity_input){
+            const gio_quantity = gio_quantity_input.value
+            if (gio_quantity) {
+                let total_quantity_in_gio_item = 0
+                document.querySelectorAll('#gio_item_quantity').forEach(function (item){
+                    total_quantity_in_gio_item += parseFloat(item.innerHTML)
+                })
+
+                console.log(parseFloat(total_quantity_in_gio_item))
+                const sibling = [...gio_quantity_input.parentNode.children].find(el => el !== gio_quantity_input && el.classList.contains("text-danger"));
+                const main_submit_btn = document.querySelector('#main-submit-btn')
+
+                if (parseFloat(gio_quantity) != parseFloat(total_quantity_in_gio_item)){
+                    let str = 'جمع تعداد ردیف های GIO باید برابر این فیلد باشد.'
+                    str += ` (${total_quantity_in_gio_item} != ${gio_quantity})`
+                    sibling.innerHTML = str
+
+                    main_submit_btn.classList.add('disabled')
+                    main_submit_btn.value = 'خطا های فرم را اصلاح کنید'
+                } else {
+                    sibling.innerHTML = ''
+                    main_submit_btn.classList.remove('disabled')
+                    main_submit_btn.value = 'ثبت'
+                }
+            }
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', check_gio_item_quantity_eq_to_qio)
+
     const gio_item_container = document.querySelector('#gio_item_container')
     const gio_item = document.querySelector('#gio_item')
     gio_item && gio_item.addEventListener('click', function (e){

@@ -1889,21 +1889,33 @@ class MicModDynamicView(DynamicViewRouter):
         import requests
         customer = self.request.GET.get('customer', None)
         customer_goods_name = self.request.GET.get('customer_goods_name', None)
-        qi = QuotationItem.objects.filter(quotation__customer_party_id=customer, customer_goods_name=customer_goods_name).order_by('-id').first()
-        if qi:
-            customer_goods_code = qi.customer_goods_code
-            item = qi.goods_code_fk
+        quotation_id = self.request.GET.get('quotation_id', None)
+        currency_ref_id = self.request.GET.get('currency_ref_id', None)
+        payment_method = self.request.GET.get('payment_method', None)
+        market_grade = self.request.GET.get('market_grade', None)
+        customer_grade = self.request.GET.get('customer_grade', None)
+        price_setting = self.request.GET.get('price_setting', None)
+        quantity = int(self.request.GET.get('quantity', '1').replace(',', '') or 1)
+
+        # quotation = Quotation.objects.filter(pk=quotation_id).first()
+        if customer and customer_goods_name:
+            qi = QuotationItem.objects.filter(quotation__customer_party_id=customer, customer_goods_name=customer_goods_name).order_by('-id').first()
+
+            if qi:
+                customer_goods_code = qi.customer_goods_code
+                item = qi.goods_code_fk
+                # party_id = customer.sepidar_party_id
 
 
-            url = """inquiry/item_list/?q=606&party_id=5648&id_currency_ref=1&id_payment_method=6%2C2%20Month&id_market_grade=5%2CA&id_customer_grade=-1%2CA&price_setting=&quantity=6000&trade_price_code=&bazar_price_code="""
-            res = requests.get(f'http://127.0.0.1:8000/{url}')
-            if res.ok:
-                moq = item.batch_count
-                moq_box = item.count_in_box
-                moq_main_box = item.count_in_main_box
-                return JsonResponse({'customer_goods_code': customer_goods_code, 'sku': item.sku, 'moq': moq,
-                                     'moq_box': moq_box, 'moq_main_box': moq_main_box, 'data': res.json()
-                                     })
+                url = f"""inquiry/item_list/?q={item.sku}&party_id={customer}&id_currency_ref={currency_ref_id}&id_payment_method={payment_method}&id_market_grade={market_grade}&id_customer_grade={customer_grade}&price_setting{price_setting}=&quantity={quantity}&trade_price_code=&bazar_price_code="""
+                res = requests.get(f'http://{self.request.get_host()}/{url}')
+                if res.ok:
+                    moq = item.batch_count
+                    moq_box = item.count_in_box
+                    moq_main_box = item.count_in_main_box
+                    return JsonResponse({'customer_goods_code': customer_goods_code, 'sku': item.sku, 'moq': moq,
+                                         'moq_box': moq_box, 'moq_main_box': moq_main_box, 'data': res.json()
+                                         })
 
         return JsonResponse({'res': 'fail'})
 

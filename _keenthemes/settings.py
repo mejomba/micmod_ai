@@ -809,3 +809,10 @@ PRODUCT_API_VERSION = os.environ.get('PRODUCT_API_VERSION')
 
 # $env:SHOP_DB="poshop"
 TOKEN_8070 = os.environ.get('TOKEN_8070')
+
+SEPIDAR_CONST_DATA = {
+    'pardakhtani_vaset_arzi': 601,  # حسابهای پرداختنی واسط ارزی code:211002
+    'hesab_pardakhtani': 404,  # حسابهای پرداختنی code:211001
+    'karmozd_sarafi': 606,  # کارمزد صرافی code:611408
+    'fiscalyearref': 46
+}

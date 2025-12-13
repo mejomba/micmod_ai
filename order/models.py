@@ -602,6 +602,9 @@ class GIO(BaseModeWF):
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)
 
+    def __str__(self):
+        return f'ID: {self.pk} ({self.gio_date}) '
+
 
 class GIOItem(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0)
@@ -629,6 +632,7 @@ class OrderPayment(BaseModeWF):
     karmozd_currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,related_name='payments_karmozd')
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
     vendor_party = models.ForeignKey(Supplier, on_delete=models.DO_NOTHING, related_name='vendor_party_payment')
+    sepidar_response = models.JSONField(null=True, blank=True)
 
     @property
     def total_payment(self):

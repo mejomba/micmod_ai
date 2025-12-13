@@ -218,6 +218,8 @@ class GIOForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(GIOForm, self).__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_eq_to_qio()'
         # self.fields['gio_date'] = JalaliDateField(label=_('gio_date'),
         #                                            widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=True)
 
@@ -250,6 +252,7 @@ class GIOItemForm(CustomBaseModelForm):
 
     def __init__(self, *args, **kwargs):
         super(GIOItemForm, self).__init__(*args, **kwargs)
+        self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_less_than_order(event)'
         self.make_hidden(['order'])
         self.fields['description'].widget.attrs['rows'] = 1
         # if self.instance.pk and (packing := self.initial.get('packing')):

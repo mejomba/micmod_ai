@@ -61,7 +61,7 @@
         <div class="col-12">
             <div class="row row-cols-2">
                 {% render_field_by_order form form.description label='on-border' %}
-                <div class="col d-flex align-items-center justify-content-center bg-light-primary">
+                <div class="col d-flex align-items-center justify-content-center bg-light-primar">
 
                     <div class="text-center mt-10 d-none" id="to-sepidar-hint">
                         <span>برای ارسال به سپیدار. پس از تکمیل اطلاعات، فرم را به مرحله پرداخت ارسال کنید تا پیش نمایش ارسال به سپیدار را مشاهده کنید.</span>
@@ -71,7 +71,11 @@
 
                     <div id="payment-for-order-to-sepidar-wrapper" class="d-none">
                         <div id="payment-for-order-to-sepidar-body" >
-                            <span id="payment-for-order-to-sepidar-preview" onclick="payment_for_order_to_sepidar_preview(event)" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar_preview&payment_id={{ form.instance.pk }}" class="btn btn-sm btn-primary">پیش نمایش ارسال به سپیدار</span>
+                            {% if save_not_allowed %}
+                                {% include 'order/partial/sepidar/payment_for_order_to_sepidar_response.html' with payment=form.instance %}
+                            {% else %}
+                                <span id="payment-for-order-to-sepidar-preview" onclick="payment_for_order_to_sepidar_preview(event)" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar_preview&payment_id={{ form.instance.pk }}" class="btn btn-sm btn-primary">پیش نمایش ارسال به سپیدار</span>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -278,6 +282,9 @@
         success: function (data) {
             const html = data['res'];
             $('#payment-for-order-to-sepidar-wrapper').html(html);
+            document.querySelector('#global-action-button').innerHTML = `<div class="d-flex justify-content-center align-items-center  badge badge-outline badge-danger">
+                                                                    امکان ویرایش سندی که به سپیدار ارسال شده است وجود ندارد.
+                                                                    </div>`
         },
         error: function () {
 

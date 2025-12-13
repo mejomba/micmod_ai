@@ -638,7 +638,6 @@ function selectGoodsCodeBasedOnCustomerCode(elem, data){
             })
             setTimeout(show_expire_message_popup, 600)
             calculate_price(elem)
-debugger
             $(elem).find('input[id*="goods_code_fk"]').val(data['id'])
             let m_url = "/inquiry/ajax/count/?sku=" + data['id']
             $.ajax({
@@ -659,9 +658,19 @@ debugger
 function customerItem(event) {
     debugger
 
-    const customer = document.querySelector('#customer_pid')?.innerText
+    const customer = document.querySelector('#id_customer_party_id')?.value
     const target = event.currentTarget.value
-    const url = `/micmod_base/dynamic_view/?view_name=customer_item&customer=${customer}&customer_goods_name=${target}`
+    const row = findAncestor(event.currentTarget, 'item')
+    const quotation_id = document.querySelector('input[name="quotation_id"]').value
+    const currency_ref_id = document.querySelector('#id_currency_ref')?.value
+    const payment_method = document.querySelector('#id_payment_method')?.value
+    const market_grade = document.querySelector('#id_market_grade')?.value
+    const customer_grade = document.querySelector('#id_customer_grade')?.value
+    const price_setting = document.querySelector('#id_q_price_setting')?.value
+    const quantity = row.querySelector('input[name$="quantity"]')?.value
+
+
+    const url = `/micmod_base/dynamic_view/?view_name=customer_item&customer=${customer}&customer_goods_name=${target}&quotation_id=${quotation_id}&currency_ref_id=${currency_ref_id}&payment_method=${payment_method}&market_grade=${market_grade}&customer_grade=${customer_grade}&price_setting=${price_setting}&quantity=${quantity}`
     $.ajax({
         type: 'GET',
         url: url,
@@ -674,8 +683,9 @@ function customerItem(event) {
             debugger
             const elem = findAncestor(event.target, "item")
             const price_data = data?.data?.items[0]
-            selectGoodsCodeBasedOnCustomerCode(elem, price_data)
-
+            if (price_data){
+                selectGoodsCodeBasedOnCustomerCode(elem, price_data)
+            }
             console.log(data)
         },
         error: function (err) {

@@ -1371,6 +1371,7 @@ function calculate_price(target) {
     const elem = findAncestor(target, "item")
     const final_price = elem.querySelector('[name*="-final_price"]')
     const total_price = elem.querySelector('[name*="-total_price"]')
+    const final_amount = elem.querySelector('[name*="-final_amount"]')
     const quantity = elem.querySelector('input[id$="quantity"]')
     const selfDiscount = document.querySelector('input[name*="self_discount"]')
     const isOfficial =  document.querySelector('#id_is_official')
@@ -1433,13 +1434,14 @@ debugger
         elem.querySelector('[name*="MAC"]').innerHTML = numberWithCommas(net_price)
         elem.querySelector('[name*="tax_value"]').innerHTML = numberWithCommas(taxValue)
         elem.querySelector('[name*="discount_value"]').innerHTML = numberWithCommas(totalDiscount)
-        // total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
         total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        final_amount.value = Number(String(total_price.innerHTML).replace(/,/g, '')) || 0
     } else {
         elem.querySelector('[name*="MAC"]').innerHTML = numberWithCommas(net_price)
         elem.querySelector('[name*="tax_value"]').innerHTML = numberWithCommas(taxValue)
         elem.querySelector('[name*="discount_value"]').innerHTML = numberWithCommas(totalDiscount)
         total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        final_amount.value = Number(String(total_price.innerHTML).replace(/,/g, '')) || 0
     }
     //calculated_price = net_price - totalDiscount + tax
 

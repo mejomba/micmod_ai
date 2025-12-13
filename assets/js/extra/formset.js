@@ -302,7 +302,6 @@ function showQuotationFormsetHeader(el){
 }
 
 function get_sepidar_stock_info(event){
-    debugger
     const qi_row = findAncestor(event.currentTarget, 'item')
     let sku = qi_row.querySelector('input[type="hidden"][name$="-itemid"]')
     const sepidar_stock_info_result = $(qi_row).find('.sepidar_stock_info_result')
@@ -316,7 +315,6 @@ function get_sepidar_stock_info(event){
     }
 }
 function item_order_quantity(event){
-    debugger
     const qi_row = findAncestor(event.currentTarget, 'item')
     let sku = qi_row.querySelector('input[type="hidden"][name$="-itemid"]')
     const item_order_quantity = $(qi_row).find('.sepidar_stock_info_result')
