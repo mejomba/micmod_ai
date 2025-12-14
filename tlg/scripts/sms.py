@@ -25,6 +25,7 @@ def send_sms(sender_phone: str, receiver_list: List, text: str):
                 'Content-Type': 'application/json'
             }
             res = requests.post(settings.SEND_SMS_URL, json=sms_config, headers=headers)
+            print(res.json())
             res_value = res.json().get('Value')
 
             if res_value:
