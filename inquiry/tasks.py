@@ -308,7 +308,7 @@ def send_reminder_notification(self, reminder_id, scheduled_time):
     return 'Reminder Sent'
 
 
-@shared_task(bind=True)
+@shared_task
 def send_reminder_notification2():
     now_date = timezone.now().date()
     reminders_for_apply = []
