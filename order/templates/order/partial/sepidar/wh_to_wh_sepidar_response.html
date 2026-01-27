@@ -1,0 +1,76 @@
+
+{% for k, v in packing.sepidar_wh_to_wh.items %}
+
+<div class="d-flex flex-row-reverse">
+{{ k }} : {{ v }}
+{#    <div class="accordion" id="accordionPanelsStayOpenExample" style="min-width: 600px;">#}
+{#        <div class="accordion-item">#}
+{#            <h2 class="accordion-header p-1">#}
+{#              <button class="accordion-button collapsed d-flex flex-row-reverse py-4 bg-white text-black" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="panelsStayOpen-collapse{{ forloop.counter }}">#}
+{#                <span>اعلامیه بدهکار بستانکار</span>#}
+{#                <span>{{ v.number }}</span>#}
+{#              </button>#}
+{#            </h2>#}
+{#            <div id="panelsStayOpen-collapse{{ forloop.counter }}" class="accordion-collapse collapse">#}
+{#                <div class="accordion-body">#}
+{#                    {% for key, value in v.items %}#}
+{#                        {% if key == 'debitcreditnote_items' %}#}
+{##}
+{#                            <div class="accordion" id="accordionPanelsStayOpenExample2">#}
+{#                                {% for item in value %}#}
+{#                                    <div class="accordion-item">#}
+{#                                        <h2 class="accordion-header p-1">#}
+{#                                          <button class="accordion-button collapsed bg-white text-black d-flex flex-row-reverse gap-2 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne{{ forloop.counter }}" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne{{ forloop.counter }}">#}
+{#                                              <span>ردیف</span>#}
+{#                                              <span>{{ forloop.counter }}</span>#}
+{#                                              <span>اعلامیه بدهکار بستانکار</span>#}
+{#                                              <span>{{ v.number }}</span>#}
+{#                                          </button>#}
+{#                                        </h2>#}
+{##}
+{#                                        <div id="panelsStayOpen-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse">#}
+{##}
+{#                                            <div class="accordion-body">#}
+{#                                                {% for row_k, row_v in item.items %}#}
+{#                                                    <div class="ms-8 d-flex" style="direction: rtl">#}
+{#                                                        <span class="bold font-size-12" data-key="{{ row_k }}">#}
+{#                                                            {{ row_k }}#}
+{#                                                        </span>#}
+{#                                                        <sapn class="me-3 ms-1 bold">: </sapn>#}
+{#                                                        <span class="text-black">#}
+{#                                                            {{ row_v }}#}
+{#                                                        </span>#}
+{#                                                        <br>#}
+{#                                                        <hr>#}
+{#                                                    </div>#}
+{#                                                {% endfor %}#}
+{#                                            </div>#}
+{##}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                {% endfor %}#}
+{#                            </div>#}
+{##}
+{##}
+{#                        {% else %}#}
+{#                            <div style="direction: rtl" class="d-flex">#}
+{#                                <span class="bold font-size-12" data-key="{{ key }}">#}
+{#                                    {{ key }}#}
+{#                                </span>#}
+{#                                <sapn class="me-3 ms-1 bold">: </sapn>#}
+{#                                <span class="">#}
+{#                                    {{ value }}#}
+{#                                </span>#}
+{#                                <br>#}
+{#                                <hr>#}
+{#                            </div>#}
+{#                        {% endif %}#}
+{#                    {% endfor %}#}
+{#                </div>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+
+</div>
+
+{% endfor %}

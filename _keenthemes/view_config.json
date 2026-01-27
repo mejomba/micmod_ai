@@ -104,7 +104,7 @@
             }],
             "formset_constraints": [
               {
-                "hide": [],
+                "hide": ["supply_location"],
                 "read": []
               }
             ]
@@ -120,48 +120,30 @@
             }],
             "formset_constraints": [
               {
-                "hide": [],
+                "hide": ["supply_location"],
                 "read": []
               }
             ]
           },
           {
-            "state": "تامین کالا",
-            "groups": ["sales_user"],
-            "deadlines": [1],
-            "form_constraints": [
-            {
-              "group": "sales_user",
-              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "checker", "deliver_to_customer","packing_json"],
-              "read": ["accounting_confirm", "checker", "collecting_start_time", "wh_user"]
-            }],
-            "formset_constraints": [
-              {
-                "hide": [],
-                "read": [
-                  {
-                    "group": "sales_user",
-                    "hide": [],
-                    "read": ["goods_code", "part_number", "quantity", "price"]
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "state": "تخصیص کارشناس انبار",
-            "groups": ["wh_admin", "accounting_user"],
+            "groups": ["wh_admin", "accounting_user", "factor_assign_user"],
             "deadlines": [1, 1],
             "form_constraints": [
               {
               "group": "wh_admin",
-              "hide": ["deliver_to_customer","official_factor_send_with_this_factor"],
-              "read": ["is_official","official_value","self_discount", "accounting_confirm","self_discount", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "self_discount","force_factor"],
+              "read": ["is_official","official_value", "accounting_confirm", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+            },
+              {
+              "group": "factor_assign_user",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "self_discount","force_factor"],
+              "read": ["is_official","official_value", "accounting_confirm", "official_value", "is_official", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
-              "read": ["is_official","official_value","self_discount", "deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["official_factor_send_with_this_factor", "wh_user", "to_be_collected", "deliver_type","force_factor", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
+              "read": ["is_official","official_value","self_discount", "deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             },
             {
               "group": "sales_user",
@@ -172,85 +154,106 @@
               {
                 "group": "wh_admin",
                 "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["is_official","official_value","self_discount", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+              },
+              {
+                "group": "factor_assign_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
+                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
               },
               {
                 "group": "accounting_user",
-                "hide": [],
-                "read": ["is_official","official_value","self_discount", "quantity"]
+                "hide": ["supply_location", "reserve_count"],
+                "read": ["is_official","official_value", "quantity"]
               }
             ]
           },
           {
             "state": "جمع‌‌آوری",
-            "groups": ["wh_user", "accounting_user"],
+            "groups": ["factor_collector", "accounting_user"],
             "deadlines": [1],
             "form_constraints": [{
-              "group": "wh_user",
-              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","packing_json", "collecting_end_time"],
-              "read": ["is_official","official_value","self_discount", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+              "group": "factor_collector",
+              "hide": ["force_factor", "deliver_to_customer","official_factor_send_with_this_factor", "collecting_end_time", "self_discount"],
+              "read": ["is_official","official_value", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
-              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "self_discount", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["force_factor","packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time"],
+              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],
             "formset_constraints": [
               {
-                "group": "wh_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
+                "group": "factor_collector",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "read": []
+              },
+              {
+                "group": "accounting_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
                 "read": []
               }
             ]
           },
           {
             "state": "چک نهایی",
-            "groups": ["wh_user"],
+            "groups": ["factor_final_check", "accounting_user"],
             "deadlines": [1],
             "form_constraints": [{
-              "group": "wh_user",
-              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time"],
-              "read": ["is_official","official_value","self_discount", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
-            }],
+              "group": "factor_final_check",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time" ,"self_discount", "force_factor"],
+              "read": ["is_official","official_value", "accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+            },
+            {
+              "group": "accounting_user",
+              "hide": ["packing_json", "official_factor_send_with_this_factor", "wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
+              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+            }
+            ],
             "formset_constraints": [
               {
-                "group": "wh_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
+                "group": "factor_final_check",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "read": []
+              },
+              {
+                "group": "accounting_user",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
                 "read": []
               }
             ]
           },
           {
             "state": "ارسال یا تحویل",
-            "groups": ["wh_user"],
+            "groups": ["factor_send_or_delivery"],
             "deadlines": [1],
             "form_constraints": [{
-              "group": "wh_user",
-              "hide": ["packing_json"],
-              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type", "accounting_confirm", "need_financial_approval", "to_be_collected", "collecting_start_time"]
+              "group": "factor_send_or_delivery",
+              "hide": ["collecting_end_time", "self_discount", "force_factor"],
+              "read": ["is_official","official_value", "need_factor_document", "deliver_type", "accounting_confirm", "need_financial_approval", "to_be_collected", "collecting_start_time"]
             }],
             "formset_constraints": [
               {
-                "group": "wh_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
+                "group": "factor_send_or_delivery",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
                 "read": []
               }
             ]
           },
           {
             "state": "تایید تحویل",
-            "groups": ["wh_user"],
+            "groups": ["factor_delivery_approve"],
             "deadlines": [1],
             "form_constraints": [{
-              "group": "wh_user",
-              "hide": ["packing_json"],
-              "read": ["is_official","official_value","self_discount", "need_factor_document", "deliver_type"]
+              "group": "factor_delivery_approve",
+              "hide": ["packing_json", "collecting_end_time", "self_discount", "force_factor"],
+              "read": ["is_official","official_value", "need_factor_document", "deliver_type"]
             }],
             "formset_constraints": [
               {
-                "group": "wh_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
+                "group": "factor_delivery_approve",
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
                 "read": []
               }
             ]
@@ -556,7 +559,7 @@
             "deadline": 3,
             "form_constraint": {
               "hide": [],
-              "read": ["quantity"]
+              "read": ["__all__"]
             },
             "formset_constraint": [
               {

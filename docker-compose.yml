@@ -13,7 +13,7 @@ services:
     image: postgres:latest
     restart: always
     ports:
-      - "5440:5432"
+      - "5441:5432"
     env_file:
       - _keenthemes/.env
     networks:

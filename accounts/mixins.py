@@ -83,7 +83,7 @@ class FormFieldAccessMixin(FormMixin):
         return {}
 
     def field_access_by_user_permission_(self, request=None):
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             return {}
         try:
             app_label = self.Meta.model._meta.app_label

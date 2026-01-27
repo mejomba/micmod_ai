@@ -812,6 +812,9 @@ TOKEN_8070 = os.environ.get('TOKEN_8070')
 
 SEPIDAR_CONST_DATA = {
     'pardakhtani_vaset_arzi': 601,  # حسابهای پرداختنی واسط ارزی code:211002
+    'hesab_daryaftani_arzi': 580,  # حسابهای دریافتنی ارزی code:؟؟؟؟؟؟
+    'hesab_daryaftani_rasmi': 677,  # حسابهای دریافتنی رسمی code:؟؟؟؟؟؟
+    'hesab_daryaftani': 420,  # حسابهای دریافتنی code:؟؟؟؟؟؟
     'hesab_pardakhtani': 404,  # حسابهای پرداختنی code:211001
     'karmozd_sarafi': 606,  # کارمزد صرافی code:611408
     'transportation_vaset': 407,  # واسط کرایه حمل موجودی code:111507
@@ -819,4 +822,7 @@ SEPIDAR_CONST_DATA = {
     'fiscalyearref': 46,  # سال مالی جاری
     'no_name_vendor': 111,  # تامین کننده هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند,
     'before_central_wh_id': 25,  # shenzen کد انبار قبل از انبار مرکزی
+    'central_wh_id': 2,  # کد انبار مرکزی
 }
+
+MULTI_GROUP_ACCESS_VIEW = ['factor']

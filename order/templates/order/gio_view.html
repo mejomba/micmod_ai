@@ -24,21 +24,20 @@
 {#        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}#}
 {#    </div>#}
 
+{% with form.instance.sepidar_buy_factor_response_json|default_if_falsy:form.instance.sepidar_inventory_receipt_response_json as is_send_to_sepidar %}
 
     <div class="rounded shadow my-10 bg-white py-10 px-3" id="block_container">
         <div class="row">
-        {% render_field_by_order form form.gio_date form.quantity form.description  label='on-border' %}
+            <input type="hidden" id="gio_id" value="{{ form.instance.pk }}">
+        {% render_field_by_order form form.gio_date form.quantity form.description form.sepidar_buy_factor_response_json  label='on-border' %}
         <div class="col-12">
-{#            <div class="row">#}
-{#                {% render_field_by_order form form.description label='on-border' %}#}
-{#            </div>#}
             <div id="to-sepidar-wrapper">
-
+                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json %}
                 <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>
-
-                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>
-                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>
-                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام 111 ثبت میشود.</span>
+                {% endif %}
+{#                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>#}
+{#                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>#}
+{#                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام 111 ثبت میشود.</span>#}
 
 
                 <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded">
@@ -53,17 +52,17 @@
             <span></span>
                 <div class="bg-white row rounded border border-2 my-10 pt-10 mt-20 mx-2 position-relative">
                     <div class="col-12">
-                        <h4 class="position-absolute" style="top: -10px">ردیف های GIO</h4>
+                        <h4 class="position-absolute" style="top: -10px" data-key="gio_items">GIO Items</h4>
                         {% if form.instance.pk %}
                             {% with form.instance.gioitems.all as gios %}
                                 {% if gios %}
                                     <div class="row align-items-center pb-2 mb-3 bold">
 {#                                        <div class="col-1 "><span class="ms-6">تعداد کارتن </span></div>#}
-                                        <div class="col-2 "><span class="ms-6"> تعداد کالا </span></div>
-                                        <div class="col-2 ">سفارش</div>
-                                        <div class="col-4">توضیحات</div>
-                                        <div class="col-2">عملیات</div>
-                                        <div class="col-2">وضعیت</div>
+                                        <div class="col-2 "><span class="ms-6" data-key="quantity">quantity </span></div>
+                                        <div class="col-2 " data-key="order">order</div>
+                                        <div class="col-4" data-key="description">description</div>
+                                        <div class="col-2" data-key="action">action</div>
+{#                                        <div class="col-2">وضعیت</div>#}
                                     </div>
                                 {% endif %}
 
@@ -81,6 +80,9 @@
                                         <span>{{ gio.description|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-2 py-1 ">
+                                        {% if is_send_to_sepidar %}
+                                            <span data-key="gioactiondescription">امکان تغییر در سندی که به سپیدار ارسال شده وجود ندارد</span>
+                                        {% else %}
                                         <span>
                                         <a href="#" target="_blank" class="me-3 edit-gio-item tooltip_" data-url="{% url 'order:gioitem.update' gio.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
@@ -115,29 +117,33 @@
                                             </i>
                                         </a>
                                     </span>
+                                        {% endif %}
                                     </div>
                                     <div class="col-2">
-                                        {% if gio.is_valid_for_sepidar %}
-                                            <i class="ki-duotone ki-check-circle text-success fs-1">
-                                             <span class="path1"></span>
-                                             <span class="path2"></span>
-                                            </i>
-                                            {% else %}
-                                            <i class="ki-duotone ki-cross-circle text-danger fs-1 invalid" data-bs-toggle="tooltip" data-bs-original-title="این سفارش، تامین کننده معتبر در سپیدار ندارد. تامین کننده را به سپیدار اضافه کنید یا سند پرداخت در پرتال برای سفارش ثبت کنید.">
-                                                <span class="path1"></span>
-                                                <span class="path2"></span>
-                                            </i>
-                                        {% endif %}
+{#                                        {% if gio.is_valid_for_sepidar %}#}
+{#                                            <i class="ki-duotone ki-check-circle text-success fs-1">#}
+{#                                             <span class="path1"></span>#}
+{#                                             <span class="path2"></span>#}
+{#                                            </i>#}
+{#                                            {% else %}#}
+{#                                            <i class="ki-duotone ki-cross-circle text-danger fs-1 invalid" data-bs-toggle="tooltip" data-bs-original-title="این سفارش، تامین کننده معتبر در سپیدار ندارد. تامین کننده را به سپیدار اضافه کنید یا سند پرداخت در پرتال برای سفارش ثبت کنید.">#}
+{#                                                <span class="path1"></span>#}
+{#                                                <span class="path2"></span>#}
+{#                                            </i>#}
+{#                                        {% endif %}#}
                                     </div>
                                 </div>
                             {% endfor %}
                             {% endwith %}
                         {% endif %}
                             <div class="mt-5">
-                            {% include 'core/partial/components/plus_new.html' with id_='gio_item' obj=form.instance url_='order:gioitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های GIO وجود دارد' %}
+                                {% if not is_send_to_sepidar %}
+                                    {% include 'core/partial/components/plus_new.html' with id_='gio_item' obj=form.instance url_='order:gioitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های GIO وجود دارد' %}
+                                {% endif %}
                             </div>
                     </div>
                 </div>
+            {% include 'order/partial/sepidar/trade_buy_factor_sepidar_response.html' with buy_factor=form.instance %}
             </div>
         </div>
     </div>
@@ -148,6 +154,8 @@
     {% include 'core/partial/empty_modal.html' %}
     {% include 'core/partial/empty_modal_lg.html' %}
     {% include 'core/partial/empty_modal_sm.html' %}
+
+{% endwith %}
 {% endblock form_content %}
 
 {% block extra_js %}
@@ -180,7 +188,7 @@
             if (gio_quantity) {
                 let total_quantity_in_gio_item = 0
                 document.querySelectorAll('#gio_item_quantity').forEach(function (item){
-                    total_quantity_in_gio_item += parseFloat(item.innerHTML)
+                    total_quantity_in_gio_item += parseFloat(item.innerHTML.replace(',', ''))
                 })
 
                 console.log(parseFloat(total_quantity_in_gio_item))
@@ -285,14 +293,17 @@
     }
 
     function send_gio_to_sepidar(event){
-        let gio_data = {}
+        const gio_id = document.querySelector('#gio_id')?.value
+        let gio_data = {
+            gio_id: gio_id
+        }
         const url = event.currentTarget.dataset.url
 
         $.ajax({
             type: 'POST',
             url: url,
             dataType: 'json',
-            data: gio_data,
+            data: JSON.stringify(gio_data),
             headers: {
                 "X-CSRFToken": getCookie("csrftoken")
             },
@@ -302,9 +313,10 @@
             beforeSend: block_main_container,
             success: function (data) {
                 const res = data['res'];
+                window.location.reload()
             },
-            error: function () {
-
+            error: function (e) {
+                alert(JSON.stringify(e.responseJSON))
             },
             complete: release_main_container
         }); // end ajax

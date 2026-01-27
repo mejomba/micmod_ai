@@ -70,3 +70,12 @@
     </div>
 </div>
 {% endfor %}
+
+{% if errors %}
+<div class="text-danger bg-light-danger p-5 rounded">
+    <span>خطا: </span>
+    <span>{{ errors }}</span>
+    <br>
+    <a href="{% url 'order:order.payment.update' payment.pk %}">بارگزاری مجدد</a>
+</div>
+{% endif %}

@@ -26,8 +26,8 @@ class Reminder(BaseModel):
     repeat_interval_value = models.PositiveIntegerField(verbose_name="مقدار", null=True, blank=True)
     repeat_interval_unit = models.CharField(max_length=10, choices=TIME_UNIT_CHOICES, verbose_name="نوع زمان", null=True, blank=True)
     user = models.ManyToManyField(User, verbose_name="user")
-    start_date = models.DateField(null=True, blank=True)
-    expiration_date = models.DateField(null=True, blank=True)
+    start_date = models.DateField()
+    expiration_date = models.DateField()
     reminder_type = models.CharField(max_length=10, choices=REMINDER_TYPE_CHOICES)
 
     def __str__(self):

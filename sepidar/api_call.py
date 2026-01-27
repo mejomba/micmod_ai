@@ -4,9 +4,8 @@ import jdatetime
 import requests
 from django.conf import settings
 from django.utils import timezone
-from core.exceptions import StockRefNotFoundError
-from tools import utils
 from .data import SepidarDataFactory
+from .models import Dl
 from .responses import SepidarResponseManager
 
 
@@ -41,15 +40,22 @@ class SepidarApiCall:
             'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
             'receipt_item': f'{protocol}://{host}:{port}/api2/inventoryreceiptitem/',
             'receipt': f'{protocol}://{host}:{port}/api2/inventoryreceipt/',
-            'invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-invoice/',
-            'voucher': f'{protocol}://{host}:{port}/api2/sepidar_api-voucher/',
+            # 'invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-invoice/',  # فاکتور فروش
+            'invoice': f'{protocol}://{host}:{port}/api2/functions/invoice/',  # فاکتور فروش
+            'voucher': f'{protocol}://{host}:{port}/api2/sepidar_api-voucher/',  # سند مالی
             'extra_data': f'{protocol}://{host}:{port}/api2/sepidar_api-extradata/',
-            'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
-            'inventory_purchase_invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorypurchaseinvoice/',
+            'inventory_delivery': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',  # خروج از انبار
+            'inventory_purchase_invoice': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorypurchaseinvoice/',  # فاکتور خرید
+            'gio': f'{protocol}://{host}:{port}/api2/functions/gio/',  # عملیات سپیدار در ازای gio
+            'bazar_buy_factor': f'{protocol}://{host}:{port}/api2/functions/bazar_buy_factor/',  # فاکتور خرید بازار
             'party': f'{protocol}://{host}:{port}/api2/sepidar_api-party/',
             'bazar_supplier': f'{protocol}://{host}:{port}/api2/sepidar_api-party?isvendor=1',
-            'wh_to_wh': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',
-            'debit_credit_note': f'{protocol}://{host}:{port}/api2/sepidar_api-debitcreditnote/',
+            'packing': f'{protocol}://{host}:{port}/api2/functions/packing/',  #  خروج از انبار (انتقال بین انبار)
+            'wh_receipt_from_bazar': f'{protocol}://{host}:{port}/api2/functions/wh_receipt_from_bazar/',  #  رسید انبار از فاکتور خرید بازار
+            'debit_credit': f'{protocol}://{host}:{port}/api2/functions/debit_credit/',    # اعلامیه بدهکار بستانکار
+            # 'wh_to_wh': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',  #  خروج از انبار (انتقال بین انبار)
+            'debit_credit_note': f'{protocol}://{host}:{port}/api2/sepidar_api-debitcreditnote/',  # اعلامیه بدهکار بستانکار
+            'inventory_receipt': f'{protocol}://{host}:{port}/api2/sepidar_api-inventoryreceipt/',  # رسید انبار
         },
     }
 
@@ -333,7 +339,8 @@ class SepidarApiCall:
         else:
             invoice_data = cls.data.get_invoice_data(obj, request, invoice_item_data=None)
 
-            res = requests.post(endpoint, json=invoice_data, headers=cls.headers)
+            d = {'data': invoice_data}
+            res = requests.post(endpoint, json=d, headers=cls.headers)
             if res.ok:
                 data = res.json()
                 out = {
@@ -348,7 +355,7 @@ class SepidarApiCall:
                 }
                 return out
             else:
-                return None
+                return res.json()
 
     @classmethod
     def buy_factor_to_sepidar(cls, obj, request=None, update=False):
@@ -389,188 +396,262 @@ class SepidarApiCall:
                 }
 
     @classmethod
-    def debtor_credit_note_to_sepidar(cls, objs: List["OrderPaymentItem"], request, response_function=None):
-        final_response = [False, dict()]
-        not_allow_key = ['meta_datas', 'blank_objects', 'fk_strs', '__str__', '__len__', 'navigation_instances', 'navigation_instances_by_user', 'past_post_res']
+    def bazar_buy_factor_to_sepidar(cls, obj, request=None, update=False):
         cls.setup()
-        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('debit_credit_note')
-        payment = objs[0].payment
-        transfer_rate = payment.exchange_rate
-        destination_currency = objs[0].order.currency
-        source_currency = payment.currency
-        orders_total_amount_in_payment = sum([x.total_amount for x in objs])
-        destination_vendors = [x.order.final_supplier for x in objs]
-        destination_vendors_str = ','.join([x.title for x in destination_vendors])
-        karmozd_rate = round(payment.total_amount / (orders_total_amount_in_payment + (payment.karmozd or 0)), 6)
-        # order = obj.order
-        # rate = payment.vendor_party.rate
-
-        """ارسال دستور پرداخت به سپیدار که معادل با اعلامیه بدهکار بستانکار میباشد"""
-        if source_currency != destination_currency:
-            'دوتا سند'
-            transfer_rate = 110299
-            'سند انتقال پول'
-            karmozd_amount = round(payment.karmozd * karmozd_rate, 2)
-            data = {
-                'version': 1,
-                "fiscalyearref": cls.const.get('fiscalyearref'),
-
-                "date": timezone.now().isoformat(),
-                "creationdate": timezone.now().isoformat(),
-                "lastmodificationdate": timezone.now().isoformat(),
-                "creator": request.user.sepidar_code,
-                "lastmodifier": request.user.sepidar_code,
-                "currencyref": payment.currency.sepidar_id,
-
-                "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
-                "sumamount": payment.total_amount + (payment.karmozd or 0),  # مبلغ کل ردیف ها
-                "sumamountinbasecurrency": round((payment.total_amount + (payment.karmozd or 0)) * transfer_rate, 4), # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
-
-                # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
-
-                'debitcreditnote_items': [
-                    {
-                        'version': 1,
-                        "rowid": 1,
-                        "debitslref": cls.const.get('pardakhtani_vaset_arzi'),
-                        "creditslref": cls.const.get('hesab_pardakhtani'),
-                        "debitdlref": payment.vendor_party.dlref,
-                        "creditdlref": payment.vendor_party.dlref,
-                        "debittype": 1,
-                        "credittype": 1,
-                        "amount": payment.total_amount,
-                        "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
-                        "amountinbasecurrency": round(payment.total_amount * transfer_rate, 4),  # Todo اینون بریم توی سپیدار حساب کنیم
-                        "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                        "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                    },
-                    {
-                        'version': 1,
-                        "rowid": 2,
-                        "debitslref": cls.const.get('karmozd_sarafi'),
-                        "creditslref": cls.const.get('hesab_pardakhtani'),
-                        "debitdlref": None,
-                        "creditdlref": payment.vendor_party.dlref,
-                        "debittype": 3,
-                        "credittype": 1,
-                        "amount": karmozd_amount,
-                        "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
-                        "amountinbasecurrency": round(karmozd_amount * transfer_rate, 4),
-                        "description": f"مبلغ {payment.karmozd * karmozd_rate}  معادل {payment.karmozd} {payment.karmozd_currency}"
-                                       f" بابت انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) "
-                                       f"از حساب {payment.vendor_party.title} به {destination_vendors_str}",
-                        "description_en": f"مبلغ {payment.karmozd * karmozd_rate}  معادل {payment.karmozd} {payment.karmozd_currency}"
-                                       f" بابت انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) "
-                                          f"از حساب {payment.vendor_party.title} به {destination_vendors_str}",
-                    },
-                ]
-            }
-
-            req1_res = requests.post(endpoint, json=data, headers=cls.headers)
-            if req1_res.ok:
-                o = cls.response_manager.clean_dict(req1_res.json())
-                final_response[1]['res1'] = o
-            else:
-                """جلوگیری از درخواست دوم در صورت خطا خوردن درخواست اول"""
-                return final_response
-
-            'سند انتقال به تامین کننده نهایی'
-
-            rate_to_final_supplier = round((payment.total_amount * transfer_rate) / orders_total_amount_in_payment, 6)  # ارزش ریالی سند اول تقسیم بر ارزش ارزی پرداختی به تامین کننده نهایی
-
-            data = {
-                "version": 1,
-                "fiscalyearref": cls.const.get('fiscalyearref'),
-
-                "date": timezone.now().isoformat(),
-                "creationdate": timezone.now().isoformat(),
-                "lastmodificationdate": timezone.now().isoformat(),
-                "creator": request.user.sepidar_code,
-                "lastmodifier": request.user.sepidar_code,
-                "currencyref": destination_currency.sepidar_id,
-
-                "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
-                "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
-                "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4), # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
-
-                # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
-
-                'debitcreditnote_items': [
-                    {
-                        "rowid": idx,
-                        "debitslref": cls.const.get('hesab_pardakhtani'),
-                        "creditslref": cls.const.get('pardakhtani_vaset_arzi'),
-                        "debitdlref": payment_item.order.final_supplier.dlref or 111,
-                        "creditdlref": payment.vendor_party.dlref,
-                        "debittype": 1,
-                        "credittype": 1,
-                        "amount": payment_item.total_amount,
-                        "rate": rate_to_final_supplier, # Todo اینون بریم توی سپیدار حساب کنیم
-                        "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),  # Todo اینون بریم توی سپیدار حساب کنیم
-                        "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                        "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                        "version": 1,
-                        # "debitcreditnoteref": 18877,
-                    } for idx, payment_item in enumerate(objs, start=1)
-                ]
-            }
-
-            req2_res = requests.post(endpoint, json=data, headers=cls.headers)
-            if req2_res.ok:
-                o = cls.response_manager.clean_dict(req2_res.json())
-                final_response[1]['res2'] = o
-                final_response[0] = True
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_buy_factor')
+        if update:
+            data = {}
         else:
-            'یدونه سند'
-            rate_to_final_supplier = round((payment.total_amount * transfer_rate) / orders_total_amount_in_payment,
-                                           6)  # ارزش ریالی سند اول تقسیم بر ارزش ارزی پرداختی به تامین کننده نهایی
+            inventory_purchase_invoice_data = cls.data.get_inventory_purchase_invoice_data(obj, request=request)
 
-            data = {
-                "version": 1,
-                "fiscalyearref": cls.const.get('fiscalyearref'),
+            res = requests.post(endpoint, json=inventory_purchase_invoice_data, headers=cls.headers)
+            return res
 
-                "date": timezone.now().isoformat(),
-                "creationdate": timezone.now().isoformat(),
-                "lastmodificationdate": timezone.now().isoformat(),
-                "creator": request.user.sepidar_code,
-                "lastmodifier": request.user.sepidar_code,
-                "currencyref": destination_currency.sepidar_id,
+    @classmethod
+    def trade_buy_factor_to_sepidar(cls, obj, request=None, update=False, buy_factor_data=None):
+        """ send GIO to sepidar
+            1: `buy factor`
+            2: `inventory_receipt_before_central_wh`
+            3: `voucher`
+        """
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('inventory_purchase_invoice')
+        # endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('gio')
 
-                "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
-                "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
-                "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4),
-                # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
+        if update:
+            data = {}
+        else:
+            buy_factor_list = list()
+            out = dict()
+            for supplier_currency, gio_items in obj.items():
+                """ generate inventory_purchase_invoice data """
+                inventory_purchase_invoice_data = cls.data.get_trade_inventory_purchase_invoice_data(supplier_currency, gio_items, request=request)
+                res = requests.post(endpoint, json=inventory_purchase_invoice_data, headers=cls.headers)
+                buy_factor_list.append(inventory_purchase_invoice_data)
 
-                # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
+            """ generate wh_to_wh_data """
+            # wh_to_wh_data = cls.data.get_receipt_before_central_wh_data(buy_factor_data, request)
 
-                'debitcreditnote_items': [
-                    {
-                        "rowid": idx,
-                        "debitslref": cls.const.get('hesab_pardakhtani'),
-                        "creditslref": cls.const.get('pardakhtani_vaset_arzi'),
-                        "debitdlref": payment_item.order.final_supplier.dlref or 111,
-                        "creditdlref": payment.vendor_party.dlref,
-                        "debittype": 1,
-                        "credittype": 1,
-                        "amount": payment_item.total_amount,
-                        "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
-                        "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),
-                        # Todo اینون بریم توی سپیدار حساب کنیم
-                        "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                        "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
-                        "version": 1,
-                        # "debitcreditnoteref": 18877,
-                    } for idx, payment_item in enumerate(objs, start=1)
-                ]
-            }
+            """ make request for create
+             1: `buy factor`
+             2: `inventory_receipt_before_central_wh`
+             3: `voucher` 
+            """
+            # d = {'buy_factor_list': buy_factor_list, "wh_to_wh_data": wh_to_wh_data}
+            d = {'buy_factor_list': buy_factor_list}
+            res = requests.post(endpoint, json=d, headers=cls.headers)
+            if res.ok:
+                out = cls.response_manager.clean_dict(res.json())
+                return out
 
-            req1_res = requests.post(endpoint, json=data, headers=cls.headers)
-            if req1_res.ok:
-                o = cls.response_manager.clean_dict(req1_res.json())
-                final_response[1]['res1'] = o
-                final_response[0] = True
+            elif res.status_code == 500:
+                return {
+                    "errors": "خطا در سرور سپیدار",
+                }
+            elif res.status_code == 400:
+                return {'errors': res.json()}
+            else:
+                return {
+                    "errors": "خطای کنترل نشده",
+                }
 
-        return final_response
+    @classmethod
+    def payment_to_sepidar(cls, objs: List["OrderPaymentItem"], request, response_function=None):
+
+        try:
+            transfer_rate = ...
+            final_response = [False, dict()]
+            not_allow_key = ['meta_datas', 'blank_objects', 'fk_strs', '__str__', '__len__', 'navigation_instances',
+                             'navigation_instances_by_user', 'past_post_res']
+            cls.setup()
+            endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('debit_credit')
+            payment = objs[0].payment
+            transfer_rate = payment.exchange_rate
+            destination_currency = objs[0].order.currency
+            source_currency = payment.currency
+            orders_total_amount_in_payment = sum([x.total_amount for x in objs])
+            destination_vendors = [x.order.final_supplier for x in objs]
+            destination_vendors_str = ','.join([x.title for x in destination_vendors])
+            karmozd_rate = round(payment.total_amount / (orders_total_amount_in_payment + (payment.karmozd or 0)), 2)
+
+            transfer_rate = Dl.account_currency_rate(payment.vendor_party.dlref, cls.const.get('fiscalyearref'),
+                                                     cls.const.get('hesab_pardakhtani'), source_currency.sepidar_id)
+            transfer_rate = round(transfer_rate, 0)
+
+            """ارسال دستور پرداخت به سپیدار که معادل با اعلامیه بدهکار بستانکار میباشد"""
+            if source_currency != destination_currency:
+                'دوتا سند'
+                'سند انتقال پول'
+                karmozd_amount = round(payment.karmozd * karmozd_rate, 2)
+                data1 = {
+                    'version': 1,
+                    "fiscalyearref": cls.const.get('fiscalyearref'),
+
+                    "date": timezone.now().isoformat(),
+                    "creationdate": timezone.now().isoformat(),
+                    "lastmodificationdate": timezone.now().isoformat(),
+                    "creator": request.user.sepidar_code,
+                    "lastmodifier": request.user.sepidar_code,
+                    "currencyref": payment.currency.sepidar_id,
+
+                    "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
+                    "sumamount": payment.total_amount + (payment.karmozd or 0),  # مبلغ کل ردیف ها
+                    "sumamountinbasecurrency": round((payment.total_amount + (payment.karmozd or 0)) * transfer_rate, 4),
+                    # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
+
+                    # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
+
+                    'debitcreditnote_items': [
+                        {
+                            'version': 1,
+                            "rowid": 1,
+                            "debitslref": settings.SEPIDAR_CONST_DATA.get('pardakhtani_vaset_arzi'),
+                            "creditslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                            "debitdlref": payment.vendor_party.dlref,
+                            "creditdlref": payment.vendor_party.dlref,
+                            "debittype": 1,
+                            "credittype": 1,
+                            "amount": payment.total_amount,
+                            "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
+                            "amountinbasecurrency": round(payment.total_amount * transfer_rate, 4),
+                            # Todo اینون بریم توی سپیدار حساب کنیم
+                            "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                            "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                        },
+                    ]
+                }
+
+                if karmozd_amount:
+                    data1['debitcreditnote_items'].append(
+                        {
+                            'version': 1,
+                            "rowid": 2,
+                            "debitslref": cls.const.get('karmozd_sarafi'),
+                            "creditslref": cls.const.get('hesab_pardakhtani'),
+                            "debitdlref": None,
+                            "creditdlref": payment.vendor_party.dlref,
+                            "debittype": 3,
+                            "credittype": 1,
+                            "amount": karmozd_amount,
+                            "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
+                            "amountinbasecurrency": round(karmozd_amount * transfer_rate, 4),
+                            "description": f"مبلغ {payment.karmozd * karmozd_rate}  معادل {payment.karmozd} {payment.karmozd_currency}"
+                                           f" بابت انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) "
+                                           f"از حساب {payment.vendor_party.title} به {destination_vendors_str}",
+                            "description_en": f"مبلغ {payment.karmozd * karmozd_rate}  معادل {payment.karmozd} {payment.karmozd_currency}"
+                                              f" بابت انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) "
+                                              f"از حساب {payment.vendor_party.title} به {destination_vendors_str}",
+                        }
+                    )
+
+                rate_to_final_supplier = round((payment.total_amount * transfer_rate) / orders_total_amount_in_payment,
+                                               6)  # ارزش ریالی سند اول تقسیم بر ارزش ارزی پرداختی به تامین کننده نهایی
+                data2 = {
+                    "version": 1,
+                    "fiscalyearref": cls.const.get('fiscalyearref'),
+
+                    "date": timezone.now().isoformat(),
+                    "creationdate": timezone.now().isoformat(),
+                    "lastmodificationdate": timezone.now().isoformat(),
+                    "creator": request.user.sepidar_code,
+                    "lastmodifier": request.user.sepidar_code,
+                    "currencyref": destination_currency.sepidar_id,
+
+                    "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
+                    "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
+                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4),
+                    # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
+
+                    # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
+
+                    'debitcreditnote_items': [
+                        {
+                            "rowid": idx,
+                            "debitslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                            "creditslref": settings.SEPIDAR_CONST_DATA.get('pardakhtani_vaset_arzi'),
+                            "debitdlref": payment_item.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(
+                                'no_name_vendor'),
+                            "creditdlref": payment.vendor_party.dlref,
+                            "debittype": 1,
+                            "credittype": 1,
+                            "amount": payment_item.total_amount,
+                            "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
+                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),
+                            # Todo اینون بریم توی سپیدار حساب کنیم
+                            "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                            "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                            "version": 1,
+                            # "debitcreditnoteref": 18877,
+                        } for idx, payment_item in enumerate(objs, start=1)
+                    ]
+                }
+
+                d = {'data_list': [data1, data2]}
+
+                res = requests.post(endpoint, json=d, headers=cls.headers)
+                if res.ok:
+                    o = cls.response_manager.clean_dict(res.json())
+                    final_response = o
+                    return [True, final_response]
+                else:
+                    return [False, {'errors': res.json()}]
+
+            else:
+                'یدونه سند'
+                rate_to_final_supplier = round((payment.total_amount * transfer_rate) / orders_total_amount_in_payment,
+                                               6)  # ارزش ریالی سند اول تقسیم بر ارزش ارزی پرداختی به تامین کننده نهایی
+
+                data = {
+                    "version": 1,
+                    "fiscalyearref": cls.const.get('fiscalyearref'),
+
+                    "date": timezone.now().isoformat(),
+                    "creationdate": timezone.now().isoformat(),
+                    "lastmodificationdate": timezone.now().isoformat(),
+                    "creator": request.user.sepidar_code,
+                    "lastmodifier": request.user.sepidar_code,
+                    "currencyref": destination_currency.sepidar_id,
+
+                    "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
+                    "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
+                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4),
+                    # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
+
+                    # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
+
+                    'debitcreditnote_items': [
+                        {
+                            "rowid": idx,
+                            "debitslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                            "creditslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                            "debitdlref": payment_item.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(
+                                'no_name_vendor'),
+                            "creditdlref": payment.vendor_party.dlref,
+                            "debittype": 1,
+                            "credittype": 1,
+                            "amount": payment_item.total_amount,
+                            "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
+                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),
+                            # Todo اینون بریم توی سپیدار حساب کنیم
+                            "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                            "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
+                            "version": 1,
+                            # "debitcreditnoteref": 18877,
+                        } for idx, payment_item in enumerate(objs, start=1)
+                    ]
+                }
+                d = {'data_list': [data]}
+
+                req1_res = requests.post(endpoint, json=d, headers=cls.headers)
+                if req1_res.ok:
+                    o = cls.response_manager.clean_dict(req1_res.json())
+                    final_response[1]['res1'] = o
+                    final_response[0] = True
+                    return final_response
+
+            return [False, {'errors': 'no valid response'}]
+        except Exception as e:
+            return [False, {'errors': str(e)}]
 
     @classmethod
     def get_bazar_supplier(cls, request):
@@ -587,7 +668,7 @@ class SepidarApiCall:
     def get_all_supplier(cls, request, response_function=None) -> List[SupplierType]:
         cls.setup()
         results = []
-        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier') + "&page_size=-1"
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier') + "&page_size=-1&dlref__isactive=1"
         res = requests.get(endpoint, headers=cls.headers)
         if res.ok:
             res = getattr(cls.response_manager, (response_function or 'supplier_default_response'))(res)
@@ -599,7 +680,7 @@ class SepidarApiCall:
     def get_supplier_by_partyid(cls, partyid, request, response_function=None) -> List[SupplierType]:
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
-        endpoint += f'&partyid={partyid}'
+        endpoint += f'&partyid={partyid}&dlref__isactive=1'
         res = requests.get(endpoint, headers=cls.headers)
         if res.ok:
             res = getattr(cls.response_manager, (response_function or 'supplier_default_response'))(res)
@@ -763,8 +844,86 @@ class SepidarApiCall:
         return list(dict())
 
     @classmethod
-    def wh_to_wh(cls, data, request, response_function=None):
+    def packing(cls, packing, request, response_function=None):
         cls.setup()
-        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('wh_to_wh')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('packing')
 
-        res = requests.post(endpoint, json=data, headers=cls.headers)
+        data = cls.data.get_wh_to_wh_data(packing)
+        d = {'data': data}
+        res = requests.post(endpoint, json=d, headers=cls.headers)
+        if res.ok:
+            clean_res = cls.response_manager.clean_dict(res.json())
+            return clean_res
+        else:
+            return {'errors': res}
+
+    @classmethod
+    def gio_to_sepidar(cls, obj, request=None, update=False, buy_factor_data=None):
+        """ send GIO to sepidar
+            1: `buy factor`
+            2: `inventory_receipt_before_central_wh`
+            3: `voucher`
+        """
+        cls.setup()
+        # endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('inventory_purchase_invoice')
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('gio')
+
+        if update:
+            data = {}
+        else:
+            buy_factor_list = list()
+            out = dict()
+            for supplier_currency, gio_items in obj.items():
+                """ generate inventory_purchase_invoice data """
+                inventory_purchase_invoice_data = cls.data.get_trade_inventory_purchase_invoice_data(supplier_currency, gio_items, request=request)
+                buy_factor_list.append(inventory_purchase_invoice_data)
+
+            """ make request for create
+             1: `buy factor`
+             2: `inventory_receipt_before_central_wh`
+             3: `voucher` 
+            """
+            d = {'buy_factor_list': buy_factor_list}
+            res = requests.post(endpoint, json=d, headers=cls.headers)
+            if res.ok:
+                out = cls.response_manager.clean_dict(res.json())
+                return out
+
+            elif res.status_code == 500:
+                return {
+                    "errors": "خطا در سرور سپیدار",
+                }
+            elif res.status_code == 400:
+                return {'errors': res.json()}
+            else:
+                return {
+                    "errors": "خطای کنترل نشده",
+                }
+
+    @classmethod
+    def wh_receipt_from_bazar(cls, obj, request=None, update=False):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('wh_receipt_from_bazar')
+
+        d = {'data': obj}
+        res = requests.post(endpoint, json=d, headers=cls.headers)
+        if res.ok:
+            clean_res = cls.response_manager.clean_dict(res.json())
+            return clean_res
+        else:
+            return {'errors': res}
+
+    @classmethod
+    def get(cls, sepidar_model_name, object_id=None, param=None):
+        cls.setup()
+        if object_id:
+            endpoint = f'{cls.protocol}://{cls.host}:{cls.port}/api2/sepidar_api-{sepidar_model_name}/{object_id}'
+        else:
+            endpoint = f'{cls.protocol}://{cls.host}:{cls.port}/api2/sepidar_api-{sepidar_model_name}/'
+
+        if param:
+            endpoint += "?" + param
+
+        res = requests.get(endpoint, headers=cls.headers)
+
+        return res

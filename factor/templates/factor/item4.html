@@ -4,6 +4,7 @@
 {% load humanize %}
 {% load more_tags %}
 {% load accounts_tag %}
+{% load factor_tags %}
 
 <div class="card item p-0 my-2 {% if not forloop.last %} sortable-item bg-danger {% endif %}" dir="rtl">
 {% if form_s.errors %}
@@ -58,16 +59,35 @@
                 <div class="d-flex">
                     <div class="w-50 mt-3">{% render_field_by_order form_s form_s.quantity label='on-border' %}</div>
                     <div class="w-50 replace-digits">
-                        <label class="card-title-desc text-center bold mt-1 ms-1"
+                        <label class="card-title-desc text-center bold ms-1"
                                data-key="stock_amount">موجودی:</label>
                         {% render_field_by_order nested nested.stock_amount nested.stock_amount_res no_input=True %}
                     </div>
                     <div>{% render_field_by_order nested nested.description label='on-border' %}</div>
                 </div>
-                <div class="d-flex mt-3">
-                    <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>
-                    <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>
+                <div class="d-flex gap-2 mb-1 d-non">
+                    <span> تعداد در بسته: </span>
+                    <span id="moq">{{ form_s.instance.goods_code_fk.batch_count|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_box">{{ form_s.instance.goods_code_fk.count_in_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>/
+                    <span id="moq_main_box">{{ form_s.instance.goods_code_fk.count_in_main_box|floatformat:"-2g"|default_if_falsy:'-' }}</span>
                 </div>
+                <div class="d-flex gap-2">
+                    <span>اولویت: </span>
+                    <span>{{ form_s.instance.goods_code_fk.items_raked.first }}</span>
+                </div>
+                <div class="d-flex mt-4">
+                    <div class="w-35">
+{#                        <input value="{{ form_s.instance.customer_goods_code.sku }}" placeholder="کد کالا مشتری" type="text" name="quotation-{{ forloop.counter0 }}-customer_goods_code" maxlength="100" class="form-control narrow-input font-size-12" id="id_quotation-{{ forloop.counter0 }}-customer_goods_code">#}
+                        {% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}
+                    </div>
+                    <div class="w-65">
+                        {% render_field_by_order form_s form_s.customer_goods_name label='on-border' margin_b=1 %}
+                    </div>
+                </div>
+{#                <div class="d-flex mt-3">#}
+{#                    <div class="w-25">{% render_field_by_order form_s form_s.customer_goods_code label='on-border' %}</div>#}
+{#                    <div class="w-75">{% render_field_by_order form_s form_s.customer_goods_name label='on-border' %}</div>#}
+{#                </div>#}
                 <div>
                 </div>
                 {% if form_s.instance.need_local_price_inquiry %}
@@ -218,38 +238,12 @@
 
 
                     <div id="id_display_price_container"></div>
-{#                    <div class="card-text bold">استعلام قیمت </div>#}
-{#                    <div class="d-flex ">#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center">تاریخ</div>#}
-{#                            <div class="text-center card-title-desc mt-2 pt-1" name="price_update_date">-</div>#}
-{#                            <div name="market_expire_date" style="width: 450px;"></div>#}
-{#                            <div name="trade_expire_date" style="width: 250px;"></div>#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center">بازار</div>#}
-{#                                {% render_field_by_order nested nested.goods_price_market no_input=True %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_exp_title">2 تا 3 هفته</div>#}
-{#                                {% render_field_by_order nested nested.express_transportation_cost_1 nested.express_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.express_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_air_title">3 تا 5 هفته</div>#}
-{#                                {% render_field_by_order nested nested.air_transportation_cost_1 nested.air_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.air_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
-{#                        <div class="w-20 d-flex flex-column gap-2">#}
-{#                            <div class="card-title-desc text-center" id="id_sea_title">12 تا 14 هفته</div>#}
-{#                                {% render_field_by_order nested nested.sea_transportation_cost_1 nested.sea_transportation_cost_2 no_input=True %}#}
-{#                                {% render_field_by_order nested nested.sea_transportation_cost_3 no_input=True css='d-none' %}#}
-{#                        </div>#}
+                    <div class="diff_price_alert badge badge-danger rounded " ></div>
                         <span class="d-none">{{ form_s.price_json }}</span>
 {#                    </div>#}
                 </div>
                 <div class="h-30 all_pricess mt-2">
-                    <div class="d-flex">
+                    <div class="d-flex flex-column">
                         <div class="p-0 w-100">
                             <div class="text-center bold bg-light-info">قیمت های موجود
                                 <span id="all_price_count">
@@ -258,6 +252,16 @@
                             </div>
                             <div class="d-none" id="selected_price_code_data" data-selected_price_code_inquiry_type="{{ form_s.instance.selected_price_code.inquiry_type }}"></div>
                             <div class="select2 selected_price_code" name="selected_price_code"></div>
+                        </div>
+                        <div class="d-flex">
+                            <span>
+                                <label for="quotation-{{ forloop.counter0 }}-reserve_count">محل تامین</label>
+                                {% supply_locations form_s.instance.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
+                            </span>
+                            <span>
+                                <label for="quotation-{{ forloop.counter0 }}-reserve_count">تعداد رزرو</label>
+                                <input type="number" step="1" class="narrow-input" name="quotation-{{ forloop.counter0 }}-reserve_count" id="quotation-{{ forloop.counter0 }}-reserve_count">
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -314,6 +318,7 @@
                             <div class="mt-4 d-flex flex-column bg-light-info bold">
                                 <span>مبلغ نهایی</span>
                                 <span name="-total_price">-</span>
+                                <input type="number" step="any" name="quotation-{{ forloop.counter0 }}-final_amount" value="{{ form_s.instance.final_amount|default_if_falsy:0 }}" class="visually-hidden">
                             </div>
                         </div>
                     </div>

@@ -348,7 +348,9 @@
                             <div class="mt-4 d-flex flex-column bg-light-info bold">
                                 <span>مبلغ نهایی</span>
                                 <span name="-total_price">-</span>
-                                <input type="number" name="quotation-{{ forloop.counter0 }}-final_amount" value="{{ form_s.instance.final_amount }}" class="d-none">
+{#                                <span class="d-none">#}
+                                    <input type="number" step="any" name="quotation-{{ forloop.counter0 }}-final_amount" value="{{ form_s.instance.final_amount|default_if_falsy:0 }}" class="visually-hidden">
+{#                                </span>#}
                             </div>
                         </div>
                     </div>

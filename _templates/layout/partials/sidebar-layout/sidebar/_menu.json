@@ -57,8 +57,8 @@
         },
         {
           "permission": {
-            "permissions": [
-              "micmod_base.view_quotation"
+            "groups": [
+              "sales_user"
             ]
           },
           "title": "sales_history",
@@ -582,7 +582,7 @@
       "section": "False",
       "permission": {
         "groups": [
-          "base_user"
+          "sales_user"
         ]
       },
       "menus": [

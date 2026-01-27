@@ -28,6 +28,45 @@ class Dl(models.Model):
     Title_En = models.CharField(max_length=250)
 
     @staticmethod
+    def account_currency_rate(dl_id, fiscalyearref, slref, currencyref):
+        currencyref = int(currencyref)
+        qry = f"""
+            select
+             
+            [DLRef] DLId
+            , SUM(vi.[CurrencyDebit]) CurrencyDebit
+            , SUM(vi.[CurrencyCredit]) CurrencyCredit
+            , SUM(vi.[Debit]) Debit
+            , SUM(vi.[Credit]) Credit
+            from [Micromodern1].[ACC].[VoucherItem] vi
+            left join [Micromodern1].[ACC].[Voucher] v
+            on vi.VoucherRef = v.VoucherId
+            where vi.DLRef={dl_id} and AccountSLRef={slref} and v.FiscalYearRef={fiscalyearref} and vi.Description NOT LIKE '%%تسعیر ارز%%' and vi.CurrencyRate <> 1 group by dlref
+        """
+
+        try:
+            res = Dl.objects.using('sepidar').raw(qry)
+
+            res = res[0]
+            credit = res.Credit
+            debit = res.Debit
+            currency_credit = res.CurrencyCredit
+            currency_debit = res.CurrencyDebit
+            mande_riali = credit - debit
+            mande_arzi = currency_credit - currency_debit
+
+            # mande_riali = debit
+            # mande_arzi = currency_debit
+            res = round(mande_riali / mande_arzi, 6)
+            if res <= 0:
+                raise ValueError(f'مانده حساب ({res}) است')
+            return float(res)
+        except IndexError as e:
+            raise ValueError(f'اطلاعات مالی تامین کننده {dl_id} یافت نشد')
+        except Exception as e:
+            raise ValueError(str(e))
+
+    @staticmethod
     def get_list(text):
         from extra_data.models import Customer
         if text.isdigit():

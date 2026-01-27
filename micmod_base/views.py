@@ -25,6 +25,7 @@ from core.permissions import HasShopPermission
 from dw.models import DimCustomer
 from extra_data.models import Item, PriceSettings, Customer
 from factor.forms import FactorItemModelForm, FactorModelForm
+from factor.models import FactorItem
 from order.models import Order
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
@@ -104,7 +105,7 @@ def generate_direct_factor(request, quotation: Quotation):
         factor.save()
 
         count = 0
-        for qi in quotation.quotation.all():
+        for idx, qi in enumerate(quotation.quotation.all()):
             factor_item_data = {
                 'factor': factor,
                 'qi': qi,
@@ -116,11 +117,12 @@ def generate_direct_factor(request, quotation: Quotation):
                 # 'supply_locations': order,
                 "creator_user": request.user,
                 "editor_user": request.user,
-                # 'supply_location': '',
-                'index': count
+                'supply_location': request.POST.get(f'quotation-{idx}-{idx}-supply_location'),
+                'index': count,
+                'reserve_count': request.POST.get(f'quotation-{idx}-reserve_count')
             }
             count += 1
-            factor_item_form = FactorItemModelForm(data=factor_item_data)
+            factor_item_form = FactorItemModelForm(data=factor_item_data, instance=FactorItem(factor=factor, qi=qi,), internal_call=True)
             if factor_item_form.is_valid():
                 factor_item_form.instance.extra_data.request = request
                 factor_item = factor_item_form.save()

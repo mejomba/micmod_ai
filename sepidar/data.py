@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.utils import timezone
 
 from core.exceptions import StockRefNotFoundError
+from sepidar.models import Dl
 from tools import utils
 
 
@@ -36,7 +38,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         addition = obj.get('addition') or 0
         rate, price, tax, duty, discount, addition = map(float, (rate, price, tax, duty, discount, addition))
         net_price = price - discount + addition + tax
-        fisicalyearref = 46
+        fisicalyearref = settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
 
         data = {
             "version": 1,
@@ -152,11 +154,11 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         currency = obj.q.currency_ref
 
         if currency.title_en.lower() != 'rial':
-            slref = 580  # حساب دریافتنی ارزی
+            slref = settings.SEPIDAR_CONST_DATA['hesab_daryaftani_arzi'] #580  # حساب دریافتنی ارزی
         elif obj.is_official:
-            slref = 677  # حسابهای دریافتنی رسمی
+            slref = settings.SEPIDAR_CONST_DATA['hesab_daryaftani_rasmi']  # حسابهای دریافتنی رسمی
         else:
-            slref = 420  # حساب دریافتنی
+            slref = settings.SEPIDAR_CONST_DATA['hesab_daryaftani']  # حساب دریافتنی
 
         currency_amount = CurrencyAmount.objects.filter(currency=currency).order_by('id').last()
         try:
@@ -291,3 +293,240 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             invoice_item_data.append(d)
 
         return invoice_item_data
+
+    @classmethod
+    def get_trade_inventory_purchase_invoice_data(cls, supplier_currency, gio_items, request):
+        totalprice = tax = duty = addition = discount = 0
+        fiscalyearref = settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
+        creator = request.user.sepidar_code
+
+        rate = Dl.account_currency_rate(supplier_currency.split('___')[0],
+                                        settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
+                                        settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                                        supplier_currency.split('___')[1])
+        rate = round(rate, 0)
+        all_tax = 0
+        all_duty = 0
+        all_discount = 0
+        rate, all_tax, all_duty, all_discount = map(int, (rate, all_tax, all_duty, all_discount))
+
+        row_count = len(gio_items)
+        row_items = []
+        for idx, gio_item in enumerate(gio_items, start=1):
+            totalprice += gio_item.order.final_price
+            itemref = gio_item.order.item.sepidar_id_0
+            fee = gio_item.order.final_price or 0
+            quantity = gio_item.quantity or 0
+            fee, quantity = map(float, (fee, quantity))
+            discount = (gio_item.order.final_discount or 0) + (all_discount / row_count)
+            description = gio_item.description
+            addition = gio_item.order.final_addition or 0
+
+            if not (itemref or fee or quantity):
+                raise Exception("(itemref or fee or quantity) is None")
+
+            row_data = {
+                # "inventorypurchaseinvoiceitemid": "",
+                # "inventorypurchaseinvoiceref": "",
+                "version": 1,
+                "rownumber": int(idx),
+                "itemref": itemref,
+                "quantity": quantity,
+                "secondaryquantity": 0,  # همیشه 0
+                "remainingquantity": quantity,
+                "remainingsecondaryquantity": 0,  # همیشه 0
+                "currencyrate": rate,
+                "fee": fee,
+                "feeinbasecurrency": round(fee * rate, 4),
+                "price": round(fee * quantity, 4),  # کل ارزش ردیف
+                "priceinbasecurrency": round(fee * quantity * rate, 4),  # کل ارزش ردیف همیشه به ریال
+                "discount": discount,
+                "discountinbasecurrentcy": round(discount * rate, 4),
+                "addition": addition,
+                "additioninbasecurrency": round(addition * rate, 4),
+                "tax": round(all_tax / row_count, 4),
+                "taxinbasecurrency": round((all_tax / row_count) * rate, 4),
+                "duty": round(all_duty / row_count, 4),
+                "dutyinbasecurrency": round((all_duty / row_count) * rate, 4),
+                "transportprice": None,  # همیشه null
+                # "transportpriceinbasecurrency": None,  # همیشه null  # Computed
+                "transporttax": None,  # همیشه null
+                # "transporttaxinbasecurrency": None,  # همیشه null  # Computed
+                "transportduty": None,  # همیشه null
+                # "transportdutyinbasecurrency": None,  # همیشه null   # Computed
+                "transportdescription": None,  # همیشه null
+                "netpriceinbasecurrency": round((fee * quantity) - discount, 4),
+                "description": description,
+                "description_en": None,
+                # "version": "",
+                "costserviceaccountslref": None,  # بجز یک رکورد همه null بودن TODO
+                "insuranceamount": None,  # یک ردیف 0 بقیه همه نال
+                "insuranceamountinbasecurrency": None,  # یک ردیف 0 بقیه همه نال
+                "withholdingtaxamount": None,  # یک ردیف 0 بقیه همه نال
+                "withholdingtaxamountinbasecurrency": None,  # یک ردیف 0 بقیه همه نال
+                "tracingref": None,  # همه نال
+                # "netprice": "",  # Computed
+            }
+            row_items.append(row_data)
+
+        totalnetprice = totalprice - discount + addition + tax
+
+        data = {
+                "version": 1,
+                "vendordlref": supplier_currency.split('___')[0],
+                "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
+                "date": timezone.now().date().isoformat(),
+                "currencyref": supplier_currency.split('___')[1],
+                "currencyrate": rate,  # Todo این چطوری حساب میشه؟
+                "totalprice": totalprice,
+                "totalpriceinbasecurrency": totalprice * rate,
+                "totaltax": tax,
+                "totalduty": duty,
+                "totaltransportprice": 0,  # همیشه صفر بود. در جلسه تصمیم بر این شد که هزینه حمل روی رسید انبار بزنن
+                "totalnetprice": totalnetprice,
+                "totalnetpriceinbasecurrency": totalnetprice * rate,
+                "totalwithholdingtaxamount": None,  # همیشه null بجز یک رکورد Todo
+                "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
+                "fiscalyearref": fiscalyearref,
+                "creator": creator,  # Todo
+                "creationdate": timezone.now().date().isoformat(),
+                "lastmodifier": creator,  # Todo
+                "lastmodificationdate": timezone.now().date().isoformat(),
+                "paymentheaderref": None,  # همیشه null بجز چهار رکورد Todo
+                "type": 1,  # همیشه 1 یجز همون یک رکورد Todo
+                "accountingvoucherref": None,  # همیشه null بجز همون یک رکورد Todo
+                "slaccountref": None,  # همیشه null بجز همون یک رکورد Todo
+                "costcenterref": None,  # همیشه null
+                "assetacquisitionpurchaseslref": None,  # همیشه null
+                "inventorypurchaseinvoice_item": row_items,
+            }
+
+        return data
+
+    @classmethod
+    def get_receipt_before_central_wh_data(cls, buy_factor_data, request):
+
+        data = {
+            "isreturn": 0,
+            "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id'),  # مقدار ثابت که به انبار قبل مرکزی اشاره دارد
+            "delivererdlref": buy_factor_data.get('vendordlref'),
+            "slaccountref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+            "paymentheaderref": None,
+            "creator": buy_factor_data.get('creator'),
+            "creationdate": timezone.now().isoformat(),
+            "lastmodifier": buy_factor_data.get('lastmodifier'),
+            "lastmodificationdate": timezone.now().isoformat(),
+            "version": 1,
+            "transportbrokerslaccountref": settings.SEPIDAR_CONST_DATA.get('transportation_vaset'),
+            "transporterdlref": None,  # buy_factor_data.get('vendordlref'),
+            "baseinventorydeliveryref": None,
+            "baseimportpurchaseinvoiceref": None,
+            "totalothercost": 0,
+            "date": timezone.now().isoformat(),
+            "purchasetype": 1,
+            "accountingvoucherref": None,
+            "totalnetprice": 1,
+            "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
+            "basepurchaseinvoiceref": buy_factor_data.get('inventorypurchaseinvoiceid'),
+            "totaltransportprice": 0,
+            "totalduty": 0,
+            "totaltax": 0,
+            "totalprice": 1,
+            "creatorform": 1,
+            "description": None,
+            "type": 1,
+            "inventoryreceipt_item": [
+                {
+                    # "inventoryreceiptref": 555,
+                    "isreturn": 0,
+                    "currencyref": None,
+                    "taxcurrencyvalue": None,
+                    "dutycurrencyvalue": None,
+                    "paritycheck": None,
+                    "productorderref": None,
+                    "inventorydeliveryitemref": None,
+                    "weighingref": None,
+                    "baseimportpurchaseinvoiceitemref": None,
+                    "allotmenedothercostinbasecurrency": None,
+                    "rownumber": ipi.get('rownumber'),
+                    "base": 1300,
+                    "itemref": ipi.get('itemref'),
+                    "tracingref": None,
+                    "quantity": ipi.get('quantity'),
+                    "remainingquantity": ipi.get('remainingquantity'),
+                    "secondaryquantity": ipi.get('secondaryquantity'),
+                    "currencyrate": ipi.get('currencyrate'),
+                    "currencyvalue": None,
+                    "fee": ipi.get('fee'),
+                    "price": ipi.get('price'),
+                    "tax": ipi.get('tax'),
+                    "duty": ipi.get('duty'),
+                    "transportprice": ipi.get('transportprice'),
+                    "transporttax": ipi.get('transporttax'),
+                    "transportduty": ipi.get('transportduty'),
+                    "transportdescription": ipi.get('transportdescription'),
+                    "description": ipi.get('description'),
+                    "version": ipi.get('version'),
+                    "description_en": ipi.get('description_en'),
+                    "basepurchaseinvoiceitemref": ipi.get('inventorypurchaseinvoiceitemid'),
+                } for idx, ipi in enumerate(buy_factor_data.get('inventorypurchaseinvoice_item'), start=1)
+            ]
+        }
+
+        return data
+
+    @classmethod
+    def get_wh_to_wh_data(cls, packing):
+        description_format = 'wh transfer (portal)'
+        description_en_format = 'tozihat'
+        wh_destination = 2  # packing.destination
+
+        inventory_delivery_item_data = [{
+            # "inventorydeliveryref": inventory_delivery_data,  # inventorydeliveryid
+            "isreturn": 0,  # دوحالت  0 و 1 داره که الان برای ما حواله خروج هست
+            "rownumber": idx,
+            "baseinvoiceitem": None,  # invoiceitemid
+            "baseinventorydeliveryitem": None,  # بر اساس داده های سپیدار همه نال بودن
+            "basereturnedinvoiceitem": None,  # ایده به این است که شماره ردیف فاکتور برگشت خورده
+            "itemref": pi.order.item.sepidar_id_0,
+            "tracingref": None,  # همه نال بودن
+            "quantity": pi.wh_receipt_quantity,
+            "secondaryquantity": None,  # همیشه نال یا 0
+            "remainingquantity": 0,  # همیشه نال یا 0
+            "remainingsecondaryquantity": None,  # همیشه نال یا صفر
+            "slaccountref": settings.SEPIDAR_CONST_DATA.get('wh_to_wh_vaset'),  # واسط انتقال بین انبار
+            "price": None,  # invi.price خود سپیدار اینو نمیزد اما توی ورژن دوم میزد
+            "description": None,
+            "description_En": None,
+            "version": 1,
+            "productorderref": None,
+            # احتمالا اگه سفارش محصول ثبت کنن این مقدار میگیره(وقتی ایدی ردیف فاکتور نال بشه یعنی به ردیف فاکتور وصل نباسه و به جاش به سفارش وصل باشه)
+            "paritycheck": None,  # همیشه نال بود
+            "quotationitemref": None,  # در سند بین انبار پیش فاکتور نداریم
+            "weighingref": None  # همیشه نال
+            , "itemrequestitemref": None  # همیشه نال
+            , "itemdescription": None  # همیشه نال
+        } for idx, pi in enumerate(packing.packing_item_rel.all())]
+
+        inventory_delivery_data = {
+            "isreturn": 0
+            , "type": 4  # 1=sale, 2=use, 3=other, 4=wh_transfer
+            , "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id')  # کد انبار قبل مرکزی
+            , "receiverdlref":  None  # اگر خروج بین انباری بود این فیلد نال میخوره
+            # , "number": "" # automation
+            , "date": timezone.now().date().isoformat()
+            , "totalprice": None  # بعدا بر اساس فی انبار بدست میاد
+            , "accountingvoucherref": None  # شماره سند حسابداری که بعد از ایجاد میاد آپدیت میکنه
+            , "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
+            , "destinationstockref": wh_destination  # اگه از نوع بین انباری type=4 باشه انبار مقصد میخوره برای ما null
+            , "creatorform": 1  # بر اساس داده های سپیدار همیشه 1 بود
+            , "creator": packing.editor_user.sepidar_code
+            , "creationdate": timezone.now().isoformat()
+            , "lastmodifier": packing.editor_user.sepidar_code
+            , "lastmodificationdate": timezone.now().isoformat()
+            , "version": 1  # automation
+            , "description": description_format
+            , "inventorydeliveryitem_set": inventory_delivery_item_data
+        }
+
+        return inventory_delivery_data

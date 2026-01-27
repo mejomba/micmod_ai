@@ -66,10 +66,18 @@
 
 <div class="bg-white rounded border pb-20 mb-20 row">
     <!-- factor header -->
+{{ form.errors }}
+<div class="d-none main-hidden-section">
+    {% for main_hidden_field in form.hidden_fields %}
+        {{ main_hidden_field }}
+    {% endfor %}
+</div>
 
     <div class="sticky-top bg-white">
         <div class="overflow-hidden col pt-2" id="factor-header"
              style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
+        <!-- سطر اول سربرگ فاکتور -->
+            <input type="hidden" name="customer" value="{{ form.instance.q.customer_party_id.sepidar_party_id }}">
             <div class="row row-cols-4 bg-white">
                 <div class="col-2">
                     <div class="d-flex flex-column gap-2">
@@ -89,8 +97,7 @@
                 </div>
                 <div class="col-2">
                     <div class="d-flex flex-column gap-2">
-                        <input type="hidden" value="{{ quotation.sale_type }}">
-                        <input type="hidden" value="{{ quotation.sale_type }}">
+{#                        <input type="hidden" value="{{ quotation.sale_type }}">#}
                         <span class="d-flex">
                         <span class="bold w-35">شماره سپیدار:</span>
                         <span class="me-2">پیش فاکتور</span>
@@ -128,30 +135,7 @@
                     </span>
                     </div>
                 </div>
-                {#            <div class="col-2">#}
-                {#                <div class="d-flex flex-column gap-1">#}
-                {#                    <span class="d-flex">#}
-                {#                        <span class="me-3 bold w-40">نوع ارز:</span>#}
-                {#                        <span>{{ quotation.currency_ref }}</span>#}
-                <input type="hidden" value="{{ quotation.currency_ref }}">
-                {#                    </span>#}
-                {#                    <span class="d-flex">#}
-                {#                        {% render_field_by_order form form.is_official label='in-line' margin_b=1 %}#}
-                <input type="hidden" value="{{ form.instance.is_official }}">
-                {#                    </span>#}
-                {#                    <span class="d-flex">#}
-                {#                        <span class="me-3 bold w-55">تخفیف نوع ۱</span>#}
-                {#                        {% render_field_by_order form form.official_value margin_b=1 %}#}
-                <input type="hidden" value="{{ form.instance.official_value }}">
-                {#                        <input onkeyup="factor_calculate_price_all_rows()" class="LTR-RTL rounded font-size-11 text-center w-25" name="{{ form.official_value.html_name }}" value="{{ form.instance.official_value }}">#}
-                {#                    </span>#}
-                {#                    <span class="d-flex">#}
-                {#                        <span class="me-3 bold w-55">درصد تخفیف روی همه</span>#}
-                {#                        {% render_field_by_order form form.self_discount margin_b=1 %}#}
-                <input type="hidden" value="{{ form.instance.self_discount }}">
-                {#                    </span>#}
-                {#                </div>#}
-                {#            </div>#}
+
                 <div class="col-4">
                     <div class="row row-cols-2">
                         {% render_field_by_order form form.need_financial_approval form.accounting_confirm form.to_be_collected form.final_check form.require_official_factor_with_delivery form.deliver_to_customer form.need_factor_document label='on-border' %}
@@ -159,6 +143,7 @@
                 </div>
             </div>
 
+        <!-- سطر دوم سربرگ فاکتور -->
             <div class="row row-cols-6 mt-4">
                 <div class="col-3">
                     <div class="row row-cols-3">
@@ -257,7 +242,7 @@
                     </div>
                 {% endif %}
 
-                {% if request.user|has_group:"wh_user" and flow_state_index == 4 %}
+                {% if request.user|has_group:"wh_user" and flow_state_index == 5 %}
                     <div href="#" class="col-1" onclick="init_packing_json_modal(event)"
                          data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal"
                          data-bs-target="#id_kt_empty_modal_lg">
@@ -273,17 +258,64 @@
                </span>
                     </div>
                 {% endif %}
-            <div class="col-sm-6">
-            {% get_comment_user_list form request.user obj_rel=form.instance.q %}
-            <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
-        </div>
+
+
+            <div class="col-10 {% if flow_state_index != 5 %} d-none {% endif %}">
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <div class="d-flex align-items-baseline">
+                            {% render_field_by_order form form.address label='on-border' %}
+                            <span onclick="show_address_input(event)" class="btn btn btn-secondary">آدرس جدید</span>
+                        </div>
+                    </div>
+
+                    <div class="col-6 d-none" id="new_address_container">
+                        <textarea class="w-100" name="new_address" id="new_address" rows="2" placeholder="آدرس جدید به صورت کامل (پس از وارد نمودن آدرس جدید ذخیره پیش نویس انجام دهید)"></textarea>
+                        <script>
+                            function show_address_input(event){
+                                const new_address_container = document.querySelector('#new_address_container')
+                                const new_address_textarea = document.querySelector('#new_address')
+                                const new_address_btn = event.currentTarget
+                                if (new_address_container){
+                                    if (new_address_container.classList.contains('d-none')){
+                                        new_address_btn.textContent = 'انصراف'
+                                        new_address_container.classList.remove('d-none')
+                                        new_address_btn.classList.toggle('btn-secondary')
+                                        new_address_btn.classList.toggle('btn-danger')
+                                    } else {
+                                        new_address_container.classList.add('d-none')
+                                        new_address_textarea.value = ''
+                                        new_address_btn.textContent = 'آدرس جدید'
+                                        new_address_btn.classList.toggle('btn-secondary')
+                                        new_address_btn.classList.toggle('btn-danger')
+                                    }
+                                }
+                            }
+
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+
+                <div class="col-sm-2">
+                    {% get_comment_user_list form request.user obj_rel=form.instance.q %}
+                    <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+                </div>
 
             </div>
-            {{ quotation.customer_party_id.province }}
-            {{ quotation.customer_party_id.address }}
+{#            {{ quotation.customer_party_id.province }}#}
+{#            {{ quotation.customer_party_id.address }}#}
+
             <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
         </div>
         <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
+    {% if flow_state_index == 5 and not form.instance.sepidar_id %}
+        <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
+{#    {% else %}#}
+{#        <span class="btn btn-sm btn-secondary my-1" data-bs-toggle="tooltip" data-bs-title="شماره فاکتور سپیدار {{ form.instance.sepidar_id }}">فاکتور به سپیدار ارسال شده</span>#}
+    {% endif %}
+
 {#        {% if form.instance.pk %}#}
 {#            <a href="{% url 'order:order_of_factor' form.instance.pk %}" target="_blank" class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">محل تامین های این فاکتور</a>#}
 {#        {% endif %}#}
@@ -685,6 +717,7 @@
         }
 
         function factor_calculate_price(target, direct_target = null) {
+            return
             debugger
             let elem;
             if (!direct_target) {
@@ -876,7 +909,7 @@
 
     </script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">#}
     <script src="{% static 'js/local/flatpicker.js' %}"></script>
 
     <script>

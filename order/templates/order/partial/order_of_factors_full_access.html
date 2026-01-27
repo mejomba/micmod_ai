@@ -12,10 +12,19 @@
             <th scope="col">پارت نامبر</th>
             <th scope="col">تعداد/موجودی</th>
             <th scope="col">تعداد موثر/رزرو</th>
-            <th scope="col">تاریخ تعهد به مشتری</th>
-            <th scope="col">روش حمل</th>
+            <th scope="col">
+                <span>تاریخ تعهد به مشتری</span>
+                <span class="text-danger">*</span>
+            </th>
+            <th scope="col">
+                <span>روش حمل</span>
+                <span class="text-danger">*</span>
+            </th>
             <th scope="col">توضیحات فروش</th>
-            <th scope="col">نوع سفارش</th>
+            <th scope="col">
+                <span>نوع سفارش</span>
+                <span class="text-danger">*</span>
+            </th>
             <th scope="col">عملیات</th>
         </tr>
         </thead>
@@ -125,47 +134,6 @@
                             </td>
                         </tr>
                         {% if forloop.last %}
-
-
-
-
-
-
-
-
-{#                            <tr class="ms-5 d-none child group-{{ main_order.pk }}" data-main_order="{{ main_order.pk }}">#}
-{#                                <input type="hidden" name="main_order_pk" value="{{ main_order.pk }}">#}
-{#                                <input type="hidden" name="editor_user" value="{{ request.user.pk }}">#}
-{#                                <th scope="row">#}
-{##}
-{#                                    <svg onclick="add_order_order_row(event)" xmlns="http://www.w3.org/2000/svg" width="16"#}
-{#                                         height="16" fill="currentColor" class="bi bi-cart-plus cursor-pointer"#}
-{#                                         viewBox="0 0 16 16">#}
-{#                                        <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>#}
-{#                                        <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zm3.915 10L3.102 4h10.796l-1.313 7zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>#}
-{#                                    </svg>#}
-{#                                    <svg xmlns="http://www.w3.org/2000/svg" style="transform: rotateX(180deg)"#}
-{#                                         width="16" height="16" fill="currentColor" class="bi bi-arrow-90deg-left"#}
-{#                                         viewBox="0 0 16 16">#}
-{#                                        <path fill-rule="evenodd"#}
-{#                                              d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>#}
-{#                                    </svg>#}
-{#                                    <span>محل تامین جدید</span>#}
-{#                                </th>#}
-{#                                <td>#}
-{#                                    {% other_available_orders main_order %}#}
-{#                                </td>#}
-{##}
-{#                            </tr>#}
-
-
-
-
-
-
-
-
-
                         {% endif %}
                     {% endfor %}
                 {% endfor %}
@@ -198,17 +166,18 @@
                     {% endif %}
                 </td>
                 <td>
-                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity|floatformat:"-2g" }}</span>
                     <span class="input d-none">{{ order_form.quantity }}</span> <br>
                     {% if order_form.instance.quantity != order_form.instance.final_quantity %}
-                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity|floatformat:"-2g" }}</span>
                     {% endif %}
                 </td>
                 <td>
-                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity }}</span>
+                    <span class="label" onclick="toggle_display(event)">{{ order_form.instance.quantity|floatformat:"-2g" }}</span>
                     <span class="input d-none">{{ order_form.quantity }}</span> <br>
+{#                    <span class="input d-none"><input type="number" class="form-control" name="pair_quantity" value="{{ order_pair.quantity }}"></span> <br>#}
                     {% if order_form.instance.quantity != order_form.instance.final_quantity %}
-                        <br><span class="text-info bold">{{ order_form.instance.final_quantity }}</span>
+                        <br><span class="text-info bold">{{ order_form.instance.final_quantity|floatformat:"-2g" }}</span>
                     {% endif %}
                 </td>
                 <td>
@@ -237,10 +206,17 @@
                                 {% with order_form.instance.state_pair.0 as back %}
                                     {% if next %}
                                         <button class="btn btn-sm btn-success" data-submit_action="save" onclick="update_supply_location(event)">ذخیره</button>
-                                        <div class="rounded bg-success text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="next" onclick="update_supply_location(event)">
-                                            <div>ارسال به</div>
-                                            <div>{{ next }}</div>
-                                        </div>
+                                        {% if not order_form.instance.is_bazar %}
+                                            <div class="rounded bg-success text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="next" onclick="update_supply_location(event)">
+                                                <div>ارسال به</div>
+                                                <div>{{ next }}</div>
+                                            </div>
+                                            {% else %}
+                                                <div class="rounded bg-light-success text-white text-center px-2 font-size-11 cursor-pointer" data-submit_action="next" onclick="alert('سفارش بازار نیاز به تایید مدیر فروش ندارد')">
+                                                <div>ارسال به</div>
+                                                <div>{{ next }}</div>
+                                            </div>
+                                        {% endif %}
                                     {% endif %}
 
                                     {% if back %}

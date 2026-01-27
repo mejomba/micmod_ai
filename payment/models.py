@@ -27,7 +27,7 @@ class CreditCard(BaseModeWF):
 class PaymentOrder(BaseModeWF):
     SOURCE_CHOICES = (('1','تنخواه مالی'), ('2', 'پرداخت مستقیم'))
     CURRENCY_CHOICE = (('ریال', 'ریال'), ('دلار', 'دلار'))
-    FORMAL_CHOICE = (('1', 'غیر رسمی'), ('2', 'رسمی رسول رفیع'), ('3', 'رسمی رهاورد'))
+    FORMAL_CHOICE = (('1', 'غیر رسمی'), ('2', 'رسمی رسول رفیع'), ('3', 'رسمی رهاورد'), ('4', 'رسمی مدرن'))
     request_date = models.DateField(verbose_name=_('request_date'))
     payment_date = models.DateField(verbose_name=_('payment_date'), null=True, blank=True)
     # amount = models.PositiveBigIntegerField(verbose_name=_('amount'), default=1)

@@ -18,6 +18,8 @@
 {% endblock extra_css %}
 
 {% block content_ %}
+    <span id="is_external" data-is_external="{{ is_external }}"></span>
+    <span id="url" data-url="{{ url }}"></span>
 
     <div class="row-container">
 
@@ -32,5 +34,13 @@
 
 
 {% block extra_js %}
-
+    <script>
+    window.addEventListener('DOMContentLoaded', function (e) {
+        const is_external = document.querySelector('#is_external').dataset.is_external
+        const url = document.querySelector('#url').dataset.url
+        if (is_external) {
+            window.open(url, '_blank');
+        }
+    })
+    </script>
 {% endblock extra_js %}

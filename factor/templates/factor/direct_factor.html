@@ -52,11 +52,27 @@
                                 <div class="row">
                                     <div class="col-sm-7">
                                         <div class="border-end p-2 pe-4">
-                                            <h3 class="card-title pb-3" data-key="quotation-information">Quotation
-                                                Information
+                                            <h3 class="card-title pb-3">
+
                                             </h3>
                                             <div class="row">
                                                 <div class="">
+{#                                                    <div class="row">#}
+{#                                                        <div class="col-sm-4 m-0">#}
+{#                                                            {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}#}
+{#                                                            {% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}#}
+{#                                                        </div>#}
+{#                                                        <div class="col-sm-4">#}
+{#                                                            {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}#}
+{#                                                        </div>#}
+{#                                                        <div class="col-sm-4 ms-lg-auto">#}
+{#                                                            {% render_field_by_order form form.currency_ref form.payment_method label='on-border' margin_b=3 %}#}
+{#                                                        </div>#}
+{##}
+{#                                                        <div class="col-sm-12">#}
+{#                                                            {% render_field_group form.addition form.tax form.sale_type label_type='on-border '%}#}
+{#                                                        </div>#}
+{#                                                    </div>#}
                                                     <div class="row">
                                                         <div class="col-sm-4 m-0">
                                                             {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
@@ -66,13 +82,25 @@
                                                             {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
                                                         </div>
                                                         <div class="col-sm-4 ms-lg-auto">
-                                                            {% render_field_by_order form form.currency_ref form.payment_method form.market_grade label='on-border' margin_b=3 %}
+                                                            {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
                                                         </div>
-
                                                         <div class="col-sm-12">
-                                                            {% render_field_group form.addition form.tax form.sale_type label_type='on-border '%}
-                                                        </div>
+                                                            <div class="row row-cols-3">
+                                                                {% render_field_by_order form form.addition form.tax label='on-border '%}
+                                                            <div class="col on-border">
+                                                            {% render_field_by_order form form.q_price_setting label='on-border '%}
+{#                                                            <label>تنظیمات قیمت</label>#}
 
+{#                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">#}
+{#                                                                    <option value="1">پیشفرض</option>#}
+{#                                                                    {% for q_price_setting in q_price_settings %}#}
+{#                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>#}
+{#                                                                    {% endfor %}#}
+{#                                                                </select>#}
+                                                            </div>
+                                                                <div class="d-none">{{ form.market_grade }}</div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -317,6 +345,27 @@ document.querySelectorAll('input').forEach(function (item){
         }
     })
 })
+
+function get_supply_locations(event){
+        debugger
+        const elem = event.currentTarget
+        elem.innerHTML = '<option value="" class="font-size-10">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</option>'
+        const row = findAncestor(elem, 'item')
+        const goods_code = row.querySelector('input[name$="-goods_code"]').value
+        const factor_item_pk = row.querySelector('input[id^="id_factoritem_set-"][id$="-id"]')?.value
+        const url = window.location.origin + `/factor/ajax/get_supply_locations/${goods_code}/${factor_item_pk || 0}`
+        custom_ajax_get(null, url, $(elem))
+        elem.blur();
+    }
+
+    function get_customer_accounting_info(){
+    const customer_party_id = document.querySelector('#id_customer_party_id')
+    if (customer_party_id){
+        const url = `/micmod_base/ajax/customer_accounting_info/?party_id=${customer_party_id.value}`
+        const el = $('#id_customer_accounting_info_container')
+        custom_ajax_get(null, url, el)
+    }
+}
 </script>
     <script src="{% static 'js/local/jalali_1.1.0.js' %}"></script>
 {% endblock extra_js %}

@@ -1,5 +1,7 @@
 import datetime
 import json
+
+from django.conf import settings
 from django.db.models import Avg, Value
 from ajax_datatable import AjaxDatatableView
 from ajax_datatable.app_settings import DISABLE_QUERYSET_OPTIMIZATION
@@ -174,9 +176,9 @@ class BaseView(UserPassesTestMixin,
         if self.has_flow and not self.flow_config.get("append_last_step"):
             self.flow_config['flow_state_list'].append('مرحله نهایی')
             self.flow_config['flow_users_groups'].append(self.flow_config['flow_users_groups'][-1])
-            self.flow_config['flow_form_constraint'].append([{"hide": [], "read": []}])
-            self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
-            self.flow_config['flow_deadline'].append([0])
+            self.flow_config['flow_form_constraint'].append([{"hide": [], "read": []}]) if self.__class__.__name__.lower() in settings.MULTI_GROUP_ACCESS_VIEW else self.flow_config['flow_form_constraint'].append({"hide": [], "read": []})
+            self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}]) #if self.__class__.__name__.lower() in settings.MULTI_GROUP_ACCESS_VIEW else self.flow_config['flow_formset_constraint'].append([{"hide": [], "read": []}])
+            self.flow_config['flow_deadline'].append([0]) if self.__class__.__name__.lower() in settings.MULTI_GROUP_ACCESS_VIEW else self.flow_config['flow_deadline'].append(0)
             self.flow_config['append_last_step'] = True
 
             self.state_index = self.get_flow_index(self.object)
@@ -407,7 +409,7 @@ class BaseView(UserPassesTestMixin,
         except:
             context['formset'] = self.formset
 
-        context['allow_next'] = True
+        context['allow_next'] = self.wf_access
         context['wf_access2'] = self.wf_access2
         return context
 
@@ -790,9 +792,10 @@ class BaseView(UserPassesTestMixin,
                         if hasattr(self.formset.forms[0], 'nested'):
                             fo = self.formset.save(request=self.request, related_name_fk=self.related_name_fk)
                         else:
-                            for f in self.formset.forms:
+                            for idx, f in enumerate(self.formset.forms):
                                 pass
                                 f.instance.extra_data.request = self.request
+                                f.instance.extra_data.idx = idx
                             fo = self.formset.save()
                     else:
                         print(self.formset.errors)
@@ -931,7 +934,7 @@ class Base:
             'flow_formset_constraint': []
         }
         cfg: dict = Base.get_view_config(file, view)
-        if view.lower() == 'factor':
+        if view.lower() in settings.MULTI_GROUP_ACCESS_VIEW:
             if wf_config := cfg.get('workflow'):
                 res['flow_name'] = _(wf_config.get('name'))
                 res['flow_action'] = _(wf_config.get('action'))

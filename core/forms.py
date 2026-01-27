@@ -108,6 +108,10 @@ class CustomBaseModelForm(forms.ModelForm):
         for f in fields:
             self.fields[f].required = True
 
+    def make_readonly(self, fields: List):
+        for f in fields:
+            self.fields[f].widget.attrs['readonly'] = True
+
     def make_disable(self, fields: List):
         if '__all__' in fields:
             for field_name, field in self.fields.items():
@@ -116,6 +120,15 @@ class CustomBaseModelForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if field_name in fields:
                 field.disabled = True
+
+    def make_enable(self, fields: List):
+        if '__all__' in fields:
+            for field_name, field in self.fields.items():
+                field.disabled = False
+            return
+        for field_name, field in self.fields.items():
+            if field_name in fields:
+                field.disabled = False
 
     # def set_field_level_permission(self, fields: List, action: int):
     def set_field_level_permission(self, fields_access):

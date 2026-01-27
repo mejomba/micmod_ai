@@ -72,4 +72,7 @@ urlpatterns = [
 
     path('other_available_orders/<int:main_order_pk>/', other_available_orders, name='other_available_orders'),
     path('get_order_order/<str:order_pk>/', get_order_order, name='get_order_order'),
+    path('get_wh_reserve_order/', views.get_wh_reserve_order, name='get_wh_reserve_order'),
+    path('wh_packing_view/', views.wh_packing_view, name='wh_packing_view'),
+    path('wh_packing_view/<int:sepidar_buy_factor_id>/', views.wh_packing_view, name='wh_packing_view'),
 ]

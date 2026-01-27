@@ -281,6 +281,7 @@
         data['currency'] = currency
         data['supplier'] = supplier
         custom_ajax_post_data(JSON.stringify(data), '/order/ajax/order_and_sepidar/', $('#ajax-response'))
+        submitBuyFactor.classList.add('d-none')
     })
 
     function calculate_price(){

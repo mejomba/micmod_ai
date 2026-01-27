@@ -16,6 +16,134 @@ from workflow.models import WorkFlow
 from tools import const
 
 
+class SepidarOrderDocument(models.Model):
+    """
+    << data format >>
+    data = {
+        "payment": [{
+            "id": 111,
+            "sepidar": [
+                {
+                    "credit_debit": {
+                        "id": 123541,
+                        "number": 44521
+                    },
+                    "credit_debit_2": {
+                        "id": 123541,
+                        "number": 44521
+                    },
+                    "voucher": {
+                        "id": 123541,
+                        "number": 44521
+                    }
+                }
+            ],
+            "general": {"id": 45, "row_id": 2, "quantity": 200, "amount": 200, "currency": "usd"}
+        }],
+        "gio": [{
+            "id": 111,
+            "sepidar": [
+                {
+                    "purchase_invoice": {
+                        "number": 13, "id": 1142, "quantity": 400,
+                        "price": 0.8, "currency": 'rmb'
+                    },
+                    "before_central_wh_receipt": {
+                        "id": 44123,
+                        "number": 123,
+                    },
+                    "voucher": {
+                        "id": 1236652,
+                        "number": 12521
+                    }
+                }
+            ],
+            "general": {"id": 45, "row_id": 2, "quantity": 200}
+        }],
+        "packing": [{
+            "id": 111,
+            "sepidar": [
+                {
+                    "wh_delivery": {
+                        "id": 1,
+                        "number": 1,
+                        "quantity": 200
+                    },
+                    "wh_receipt": {
+                        "id": 1,
+                        "number": 1,
+                        "quantity": 200
+                    }
+                }
+            ],
+            "general": {"id": 45, "row_id": 2, "quantity": 200}
+        }]
+    }
+    """
+    data = models.JSONField(null=True, blank=True)
+    order = models.OneToOneField("Order", on_delete=models.DO_NOTHING, related_name='sepidar_document', null=True, blank=True)
+
+    @staticmethod
+    def get_format():
+        return {
+            "payment": {
+                "sepidar": [
+                    {
+                        "credit_debit": {
+                            "id": 123541,
+                            "number": 44521
+                        },
+                        "credit_debit_2": {
+                            "id": 123541,
+                            "number": 44521
+                        },
+                        "voucher": {
+                            "id": 123541,
+                            "number": 44521
+                        }
+                    }
+                ],
+                "general": {"id": 45, "row_id": 2, "quantity": 200, "amount": 200, "currency": "usd"}
+            },
+            "gio": {
+                "sepidar": [
+                    {
+                        "purchase_invoice": {
+                            "number": 13, "id": 1142, "quantity": 400,
+                            "price": 0.8, "currency": 'rmb'
+                        },
+                        "before_central_wh_receipt": {
+                            "id": 44123,
+                            "number": 123,
+                        },
+                        "voucher": {
+                            "id": 1236652,
+                            "number": 12521
+                        }
+                    }
+                ],
+                "general": {"id": 45, "row_id": 2, "quantity": 200}
+            },
+            "packing": {
+                "sepidar": [
+                    {
+                        "wh_delivery": {
+                            "id": 1,
+                            "number": 1,
+                            "quantity": 200
+                        },
+                        "wh_receipt": {
+                            "id": 1,
+                            "number": 1,
+                            "quantity": 200
+                        }
+                    }
+                ],
+                "general": {"id": 45, "row_id": 2, "quantity": 200}
+            }
+        }
+
+
 class Order(BaseModeWF):
     # SALES #######################################
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
@@ -27,24 +155,16 @@ class Order(BaseModeWF):
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
     order_title = models.CharField(max_length=255, blank=True, null=True)
     order_number = models.CharField(max_length=255, blank=True, null=True)
-    # status = models.CharField(max_length=2, verbose_name=_('status'), default=1, choices=ORDER_STATUS)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
-    # customer = models.ForeignKey(Customer, verbose_name=_('customer'), on_delete=models.DO_NOTHING,
-    #                              to_field='sepidar_party_id', db_column='customer_party_id')
-    # fi = models.ForeignKey(_('fi'), FactorItem, on_delete=models.DO_NOTHING)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
                                              default='sea', null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
-
     quantity = models.FloatField(_('quantity'), default=0)
-
-
     description_sale = models.TextField(_('description_sale'), null=True, blank=True)
     order_type = models.CharField(_('order_type'), max_length=64, choices=ORDER_TYPE_CHOICE, default='china',
                                   null=True, blank=True)
     price = models.FloatField(_("order_final_price"), null=True, blank=True, help_text='قیمت نهایی (در صورت وجود تضاد در قیمت)')
-
     # TRADE #######################################
     item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
                                    blank=True)  # Todo autocomplete with select2 search
@@ -58,7 +178,6 @@ class Order(BaseModeWF):
     mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
     trade_commitment_date = models.DateField(_('trade_commitment_date'), null=True, blank=True)
     production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
-
     # MAC #######################################
     supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                      on_delete=models.DO_NOTHING, related_name='supplier_mac_set')
@@ -71,10 +190,7 @@ class Order(BaseModeWF):
     sales_admin_confirmation = models.BooleanField(_("sales_admin_confirmation"), default=False)
     cancel = models.BooleanField(_("cancel"), default=False)
     is_over = models.BooleanField(_('is_over'), default=False)
-    # qi = models.ForeignKey(Quotation, on_delete=models.DO_NOTHING, null=True)
     qi = models.ForeignKey(QuotationItem, on_delete=models.DO_NOTHING, null=True, blank=True)
-    # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
-    # local_sepidar_wh_code = models.IntegerField(_("local_sepidar_wh_code"), null=True, blank=True)
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='currency_ref', null=True, blank=True)
     order_m2m = models.ManyToManyField('self', through='OrderOrder', related_name='order_items',
                                        null=True, blank=True, verbose_name=_('OrderOrder'))
@@ -82,6 +198,9 @@ class Order(BaseModeWF):
                                               related_name='customer_order_items')
     buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
     buy_factor_quantity_in_sepidar = models.FloatField(verbose_name=_('buy_factor_quantity_in_sepidar'), null=True, blank=True)
+    order_report_data = models.JSONField(null=True, blank=True)
+    sepidar_wh_code = models.IntegerField(null=True, blank=True)
+    receipt_in_wh = models.BooleanField(default=False)
 
     def __str__(self):
         if self.final_item:
@@ -191,8 +310,19 @@ class Order(BaseModeWF):
     def final_price(self):
         # issues 295
         """ calculate effective price for order"""
-        price = self.price_mac or self.price or self.price_trade or 0
+        price = self.price or self.price_mac or self.price_trade or 0
         return price
+
+    @property
+    def final_discount(self):
+        discount = (self.price_mac or self.price_trade or 0) - self.final_price
+        if discount > 0:
+            return discount
+        return 0
+
+    @property
+    def final_addition(self):
+        return 0
 
     @property
     def final_quantity(self):
@@ -241,16 +371,16 @@ class Order(BaseModeWF):
                     total_arrived_wh += oo.quantity
                 else:
                     arrived_wh, arrived_wh_in_percent = oo.order_rel.packing_item_order.filter().aggregate(
-                    total_arrived_wh=Sum("arrived_quantity"),
-                    total_arrived_wh_in_precent=Sum("arrived_quantity") / self.final_quantity * 100).values()
+                    total_arrived_wh=Sum("wh_receipt_quantity"),
+                    total_arrived_wh_in_precent=Sum("wh_receipt_quantity") / self.final_quantity * 100).values()
 
                     total_arrived_wh += (arrived_wh or 0)
                     total_arrived_wh_in_percent += (arrived_wh_in_percent or 0)
             return int(total_arrived_wh_in_percent or 0), int(total_arrived_wh or 0), final_quantity
 
         total_arrived_wh, total_arrived_wh_in_percent = self.packing_item_order.filter().aggregate(
-            total_arrived_wh=Sum("arrived_quantity"),
-            total_arrived_wh_in_precent=Sum("arrived_quantity")/self.final_quantity*100).values()
+            total_arrived_wh=Sum("wh_receipt_quantity"),
+            total_arrived_wh_in_precent=Sum("wh_receipt_quantity")/self.final_quantity*100).values()
         return int(total_arrived_wh_in_percent or 0), int(total_arrived_wh or 0), final_quantity
 
     @property
@@ -329,7 +459,7 @@ class Order(BaseModeWF):
         return 0
 
     @classmethod
-    def create_with_rel(cls, data_base=None, o2=None, factor_item=None, sepidar_wh_code=None):
+    def create_with_rel(cls, data_base=None, o2=None, factor_item=None, sepidar_wh_code=None, is_wh=False):
         if not data_base:
             data_base = {
                 "order_title": "خودکار توسط سیستم",
@@ -343,7 +473,7 @@ class Order(BaseModeWF):
                 "creator_user": factor_item.extra_data.request.user,
                 "editor_user": factor_item.extra_data.request.user,
                 'is_bazar': factor_item.is_bazar,
-                'is_wh': False,
+                'is_wh': is_wh,
                 'commitment_date_to_customer': factor_item.qi.supply_date,
                 'transportation_method': factor_item.qi.get_price_method_type
             }
@@ -364,33 +494,19 @@ class Order(BaseModeWF):
             "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
         }
         wf = WorkFlow.objects.create(**flow_data)
-        # flow_data = {
-        #     "wf_status": 3,  # next
-        #     "action": 'ایجاد خودکار',
-        #     "flow_name": 'سفارش',
-        #     "state": const.WF__ORDER__FIRST_STATE,
-        #     "wf_description": const.WF__ORDER__FIRST_WF_DESCRIPTION,
-        #     "belong_to_group": 'order_admin',
-        #     "object_id": o1.pk,
-        #     "content_type": ContentType.objects.get_for_model(o1),
-        #     "creator_user": data_base.get('creator_user'),
-        #     "editor_user": data_base.get('editor_user'),
-        #     "from_user": data_base.get('editor_user'),
-        #     "to_user": get_user_model().objects.filter(groups__name='order_admin').first(),
-        #     "current_state_name": const.WF__ORDER__SECOND_CURRENT_STATE_NAME,
-        # }
 
-        # wf = WorkFlow.objects.create(**flow_data)
         o1.last_work_flow = wf
+        oo = None
         if o2 is not None:
             factor_item.supply_locations = o1
             # o1.cancel = True
             remaining_quantity = o2.remaining_quantity
             oo = OrderOrder.objects.create(order_base=o1, order_rel=o2, quantity=min(factor_item.quantity, o1.quantity, remaining_quantity, factor_item.reserve_count),
-                                           sepidar_wh_code=sepidar_wh_code)
+                                           sepidar_wh_code=sepidar_wh_code, creator_user=factor_item.creator_user, editor_user=factor_item.creator_user,
+                                           item=o1.item)
         o1.extra_data.request = factor_item.extra_data.request
         o1.save()
-        return o1
+        return o1, oo
 
     @property
     def remaining_quantity(self):
@@ -424,6 +540,72 @@ class Order(BaseModeWF):
     @property
     def select2_placeholder(self):
         return f'{self.pk} - {self.final_item} - {self.final_item.part_number}'
+
+    sepidar_wh_map = {
+        2: "انبار مركزي",
+        5: "انبار اوليه فروشگاه",
+        15: "ويترين",
+        19: "انبار فروشگاه",
+        22: "انبار توليد",
+        23: "انبار موقت",
+        24: "انبار سايت",
+        25: "shenzen",
+        26: "انباري",
+        27: "leadtime",
+        28: "گمرك",
+        29: "انبار 19",
+        30: "انبار فني",
+        32: "انبار سوختي گمرك",
+        33: "hogkog majazi",
+        34: "انبار طبقه 3",
+        35: "گمرك مجازي",
+        37: "انبار اماني",
+        40: "انبار 5",
+        42: "انبار كالاي معيوب",
+        44: "انبار اماني سايت",
+        45: "HONGKONG",
+        50: "انبار رزرو 2",
+        51: "انبار رزرو 1",
+        53: "انبار رزرو 3",
+        54: "انبار رزرو 4",
+        55: "انبار ورامين",
+        56: "انبار رزرو ماركت",
+        57: "انبار رزرو رايكا",
+        58: "انبار رزرو JRC",
+        59: "انبار مركزي 2",
+        60: "انبار رزرو آقاي چاوشي",
+        61: "انبار نمونه",
+        62: "انبار قرنطينه",
+        63: "انبار بازار",
+        64: "انبار مرجوعي مشتري خاص",
+        65: "انبار بازرگاني(غير قابل فروش)",
+        69: "انبار رزرو 5",
+        70: "انبار اصفهان",
+        73: "انبار رسالت",
+        74: "انبار رسالت رزرو 1",
+        75: "انبار رسالت رزرو 2",
+        76: "انبار رسالت رزرو 3",
+        77: "انبار رسالت رزرو 4",
+        78: "انبار رسالت رزرو 5",
+        79: "انبار رسالت معيوب",
+        80: "انبار توليد آقاي پاكدل",
+        81: "انبار مجازي مرصوص",
+        82: "انبار توليد PCB",
+        83: "انبار محصول  PCB",
+        84: "انبار رزرو 6",
+        85: "انبار رسالت رزرو 6",
+        87: "انبار آذين",
+        88: "انبار مواد اوليه ايروان",
+        89: "انبار محصول ايروان",
+        90: "انبار کالای بین راهی لوئیز"
+    }
+
+    @property
+    def get_wh_name(self):
+        name = self.sepidar_wh_map.get(self.sepidar_wh_code)
+        if not name:
+            name = 'سفارش'
+        return name
 
 
 class OrderOrder(BaseModel):
@@ -495,6 +677,7 @@ class OrderOrder(BaseModel):
     # local_sepidar_wh = models.ForeignKey(WH, on_delete=models.DO_NOTHING, null=True, blank=True)
     fi = models.ForeignKey("factor.FactorItem", on_delete=models.DO_NOTHING, null=True, blank=True)
     sepidar_wh_code = models.IntegerField(_('sepidar_wh_code'), null=True, blank=True)
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='oo_items', null=True, blank=True)
 
     @property
     def get_wh_name(self):
@@ -510,6 +693,7 @@ class OrderOrder(BaseModel):
 
 class Packing(BaseModeWF):
     SHIPMENT_TYPE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
+    WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
     bl_number = models.CharField(_('bl_number'), max_length=255, null=True, blank=True)
@@ -526,6 +710,8 @@ class Packing(BaseModeWF):
     sum_qty = models.FloatField(_('sum_qty'))
     sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
     description = models.TextField(_('description'), null=True, blank=True)
+    wh_destination = models.CharField('wh_destination', choices=WH_DESTINATION_CHOICE, null=True, blank=True)
+    sepidar_wh_to_wh = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'
@@ -564,6 +750,7 @@ class PackingItem(BaseModeWF):
     sales_conf_date = models.DateField(_('sales_conf_date'), null=True, blank=True)
     invoice_conf = models.BooleanField(_('invoice_conf'), default=False)
     invoice_conf_date = models.DateField(_('invoice_conf_date'), null=True, blank=True)
+    wh_receipt_quantity = models.FloatField(null=True, blank=True, verbose_name='تعداد در انبار')
 
     @property
     def computed_price(self):
@@ -601,6 +788,8 @@ class GIO(BaseModeWF):
     quantity = models.FloatField(_('quantity'), default=0)
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)
+    sepidar_buy_factor_response_json = models.JSONField(null=True, blank=True)
+    sepidar_inventory_receipt_response_json = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f'ID: {self.pk} ({self.gio_date}) '

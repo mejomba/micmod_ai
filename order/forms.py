@@ -61,9 +61,9 @@ class OrderForm(CustomBaseModelForm):
             initial=self.instance.supplier_mac,  # or qs.first().pk if qs.first() else 0,
             required=False
         )
-        self.fields['trade_commitment_date'] = JalaliDateField(label=_('request_date'),
+        self.fields['trade_commitment_date'] = JalaliDateField(label=_('trade_commitment_date'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('request_date'),
+        self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('commitment_date_to_customer'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.make_hidden(['item', 'qi', 'item_trade'])
         self.fields['description_sale'].widget.attrs['rows'] = 6
@@ -90,7 +90,7 @@ class OrderForm(CustomBaseModelForm):
             self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
             # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
-        if request and not request.user.is_superuser and '__all__' in form_constraint_read:
+        if request and not request.user.is_superuser and form_constraint_read and '__all__' in form_constraint_read:
             self.make_disable(self.fields)
 
         elif request and not request.user.is_superuser:
@@ -156,7 +156,7 @@ class PackingForm(CustomBaseModelForm):
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 3
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
@@ -177,6 +177,7 @@ class PackingItemForm(CustomBaseModelForm):
         exclude = ['group']
 
     def __init__(self, *args, **kwargs):
+        request = kwargs['initial'].pop('request', None) if kwargs.get('initial') else None
         super(PackingItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order'])
         self.fields['description'].widget.attrs['rows'] = 8
@@ -184,6 +185,28 @@ class PackingItemForm(CustomBaseModelForm):
         packing = self.initial.get('packing')
         if packing:
             self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=getattr(packing, 'pk', packing))
+
+        if request and request.user.base_group == 'wh':
+            self.make_readonly(
+                [
+                    'order',
+                    'part_number',
+                    'quantity',
+                    'arrived_quantity',
+                    'price',
+                    'packing',
+                    'carton_number',
+                    'net_weight_kg',
+                    'gross_weight_kg',
+                    'size',
+                    'brand',
+                    'description',
+                    'sales_conf',
+                    'sales_conf_date',
+                    'invoice_conf',
+                    'invoice_conf_date',
+                ]
+            )
 
 
 class GIOForm(CustomBaseModelForm):
@@ -218,6 +241,7 @@ class GIOForm(CustomBaseModelForm):
                 formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(GIOForm, self).__init__(*args, **kwargs)
+        self.make_hidden(['sepidar_buy_factor_response_json'])
         if self.instance.pk:
             self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_eq_to_qio()'
         # self.fields['gio_date'] = JalaliDateField(label=_('gio_date'),
@@ -230,7 +254,7 @@ class GIOForm(CustomBaseModelForm):
 
         self.fields['description'].widget.attrs['rows'] = 1
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
@@ -314,7 +338,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         #                                            required=False)
         self.fields['description'].widget.attrs['rows'] = 3
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
