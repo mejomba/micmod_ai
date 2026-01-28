@@ -12,6 +12,7 @@ from pprint import pprint
 from django.apps import apps
 from django.apps import apps
 
+from core.models import PinUrl
 from guides.models import Guides
 from tools.utils import show_error
 
@@ -330,3 +331,11 @@ def guide_for_each_model(section_id, user):
     ).first()
     return guide.id if guide else None
 
+
+@register.simple_tag()
+def user_pins(request):
+    user = request.user
+
+    pins = PinUrl.objects.filter(user=user, is_active=True)
+    # pin_data = [(pin.id, pin.pin_url.url, pin.pin_url.title) for pin in pins]
+    return pins

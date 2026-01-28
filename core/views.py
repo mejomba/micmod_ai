@@ -45,7 +45,7 @@ from tools.form_tools import get_function
 
 import openpyxl
 
-from .models import ExtraData
+from .models import ExtraData, PinUrl
 
 from .models import LogError
 from services.payment_service import create_or_update_payment
@@ -1669,3 +1669,58 @@ class DynamicViewRouter(View):
             return getattr(self, view_name)(request, *args, **kwargs)
         return super().dispatch(request, *args, **kwargs)
 
+
+def get_user_pins(request, *args, **kwargs):
+
+    user = request.user
+    user_permission = user.get_all_permissions()
+    user_perms = [p.split('.')[1] for p in user_permission]
+
+    pinned_ids = set(PinUrl.objects.values_list('id', flat=True))
+
+    # q = Q(permissions__codename__in=user_perms) | Q(permissions__isnull=True)
+    pins = PinUrl.objects.filter(user=user, is_active=True).distinct()
+    data = [{'pin_id': pin.id, 'pin_title': pin.title, 'pinned_ids': pin.id in pinned_ids} for pin in pins]
+    return JsonResponse({'res': data}, safe=False)
+
+
+def save_user_pins(request, *args, **kwargs):
+    user = request.user
+    pin_id = request.POST.get('pin_id')
+
+    if not pin_id:
+        return JsonResponse({'error': 'pin id is required'}, safe=False)
+
+    pin = PinUrl.objects.get_or_create(user=user, id=pin_id)
+
+    return JsonResponse({'status': 'ok', 'pin': {'pin_id': pin[0].id, 'pin_title': pin[0].title, 'pin_url': pin[0].url}}, safe=False)
+
+
+def add_pin(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        title = data.get("title")
+        url = data.get("url")
+        user = request.user
+
+        pin = PinUrl.objects.create(
+            title=title,
+            url=url,
+            user=user,
+            is_active=True
+        )
+
+        return JsonResponse({'status': 200, 'pin': {'pin_id': pin.id, 'pin_title': pin.title, 'pin_url': pin.url}}, safe=False)
+
+
+def delete_pin(request):
+    data = json.loads(request.body)
+    pin_id = data.get("pin_id")
+
+    PinUrl.objects.filter(
+        id=pin_id,
+        user=request.user
+    ).update(is_active=False)
+
+    return JsonResponse({"status": 200})

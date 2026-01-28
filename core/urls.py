@@ -30,4 +30,8 @@ urlpatterns = [
     path('import_customer_from_sepidar/', views.ImportCustomerFromSepidar.as_view(), name='import_customer_from_sepidar'),
     path('select2/<str:app_name>/<str:model_name>/<str:title>/', views.Select2BaseSearch.as_view(), name='select2.base.search'),
     path('api_call/<str:app_name>/<str:model_name>/<str:function>/', views.GenericApiCall.as_view(), name='generic.api.call'),
+    path('get_user_pin/', views.get_user_pins, name='get_user_pin'),
+    # path("save_user_pins/", views.save_user_pins, name="save_user_pins"),
+    path("add_pin/", views.add_pin, name="add_pin"),
+    path("delete_pin/", views.delete_pin, name="delete_pin")
 ]

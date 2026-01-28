@@ -5,10 +5,46 @@
 <div class="app-navbar flex-lg-shrink-0">
 
     {#    lan#}
-    <div class="mt-2 me-2"><span class="d-none">{% guide_for_each_model section_id request.user as guide_id%}</span>
+
+<!-- ADD PINS TO THIS ELEMENT -->
+<div id="user-pins" class="d-inline-flex align-items-center gap-1" >
+{% user_pins request as pins %}
+    {% for pin in pins %}
+<div data-pin-id="{{ pin.id }}" class="pin-item">
+    <a href="{{ pin.url }}"
+           data-pin-id="{{pin.id}}"
+           class="btn btn-light-primary btn-sm" target="_blank">
+           {{ pin.title }}
+    </a>
+    <span class="me-2 tooltip_ cursor-pointer" id="id_delete_pin_{{ pin.id }}" onclick="removePin(this)">
+        ❌
+    </span>
+
+</div>
+{% endfor %}
+</div>
+
+<div class="mt-2 me-2 ms-2 cursor-pointer" onclick="loadPins();">
+    <div class="d-flex gap-1">
+        <input type="text" class="form-control narrow-input d-none" id="id_title_input">
+        <span class="btn btn-sm btn-outline-primary border border-primary rounded d-none mt-1" id="id_title_save">ذخیره</span>
+    </div>
+ <i class="ki-duotone ki-bookmark-2 fs-2x cursor-pointer" id="openPinModal"
+  data-bs-toggle="tooltip"
+  data-bs-placement="bottom"
+  title="بوک‌مارک کردن این صفحه"
+  tabindex="0"
+  data-bs-user="{{ request.user }}">
+ <span class="path1"></span>
+ <span class="path2"></span>
+</i>
+{#{% include 'core/partial/pin_empty_modal.html' %}#}
+</div>
+
+    <div class="mt-2 me-2 cursor-pointer"><span class="d-none">{% guide_for_each_model section_id request.user as guide_id%}</span>
             {% if guide_id %}
             	<a href="{% url 'guides:guides.update' guide_id %}" target="_blank">
-                    <i class="ki-duotone ki-question fs-2x " data-bs-toggle="tooltip" data-bs-placement="left" title="راهنما">
+                    <i class="ki-duotone ki-question fs-2x " data-bs-toggle="tooltip" data-bs-placement="bottom" title="راهنما">
                         <span class="path1"></span>
                         <span class="path2"></span>
                         <span class="path3"></span>
@@ -100,3 +136,227 @@
     <!--end::Header menu toggle-->
 </div>
 <!--end::Navbar-->
+{% block extra_js %}
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    debugger
+
+    const openBtn = document.getElementById("openPinModal");
+    const titleInput = document.getElementById("id_title_input");
+    const titleSave = document.getElementById("id_title_save");
+
+    // اگر المنت‌ها وجود نداشتند، خارج شو
+    if (!openBtn || !titleInput) return;
+
+    const tooltip = new bootstrap.Tooltip(openBtn);
+
+    openBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        tooltip.hide();
+
+        titleInput.classList.remove("d-none");
+        titleSave.classList.remove("d-none");
+        openPinModal.classList.add('d-none');
+        titleInput.value = document.title;
+
+        })
+titleSave.addEventListener('click', function (){
+            const title = titleInput.value.trim()
+            const url = window.location.href;
+
+            if (!title) {
+                alert('عنوان پین را وارد کنید')
+                return
+            }
+
+            addPin({
+            {#id: pinId,#}
+            title: title,
+            url: url
+        });
+
+        setTimeout(() => {
+            titleInput.focus();
+        }, 50);
+    });
+
+});
+</script>
+
+
+<script>
+function loadPins() {
+    fetch("{% url 'core:get_user_pin' %}")
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById("id-empty-modal-body");
+            container.innerHTML = "";
+            let items = []
+
+            data.res.forEach(pin => {
+                const disabled = pin.pinned_ids ? "disabled" : "";
+                const icon = pin.pinned_ids ? "✔️" : "➕";
+                const item = `<button
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                            data-id="${pin.pin_id}"
+                            ${disabled}
+                            onclick="addPin(this)">
+                            <span>${pin.pin_title}</span>
+                            <span class="badge badge-light">${icon}</span>
+                        </button>`
+
+                items.push(item)
+            });
+
+
+            container.innerHTML = `
+                <!--begin::Heading-->
+                <div class="text-center mb-13">
+                    <!--begin::Title-->
+                    <h1 class="mb-3"></h1>
+                    <!--end::Title-->
+
+                    <div></div>
+                    <div id="pin-list-container" class="list-group list-group-flush">
+                        ${items.join("")}
+                    </div>
+                        <div data-kt-inbox-message="message_wrapper"  class="mb-10 border-right-1 pt-2 px-1">
+                            <!--begin::Message header-->
+                            <div class="d-flex flex-wrap gap-2 flex-stack cursor-pointer"
+                                 data-kt-inbox-message="header">
+                                <!--begin::Author-->
+                                <div class="d-flex align-items-baseline">
+                                    <!--begin::Author details-->
+                                    <div></div>
+                                    <p class="me-4 ms-2 fw-bold text-active-gray-800" >
+
+                                    </p>
+                                    <p class="font-size-10 font-italic text-muted text-end" style="font-style: italic">
+
+                                    </p>
+                                    <!--end::Author details-->
+                                </div>
+                                <!--end::Author-->
+
+                                <!--begin::Actions-->
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <!--begin::Date-->
+                                    <p class="badge ms-auto">
+
+                                    </p>
+                                    <!--end::Date-->
+                                    <div class="d-flex">
+                                    </div>
+                                </div>
+                                <!--end::Actions-->
+                            </div>
+                            <!--end::Message header-->
+
+                            <!--begin::Message content-->
+                            <div class="d-flex justify-content-start">
+                                <p class="px-4" style="text-align: right"></p>
+                            </div>
+                        </div>
+                `
+
+        });
+}
+</script>
+
+<script>
+function addPin(data) {
+    debugger
+
+    fetch("{% url 'core:add_pin' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            {#pin_id: data.pin_id,#}
+            title: data.title,
+            url: data.url
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.status === 200) {
+            debugger
+            console.log("Pin saved");
+
+
+            document.getElementById("id_title_input").classList.add("d-none");
+            document.getElementById("id_title_save").classList.add("d-none");
+            document.getElementById("openPinModal").classList.remove("d-none");
+            appendPinToUI(res.pin)
+        }
+    })
+    .catch(err => console.error(err));
+}
+</script>
+
+<script>
+   function appendPinToUI(pin) {
+       debugger
+    const container = document.getElementById("user-pins");
+
+    if (container.querySelector(`[data-pin-id="${pin.pin_id}"]`)) return;
+
+    const html = `
+        <div id="user-pins" class="d-inline-flex align-items-center gap-1">
+        <div class="pin-item"
+             data-pin-id="${pin.pin_id}">
+
+            <a href="${pin.pin_url}"
+               class="btn btn-light-primary btn-sm"
+               target="_blank">
+               ${pin.pin_title}
+            </a>
+
+            <span class="me-2 cursor-pointer text-danger"
+                  onclick="removePin(this)">
+                ❌
+            </span>
+        </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML("beforeend", html);
+}
+
+</script>
+<script>
+
+function removePinFromUI(pinId) {
+    debugger
+    const el = document.querySelector(`[data-pin-id="${pinId}"]`);
+    document.getElementById(`id_delete_pin_${pinId}`).classList.add('d-none')
+    if (el) el.remove();
+}
+
+function removePin(el) {
+    debugger
+    const wrapper = el.closest('.pin-item');
+    const pinId = wrapper.dataset.pinId;
+
+    fetch("{% url 'core:delete_pin' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ pin_id: pinId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 200) {
+            wrapper.remove();
+        }
+    });
+}
+
+</script>
+
+{% endblock extra_js %}
