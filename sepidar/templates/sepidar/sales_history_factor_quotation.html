@@ -1,0 +1,248 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load jalali_tags %}
+{% load more_tags %}
+{% load humanize %}
+
+{% block title %}تاریخچه فروش{% endblock title %}
+{% block extra_css %}
+    <!-- Responsive Table css -->
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css"/>
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
+          type="text/css"/>
+{% endblock %}
+
+
+            {% block content %}
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="my-2">
+                        <form class="" method="get" action="">
+                            <div class="row row-cols-4">
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="customer_code"
+                                   value="{{ customer_code }}" placeholder="کد مشتری / عنوان مشتری">
+                                </div>
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="item_code" value="{{ item_code }}"
+                                   placeholder="کد کالا">
+                                </div>
+                                <div class="col p-0">
+                                    <input class="form-control mx-2" type="text" name="part" value="{{ part }}"
+                                   placeholder="پارت نامبر">
+                                </div>
+                                <div class="col p-0 pe-3">
+                                    <input class="form-control mx-2" type="text" name="g_p" value="{{ g_p }}"
+                                   placeholder="گروه خرید">
+                                </div>
+                                <div class="col p-0">
+                                    <select class="form-control mx-2" name="fisicalyearref" id="fisicalyearref">
+                                        <option value="">----------</option>
+                                        <option value="46" {% if fisicalyearref == '46' %} selected {% endif %} >سال مالی 1404</option>
+                                        <option value="44" {% if fisicalyearref == '44' %} selected {% endif %} >سال مالی 1403</option>
+                                        <option value="42" {% if fisicalyearref == '42' %} selected {% endif %} >سال مالی 1402</option>
+                                        <option value="41" {% if fisicalyearref == '41' %} selected {% endif %} >سال مالی 1401</option>
+                                        <option value="31" {% if fisicalyearref == '31' %} selected {% endif %} >سال مالی 1400</option>
+                                        <option value="25" {% if fisicalyearref == '25' %} selected {% endif %} >سال مالی 1399</option>
+                                        <option value="23" {% if fisicalyearref == '23' %} selected {% endif %} >سال مالی 1398</option>
+                                        <option value="21" {% if fisicalyearref == '21' %} selected {% endif %} >سال مالی 1397</option>
+                                        <option value="14" {% if fisicalyearref == '14' %} selected {% endif %} >سال مالی 1396</option>
+                                        <option value="3" {% if fisicalyearref == '3' %} selected {% endif %} >سال مالی 1395</option>
+                                    </select>
+                                </div>
+                                <div class="col p-0">
+                                    <div class="d-flex align-items-baseline ps-4">
+                                        <div class="">
+                                            <input type="radio" name="doc_type" value="invoice" id='doc_type_invoice'>
+                                            <label for="doc_type_invoice" class="col-form-label text-center mx-2">فقط فاکتور</label>
+                                        </div>
+                                        <div class="">
+                                            <input type="radio" name="doc_type" value="quotation" id='doc_type_quotation'>
+                                            <label for="doc_type_quotation" class="col-form-label text-center mx-2">فقط پیش فاکتور</label>
+                                        </div>
+                                        <div class="">
+                                            <a class="btn btn-sm btn-primary px-5" href="{% url 'sepidar:sales_history' %}" id="id_factor_table">factor</a>
+                                            <a class="btn btn-sm btn-primary px-5" href="{% url 'micmod_base:get_quotation_sales_history' %}" id="id_quotation_table">quotation</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+
+                                <h4 class="card-title" data-key="sales_history">مرور فروش</h4>
+
+                                <div class="table-rep-plugin">
+                                <div class="d-flex flex-end gap-4">
+                                <span>جمع قیمت (تعداد * فی) تمام ردیف ها: </span>
+                                    {% if total_price %}
+                                        <span class="bold" id="total-price-dt">{{ total_price|floatformat:'-2g'|intcomma }}</span>
+                                    {% else %}
+                                        <span class="badge badge-light-warning">تعداد ردیف ها بیشتر یا کمتر از حد مجاز، فیلتر را تغییر دهید.</span>
+                                    {% endif %}
+                                </div>
+                                    <div>
+                                        <table id="datatable-buttons"
+                                               class="m-table table-striped table-bordered w-100"
+                                                data-order='[[0,"asc"],[ 2, "desc" ]]' data-page-length='25' paging='false' >
+                                            <thead>
+                                            <tr>
+                                                <th data-key="doc_type">نوع سند</th>
+                                                <th data-key="Number">شماره سند</th>
+                                                <th data-key="date">تاریخ</th>
+                                                <th data-key="customer_title">مشتری</th>
+                                                <th data-key="customer_code">کد مشتری</th>
+                                                <th data-key="sales_user_group">کارشناس</th>
+                                                <th data-key="item_code">کد کالا</th>
+                                                <th data-key="item_title">کالا</th>
+                                                <th data-key="purchase_group">گروه خرید</th>
+                                                <th data-key="sales_group">گروه فروش</th>
+                                                <th data-key="sales_type">نوع فروش</th>
+                                                <th data-key="Quantity">تعداد</th>
+                                                <th data-key="Fee">فی</th>
+                                                <th data-key="currency">ارز</th>
+                                                <th data-key="Rate">نرخ ارز</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in list %}
+                                                <tr>
+                                                    <td>{{ item.doc_type }}</td>
+                                                    <td>{{ item.Number }}</td>
+                                                    <td>{{ item.Date|to_jalali:'%Y/%m/%d' }}</td>
+                                                    <td>{{ item.customer_title }}</td>
+                                                    <td>{{ item.customer_code }}</td>
+                                                    <td>{{ item.sales_user_group }}</td>
+                                                    <td>{{ item.item_code }}</td>
+                                                    <td>{{ item.item_title }}</td>
+                                                    <td>{{ item.purchase_group }}</td>
+                                                    <td>{{ item.sales_group }}</td>
+                                                    {#                                                        <td>{{ item.coef }}</td>#}
+                                                    <td>{{ item.sales_type }}</td>
+                                                    <td>{{ item.Quantity|floatformat:0|intcomma }}</td>
+                                                    <td>{{ item.Fee|floatformat:2|intcomma }}</td>
+                                                    {#                                                        <td>{{ item.Price|floatformat:2|intcomma }}</td>#}
+                                                    {#                                                        <td>{{ item.PriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
+                                                    {#                                                        <td>{{ item.NetPrice|floatformat:2|intcomma }}</td>#}
+                                                    {#                                                        <td>{{ item.NetPriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
+                                                    <td>{{ item.currency }}</td>
+                                                    <td>{{ item.Rate|floatformat:0|intcomma }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container-fluid -->
+        </div>
+        <!-- End Page-content -->
+
+    </div>
+    <!-- end main content-->
+{% endblock content %}
+
+
+{% block extra_js %}
+    <!-- Required datatable js -->
+    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+    <!-- Buttons examples -->
+    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+
+    <!-- Responsive examples -->
+    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+    <!-- Datatable init js -->
+    <script src="{% static 'js/pages/datatables.init.js' %}"></script>
+
+    <script>
+       // $('#datatable-buttons').DataTable({
+       //     paging: false
+        //});
+        //hide the second and third columns
+        {#debugger#}
+        {#dt.orderable = false#}
+        {#dt.columns([1,2]).visible(false);#}
+        setTimeout(function (){
+            $('#datatable-buttons_filter input').on('keyup', function () {
+               debugger
+                let table = $('#datatable-buttons').DataTable();
+                let filteredRows = table.rows({ search: 'applied' }).data();
+                let total = 0;
+                filteredRows.each(function(row){
+                    let price = parseFloat(row[11].replace(/,/g, '')) || 0;   // ستون فی
+                    let qty   = parseFloat(row[12].replace(/,/g, '')) || 0;   // ستون تعداد
+
+                    console.log(price, qty, price*qty)
+
+                    total += price * qty;
+                });
+
+                console.log('========')
+
+                document.querySelector('#total-price-dt').innerHTML = numberWithCommas(total)
+            });
+        }, 3000)
+
+
+$('#id_quotation_table').on('click', function (e) {
+    debugger
+    e.preventDefault();
+    const datas = {
+                customer_code: $('input[name="customer_code"]').val(),
+                item_code: $('input[name="item_code"]').val(),
+                part: $('input[name="part"]').val(),
+                g_p: $('input[name="g_p"]').val(),
+                }
+     $.ajax({
+
+                url: '/micmod_base/get_quotation_sales_history/',
+                type: "POST",
+                dataType: 'json',
+                headers: { "X-CSRFToken": getCookie('csrftoken') },
+                cache: false,
+                processData: false,
+                contentType: false,
+                data: JSON.stringify(datas),
+                success: function (data) {
+                    console.log(data)
+
+                },
+                error: function (rs, e) {
+                    console.log(e)
+                }
+            }) // end ajax
+            })
+    </script>
+
+{% endblock extra_js %}
