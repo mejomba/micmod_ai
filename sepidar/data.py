@@ -37,7 +37,17 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         discount = obj.get('discount') or 0
         addition = obj.get('addition') or 0
         rate, price, tax, duty, discount, addition = map(float, (rate, price, tax, duty, discount, addition))
+
+
+        grouped = utils.grouped_value(obj, target_suffixes=('-discount', '-itemref', '-quantity', '-price', '-addition'))
+        for idx, row_data in grouped.items():
+            if idx == '0' or idx == 0:
+                continue  # first row is empty in bazar order trade order start idx from 1 => (enumerate(order, start=1)
+            discount += (row_data.get('discount') or 0)
+            addition += (row_data.get('addition') or 0)
+
         net_price = price - discount + addition + tax
+
         fisicalyearref = settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
 
         data = {
@@ -67,14 +77,13 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "slaccountref": None,  # همیشه null بجز همون یک رکورد Todo
             "costcenterref": None,  # همیشه null
             "assetacquisitionpurchaseslref": None,  # همیشه null
-            "inventorypurchaseinvoice_item": cls.get_inventory_purchase_invoice_item_data(obj, request),
+            "inventorypurchaseinvoice_item": cls.get_inventory_purchase_invoice_item_data(obj, request, grouped=grouped),
         }
 
         return data
 
     @classmethod
-    def get_inventory_purchase_invoice_item_data(cls, obj, request=None):
-        grouped = utils.grouped_value(obj, target_suffixes=('-discount', '-itemref', '-quantity', '-price', '-addition'))
+    def get_inventory_purchase_invoice_item_data(cls, obj, request=None, grouped=None):
 
         rate = obj.get('rate') or 1
         all_tax = obj.get('tax') or 0
