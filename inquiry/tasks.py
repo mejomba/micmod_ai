@@ -308,3 +308,27 @@ def send_reminder_notification(self, reminder_id, scheduled_time):
     return 'Reminder Sent'
 
 
+@shared_task
+def send_reminder_notification2():
+    now_date = timezone.now().date()
+    reminders_for_apply = []
+    reminders = Reminder.objects.all()
+
+    for reminder in reminders:
+        if reminder.start_date == now_date:
+            reminders_for_apply.append(reminder)
+
+        elif reminder.start_date < now_date < reminder.expiration_date:
+            if reminder.repeat_interval_value and reminder.repeat_interval_unit:
+                next_time = calculate_next_time(reminder, reminder.start_date)
+                while next_time != now_date:
+                    next_time = calculate_next_time(reminder, next_time)
+                    if next_time > now_date:
+                        break
+                else:
+                    reminders_for_apply.append(reminder)
+
+    for reminder in reminders_for_apply:
+        user_list = [user.phone for user in reminder.user.all()]
+        message_format = f'{reminder.title}:\n {reminder.short_text}\n {reminder.long_text}'
+        send_sms('', user_list, message_format)

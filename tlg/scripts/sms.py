@@ -12,6 +12,8 @@ def send_sms(sender_phone: str, receiver_list: List, text: str):
             sender_obj = SMS.objects.first()
         else:
             sender_obj = SMS.objects.filter(phone_number=sender_phone).first()
+
+        print('receiver: ', receiver_str)
         if receiver_str and sender_obj:
             sms_config = {
                 "username": sender_obj.username,
@@ -21,10 +23,12 @@ def send_sms(sender_phone: str, receiver_list: List, text: str):
                 "text": text,
                 "isFlash": False
             }
+            print('sms config: ', sms_config)
             headers = {
                 'Content-Type': 'application/json'
             }
             res = requests.post(settings.SEND_SMS_URL, json=sms_config, headers=headers)
+            print(res.json())
             res_value = res.json().get('Value')
 
             if res_value:

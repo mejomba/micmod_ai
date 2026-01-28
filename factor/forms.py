@@ -94,6 +94,7 @@ class FactorModelForm(CustomBaseModelForm):
                 queryset=User.objects.filter(Q(groups__name='accounting_user') |
                                              Q(groups__name='accounting_admin')).distinct(), required=False, disabled=True)
 
+        self.make_disable(["sepidar_number", "sepidar_id"])
         self.make_hidden(form_constraint_hide or [])
         self.make_hidden(formset_constraint_hide or [])
         self.make_disable(form_constraint_read or [])
@@ -179,4 +180,4 @@ class DeliveryForm(CustomBaseModelForm):
         exclude = ['group', 'delivery_date', 'tracking_number']
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)\
+        super().__init__(*args, **kwargs)
