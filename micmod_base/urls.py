@@ -66,4 +66,5 @@ urlpatterns = [
     path('quotation_from_customer_request/<int:pk>/', QuotationFromCustomerRequestView.as_view(), name="quotation_from_customer_request.view"),
     path('item_order_quantity/', item_order_quantity, name="item_order_quantity"),
     path('dynamic_view/', MicModDynamicView.as_view(), name="dynamic_view"),
+    path('get_quotation_sales_history/', get_quotation_sales_history, name="get_quotation_sales_history"),
 ]

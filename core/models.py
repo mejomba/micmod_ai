@@ -1,5 +1,6 @@
 import importlib
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.forms import generic_inlineformset_factory
 from django.core import serializers
 from django.db import models
@@ -849,3 +850,10 @@ class LogError(AbsBaseModel):
             "editor_user": request.user
         }
         cls.objects.create(**data)
+
+
+class PinUrl(models.Model):
+    title = models.CharField(max_length=255)
+    url = models.TextField()
+    is_active = models.BooleanField(default=True)
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)

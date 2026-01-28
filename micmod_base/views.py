@@ -131,10 +131,6 @@ def generate_direct_factor(request, quotation: Quotation):
 
 class QuotationsList(LoginRequiredMixin,View):
     def get(self, request):
-        user_list = ['09114281403']
-
-        send_sms('', user_list, 'message_format')
-
         q = self.request.GET.get('q')
         greeting = {}
         greeting['heading'] = _("quotation")
@@ -1922,4 +1918,74 @@ class MicModDynamicView(DynamicViewRouter):
         return JsonResponse({'res': 'fail'})
 
 
+# def get_quotation_sales_history(request):
+#     qs = Quotation.objects.select_related(
+#         'customer_party_id',
+#         'customer_party_id__title',
+#         'quotation__goods_code_fk__part_number',
+#         'quotation__goods_code_fk__sepidar_id_0'
+#         'quotation__goods_code_fk__purchase_group__title',
+#         'created_date'
+#     )
+#
+#     customer_goods_code = request.GET.get('customer_code')
+#     goods_code = request.GET.get('item_code')
+#     part_number = request.GET.get('part')
+#     purchase_group = request.GET.get('g_p')
+#     created_date = request.GET.get('created_date')
+
+
+def get_quotation_sales_history(request):
+    # qs = QuotationItem.objects.select_related(
+    #     'quotation',
+    #
+    # )
+    qs = QuotationItem.objects.select_related('goods_code_fk', 'quotation')
+
+    body = json.loads(request.body.decode('utf-8'))
+    customer_code = body.get('customer_code')
+    item_code = body.get('item_code')
+    part = body.get('part')
+    start_date = body.get('start_date')
+    end_date = body.get('end_date')
+
+    if customer_code:
+        qs = qs.filter(
+            quotation__customer_party_id__icontains=customer_code
+        )
+
+    if item_code:
+        qs = qs.filter(goods_code_fk__sku__icontains=item_code)
+
+    if part:
+        qs = qs.filter(goods_code_fk__part_number__icontains=part)
+
+    if start_date and end_date:
+        qs = qs.filter(
+            quotation__created_date__range=[start_date, end_date]
+        )
+
+    qs = qs.order_by('-created_date')[:3000] if qs is not None else QuotationItem.objects.none()
+
+    context = {}
+    for obj in qs:
+        context = {
+            'doc_type': 'quotation',
+            'number': obj.quotation.pk,
+            'date': obj.quotation.created_date,
+            'customer_title': obj.quotation.customer_party_id.title,
+            'customer_code': obj.quotation.customer_party_id.sepidar_party_id,
+            'sales_user_group': obj.quotation.customer_party_id.customer_group.title if obj.quotation.customer_party_id.customer_group else None,
+            'item_code': obj.goods_code_fk.sku,
+            'item_title': obj.goods_code_fk.part_number,
+            'purchase_group': obj.goods_code_fk.purchase_group.title if obj.goods_code_fk.purchase_group else None,
+            'sales_type': obj.quotation.sale_type.title if obj.quotation.sale_type else None,
+            'quantity': float(obj.quantity),
+            'fee': float(obj.fee),
+            'currency': obj.quotation.sale_type.currency.title,
+            'rate': '-',
+        }
+
+
+    return render(request, 'sepidar/sales_history_factor_quotation.html', context=context)
 

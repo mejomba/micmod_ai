@@ -1,0 +1,36 @@
+{% load more_tags %}
+
+<style>
+    #id_kt_empty_modal {
+    z-index: 1000000 !important;
+}
+
+#id_kt_empty_modal + .modal-backdrop {
+    z-index: 1095 !important;
+}
+
+</style>
+
+<div class="modal fade" id="id_kt_empty_modal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog mw-650px">
+        <!--begin::Modal content-->
+        <div class="modal-content">
+            <!--begin::Modal header-->
+            <div class="modal-header pb-0 border-0 justify-content-end">
+                <!--begin::Close-->
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i></div>
+                <!--end::Close-->
+            </div>
+            <!--begin::Modal header-->
+            <!--begin::Modal body-->
+            <div class="modal-body scroll-y mx-5 mx-xl-18 pt-0 pb-15" id="id-empty-modal-body">
+
+            </div>
+            <!--end::Modal content-->
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+</div>
+
