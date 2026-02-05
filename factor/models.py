@@ -52,7 +52,7 @@ class Factor(SLSDoc):
 
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
 
-    need_financial_approval = models.BooleanField(default=False, verbose_name=_('نیاز به تایید مالی'))
+    need_financial_approval = models.BooleanField(default=True, verbose_name=_('نیاز به تایید مالی'))
     wh_user = models.ManyToManyField(User, related_name='wh_factors', null=True, blank=True, verbose_name=_('کارشناس انبار'))
     to_be_collected = models.BooleanField(default=False, verbose_name=_('جمع‌آوری شود'))
     collecting_start_time = models.DateTimeField(verbose_name=_('زمان شروع جمع‌آوری'), null=True, blank=True)
@@ -302,11 +302,22 @@ class FactorItem(BaseModel):
         return self.supply_location and not str(self.supply_location).startswith('wh__')
 
     def get_sepidar_stock_code_from_selected_supply_location(self):
-        sp = self.supply_location.split('__')
-        wh_code = sp[1] if len(sp) >= 2 else 0
-        if not wh_code:
-            return self.supply_locations.sepidar_wh_code
+        try:
+            wh_code = self.supply_locations.sepidar_wh_code
+        except Exception as e:
+            sp = self.supply_location.split('__')
+            wh_code = sp[1] if len(sp) >= 2 else 0
         return wh_code
+
+        """
+        قبلا:
+        اول رشته چک میشد بعد کد انبار سفارش
+        """
+        # sp = self.supply_location.split('__')
+        # wh_code = sp[1] if len(sp) >= 2 else 0
+        # if not wh_code:
+        #     return self.supply_locations.sepidar_wh_code
+        # return wh_code
 
     def quantity_for_wh_order(self):
         """calculate quantity base on min(fi.quantity, sepidar_wh_quantity, reserve_quantity)"""
@@ -319,7 +330,7 @@ class FactorItem(BaseModel):
                 code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                 wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
                 if int(code) == int(wh_code):
-                    x = quantity - self.goods_code.reserved_count_in_portal
+                    x = quantity - self.goods_code.reserved_count_in_portal(wh_code)
                     return min([float(x) if x > 0 else 0, float(self.quantity), (self.reserve_count or 0)])
 
     def selected_order(self):
@@ -413,7 +424,8 @@ class FactorItem(BaseModel):
                     "creator_user": self.extra_data.request.user,
                     "editor_user": self.extra_data.request.user,
                     'is_bazar': False,
-                    'is_wh': True
+                    'is_wh': True,
+                    'sepidar_wh_code': int(self.supply_location[4:])
                 }
                 o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
                 o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)

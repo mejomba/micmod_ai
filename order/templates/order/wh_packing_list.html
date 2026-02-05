@@ -32,7 +32,12 @@
 {% block content_ %}
 
 
-
+    <a href="{% url 'order:packing.list' %}" class="btn btn-primary">
+        <i class="ki-duotone ki-arrow-right">
+         <span class="path1"></span>
+         <span class="path2"></span>
+        </i>
+        پکینگ خارجی</a>
     <div class="accordion" id="accordionPanelsStayOpenExample" dir="rtl">
         {% for sepidar_buy_factor_id, order_ids in buy_factor_id_dict.items %}
 
@@ -141,6 +146,7 @@
         const target = event.currentTarget
         const accordion_body = findAncestor(target, 'accordion-body')
         const quantities = accordion_body.querySelectorAll("input[name*='receipt_quantity__']")
+        target.classList.add('d-none')
 
         const result = {}
 
@@ -167,11 +173,12 @@
             success: function (data) {
                 debugger
                 const res = data['res']
-                accordion_body.innerHTML = res
+                findAncestor(accordion_body, 'accordion-item').innerHTML = res
             },
             error: function (rs, e) {
                 debugger
                 alert(rs.responseJSON.res)
+                target.classList.remove('d-none')
             },
         });
     }

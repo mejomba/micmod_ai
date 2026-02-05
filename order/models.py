@@ -231,7 +231,7 @@ class Order(BaseModeWF):
                     sepidar_wh_code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                     # todo get wh__order from db, show reserve and stock_quantity
                     if self.oo.sepidar_wh_code == sepidar_wh_code:
-                        quantity_sum = self.item.reserved_count_in_portal
+                        quantity_sum = self.item.reserved_count_in_portal(sepidar_wh_code)
                         if stock_qty.is_integer():
                             qty = int(stock_qty)
                             if qty - quantity_sum < 0:
@@ -475,7 +475,8 @@ class Order(BaseModeWF):
                 'is_bazar': factor_item.is_bazar,
                 'is_wh': is_wh,
                 'commitment_date_to_customer': factor_item.qi.supply_date,
-                'transportation_method': factor_item.qi.get_price_method_type
+                'transportation_method': factor_item.qi.get_price_method_type,
+                'sepidar_wh_code': sepidar_wh_code
             }
         o1 = cls.objects.create(**data_base)
         flow_data = {

@@ -153,17 +153,17 @@
             "formset_constraints": [
               {
                 "group": "wh_admin",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "is_bazar"],
+                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item"]
               },
               {
                 "group": "factor_assign_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item", "is_bazar"]
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "is_bazar"],
+                "read": ["is_official","official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item"]
               },
               {
                 "group": "accounting_user",
-                "hide": ["supply_location", "reserve_count"],
+                "hide": ["supply_location", "reserve_count", "is_bazar"],
                 "read": ["is_official","official_value", "quantity"]
               }
             ]
@@ -186,12 +186,12 @@
             "formset_constraints": [
               {
                 "group": "factor_collector",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               },
               {
                 "group": "accounting_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               }
             ]
@@ -214,12 +214,12 @@
             "formset_constraints": [
               {
                 "group": "factor_final_check",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               },
               {
                 "group": "accounting_user",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               }
             ]
@@ -236,7 +236,7 @@
             "formset_constraints": [
               {
                 "group": "factor_send_or_delivery",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               }
             ]
@@ -253,7 +253,7 @@
             "formset_constraints": [
               {
                 "group": "factor_delivery_approve",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count"],
+                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
                 "read": []
               }
             ]
@@ -459,7 +459,7 @@
             "formset_constraint": [
               {
                 "hide": [],
-                "read": []
+                "read": ["wh_receipt_quantity"]
               }
             ]
           },

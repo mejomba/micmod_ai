@@ -154,11 +154,10 @@ class CustomBaseModelForm(forms.ModelForm):
         #         self.fields[f].disabled = True
 
     def make_hidden(self, fields: List):
-        import sys
-        # sys.setdefaultencoding('UTF8')
         for f in fields:
             try:
-                self.fields[f].widget = self.fields[f].hidden_widget()
+                if f in self.fields:
+                    self.fields[f].widget = self.fields[f].hidden_widget()
             except KeyError as e:
                 show_error(e, __file__)
 

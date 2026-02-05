@@ -716,7 +716,7 @@ class BaseView(UserPassesTestMixin,
                         wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
                                                                          model=new_obj._meta.model_name).first()
                         wf_obj.wf_status = 4  # change user
-                        print('========= workflow save as next')
+                        print('========= workflow save as change user')
                         wf_obj.extra_data.request = self.request
                         wf_obj.current_state_name = self.flow_config.get('flow_state_list')[self.state_index]
                         wf_obj.save()
@@ -730,7 +730,7 @@ class BaseView(UserPassesTestMixin,
                         wf_obj.content_type = ContentType.objects.filter(app_label=new_obj._meta.app_label,
                                                                          model=new_obj._meta.model_name).first()
                         wf_obj.wf_status = 5  # first draft
-                        print('========= workflow save as next')
+                        print('========= workflow save as first draft')
                         wf_obj.extra_data.request = self.request
                         wf_obj.current_state_name = self.flow_config.get('flow_state_list')[0]
                         wf_obj.save()

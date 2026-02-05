@@ -1368,6 +1368,31 @@ class OrderAndSepidar(View):
                 packing.sepidar_wh_to_wh = res['packing']['sepidar'][0]
                 for packing_item in packing.packing_item_rel.all():
                     order_ = packing_item.order
+
+                    """
+                    پیدا کردن همه سفارش های میانی که از سفارش فعلی تامین میشوند 
+                    و آپدیت کردن فیلد کد انبار سپیدار که یعنی سفارش تامین کننده در انبار رسید شده
+                     و همه سفارش هایی که از آن تامین میشدند الان در انبار هستند
+                    """
+                    oo_queryset = OrderOrder.objects.filter(order_rel=order_)
+                    if oo_queryset:
+                        oo_queryset.update(sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
+
+                        for oo in oo_queryset:
+                            """
+                            به ازای هر سفارشی که در جدول میانی از این سفارش تامین میشده
+                             حساب میکنیم تعداد کل تامین شده ها اگر برابر با تعداد مورد نیاز در خود همان سفارش بود
+                              پس آن سفارش در انبار رسید شده و آپدیت میشود
+                            """
+                            o = oo.order_base
+                            sum_supply_order_quantity = OrderOrder.objects.filter(order_base=o, sepidar_wh_code__isnull=False).aggregate(sum_quantity=Sum('quantity'))['sum_quantity'] or 0
+                            if sum_supply_order_quantity == o.quantity:
+                                o.is_wh = True
+                                o.receipt_in_wh = True
+                                o.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+                                o.extra_data.request = request
+                                o.save()
+
                     order_document = getattr(order_, 'sepidar_document', None)
 
                     """
@@ -1387,6 +1412,7 @@ class OrderAndSepidar(View):
                     order_document.save()
 
                     order_.is_wh = True
+                    order_.receipt_in_wh = True
                     order_.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
                     order_.extra_data.request = self.request
                     order_.save()
@@ -1682,7 +1708,7 @@ class OrderOfFactor(BaseView):
                     order.oo = oo
                     if oo.sepidar_wh_code:
                         real_sepidar_wh_quantity = order.sepidar_wh_item_pair_quantity  # if order.is_wh else order.quantity
-                        free_sepidar_wh_quantity = real_sepidar_wh_quantity - order.item.reserved_count_in_portal + oo.quantity
+                        free_sepidar_wh_quantity = real_sepidar_wh_quantity - order.item.reserved_count_in_portal(wh_code=oo.sepidar_wh_code) + oo.quantity
 
                         oo.quantity = min(pair_quantity, free_sepidar_wh_quantity, max_needed_qty)
                         order.quantity = min(pair_quantity, max_needed_qty, free_sepidar_wh_quantity)
@@ -1793,7 +1819,7 @@ def other_available_orders(request, main_order_pk, *args, **kwargs):
             if stock_qty:
                 sepidar_wh_name = name_code[0]
                 sepidar_wh_code = name_code[1]
-                quantity_sum = item.reserved_count_in_portal
+                quantity_sum = item.reserved_count_in_portal(sepidar_wh_code)
                 if stock_qty.is_integer():
                     qty = int(stock_qty)
                     if qty - quantity_sum < 0:

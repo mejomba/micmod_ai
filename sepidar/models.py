@@ -52,12 +52,16 @@ class Dl(models.Model):
             debit = res.Debit
             currency_credit = res.CurrencyCredit
             currency_debit = res.CurrencyDebit
-            mande_riali = credit - debit
-            mande_arzi = currency_credit - currency_debit
+            mande_riali = debit - credit
+            mande_arzi = currency_debit - currency_credit
 
             # mande_riali = debit
             # mande_arzi = currency_debit
-            res = round(mande_riali / mande_arzi, 6)
+            if mande_arzi:
+                res = round(mande_riali / mande_arzi, 6)
+            else:
+                res = 0
+
             if res <= 0:
                 raise ValueError(f'مانده حساب ({res}) است')
             return float(res)

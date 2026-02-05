@@ -477,6 +477,12 @@ class SepidarApiCall:
             transfer_rate = Dl.account_currency_rate(payment.vendor_party.dlref, cls.const.get('fiscalyearref'),
                                                      cls.const.get('hesab_pardakhtani'), source_currency.sepidar_id)
             transfer_rate = round(transfer_rate, 0)
+            if 'rmb' in destination_currency.title_en.lower() or "یوآن" in destination_currency.title.lower():
+                currency_name = 'rmb'
+            elif 'ero' in destination_currency.title_en.lower() or "یورو" in destination_currency.title.lower():
+                currency_name = 'ero'
+            elif 'usd' in destination_currency.title_en.lower() or "دلار" in destination_currency.title.lower():
+                currency_name = 'usd'
 
             """ارسال دستور پرداخت به سپیدار که معادل با اعلامیه بدهکار بستانکار میباشد"""
             if source_currency != destination_currency:
@@ -513,7 +519,7 @@ class SepidarApiCall:
                             "credittype": 1,
                             "amount": payment.total_amount,
                             "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
-                            "amountinbasecurrency": round(payment.total_amount * transfer_rate, 4),
+                            "amountinbasecurrency": round(payment.total_amount * transfer_rate, 3),
                             # Todo اینون بریم توی سپیدار حساب کنیم
                             "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
                             "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
@@ -534,7 +540,7 @@ class SepidarApiCall:
                             "credittype": 1,
                             "amount": karmozd_amount,
                             "rate": transfer_rate,  # Todo اینون بریم توی سپیدار حساب کنیم
-                            "amountinbasecurrency": round(karmozd_amount * transfer_rate, 4),
+                            "amountinbasecurrency": round(karmozd_amount * transfer_rate, 3),
                             "description": f"مبلغ {payment.karmozd * karmozd_rate}  معادل {payment.karmozd} {payment.karmozd_currency}"
                                            f" بابت انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) "
                                            f"از حساب {payment.vendor_party.title} به {destination_vendors_str}",
@@ -559,7 +565,7 @@ class SepidarApiCall:
 
                     "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
                     "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
-                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4),
+                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 3),
                     # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
 
                     # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
@@ -570,13 +576,13 @@ class SepidarApiCall:
                             "debitslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
                             "creditslref": settings.SEPIDAR_CONST_DATA.get('pardakhtani_vaset_arzi'),
                             "debitdlref": payment_item.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(
-                                'no_name_vendor'),
+                                f'no_name_vendor_{currency_name}'),
                             "creditdlref": payment.vendor_party.dlref,
                             "debittype": 1,
                             "credittype": 1,
                             "amount": payment_item.total_amount,
                             "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
-                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),
+                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 3),
                             # Todo اینون بریم توی سپیدار حساب کنیم
                             "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
                             "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
@@ -614,7 +620,7 @@ class SepidarApiCall:
 
                     "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
                     "sumamount": orders_total_amount_in_payment,  # مبلغ کل ردیف ها
-                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 4),
+                    "sumamountinbasecurrency": round(orders_total_amount_in_payment * rate_to_final_supplier, 3),
                     # مبلغ به ریال Todo اینم بریم توی سپیدار حساب کنیم
 
                     # "voucherref": 243070, Todo: بعد از ثبت سند مالی باید یکبار این سند آپدیت بشه و این مقدار رو بگیره
@@ -625,13 +631,13 @@ class SepidarApiCall:
                             "debitslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
                             "creditslref": settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
                             "debitdlref": payment_item.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(
-                                'no_name_vendor'),
+                                f'no_name_vendor_{currency_name}'),
                             "creditdlref": payment.vendor_party.dlref,
                             "debittype": 1,
                             "credittype": 1,
                             "amount": payment_item.total_amount,
                             "rate": rate_to_final_supplier,  # Todo اینون بریم توی سپیدار حساب کنیم
-                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 4),
+                            "amountinbasecurrency": round(payment_item.total_amount * rate_to_final_supplier, 3),
                             # Todo اینون بریم توی سپیدار حساب کنیم
                             "description": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',
                             "description_en": f'''انتقال {payment.total_amount} {source_currency} (معادل {orders_total_amount_in_payment} {destination_currency}) از حساب {payment.vendor_party.title} به {destination_vendors_str}''',

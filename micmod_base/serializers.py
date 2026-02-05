@@ -165,4 +165,34 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuotationItem
+        fields = ['id', 'sku', 'part_number',]
+        read_only_fields = []
 
+
+class QuotationItemGroupSerializer(serializers.ModelSerializer):
+    goods_code_fk = ItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuotationItem
+        fields = ['id', 'quotation', 'goods_code_fk', 'quantity', 'final_price',]
+        read_only_fields = []
+
+    def validate(self, data):
+        if data['quantity'] <= 0:
+            raise serializers.ValidationError("تعداد باید بزرگتر از صفر باشد")
+        if data['unit_price'] <= 0:
+            raise serializers.ValidationError("قیمت واحد باید بزرگتر از صفر باشد")
+        return data
+
+
+class QuotationGroupSerializer(serializers.ModelSerializer):
+    qis = QuotationItemGroupSerializer(many=True, read_only=True)
+    total_rows = serializers.IntegerField(source='rows.count', read_only=True)
+    customer = serializers.CharField(source='customer_party_id.title', read_only=True)
+
+    class Meta:
+        model = Quotation
+        fields = ['id', 'qis', 'customer']

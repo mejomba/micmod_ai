@@ -54,11 +54,11 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "version": 1,
             "vendordlref": supplier,
             "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
-            "date": timezone.now().date().isoformat(),
+            "date": timezone.now().isoformat(),
             "currencyref": currency,
             "currencyrate": rate,
             "totalprice": price,
-            "totalpriceinbasecurrency": price * rate,
+            "totalpriceinbasecurrency": round(price * rate, 4),
             "totaltax": tax,
             "totalduty": duty,
             "totaltransportprice": 0,  # همیشه صفر بود. در جلسه تصمیم بر این شد که هزینه حمل روی رسید انبار بزنن
@@ -68,9 +68,9 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
             "fiscalyearref": fisicalyearref,
             "creator": creator,  # Todo
-            "creationdate": timezone.now().date().isoformat(),
+            "creationdate": timezone.now().isoformat(),
             "lastmodifier": creator,  # Todo
-            "lastmodificationdate": timezone.now().date().isoformat(),
+            "lastmodificationdate": timezone.now().isoformat(),
             "paymentheaderref": None,  # همیشه null بجز چهار رکورد Todo
             "type": 1,  # همیشه 1 یجز همون یک رکورد Todo
             "accountingvoucherref": None,  # همیشه null بجز همون یک رکورد Todo
@@ -189,7 +189,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             # "partyaddressref": None,  # calculate in base
             "price": price,  # محاسبه از تمام ردیف ها fi.quantity * fi.fee
             "priceinbasecurrency": price * rate,  # calculate in save
-            "date": timezone.now().date().isoformat(),  # obj.created_date.isoformat(),
+            "date": timezone.now().isoformat(),  # obj.created_date.isoformat(),
             "shouldcontrolcustomercredit": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
@@ -384,23 +384,23 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "version": 1,
                 "vendordlref": supplier_currency.split('___')[0],
                 "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
-                "date": timezone.now().date().isoformat(),
+                "date": timezone.now().isoformat(),
                 "currencyref": supplier_currency.split('___')[1],
                 "currencyrate": rate,  # Todo این چطوری حساب میشه؟
-                "totalprice": totalprice,
-                "totalpriceinbasecurrency": totalprice * rate,
+                "totalprice": round(totalprice, 4),
+                "totalpriceinbasecurrency": round(totalprice * rate, 4),
                 "totaltax": tax,
                 "totalduty": duty,
                 "totaltransportprice": 0,  # همیشه صفر بود. در جلسه تصمیم بر این شد که هزینه حمل روی رسید انبار بزنن
                 "totalnetprice": totalnetprice,
-                "totalnetpriceinbasecurrency": totalnetprice * rate,
+                "totalnetpriceinbasecurrency": round(totalnetprice * rate, 4),
                 "totalwithholdingtaxamount": None,  # همیشه null بجز یک رکورد Todo
                 "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
                 "fiscalyearref": fiscalyearref,
                 "creator": creator,  # Todo
-                "creationdate": timezone.now().date().isoformat(),
+                "creationdate": timezone.now().isoformat(),
                 "lastmodifier": creator,  # Todo
-                "lastmodificationdate": timezone.now().date().isoformat(),
+                "lastmodificationdate": timezone.now().isoformat(),
                 "paymentheaderref": None,  # همیشه null بجز چهار رکورد Todo
                 "type": 1,  # همیشه 1 یجز همون یک رکورد Todo
                 "accountingvoucherref": None,  # همیشه null بجز همون یک رکورد Todo
@@ -523,7 +523,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             , "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id')  # کد انبار قبل مرکزی
             , "receiverdlref":  None  # اگر خروج بین انباری بود این فیلد نال میخوره
             # , "number": "" # automation
-            , "date": timezone.now().date().isoformat()
+            , "date": timezone.now().isoformat()
             , "totalprice": None  # بعدا بر اساس فی انبار بدست میاد
             , "accountingvoucherref": None  # شماره سند حسابداری که بعد از ایجاد میاد آپدیت میکنه
             , "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref')

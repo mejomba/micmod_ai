@@ -1,0 +1,343 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load quotation_tag %}
+{% load jalali_tags %}
+{% load accounts_tag %}
+
+{% block title %}لیست پیش فاکتور{% endblock title %}
+{% block extra_css %}
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+            <span class="d-flex align-items-center">
+                <span class="mt-3 me-3">استفاده از فیلتر</span>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=is_inquiry" class="btn btn-bordered btn-outline-primary ms-3 mx-1 {% if request.GET.q == 'is_inquiry' %} bg-primary {% endif %}">پاسخ استعلام</a>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
+                <span class="tooltip_">
+                    <a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank">
+                        <i class="ki-duotone ki-plus-circle fs-3x">
+                            <span class="tooltiptext font-size-12">ایجاد پیش‌فاکتور</span>
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </a>
+                </span>
+            </span>
+        </div>
+    </div>
+
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="container-fluid">
+                                <div class="accordion" id="ordersAccordion" >
+
+                                </div>
+
+                                <nav>
+                                  <ul class="pagination justify-content-center" id="pagination"></ul>
+                                </nav>
+
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- container-fluid -->
+            </div> <!-- End Page-content -->
+            {% include 'core/partial/empty_modal_lg.html' %}
+        </div> <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+
+    <script language="javascript">
+
+    function buildAccordion(data, pagination) {
+        const acc = document.getElementById("ordersAccordion");
+        acc.innerHTML = "";
+
+        Object.entries(data).forEach(([key, section], index) => {
+
+            const rowsHtml = section.items.map(item => `
+                <tr>
+                    <td class="d-none">${item.id}</td>
+                    <td>${item.sku}</td>
+                    <td>${item.goods_code}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.final_price ?? "-"}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success approve-row"
+                                data-item="${item.id}">
+                            تایید
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+
+            const html = `
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" style="direction: rtl"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#acc_${key}">
+                        <div class="d-flex gap-5">
+                            <span>پیش فاکتور ${key}</span>
+                            <span>${section.customer}</span>
+                        </div>
+
+
+                    </button>
+                </h2>
+
+                <div id="acc_${key}" class="accordion-collapse collapse"
+                     data-bs-parent="#ordersAccordion">
+
+                    <div class="accordion-body">
+
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="d-none">ID</th>
+                                    <th class="text-center">SKU</th>
+                                    <th class="text-center">کالا</th>
+                                    <th class="text-center">تعداد</th>
+                                    <th class="text-center">قیمت نهایی</th>
+                                    <th class="text-center">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+
+                        <div class="mb-2 text-start">
+                            <button class="btn btn-primary approve-all"
+                                    data-group="${key}">
+                                تایید همه ردیف‌ها
+                            </button>
+                            <a href="/micmod_base/quotation/view/${key}" target="_blank" class="btn mx-2 btn-secondary"
+                                    data-group="${key}">
+                                رفتن به پیش فاکتور
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            `;
+
+            acc.insertAdjacentHTML("beforeend", html);
+        });
+    }
+
+
+    $.ajax({
+        type: 'GET',
+        url: '/micmod_base/api/quotation-rows/',
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (res) {
+           debugger
+            const data = res.data
+            const pagination = res.pagination
+            buildAccordion(data, )
+            renderPagination(pagination);
+        },
+        error: function () {
+
+        },
+    });
+
+
+    $(document).on("click", ".approve-row", function () {
+        const itemId = $(this).data("item");
+        const local_this = $(this)
+
+        console.log("approve row:", itemId);
+
+        // ajax approve row
+        /*
+        $.post("/approve-item/", {id: itemId})
+        */
+        const post_data = JSON.stringify({'quotation_item_id': itemId})
+
+        $.ajax({
+            type: 'POST',
+            url: "/micmod_base/quotation_item_approve/",
+            dataType: 'json',
+            data: post_data,
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                local_this
+                .removeClass("btn-success")
+                .addClass("btn-secondary")
+                .text("تایید شد")
+                .prop("disabled", true);
+            },
+            error: function (err) {
+                local_this
+                .removeClass("btn-success")
+                .addClass("btn-danger")
+                .text("خطا")
+                .prop("disabled", true);
+
+                alert(JSON.stringify(err))
+            },
+        }); // end ajax
+
+
+    });
+
+
+    $(document).on("click", ".approve-all", function () {
+        const groupId = $(this).data("group");
+
+        const section = $(this).closest(".accordion-body");
+
+        section.find(".approve-row").each(function () {
+            $(this).trigger("click");
+        });
+
+        console.log("approve group:", groupId);
+    });
+
+
+
+    function renderPagination(p) {
+        const ul = document.getElementById("pagination");
+        ul.innerHTML = "";
+
+        // دکمه قبلی
+        ul.insertAdjacentHTML("beforeend", `
+            <li class="page-item ${!p.has_previous ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${p.current_page - 1}">
+                    قبلی
+                </a>
+            </li>
+        `);
+
+        // بازه صفحات اطراف صفحه فعلی (windowed pagination)
+        const windowSize = 2;
+        let start = Math.max(1, p.current_page - windowSize);
+        let end   = Math.min(p.total_pages, p.current_page + windowSize);
+
+        if (start > 1) {
+            addPageBtn(1);
+            if (start > 2) addDots();
+        }
+
+        for (let i = start; i <= end; i++) {
+            addPageBtn(i, i === p.current_page);
+        }
+
+        if (end < p.total_pages) {
+            if (end < p.total_pages - 1) addDots();
+            addPageBtn(p.total_pages);
+        }
+
+        // دکمه بعدی
+        ul.insertAdjacentHTML("beforeend", `
+            <li class="page-item ${!p.has_next ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${p.current_page + 1}">
+                    بعدی
+                </a>
+            </li>
+        `);
+
+
+        function addPageBtn(page, active=false) {
+            ul.insertAdjacentHTML("beforeend", `
+                <li class="page-item ${active ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${page}">
+                        ${page}
+                    </a>
+                </li>
+            `);
+        }
+
+        function addDots() {
+            ul.insertAdjacentHTML("beforeend", `
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            `);
+        }
+    }
+
+    $(document).on("click", "#pagination .page-link", function(e) {
+        e.preventDefault();
+
+        const page = $(this).data("page");
+        if (!page) return;
+
+        $.ajax({
+            type: 'GET',
+            url: `/micmod_base/api/quotation-rows/?page=${page}`,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+               debugger
+                const data = res.data
+                const pagination = res.pagination
+                buildAccordion(data, )
+                renderPagination(pagination);
+            },
+            error: function () {
+
+            },
+        }); // end ajax
+    });
+
+
+
+
+    </script>
+
+
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+{% endblock extra_js %}

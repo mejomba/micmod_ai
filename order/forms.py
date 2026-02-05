@@ -187,6 +187,8 @@ class PackingItemForm(CustomBaseModelForm):
             self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=getattr(packing, 'pk', packing))
 
         if request and request.user.base_group == 'wh':
+            # self.make_disable(['order'])
+            self.make_hidden(['price'])
             self.make_readonly(
                 [
                     'order',
@@ -207,6 +209,10 @@ class PackingItemForm(CustomBaseModelForm):
                     'invoice_conf_date',
                 ]
             )
+
+        if request and request.user.base_group == 'trade':
+            self.make_hidden(['wh_receipt_quantity'])
+
 
 
 class GIOForm(CustomBaseModelForm):
