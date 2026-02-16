@@ -29,6 +29,8 @@ class Dl(models.Model):
 
     @staticmethod
     def account_currency_rate(dl_id, fiscalyearref, slref, currencyref):
+        if not dl_id or dl_id == 'None':
+            raise ValueError("تامین کننده در سپیدار وجود ندارد")
         currencyref = int(currencyref)
         qry = f"""
             select
@@ -613,7 +615,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = {settings.SEPIDAR_STOCK_NUMBER}) and StockRef in (50,51,53,54,60,28,84,73,74,75,76,77,78,85)
+                                   WHERE        (FiscalYearRef = {settings.SEPIDAR_STOCK_NUMBER}) and StockRef in (50,51,53,54,60,61,28,84,73,74,75,76,77,78,85)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN
@@ -671,7 +673,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
                                    GROUP BY ItemRef) AS sum_stock ON sum_stock.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        ItemRef, SUM(Quantity) AS total_quantity
                                    FROM            INV.ItemStockSummary
-                                   WHERE        (FiscalYearRef = {settings.SEPIDAR_STOCK_NUMBER}) and StockRef in (50,51,53,54,60,28,84,73,74,75,76,77,78,85)
+                                   WHERE        (FiscalYearRef = {settings.SEPIDAR_STOCK_NUMBER}) and StockRef in (50,51,53,54,60, 61,28,84,73,74,75,76,77,78,85)
                                    GROUP BY ItemRef) AS sum_stock_res ON sum_stock_res.ItemRef = item.ItemID LEFT OUTER JOIN
                                  (SELECT        InvI.ItemRef, SUM(InvI.Quantity) AS total_quantity
                                    FROM            SLS.Invoice AS Inv INNER JOIN
@@ -704,7 +706,7 @@ where EntityTypeName = 'SG.General.PartyManagement.Common.DsParty' and p.IsCusto
 SELECT i.code code, cast(SUM(Quantity) as float) AS quantity
 FROM          INV.ItemStockSummary as inv_s
 join inv.item as i on i.ItemID = inv_s.ItemRef
-WHERE        (inv_s.FiscalYearRef = (select * from fis_year)) and StockRef in (2,50,51,53,54,60,84,   73,74,75,76,77,78,85) and i.code={sku}
+WHERE        (inv_s.FiscalYearRef = (select * from fis_year)) and StockRef in (2,50,51,53,54,60,84, 61,  73,74,75,76,77,78,85) and i.code={sku}
 GROUP BY i.code
     """
         res = Item.objects.raw(qry, using='sepidar')

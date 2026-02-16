@@ -5,6 +5,8 @@ import pytz
 from ajax_datatable.utils import parse_date
 from dateutil.relativedelta import relativedelta
 import time
+
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import make_aware
@@ -580,3 +582,16 @@ class DaxCall:
         import requests
         res = requests.get(url, headers=headers)
         return res.json()
+
+
+def wf_cache(timeout=36000):
+    def deco(fn):
+        def wrapper(user_id, model_name, state):
+            key = f"wfperm:v1:u{user_id}:m{model_name}:s{state}"
+            val = cache.get(key)
+            if val is None:
+                val = fn(user_id, model_name, state)
+                cache.set(key, val, timeout)
+            return val
+        return wrapper
+    return deco

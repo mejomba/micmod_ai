@@ -303,7 +303,7 @@ class DimOrder(models.Model):
     @classmethod
     def order_inway(cls, sku_):
         qry = f'''
-        select order_id, sku, sum(remaining_qty) as customer_inway, sum(kasri_remained) as kasri_inway from dim_order
+        select order_id, sku, sum(cast(remaining_qty as int)) as customer_inway, sum(cast(kasri_remained as int)) as kasri_inway from dim_order
         where sku = {sku_} and status_coef>2
         group by sku, order_id
         '''

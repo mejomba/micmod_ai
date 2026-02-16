@@ -122,7 +122,6 @@ class OrderView(LoginRequiredMixin, BaseView):
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
             context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
-            # context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).annotate(Sum(')).order_by('-id')
         return context
 
 
@@ -263,20 +262,20 @@ class OrderDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = self.model.get_qs(self.request, lst=False)  # super().get_initial_queryset(request)
+        # qs = self.model.get_qs(self.request, lst=False)  # super().get_initial_queryset(request)
         # if request.user.is_superuser:
         #     return qs
 
         q = request.POST.get('q')
         user_group = request.user.base_group
-        if request.user.groups.filter(name='mac'):
-            return self.model.objects.filter(is_deleted=False, apply_mac=True)
+        if request.user.groups.filter(name='mac') and q == 'mac':
+            return self.model.objects.filter(is_deleted=False, apply_mac=True).distinct()
         if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
         elif user_group == 'bazar':
             user_groups = request.user.groups.filter(name='bazar_user')
             qs = self.model.objects.filter(is_bazar=True)
-            return qs
+            return qs.distinct()
         else:
             user_groups = None
         # elif user_groups == 'sales':
@@ -304,7 +303,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 res = not_complete - order.quantity
                 if res < 0:
                     not_complete_order |= Q(id=order.id)
-            return Order.objects.filter(not_complete_order) if not_complete_order else Order.objects.none()
+            return Order.objects.filter(not_complete_order).distinct() if not_complete_order else Order.objects.none()
         elif q == 'bazar_user':
             qs = qs.filter(is_bazar=True)
         elif q == 'is_wh':
@@ -315,7 +314,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
         if user_group == 'trade':
             qs = qs.filter(is_bazar=False)
-        return qs
+        return qs.distinct()
 
     def customize_row(self, row, obj):
         row['order_method'] = f'<span>{obj.order_method}</span>'
@@ -333,6 +332,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
+        row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -364,6 +364,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False, },
@@ -387,6 +388,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
@@ -1186,7 +1188,14 @@ class OrderAndSepidar(View):
 
             supplier_currency_list = []
             for gioi in gio_items:
-                key1 = gioi.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get('no_name_vendor')
+                if 'rmb' in gioi.order.currency.title_en.lower() or "یوآن" in gioi.order.currency.title.lower():
+                    currency_name = 'rmb'
+                elif 'ero' in gioi.order.currency.title_en.lower() or "یورو" in gioi.order.currency.title.lower():
+                    currency_name = 'ero'
+                elif 'usd' in gioi.order.currency.title_en.lower() or "دلار" in gioi.order.currency.title.lower():
+                    currency_name = 'usd'
+
+                key1 = gioi.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get(f'no_name_vendor_{currency_name}')
                 key2 = gioi.order.currency.sepidar_id
 
                 final_key = f'{key1}___{key2}'
@@ -1440,8 +1449,12 @@ class OrderOfFactor(BaseView):
         self.args = args
         self.kwargs = kwargs
         self.flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
-        self.object = Order.objects.get(pk=kwargs.get('pk'))
-        self.state_index = self.get_flow_index(self.object)
+        if self.request.method == 'POST':
+            try:
+                self.object = Order.objects.get(pk=kwargs.get('pk'))
+                self.state_index = self.get_flow_index(self.object)
+            except Exception as e:
+                print(e, e.__traceback__.tb_lineno)
 
     def dispatch(self, request, *args, **kwargs):
         if kwargs.get('pk') == '0':

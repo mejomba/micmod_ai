@@ -41,7 +41,7 @@
             {% if wf_access2 %}
                 <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار"/>
             {% else %}
-                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" name="back" value="عودت کار"/>
+                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" {% if not allow_back %} disabled {% endif %} name="back" value="عودت کار"/>
             {% endif %}
         {% elif flow_state_index and finish and not wf_last_step_is_open %}
             <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>

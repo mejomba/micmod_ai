@@ -1,4 +1,6 @@
-from django.db.models import Q
+import time
+
+from django.db.models import Q, Max
 from django.forms import inlineformset_factory
 
 from django import forms
@@ -12,6 +14,7 @@ from extra_data.models import CustomerAddress
 from factor.models import Factor, FactorItem, Delivery
 from files.models import File
 from order.models import Order
+from tools.utils import timer
 from translator import get_text as _
 from django.utils.html import format_html
 from workflow.models import FlowAdminGroup
@@ -32,7 +35,7 @@ class UserSelectWidget(ModelSelect2MultipleWidget):
 
 class FactorModelForm(CustomBaseModelForm):
     file_model = File
-    file_groups = 2
+    file_groups = 3
     has_comment = True
 
     class Meta:
@@ -77,17 +80,26 @@ class FactorModelForm(CustomBaseModelForm):
         super(FactorModelForm, self).__init__(*args, **kwargs)
         # self.make_hidden(['packing_json'])
         if self.instance.__class__.__name__.lower() == 'quotation':
-            self.fields['address'].queryset = CustomerAddress.objects.filter(customer=self.instance.customer_party_id)
+            qs = (
+                CustomerAddress.objects
+                .filter(customer=self.instance.customer_party_id)
+                .annotate(last_used=Max('factor__created_date'))
+                .order_by('-last_used')
+            )
+            self.fields['address'].queryset = qs  # CustomerAddress.objects.filter(customer=self.instance.customer_party_id)
         elif self.instance.pk:
-            self.fields['address'].queryset = CustomerAddress.objects.filter(customer=self.instance.q.customer_party_id)
+            qs = (
+                CustomerAddress.objects
+                .filter(customer=self.instance.q.customer_party_id)
+                .annotate(last_used=Max('factor__created_date'))
+                .order_by('-last_used')
+            )
+            self.fields['address'].queryset = qs  # CustomerAddress.objects.filter(customer=self.instance.q.customer_party_id)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
         self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
 
         self.make_hidden(['q'])
-        # self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('date time'),
-        #     widget=AdminSplitJalaliDateTime # required, for decompress DatetimeField to JalaliDateField and JalaliTimeField
-        # )
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                       widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
@@ -120,6 +132,7 @@ class FactorItemModelForm(CustomBaseModelForm):
         exclude = ['group']
     # supply_location = forms.CharField(required=False)
 
+    @timer
     def __init__(self, *args, **kwargs):
         internal_call = kwargs.pop('internal_call', None)
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None

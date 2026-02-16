@@ -35,6 +35,9 @@
             <a href="{% url 'micmod_base:quotations.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'sales_user' %} bg-primary {% endif %}">همه</a>
             <a href="{% url 'micmod_base:quotations.list' %}?q=is_inquiry" class="btn btn-bordered btn-outline-primary ms-3 mx-1 {% if request.GET.q == 'is_inquiry' %} bg-primary {% endif %}">پاسخ استعلام</a>
             <a href="{% url 'micmod_base:quotations.list' %}?q=not_over" class="btn btn-bordered btn-outline-danger ms-3 mx-1 {% if request.GET.q == 'not_over' %} bg-danger {% endif %}">مستهلک نشده</a>
+            {% if request.user|has_group:'sales_admin' %}
+                <a href="{% url 'micmod_base:quotation_item_approve' %}" class="btn btn-bordered btn-outline-secondary ms-3 mx-1">نمای تایید</a>
+            {% endif %}
 {#        {% if request.user|has_group:'sales_admin' %}#}
 {#        	<a href="{% url 'micmod_base:quotations.list' %}?q=sales_admin_confirm" class="btn btn-bordered btn-outline-primary ms-3 mx-1 {% if request.GET.q == 'sales_admin_confirm' %} bg-primary {% endif %}">نیاز به بررسی مدیر فروش</a>#}
 {#        {% endif %}#}

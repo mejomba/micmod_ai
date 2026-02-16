@@ -95,7 +95,7 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                            لید تایم تولید
+                            لید تایم تولید (پیش فاکتور)
                         </div>
                         <span class="badge">
                             {{ form.instance.qi.lead_time|default_if_falsy:'-' }}
@@ -116,6 +116,14 @@
                         </div>
                         <span class="badge">
                             {{ form.instance.sales_admin_cancel|yesno:"بله,خیر" }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2">
+                            تاریخ تعهد فروش
+                        </div>
+                        <span class="badge ms-auto">
+                            {{ form.instance.commitment_date_to_customer|to_jalali:"%Y-%m-%d" }} | {{ form.instance.commitment_date_to_customer|date }}
                         </span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-start">

@@ -462,12 +462,12 @@ class Item(BaseModel):
                         remaining_quantity = o.remaining_quantity
                         if remaining_quantity > 0:
                             res.append((str(o.pk),
-                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})"))
+                                        f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام ({o.final_quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})"))
             else:
                 remaining_quantity = o.remaining_quantity
                 if remaining_quantity > 0:
                     res.append((str(o.pk),
-                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
+                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.final_quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
 
         return res
 

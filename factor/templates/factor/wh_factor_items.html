@@ -74,7 +74,7 @@
 </div>
 
     <div class="sticky-top bg-white">
-        <div class="overflow-hidden col pt-2" id="factor-header"
+        <div class="overflow-hidden col pt-2 mb-8" id="factor-header"
              style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
         <!-- سطر اول سربرگ فاکتور -->
             <input type="hidden" name="customer" value="{{ form.instance.q.customer_party_id.sepidar_party_id }}">
@@ -216,6 +216,33 @@
                 {% endif %}
 
                 {% if request.user|has_group:"wh_user" %}
+            <div class="col-2 on-border d-flex flex-column">
+                <label for="">اسناد تحویل</label>
+                {% render_field_by_order form form.file_3 margin_b=0 %}
+                <div class="d-flex gap-3" style="position: absolute; top: 50px;">
+                    {% for file in form.instance.files.all %}
+                        {% if file.group == 3 %}
+                            <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="col-1 mt-3 d-flex gap-2">
+            <span>اسناد تحویل:</span>
+                {% for file in form.instance.files.all %}
+                    {% if file.group == 3 %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                            <i class="fas fs-2 fa-file icon-lg"></i>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+                {% if request.user|has_group:"wh_user" %}
                     <div class="col-2 on-border d-flex flex-column">
                         <label for="">اسناد انبار</label>
                         {% render_field_by_order form form.file_2 margin_b=0 %}
@@ -260,16 +287,16 @@
                 {% endif %}
 
 
-            <div class="col-10 {% if flow_state_index != 5 %} d-none {% endif %}">
+            <div class="col-7 {% if flow_state_index != 5 %} d-none {% endif %}">
                 <div class="row mt-2">
-                    <div class="col-6">
+                    <div class="col-7">
                         <div class="d-flex align-items-baseline">
                             {% render_field_by_order form form.address label='on-border' %}
                             <span onclick="show_address_input(event)" class="btn btn btn-secondary">آدرس جدید</span>
                         </div>
                     </div>
 
-                    <div class="col-6 d-none" id="new_address_container">
+                    <div class="col-5 d-none" id="new_address_container">
                         <textarea class="w-100" name="new_address" id="new_address" rows="2" placeholder="آدرس جدید به صورت کامل (پس از وارد نمودن آدرس جدید ذخیره پیش نویس انجام دهید)"></textarea>
                         <script>
                             function show_address_input(event){

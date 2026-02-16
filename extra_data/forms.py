@@ -5,7 +5,7 @@ from jalali_date.widgets import AdminJalaliDateWidget
 from core.forms import CustomBaseModelForm
 from files.models import Image, File
 from .models import ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, ChangeCustomerGroup, CustomerExpert, \
-    CustomerFields, CustomerContract, ItemPackage, AccountingUser, CustomerGroup
+    CustomerFields, CustomerContract, ItemPackage, AccountingUser, CustomerGroup, CustomerAddress
 from django_select2 import forms as s2forms
 from django import forms
 from tools.utils import c_get
@@ -207,3 +207,18 @@ class CustomerGroupUserForm(CustomBaseModelForm):
     class Meta:
         model = CustomerGroup
         exclude = ['group']
+
+
+class CustomerAddressForm(CustomBaseModelForm):
+
+    class Meta:
+        model = CustomerAddress
+        exclude = ['group']
+
+        widgets = {
+            'customer': ChangeCustomerGroupWidget,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['address'].widget.attrs.update({'placeholder': "آدرس کامل همراه کد پستی و شماره تماس"})

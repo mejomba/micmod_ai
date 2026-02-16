@@ -151,11 +151,11 @@
     {% endif %}
 
         <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
-            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"
-                 data-key="refresh" onclick="refresh_prices()">
-                به روز رسانی قیمت
-            </div>
-            <div class="align-items-center text-white bg-info w-65 rounded">
+{#            <div class="btn btn-outline-info w-35 btn-bordered w-lg text-xl-center mx-1 text-center"#}
+{#                 data-key="refresh" onclick="refresh_prices()">#}
+{#                به روز رسانی قیمت#}
+{#            </div>#}
+            <div class="align-items-center text-white bg-info w-100 rounded">
                 <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
                     <div class="w-30 ms-2"> جمع کل</div>
                     <div class="factor_total_price w-70 text-center "
@@ -183,6 +183,7 @@
         const elem = event.currentTarget
         const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
         const qi_quantity = row.querySelector('.qi_quantity')
+        const batch_count = row.querySelector('.batch-count')
         const Alert = document.querySelector('.factor-alert')
         if (parseFloat(elem.value) > parseFloat(qi_quantity.dataset.quantity)){
             elem.classList.add('border-danger')
@@ -193,10 +194,25 @@
             setTimeout(()=>{
                 Alert.classList.remove('show')
                 Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
             }, 7000)
         } else {
             elem.classList.remove('border-danger')
             elem.classList.remove('text-danger')
+            Alert.querySelector('#alert_message').innerText = ''
+        }
+
+        if (parseFloat(elem.value) % parseFloat(batch_count.innerText)) {
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText += '   تعداد انتخابی ضریبی از تعداد در بسته نیست'
+            setTimeout(() => {
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
+            }, 7000)
         }
     }
 
@@ -249,12 +265,12 @@
         const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')
         const supply_location = event.currentTarget.parentElement.parentElement.querySelector('[id$="-supply_location"]')
         supply_locations.value = event.currentTarget.value
-        {#supply_location.value = event.currentTarget.value#}
+        supply_location.value = event.currentTarget.value
         const row = findAncestor(event.currentTarget, 'factor_item')
 
         try {
             let need_more
-            const text = event.currentTarget.textContent
+            const text = event.currentTarget.options[event.currentTarget.selectedIndex].text
             const match = text.match(/آزاد:\s*([\d,]+)/);
             const reserve_count = row.querySelector('input[name$="-reserve_count"]').value
 
@@ -298,6 +314,10 @@
                     },
                     complete: release_main_container
                 }); // end ajax
+            } else {
+                const reserve_selection = row.querySelector('#reserve_selection')
+                reserve_selection.innerHTML = ''
+                reserve_selection.classList.add('d-none')
             }
         } catch (e){
             console.log('wh not fount')
