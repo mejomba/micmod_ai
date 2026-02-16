@@ -564,9 +564,13 @@ class FactorListDatatable(AjaxDatatableView):
         self.cols = unique_cols
 
 
-def print_view(request,id=-1):
+def print_view(request, id=-1):
 
-    template_name = 'factor/factor_print.html'
+    action_ = request.GET.get('action')
+    if action_ == 'wh_exit_permit':
+        template_name = 'factor/wh_exit_permit.html'
+    else:
+        template_name = 'factor/factor_print.html'
 
     formset = inlineformset_factory(Factor, FactorItem, form=FactorItemModelForm, extra=0, )
     greeting = {}
