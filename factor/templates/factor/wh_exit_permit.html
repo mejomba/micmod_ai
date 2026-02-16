@@ -1,0 +1,304 @@
+{% load humanize %}
+{% load jalali_tags %}
+{% load static %}
+{#{% load crispy_forms_tags %}#}
+{#{% load humanize %}#}
+{#{% load quotation_tag %}#}
+{% load more_tags %}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+<link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
+<link href="/assets/css/style.bundle.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/custom_libs/toastr/toastr.rtl.css" rel="stylesheet" type="text/css">
+<link href="/assets/custom_libs/toastr/toastr.min.rtl.css" rel="stylesheet" type="text/css">
+<link href="{% static 'css/icons.min.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'css/custom.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+<link href="{% static 'css/print/print.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
+<link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
+<link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>
+<link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
+<link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+<style>
+        @media print {
+
+           .noprint {
+              visibility: hidden;
+           }
+           .button {
+               display: block;
+           }
+        }
+    </style>
+
+<div class="container" dir="rtl">
+    <div>
+        <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+    </div>
+    <div>
+    {% if request.user.base_group == 'wh' %}
+        <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
+    {% endif %}
+    </div>
+
+    <div class="row">
+
+        <div class="col text-center py-2">
+            <h1>میکرومدرن</h1>
+            <span class="font-size-20 mb-5">مجوز خروج انبار(فروش)</span>
+        </div>
+    </div>
+
+</div>
+
+<div class="container border border-dark" dir="rtl">
+    <div class="row">
+
+        <div class="col">
+            <span data-key="wh_code">کد انبار : </span><span class="ms-5">1</span><br>
+            <span data-key="wh_title">عنوان انبار : </span><span class="ms-5">انبار مرکزی</span>
+        </div>
+        <div class="col">
+            <span data-key="customer_code">کد تحویل گیرنده:</span><span class="ms-5">{{ data.q.customer_party_id.sepidar_dl_code|default_if_none:"-" }}</span><br>
+            <span data-key="postal_code">عنوان تحویل گیرنده:</span><span class="ms-5">{{ data.q.customer_party_id.title|default_if_none:"-" }}</span>
+        </div>
+        <div class="col">
+            <span data-key="serial_number">شماره سریال : </span>
+            <span>
+                {{ data.id }}
+                {% if data.sepidar_number %}
+                    | S{{ data.sepidar_number }}
+                {% endif %}
+            </span><br>
+            <span data-key="date">تاریخ: </span><span dir="rtl" >{% jalali_now as today %}{{ today|to_jalali:"%Y/%m/%d" }}</span><br>
+{#            <span data-key="validity_date">تاریخ اعتبار: </span><span dir="rtl">{{ data.q.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span>#}
+        </div>
+
+    </div>
+</div>
+<div class="container" dir="rtl" style="background-color: #f7fafc">
+    <div class="row border border-dark">
+        <div class="col"></div>
+        <div class="col">
+            <h6 data-key="buyer_info" class="text-center">مشخصات کالا یا خدمات مورد معامله</h6>
+        </div>
+        <div class="col"></div>
+    </div>
+</div>
+
+<div class="container" dir="rtl">
+    <div class="row">
+        <table class="table table-bordered border-dark mb-0">
+            <thead>
+            <tr>
+                <th scope="col">ردیف</th>
+                <th scope="col">کد کالا</th>
+                <th scope="col" >عنوان کالا</th>
+                <th scope="col">مقدار</th>
+                <th scope="col">واحد</th>
+                <th scope="col">توضیحات</th>
+            </tr>
+            </thead>
+            {% for form_ in formset %}
+            <tbody class="border border-dark" id="row_element">
+            <tr>
+                {% if form.instance.q.currency_ref.id == 1 %}
+                    {% include "factor/wh_exit_permit_item.html" with form=form_ digit=0 %}
+                {% else %}
+                    {% include "factor/wh_exit_permit_item.html" with form=form_ digit=4 %}
+                {% endif %}
+            </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{#{% if not request.user.base_group == 'wh' %}#}
+{#<div class="container border border-dark" dir="rtl">#}
+{#    <div class="row">#}
+{#        <div class="col-1"></div>#}
+{#        <div class="col-1"></div>#}
+{#        <div class="col-5"></div>#}
+{#        <div class="col-5 "><span class="me-10"> جمع:</span> {% sum_quantity data as total_quantity %} {{ total_quantity }}</div>#}
+{#    </div>#}
+{#</div>#}
+
+<div class="container" dir="rtl">
+    <div class="row row-cols-3">
+        <div class="col">
+
+        </div>
+        <div class="col"></div>
+        <div class="col">
+            <div class="row row-cols-2 border-bottom border-dark ">
+                <div class="col p-0 border-right border-dark text-right" style="border-left: 1px solid black;">
+                    <p class=" my-1 ps-1">جمع</p>
+                </div>
+                <div class="col m-0 p-0 text-center border-left">
+
+                    <p class=" my-1" >{% sum_quantity data as total_quantity %} {{ total_quantity|intcomma }}</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pt-20" dir="rtl">
+
+        <div class="col"></div>
+</div>
+<div class="container" dir="rtl">
+    <div class="row row-cols-2 border border-dark">
+        <div class=" mt-2">
+            <p class="bold">
+                توضیحات:
+            </p>
+            <p class="font-size-15">
+                لطفا درصورت تایید حواله، تاییدیه آن را ظرف 48 ساعت فکس نمایید، در غیر این‌صورت شرکت میکرومدرن
+                هیچ مسئولیتی در قبال مغایرات احتمالی ندارد.
+                مدت زمان مرجوع کالا حداکثر 72 ساعت می‌باشد.کالاهای اختصاصی که جهت مشتری سفارش گذاری و تامین شده باشند، قابلیت مرجوع ندارند(مگر اشکال کیفی که مورد تایید فنی میکرومدرن قرار گیرد).
+            </p>
+        </div>
+        <div class="col-11 col-md-11">
+            <p class="mb-10 mt-2">
+                {{ data.description|default_if_none:"-"|linebreaks }}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="container" dir="rtl">
+    <div class="row row-cols-2 border border-dark">
+        <div class="col mb-10">
+            <span class="mt-2">
+                صادر کننده:
+            </span>
+            <span>{{ data.q.creator_user }}</span>
+        </div>
+        <div class="col border border-right border-dark">
+            <span class="mt-2">
+              تحویل گیرنده:
+            </span>
+            <span class="ms-3">{{ data.q.customer_party_id.title }}</span>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<br>
+<div id="result-container">
+            </div>
+{#{% endif %}#}
+{% block extra_js %}
+    <script src="{% static 'js/base.js' %}"></script>
+
+    <div id="result-container" style="display:none;"></div>
+
+<script>
+document.getElementById('calculate-button').addEventListener('click', function() {
+    debugger
+    const rows = document.querySelectorAll('[id^="id_goods_code-"]'); // همه ردیف‌ها
+
+    // ✅ متغیر برای جمع کردن همه خروجی‌ها
+    let allHTML = '';
+
+    rows.forEach(rowEl => {
+        const rowId = rowEl.id.replace('id_goods_code-', '');
+
+        const productCode = document.getElementById(`id_goods_code-${rowId}`)?.innerText?.trim() || '-';
+        const totalQuantityStr = document.getElementById(`id_quantity-${rowId}`)?.innerText?.trim() || '0';
+        const qtyPerPackageStr = document.getElementById(`id_batch_count-${rowId}`)?.innerText?.trim() || '0';
+
+        const totalQuantity = parseInt(totalQuantityStr, 10);
+        const qtyPerPackage = parseInt(qtyPerPackageStr, 10);
+
+        // بررسی صحت مقادیر
+        if (isNaN(totalQuantity) || isNaN(qtyPerPackage) || totalQuantity <= 0) return;
+
+        let finalQtyPerPackage = qtyPerPackage;
+        let specialCaseMessage = '';
+
+        if (qtyPerPackage === 0) {
+            finalQtyPerPackage = totalQuantity;
+            specialCaseMessage = `<p class="text-warning">⚠️ به دلیل صفر بودن تعداد در بسته، مقدار برابر با ${finalQtyPerPackage} در نظر گرفته شد.</p>`;
+        }
+
+        const fullPackagesCount = Math.floor(totalQuantity / finalQtyPerPackage);
+        const remainder = totalQuantity % finalQtyPerPackage;
+
+        const packageBreakdown = [];
+        for (let i = 0; i < fullPackagesCount; i++) packageBreakdown.push(finalQtyPerPackage);
+        if (remainder > 0) packageBreakdown.push(remainder);
+
+        const breakdownString = packageBreakdown.join(' + ');
+
+        // ✅ هر ردیف را به متن کل اضافه می‌کنیم
+        allHTML += `
+            <div style="border:1px dashed #ccc; margin-bottom:15px; padding:10px; border-radius:8px;">
+                <h4>کالا: ${productCode}</h4>
+                <p><strong>تعداد کل:</strong> ${totalQuantity}</p>
+                <p><strong>تعداد در هر بسته:</strong> ${qtyPerPackage}</p>
+                ${specialCaseMessage}
+                <p><strong>بسته‌های کامل:</strong> ${fullPackagesCount}</p>
+                <p><strong>تفکیک بسته‌ها:</strong> ${breakdownString}</p>
+            </div>
+        `;
+    });
+
+    // ✅ نتیجه نهایی را فقط در یک تب نمایش بده
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+        alert('مرورگر اجازه باز کردن تب جدید را نداد. لطفاً پاپ‌آپ‌ها را فعال کنید.');
+        return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`
+        <html dir="rtl" lang="fa">
+        <head>
+            <meta charset="utf-8">
+            <title>پرینت فاکتور</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    padding: 20px;
+                    direction: rtl;
+                    background: #fff;
+                    color: #333;
+                }
+                h2 {
+                    text-align: center;
+                    border-bottom: 2px solid #999;
+                    padding-bottom: 8px;
+                }
+                .text-warning {
+                    color: red;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>جزئیات بسته‌بندی فاکتور</h2>
+            ${allHTML}
+            <script>
+                // ✅ بستن خودکار تب بعد از پرینت
+                window.onafterprint = function() { window.close(); };
+                window.print();
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+});
+</script>
+
+
+
+{% endblock extra_js %}

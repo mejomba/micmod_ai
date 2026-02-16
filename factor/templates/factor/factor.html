@@ -130,6 +130,7 @@
                 </span>
             </div>
         </div>
+
         {% else %}
             <div class="d-flex align-items-baseline">
             {% if form.instance.force_factor  %}
@@ -141,9 +142,14 @@
             {% endif %}
             </div>
         {% endif %}
-    <a class="btn btn-outline-dark btn-bordered text-xl-center ms-auto"
-         href="{% url 'factor:factor.print' form.instance.id %}" target="_blank">
-        پرینت فاکتور
+
+    <a class="btn btn-outline-dark btn-bordered text-xl-center " id="factor_print"
+         href="{% url 'factor:factor.print' form.instance.id %}?action=factor_print" target="_blank">
+             پرینت فاکتور
+    </a>
+    <a class="btn btn-outline-dark btn-bordered text-xl-center ms-1" id="wh_exit_permit"
+         href="{% url 'factor:factor.print' form.instance.id %}?action=wh_exit_permit" target="_blank">
+        حواله خروج
     </a>
     {% else %}
         <div class="px-2 mx-auto">

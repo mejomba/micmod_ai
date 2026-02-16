@@ -3,6 +3,7 @@ import uuid
 from django import template
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 from comments.models import Comments, CommentSeen
 from extra_data.models import Item
@@ -469,7 +470,7 @@ def get_field_name(field):
         return None
 
 
-from django.db.models import ForeignKey, Q
+from django.db.models import ForeignKey, Q, Sum
 
 
 @register.simple_tag
@@ -590,3 +591,14 @@ def merge_dict_common_key(x, y):
 @register.filter
 def get_total_qty_cri(dictionary, key):
     return dictionary.get(key)
+
+
+@register.simple_tag
+def sum_quantity(data):
+    total_quantity = data.factoritem_set.all().aggregate(total=Sum('quantity'))['total'] or 0
+    return total_quantity
+
+@register.simple_tag
+def jalali_now():
+    now = timezone.now()
+    return now
