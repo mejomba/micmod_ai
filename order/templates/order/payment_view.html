@@ -44,9 +44,10 @@
 
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row">
+        <span class="d-none">
         party: {{ form.instance.vendor_party.partyid }}
         dl: {{ form.instance.vendor_party.dlref }}
-            <br>
+            </span>
         {% render_field_by_order form form.total_amount form.currency form.vendor_party form.karmozd form.karmozd_currency label='on-border' %}
 
         <div class="col">
@@ -88,30 +89,30 @@
 {#            {{ form.instance.total_payment }}#}
 {#            {{ form.instance.total_amount }}#}
         {% if form.instance.pk %}
-        {% with form.instance.total_payment_and_percent as payment %}
-                {% if payment.1 == 100 %}
-                    <i class="ki-duotone ki-double-check-circle text-success fs-1">
-                     <span class="path1"></span>
-                     <span class="path2"></span>
-                     <span class="path3"></span>
-                    </i>
-                {% else %}
-                    <i class="ki-duotone ki-information-2 text-warning fs-1">
-                     <span class="path1"></span>
-                     <span class="path2"></span>
-                     <span class="path3"></span>
-                    </i>
-                {% endif %}
+{#        {% with form.instance.total_payment_and_percent as payment %}#}
+{#                {% if payment.1 == 100 %}#}
+{#                    <i class="ki-duotone ki-double-check-circle text-success fs-1">#}
+{#                     <span class="path1"></span>#}
+{#                     <span class="path2"></span>#}
+{#                     <span class="path3"></span>#}
+{#                    </i>#}
+{#                {% else %}#}
+{#                    <i class="ki-duotone ki-information-2 text-warning fs-1">#}
+{#                     <span class="path1"></span>#}
+{#                     <span class="path2"></span>#}
+{#                     <span class="path3"></span>#}
+{#                    </i>#}
+{#                {% endif %}#}
 
-                <span class="text-black font-size-16">{{ payment.0 }}</span>
-                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>
-                <span>پرداخت شده از </span>
-                <span class="text-black font-size-16">{{ form.instance.total_amount }}</span>
-                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>
+{#                <span class="text-black font-size-16">{{ payment.0 }}</span>#}
+{#                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>#}
+{#                <span>پرداخت شده از </span>#}
+{#                <span class="text-black font-size-16">{{ form.instance.total_amount }}</span>#}
+{#                <span>{{ form.instance.currency|default_if_falsy:'' }}</span>#}
+{##}
+{#                <span class="rounded py-1 px-2 bg-primary text-white  ms-5">% {{ payment.1 }}</span>#}
 
-                <span class="rounded py-1 px-2 bg-primary text-white  ms-5">% {{ payment.1 }}</span>
-
-            {% endwith %}
+{#            {% endwith %}#}
         {% endif %}
         </div>
 

@@ -1,0 +1,187 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+{% load jalali_tags %}
+
+{% block title %} Payment {{ form.instance.pk }} {% endblock title %}
+{% block extra_css %}
+
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+    </style>
+{% endblock extra_css %}
+
+
+{% block content_ %}
+
+
+    <a href="{% url 'order:packing.list' %}" class="btn btn-primary">
+        <i class="ki-duotone ki-arrow-right">
+         <span class="path1"></span>
+         <span class="path2"></span>
+        </i>
+        پکینگ خارجی</a>
+    <div class="accordion" id="accordionPanelsStayOpenExample" dir="rtl">
+        {% for sepidar_buy_factor_id, order_ids in buy_factor_id_dict.items %}
+
+            <div class="accordion-item" style="direction: rtl">
+                <h2 class="accordion-header" id="panelsStayOpen-heading{{ forloop.counter }}">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" onclick="get_sepidar_buy_factor(event, {{ sepidar_buy_factor_id.0 }}, {{ order_ids  }})"
+                            data-bs-target="#panelsStayOpen-collapse{{ forloop.counter }}" aria-expanded="true"
+                            aria-controls="panelsStayOpen-collapse{{ forloop.counter }}" data-sepidar-buy-factor-id="{{ sepidar_buy_factor_id.0 }}">
+                        فاکتور خرید سپیدار
+                        {{ sepidar_buy_factor_id.1 }}
+                    </button>
+                </h2>
+                <div id="panelsStayOpen-collapse{{ forloop.counter }}" class="accordion-collapse collapse "
+                     aria-labelledby="panelsStayOpen-heading{{ forloop.counter }}">
+                    <div class="accordion-body" id="">
+                        <div id=""></div>
+                    </div>
+                </div>
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+
+
+
+
+{% endblock content_ %}
+
+{% block form_footer_extra %}
+    <span style="position: relative; bottom: 6px;">
+    {% include "core/partial/add_formset_button.html" %}
+    </span>
+{% endblock form_footer_extra %}
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'js/extra/formset.js' %}"></script>
+
+    <script>
+    function get_sepidar_buy_factor(event, sepidar_buy_factor_id, order_ids=null){
+        const target = event.currentTarget
+        const accordion = findAncestor(target, 'accordion-item')
+        const accordion_body = accordion.querySelector('.accordion-body')
+
+        $.ajax({
+            type: 'GET',
+            url: `${sepidar_buy_factor_id}/`,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                debugger
+                const res = data['res']
+                let row_list = []
+                let row_html = ''
+                const h = `<table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col" style="font-weight: bold">ردیف</th>
+                      <th scope="col" style="font-weight: bold">پارت نامبر</th>
+                      <th scope="col" style="font-weight: bold">تعداد</th>
+                      <th scope="col" style="font-weight: bold">تعداد رسید شده</th>
+                    </tr>
+                  </thead>
+                  <tbody>`
+
+                    for (const [index, row] of res['items'].entries()) {
+                        row_html = `<tr>
+                            <th scope="row" style="text-align:right">${index+1}</th>
+                            <td class="" style="text-align:right">${row['partnumber']}</td>
+                            <td class="" style="text-align:right">${row['quantity']}</td>
+                            <td class="" style="text-align:right"><input type="number" name="receipt_quantity__${row['id']}" value="${row['quantity']}"></td>
+                        </tr>`
+
+                        row_list.push(row_html)
+                    }
+
+                  const h2 = `</tbody>
+                </table>`
+
+
+
+                    {#row_list.push(row_html)#}
+
+                let html = h + row_list.join('') + h2
+                 html += `<button class="btn btn-sm btn-success" onclick="wh_receipt_from_bazar(event, ${sepidar_buy_factor_id}, ${order_ids})">تبدیل به رسید انبار سپیدار</button>`
+                accordion_body.innerHTML = html
+            },
+            error: function () {
+
+            },
+        });
+    }
+
+    function wh_receipt_from_bazar(event, sepidar_buy_factor_id, order_ids=null){
+        debugger
+        const target = event.currentTarget
+        const accordion_body = findAncestor(target, 'accordion-body')
+        const quantities = accordion_body.querySelectorAll("input[name*='receipt_quantity__']")
+        target.classList.add('d-none')
+
+        const result = {}
+
+        quantities.forEach(input => {
+            const key = input.name.split('__')[1]
+            const value = Number(input.value)
+
+            if (key) {
+                result[key] = value
+            }
+        })
+
+        $.ajax({
+            type: 'POST',
+            url: `${sepidar_buy_factor_id}/?send_to_sepidar=1&order_ids=${order_ids}`,
+            dataType: 'json',
+            contentType: 'application/json',
+            cache: false,
+            processData: false,
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            data: JSON.stringify({result}),
+            success: function (data) {
+                debugger
+                const res = data['res']
+                findAncestor(accordion_body, 'accordion-item').innerHTML = res
+            },
+            error: function (rs, e) {
+                debugger
+                alert(rs.responseJSON.res)
+                target.classList.remove('d-none')
+            },
+        });
+    }
+    </script>
+
+{% endblock extra_js %}

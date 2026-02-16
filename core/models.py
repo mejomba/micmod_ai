@@ -334,7 +334,7 @@ class BaseModelAuto:
 
 class BaseFunctions():
     def log_error(self, e):
-        print('error: ', e.__traceback__.tb_lineno, e)
+        print('error: ', e.__traceback__.tb_lineno, e, 's')
 
     def state(self, flow_config, state_index, request, obj):
         """

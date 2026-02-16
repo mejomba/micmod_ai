@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms import inlineformset_factory
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -25,7 +25,7 @@ from simple_history.models import HistoricalRecords
 
 from core.exceptions import StockRefNotFoundError
 from core.permissions import HasShopPermission
-from extra_data.models import Item
+from extra_data.models import Item, CustomerAddress
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from micmod_base.serializers import CustomerRequestSerializer
@@ -96,7 +96,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             return
         try:
             res = SepidarApiCall.factor_to_sepidar(self.object, self.request)
-            if res:
+            if 'errors' not in res:
                 self.object.sepidar_number = res.get('number')
                 self.object.sepidar_id = res.get('invoiceid')
                 self.object.extra_data.request = self.request
@@ -118,6 +118,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             else:
                 self.after_sepidar_error()
                 messages.error(self.request, f'خطا در ارسال فاکتور به سپیدار')
+                messages.error(self.request, f"{res['errors']}")
                 return
         except StockRefNotFoundError as e:
             self.after_sepidar_error()
@@ -126,6 +127,21 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.after_sepidar_error()
             messages.error(self.request, f'{e}')
 
+    def save_new_address(self):
+        address = self.request.POST.get('new_address')
+        customer = self.request.POST.get('customer')
+        if address and customer:
+            obj = CustomerAddress.objects.create(address=address, customer_id=customer)
+
+            self.request.POST._mutable = True
+            self.request.POST['address'] = obj.pk
+            self.request.POST._mutable = False
+
+            self.object.extra_data.request = self.request
+            self.object.address = obj
+            self.object.save()
+            return obj
+
     def get_success_url(self):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
@@ -133,6 +149,9 @@ class FactorView(LoginRequiredMixin, BaseView):
         if self.object is None:
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+
+        if 'new_address' in self.request.POST:
+            self.save_new_address()
 
         try:
             condition = self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST
@@ -176,51 +195,55 @@ class FactorView(LoginRequiredMixin, BaseView):
         if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 0:
             # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله پیش نویس هستیم" and 'next':
             next = "مرحله تایید مدیر فروش"
-            next = "مرحله تامین کالات"
-        elif 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 0:
-            # "بدون نیاز به تایید مدیر فروش" and "در مرحله پیش نویس هستیم" and "next":
-            next = "تاید مدیر فروش"
-        elif 'next' in self.request.POST and self.object.is_all_supplied and self.state_index == 1:
-            # "بدون نیاز به تامین کالا" and "در مرحله تایید مدیر فروش هستیم" and "next":
-            next = "تاید مدیر فروش"
-
-        if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 3:
-            # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله تخصیص کارشناس انبار هستیم" and 'back':
-            back = "مرحله تایید مدیر فروش"
-            back = "مرحله تامین کالات"
-        elif 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
-            # "بدون نیاز به تایید مدیر فروش" and "در مرحله تامین کالا هستیم" and "back":
-            back = "تاید مدیر فروش"
-
-        if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
-            # belong_to_group = self.flow_config.get('flow_users_groups')[self.state_index - 2]
-            last_wf_belong_to_sales_user_if_change = self.object.workflows.filter(belong_to_group='sales_user', wf_status=4).order_by('id').last()
-            last_wf_belong_to_sales_user = self.object.workflows.filter(belong_to_group='sales_user').order_by('id').first()
-            wf_data = {
-                'wf_status': 2,  # back
-                'state': self.flow_config.get('flow_state_list')[self.state_index - 1],
-                'wf_description': 'بدون نیاز به تایید مدیر فروش',
-                'from_user': self.request.user,
-                'to_user': last_wf_belong_to_sales_user_if_change.to_user if last_wf_belong_to_sales_user_if_change else last_wf_belong_to_sales_user.from_user,
-                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index - 2],
-                'object_id': self.object.pk,
-            }
-            self.save_flow(self.request, **wf_data)
-        if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 0:
             wf_data = {
                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
                 'from_user': self.request.user,
-                'to_user': get_user_model().objects.filter(groups__name='wh_admin').first(),
+                'to_user': get_user_model().objects.filter(groups__name='wh_admin').last(),
                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
                 'object_id': self.object.pk,
             }
             self.save_flow(self.request, **wf_data)
-        if 'next' in self.request.POST and self.state_index == 4:
-            self.send_factor_to_sepidar()
 
-        # if self.object.final_check and not obj_before_save.final_check and 'next' not in self.request.POST:
-        #     self.send_factor_to_sepidar()
+            # wf_data = {
+            #     'state': self.flow_config.get('flow_state_list')[self.state_index + 2],
+            #     'wf_description': 'کالا موجود در انبار',
+            #     'from_user': self.request.user,
+            #     'to_user': get_user_model().objects.filter(groups__name='wh_admin').first(),
+            #     'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 3],
+            #     'object_id': self.object.pk,
+            # }
+            # self.save_flow(self.request, **wf_data)
+
+        elif 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and not self.object.is_all_supplied and self.state_index == 0:
+            # "بدون نیاز به تایید مدیر فروش" and "در مرحله پیش نویس هستیم" and "next": و کالا تامیین نشده
+            next = "تاید مدیر فروش"
+            wf_data = {
+                'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
+                'wf_description': 'بدون نیاز به تایید مدیر فروش',
+                'from_user': self.request.user,
+                'to_user': self.object.creator_user, # get_user_model().objects.filter(groups__name='wh_admin').first(),
+                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
+                'object_id': self.object.pk,
+            }
+            self.save_flow(self.request, **wf_data)
+
+        if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
+            # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله تخصیص کارشناس انبار هستیم" and 'back':
+            back = "مرحله تایید مدیر فروش"
+            wf_data = {
+                'wf_status': 2,  # back
+                'state': self.flow_config.get('flow_state_list')[self.state_index - 1],
+                'wf_description': 'کالا موجود در انبار',
+                'from_user': self.request.user,
+                'to_user': self.object.creator_user, # get_user_model().objects.filter(groups__name='wh_admin').first(),
+                'current_state_name': self.flow_config.get('flow_state_list')[self.state_index - 2],
+                'object_id': self.object.pk,
+            }
+            self.save_flow(self.request, **wf_data)
+
+        if 'send_factor_to_sepidar' in self.request.POST:
+            self.send_factor_to_sepidar()
 
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
@@ -292,6 +315,10 @@ class FactorView(LoginRequiredMixin, BaseView):
             context['f_warning'].append('نیاز به تایید مالی دارد.')
             context['allow_next'] = False
 
+        if self.object and self.state_index == 5 and not self.object.sepidar_id:
+            context['allow_next'] = False
+            context['f_warning'].append('فاکتور به سپیدار ارسال نشده')
+
         if self.object:
             # factoritems = (
             #     self.object.factoritem_set
@@ -300,7 +327,7 @@ class FactorView(LoginRequiredMixin, BaseView):
             # )
 
             if self.object and self.state_index >= 0 and not self.object.is_all_supplied:
-                context['f_warning'].append('سفارش در راه دارد')
+                context['f_warning'].append('سفارش در راه دارد یا تمام کالاها در انبار موجود نیست')
                 if self.state_index == 2:
                     context['allow_next'] = False
 
@@ -473,7 +500,19 @@ class FactorListDatatable(AjaxDatatableView):
         return self.cols
 
     def get_initial_queryset(self, request=None):
+        q = request.POST.get('q')
         qs = self.model.get_qs(self.request, lst=False)
+
+        if self.request.user.base_group == 'accounting':
+            qf = Q()
+            f = dict()
+            if q == 'all':
+                return self.model.objects.all()
+            else:
+                qf = Q(last_work_flow__current_state_name='تخصیص کارشناس انبار') | Q(last_work_flow__current_state_name='جمع‌‌آوری') | Q(last_work_flow__current_state_name='چک نهایی')
+                f = {"need_financial_approval": True, "accounting_confirm": False}
+            qs = qs.filter(qf, **f)
+
         return qs
 
     def customize_row(self, row, obj):
@@ -488,6 +527,7 @@ class FactorListDatatable(AjaxDatatableView):
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
         row['q__payment_method'] = obj.q.payment_method if obj.q else ''
+        row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
 
@@ -550,6 +590,9 @@ class FactorListDatatable(AjaxDatatableView):
             {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
             {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'),
              'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
+            {'name': 'last_work_flow__to_user', 'visible': True, 'searchable': True, 'title': "متعلق به",
+             'orderable': True,
+             'lookup_field': '__username__icontains', 'className': 'border'},
         ]
         return self.cols
 
@@ -717,9 +760,250 @@ def get_supply_locations(request, sku, factor_item_pk, *args, **kwargs):
 
 
 def show_force_factor(request, *args, **kwargs):
+    from tools import const
     user = request.user
     if user.base_group == 'wh' or user.is_superuser:
-        force_factor = Factor.objects.filter(force_inquiry=True)
+        force_factor = Factor.objects.filter(force_factor=True, last_work_flow__current_state_name__in=const.WH_FACTOR_STATES)
         force_factors_id = [f.pk for f in force_factor]
         return JsonResponse({'res': force_factors_id, 'count': force_factor.count()})
     return JsonResponse({'res': ''}, safe=False)
+
+
+class FactorAndSepidar(View):
+    valid_view = ('trade_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
+    valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview', 'wh_to_wh_preview')
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name')
+        if self.request.method != 'POST' and view_name not in self.valid_for_get:
+            return HttpResponseNotAllowed(["POST"])
+
+        if view_name and (view_name in self.valid_view or view_name in self.valid_for_get):
+            return getattr(self, view_name)(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+    def factor_to_sepidar(self, request, *args, **kwargs):
+        """ from GIO generate
+            1: `buy factor`
+            2: `inventory_receipt_before_central_wh`
+            3: `voucher`
+            in sepidar
+        """
+        from tools import utils
+        gio_id = json.loads(self.request.body or '{}').get('gio_id')
+        gio_object = GIO.objects.filter(pk=gio_id).first()
+        if not gio_object:
+            return
+
+        gio_items = gio_object.gioitems.all()
+        if not gio_items:
+            return
+
+        gio_items_group_by_supplier_and_currency = dict()
+
+        supplier_currency_list = []
+        for gioi in gio_items:
+            key1 = gioi.order.final_supplier.dlref or settings.SEPIDAR_CONST_DATA.get('no_name_vendor')
+            key2 = gioi.order.currency.sepidar_id
+
+            final_key = f'{key1}___{key2}'
+            supplier_currency_list.append(final_key)
+            gio_items_group_by_supplier_and_currency.setdefault(final_key, []).append(gioi)
+
+        res = SepidarApiCall.gio_to_sepidar(gio_items_group_by_supplier_and_currency, request)
+
+        if res.get('errors'):
+            return JsonResponse(res, status=500)
+
+        for supplier_currency in supplier_currency_list:
+            gio_res = res.get(supplier_currency)
+            if gio_res:
+                grouped_gioi = gio_items_group_by_supplier_and_currency.get(supplier_currency)
+                for gio_item in grouped_gioi:
+
+                    if SepidarOrderDocument.objects.filter(order=gio_item.order).exists():
+                        order_document_obj = SepidarOrderDocument.objects.get(order=gio_item.order)
+                        data = order_document_obj.data
+                        data['gio']['sepidar'].append(gio_res['gio']['sepidar'][0])
+                        order_document_obj.data = data
+                        order_document_obj.save()
+                    else:
+                        SepidarOrderDocument.objects.create(order=gio_item.order, data=gio_res)
+
+        gio_json_response = {"purchase_invoice":[], "before_central_wh_receipt":[], "voucher":[]}
+        for supplier_currency, gio_res in res.items():
+            purchase_invoice = gio_res['gio']['sepidar'][0]['purchase_invoice']['id']
+            before_central_wh_receipt = gio_res['gio']['sepidar'][0]['before_central_wh_receipt']['id']
+            voucher = gio_res['gio']['sepidar'][0]['voucher']['id']
+            gio_json_response['purchase_invoice'].append(purchase_invoice)
+            gio_json_response['before_central_wh_receipt'].append(before_central_wh_receipt)
+            gio_json_response['voucher'].append(voucher)
+
+        gio_object.sepidar_buy_factor_response_json = gio_json_response
+        # gio_object.sepidar_inventory_receipt_response_json = wh_res
+        gio_object.extra_data.request = self.request
+        gio_object.save()
+
+        return JsonResponse({'res': 'success'})
+
+    def bazar_buy_factor(self, request, *args, **kwargs):
+        from tools import utils
+        try:
+            body = self.request.body or '{}'
+            data = json.loads(body)
+            grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+            res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+            if hasattr(res, 'errors'):
+                # messages.error(self.request, res.get('errors'))
+                return JsonResponse({'res': 'fail'})
+
+            elif res and res.get('valid'):
+                buy_factor_number = res.get('number')
+                buy_factor_id = res.get('buy_factor_id')
+                lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+                """
+                lookup output like this:
+                lookup = {
+                    (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+                }
+                """
+                buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+                for key, value in lookup.items():
+                    buy_factor_item = buy_factor_items.get(key)
+                    inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                    order_pk = value.get('portal_order_id')
+                    o = Order.objects.filter(pk=order_pk).first()
+                    o.buy_factors.append(
+                        {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                    o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
+                    o.editor_user = self.request.user
+                    o.save()
+                new_btn = """
+                        <button 
+                            type="button" 
+                            id="submit-buy-factor" 
+                            class="btn btn-secondary mt-5 me-5"
+                            onclick="window.location.href = window.location.href">
+                            جدید
+                        </button>
+                        """
+                return JsonResponse({
+                                        'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span> <a href="/order/bazar/buy_factor/view/?" class="btn btn-sm">جدید</a>'},
+                                    status=201)
+            else:
+                return JsonResponse({'res': res}, status=400)
+        except Exception as e:
+            return JsonResponse({'res': {"error": e.args[0]}}, status=400)
+
+    def payment_for_order_to_sepidar_preview(self, request, *args, **kwargs):
+        context = dict()
+
+        payment_id = self.request.GET.get('payment_id')
+        payment = OrderPayment.objects.get(pk=payment_id)
+        currency_for_orders = [x.order.currency for x in payment.payment_item.all()]
+
+        groups = OrderedDict()
+        for item in payment.payment_item.all():
+            groups.setdefault(item.order.currency, []).append(item)
+
+        context['groups'] = list()
+        if len(groups.values()) != 1:
+            return JsonResponse({'res': 'نوع ارز انتخابی در سفارش ها متفاوت است'})
+
+        for g in groups.values():
+            print(g)
+            context['groups'].append(g)
+
+        context['payment'] = payment
+
+        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_preview.html', context=context)
+
+        return JsonResponse({'res': html})
+
+    def payment_for_order_to_sepidar(self, request, *args, **kwargs):
+        from tools import utils
+        payment_id = self.request.GET.get('payment_id')
+        payment = OrderPayment.objects.get(pk=payment_id)
+        context = dict()
+
+        groups = OrderedDict()
+        for item in payment.payment_item.all():
+            groups.setdefault(item.order.currency, []).append(item)
+
+        context['groups'] = list()
+        for g in groups.values():
+            print(g)
+            context['groups'].append(g)
+            res = SepidarApiCall.payment_to_sepidar(g, self.request)
+            if res[0]:
+                payment.sepidar_response = res[1]
+                payment.save()
+
+        context['payment'] = payment
+
+        html = render_to_string('order/partial/sepidar/payment_for_order_to_sepidar_response.html', context=context)
+
+        return JsonResponse({'res': html})
+
+    def wh_to_wh_preview(self, request, *args, **kwargs):
+        context = dict()
+
+        packing_id = self.request.GET.get('packing_id')
+        context['packing'] = Packing.objects.get(pk=packing_id)
+        context['packing_items'] = PackingItem.objects.filter(packing_id=packing_id)
+        html = render_to_string('order/partial/sepidar/wh_to_wh_preview.html', context=context)
+
+        return JsonResponse({'res': html})
+
+    def wh_to_wh_execute(self, request, *args, **kwargs):
+        """ from packing in wh state generate
+         1: Inventorydelivery
+         2: Inventoryreceipt
+         to sepidar
+         """
+        packing_id = self.request.GET.get('packing_id')
+        packing = Packing.objects.get(pk=packing_id)
+
+        # res = SepidarApiCall.wh_to_wh(packing, request)
+        res = SepidarApiCall.packing(packing, request)
+
+        if res.get('errors'):
+            return JsonResponse({"res": res['errors']}, status=500)
+        else:
+            packing.sepidar_wh_to_wh = res['packing']['sepidar'][0]
+            for packing_item in packing.packing_item_rel.all():
+                order_ = packing_item.order
+                order_document = order_.sepidar_document
+
+                """
+                اگر اصلا داکیومنت برای پکینگ وجود نداشت ایجاد میکنیم
+                اگر داکیومنت داشت اما پکینگ نداشت فقط کلید پکینگ را اضافه میکنیم
+                اگر داکیومنت داشت و پکینگ هم داشت رکورد جدید را به لیست اضافه میکنیم یعنی این سفارش در بیش از یک پکینگ بوده و به سپیدار رفته
+                """
+                res['packing']['sepidar'][0]['wh_delivery']['quantity'] = packing_item.wh_receipt_quantity
+                res['packing']['sepidar'][0]['wh_receipt']['quantity'] = packing_item.wh_receipt_quantity
+                if not order_document:
+                    SepidarOrderDocument.objects.create(order=order_, data=res)
+                elif order_document and not order_document.data.get('packing'):
+                    order_document.data['packing'] = res['packing']['sepidar']
+                elif order_document and order_document.data.get('packing'):
+                    order_document.data['packing'].append(res['packing']['sepidar'][0])
+
+                order_document.save()
+
+                order_.is_wh = True
+                order_.sepidar_wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+                order_.extra_data.request = self.request
+                order_.save()
+
+            packing.extra_data.request = self.request
+            packing.save()
+
+        context = dict()
+        context['packing'] = packing
+        html = render_to_string('order/partial/sepidar/wh_to_wh_sepidar_response.html', context=context)
+
+        return JsonResponse({'res': html})

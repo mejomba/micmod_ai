@@ -75,10 +75,10 @@
                                     <span>تعداد کل</span>
                                     <span id="order-quantity">{{ form.instance.order.final_quantity|default_if_falsy:'-' }}</span>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <span>تعداد مانده</span>
-                                    <span id="order-quantity">{{ form.instance.order.remaining_quantity|default_if_falsy:'-' }}</span>
-                                </div>
+{#                                <div class="d-flex gap-2">#}
+{#                                    <span>تعداد مانده</span>#}
+{#                                    <span id="order-quantity">{{ form.instance.order.remaining_quantity|default_if_falsy:'-' }}</span>#}
+{#                                </div>#}
                             </div>
                             <div class="d-flex gap-6 mt-4 text-info">
                                 {% for other_payment_item in form.instance.order.where_is_other_payment %}

@@ -8,11 +8,13 @@ from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
 from accounts.models import User
 from core.forms import CustomBaseModelForm
+from extra_data.models import CustomerAddress
 from factor.models import Factor, FactorItem, Delivery
 from files.models import File
 from order.models import Order
 from translator import get_text as _
 from django.utils.html import format_html
+from workflow.models import FlowAdminGroup
 
 
 class x (AdminSplitJalaliDateTime):
@@ -60,16 +62,24 @@ class FactorModelForm(CustomBaseModelForm):
 
             if form_constraint:
                 for item in form_constraint[self.form_state]:
-                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                    if not isinstance(item, dict):
+                        item = form_constraint[self.form_state]
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if formset_constraint:
                 for item in formset_constraint[self.form_state]:
-                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                    if not isinstance(item, dict):
+                        item = formset_constraint[self.form_state]
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
         super(FactorModelForm, self).__init__(*args, **kwargs)
         # self.make_hidden(['packing_json'])
+        if self.instance.__class__.__name__.lower() == 'quotation':
+            self.fields['address'].queryset = CustomerAddress.objects.filter(customer=self.instance.customer_party_id)
+        elif self.instance.pk:
+            self.fields['address'].queryset = CustomerAddress.objects.filter(customer=self.instance.q.customer_party_id)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
         self.fields['official_value'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
         self.fields['self_discount'].widget = forms.TextInput(attrs={'onchange': 'factor_calculate_price_all_rows()', 'class': 'LTR-RTL rounded font-size-11 text-center w-75'})
@@ -83,6 +93,7 @@ class FactorModelForm(CustomBaseModelForm):
                                                           attrs={'class': 'jalali_date-date form-control',
                                                                  'size': '10'}), required=True if request and request.user.base_group == 'wh' else False
                                                       )
+        self.fields['collecting_end_time'] = forms.DateTimeField(required=False)
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
 
@@ -107,9 +118,10 @@ class FactorItemModelForm(CustomBaseModelForm):
     class Meta:
         model = FactorItem
         exclude = ['group']
-    supply_location = forms.CharField(required=False)
+    # supply_location = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
+        internal_call = kwargs.pop('internal_call', None)
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
         if self.form_state is None:
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
@@ -132,12 +144,16 @@ class FactorItemModelForm(CustomBaseModelForm):
 
             if request and not request.user.is_superuser and form_constraint:
                 for item in form_constraint[self.form_state]:
-                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                    if not isinstance(item, dict):
+                        item = form_constraint[self.form_state]
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if request and not request.user.is_superuser and formset_constraint:
                 for item in formset_constraint[self.form_state]:
-                    if item.get('group') in request.user.groups.values_list('name', flat=True):
+                    if not isinstance(item, dict):
+                        item = formset_constraint[self.form_state]
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
 
@@ -155,8 +171,10 @@ class FactorItemModelForm(CustomBaseModelForm):
         self.make_hidden(formset_constraint_hide or [])
         self.make_disable(form_constraint_read or [])
         self.make_disable(formset_constraint_read or [])
-        if not access:
+        if not access and not internal_call:
             self.make_disable(self.fields)
+
+        self.make_enable(['supply_location'])
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code', 'price',

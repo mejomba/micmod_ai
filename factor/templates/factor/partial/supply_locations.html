@@ -1,7 +1,7 @@
 {% load more_tags %}
 <div class="d-flex">
 {% if not user.base_group == 'wh' %}
-<select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-25 disabled_supply_locations" onfocusin="get_supply_locations(event)" onchange="sync_supply_location(event)">
+<select name="{{ prefix }}-{{ counter }}-supply_location" id="id_supply_location" class="rounded font-size-12 w-25 disabled_supply_locations" onfocusin="get_supply_locations(event)" onchange="sync_supply_location(event);">
 <option value="" class="font-size-10">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</option>
     {% if factor_item.supply_locations %}
         {% if factor_item.supply_locations.is_wh %}
@@ -14,8 +14,10 @@
     {% endif %}
 </select>
 
+    <select name="{{ prefix }}-{{ counter }}-reserve_selection" id="reserve_selection" class="d-none w-75"></select>
+
 {% endif %}
-    <div class="{% if not user.base_group == 'wh' %} w-75 {% endif %}">
+    <div class="{% if not user.base_group == 'wh' %} w-75 {% endif %} {% if not factor_item.pk %} d-none {% endif %}">
         <div class="font-size-11 text-start d-flex flex-column ms-2">
             {% if factor_item.supply_locations.cancel %}
                 {% for o in factor_item.supply_locations.order_base_items.all %}
@@ -37,6 +39,7 @@
                         <a href="{% url 'order:order.view' factor_item.supply_locations.pk %}" class="hover-link"
                            target="_blank">
                             {{ factor_item.supply_locations.order_text_in_factor }}
+                            ({{ factor_item.supply_locations.get_wh_name }})
                         </a>
                         {{ factor_item.supply_locations.estimate_arrive_at }}
                     {% endif %}

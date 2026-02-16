@@ -543,7 +543,7 @@ class CustomerDataTableView(AjaxDatatableView):
     #     pass
 
     def customize_row(self, row, obj):
-        row['customer_group'] = obj.change_marketer_rel.latest('created_date').to_marketer.title if obj.change_marketer_rel.all() else ''
+        row['customer_group'] = obj.change_marketer_rel.latest('created_date').to_marketer.title if obj.change_marketer_rel.all() and obj.change_marketer_rel.latest('created_date').to_marketer else ''
         row['title'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
             reverse('extra_data:customer.update', args=(obj.id,)),
             obj.title if obj.title else '_'

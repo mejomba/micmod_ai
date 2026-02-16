@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+/*@import url("https://fonts.googleapis.com/icon?family=Material+Icons");*/
 @font-face {
   font-family: Sahel;
   src: url(../fonts/Sahel.woff2);
@@ -12,6 +12,9 @@
 }
 .bg-order-item-new{
     background-color: #f7fcf8 !important;
+}
+.bg-hover-light-warning:hover {
+    background-color: #fff8d8;
 }
 .factor-alert {
   /*--bs-alert-bg: transparent;*/

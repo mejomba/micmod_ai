@@ -11,10 +11,19 @@
             <th scope="col">پارت نامبر</th>
             <th scope="col">موجودی/تعداد</th>
             <th scope="col">تعداد موثر/رزرو</th>
-            <th scope="col">تاریخ تعهد به مشتری</th>
-            <th scope="col">روش حمل</th>
+            <th scope="col">
+                <span>تاریخ تعهد به مشتری</span>
+                <span class="text-danger">*</span>
+            </th>
+            <th scope="col">
+                <span>روش حمل</span>
+                <span class="text-danger">*</span>
+            </th>
             <th scope="col">توضیحات فروش</th>
-            <th scope="col">نوع سفارش</th>
+            <th scope="col">
+                <span>نوع سفارش</span>
+                <span class="text-danger">*</span>
+            </th>
             <th scope="col">عملیات</th>
         </tr>
         </thead>
@@ -22,7 +31,7 @@
         {% for order_form in forms %}
             {% if order_form.items %}
                 {% for main_order, nested_orders in order_form.items %}
-                    <tr class="group bg-warning cursor-pointer">
+                    <tr class="group border border-warning bg-hover-light-warning rounded cursor-pointer">
                         <td colspan="11" onclick="toggleGroup('{{ main_order.pk }}')">
                             <div class="d-flex gap-5">
                                 <span class="hover-link">📦 محل تامین {{ main_order.pk }} (میتواند شامل یک یا چند محل تامین دیگر باشد)</span>
@@ -30,7 +39,7 @@
                                     <span class="mx-1">تعداد در فاکتور</span>
                                     <span class="bold">{{ main_order.quantity|floatformat:"-2g" }}</span>
                                 </div>
-                                <div class="bg-light-success rounded px-2">
+                                <div class="bg-success rounded px-2">
                                     <span>تامین شده</span>
                                     <span class="bold">{{ main_order.total_supply_qty|floatformat:"-2g" }}</span>
                                 </div>

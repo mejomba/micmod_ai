@@ -158,7 +158,7 @@ class FlowAdminGroup(models.Model):
             for my_flow_admin in cls.objects.filter(group_rel=ug):
                 my_flow_admin_child = my_flow_admin.group_child.all()
                 for ru in my_flow_admin_child:  # get all subgroups
-                    if ru in group_memo.get('prev'):
+                    if ru in group_memo.get('prev', []):
                         # group_memo.clear()
                         # group_memo['prev'] = None
                         # continue

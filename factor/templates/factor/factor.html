@@ -105,7 +105,7 @@
         <div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div>
 
         <div id="ajax_quotation_items"></div>
-    {% endif %} 
+    {% endif %}
 
 {% endblock form_content %}
 
@@ -118,21 +118,34 @@
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
     </div>
-        <div class="d-flex justify-content-between mt-1 {% if not request.user|has_group:'sales_admin' %} d-none {% endif %}">
-            <div><label class="col-form-label">استعلام سریع</label></div>
+        {% if  request.user|has_group:'sales_admin' and flow_state_index < 2 %}
+        <div class="d-flex justify-content-between mt-1 ">
+            <div><label class="col-form-label">فاکتور فوری</label></div>
             <div>
                 <span class="switch switch-brand">
                     <label>
-                        {{ form.force_inquiry }}
+                        {{ form.force_factor }}
                         <span></span>
                     </label>
                 </span>
             </div>
         </div>
 
+        {% else %}
+            <div class="d-flex align-items-baseline">
+            {% if form.instance.force_factor  %}
+                <span>فاکتور فوری: </span>
+                <span class="font-size-20">✔️</span>
+            {% else %}
+                <span>فاکتور فوری: </span>
+                <span class="font-size-20">❌</span>
+            {% endif %}
+            </div>
+        {% endif %}
+
     <a class="btn btn-outline-dark btn-bordered text-xl-center " id="factor_print"
          href="{% url 'factor:factor.print' form.instance.id %}?action=factor_print" target="_blank">
-        پرینت فاکتور
+             پرینت فاکتور
     </a>
     <a class="btn btn-outline-dark btn-bordered text-xl-center ms-1" id="wh_exit_permit"
          href="{% url 'factor:factor.print' form.instance.id %}?action=wh_exit_permit" target="_blank">
@@ -223,7 +236,7 @@
         rows.forEach(function (item){
             const qi_price = item.querySelector('.qi_price')
             const elem = item.querySelector("input[name*='-price']")
-            if (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price)){
+            if (qi_price && (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price))){
                 elem.classList.add('border-danger')
                 elem.classList.add('text-danger')
                 Alert.classList.add('alert-danger')
@@ -240,19 +253,62 @@
     function sync_supply_location(event){
         debugger
         const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')
+        const supply_location = event.currentTarget.parentElement.parentElement.querySelector('[id$="-supply_location"]')
         supply_locations.value = event.currentTarget.value
+        {#supply_location.value = event.currentTarget.value#}
+        const row = findAncestor(event.currentTarget, 'factor_item')
+
+        try {
+            let need_more
+            const text = event.currentTarget.textContent
+            const match = text.match(/آزاد:\s*([\d,]+)/);
+            const reserve_count = row.querySelector('input[name$="-reserve_count"]').value
+
+            if (match) {
+                const value = Number(match[1].replace(/,/g, ''));
+                need_more = Number(reserve_count) > value
+            }
+
+            if (need_more){
+                const wh_code = event.currentTarget.value.split('__')[1]
+                const sku = row.querySelector('input[name$="-goods_code"]').value
+                $.ajax({
+                    type: 'GET',
+                    url: `/order/get_wh_reserve_order/?wh_code=${wh_code}&sku=${sku}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: block_main_container,
+                    success: function (data) {
+                        debugger
+                        const reserve_selection = row.querySelector('#reserve_selection')
+                        reserve_selection.innerHTML = ''
+                        reserve_selection.classList.remove('d-none')
+
+                        const empty_option = document.createElement('option');
+                        empty_option.value = ''
+                        empty_option.textContent = 'انتخاب از رزرو دیگران ...'
+                        reserve_selection.appendChild(empty_option);
+
+                        Object.entries(data).forEach(([key, value]) => {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = value;
+                            reserve_selection.appendChild(option);
+                        });
+
+                    },
+                    error: function () {
+
+                    },
+                    complete: release_main_container
+                }); // end ajax
+            }
+        } catch (e){
+            console.log('wh not fount')
+        } // end try catch
     }
-    {#const factor_items = document.querySelectorAll('.factor_item')#}
-    {#if (factor_items){#}
-    {#    factor_items.forEach(function (fi){#}
-    {#        const id_supply_location = fi.querySelector('#id_supply_location')#}
-    {#        id_supply_location && id_supply_location.addEventListener('change', function (e){#}
-    {#            debugger#}
-    {#            const supply_locations = fi.querySelector('[id*="-supply_locations"]')#}
-    {#            supply_locations.value = e.currentTarget.value#}
-    {#        })#}
-    {#    })#}
-    //}
     </script>
     <script src="{% static 'js/local/sortable.min.js' %}"></script>
 <script>

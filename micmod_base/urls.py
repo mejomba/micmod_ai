@@ -67,4 +67,7 @@ urlpatterns = [
     path('item_order_quantity/', item_order_quantity, name="item_order_quantity"),
     path('dynamic_view/', MicModDynamicView.as_view(), name="dynamic_view"),
     path('get_quotation_sales_history/', get_quotation_sales_history, name="get_quotation_sales_history"),
+
+    path('api/quotation-rows/', QuotationRowsGroupedByQuotationView.as_view(), name='quotation-rows-list'),
+    path('quotation_item_approve/', quotation_item_approve_view, name='quotation_item_approve'),
 ]

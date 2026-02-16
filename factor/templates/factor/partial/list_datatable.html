@@ -14,8 +14,10 @@
     <!-- Responsive datatable examples -->
     <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />
+{#    <link href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{#    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" rel="stylesheet" type="text/css" />#}
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
     <style>
 
@@ -33,24 +35,32 @@
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
+    <div class="d-flex align-items-baseline my-3">
+                    {% if request.user.base_group == 'accounting' %}
+                        <a href="{% url 'factor:factor.list' %}" class="btn btn-sm my-1 ms-3 {% if not request.GET.q %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="فاکتور هایی که نیاز به تایید مالی دارند و هنوز تایید نشده اند">در جریان</a>
+                        <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-sm my-1 ms-3 {% if request.GET.q == 'all' %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="تمام فاکتور های ثبت شده در پرتال">همه</a>
+                    {% endif %}
+                    </div>
+
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
                     {% if request.user|has_group:"wh_admin" %}
                     <div class="border border-success bg-light-success rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="forceFactorBox"></div>
                     {% endif %}
-                <div class="row">
-{#                    <a href="{% url 'order:order_of_factor' 0 %}" target="_blank" class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">همه</a>#}
-                            <div class="col-12">
-                                <div class="container-fluid">
-                                    <div class="table-responsive p-2">
-                                        <table id="factor_list" width="100%" class="m-table table-striped table-bordered w-100">
 
-                                        </table>
-                                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="container-fluid">
+                                <div class="table-responsive p-2">
+                                    <table id="factor_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                    </table>
                                 </div>
                             </div>
-                </div>
+                        </div>
+                    </div>
 
                 </div> <!-- container-fluid -->
             </div>
@@ -129,8 +139,8 @@
 
     fetchForceFactor();
 
-    // اجرا هر یک دقیقه
-    setInterval(fetchForceFactor, 300000);
+    // اجرا هر 2 دقیقه
+    setInterval(fetchForceFactor, 120000);
 </script>
 
 

@@ -1,0 +1,29 @@
+<table class="table table-bordered table-responsive table-hover table-striped">
+    <thead class="table-light">
+        <tr>
+            <th scope="col" class="text-center">#</th>
+            <th scope="col" class="text-center">کالا</th>
+            <th scope="col" class="text-center">تعداد در پکینگ</th>
+            <th scope="col" class="text-center">تعداد دریافت شده در انبار</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for packing_item in packing_items %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ packing_item.order.item.part_number }}</td>
+            <td>{{ packing_item.quantity }}</td>
+            <td>
+                {{ packing_item.wh_receipt_quantity }}
+            </td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+</table>
+
+
+
+
+
+<span id="to-sepidar" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=wh_to_wh_execute&packing_id={{ packing.pk }}" onclick="wh_to_wh_sepidar_execute(event)" data-bs-toggle="tooltip" data-bs-original-title="پس از ارسال به سپیدار سند قفل شده و امکان تغییر آن وجود نخواهد داشت.">ارسال به سپیدار</span>

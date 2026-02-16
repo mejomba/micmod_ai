@@ -39,7 +39,8 @@ def update_price_db(objs):
 
     to_create = []
     to_update = []
-    keys = ['air', 'sea', 'express', "price_update_date", "is_sea_default", "part_number", "purchase_group", "sales_group", "sepidar_quantity", ]
+    keys = ['air', 'sea', 'express', "price_update_date", "is_sea_default", "part_number", "purchase_group",
+            "sales_group", "sepidar_quantity", "in_way_count", "quantity_json"]
 
     # 3️⃣ تشخیص رکوردهای جدید و قدیمی
     for data in objs:
@@ -133,13 +134,14 @@ def update_price_list():
         qty_100_999 = None
         qty_1000_ = None
         items = Item.objects.all().order_by('id')
-        g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
+        # g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
         print('gsheet created')
         # i=0
         for idx, item in enumerate(items):
             inquiry_obj = item.price
-            if inquiry_obj and inquiry_obj.rmb_final_price:
-                price = inquiry_obj.rmb_final_price
+            sepidar_quantity = items_sepidar_quantity.get(item.sepidar_id_0)
+            if (inquiry_obj and inquiry_obj.rmb_final_price) or sepidar_quantity:
+                price = inquiry_obj.rmb_final_price if inquiry_obj else {'air': {'duration': None, 'method': None, 'price': 0}, 'sea': {'duration': None, 'method': None, 'price': 0}}
                 price = {k: round(v.get('price'), 5) for k, v in price.items()}
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
@@ -149,12 +151,14 @@ def update_price_list():
                      'air': price.get('air'),
                      'sea': price.get('sea'),
                      'express': price.get('express'),
-                     "price_update_date": inquiry_obj.price_update_date,
+                     "price_update_date": inquiry_obj.price_update_date if inquiry_obj else None,
                      "is_sea_default": item.is_sea_default,
                      "part_number": item.part_number ,
                      "purchase_group": item.purchase_group.title if item.purchase_group else "",
                      "sales_group": item.sale_group.title if item.sale_group else "",
                      "sepidar_quantity": items_sepidar_quantity.get(item.sepidar_id_0),
+                     "in_way_count": None,
+                     "quantity_json": None,
                      }
                 )
                 if not y_rate:
@@ -170,18 +174,18 @@ def update_price_list():
         if prices:
             print(f'final update_price_list count: {len(prices)}')
             update_price_db(price_for_db)
-            g_sheet.clear_rows('portal_prices')
-            g_sheet.update_rows('portal_prices', prices, 2)
-            update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
-            print(f'task done at:{update_time}')
-            g_sheet.wb.worksheet('portal_prices').update_cell(1, 7, update_time)
-            g_sheet.wb.worksheet('portal_prices').update_cell(1, 9, y_rate)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 10, grade_a)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, qty_1_9)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_10_99)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
-            g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
+            # g_sheet.clear_rows('portal_prices')
+            # g_sheet.update_rows('portal_prices', prices, 2)
+            # update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
+            # print(f'task done at:{update_time}')
+            # g_sheet.wb.worksheet('portal_prices').update_cell(1, 7, update_time)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(1, 9, y_rate)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 10, grade_a)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 11, qty_1_9)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 12, qty_10_99)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 13, qty_100_999)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 14, qty_1000_)
+            # g_sheet.wb.worksheet('portal_prices').update_cell(2, 15, chash_rial)
     except Exception as e:
         print(str(e))
     finally:

@@ -3,6 +3,7 @@ import uuid
 from django import template
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 from comments.models import Comments, CommentSeen
 from extra_data.models import Item
@@ -596,3 +597,8 @@ def get_total_qty_cri(dictionary, key):
 def sum_quantity(data):
     total_quantity = data.factoritem_set.all().aggregate(total=Sum('quantity'))['total'] or 0
     return total_quantity
+
+@register.simple_tag
+def jalali_now():
+    now = timezone.now()
+    return now

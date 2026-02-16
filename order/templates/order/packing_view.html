@@ -25,26 +25,9 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 
-{#packing_number#}
-{#shipment_type#}
-{#bl_number#}
-{#departure_date#}
-{#arrival_date#}
-{#sales_manager_needed#}
-{#sales_manager_check_date#}
-{#delivery_to_salehi_date#}
-{#cl_90_date#}
-{#cl_10_date#}
-{#cl_100_date#}
-{#arrive_to_wh_date#}
-{#estimated_delivery_date#}
-{#sum_qty#}
-{#sum_arrived_qty#}
-{#tp_method#}
-{#pack_date#}
-{#description#}
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row row-cols-5">
+            <input type="hidden" id="packing_id" value="{{ form.instance.pk }}">
         {% render_field_by_order form form.packing_number form.shipment_type form.bl_number form.sales_manager_needed form.sales_manager_check_date label='on-border' %}
 {#        {% render_field_by_order form form.departure_date form.arrival_date label='on-border' %}#}
 {#        {% render_field_by_order form form.delivery_to_salehi_date form.cl_90_date form.cl_10_date form.cl_100_date form.arrive_to_wh_date label='on-border' %}#}
@@ -55,24 +38,55 @@
                 {% render_field_by_order form form.description label='on-border' %}
             </div>
         </div>
-{#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
+
+            <div id="to-sepidar-wrapper" class="{% if flow_state_index != 7 and wf_access %} d-none {% endif %}">
+            {% if form.instance.pk and packing_items and flow_state_index == 7 and not form.instance.sepidar_wh_to_wh and wf_access %}
+                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=wh_to_wh_preview&packing_id={{ form.instance.pk }}" onclick="wh_to_wh_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="انتقال از انبار قبل مرکزی به انبار مرکزی">پیش نمایش انتقال به انبار مرکزی</span>
+                <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded"></span>
+            {% else %}
+                {% include 'order/partial/sepidar/wh_to_wh_sepidar_response.html' with packing=form.instance %}
+            {% endif %}
+            </div>
+
+            {% if form.instance.sepidar_wh_to_wh and flow_state_index != 7 %}
+                {% include 'order/partial/sepidar/wh_to_wh_sepidar_response.html' with packing=form.instance %}
+            {% endif %}
+
+            <div id="sepidar-preview" class="col-12 mt-2"></div>
 
         </div>
     <div class="" id="packing_item_container">
                 <div class="bg-white row rounded border my-10 pt-10 mt-20 mx-2 position-relative shadow-sm">
+                {% if state_index == 7 %}
+                    <div class="mb-8 bg-light-info p-1">به ازای هر ردیف در ستون عملیات روی آیکن
+                    <span>
+                        <i class="ki-duotone ki-pencil fs-2 text-info">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </span>
+                    بزنید و فیلد
+                    <span class="bold mx-3">تعداد در انبار</span>
+                    را پر کنید. پس از آن
+                    <span class="bold mx-3">پیش نمایش انتقال به انبار مرکزی</span>
+                    را بزنید. در صورت تایید با استفاده از دکمه
+                        <span class="bold mx-3">ارسال به سپیدار</span>
+                        اطلاعات به سپیدار ارسال میشود.
+                    </div>
+                {% endif %}
+
                     <div class="col-12">
-                        <h4 class="position-absolute" style="top: -10px">ردیف های پکینگ</h4>
+                        <h4 class="position-absolute" style="top: -10px" data-key="packing_items">packing items</h4>
                         {% if form.instance.pk %}
-                            {% with form.instance.packing_item_rel.all as packing_items %}
                                 {% if packing_items %}
                                     <div class="row align-items-center pb-2 mb-3 bold">
-                                        <div class="col-2 "><span class="ms-6">شماره کارتن </span></div>
-                                        <div class="col-1 ">تعداد کارتن </div>
-                                        <div class="col-2">وزن (کیلوگرم)</div>
-                                        <div class="col-2">پکینگ</div>
-                                        <div class="col-2">سفارش</div>
-                                        <div class="col-2">عملیات</div>
-                                        <div class="col-3"></div>
+                                        <div class="col-2 " data-key="carton_number"><span class="ms-6"> carton number</span></div>
+                                        <div class="col-1 " data-key="carton_qty"> carton qty</div>
+                                        <div class="col-2" data-key="weight_kg">weight kg</div>
+                                        <div class="col-2" data-key="packing">packing</div>
+                                        <div class="col-2" data-key="order">order</div>
+                                        <div class="col-1" data-key="wh_receipt_quantity">wh receipt quantity</div>
+                                        <div class="col-2" data-key="actions">actions</div>
                                     </div>
                                 {% endif %}
 
@@ -94,8 +108,12 @@
                                     <div class="col-2 py-2 ">
                                         <span>{{ packing_item.order|default_if_none:"-"  }}</span>
                                     </div>
+                                    <div class="col-1 py-2 ">
+                                        <span>{{ packing_item.wh_receipt_quantity|default_if_none:"-"  }}</span>
+                                    </div>
                                     <div class="col-2 py-1 ">
                                         <span>
+                                            {% if not form.instance.sepidar_wh_to_wh %}
                                         <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{% url 'order:packingitem.update' packing_item.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
                                             <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -113,6 +131,7 @@
                                                 <span class="path5"></span>
                                             </i>
                                         </a>
+                                            {% endif %}
                                         <a class="mx-4 tooltip_ cursor-pointer"
                                             data-bs-toggle="modal"
                                             data-bs-target="#id_kt_empty_modal_lg"
@@ -130,13 +149,14 @@
                                         </a>
                                     </span>
                                     </div>
-                                    <div class="col-3"></div>
                                 </div>
                             {% endfor %}
-                            {% endwith %}
+
                         {% endif %}
                             <div class="mt-5">
-                            {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packingitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+                                {% if state_index < 1 %}
+                                    {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packingitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
+                                {% endif %}
                             </div>
                     </div>
                 </div>
@@ -215,6 +235,42 @@
             custom_ajax_get('', this.dataset.url, modal_sm_body)
         })
     })
+
+    function wh_to_wh_sepidar_preview(event){
+        const preview_element = $('#sepidar-preview')
+        custom_ajax_get(null, event.currentTarget.dataset.url, preview_element)
+    }
+
+    function wh_to_wh_sepidar_execute(event){
+        const url = event.currentTarget.dataset.url
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            dataType: 'json',
+            //data: JSON.stringify(packing_data),
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                const res = data['res'];
+                const to_sepidar_wrapper = document.querySelector('#sepidar-preview')
+                to_sepidar_wrapper.classList.remove('text-danger')
+                to_sepidar_wrapper.innerHTML = res
+                document.querySelector('#to-sepidar-wrapper')?.classList.add('d-none')
+            },
+            error: function (err) {
+                const to_sepidar_wrapper = document.querySelector('#sepidar-preview')
+                to_sepidar_wrapper.classList.add('text-danger')
+                to_sepidar_wrapper.innerHTML = err.responseJSON.res
+            },
+            complete: release_main_container
+        }); // end ajax
+    }
 
     </script>
 {% endblock extra_js %}

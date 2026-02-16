@@ -72,7 +72,12 @@ class ProductApiCall:
     @classmethod
     def set_token(cls):
         from django.core.cache import cache
-        cls.token = cache.get_or_set('product_jwt_access_token', cls.get_token(), timeout=9000)
+        cls.token = cache.get('product_jwt_access_token')
+        if cls.token:
+            return
+        else:
+            cls.token = cls.get_token()
+            cache.set('product_jwt_access_token', cls.token, timeout=9000)
 
     @classmethod
     def get_header(cls):
@@ -86,7 +91,7 @@ class ProductApiCall:
         cls.headers = cls.get_header()
 
     @classmethod
-    def login(cls, username='ali', password='123456'):
+    def login(cls, username='mr.aminzadeh', password='@Mm123456'):
         url = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('login')
         data = {'username': username, 'password': password}
         res = requests.post(url, data=data)

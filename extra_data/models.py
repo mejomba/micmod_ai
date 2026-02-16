@@ -377,12 +377,15 @@ class Item(BaseModel):
         res = Item.objects.filter(pk=text)
         return res
 
-    @property
-    def reserved_count_in_portal(self):
-        from order.models import Order
+    # @property
+    def reserved_count_in_portal(self, wh_code):
+        from order.models import Order, OrderOrder
         from factor.models import FactorItem
-        # r = Order.objects.filter(is_wh=True).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
-        r = Order.objects.filter(is_wh=True, is_deleted=False, item=self).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0)
+        exclude_order_rel_ids = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False).values_list('id', flat=True)
+        order_receipt_in_wh = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0) or 0
+        r = OrderOrder.objects.filter(sepidar_wh_code__isnull=False, sepidar_wh_code=wh_code, item=self, fi__factor__sepidar_id__isnull=True).exclude(order_rel_id__in=exclude_order_rel_ids).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0) or 0
+
+        r += order_receipt_in_wh
         if not r or r < 0:
             return 0
         else:
@@ -434,7 +437,7 @@ class Item(BaseModel):
                     sepidar_wh_code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
                     # todo get wh__order from db, show reserve and stock_quantity
 
-                    quantity_sum = self.reserved_count_in_portal
+                    quantity_sum = self.reserved_count_in_portal(sepidar_wh_code)
                     if stock_qty.is_integer():
                         qty = int(stock_qty)
                         if qty - quantity_sum < 0:
@@ -449,7 +452,7 @@ class Item(BaseModel):
                 res = [(x[0], x[1]) for x in res]
 
 
-        for o in self.order_set.filter(cancel=False).order_by('-quantity'):
+        for o in self.order_set.filter(cancel=False, is_wh=False).order_by('-quantity'):
             if o.cancel:
                 for oo in o.order_base_items.all():
                     if oo.sepidar_wh_code:
@@ -864,7 +867,7 @@ class CustomerAddress(models.Model):
         OFFICIAL = ("6", "رسمی")
         POSTI = ("7", "پستی")
         OTHER = ("8", "سایر")
-    customer = models.ForeignKey('Customer', on_delete=models.DO_NOTHING)
+    customer = models.ForeignKey('Customer', on_delete=models.DO_NOTHING, to_field='sepidar_party_id')
     location = models.ForeignKey(Province, on_delete=models.DO_NOTHING, null=True, blank=True)
     address = models.TextField()
     zip_code = models.CharField(max_length=10, null=True, blank=True)
@@ -874,6 +877,9 @@ class CustomerAddress(models.Model):
     guid = models.CharField(max_length=128, null=True, blank=True)
     is_main = models.BooleanField(default=False)
     type = models.CharField(max_length=2, choices=AddressType.choices, default=AddressType.OFFICIAL)
+
+    def __str__(self):
+        return f'{self.address}: {self.customer}'
 
 
 class CustomerPhone(models.Model):
@@ -1076,6 +1082,8 @@ class ItemPrice(BaseModel):
     air = models.FloatField(null=True, blank=True)
     sea = models.FloatField(null=True, blank=True)
     sepidar_quantity = models.FloatField(null=True, blank=True)
+    in_way_count = models.FloatField(null=True, blank=True)
+    quantity_json = models.JSONField(null=True, blank=True)
     express = models.FloatField(null=True, blank=True)
     price_update_date = models.DateTimeField(null=True, blank=True)
     is_sea_default = models.BooleanField(_('is_sea_default'), default=False)

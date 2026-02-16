@@ -73,8 +73,8 @@
                     | S{{ data.sepidar_number }}
                 {% endif %}
             </span><br>
-            <span data-key="date">تاریخ: </span><span dir="rtl" >{{ data.q.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span><br>
-            <span data-key="validity_date">تاریخ اعتبار: </span><span dir="rtl">{{ data.q.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span>
+            <span data-key="date">تاریخ: </span><span dir="rtl" >{% jalali_now as today %}{{ today|to_jalali:"%Y/%m/%d" }}</span><br>
+{#            <span data-key="validity_date">تاریخ اعتبار: </span><span dir="rtl">{{ data.q.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span>#}
         </div>
 
     </div>

@@ -2349,7 +2349,7 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
             {'name': 'pk', 'visible': False,},
             {'name': 'currency', 'visible': True, 'title': _('نوع ارز'),  'orderable': False, 'lookup_field': '__title__icontains' },
             # {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
-            {'name': 'open_rate',  'title': "<div class='px-3' style='width:40px;' data-key='items'>یو آزاد</div>"},
+            {'name': 'open_rate',  'title': _('rate')},
             # {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
             # {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
         ]

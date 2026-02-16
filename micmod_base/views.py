@@ -5,9 +5,10 @@ import jdatetime
 from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
 from django.template import TemplateDoesNotExist, loader
 from django.template.loader import render_to_string
-from django.db.models import Q, QuerySet, CharField, Count, Sum
+from django.db.models import Q, QuerySet, CharField, Count, Sum, Prefetch
 from django.db.models.functions import Cast
 from django.utils import timezone
 from django.views.generic import DetailView, UpdateView
@@ -25,6 +26,7 @@ from core.permissions import HasShopPermission
 from dw.models import DimCustomer
 from extra_data.models import Item, PriceSettings, Customer
 from factor.forms import FactorItemModelForm, FactorModelForm
+from factor.models import FactorItem
 from order.models import Order
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
@@ -62,9 +64,10 @@ from workflow.models import WorkFlow
 from .forms import PendingFormFilter
 from django.urls import reverse
 import re
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from .models import CustomerRequest
-from .serializers import CustomerRequestSerializer, QuotationSerializer, CustomerQuotationSerializer
+from .serializers import CustomerRequestSerializer, QuotationSerializer, CustomerQuotationSerializer, \
+    QuotationGroupSerializer, QuotationItemGroupSerializer
 
 
 def generate_direct_factor(request, quotation: Quotation):
@@ -104,7 +107,7 @@ def generate_direct_factor(request, quotation: Quotation):
         factor.save()
 
         count = 0
-        for qi in quotation.quotation.all():
+        for idx, qi in enumerate(quotation.quotation.all()):
             factor_item_data = {
                 'factor': factor,
                 'qi': qi,
@@ -116,11 +119,12 @@ def generate_direct_factor(request, quotation: Quotation):
                 # 'supply_locations': order,
                 "creator_user": request.user,
                 "editor_user": request.user,
-                # 'supply_location': '',
-                'index': count
+                'supply_location': request.POST.get(f'quotation-{idx}-{idx}-supply_location'),
+                'index': count,
+                'reserve_count': request.POST.get(f'quotation-{idx}-reserve_count')
             }
             count += 1
-            factor_item_form = FactorItemModelForm(data=factor_item_data)
+            factor_item_form = FactorItemModelForm(data=factor_item_data, instance=FactorItem(factor=factor, qi=qi,), internal_call=True)
             if factor_item_form.is_valid():
                 factor_item_form.instance.extra_data.request = request
                 factor_item = factor_item_form.save()
@@ -1987,3 +1991,92 @@ def get_quotation_sales_history(request):
 
     return render(request, 'sepidar/sales_history_factor_quotation.html', context=context)
 
+
+def quotation_item_approve_view(request, *args, **kwargs):
+    if request.method == 'GET':
+        return render(request, 'micmod-base/quotation/quotation_item_approve.html')
+
+    if request.method == 'POST':
+        try:
+            quotation_item_id = json.loads(request.body).get('quotation_item_id')
+
+            row = QuotationItem.objects.select_related("quotation").get(pk=quotation_item_id)
+            row.is_approved = True
+            row.extra_data.request = request
+            row.save()
+
+            quotation = row.quotation
+
+            if not quotation.quotation.filter(is_approved=False).exists():
+                quotation.sales_admin_confirm = True
+                quotation.extra_data.request = request
+                quotation.save(update_fields=["sales_admin_confirm"])
+
+            return JsonResponse({"res": 'success'}, status=200)
+        except Exception as e:
+            return JsonResponse({'res': str(e)}, status=500)
+
+
+class QuotationRowsGroupedByQuotationView(View, LoginRequiredMixin):
+    """
+    برای نمایش لیست ردیف‌های پیش فاکتور دسته‌بندی شده بر اساس پیش فاکتور
+    """
+
+    def get(self, request):
+        page = request.GET.get('page', 1)
+        per_page = min(int(request.GET.get('per_page', 50)), 100)
+
+        quotations = Quotation.objects.filter(sales_admin_confirm=False) \
+            .prefetch_related(
+            Prefetch(
+                'quotation',
+                queryset=QuotationItem.objects
+                    .select_related('goods_code_fk')
+                    .only(
+                    'id', 'quantity', 'final_price', 'quotation_id', 'is_approved',
+                    'goods_code_fk__id', 'goods_code_fk__part_number', 'goods_code_fk__sku'
+                )
+                    .order_by('id')  # مرتب‌سازی ردیف‌ها
+            )
+        ).order_by('-pk').only('pk')
+
+        paginator = Paginator(quotations, per_page)
+        current_page = paginator.get_page(page)
+
+        data = {}
+        for quotation in current_page:
+            # استفاده از list comprehension برای سرعت بیشتر
+            items = [
+                {
+                    'id': item.pk,
+                    'goods_code': item.goods_code_fk.part_number if item.goods_code_fk else '',
+                    'sku': item.goods_code_fk.sku if item.goods_code_fk else '',
+                    'quantity': item.quantity,
+                    'final_price': str(item.final_price or '-'),
+                    'total_price': str(item.quantity * item.final_price) if item.quantity and item.final_price else 0
+                }
+                for item in quotation.quotation.all() if not item.is_approved
+            ]
+
+            data[str(quotation.pk)] = {
+                'customer': quotation.customer_party_id.title if quotation.customer_party_id else '-',
+                'items': items,
+            }
+
+        response = {
+            'success': True,
+            'data': data,
+            'pagination': {
+                'current_page': current_page.number,
+                'total_pages': paginator.num_pages,
+                'total_quotations': paginator.count,
+                'per_page': per_page,
+                'has_next': current_page.has_next(),
+                'has_previous': current_page.has_previous(),
+            },
+        }
+
+        return JsonResponse(response, json_dumps_params={'ensure_ascii': False})
+
+    def post(self, request):
+        pass

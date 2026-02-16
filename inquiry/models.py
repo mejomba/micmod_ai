@@ -724,7 +724,7 @@ class AllowedInquiry(BaseModel):
 class CurrencyAmount(BaseModel):
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, related_name='currency_amount')
     # customs = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('customs'))
-    open_rate = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('open_rate'))
+    open_rate = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'))
     # new_order = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('new_order'))
     # talar = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('talar'))
 

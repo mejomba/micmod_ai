@@ -747,5 +747,17 @@
     "lastmodifier": "ویرایش کننده",
     "fiscalyearref": "سال مالی",
     "debitcreditnoteid": "شناسه اعلامیه بدهکار بستانکار",
-    "lastmodificationdate": "تاریخ ویرایش"
+    "lastmodificationdate": "تاریخ ویرایش",
+    "karmozd": "کارمزد",
+    "karmozd_currency": "واحد پول کارمزد",
+    "packing_items": "ردیف های پکینگ",
+    "carton_number": "شماره کارتن",
+    "carton_qty": "تعداد کارتن",
+    "weight_kg": "وزن (کیلوگرم)",
+    "packing": "پکینگ",
+    "order": "سفارش",
+    "wh_receipt_quantity": "در انبار",
+    "actions": "عملیات",
+    "force_factor": "فاکتور فوری",
+    "gio_items": "ردیف های GIO"
 }

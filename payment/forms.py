@@ -185,7 +185,7 @@ class PaymentForm(CustomBaseModelForm):
                                                    required=True)
         self.fields['description'].widget.attrs['rows'] = 3
 
-        if request and request.user.is_superuser:
+        if request and not request.user.is_superuser:
             if form_constraint_hide:
                 self.make_hidden(form_constraint_hide)
             if form_constraint_read:
