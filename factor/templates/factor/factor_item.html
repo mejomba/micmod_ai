@@ -163,7 +163,7 @@
                     {% render_field_by_order form form.deliver_type form.deliver_method label='on-border' %}
                 </div>
             </div>
-            {% render_field_by_order form form.official_factor_send_with_this_factor label='on-border' %}
+            {% render_field_by_order form form.official_factor_send_with_this_factor form.official_factor_for_this_factor label='on-border' %}
         {% if not form.wh_user.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
@@ -201,6 +201,19 @@
                 <div class="d-flex gap-3" style="position: absolute; top: 50px;">
                     {% for file in form.instance.files.all %}
                         {% if file.group == 1 %}
+                            <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-2 on-border d-flex flex-column">
+                <label for="">فاکتور رسمی</label>
+                {% render_field_by_order form form.file_4 margin_b=0 %}
+                <div class="d-flex gap-3" style="position: absolute; top: 50px;">
+                    {% for file in form.instance.files.all %}
+                        {% if file.group == 4 %}
                             <a href="{{ file.path.url }}" target="_blank" class="me-1">
                                 <i class="fas fs-2 fa-file icon-lg"></i>
                             </a>

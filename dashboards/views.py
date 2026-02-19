@@ -18,7 +18,8 @@ Here you can override the page view layout.
 Refer to dashboards/urls.py file for more pages.
 """
 
-class DashboardsView(LoginRequiredMixin,TemplateView):
+
+class DashboardsView(LoginRequiredMixin, TemplateView):
     # Default template file
     # Refer to dashboards/urls.py file for more pages and template files
     template_name = 'pages/dashboards/index.html'
@@ -61,10 +62,24 @@ class BIView(View):
                 url += bi_filter
 
         host = request.META.get('HTTP_HOST')
-        if host.split(':')[0] == '94.182.194.120':
-            url = url.replace('192.168.1.80', '94.182.194.120:4040')
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        print("x_forwarded_for: ", x_forwarded_for)
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+
+        if not ip:
+            ip = x_forwarded_for.split(",")[1].strip()
+
+        # if host.split(':')[0] == '94.182.194.120':
+        is_external = False
+        # if '192.168.1.9' in ip: # == '94.182.194.120':
+        # url = url.replace('192.168.1.80', '94.182.194.120:4040')
+        # is_external = True
+        print('url:====== ', url, 'is_external:=======', is_external)
         parsed = urlparse(url)
         encoded_query = quote(parsed.query, safe="=&:")
         valid_url = urlunparse(parsed._replace(query=encoded_query))
-        context = {'url': valid_url, 'title': bi_obj.name}
+        context = {'url': valid_url, 'title': bi_obj.name, 'is_external': is_external}
         return render(request, 'dashboards/bi_report.html', context)

@@ -118,7 +118,8 @@
     {% if form.instance.id %}
     <div class="px-2 mx-auto">
     </div>
-        {% if  request.user|has_group:'sales_admin' and flow_state_index < 2 %}
+{#        {% if  request.user|has_group:'sales_admin' and flow_state_index < 2 %}#}
+        {% if  request.user|has_group:'sales_user' and flow_state_index < 2 %}
         <div class="d-flex justify-content-between mt-1 ">
             <div><label class="col-form-label">فاکتور فوری</label></div>
             <div>
@@ -143,14 +144,18 @@
             </div>
         {% endif %}
 
-    <a class="btn btn-outline-dark btn-bordered text-xl-center " id="factor_print"
-         href="{% url 'factor:factor.print' form.instance.id %}?action=factor_print" target="_blank">
-             پرینت فاکتور
-    </a>
-    <a class="btn btn-outline-dark btn-bordered text-xl-center ms-1" id="wh_exit_permit"
-         href="{% url 'factor:factor.print' form.instance.id %}?action=wh_exit_permit" target="_blank">
-        حواله خروج
-    </a>
+        <a class="btn btn-outline-dark btn-bordered text-xl-center " id="factor_print"
+             href="{% url 'factor:factor.print' form.instance.id %}?action=factor_print" target="_blank">
+                 پرینت فاکتور
+        </a>
+
+        {% if  request.user|has_group:'wh_user' or request.user.is_supperuser %}
+            <a class="btn btn-outline-dark btn-bordered text-xl-center ms-1" id="wh_exit_permit"
+                 href="{% url 'factor:factor.print' form.instance.id %}?action=wh_exit_permit" target="_blank">
+                حواله خروج
+            </a>
+        {% endif %}
+
     {% else %}
         <div class="px-2 mx-auto">
         </div>

@@ -35,7 +35,7 @@ class UserSelectWidget(ModelSelect2MultipleWidget):
 
 class FactorModelForm(CustomBaseModelForm):
     file_model = File
-    file_groups = 3
+    file_groups = 4
     has_comment = True
 
     class Meta:
@@ -56,12 +56,14 @@ class FactorModelForm(CustomBaseModelForm):
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
                 formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
                 request = c.pop('request')  # remove unnecessary kwargs
+                flow_state_name = c.pop('flow_state_name', None)
             elif kwargs.get('constraint'):
                 access = kwargs.get('constraint').get('wf_access')
                 form_constraint = kwargs.get('constraint').get('form_constraint')
                 formset_constraint = kwargs.get('constraint').get('formset_constraint')
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
                 kwargs.pop('constraint')  # remove unnecessary kwargs
+                flow_state_name = kwargs.pop('flow_state_name', None)
 
             if form_constraint:
                 for item in form_constraint[self.form_state]:
@@ -92,7 +94,7 @@ class FactorModelForm(CustomBaseModelForm):
                 CustomerAddress.objects
                 .filter(customer=self.instance.q.customer_party_id)
                 .annotate(last_used=Max('factor__created_date'))
-                .order_by('-last_used')
+                .order_by('last_used')
             )
             self.fields['address'].queryset = qs  # CustomerAddress.objects.filter(customer=self.instance.q.customer_party_id)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
@@ -132,10 +134,9 @@ class FactorItemModelForm(CustomBaseModelForm):
         exclude = ['group']
     # supply_location = forms.CharField(required=False)
 
-    @timer
     def __init__(self, *args, **kwargs):
         internal_call = kwargs.pop('internal_call', None)
-        request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
+        request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = flow_state_name = None
         if self.form_state is None:
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
                 self.form_state = c.get('form_state')
@@ -148,25 +149,27 @@ class FactorItemModelForm(CustomBaseModelForm):
                 form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
                 formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
                 request = c.pop('request')  # remove unnecessary kwargs
+                flow_state_name = kwargs.pop('form_state_name', None)
             elif kwargs.get('constraint'):
                 access = kwargs.get('constraint').get('wf_access')
                 form_constraint = kwargs.get('constraint').get('form_constraint')
                 formset_constraint = kwargs.get('constraint').get('formset_constraint')
                 request = kwargs.get('constraint').get('request')  # remove unnecessary kwargs
+                flow_state_name = kwargs.get('constraint').get('form_state_name')
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
             if request and not request.user.is_superuser and form_constraint:
                 for item in form_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = form_constraint[self.form_state]
-                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group_cached(request.user, item.get('group'), flow_state_name):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if request and not request.user.is_superuser and formset_constraint:
                 for item in formset_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = formset_constraint[self.form_state]
-                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group(request.user, item.get('group')):
+                    if item.get('group') in request.user.groups.values_list('name', flat=True) or FlowAdminGroup.is_admin_of_group_cached(request.user, item.get('group'), flow_state_name):
                         formset_constraint_read = item.get('read')  # formset_constraint[self.form_state][0].get('read')
                         formset_constraint_hide = item.get('hide')  # formset_constraint[self.form_state][0].get('hide')
 

@@ -38,7 +38,7 @@
     window.addEventListener('DOMContentLoaded', function (e) {
         const is_external = document.querySelector('#is_external').dataset.is_external
         const url = document.querySelector('#url').dataset.url
-        if (is_external) {
+        if (is_external === "True") {
             window.open(url, '_blank');
         }
     })

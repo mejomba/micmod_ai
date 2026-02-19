@@ -38,11 +38,15 @@
          <span class="path2"></span>
         </i>
         پکینگ خارجی</a>
-    <div class="accordion" id="accordionPanelsStayOpenExample" dir="rtl">
+
+    <div class="border p-2 my-5">
+        <h2 class="my-6">پکینگ داخلی</h2>
+        <div class="accordion" id="accordionPanelsStayOpenExample" dir="rtl">
         {% for sepidar_buy_factor_id, order_ids in buy_factor_id_dict.items %}
 
             <div class="accordion-item" style="direction: rtl">
                 <h2 class="accordion-header" id="panelsStayOpen-heading{{ forloop.counter }}">
+                    {{ order_ids  }}
                     <button class="accordion-button" type="button" data-bs-toggle="collapse" onclick="get_sepidar_buy_factor(event, {{ sepidar_buy_factor_id.0 }}, {{ order_ids  }})"
                             data-bs-target="#panelsStayOpen-collapse{{ forloop.counter }}" aria-expanded="true"
                             aria-controls="panelsStayOpen-collapse{{ forloop.counter }}" data-sepidar-buy-factor-id="{{ sepidar_buy_factor_id.0 }}">
@@ -61,7 +65,7 @@
         {% endfor %}
 
     </div>
-
+    </div>
 
 
 
@@ -86,6 +90,7 @@
 
     <script>
     function get_sepidar_buy_factor(event, sepidar_buy_factor_id, order_ids=null){
+        debugger
         const target = event.currentTarget
         const accordion = findAncestor(target, 'accordion-item')
         const accordion_body = accordion.querySelector('.accordion-body')
@@ -106,6 +111,7 @@
                   <thead>
                     <tr>
                       <th scope="col" style="font-weight: bold">ردیف</th>
+                      <th scope="col" style="font-weight: bold">کد کالا</th>
                       <th scope="col" style="font-weight: bold">پارت نامبر</th>
                       <th scope="col" style="font-weight: bold">تعداد</th>
                       <th scope="col" style="font-weight: bold">تعداد رسید شده</th>
@@ -116,6 +122,7 @@
                     for (const [index, row] of res['items'].entries()) {
                         row_html = `<tr>
                             <th scope="row" style="text-align:right">${index+1}</th>
+                            <td class="" style="text-align:right">${row['sku']}</td>
                             <td class="" style="text-align:right">${row['partnumber']}</td>
                             <td class="" style="text-align:right">${row['quantity']}</td>
                             <td class="" style="text-align:right"><input type="number" name="receipt_quantity__${row['id']}" value="${row['quantity']}"></td>
@@ -132,7 +139,8 @@
                     {#row_list.push(row_html)#}
 
                 let html = h + row_list.join('') + h2
-                 html += `<button class="btn btn-sm btn-success" onclick="wh_receipt_from_bazar(event, ${sepidar_buy_factor_id}, ${order_ids})">تبدیل به رسید انبار سپیدار</button>`
+                console.log('order_ids: ', order_ids)
+                 html += `<button class="btn btn-sm btn-success" onclick="wh_receipt_from_bazar(event, ${sepidar_buy_factor_id}, ${JSON.stringify(order_ids)})">تبدیل به رسید انبار سپیدار</button>`
                 accordion_body.innerHTML = html
             },
             error: function () {

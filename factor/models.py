@@ -65,7 +65,8 @@ class Factor(SLSDoc):
     collecting_end_time = models.DateTimeField(verbose_name=_('زمان پایان جمع‌آوری'), null=True, blank=True)
     final_check = models.BooleanField(default=False, verbose_name=_('چک نهایی'))
     require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('الزام ارسال فاکتور رسمی همراه بار'))
-    official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
+    official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتورهای رسمی ارسال شده(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
+    official_factor_for_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(متعلق به این فاکتور)'), max_length=255, null=True, blank=True)
     deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('deliver_type'))
     deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
@@ -95,27 +96,31 @@ class Factor(SLSDoc):
     def get_qs(cls, request, lst=False, groups_list=None):
         q = request.POST.get('q')
         qs = cls.objects.none()
+        base_group = request.user.base_group
         comm_filter = Q(is_deleted=False)
         wh_filter = Q(last_work_flow__current_state_name__in=const.WH_FACTOR_STATES) | Q(wh_user__id__in=[request.user.pk])
+        office_filter = Q()
         sales_filter = Q()
         trade_filter = ''
         bazar_filter = ''
         accounting_filter = Q(last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES) | Q(checker__id__in=[request.user.pk])
 
-        if request.user.base_group == 'wh':
+        if base_group == 'wh':
             total_filter = comm_filter & wh_filter
             qs = cls.objects.filter(total_filter).exclude(factoritem__supply_locations__is_wh=False).distinct()
-        if request.user.base_group == 'sales':
+        if base_group == 'sales':
             # total_filter = comm_filter & wh_filter
             qs = cls.objects.get_access_object(request.user, q=q, lst=False)
-        if request.user.base_group == 'trade':
+        if base_group == 'trade':
             qs |= Factor.objects.filter()
-        if request.user.base_group == 'bazar':
+        if base_group == 'bazar':
             qs |= Factor.objects.filter()
-        if request.user.base_group == 'accounting':
+        if base_group == 'accounting':
             qs |= Factor.objects.filter(accounting_filter, need_financial_approval=True)
         if request.user.is_superuser:
             qs |= Factor.objects.filter()
+        if base_group == 'office':
+            qs |= Factor.objects.filter(office_filter)
         # qs = cls.objects.get_access_object(request.user, q=q, lst=False)
         return qs
 

@@ -124,7 +124,7 @@
                 {% elif request.user.base_group == 'sales' %}
                     {% get_comment_user_list form request.user %}
                 {% else %}
-                    {% get_comment_user_list form_s request.user %}
+                    {% get_comment_user_list form request.user %}
                 {% endif %}
 
                 <div class="mt-1"></div>

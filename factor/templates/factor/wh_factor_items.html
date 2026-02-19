@@ -286,6 +286,16 @@
                     </div>
                 {% endif %}
 
+            <div>
+        <span id="address-text">
+            <span>آدرس: </span>
+            <span>
+                {{ form.instance.address|default_if_falsy:quotation.customer_party_id.address }}
+            </span>
+        </span>
+        <span class="hover-link text-primary cursor-pointer ms-2" onclick="printElement('address-text')">پرینت <i class="bi bi-printer text-primary"></i></span>
+    </div>
+
 
             <div class="col-7 {% if flow_state_index != 5 %} d-none {% endif %}">
                 <div class="row mt-2">
@@ -955,4 +965,36 @@
             time_24hr: true,
             enableSeconds: false
         });
+
+
+
+        function printElement(elementId) {
+
+        const content = document.getElementById(elementId).innerHTML;
+        const printWindow = window.open('', '', 'width=900,height=700');
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print</title>
+
+                <style>
+                    body { padding: 20px; direction: rtl}
+                </style>
+
+            </head>
+            <body>
+                ${content}
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    }
     </script>

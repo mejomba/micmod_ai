@@ -760,5 +760,8 @@
     "actions": "عملیات",
     "force_factor": "فاکتور فوری",
     "gio_items": "ردیف های GIO",
-    "trade_lock_order": "عدم ویرایش توسط فروش"
+    "trade_lock_order": "عدم ویرایش توسط فروش",
+    "official_factor_for_this_factor": "فاکتور رسمی متعلق به این فاکتور",
+    "official_factor_send_with_this_factor": "فاکتور های رسمی ارسال شده با این فاکتور",
+    "arrived_quantity": "تعداد رسیده"
 }

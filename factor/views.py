@@ -268,6 +268,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                                                   "constraint": {
                                                       "wf_access": self.wf_access,
                                                       'form_state': self.state_index,
+                                                      'form_state_name': self.flow_config.get('flow_state_list')[self.state_index],
                                                       'request': self.request,
                                                       'form_constraint': self.flow_config.get("flow_form_constraint"),
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
@@ -280,10 +281,7 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         ''' the for loop get 2 second of execution time for 30 rows '''
 
-        t = time.time()
         for factor_item_form in context['form_s'].forms:
-            t2 = time.time()
-            print('factor item form loop ...', t2 - t)
             for qi in qis:
                 factor_item_form_instance_pk = factor_item_form.instance.pk
                 if factor_item_form_instance_pk:
@@ -403,7 +401,6 @@ def search_factor_view(request, *args, **kwargs):
     return JsonResponse(res)
 
 
-@timer
 def get_quotation_items_for_factor(request, pk, *args, **kwargs):
     from workflow.forms import WorkFlowModelForm
     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
@@ -498,6 +495,10 @@ class FactorListDatatable(AjaxDatatableView):
             self.wh_column_defs(request)
         elif self.request.user.base_group == 'sales':
             self.sales_column_defs(request)
+        elif self.request.user.base_group == 'office':
+            self.office_column_defs(request)
+        elif self.request.user.base_group == 'accounting':
+            self.accounting_column_defs(request)
         else:
             self.cols.append({'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains', 'searchable': True, 'className': 'border'})
             self.cols.append({'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains', 'className': 'border'})
@@ -538,12 +539,38 @@ class FactorListDatatable(AjaxDatatableView):
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__currency_ref'] = obj.q.currency_ref.title if obj.q else ''
         row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
-        row['q__payment_method'] = obj.q.payment_method if obj.q else ''
+        row['q__payment_method'] = obj.q.get_payment_method_display() if obj.q else ''
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in
                                        obj.comments.filter(comment_title='S')]) if not obj.accounting_confirm else ''  # "S" is accounting not approve factor
+
+    def office_column_defs(self, request):
+        for col in [
+            {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
+             'lookup_field': '__current_state_name__icontains', 'className': 'border'},
+            {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+             'lookup_field': '__icontains', 'className': 'border'},
+            {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True,
+             'className': 'border'},
+            {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True,
+             'className': 'border'},
+            {'name': 'comments', 'orderable': True, 'title': '<div>شرح عدم تایید مالی</div>', 'visible': True,
+             'lookup_field': '__comment_content__icontains', 'className': 'border'},
+
+        ]:
+            self.cols.append(col)
+        return self.cols
 
     def wh_column_defs(self, request):
         for col in [
@@ -558,6 +585,7 @@ class FactorListDatatable(AjaxDatatableView):
             {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
              'lookup_field': '__current_state_name__icontains', 'className': 'border'},
             {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'title': 'شماره سپیدار', 'className': 'border'},
+            {'name': 'sepidar_inventory_delivery_number', 'visible': True, 'orderable': True, 'title': 'حواله سپیدار', 'className': 'border'},
             {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
             {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
              'lookup_field': '__icontains', 'className': 'border'},
@@ -598,6 +626,53 @@ class FactorListDatatable(AjaxDatatableView):
              'className': 'border'},
             {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True,
              'searchable': True, 'className': 'border'},
+            {'name': 'official_factor_for_this_factor', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:60px; text-wrap:auto;'>{_('official_factor_for_this_factor')}</div>",
+             'className': 'border'},
+            {'name': 'official_factor_send_with_this_factor', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:80px; text-wrap:auto;'>{_('official_factor_send_with_this_factor')}</div>",
+             'className': 'border'},
+        ]:
+            self.cols.append(col)
+        return self.cols
+
+    def accounting_column_defs(self, request):
+        for col in [
+            {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+            {'name': 'comments', 'orderable': True, 'title': '<div>شرح عدم تایید مالی</div>', 'visible': True,
+             'lookup_field': '__comment_content__icontains', 'className': 'border'},
+            {'name': 'q__currency_ref', 'visible': True, 'searchable': True, 'title': "نوع ارز", 'orderable': True,
+             'lookup_field': '__title__icontains', 'className': 'border'},
+            {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
+             'lookup_field': '__current_state_name__icontains', 'className': 'border'},
+            {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'title': 'شماره سپیدار', 'className': 'border'},
+            {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
+            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+             'lookup_field': '__icontains', 'className': 'border'},
+            {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
+             'searchable': True, 'className': 'border'},
+            {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains',
+             'className': 'border'},
+            {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': True, 'orderable': True,
+             'lookup_field': '__title__icontains', 'className': 'border'},
+            {'name': 'self_discount', 'title': 'تخفیف', 'visible': True, 'orderable': True, 'searchable': True,
+             'className': 'border'},
+            {'name': 'is_official', 'title': _('is_official'), 'visible': True, 'searchable': True, 'orderable': True,
+             'className': 'border'},
+            {'name': 'official_value', 'title': _('official_value'), 'visible': True, 'orderable': True,
+             'searchable': True, 'className': 'border'},
+            {'name': 'official_factor_for_this_factor', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:60px; text-wrap:auto;'>{_('official_factor_for_this_factor')}</div>",
+             'className': 'border'},
+            {'name': 'official_factor_send_with_this_factor', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:80px; text-wrap:auto;'>{_('official_factor_send_with_this_factor')}</div>",
+             'className': 'border'},
         ]:
             self.cols.append(col)
         return self.cols

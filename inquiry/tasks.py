@@ -70,9 +70,11 @@ def update_components():
         print('task is running')
         return
     try:
+        t = time.time()
         cache.set('update_components', True, 300)
         print('update_components start')
-        components = Item.objects.all().order_by('id')
+        components = Item.objects.select_related('purchase_group', 'sale_group', 'brand').order_by('id')
+
         components_lst = list()
         c = 0
         for component in components:
@@ -94,6 +96,8 @@ def update_components():
             components_lst.append(component_)
 
         print('update_components validate')
+        t2 = time.time()
+        print(f'update time: {t2 - t}')
         update_time = datetime.datetime.now().strftime('%Y/%m/%d  %H:%M')
 
         df = pd.DataFrame(components_lst)

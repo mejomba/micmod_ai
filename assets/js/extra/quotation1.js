@@ -845,7 +845,6 @@ function display_price(row){
         price_json.forEach(function (item){
             if(item.lead_time){
                 row.querySelector('#lead_time_text').innerText = item.lead_time
-                debugger
                 try {
                     row.querySelector('input[name$="lead_time"]').value = item.lead_time
                 } catch (err){

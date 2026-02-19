@@ -129,6 +129,17 @@ class FlowAdminGroup(models.Model):
             return user in flow_admin.user_rel.all()
 
     @classmethod
+    @wf_cache(timeout=10)
+    def is_admin_of_group_cached(cls, user_id, group_name, state):
+        # from django.contrib.auth import get_user_model
+        # User = get_user_model()
+        # user = User.objects.select_related().get(pk=user_id)
+        user = user_id
+
+        return cls.is_admin_of_group(user, group_name)
+
+
+    @classmethod
     def is_admin_of_group(cls, user, group_name, model=None) -> bool:
         """if user inside of admin group
         Args:

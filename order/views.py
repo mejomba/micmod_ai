@@ -268,8 +268,8 @@ class OrderDataTableListView(AjaxDatatableView):
 
         q = request.POST.get('q')
         user_group = request.user.base_group
-        if request.user.groups.filter(name='mac') and q == 'mac':
-            return self.model.objects.filter(is_deleted=False, apply_mac=True).distinct()
+        if request.user.groups.filter(name='mac'):
+            return self.model.objects.filter(is_deleted=False, currency_id=2).distinct()
         if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
         elif user_group == 'bazar':
@@ -333,6 +333,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
+        row['payment'] = '<hr>'.join([f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>" for x in obj.order_payment_items.select_related('payment').all()])  # "R" is order error from trade user
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -406,6 +407,24 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
                 {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+            ]
+        elif self.request.user.base_group == 'mac':
+            self.column_defs = [
+                AjaxDatatableView.render_row_tools_column_def(),
+                {'name': 'id', 'title': _("id"), 'orderable': True, 'visible': True, },
+                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'order_title', 'orderable': True, 'visible': True, 'title': _("title")},
+                {'name': 'last_work_flow', 'title': _('status'), 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'part_number_s', 'orderable': True, 'title': 'part number', 'visible': True, 'lookup_field': '__part_number__icontains'},
+                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True, 'lookup_field': '__title__icontains'},
+                # {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'quantity', },
+                {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'sales description'},
             ]
 
         return super().get_column_defs(request)
@@ -2014,6 +2033,9 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
         if sepidar_buy_factor_id < 0:
             import ast
             orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, is_wh=False).exclude(buy_factors=[])
+            trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
+            for item in trade_orders:
+                print(item.order)
 
             buy_factor_id_dict = dict()
             for order in orders:
@@ -2030,12 +2052,14 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             return render(request, template_name, context=context)
 
         res = SepidarApiCall.get('inventorypurchaseinvoice', sepidar_buy_factor_id)
+
         if res.ok:
             data = res.json()
             data_ = {
                 'vendor': data['fk_strs']['vendordlref'],
                 'items': [
                     {
+                        'sku': row['sku'],
                         'partnumber': row['fk_strs']['itemref'],
                         'quantity': row['quantity'],
                         'id': row['inventorypurchaseinvoiceitemid']
