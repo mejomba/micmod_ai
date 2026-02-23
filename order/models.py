@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
+from accounts.models import User
 from micmod_base.base import Currency
 from core.models import BaseModel, BaseModeWF, BaseManager
 from extra_data.models import Brand, Item, Customer, WH
@@ -201,6 +202,7 @@ class Order(BaseModeWF):
     order_report_data = models.JSONField(null=True, blank=True)
     sepidar_wh_code = models.IntegerField(null=True, blank=True)
     receipt_in_wh = models.BooleanField(default=False)
+    trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
 
     def __str__(self):
         if self.final_item:
