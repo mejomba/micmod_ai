@@ -411,6 +411,7 @@ class BaseView(UserPassesTestMixin,
 
         context['allow_next'] = self.wf_access
         context['wf_access2'] = self.wf_access2
+        context['allow_back'] = True  # برگشت همیشه مجاز است مگر در ویو نهایی بازنویسی شود
         return context
 
     def get_form_kwargs(self):
@@ -1079,6 +1080,9 @@ class CommentsFormView(View):
             comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'order_error':
             kwargs['submit_type'] = 'order_error'
+            comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'factor_accounting':
+            kwargs['submit_type'] = 'factor_accounting'
             comments = obj.comments.all().order_by('-created_date')
         comments |= Comments.objects.filter(Q(for_sku | for_customer), is_active=True)
         prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'

@@ -68,7 +68,7 @@
     <!-- factor header -->
 {{ form.errors }}
 <div class="sticky-top bg-white">
-    <div class="overflow-hidden col pt-2" id="factor-header" style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
+    <div class="overflow-hidden col pt-2 mb-8" id="factor-header" style="height: fit-content; max-height: 400px; transition: all ease 0.3s;">
         <div class="row row-cols-4 bg-white">
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
@@ -163,7 +163,7 @@
                     {% render_field_by_order form form.deliver_type form.deliver_method label='on-border' %}
                 </div>
             </div>
-            {% render_field_by_order form form.official_factor_send_with_this_factor label='on-border' %}
+            {% render_field_by_order form form.official_factor_send_with_this_factor form.official_factor_for_this_factor label='on-border' %}
         {% if not form.wh_user.field.widget.input_type == 'hidden' %}
             <div class="col-2 on-border">
                 <label style="z-index: 100 !important;">کاربر انبار</label>
@@ -201,6 +201,19 @@
                 <div class="d-flex gap-3" style="position: absolute; top: 50px;">
                     {% for file in form.instance.files.all %}
                         {% if file.group == 1 %}
+                            <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-2 on-border d-flex flex-column">
+                <label for="">فاکتور رسمی</label>
+                {% render_field_by_order form form.file_4 margin_b=0 %}
+                <div class="d-flex gap-3" style="position: absolute; top: 50px;">
+                    {% for file in form.instance.files.all %}
+                        {% if file.group == 4 %}
                             <a href="{{ file.path.url }}" target="_blank" class="me-1">
                                 <i class="fas fs-2 fa-file icon-lg"></i>
                             </a>
@@ -248,6 +261,33 @@
             </div>
         {% endif %}
 
+        {% if request.user|has_group:"wh_user" %}
+            <div class="col-2 on-border d-flex flex-column">
+                <label for="">اسناد تحویل</label>
+                {% render_field_by_order form form.file_3 margin_b=0 %}
+                <div class="d-flex gap-3" style="position: absolute; top: 50px;">
+                    {% for file in form.instance.files.all %}
+                        {% if file.group == 3 %}
+                            <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="col-1 mt-3 d-flex gap-2">
+            <span>اسناد تحویل:</span>
+                {% for file in form.instance.files.all %}
+                    {% if file.group == 3 %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                            <i class="fas fs-2 fa-file icon-lg"></i>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% if request.user|has_group:"wh_user" and flow_state_index == 4 %}
            <div href="#" class="col-1" onclick="init_packing_json_modal(event)" data-url="{% url 'factor:wh.packing' %}?pk={{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                <span class="cursor-pointer mb-5 text-primary">
@@ -262,18 +302,25 @@
            </div>
         {% endif %}
         <div class="col-sm-6">
-            {% get_comment_user_list form request.user obj_rel=form.instance.q %}
+            {% if request.user.base_group == 'accounting' %}
+                {% get_comment_user_list form_s request.user obj_rel=form.instance.q comment_type='factor_accounting' %}
+            {% elif request.user.base_group == 'sales' %}
+                {% get_comment_user_list form_s request.user obj_rel=form.instance.q %}
+            {% else %}
+                {% get_comment_user_list form_s request.user obj_rel=form.instance.q%}
+            {% endif %}
             <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
         </div>
 
         </div>
     <div>
-        <span>آدرس: </span>
-        <span>
-{#            {{ quotation.customer_party_id.province|default_if_none:'-' }}#}
-{#            {{ quotation.customer_party_id.address|default_if_none:'-' }}#}
-            {{ form.instance.address|default_if_falsy:quotation.customer_party_id.address }}
+        <span id="address-text">
+            <span>آدرس: </span>
+            <span>
+                {{ form.instance.address|default_if_falsy:quotation.customer_party_id.address }}
+            </span>
         </span>
+        <span class="hover-link text-primary cursor-pointer ms-2" onclick="printElement('address-text')">پرینت <i class="bi bi-printer text-primary"></i></span>
     </div>
         <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
     </div>
@@ -299,7 +346,7 @@
                     <span class="col-9 bold">
                         <span data-key="">پارت نامبر | کد کالا</span>
                         <div class="border-top border-gray-500"></div>
-                        <span data-key=""> تعداد | قیمت | فاکتور شده </span>
+                        <span data-key=""> تعداد | قیمت | فاکتور شده | تعداد در بسته </span>
                     </span>
                     <span class="col-2 bold p-0">
                         <span data-key="lead_time" class="font-size-12">lead_time</span>
@@ -386,8 +433,8 @@
                                 {% with qi.total_quantity_in_factor as tqif %}
                                 <span class="font-size-11 text-success"> فاکتور شده: </span> <span>({{ tqif.0|intcomma }}, <span class="text-success">{{ tqif.1|intcomma }}</span>)</span>
                                 {% endwith %}
-{#                                <b>|</b>#}
-{#                                 <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>#}
+                                |
+                                <span class="font-size-11 text-danger"> تعداد در بسته: </span> <span class="batch-count">{{ qi.goods_code_fk.batch_count|default_if_falsy:'-' }}</span>
                             </span>
                         </div>
                     </span>
@@ -520,8 +567,8 @@
                                 <br>
                                 <b>|</b>
                                 <span class="font-size-11 text-success"> فاکتور شده: </span> <span>{{ qi.total_quantity_in_factor|intcomma }}</span>
-{#                                <b>|</b>#}
-{#                                <span class="font-size-11 text-success"> سفارش : </span> <span>----</span>#}
+                                |
+                                <span class="font-size-11 text-danger"> تعداد در بسته: </span> <span class="batch-count">{{ qi.goods_code_fk.batch_count|default_if_falsy:'-' }}</span>
 
                             </span>
                         </div>
@@ -1095,4 +1142,35 @@ flatpickr("#id_collecting_start_time_1", {
     time_24hr: true,
     enableSeconds: false
 });
+
+    function printElement(elementId) {
+
+        const content = document.getElementById(elementId).innerHTML;
+        const printWindow = window.open('', '', 'width=900,height=700');
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print</title>
+
+                <style>
+                    body { padding: 20px; direction: rtl}
+                </style>
+
+            </head>
+            <body>
+                ${content}
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    }
+
 </script>

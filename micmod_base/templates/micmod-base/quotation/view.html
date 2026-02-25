@@ -24,19 +24,28 @@
     <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
     <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
 
-    <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded mb-5 p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
-        خروجی اکسل
-    </button>
 
 
-{#    <div id="" class="d-flex gap-5 align-items-center">#}
-{#        <input type="text" id="id_customer_request_search" placeholder="جستجوی درخواست..." class="narrow-input">#}
-{##}
-{#        <div id="customer_request_search_result" class="d-flex gap-5 align-items-center"></div>#}
-{#    </div>#}
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+            <span class="d-flex align-items-center gap-3">
+                <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+                    خروجی اکسل
+                </button>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="border border-primary rounded text-black p-2 bg-light-primary">بازگشت به لیست</a>
+                <span class="tooltip_">
+                    <a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank">
+                        <i class="ki-duotone ki-plus-circle fs-2x">
+                            <span class="tooltiptext font-size-12">ایجاد پیش‌فاکتور</span>
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </a>
+                </span>
+            </span>
+        </div>
+    </div>
 
-{#    <div id="id_customer_request_select2"></div>#}
-{#    <span>{{ form.customer_request }}</span>#}
 
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>

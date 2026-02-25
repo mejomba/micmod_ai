@@ -1,12 +1,9 @@
 {% load humanize %}
 {% load jalali_tags %}
 {% load static %}
-{#{% load crispy_forms_tags %}#}
-{#{% load humanize %}#}
-{#{% load quotation_tag %}#}
 {% load more_tags %}
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+{#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
@@ -18,7 +15,7 @@
 <link href="{% static 'css/custom.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
 <link href="{% static 'css/print/print.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
 <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
-<link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>
+<link href="{% static 'css/local/jquery.dataTables1.10.22.min.css' %}"/>
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -214,16 +211,6 @@
                 </div>
                 <div class="col m-0 p-0 text-center">
                 {% with data.payment as payment %}
-{#                    <p class="border-bottom border-dark my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
-{#                    <p class="border-bottom border-dark my-1">{{ data.addition|default_if_none:0 }}</p>#}
-{#                    <p class="border-bottom border-dark my-1">{{ data.self_discount|default_if_none:0 }}</p>#}
-{#                    <p class="border-bottom border-dark my-1" >{{ data.tax_amount|default_if_none:0|floatformat:0|intcomma }}</p>#}
-{#                    {% if data.addition %}#}
-{#                    	<p class=" my-1" >{{ data.sum_prices|add:data.addition|intcomma }}</p>#}
-{#                        {% else %}#}
-{#                        <p class=" my-1" >{{ data.sum_prices|default_if_none:0|intcomma }}</p>#}
-{#                    {% endif %}#}
-
                     <p class="border-bottom border-dark my-1" >{{ payment.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>

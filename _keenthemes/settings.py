@@ -758,7 +758,7 @@ SEPIDAR_CUSTOM_API_PROTOCOL = os.environ.get('SEPIDAR_CUSTOM_API_PROTOCOL')
 SEPIDAR_CUSTOM_API_HOST = os.environ.get('SEPIDAR_CUSTOM_API_HOST')
 SEPIDAR_CUSTOM_API_PORT = os.environ.get('SEPIDAR_CUSTOM_API_PORT')
 SEPIDAR_STOCK_NUMBER = os.environ.get('SEPIDAR_STOCK_NUMBER')
-SEPIDAR_CUSTOM_API_VERSION = os.environ.get('SEPIDAR_CUSTOM_API_VERSION')
+SEPIDAR_CUSTOM_API_VERSION = 'v2' #os.environ.get('SEPIDAR_CUSTOM_API_VERSION')
 # AQYVp4^icl8F
 
 SESSION_COOKIE_AGE = 120960000  # 200 weeks
@@ -820,10 +820,10 @@ SEPIDAR_CONST_DATA = {
     'transportation_vaset': 407,  # واسط کرایه حمل موجودی code:111507
     'wh_to_wh_vaset': 496,  # واسط انتقال بین انبار code:111506
     'fiscalyearref': 46,  # سال مالی جاری
-    'no_name_vendor_rmb': 111,  # تامین کننده یوآنی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند,
-    'no_name_vendor_usd': 222,  # تامین کننده دلاری هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند,
-    'no_name_vendor_ero': 333,  # تامین کننده یورویی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند,
-    'before_central_wh_id': 25,  # shenzen کد انبار قبل از انبار مرکزی
+    'no_name_vendor_rmb': 5962,  # تامین کننده یوآنی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32592
+    'no_name_vendor_ero': 5961,  # تامین کننده یورویی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32591
+    'no_name_vendor_usd': 5960,  # تامین کننده دلاری هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32590
+    'before_central_wh_id': 91,  # کد انبار کالای بین راهی ایران
     'central_wh_id': 2,  # کد انبار مرکزی
 }
 

@@ -1113,7 +1113,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
         {'name': 'expiration_date', 'title': '<div class="px-2">تاریخ انقضا</div>', 'visible': True, 'orderable': True, 'searchable': False},
         {'name': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
         {'name': 'last_work_flow__to_user', 'title': 'متعلق به', 'visible': True, 'orderable': True, 'lookup_field': '__profile__first_name__icontains'},
-        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False},
+        {'name': 'description', 'visible': True, 'orderable': True, 'searchable': False, 'title': '<div style="width:100px;">توضیحات</div>'},
         {'name': 'inquiry_status', 'title': 'وضعیت استعلام', 'visible': True, 'orderable': False, 'searchable': False},
         {'name': 'not_over', 'title': 'وضعیت استهلاک','visible': True, 'orderable': False, 'searchable': False},
         {'name': 'last_work_flow','title': 'آخرین وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
@@ -2024,9 +2024,9 @@ class QuotationRowsGroupedByQuotationView(View, LoginRequiredMixin):
 
     def get(self, request):
         page = request.GET.get('page', 1)
-        per_page = min(int(request.GET.get('per_page', 50)), 100)
+        per_page = min(int(request.GET.get('per_page', 100)), 100)
 
-        quotations = Quotation.objects.filter(sales_admin_confirm=False) \
+        quotations = Quotation.objects.filter(sales_admin_confirm=False, sepidar_number__isnull=False, pk__gt=1000, cancel=False, is_deleted=False) \
             .prefetch_related(
             Prefetch(
                 'quotation',

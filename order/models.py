@@ -166,6 +166,7 @@ class Order(BaseModeWF):
     order_type = models.CharField(_('order_type'), max_length=64, choices=ORDER_TYPE_CHOICE, default='china',
                                   null=True, blank=True)
     price = models.FloatField(_("order_final_price"), null=True, blank=True, help_text='قیمت نهایی (در صورت وجود تضاد در قیمت)')
+
     # TRADE #######################################
     item_trade = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='item_trade', null=True,
                                    blank=True)  # Todo autocomplete with select2 search
@@ -179,6 +180,8 @@ class Order(BaseModeWF):
     mohandes_confirmation = models.BooleanField(_("mohandes_confirmation"), default=False)
     trade_commitment_date = models.DateField(_('trade_commitment_date'), null=True, blank=True)
     production_lead_time = models.PositiveSmallIntegerField(_('production_lead_time'), null=True, blank=True)
+    trade_lock_order = models.BooleanField(_('trade_lock_order'), default=False)
+
     # MAC #######################################
     supplier_mac = models.ForeignKey(Supplier, verbose_name=_('supplier'), null=True, blank=True,
                                      on_delete=models.DO_NOTHING, related_name='supplier_mac_set')
@@ -253,11 +256,11 @@ class Order(BaseModeWF):
                     else:
                         remaining_quantity = o.remaining_quantity
                         if remaining_quantity > 0:
-                            res.append(f"🧺 {o.last_work_flow.current_state_name} ({o.quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})")
+                            res.append(f"🧺 {o.last_work_flow.current_state_name} ({o.final_quantity:0.20g} کل) - (آزاد {remaining_quantity:0.20g})")
             else:
                 remaining_quantity = o.remaining_quantity
                 if remaining_quantity > 0:
-                    res.append(f"🧺 {o.last_work_flow.current_state_name} (کل {o.quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}")
+                    res.append(f"🧺 {o.last_work_flow.current_state_name} (کل {o.final_quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}")
 
         if not res:
             return None
@@ -695,7 +698,7 @@ class OrderOrder(BaseModel):
 
 
 class Packing(BaseModeWF):
-    SHIPMENT_TYPE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
+    SHIPMENT_TYPE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     WH_DESTINATION_CHOICE = [(2, _("central")), (3, _("resalat")), ]
     packing_number = models.CharField(_('packing_number'), max_length=255, null=True, blank=True)
     shipment_type = models.CharField(_('shipment_type'), max_length=255, choices=SHIPMENT_TYPE, null=True, blank=True)
@@ -711,7 +714,7 @@ class Packing(BaseModeWF):
     arrive_to_wh_date = models.DateField(_('arrive_to_wh_date'), null=True, blank=True)
     estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'))
-    sum_arrived_qty = models.FloatField(_('sum_arrived_qty'))
+    sum_arrived_qty = models.FloatField(_('sum_arrived_qty'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
     wh_destination = models.CharField('wh_destination', choices=WH_DESTINATION_CHOICE, null=True, blank=True)
     sepidar_wh_to_wh = models.JSONField(null=True, blank=True)

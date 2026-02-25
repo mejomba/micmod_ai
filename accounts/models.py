@@ -42,7 +42,9 @@ class User(AbstractUser):
     def base_group(self):
         user_groups = self.groups.values_list('name', flat=True)
         group = None
-        if 'trade_user' in user_groups or 'trade_admin' in user_groups:
+        if 'office' in user_groups or 'office_admin' in user_groups:
+            group = 'office'
+        elif 'trade_user' in user_groups or 'trade_admin' in user_groups:
             group = 'trade'
         elif 'bazar_user' in user_groups or 'bazar_admin' in user_groups:
             group = 'bazar'
@@ -54,6 +56,8 @@ class User(AbstractUser):
             group = 'store'
         elif 'accounting_user' in user_groups or 'accounting_admin' in user_groups:
             group = 'accounting'
+        elif 'mac' in user_groups:
+            group = 'mac'
 
         return group
 

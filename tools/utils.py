@@ -5,6 +5,8 @@ import pytz
 from ajax_datatable.utils import parse_date
 from dateutil.relativedelta import relativedelta
 import time
+
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import make_aware
@@ -19,6 +21,7 @@ from io import BytesIO
 import string
 import random
 from django.conf import settings
+from functools import wraps
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -580,3 +583,22 @@ class DaxCall:
         import requests
         res = requests.get(url, headers=headers)
         return res.json()
+
+
+def wf_cache(timeout=20):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            user_id = kwargs.get("user_id") or args[1]
+            group_name = kwargs.get("group_name") or args[2]
+            state = kwargs.get("state") or args[3]
+
+            key = f"wfperm:v1:u{user_id.pk}:p{group_name}:s{state}"
+            val = cache.get(key)
+            if val is None:
+                val = fn(*args, **kwargs)
+                cache.set(key, val, timeout)
+            return val
+        return wrapper
+    return deco
+

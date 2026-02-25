@@ -39,9 +39,15 @@ class Factor(SLSDoc):
                                      verbose_name=_('delivery_time'), default="2-3 week")
     description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
-    # sepidar_quotation_id = models.BigIntegerField(_('sepidar_quotation_id'), null=True, blank=True)
+
+    ### sepidar data
     sepidar_number = models.BigIntegerField(_('sepidar_number'), null=True, blank=True)
     sepidar_id = models.BigIntegerField(_('sepidar_id'), null=True, blank=True)
+    sepidar_inventory_delivery_number = models.CharField(_('sepidar_inventory_delivery_number'), null=True, blank=True, max_length=64)
+    sepidar_inventory_delivery_id = models.CharField(_('sepidar_inventory_delivery_id'), null=True, blank=True, max_length=64)
+    sepidar_voucher_number = models.BigIntegerField(_('sepidar_voucher_number'), null=True, blank=True)
+    sepidar_voucher_id = models.BigIntegerField(_('sepidar_voucher_id'), null=True, blank=True)
+    fiscalyearref = models.SmallIntegerField(_('sepidar_fiscalyearref'), null=True, blank=True)
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
     factor_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='factor_rel', null=True, blank=True)
@@ -59,7 +65,8 @@ class Factor(SLSDoc):
     collecting_end_time = models.DateTimeField(verbose_name=_('زمان پایان جمع‌آوری'), null=True, blank=True)
     final_check = models.BooleanField(default=False, verbose_name=_('چک نهایی'))
     require_official_factor_with_delivery = models.BooleanField(default=False, verbose_name=_('الزام ارسال فاکتور رسمی همراه بار'))
-    official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
+    official_factor_send_with_this_factor = models.CharField(verbose_name=_('فاکتورهای رسمی ارسال شده(با ویرگول جدا شود)'), max_length=255, null=True, blank=True)
+    official_factor_for_this_factor = models.CharField(verbose_name=_('فاکتور رسمی(متعلق به این فاکتور)'), max_length=255, null=True, blank=True)
     deliver_type = models.CharField(max_length=10, null=True, blank=True, choices=DELIVER_TYPE_CHOICES, verbose_name=_('deliver_type'))
     deliver_to_customer = models.BooleanField(default=False, verbose_name=_('تحویل به مشتری'))
     need_factor_document = models.BooleanField(default=False, verbose_name=_('نیاز به اسناد فاکتور'))
@@ -76,7 +83,7 @@ class Factor(SLSDoc):
         if not self.q.sales_admin_confirm:
             return True
 
-        for fis in self.factoritem_set.all():
+        for fis in self.factoritem_set.select_related('qi'):
             if fis.qi.fee != fis.price:
                 return True
         return False
@@ -89,27 +96,31 @@ class Factor(SLSDoc):
     def get_qs(cls, request, lst=False, groups_list=None):
         q = request.POST.get('q')
         qs = cls.objects.none()
+        base_group = request.user.base_group
         comm_filter = Q(is_deleted=False)
         wh_filter = Q(last_work_flow__current_state_name__in=const.WH_FACTOR_STATES) | Q(wh_user__id__in=[request.user.pk])
+        office_filter = Q()
         sales_filter = Q()
         trade_filter = ''
         bazar_filter = ''
         accounting_filter = Q(last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES) | Q(checker__id__in=[request.user.pk])
 
-        if request.user.base_group == 'wh':
+        if base_group == 'wh':
             total_filter = comm_filter & wh_filter
             qs = cls.objects.filter(total_filter).exclude(factoritem__supply_locations__is_wh=False).distinct()
-        if request.user.base_group == 'sales':
+        if base_group == 'sales':
             # total_filter = comm_filter & wh_filter
             qs = cls.objects.get_access_object(request.user, q=q, lst=False)
-        if request.user.base_group == 'trade':
+        if base_group == 'trade':
             qs |= Factor.objects.filter()
-        if request.user.base_group == 'bazar':
+        if base_group == 'bazar':
             qs |= Factor.objects.filter()
-        if request.user.base_group == 'accounting':
+        if base_group == 'accounting':
             qs |= Factor.objects.filter(accounting_filter, need_financial_approval=True)
         if request.user.is_superuser:
             qs |= Factor.objects.filter()
+        if base_group == 'office':
+            qs |= Factor.objects.filter(office_filter)
         # qs = cls.objects.get_access_object(request.user, q=q, lst=False)
         return qs
 
@@ -304,6 +315,9 @@ class FactorItem(BaseModel):
     def get_sepidar_stock_code_from_selected_supply_location(self):
         try:
             wh_code = self.supply_locations.sepidar_wh_code
+            if not wh_code:
+                sp = self.supply_location.split('__')
+                wh_code = sp[1] if len(sp) >= 2 else 0
         except Exception as e:
             sp = self.supply_location.split('__')
             wh_code = sp[1] if len(sp) >= 2 else 0
@@ -326,9 +340,9 @@ class FactorItem(BaseModel):
         res = SepidarApiCall.get_stock_quantity([self.goods_code.sepidar_id_0])
         res = res.get('res')
         if res:
+            wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
             for name_code, quantity in res.items():
                 code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
-                wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
                 if int(code) == int(wh_code):
                     x = quantity - self.goods_code.reserved_count_in_portal(wh_code)
                     return min([float(x) if x > 0 else 0, float(self.quantity), (self.reserve_count or 0)])
@@ -469,6 +483,61 @@ class FactorItem(BaseModel):
                 o1 = Order.create_with_rel(o2=o2, factor_item=self)[0]
                 # self.supply_locations = o1
             elif select_wh:
+
+                oo = self.supply_locations.order_base_items.first()
+                if oo:
+                    oo.is_deleted = True
+                    oo.save()
+
+                quantity = self.quantity_for_wh_order()
+                sepidar_free_quantity = quantity
+                if quantity < self.reserve_count:
+                    '''محاسبه تعداد قرض گرفتن از رزرو دیگران'''
+                    oo_id = self.extra_data.request.POST.get(
+                        f'factoritem_set-{self.extra_data.idx}-reserve_selection') or 0
+                    oo = OrderOrder.objects.filter(pk=oo_id).first()
+                    available_for_barrow = oo.quantity if oo else 0
+
+                    quantity = min(self.reserve_count, quantity + available_for_barrow)
+
+                    '''تغییر تعداد در سفارش میانی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                    if oo:
+                        total_barrow = min(abs(self.reserve_count - sepidar_free_quantity), available_for_barrow)
+                        oo.quantity -= total_barrow
+                        oo.editor_user = self.editor_user
+                        oo.save()
+
+                        '''تغییر تعداد در سفارش اصلی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                        order_rel = oo.order_rel
+                        order_rel.quantity -= total_barrow
+                        order_rel.editor_user = self.extra_data.request.user
+                        order_rel.save()
+
+                """ایجاد سفارش کامل"""
+                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
+
+                """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
+                data_base = {
+                    "order_title": "رزرو انبار (خودکار توسط سیستم)",
+                    # "status": "1",
+                    "item": self.qi.goods_code_fk,
+                    "production_lead_time": 10,  # self.qi.lead_time,
+                    "quantity": quantity,  # self.quantity,
+                    "cancel": False,
+                    "is_over": False,
+                    "qi": self.qi,
+                    'commitment_date_to_customer': self.qi.supply_date,
+                    "creator_user": self.extra_data.request.user,
+                    "editor_user": self.extra_data.request.user,
+                    'is_bazar': False,
+                    'is_wh': True,
+                    'sepidar_wh_code': int(self.supply_location[4:])
+                }
+                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
+                o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self,
+                                               sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)
+                self.supply_locations = o1
+
                 """
                 x = fi.reserve_count - order_rel.quantity
                 order_rel.quantity += x
@@ -476,7 +545,6 @@ class FactorItem(BaseModel):
                 oo = oo.order_base == fi.supply_location
                 oo.quantity = fi.reserve_count
                 """
-                # oo = self.supply_locations.order_base_items.first()
                 # order_rel = oo.order_rel if oo else None
                 # order_rel.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
                 # oo.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)

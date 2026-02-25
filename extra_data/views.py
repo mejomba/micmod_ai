@@ -26,13 +26,13 @@ from tools.import_data import set_items_sepidar_id_from_sepidar
 from tools.utils import show_error, set_secret_id, DaxCall
 from .forms import ItemWeightForm, PurchaseGroupForm, HsForm, CustomerForm, CustomerDocumentsForm, \
     ChangeCustomerGroupForm, CustomerExpertForm, CustomerContractForm, ItemPackageForm, AccountingUserForm, \
-    CustomerGroupUserForm
+    CustomerGroupUserForm, CustomerAddressForm
 
 from accounts.mixins import FormFieldAccessMixin
 from changelog.models import ChangeLog
 from core.views import BaseView, Base
 from extra_data.models import Item, ItemWeight, PurchaseGroup, HS, Customer, CustomerDocuments, CustomerExpert, \
-    CustomerContract, ChangeCustomerGroup, ItemPackage, AccountingUser, CustomerGroup
+    CustomerContract, ChangeCustomerGroup, ItemPackage, AccountingUser, CustomerGroup, CustomerAddress
 from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
@@ -1067,3 +1067,45 @@ class ItemFromProductView(APIView):
         response_function = self.request.GET.get('response_function')
         res = ProductApiCall.get_product_by_skus(skus=skus, response_function=response_function)
         return JsonResponse({'res': res})
+
+
+class CustomerAddressView(LoginRequiredMixin, BaseView):
+    model = CustomerAddress
+    template_name = 'extra_data/customer_address.html'
+    success_message = '%(customer)s update'
+    form_struct = {
+        'form': CustomerAddressForm,
+        'childes': [
+            {
+                'form': '',
+                'childes': [{}]
+            },
+        ]
+    }
+
+    def get_success_message(self, cleaned_data):
+        return f'آدرس {self.object.customer.title} save'
+
+    def get_success_url(self):
+        return reverse_lazy('extra_data:customer_address.update', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.filter(pk=self.request.GET.get('pk')).first()
+        context['form'] = CustomerAddressForm(initial={'customer': customer or self.object.customer},
+                                              instance=self.object)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        x = super().post(request, *args, **kwargs)
+        return x
+
+    def form_valid(self, form):
+        x = self.form.save()
+        # x = super().form_valid(form)
+        return JsonResponse({'res': True})
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        res = render_to_string(self.template_name, context=context, request=self.request)
+        return JsonResponse({'res': res, 'jss': '', 'csss': ''})

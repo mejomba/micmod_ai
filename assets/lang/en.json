@@ -24,6 +24,7 @@
     "t-products":"Products",
     "t-product-detail":"Product Detail",
     "t-orders":"Orders",
+    "t-order":"Orders",
     "t-customers":"Customers",
     "t-cart":"Cart",
     "t-checkout":"Checkout",
@@ -173,5 +174,6 @@
     "t-fa_lang": "Persian",
     "t-en_lang": "English",
     "t-quotation": "Quotation",
-    "t-factor": "Factor"
+    "t-factor": "Factor",
+    "t-gio": "Gio"
 }

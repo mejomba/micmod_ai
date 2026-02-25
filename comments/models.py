@@ -26,6 +26,8 @@ class Comments(BaseContentType):
         ('Q', 'فقط بازرگانی'),
         # order error
         ('R', 'خطای سفارش'),
+        # factor accounting
+        ('S', 'عدم تایید مالی فاکتور'),
         # other
         ('O','کامنت ساده'),
     )

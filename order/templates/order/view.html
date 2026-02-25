@@ -118,8 +118,15 @@
             <div class="overflow-scroll">
                 <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
                 <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
-{#                {% get_comment_user_list form request.user %}#}
-                {% get_comment_user_list form request.user comment_type='order_error' %}
+
+                {% if request.user.base_group == 'trade' %}
+                    {% get_comment_user_list form request.user comment_type='order_error' %}
+                {% elif request.user.base_group == 'sales' %}
+                    {% get_comment_user_list form request.user %}
+                {% else %}
+                    {% get_comment_user_list form request.user %}
+                {% endif %}
+
                 <div class="mt-1"></div>
                 {% get_payment_list form request.user %}
             </div>

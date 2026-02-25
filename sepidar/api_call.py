@@ -346,6 +346,10 @@ class SepidarApiCall:
                 out = {
                     "number": data.get("number"),
                     "invoiceid": data.get("invoiceid"),
+                    "sepidar_inventory_delivery_number": data.get('sepidar_inventory_delivery_number'),
+                    "sepidar_inventory_delivery_id": data.get('sepidar_inventory_delivery_id'),
+                    "sepidar_voucher_number": data.get('sepidar_voucher_number'),
+                    "sepidar_voucher_id": data.get('sepidar_voucher_id'),
                     'invoice_items': [{"invoiceitemid": x.get("invoiceitemid"),
                                        "quantity": x.get('quantity'),
                                        "itemref": x.get('itemref'),

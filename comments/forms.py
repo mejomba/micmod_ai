@@ -37,6 +37,12 @@ class CommentsForm(CustomBaseModelForm):
                 ('O', 'کامنت ساده'),
                 ('R', 'خطای سفارش'),
             )
+        if self.submit_type == 'factor_accounting':
+            self.initial['comment_title'] = 'O'
+            self.fields['comment_title'].choices = (
+                ('O', 'کامنت ساده'),
+                ('S', 'عدم تایید مالی فاکتور'),
+            )
         if self.submit_type == 'save_comment':
             self.initial['comment_title'] = 'O'
             self.fields['comment_title'].choices = (

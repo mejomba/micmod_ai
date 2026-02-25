@@ -8,6 +8,7 @@ from notifications.models import Messages
 from django.apps import apps
 
 from services.notify_service import notify_wf_to_shop
+from tools.utils import wf_cache
 from translator import get_text as _
 
 from inspect import stack
@@ -128,6 +129,17 @@ class FlowAdminGroup(models.Model):
             return user in flow_admin.user_rel.all()
 
     @classmethod
+    @wf_cache(timeout=10)
+    def is_admin_of_group_cached(cls, user_id, group_name, state):
+        # from django.contrib.auth import get_user_model
+        # User = get_user_model()
+        # user = User.objects.select_related().get(pk=user_id)
+        user = user_id
+
+        return cls.is_admin_of_group(user, group_name)
+
+
+    @classmethod
     def is_admin_of_group(cls, user, group_name, model=None) -> bool:
         """if user inside of admin group
         Args:
@@ -142,7 +154,7 @@ class FlowAdminGroup(models.Model):
             return True
         
         direct_group_name = f'{model._meta.model_name.lower()}_direct_access' if model else ''
-        if model and model._meta.model_name.lower() == "item" and direct_group_name in user.groups.values_list('name', flat=True):
+        if model and model._meta.model_name.lower() in ["item", "order"] and direct_group_name in user.groups.values_list('name', flat=True):
             return True
 
         current_user_group = target_group_memo.get('target_group')
@@ -151,26 +163,38 @@ class FlowAdminGroup(models.Model):
             target_group_memo['target_group'] = current_user_group
             group_memo['prev'] = []
 
-        # qry = f""" select case when name Like '%%_admin' then 1 else 0 end AS "x", "auth_group"."id", "auth_group"."name" FROM "auth_group" INNER JOIN "auth_user_groups" ON ("auth_group"."id" = "auth_user_groups"."group_id") WHERE "auth_user_groups"."user_id" = {user.pk} ORDER BY 1 desc """
-        # user_all_groups = user.__class__.objects.raw(qry)
-        user_all_groups = user.groups.all()
-        for ug in user_all_groups:
-            for my_flow_admin in cls.objects.filter(group_rel=ug):
-                my_flow_admin_child = my_flow_admin.group_child.all()
-                for ru in my_flow_admin_child:  # get all subgroups
-                    if ru in group_memo.get('prev', []):
-                        # group_memo.clear()
-                        # group_memo['prev'] = None
-                        # continue
-                        pass #continue
-                    elif current_user_group in my_flow_admin_child:# or current_user_group in user_all_groups:
-                        group_memo.clear()
-                        target_group_memo.clear()
-                        # group_memo['prev'] = None
-                        return True
-                    else:
-                        group_memo['prev'].append(ru)
-                        return cls.is_admin_of_group(user, ru.name)
+        user_all_groups = list(user.groups.all())
+        for my_flow_admin in cls.objects.filter(group_rel__in=user_all_groups).distinct().prefetch_related('group_child'):
+            my_flow_admin_child = my_flow_admin.group_child.all()
+            for ru in my_flow_admin_child:  # get all subgroups
+                if ru in group_memo.get('prev', []):
+                    pass  # continue
+                elif current_user_group in my_flow_admin_child:  # or current_user_group in user_all_groups:
+                    group_memo.clear()
+                    target_group_memo.clear()
+                    return True
+                else:
+                    group_memo.get('prev', []).append(ru)
+                    return cls.is_admin_of_group(user, ru.name)
+
+        # user_all_groups = user.groups.all()
+        # for ug in user_all_groups:
+        #     for my_flow_admin in cls.objects.filter(group_rel=ug):
+        #         my_flow_admin_child = my_flow_admin.group_child.all()
+        #         for ru in my_flow_admin_child:  # get all subgroups
+        #             if ru in group_memo.get('prev', []):
+        #                 # group_memo.clear()
+        #                 # group_memo['prev'] = None
+        #                 # continue
+        #                 pass #continue
+        #             elif current_user_group in my_flow_admin_child:# or current_user_group in user_all_groups:
+        #                 group_memo.clear()
+        #                 target_group_memo.clear()
+        #                 # group_memo['prev'] = None
+        #                 return True
+        #             else:
+        #                 group_memo.get('prev', []).append(ru)
+        #                 return cls.is_admin_of_group(user, ru.name)
         target_group_memo.clear()
         group_memo.clear()
         return False
