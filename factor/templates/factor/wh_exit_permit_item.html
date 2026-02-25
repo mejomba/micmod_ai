@@ -37,6 +37,14 @@
     <td class="font-size-12 replace-digits">
         <div class=" text-center font-size-12" name="unit" >عدد</div>
     </td>
+    {% if with_location == '0' %}
+        <td class="font-size-12 replace-digits">
+        <div class=" text-center font-size-12" name="unit" >{{ form.instance.goods_code.location_in_wh }}</div>
+    </td>
+    {% elif with_location == '1' %}
+
+    {% endif %}
+
     <td class="font-size-12 replace-digits">
         <div class="text-center font-size-12" >بابت قلم فاکتور شماره {{ form.instance.factor.pk }}, ردیف {{ forloop.counter }}</div>
     </td>

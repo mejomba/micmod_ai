@@ -245,6 +245,7 @@ class OrderDataTableListView(AjaxDatatableView):
          'lookup_field': '__current_state_name__icontains'},
         {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
+        {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
@@ -358,6 +359,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات فروش'},
+                {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
+                 'lookup_field': '__username__icontains'},
             ]
         elif self.request.user.base_group == 'sales':
             self.column_defs = [
@@ -382,6 +385,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
                 {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
+                 'lookup_field': '__username__icontains'},
             ]
         elif self.request.user.base_group == 'trade':
             self.column_defs = [
@@ -407,6 +412,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
                 {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
+                 'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
                 # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },

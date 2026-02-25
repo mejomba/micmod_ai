@@ -47,7 +47,7 @@
             {# sales edit section #}
             {% render_field_by_order form label='on-border' %}
             {% render_field_by_order form form.quantity label='on-border' margin_b=5 %}
-            {% render_field_by_order form form.commitment_date_to_customer label='on-border' %}
+            {% render_field_by_order form form.commitment_date_to_customer form.trade_user label='on-border' %}
             <div class="col-8 t">
                 <div class="d-flex pb-20">
                     {% render_field_by_order form form.sales_admin_cancel form.is_bazar label='on-border' %}

@@ -68,6 +68,12 @@
             </div>
             <span class="badge bg-light-info rounded-pill">{{ form.instance.trade_commitment_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
         </li>
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                کارشناس بازرگانی
+            </div>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.trade_user|default_if_none:"-" }}</span>
+        </li>
 
     </ul>
 </div>

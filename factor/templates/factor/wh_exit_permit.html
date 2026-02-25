@@ -36,6 +36,15 @@
 
 <div class="container" dir="rtl">
     <div>
+        <a href="{% url "factor:factor.print" id=data.pk %}?action=wh_exit_permit&location_url_params={{ location_url_params }}"
+           class="button print mb-5 mt-5 btn btn-primary btn-bordered ">
+            {% if with_location == '0' %}
+                بدون موقعیت در انبار
+            {% elif with_location == '1' %}
+                با موقعیت در انبار
+            {% endif %}
+        </a>
+
         <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
     </div>
     <div>
@@ -99,6 +108,11 @@
                 <th scope="col" >عنوان کالا</th>
                 <th scope="col">مقدار</th>
                 <th scope="col">واحد</th>
+                {% if with_location == '0' %}
+                <th scope="col">موقعیت در انبار</th>
+                {% elif with_location == '1' %}
+
+                {% endif %}
                 <th scope="col">توضیحات</th>
             </tr>
             </thead>
