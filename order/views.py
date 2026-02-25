@@ -369,7 +369,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False, },
-                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
+                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
                 {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
@@ -394,7 +394,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
-                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True},
+                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__part_number__icontains'},
                 # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
@@ -2007,7 +2007,7 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
         try:
             order_ids = request.GET.get('order_ids', '').split(',')
             receipt_quantity = json.loads(request.body)
-            obj = {'receipt_quantity': receipt_quantity, "sepidar_buy_factor_id": sepidar_buy_factor_id}
+            obj = {'receipt_quantity': receipt_quantity, "sepidar_buy_factor_id": sepidar_buy_factor_id, 'user': request.user.sepidar_code}
             res = SepidarApiCall.wh_receipt_from_bazar(obj, request)
             if "errors" in res:
                 return JsonResponse({'res': res['errors']}, status=500)
@@ -2062,6 +2062,7 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
                         'sku': row['sku'],
                         'partnumber': row['fk_strs']['itemref'],
                         'quantity': row['quantity'],
+                        'remaining_quantity': row['remainingquantity'],
                         'id': row['inventorypurchaseinvoiceitemid']
                     } for row in data['inventorypurchaseinvoice_item']
                 ]

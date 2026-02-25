@@ -46,7 +46,6 @@
 
             <div class="accordion-item" style="direction: rtl">
                 <h2 class="accordion-header" id="panelsStayOpen-heading{{ forloop.counter }}">
-                    {{ order_ids  }}
                     <button class="accordion-button" type="button" data-bs-toggle="collapse" onclick="get_sepidar_buy_factor(event, {{ sepidar_buy_factor_id.0 }}, {{ order_ids  }})"
                             data-bs-target="#panelsStayOpen-collapse{{ forloop.counter }}" aria-expanded="true"
                             aria-controls="panelsStayOpen-collapse{{ forloop.counter }}" data-sepidar-buy-factor-id="{{ sepidar_buy_factor_id.0 }}">
@@ -114,6 +113,7 @@
                       <th scope="col" style="font-weight: bold">کد کالا</th>
                       <th scope="col" style="font-weight: bold">پارت نامبر</th>
                       <th scope="col" style="font-weight: bold">تعداد</th>
+                      <th scope="col" style="font-weight: bold">باقی مانده</th>
                       <th scope="col" style="font-weight: bold">تعداد رسید شده</th>
                     </tr>
                   </thead>
@@ -125,7 +125,8 @@
                             <td class="" style="text-align:right">${row['sku']}</td>
                             <td class="" style="text-align:right">${row['partnumber']}</td>
                             <td class="" style="text-align:right">${row['quantity']}</td>
-                            <td class="" style="text-align:right"><input type="number" name="receipt_quantity__${row['id']}" value="${row['quantity']}"></td>
+                            <td class="" style="text-align:right">${row['remaining_quantity']}</td>
+                            <td class="" style="text-align:right"><input type="number" name="receipt_quantity__${row['id']}" value="${row['remaining_quantity']}"></td>
                         </tr>`
 
                         row_list.push(row_html)

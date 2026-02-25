@@ -5,13 +5,20 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 
 from files.models import File
-from inquiry.models import Supplier
+from inquiry.models import Supplier, PriceInquiryResult
 from micmod_base.base import Currency
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm, CustomBaseForm
 from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT
 from dal import autocomplete
+
+
+class PriceInquiryResultChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        # return ''
+        return f"{obj.supplier} - {obj.inquiry_type} - ({obj.price}) - {obj.price_update_date.date()}"
+
 
 
 class OrderForm(CustomBaseModelForm):
@@ -59,6 +66,12 @@ class OrderForm(CustomBaseModelForm):
             queryset=qs,
             widget=forms.Select(attrs={'class': 'form-control'}),
             initial=self.instance.supplier_mac,  # or qs.first().pk if qs.first() else 0,
+            required=False
+        )
+        self.fields['price_inquiry_result'] = PriceInquiryResultChoiceField(
+            queryset=PriceInquiryResult.objects.filter(sku=self.instance.final_item, is_deleted=False, active=True),
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            initial=self.instance.price_inquiry_result,  # or qs.first().pk if qs.first() else 0,
             required=False
         )
         self.fields['trade_commitment_date'] = JalaliDateField(label=_('trade_commitment_date'),
@@ -194,7 +207,6 @@ class PackingItemForm(CustomBaseModelForm):
                     'order',
                     'part_number',
                     'quantity',
-                    'arrived_quantity',
                     'price',
                     'packing',
                     'carton_number',

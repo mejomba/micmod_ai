@@ -22,12 +22,13 @@
                 {{ form.order_number }}
                 {{ form.commitment_date_to_customer }}
                 {{ form.price }}
+                {{ form.is_kasri }}
 
             </div>
             <div class="col-6">
                 <div id="id_item_trade_select2"></div>
             </div>
-            {% render_field_by_order form form.po_number_trade form.quantity_trade form.price_trade form.currency label='on-border' %}
+            {% render_field_by_order form form.po_number_trade form.quantity_trade form.price_inquiry_result form.price_trade form.currency label='on-border' %}
             {% render_field_by_order form form.supplier_trade form.production_lead_time form.trade_commitment_date label='on-border' margin_b=5 %}
             {% render_field_by_order form form.order_type form.mohandes_confirmation form.apply_mac form.trade_lock_order label='on-border' %}
             {% render_field_by_order form form.description_trade label='on-border' %}

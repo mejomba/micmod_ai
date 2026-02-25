@@ -21,8 +21,8 @@
                 </div>
                 <div class="row row-cols-3">
                     <span class="d-none">{{ form.packing }}</span>
-                    {% render_field_by_order form form.quantity form.arrived_quantity form.price label='on-border' %}
-                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand form.wh_receipt_quantity label='on-border' %}
+                    {% render_field_by_order form form.quantity form.price label='on-border' %}
+                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand form.wh_receipt_quantity form.ruined_quantity label='on-border' %}
                 </div>
             </div>
             <div class="col-3">

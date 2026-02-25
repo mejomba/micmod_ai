@@ -511,6 +511,7 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'official_name', 'orderable': True, 'title': '<div class="px-6">نام رسمی</div>', 'visible': True, 'className': 'text-center'},
         {'name': 'phone', 'orderable': True, 'visible': True, 'className': 'text-center'},
         {'name': 'customer_group', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
+        {'name': 'accounting_user', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
         {'name': 'senf', 'orderable': True, 'visible': True, 'lookup_field': '__title__icontains', 'className': 'text-center'},
         {'name': 'cheque_to_delivery', 'title': '<div class="px-0">بدون قرارداد<br>چک هنگام تحویل</div>', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},
         {'name': 'z_no', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},

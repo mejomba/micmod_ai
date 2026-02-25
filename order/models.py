@@ -7,7 +7,7 @@ from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 from micmod_base.base import Currency
 from core.models import BaseModel, BaseModeWF, BaseManager
 from extra_data.models import Brand, Item, Customer, WH
-from inquiry.models import Supplier
+from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
 from micmod_base.models import QuotationItem, CustomerRequestItem
 from sepidar.api_call import SepidarApiCall
@@ -204,6 +204,8 @@ class Order(BaseModeWF):
     order_report_data = models.JSONField(null=True, blank=True)
     sepidar_wh_code = models.IntegerField(null=True, blank=True)
     receipt_in_wh = models.BooleanField(default=False)
+    price_inquiry_result = models.ForeignKey(PriceInquiryResult, on_delete=models.DO_NOTHING, related_name='orders', verbose_name='inquiry', null=True, blank=True)
+    is_kasri = models.BooleanField(default=False, verbose_name=_('is_kasri'))
 
     def __str__(self):
         if self.final_item:
@@ -740,7 +742,7 @@ class PackingItem(BaseModeWF):
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='packing_item_order', null=True, blank=True)
     part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
-    arrived_quantity = models.FloatField(_('arrived_quantity'), null=True, blank=True)
+    ruined_quantity = models.FloatField(_('ruined_quantity'), null=True, blank=True)
     # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')

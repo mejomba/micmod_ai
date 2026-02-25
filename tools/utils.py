@@ -593,7 +593,7 @@ def wf_cache(timeout=20):
             group_name = kwargs.get("group_name") or args[2]
             state = kwargs.get("state") or args[3]
 
-            key = f"wfperm:v1:u{user_id.pk}:p{group_name}:s{state}"
+            key = f"wfperm:v1:u{user_id.pk}:g{group_name}:s{state}"
             val = cache.get(key)
             if val is None:
                 val = fn(*args, **kwargs)

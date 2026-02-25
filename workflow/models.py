@@ -135,6 +135,7 @@ class FlowAdminGroup(models.Model):
         # User = get_user_model()
         # user = User.objects.select_related().get(pk=user_id)
         user = user_id
+        print('is_admin_of_group_cached')
 
         return cls.is_admin_of_group(user, group_name)
 

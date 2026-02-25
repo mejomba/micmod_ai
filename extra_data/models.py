@@ -379,10 +379,12 @@ class Item(BaseModel):
 
     # @property
     def reserved_count_in_portal(self, wh_code):
+        if wh_code == 2:
+            pass
         from order.models import Order, OrderOrder
         from factor.models import FactorItem
-        exclude_order_rel_ids = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False).values_list('id', flat=True)
-        order_receipt_in_wh = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0) or 0
+        exclude_order_rel_ids = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False, is_kasri=False).values_list('id', flat=True)
+        order_receipt_in_wh = Order.objects.filter(item=self, is_wh=True, receipt_in_wh=True, sepidar_wh_code=wh_code, is_deleted=False, factor_items__factor__sepidar_id__isnull=True, cancel=False, is_kasri=False).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0) or 0
         r = OrderOrder.objects.filter(sepidar_wh_code__isnull=False, sepidar_wh_code=wh_code, item=self, fi__factor__sepidar_id__isnull=True).exclude(order_rel_id__in=exclude_order_rel_ids).aggregate(reserved_quantity=Sum("quantity")).get("reserved_quantity", 0) or 0
 
         r += order_receipt_in_wh
@@ -879,7 +881,7 @@ class CustomerAddress(models.Model):
     type = models.CharField(max_length=2, choices=AddressType.choices, default=AddressType.OFFICIAL)
 
     def __str__(self):
-        return f'{self.address}: {self.customer}'
+        return f'{self.address}'
 
 
 class CustomerPhone(models.Model):

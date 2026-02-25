@@ -94,7 +94,7 @@ class FactorModelForm(CustomBaseModelForm):
                 CustomerAddress.objects
                 .filter(customer=self.instance.q.customer_party_id)
                 .annotate(last_used=Max('factor__created_date'))
-                .order_by('last_used')
+                .order_by('-last_used')
             )
             self.fields['address'].queryset = qs  # CustomerAddress.objects.filter(customer=self.instance.q.customer_party_id)
         self.fields['is_official'].widget.attrs['onchange'] = 'factor_calculate_price_all_rows()'
@@ -124,6 +124,8 @@ class FactorModelForm(CustomBaseModelForm):
         self.make_hidden(formset_constraint_hide or [])
         self.make_disable(form_constraint_read or [])
         self.make_disable(formset_constraint_read or [])
+        self.make_hidden(['fiscalyearref', 'sepidar_voucher_id', 'sepidar_voucher_number',
+                          'sepidar_inventory_delivery_id', 'sepidar_inventory_delivery_number'])
         # if not access:
         #     self.make_disable(self.fields)
 

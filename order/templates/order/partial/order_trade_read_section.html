@@ -11,7 +11,7 @@
             <div class="list-group">
 
                 {% for trade_price in trade_price_list %}
-                      <div class="list-group-item  list-group-item-action " aria-current="true">
+                      <div class="list-group-item  list-group-item-action inquiry-item" aria-current="true">
                         <div class="d-flex w-100 justify-content-between">
                             <small>{{ trade_price.last_update_date|date }}</small>
                             <span class="mb-1"> {{ trade_price.supplier }}</span>
@@ -27,6 +27,12 @@
 {#                          {% for key in trade_price.trade_transportation_method_json.keys %}#}
 {#                          <small class="float-end mt-1 me-2">{{ key|default_if_falsy:'' }}</small>#}
 {#                          {% endfor %}#}
+
+{#                            <span class="text-success cursor-pointer select-inquiry" id="select-inquiry" onclick="selectInquiry(event)">انتخاب</span>#}
+{#                            <span class="ms-4 text-danger cursor-pointer d-none" id="deselect-inquiry" onclick="deselectInquiry(event)">حذف</span>#}
+{#                            <span data-inquiry_pk="{{ trade_price.pk }}" id="inquiry_pk" class="d-none"></span>#}
+{#                            <span data-inquiry_currency_pk="{{ trade_price.currency_type.pk }}" id="inquiry_currency_pk" class="d-none"></span>#}
+{#                            <span data-inquiry_price_value="{{ trade_price.price }}" id="inquiry_price_value" class="d-none"></span>#}
                       </div>
                 {% endfor %}
 
@@ -139,3 +145,45 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    function selectInquiry(event){
+        const select_ = event.currentTarget
+        const inquiry_item = findAncestor(select_, 'inquiry-item')
+        const selected_inquiry_pk = inquiry_item.querySelector('#inquiry_pk').dataset.inquiry_pk
+        const price_inquiry_result = document.querySelector('#id_price_inquiry_result')
+        price_inquiry_result.value = selected_inquiry_pk;
+
+        const price_trade = document.querySelector('#id_price_trade')
+        price_trade.value = inquiry_item.querySelector('#inquiry_price_value').dataset.inquiry_price_value
+
+        const currency = document.querySelector('#id_currency')
+        currency.value = inquiry_item.querySelector('#inquiry_currency_pk').dataset.inquiry_currency_pk
+
+        select_.classList.add('d-none')
+        select_.nextElementSibling.classList.remove('d-none')
+
+        document.querySelectorAll('.select-inquiry').forEach(function (select_item){
+            select_item.classList.remove('d-none')
+        })
+    }
+
+    function deselectInquiry(event){
+        const deselect_ = event.currentTarget
+        {#const inquiry_item = findAncestor(deselect_, 'inquiry-item')#}
+        {#const selected_inquiry_pk = inquiry_item.querySelector('#inquiry_pk').dataset.inquiry_pk#}
+        const price_inquiry_result = document.querySelector('#id_price_inquiry_result')
+        price_inquiry_result.value = '';
+
+        const price_trade = document.querySelector('#id_price_trade')
+        price_trade.value = ''
+
+        const currency = document.querySelector('#id_currency')
+        currency.value = ''
+
+        deselect_.classList.add('d-none')
+        deselect_.previousElementSibling.classList.remove('d-none')
+
+    }
+</script>

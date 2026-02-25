@@ -249,7 +249,7 @@ class PriceInquiryResult(BaseModel):
                 settings = self.price_settings
                 if self.custom_properties.get('quantity_'):
                     quantity_discounts_percentage = settings.get_discount_based_quantity(
-                        self.custom_properties.get('quantity_'))
+                        self.custom_properties.get('quantity_') or 1)
                     on_demand_discounts += quantity_discounts_percentage
                 if self.custom_properties.get('customer_grade_'):
                     customer_grade_discounts_percentage = settings.get_discount_based_customer(

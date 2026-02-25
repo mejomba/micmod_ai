@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.utils import timezone
-
+from datetime import datetime, time, timedelta
 from core.exceptions import StockRefNotFoundError
 from sepidar.models import Dl
 from tools import utils
@@ -54,7 +54,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "version": 1,
             "vendordlref": supplier,
             "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
-            "date": timezone.now().isoformat(),
+            "date": (timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)).isoformat(),
             "currencyref": currency,
             "currencyrate": rate,
             "totalprice": price,

@@ -40,7 +40,7 @@ def update_price_db(objs):
     to_create = []
     to_update = []
     keys = ['air', 'sea', 'express', "price_update_date", "is_sea_default", "part_number", "purchase_group",
-            "sales_group", "sepidar_quantity", "in_way_count", "quantity_json"]
+            "sales_group", "sepidar_quantity", "in_way_count", "quantity_json", "last_update_date"]
 
     # 3️⃣ تشخیص رکوردهای جدید و قدیمی
     for data in objs:
@@ -57,10 +57,14 @@ def update_price_db(objs):
             to_create.append(ItemPrice(**data))
 
     if to_create:
+        print('start to create')
         ItemPrice.objects.bulk_create(to_create, batch_size=500)
+        print('end to create')
 
     if to_update:
+        print('start to update')
         ItemPrice.objects.bulk_update(to_update, keys, batch_size=500)
+        print('start to update')
 
 
 @shared_task
@@ -124,6 +128,7 @@ def update_price_list():
         print('task is running')
         return
     try:
+        t = time.time()
         from extra_data.models import Item
         items_sepidar_quantity =  get_sepidar_quantity()
         cache.set('task_is_running', True, 300)
@@ -137,15 +142,21 @@ def update_price_list():
         qty_10_99 = None
         qty_100_999 = None
         qty_1000_ = None
-        items = Item.objects.all().order_by('id')
+        items = Item.objects.select_related("purchase_group", "sale_group").order_by('id')
         # g_sheet = GSheet("1LC3YoRdEbkP9ipxAB_c6k3l05FF7hNsMJ97hllLjXI8")
-        print('gsheet created')
+        # print('gsheet created')
         # i=0
-        for idx, item in enumerate(items):
+        for item in items:
             inquiry_obj = item.price
+            # if inquiry_obj:
+            #     inquiry_obj.set_discount_params(quantity=1, customer_grade='C', payment_method='Cash')
+            # else:
+            #     print(f'item has not inquiry: ', item)
+
             sepidar_quantity = items_sepidar_quantity.get(item.sepidar_id_0)
-            if (inquiry_obj and inquiry_obj.rmb_final_price) or sepidar_quantity:
-                price = inquiry_obj.rmb_final_price if inquiry_obj else {'air': {'duration': None, 'method': None, 'price': 0}, 'sea': {'duration': None, 'method': None, 'price': 0}}
+            rmb_final_price = inquiry_obj.rmb_final_price if inquiry_obj else None
+            if (inquiry_obj and rmb_final_price) or sepidar_quantity:
+                price = rmb_final_price if inquiry_obj else {'air': {'duration': None, 'method': None, 'price': 0}, 'sea': {'duration': None, 'method': None, 'price': 0}}
                 price = {k: round(v.get('price'), 5) for k, v in price.items()}
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
@@ -160,21 +171,22 @@ def update_price_list():
                      "part_number": item.part_number ,
                      "purchase_group": item.purchase_group.title if item.purchase_group else "",
                      "sales_group": item.sale_group.title if item.sale_group else "",
-                     "sepidar_quantity": items_sepidar_quantity.get(item.sepidar_id_0),
+                     "sepidar_quantity": sepidar_quantity,  # items_sepidar_quantity.get(item.sepidar_id_0),
                      "in_way_count": None,
                      "quantity_json": None,
+                     "last_update_date": timezone.now(),
                      }
                 )
-                if not y_rate:
-                    y_rate = inquiry_obj.price_settings.free_rmb_rate
-                    chash_rial = inquiry_obj.price_settings.discount_based_payment_method[0]['rial_percentage']
-                    grade_a = inquiry_obj.price_settings.discount_based_customer[2]['percentage']
-                    qty_1_9 = inquiry_obj.price_settings.discount_based_quantity[0]['percentage']
-                    qty_10_99 = inquiry_obj.price_settings.discount_based_quantity[1]['percentage']
-                    qty_100_999 = inquiry_obj.price_settings.discount_based_quantity[2]['percentage']
-                    qty_1000_ = inquiry_obj.price_settings.discount_based_quantity[3]['percentage']
-            if idx % 1000 == 0:
-                print(f'update_price_list count: {len(prices)}, products_checked {idx}: ', item.sku, price)
+                # if not y_rate:
+                #     y_rate = inquiry_obj.price_settings.free_rmb_rate
+                #     chash_rial = inquiry_obj.price_settings.discount_based_payment_method[0]['rial_percentage']
+                #     grade_a = inquiry_obj.price_settings.discount_based_customer[2]['percentage']
+                #     qty_1_9 = inquiry_obj.price_settings.discount_based_quantity[0]['percentage']
+                #     qty_10_99 = inquiry_obj.price_settings.discount_based_quantity[1]['percentage']
+                #     qty_100_999 = inquiry_obj.price_settings.discount_based_quantity[2]['percentage']
+                #     qty_1000_ = inquiry_obj.price_settings.discount_based_quantity[3]['percentage']
+            if item.pk % 100 == 0:
+                print(f'update_price_list count: {len(prices)}, last_products_checked {item.sku}: ', price)
         if prices:
             print(f'final update_price_list count: {len(prices)}')
             update_price_db(price_for_db)
@@ -193,6 +205,8 @@ def update_price_list():
     except Exception as e:
         print(str(e))
     finally:
+        t2 = time.time()
+        print(f'update_price_list time: {t2 - t}')
         cache.set('task_is_running', False, 100)
 
 

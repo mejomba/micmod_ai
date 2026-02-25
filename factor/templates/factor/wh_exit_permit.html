@@ -70,7 +70,7 @@
             <span>
                 {{ data.id }}
                 {% if data.sepidar_number %}
-                    | S{{ data.sepidar_number }}
+                    | S{{ data.sepidar_inventory_delivery_number }}
                 {% endif %}
             </span><br>
             <span data-key="date">تاریخ: </span><span dir="rtl" >{% jalali_now as today %}{{ today|to_jalali:"%Y/%m/%d" }}</span><br>

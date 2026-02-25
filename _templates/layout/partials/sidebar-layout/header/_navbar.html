@@ -38,7 +38,6 @@
  <span class="path1"></span>
  <span class="path2"></span>
 </i>
-{#{% include 'core/partial/pin_empty_modal.html' %}#}
 </div>
 
     <div class="mt-2 me-2 cursor-pointer"><span class="d-none">{% guide_for_each_model section_id request.user as guide_id%}</span>
@@ -72,11 +71,18 @@
         <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px"
              id="kt_notifications_toggle"
         >
-            <button class="btn btn-icon btn-custom w-35px h-35px"
+{#            <button class="btn btn-icon btn-custom w-35px h-35px"#}
+{#                    m_url="{% url 'notifications:notification_menu_list' %}" type="submit"#}
+{#                    id="notifications_header_menu_btn" onclick="menu_btn_click()">#}
+{#                <span class="badge badge-light-danger badge-circle fw-bold fs-9 "#}
+{#                      id="notification_count">{{ notifications.count }}</span>#}
+{#                <span>{% getIcon 'notification-on' 'fs-1' %}</span>#}
+{#            </button>#}
+            <button class="btn btn-icon btn-custom w-35px h-35px mx-3"
                     m_url="{% url 'notifications:notification_menu_list' %}" type="submit"
-                    id="notifications_header_menu_btn" onclick="menu_btn_click()">
+                    id="ajax_notifications_header" onclick="ajax_notify_click()">
                 <span class="badge badge-light-danger badge-circle fw-bold fs-9 "
-                      id="notification_count">{{ notifications.count }}</span>
+                      id="ajax_notification_count">10</span>
                 <span>{% getIcon 'notification-on' 'fs-1' %}</span>
             </button>
             <!--end::Drawer toggle-->
@@ -190,7 +196,7 @@ function loadPins() {
     fetch("{% url 'core:get_user_pin' %}")
         .then(res => res.json())
         .then(data => {
-            const container = document.getElementById("id-empty-modal-body");
+            const container = document.getElementById("id-pin-empty-modal-body");
             container.innerHTML = "";
             let items = []
 
@@ -357,6 +363,9 @@ function removePin(el) {
     });
 }
 
+function ajax_notify_click(){
+    const ajax_notify = document.querySelector('#kt_notifications').innerHTML = 'some html'
+}
 </script>
 
 {% endblock extra_js %}
