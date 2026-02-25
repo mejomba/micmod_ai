@@ -615,6 +615,15 @@ def print_view(request, id=-1):
     else:
         template_name = 'factor/factor_print.html'
 
+    location_url_params = '0'
+    with_location = '1'
+    if request.GET.get('location_url_params') == '1':
+        with_location = '1'
+        location_url_params = '0'
+    elif request.GET.get('location_url_params') == '0':
+        with_location = '0'
+        location_url_params = '1'
+
     formset = inlineformset_factory(Factor, FactorItem, form=FactorItemModelForm, extra=0, )
     greeting = {}
     greeting['alt_code_html'] = []
@@ -622,6 +631,9 @@ def print_view(request, id=-1):
     greeting['pageview'] = _("quotation")
     factor = Factor.objects.filter(id=id).first()
     greeting['form'] = FactorModelForm(instance=factor)
+    greeting['with_location'] = with_location
+    greeting['location_url_params'] = location_url_params
+    greeting['with_location'] = with_location
     greeting['formset'] = formset(instance=factor,
                                   form_kwargs={
                                       "constraint": {
