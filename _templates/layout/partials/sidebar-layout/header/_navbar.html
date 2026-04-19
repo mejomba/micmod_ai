@@ -24,6 +24,18 @@
 {% endfor %}
 </div>
 
+<div class="mt-2 me-2 ms-2 cursor-pointer" onclick="workCreateForm();" data-url="/order/gioitem/view/?pk=1" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
+ <i class="ki-duotone ki-bookmark-2 fs-2x cursor-pointer"
+  data-bs-toggle="tooltip"
+  data-bs-placement="bottom"
+  title="اعلان به سایر کاربران"
+  tabindex="0"
+  data-bs-user="{{ request.user }}">
+ <span class="path1"></span>
+ <span class="path2"></span>
+</i>
+</div>
+
 <div class="mt-2 me-2 ms-2 cursor-pointer" onclick="loadPins();">
     <div class="d-flex gap-1">
         <input type="text" class="form-control narrow-input d-none" id="id_title_input">
@@ -71,6 +83,9 @@
         <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-35px h-35px"
              id="kt_notifications_toggle"
         >
+
+                            <span class="d-none badge badge-light-danger badge-circle fw-bold fs-9 "
+                      id="notification_count">{{ notifications.count }}</span>
 {#            <button class="btn btn-icon btn-custom w-35px h-35px"#}
 {#                    m_url="{% url 'notifications:notification_menu_list' %}" type="submit"#}
 {#                    id="notifications_header_menu_btn" onclick="menu_btn_click()">#}
@@ -363,9 +378,134 @@ function removePin(el) {
     });
 }
 
-function ajax_notify_click(){
-    const ajax_notify = document.querySelector('#kt_notifications').innerHTML = 'some html'
+function readAllNotif(event){
+    const url = '/core/ajax/work_notify?view_name=read_all_notif'
+    const target = event.currentTarget
+    target.innerText = 'در حال انجام'
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            const allNewBadge = document.querySelectorAll('.new_notif')
+            allNewBadge && allNewBadge.forEach(function(item){
+                item.classList.add('d-none')
+            })
+            target.innerText = 'انجام شد'
+        },
+        error: function () {
+            target.innerHtml = 'خطا'
+        },
+    });
 }
+
+function ajax_notify_click(){
+    let notify_html = `
+    <div class="row row-cols-1 px-1" id="notif_container">
+        <div onclick="readAllNotif(event)" class="bg-primary p-2 text-center text-white cursor-pointer font-size-14 ms-4 me-3 " style="position: fixed; width: stretch; bottom: 0">
+            علامت گذاری همه به عنوان خوانده شده
+        </div>
+        .....
+    </div>
+    
+    `
+    const url = '/core/ajax/work_notify?view_name=list'
+
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            debugger
+            data['res']
+            let html = `
+            <div class="col">
+                <div class="notify-item-header mt-3 d-flex justify-content-between align-items-start">
+                    <h3>
+                        <a href="#">عنوان پیام دیدن عنوان پیام دیدن عنوان پیام دیدن عنوان پیام دیدن پیش فاکتور ۱۲۳۴۵</a>
+                    </h3>
+                    <span class="badge badge-danger new_notif">جدید</span>
+                </div>
+                <div class="notify-item-content" style="border-right: 3px solid grey">
+                    <div class="notify-item-body px-3">
+                        <p class="font-size-14">یک متن جهت توضیح این نوتیفای ممکن اس توسط کاربر یا خودکار ایجاد شده باید حتی mant englisi وسطش dashte باشه</p>
+                    </div>
+                    <div class="notify-item-footer px-3">
+                        <div class="d-flex gap-1 align-items-baseline">
+                            <label for="time">یاد آوری مجدد</label>
+                            <input type="datetime-local">
+                            <div class="btn btn-sm btn-primary">تایید</div>
+                        </div>
+                        <div class="hover-link py-2 cursor-pointer">علامت گذاری به عنوان خوانده شده</div>
+                    </div>
+                </div>
+            </div>
+            `
+            console.log(data)
+        },
+        error: function () {
+            alert('خطا')
+        },
+    });
+    const ajax_notify = document.querySelector('#kt_notifications').innerHTML = notify_html
+}
+
+function workCreateForm(){
+    const url = '/core/ajax/work_notify?view_name=create_form'
+    const target = event.currentTarget
+
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            const modal_body = document.querySelector('#id-empty-modal-body')
+            if (modal_body){modal_body.innerHTML = data['res']}
+        },
+        error: function () {
+            alert('خطا')
+        },
+    });
+}
+
+function sendWorkNotif(event){
+    const url = '/core/ajax/work_notify?view_name=create_notif'
+    const form = $('#work_form')
+    let formData = {}; //new FormData()
+    formData['address'] = form.find('#id_address').val().trim()
+    formData['to_users'] = form.find('#to_users').val()
+    formData['title'] = form.find('#id_title').val().trim()
+    formData['body'] = form.find('#id_body').val().trim()
+    $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        data: JSON.stringify(formData),
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            html = data['res'];
+            alert(html)
+        },
+        error: function () {
+
+        },
+    }); // end ajax
+
+    }
 </script>
 
 {% endblock extra_js %}

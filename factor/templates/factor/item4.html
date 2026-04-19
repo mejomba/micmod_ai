@@ -255,12 +255,12 @@
                         </div>
                         <div class="d-flex">
                             <span>
-                                <label for="quotation-{{ forloop.counter0 }}-reserve_count">محل تامین</label>
-                                {% supply_locations form_s.instance.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
+                                <label for="{{ form_s.prefix }}-reserve_count">محل تامین</label>
+                                {% supply_locations form_s.instance.goods_code_fk form_s.prefix 0 factor_item.instance %}
                             </span>
                             <span>
-                                <label for="quotation-{{ forloop.counter0 }}-reserve_count">تعداد رزرو</label>
-                                <input type="number" step="1" class="narrow-input" name="quotation-{{ forloop.counter0 }}-reserve_count" id="quotation-{{ forloop.counter0 }}-reserve_count">
+                                <label for="{{ form_s.prefix }}-reserve_count">تعداد رزرو</label>
+                                <input type="number" step="1" class="narrow-input" name="{{ form_s.prefix }}-reserve_count" id="{{ form_s.prefix }}-reserve_count">
                             </span>
                         </div>
                     </div>

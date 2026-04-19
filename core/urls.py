@@ -33,5 +33,6 @@ urlpatterns = [
     path('get_user_pin/', views.get_user_pins, name='get_user_pin'),
     # path("save_user_pins/", views.save_user_pins, name="save_user_pins"),
     path("add_pin/", views.add_pin, name="add_pin"),
-    path("delete_pin/", views.delete_pin, name="delete_pin")
+    path("delete_pin/", views.delete_pin, name="delete_pin"),
+    path("ajax/work_notify", views.WorkNotify.as_view(), name="work_notify"),
 ]

@@ -1,3 +1,5 @@
+import copy
+
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models import Count, Q
@@ -341,6 +343,15 @@ class PriceInquiryResult(BaseModel):
 
                 # if d:
                 #     self.extra_data._rmb_final_price_ = d
+                for k, v in self.extra_data._rmb_final_price_.items():
+                    if k.lower() in ['express', 'air']:
+                        self.extra_data._rmb_final_price_[k] = {'duration': self.extra_data._rmb_final_price_[k]['duration'],
+                                                                'method': self.extra_data._rmb_final_price_[k]['method'],
+                                                                'price': self.extra_data._rmb_final_price_[k]['price'] * 1.35}
+                    elif k.lower() in ['sea']:
+                        self.extra_data._rmb_final_price_[k] = {'duration': self.extra_data._rmb_final_price_[k]['duration'],
+                                                                'method': self.extra_data._rmb_final_price_[k]['method'],
+                                                                'price': self.extra_data._rmb_final_price_[k]['price'] * 1.25}
                 return self.extra_data._rmb_final_price_
             except Exception as e:
                 show_error(e, __file__)

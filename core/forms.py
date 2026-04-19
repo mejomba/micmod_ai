@@ -1,10 +1,12 @@
 
 from django import forms
+from django.contrib.auth import get_user_model
 from django.forms import DateInput
 from django.forms.widgets import CheckboxInput, FileInput, DateTimeInput
 from jalali_date.widgets import AdminJalaliDateWidget, AdminSplitJalaliDateTime
 
-from files.models import UploadType
+from core.models import Work
+from files.models import UploadType, File
 from tools.utils import show_error
 from translator import get_text as _
 
@@ -406,3 +408,29 @@ class CustomBaseModelFormAuto(forms.ModelForm):
     #     if any(item for item in self.cleaned_data):
     #         return super().save()
     #     return None
+
+from django.contrib.admin.widgets import FilteredSelectMultiple
+
+
+class WorkModelForm(CustomBaseModelForm):
+    file_model = File
+    file_groups = 1
+
+    class Meta:
+        model = Work
+        exclude = ['factor_self', 'guid', 'status', 'group', ]
+
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['to_users'] = forms.ModelChoiceField(
+            queryset=get_user_model().objects.all(),
+            required=True,
+            widget=FilteredSelectMultiple(_("to_users"), is_stacked=False),
+        )
+        self.fields['to_users'].widget.attrs['placeholder'] = 'کاربرانی که میخواهید این اعلان را دریافت کنند'
+        self.fields['address'].widget.attrs['placeholder'] = 'آدرس صفحه پرتال که کاربران باید به آن مراجعه کنند (به صورت پیشفرض صفحه فعلی در نظر گرفته میشود)'
+        self.fields['address'].widget.attrs['rows'] = 3
+        self.fields['address'].initial = request.META.get('HTTP_REFERER') if request else ''
+        self.fields['body'].widget.attrs['rows'] = 3

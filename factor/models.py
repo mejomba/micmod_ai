@@ -180,7 +180,7 @@ class FactorItem(BaseModel):
     part_number_show = models.CharField(max_length=255, verbose_name=_('part_number_show'), null=True, blank=True)
     price = models.FloatField(verbose_name=_('price'), null=True, blank=True)
     index = models.IntegerField(null=True, blank=True, verbose_name=_("index"))
-    quantity = models.PositiveBigIntegerField(null=True, blank=True, validators=[MinValueValidator(0)], verbose_name=_("quantity"))
+    quantity = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0)], verbose_name=_("quantity"))
     delivery_time = models.CharField(choices=DeliveryTime, max_length=20, null=True, blank=True,
                                      verbose_name=_('delivery_time'))
     custom_price = models.FloatField(_('custom_price'), null=True, blank=True)

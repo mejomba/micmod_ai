@@ -71,64 +71,66 @@ from .serializers import CustomerRequestSerializer, QuotationSerializer, Custome
 
 
 def generate_direct_factor(request, quotation: Quotation):
-    factor_data = {
-        'q': quotation,
-        'delivery_time': quotation.delivery_time,
-        'description': 'فاکتور مستقیم',
-        'guid': uuid.uuid4(),
-        'sepidar_number': quotation.sepidar_number,
-        'is_official': quotation.is_official,
-        'official_value': quotation.official_value,
-        'sale_type': quotation.sale_type,
-        'self_discount': quotation.self_discount,
-        "creator_user": request.user,
-        "editor_user": request.user,
-    }
-    factor_form = FactorModelForm(data=factor_data)
-    if factor_form.is_valid():
-        factor = factor_form.save()
-        flow_data = {
-            "wf_status": 5,
-            "action": 'فاکتور مستقیم',
-            "flow_name": 'فاکتور',
-            "state": const.WF__FACTOR__FIRST_STATE,
-            "wf_description": 'فاکتور مستقیم',
-            "belong_to_group": 'sales_user',
-            "object_id": factor.pk,
-            "content_type": ContentType.objects.get_for_model(factor),
+    with transaction.atomic():
+        factor_data = {
+            'q': quotation,
+            'delivery_time': quotation.delivery_time,
+            'description': 'فاکتور مستقیم',
+            'guid': uuid.uuid4(),
+            'sepidar_number': quotation.sepidar_number,
+            'is_official': quotation.is_official,
+            'official_value': quotation.official_value,
+            'sale_type': quotation.sale_type,
+            'self_discount': quotation.self_discount,
             "creator_user": request.user,
             "editor_user": request.user,
-            "from_user": request.user,
-            "to_user": request.user,
-            "current_state_name": const.WF__FACTOR__FIRST_STATE,
         }
-        wf = WorkFlow.objects.create(**flow_data)
-        factor.last_work_flow = wf
-        factor.save()
-
-        count = 0
-        for idx, qi in enumerate(quotation.quotation.all()):
-            factor_item_data = {
-                'factor': factor,
-                'qi': qi,
-                'goods_code': qi.goods_code_fk,
-                'part_number_show': qi.goods_code_fk.part_number,
-                'price': qi.fee,
-                'quantity': qi.quantity,
-                'delivery_time': qi.delivery_time,
-                # 'supply_locations': order,
+        factor_form = FactorModelForm(data=factor_data)
+        if factor_form.is_valid():
+            factor = factor_form.save()
+            flow_data = {
+                "wf_status": 5,
+                "action": 'فاکتور مستقیم',
+                "flow_name": 'فاکتور',
+                "state": const.WF__FACTOR__FIRST_STATE,
+                "wf_description": 'فاکتور مستقیم',
+                "belong_to_group": 'sales_user',
+                "object_id": factor.pk,
+                "content_type": ContentType.objects.get_for_model(factor),
                 "creator_user": request.user,
                 "editor_user": request.user,
-                'supply_location': request.POST.get(f'quotation-{idx}-{idx}-supply_location'),
-                'index': count,
-                'reserve_count': request.POST.get(f'quotation-{idx}-reserve_count')
+                "from_user": request.user,
+                "to_user": request.user,
+                "current_state_name": const.WF__FACTOR__FIRST_STATE,
             }
-            count += 1
-            factor_item_form = FactorItemModelForm(data=factor_item_data, instance=FactorItem(factor=factor, qi=qi,), internal_call=True)
-            if factor_item_form.is_valid():
-                factor_item_form.instance.extra_data.request = request
-                factor_item = factor_item_form.save()
-        return redirect(reverse('factor:factor.view', kwargs={'pk': factor.pk}))
+            wf = WorkFlow.objects.create(**flow_data)
+            factor.last_work_flow = wf
+            factor.save()
+
+            count = 0
+            for idx, qi in enumerate(quotation.quotation.all()):
+                factor_item_data = {
+                    'factor': factor,
+                    'qi': qi,
+                    'goods_code': qi.goods_code_fk,
+                    'part_number_show': qi.goods_code_fk.part_number,
+                    'price': qi.fee,
+                    'quantity': qi.quantity,
+                    'delivery_time': qi.delivery_time,
+                    # 'supply_locations': order,
+                    "creator_user": request.user,
+                    "editor_user": request.user,
+                    'supply_location': request.POST.get(f'quotation-{idx}-{idx}-supply_location'),
+                    'index': count,
+                    'reserve_count': request.POST.get(f'quotation-{idx}-reserve_count')
+                }
+                count += 1
+                factor_item_form = FactorItemModelForm(data=factor_item_data, instance=FactorItem(factor=factor, qi=qi,), internal_call=True)
+                if factor_item_form.is_valid():
+                    factor_item_form.instance.extra_data.request = request
+                    factor_item_form.instance.extra_data.idx = idx
+                    factor_item = factor_item_form.save()
+            return redirect(reverse('factor:factor.view', kwargs={'pk': factor.pk}))
 
 
 class QuotationsList(LoginRequiredMixin,View):

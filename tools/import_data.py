@@ -187,7 +187,7 @@ def import_customers_from_sepidar(extra_data, for_range=None):
 
         except Exception as e:
             print(str(e))
-            return str(e)
+            #return str(e)
     else:
         print(senf_diff)
         return res_list

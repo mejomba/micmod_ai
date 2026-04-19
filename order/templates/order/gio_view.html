@@ -279,11 +279,11 @@
         const invalid_row = document.querySelectorAll('.invalid')
 
         if (invalid_row.length > 0) {
-            to_sepidar.classList.add('d-none')
-            to_sepidar_err.classList.remove('d-none')
+            to_sepidar && to_sepidar.classList.add('d-none')
+            to_sepidar_err && to_sepidar_err.classList.remove('d-none')
         } else {
-            to_sepidar.classList.remove('d-none')
-            to_sepidar_err.classList.add('d-none')
+            to_sepidar && to_sepidar.classList.remove('d-none')
+            to_sepidar_err && to_sepidar_err.classList.add('d-none')
         }
     })
 

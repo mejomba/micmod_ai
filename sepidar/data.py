@@ -225,7 +225,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "customerrealname": obj.q.customer_party_id.title,  # calculate in save
             "addition": addition,
             "dutyinbasecurrency": duty * rate,  # calculate in save
-            "fiscalyearref": 46,  # calculate in base
+            "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),  # calculate in base
             # "netprice": None,  # محاسبه میشه
             "tax": sum_tax,  # محاسبه از تمام ردیف ها
             "discountinbasecurrency": sum_discount * rate,  # calculate in save

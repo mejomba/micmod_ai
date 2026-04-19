@@ -429,6 +429,7 @@ class Item(BaseModel):
     def supply_locations_(self):
         """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
+        year = 1404
         res = []
         stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], year)
         api_res = stock_qty_api.get('res')

@@ -698,6 +698,9 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
     sku_or_partnumber_filter = Q(sku=sku) | Q(part_number=sku)
     item_sku = Item.objects.filter(sku_or_partnumber_filter).first()
+    parent = item_sku.parent
+    if parent:
+        item_sku = parent
     all_trade_active_prices = item_sku.all_trade_active_price_
     all_bazar_active_prices = item_sku.all_bazar_active_price_
 

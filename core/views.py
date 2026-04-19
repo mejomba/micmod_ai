@@ -41,13 +41,13 @@ from tools.utils import map_model_to_python_type, show_error, diff_time, build_c
 from workflow.forms import WorkFlowModelForm
 from workflow.models import FlowAdminGroup
 from workflow.views import FlowBaseView
-from .forms import CustomBaseModelForm
+from .forms import CustomBaseModelForm, WorkModelForm
 from comments.models import Comments
 from tools.form_tools import get_function
 
 import openpyxl
 
-from .models import ExtraData, PinUrl
+from .models import ExtraData, PinUrl, Work
 
 from .models import LogError
 from services.payment_service import create_or_update_payment
@@ -1731,3 +1731,76 @@ def delete_pin(request):
     ).update(is_active=False)
 
     return JsonResponse({"status": 200})
+
+
+class WorkNotify(View):
+    safe_methods = {'get', 'list', 'read_all_notif', 'read_one_notif', 'create_form', 'create_notif'}
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name in self.__class__.safe_methods and hasattr(self, view_name):
+            method = getattr(self, view_name)
+            return method(request, *args, **kwargs)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+    def list(self, request, *args, **kwargs):
+        user = self.request.user
+        page = self.request.GET.get('page', 1)
+        page_size = 20
+        if user.is_authenticated:
+            start = (page - 1) * page_size
+            end = page * page_size
+            out = list()
+            temp = dict()
+            notifs = Work.objects.filter(to_users=user).order_by('seen', '-last_update_date')[start:end]
+            for notif in notifs:
+                temp['title'] = notif.title
+                temp['body'] = notif.body
+                temp['from_user'] = notif.from_user.username
+                temp['address'] = notif.address
+
+                out.append(temp)
+            return JsonResponse({'res': out})
+
+
+    def create_notif(self, request, *args, **kwargs):
+        user = self.request.user
+        data = json.loads(self.request.body)
+        to_users = data.get('to_users')
+        users = get_user_model().objects.filter(pk__in=to_users)
+        if user.is_authenticated and data:
+            d = {'from_user': user, 'title': data['title'], 'creator_user': user, 'editor_user': user,
+                 'body': data['body'], 'address': data['address']}
+            work_obj = Work.objects.create(**d)
+            work_obj.to_users.set(users)
+            return JsonResponse({'res': 'ok'}, status=200)
+        return JsonResponse({'res': 'error'}, status=401)
+
+    def create_form(self, request, *args, **kwargs):
+        form = WorkModelForm(request=self.request)
+        context = {'form': form}
+        html = render_to_string('core/partial/work_form.html', context=context, request=self.request)
+        return JsonResponse({'res': html})
+
+    def read_all_notif(self, request, *args, **kwargs):
+        user = self.request.user
+        if user.is_authenticated:
+            Work.objects.filter(to_user=user).update(seen=True)
+            return JsonResponse({'res': 'ok'}, status=200)
+        else:
+            return JsonResponse({'res': 'لاگین منقضی شده است دوباره وارد شوید'}, status=401)
+
+    def read_one_notif(self, request, *args, **kwargs):
+        user = self.request.user
+        pk = json.loads(self.request.body)
+        if user.is_authenticated and pk:
+            Work.objects.filter(pk=pk).update(seen=True)
+            return JsonResponse({'res': 'ok'}, status=200)
+        else:
+            return JsonResponse({'res': 'لاگین منقضی شده است دوباره وارد شوید'}, status=401)

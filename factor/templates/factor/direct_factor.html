@@ -366,6 +366,70 @@ function get_supply_locations(event){
         custom_ajax_get(null, url, el)
     }
 }
+
+function sync_supply_location(event){
+        debugger
+        const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')
+        const supply_location = event.currentTarget.parentElement.parentElement.querySelector('[id$="-supply_location"]')
+        supply_locations.value = event.currentTarget.value
+        supply_location.value = event.currentTarget.value
+        const row = findAncestor(event.currentTarget, 'factor_item')
+
+        try {
+            let need_more
+            const text = event.currentTarget.options[event.currentTarget.selectedIndex].text
+            const match = text.match(/آزاد:\s*([\d,]+)/);
+            const reserve_count = row.querySelector('input[name$="-reserve_count"]').value
+
+            if (match) {
+                const value = Number(match[1].replace(/,/g, ''));
+                need_more = Number(reserve_count) > value
+            }
+
+            if (need_more){
+                const wh_code = event.currentTarget.value.split('__')[1]
+                const sku = row.querySelector('input[name$="-goods_code"]').value
+                $.ajax({
+                    type: 'GET',
+                    url: `/order/get_wh_reserve_order/?wh_code=${wh_code}&sku=${sku}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: block_main_container,
+                    success: function (data) {
+                        debugger
+                        const reserve_selection = row.querySelector('#reserve_selection')
+                        reserve_selection.innerHTML = ''
+                        reserve_selection.classList.remove('d-none')
+
+                        const empty_option = document.createElement('option');
+                        empty_option.value = ''
+                        empty_option.textContent = 'انتخاب از رزرو دیگران ...'
+                        reserve_selection.appendChild(empty_option);
+
+                        Object.entries(data).forEach(([key, value]) => {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = value;
+                            reserve_selection.appendChild(option);
+                        });
+
+                    },
+                    error: function () {
+
+                    },
+                    complete: release_main_container
+                }); // end ajax
+            } else {
+                const reserve_selection = row.querySelector('#reserve_selection')
+                reserve_selection.innerHTML = ''
+                reserve_selection.classList.add('d-none')
+            }
+        } catch (e){
+            console.log('wh not fount')
+        } // end try catch
+    }
 </script>
     <script src="{% static 'js/local/jalali_1.1.0.js' %}"></script>
 {% endblock extra_js %}

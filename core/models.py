@@ -857,3 +857,13 @@ class PinUrl(models.Model):
     url = models.TextField()
     is_active = models.BooleanField(default=True)
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+
+
+class Work(AbsBaseModel):
+    from_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='work_from_user')
+    to_users = models.ManyToManyField(User, related_name='work_to_user_list', help_text='انتخاب کاربرانی که میخواهید این اعلان را دریافت کنند')
+    address = models.TextField(_('آدرس صفحه'),help_text='آدرس صفحه پرتال که کاربران باید به آن مراجعه کنند (به صورت پیشفرض صفحه فعلی در نظر گرفته میشود)')
+    title = models.CharField(_('عنوان'), max_length=255)
+    body = models.TextField(_('متن توضیحات'))
+    remind_at = models.DateTimeField(_('یاد آوری'), null=True, blank=True)
+    seen = models.BooleanField(_('دیده شده'), default=False)

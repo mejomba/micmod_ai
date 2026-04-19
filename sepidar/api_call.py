@@ -101,6 +101,7 @@ class SepidarApiCall:
         cls.setup()
         if year is None:
             year = jdatetime.date.today().year
+        year = 1404
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
         endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}'
         res = requests.get(endpoint, headers=cls.headers)
@@ -123,6 +124,7 @@ class SepidarApiCall:
         cls.setup()
         if year is None:
             year = jdatetime.date.today().year
+        year = 1404
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
         endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}&stockref__stockid={stock}'
         res = requests.get(endpoint, headers=cls.headers)
@@ -667,9 +669,12 @@ class SepidarApiCall:
     def get_bazar_supplier(cls, request):
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
+        q = request.GET.get('q', '')
+        x = q.replace('ی',  'ي').replace('ک', 'ك')
+        endpoint += f"&name__icontains={x}"
         res = requests.get(endpoint, headers=cls.headers)
         if res.ok:
-            res = {x.get('dlref'): x.get('name') for x in res.json().get('results')}
+            res = {x.get('dlref'): x.get('name') + x.get('lastname', '') for x in res.json().get('results')}
             return res
 
         return dict()

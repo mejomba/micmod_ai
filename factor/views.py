@@ -245,6 +245,7 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
+        self.object.need_financial_approval = True
         self.object.save()
         return res
 

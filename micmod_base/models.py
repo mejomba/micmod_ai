@@ -1107,7 +1107,7 @@ class QuotationItem(BaseModel):
     def fee(self):
         return self.final_price or 0
         if self.quotation.is_official:
-            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 12 else self.quotation.official_value
             total_ = (100 - (official_value)) / 100
         else:
             total_ = (100 - self.quotation.self_discount) / 100
@@ -1124,7 +1124,7 @@ class QuotationItem(BaseModel):
     @property
     def sepidar_discount(self):
         if self.quotation.is_official:
-            official_value = settings.TAX_VALUE if self.quotation.official_value >= 10 else self.quotation.official_value
+            official_value = settings.TAX_VALUE if self.quotation.official_value >= 12 else self.quotation.official_value
             total_ = official_value / 100
         else:
             total_ = self.quotation.self_discount / 100

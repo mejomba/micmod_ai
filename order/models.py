@@ -228,6 +228,7 @@ class Order(BaseModeWF):
             return None
         """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
+        yaer = 1404
         res = []
         stock_qty_api = SepidarApiCall.get_stock_quantity([self.item.sepidar_id_0], year) if self.is_wh else {}
         api_res = stock_qty_api.get('res')
@@ -275,6 +276,7 @@ class Order(BaseModeWF):
             return None
         """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
+        year = 1404
         stock_qty_api = SepidarApiCall.get_stock_item_pair_quantity([self.item.sepidar_id_0], self.oo.sepidar_wh_code, year)
         if stock_qty_api:
             if stock_qty_api.get('results'):

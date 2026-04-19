@@ -20,6 +20,8 @@ function setPriceWithAjax(e, elem=null, price_code=''){
         if (party_id == 'None'){
             party_id = -1
         }
+        const reserve_count = elem.querySelector('[id*="-reserve_count"]')
+        if (reserve_count) {reserve_count.value = parseInt(removeCommaSeperator(elem.querySelector('[id*="-quantity"]').value))}
         const tradePriceCode = elem.querySelector('[id*="-trade_price_code"]')
         const bazarPriceCode = elem.querySelector('[id*="-bazar_price_code"]')
         let tradePriceCodeValue;
@@ -1415,7 +1417,7 @@ debugger
     row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
 
     if (isOfficial && isOfficial.checked){
-        tax = 10
+        tax = 12
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
             tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
