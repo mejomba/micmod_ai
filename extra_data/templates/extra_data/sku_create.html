@@ -102,5 +102,24 @@
 
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'js/image_gallery_slider.js' %}"></script>
+    <script>
+
+        const queryString = window.location.search;
+
+        // ۲. تبدیل رشته‌ی کوئری به یک شیء قابل فهم برای جاوااسکریپت
+        const urlParams = new URLSearchParams(queryString);
+
+        // ۳. خواندن مقدار پارامتر مشخص (مثلاً پارامتری به نام partNumber)
+        const partValue = urlParams.get('part_number');
+
+        // ۴. اگر مقداری پیدا شد، آن را در اینپوت قرار بده
+        if (partValue) {
+            const inputElement = document.getElementById('id_part_number');
+            inputElement.value = partValue;
+        } else {
+            console.log("پارامتری پیدا نشد!");
+        }
+
+    </script>
     {{ form.media.js }}
 {% endblock extra_js %}

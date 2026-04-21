@@ -456,6 +456,8 @@
                             {% get_comment_user_list factor_item request.user size=25 obj_rel=qi %}
                         </div>
                         <div class="position-absolute d-none" id="comment-form-group__{{ factor_item.instance.pk }}"></div>
+                        <br>
+                                <span class="pt-1 bold font-size-12 diff_price_alert badge badge-danger"></span>
                     </span>
                     <span class="col-4 text-center gap-1">
 {#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor_item.instance.part_number_show }}" >#}

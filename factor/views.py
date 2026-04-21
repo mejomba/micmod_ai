@@ -526,6 +526,15 @@ class FactorListDatatable(AjaxDatatableView):
                 f = {"need_financial_approval": True, "accounting_confirm": False}
             qs = qs.filter(qf, **f)
 
+        if q == 'include_bazar':
+            qs = self.model.objects.filter(factoritem__is_bazar=True).distinct()
+            return qs
+        elif q == 'include_trade':
+            qs = self.model.objects.filter(Q(factoritem__supply_locations__is_bazar=False) & Q(factoritem__supply_locations__is_wh=False)).distinct()
+            return qs
+        elif q == 'all_wh':
+            qs = self.model.objects.filter(factoritem__isnull=False).exclude(factoritem__supply_locations__receipt_in_wh=False).distinct()
+            return qs
         return qs
 
     def customize_row(self, row, obj):

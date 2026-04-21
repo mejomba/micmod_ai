@@ -32,7 +32,7 @@ from tools.utils import is_ajax
 from workflow.models import WorkFlow
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
-    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm
+    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, SepidarOrderDocument
 from translator import get_text as _
 from .serializers import OrderSerializer
@@ -714,6 +714,16 @@ class GIOView(LoginRequiredMixin, BaseView):
         return reverse_lazy('order:gio.update', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
+        # if is_ajax(self.request):
+        #     res = json.loads(self.request.body)
+        #     # kwargs['quantity'] = res['quantity']
+        #     # kwargs['gio_date'] = res['gio_date']
+        #     # kwargs['description'] = res['description']
+        #     self.request.POST._mutable = False
+        #     request.POST = res
+        #     self.request.POST._mutable = True
+        #     return super().post(request, *args, **kwargs)
+
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -742,33 +752,41 @@ class GIOItemView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         order_id = self.request.POST.get('order')
+        part_number = self.request.POST.get('part_number')
         gio_id = self.request.POST.get('gio')
         quantity = float(self.request.POST.get('quantity', 0))
-        order = Order.objects.filter(pk=order_id).first()
+        if order_id:
+            order = Order.objects.filter(pk=order_id).first()
 
-        order_quantity = order.final_quantity
+            order_quantity = order.final_quantity
 
-        if quantity > order_quantity:
-            messages.error(request, f'تعداد انتخابی در GIO نمیتواند بیشتر از تعداد ثبت شده در سفارش باشد. {quantity} > {order.final_quantity}')
-            return JsonResponse({'res': 'fail'})
-
-        if not self.object and GIOItem.objects.filter(order=order_id, gio_id=gio_id).exists():
-            messages.error(request, f'سفارش {order_id} قبلا در این GIO ثبت شده است')
-            return JsonResponse({'res': 'fail'})
-
-        gio_items = GIOItem.objects.filter(order_id=order_id).exclude(gio_id=gio_id)
-
-        if gio_items:
-            order_quantity_in_gio_items = gio_items.aggregate(sum_quantity=Sum('quantity'))['sum_quantity']
-            if quantity > (order.final_quantity - order_quantity_in_gio_items):
-                messages.error(request, f'''تعداد {order_quantity_in_gio_items} عدد از سفارش {order_id} در GIO(ها)ی {"و ".join([mark_safe(f"<a href={reverse('order:gio.update', kwargs={'pk': x.gio.pk})}>{x.gio.pk}</a>") for x in gio_items])} ثبت شده است''')
+            if quantity > order_quantity:
+                messages.error(request, f'تعداد انتخابی در GIO نمیتواند بیشتر از تعداد ثبت شده در سفارش باشد. {quantity} > {order.final_quantity}')
                 return JsonResponse({'res': 'fail'})
 
-        x = super().post(request, *args, **kwargs)
-        if is_ajax(request):
-            return JsonResponse({'res': 'success'})
+            if not self.object and GIOItem.objects.filter(order=order_id, gio_id=gio_id).exists():
+                messages.error(request, f'سفارش {order_id} قبلا در این GIO ثبت شده است')
+                return JsonResponse({'res': 'fail'})
+
+            gio_items = GIOItem.objects.filter(order_id=order_id).exclude(gio_id=gio_id)
+
+            if gio_items:
+                order_quantity_in_gio_items = gio_items.aggregate(sum_quantity=Sum('quantity'))['sum_quantity']
+                if quantity > (order.final_quantity - order_quantity_in_gio_items):
+                    messages.error(request, f'''تعداد {order_quantity_in_gio_items} عدد از سفارش {order_id} در GIO(ها)ی {"و ".join([mark_safe(f"<a href={reverse('order:gio.update', kwargs={'pk': x.gio.pk})}>{x.gio.pk}</a>") for x in gio_items])} ثبت شده است''')
+                    return JsonResponse({'res': 'fail'})
+
+            x = super().post(request, *args, **kwargs)
+            if is_ajax(request):
+                return JsonResponse({'res': 'success'})
+            else:
+                return x
         else:
-            return x
+            x = super().post(request, *args, **kwargs)
+            if is_ajax(request):
+                return JsonResponse({'res': 'success'})
+            else:
+                return x
 
     def form_valid(self, form):
         x = super().form_valid(form)
@@ -820,6 +838,18 @@ class GIODataTableListView(AjaxDatatableView):
         {'name': 'creator_user', 'title': _('creator_user'), 'className': 'py-1', },
         {'name': 'created_date', 'orderable': True, 'visible': True, },
     ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.all()
+        q = self.request.POST.get('q')
+        if q == 'all':
+            return qs
+        elif q == 'need_sku_approval':
+            qs = self.model.objects.filter(gioitems__order__isnull=True, gioitems__part_number__isnull=False)
+            return qs
+        else:
+            return qs
+
 
     def customize_row(self, row, obj):
         row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
@@ -2079,3 +2109,93 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             return JsonResponse({'res': res.json()})
 
 
+class QuickGIOView(LoginRequiredMixin, View):
+    template_name = 'order/quick_gio.html'
+    form_class = GIOForm
+    model = GIO
+    # wf_last_step_is_open = True
+    has_flow = False
+    form_struct = {
+        'form': GIOForm,
+        'childes': [
+            {},
+        ]
+    }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        gio_form = GIOForm(request.POST)
+        gio_item_formset = GIOItemFormSet(request.POST)
+
+        if gio_form.is_valid() and gio_item_formset.is_valid():
+            invoice_data = gio_form.cleaned_data
+            items_data = [f.cleaned_data for f in gio_item_formset if f.cleaned_data]
+            print(invoice_data, items_data)
+            # اینجا می‌تونی پردازش دلخواه رو انجام بدی
+            return self.get_success_url()
+        return super().post(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        gio_form = GIOForm()
+        gio_item_formset = GIOItemFormSet()
+
+        context = {
+            'form': gio_form,
+            'formset': gio_item_formset,
+        }
+        return render(request, self.template_name, context)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class QuickGIODataTableListView(AjaxDatatableView):
+    model = Order
+    title = 'order_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[10, 25, 50, -1], [10, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+    show_column_filters = True
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
+        # {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
+        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
+        {'name': 'part_number_s', 'orderable': True, 'title': 'نام کالا', 'visible': True,
+         'lookup_field': '__part_number__icontains', 'className': 'partnumber'},
+        {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
+         'lookup_field': '__icontains'},
+        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
+        {'name': 'order', 'orderable': False, 'visible': True, 'title': '<div class="px-0"> سفارش</div>', },
+    ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.filter(is_deleted=False, is_wh=False, last_work_flow__current_state_name='پرداخت / PACKING / GIO')
+        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
+        return qs
+
+    def customize_row(self, row, obj):
+        from tools.utils import to_jalali_date
+        row['created_date'] = to_jalali_date(obj.created_date)
+        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
+        row['order_method'] = f'<span>{obj.order_method}</span>'
+        row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+        row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
+        row['estimated_arrive_date'] = obj.estimate_arrive_at
+        row['order'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event)" >➕</span>'

@@ -810,6 +810,7 @@ class GIOItem(BaseModeWF):
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='gio_items', verbose_name=_('order'), null=True, blank=True)
     gio = models.ForeignKey(GIO, on_delete=models.DO_NOTHING, related_name='gioitems')
     description = models.TextField(_('description'), null=True, blank=True)
+    part_number = models.CharField(_('part_number'), max_length=255, null=True, blank=True)
 
     def is_valid_for_sepidar(self):
         supplier_trade = self.order.supplier_trade

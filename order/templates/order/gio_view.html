@@ -32,9 +32,9 @@
         {% render_field_by_order form form.gio_date form.quantity form.description form.sepidar_buy_factor_response_json  label='on-border' %}
         <div class="col-12">
             <div id="to-sepidar-wrapper">
-                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}
-                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>
-                {% endif %}
+{#                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}#}
+{#                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>#}
+{#                {% endif %}#}
 {#                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>#}
 {#                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>#}
 {#                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام 111 ثبت میشود.</span>#}
@@ -58,8 +58,9 @@
                                 {% if gios %}
                                     <div class="row align-items-center pb-2 mb-3 bold">
 {#                                        <div class="col-1 "><span class="ms-6">تعداد کارتن </span></div>#}
-                                        <div class="col-2 "><span class="ms-6" data-key="quantity">quantity </span></div>
+                                        <div class="col-1 "><span class="ms-6" data-key="quantity">quantity </span></div>
                                         <div class="col-2 " data-key="order">order</div>
+                                        <div class="col-3 " data-key="part_number">part_number</div>
                                         <div class="col-4" data-key="description">description</div>
                                         <div class="col-2" data-key="action">action</div>
 {#                                        <div class="col-2">وضعیت</div>#}
@@ -68,13 +69,22 @@
 
                             {% for gio in gios %}
                                 <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
-                                    <div class="col-2 py-2">
-                                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                    <div class="col-1 py-2">
+                                        {% if not gio.order and gio.part_number %}
+{#                                            <span class="text-danger">*</span>#}
+                                            <span class="me-3 text-danger"><b>{{ forloop.counter }})  </b></span>
+                                            {% else %}
+                                            <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                        {% endif %}
+{#                                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
                                         <span id="gio_item_quantity">{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-2 py-2 s-05">
                                         <span>{{ gio.order|default_if_none:"-" }}</span>
 {#                                        <span class="d-non" id="order_pk-{{ forloop.counter }}">{{ gio.order.pk }}</span>#}
+                                    </div>
+                                    <div class="col-3 py-2 s-05">
+                                        <span id="id_part_number">{{ gio.part_number|default_if_none:"-" }}</span>
                                     </div>
                                     <div class="col-4 py-2 ">
                                         <span>{{ gio.description|default_if_none:"-" }}</span>
@@ -118,6 +128,9 @@
                                         </a>
                                     </span>
                                         {% endif %}
+                                    {% if not gio.order and gio.part_number and request.user|has_group:'technical_admin' and request.user.is_superuser %}
+                                        <span class="badge badge-success cursor-pointer" id="id_create_sku">ایجاد کد کالا</span>
+                                    {% endif %}
                                     </div>
                                     <div class="col-2">
 {#                                        {% if gio.is_valid_for_sepidar %}#}
@@ -321,6 +334,15 @@
             complete: release_main_container
         }); // end ajax
     }
+
+    const createSku = document.getElementById('id_create_sku')
+    createSku.addEventListener('click', function (){
+        debugger
+        const part_number = document.getElementById('id_part_number').value || document.getElementById('id_part_number').textContent
+        const targeturl = `/extra_data/item/create/?part_number=${part_number}`
+        window.open(targeturl, '_blank');
+
+    })
 
     </script>
 {% endblock extra_js %}

@@ -34,6 +34,26 @@
 {#        </div>#}
 
 {#    </div>#}
+
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+        <span>
+            <span class="mt-3 me-3">استفاده از فیلتر</span>
+            <a href="{% url 'order:gio.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}"> همه</a>
+            <a href="{% url 'order:gio.list' %}?q=need_sku_approval" class="btn btn-bordered btn-outline-danger mx-1 {% if request.GET.q == 'need_sku_approval' %} bg-danger {% endif %}">نیازمند تایید کد کالا</a>
+{#            <a href="{% url 'order:order.list' %}?q=bazar_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'bazar_user' %} bg-primary {% endif %}">بازار</a>#}
+{#            <a href="{% url 'order:order.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>#}
+
+
+{#            <select id="filter-orders" class="form-select">#}
+{#                <option value="">استفاده از فیلتر</option>#}
+{#                <option value="all" {% if request.GET.q == "all" %}selected{% endif %}>همه</option>#}
+{#                <option value="need_sku_approval" {% if request.GET.q == "need_sku_approval" %}selected{% endif %}>نیازمند تایید کد کالا</option>#}
+{#            </select>#}
+        </span>
+        </div>
+
+    </div>
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">

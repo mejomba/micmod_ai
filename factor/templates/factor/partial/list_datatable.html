@@ -26,11 +26,14 @@
 
 {% block content %}
 
-{#    <div class="border rounded mb-5 p-3">#}
-{#        <span>استفاده از فیلتر</span>#}
-{#        <a href="{% url 'factor:factor.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>#}
-{#        <a href="{% url 'factor:factor.list' %}?q=sales_user" class="btn btn-bordered btn-outline-primary mx-1">همه</a>#}
-{#    </div>#}
+    <div class="border rounded mb-5 p-3">
+        <span>استفاده از فیلتر</span>
+        <a href="{% url 'factor:factor.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
+        <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <a href="{% url 'factor:factor.list' %}?q=include_bazar" class="btn btn-bordered btn-outline-primary mx-1">بازار</a>
+        <a href="{% url 'factor:factor.list' %}?q=include_trade" class="btn btn-bordered btn-outline-primary mx-1">خارج</a>
+        <a href="{% url 'factor:factor.list' %}?q=all_wh" class="btn btn-bordered btn-outline-success mx-1">موجود در انبار</a>
+    </div>
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
