@@ -533,7 +533,19 @@ class FactorListDatatable(AjaxDatatableView):
             qs = self.model.objects.filter(Q(factoritem__supply_locations__is_bazar=False) & Q(factoritem__supply_locations__is_wh=False)).distinct()
             return qs
         elif q == 'all_wh':
-            qs = self.model.objects.filter(factoritem__isnull=False).exclude(factoritem__supply_locations__receipt_in_wh=False).distinct()
+            qs = (self.model.objects
+                  .filter(factoritem__isnull=False)
+                  .exclude(factoritem__supply_locations__receipt_in_wh=False)
+                  .distinct())
+            return qs
+        elif q == 'today':
+            user = request.user
+            user_groups_name = user.groups.values_list('name', flat=True) if hasattr(request,'user') else request.groups.values_list('name', flat=True)
+            if 'sales_admin' in user_groups_name:
+                qs = self.model.objects.filter(created_date__date=timezone.now()).distinct()
+            elif 'sales_user' in user_groups_name:
+                qs = self.model.objects.filter(creator_user=user, created_date__date=timezone.now()).distinct()
+
             return qs
         return qs
 
@@ -641,6 +653,9 @@ class FactorListDatatable(AjaxDatatableView):
              'className': 'border'},
             {'name': 'official_factor_send_with_this_factor', 'visible': True, 'orderable': True,
              'title': f"<div style='width:80px; text-wrap:auto;'>{_('official_factor_send_with_this_factor')}</div>",
+             'className': 'border'},
+            {'name': 'total_price', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:80px; text-wrap:auto;'>جمع مبلغ </div>",
              'className': 'border'},
         ]:
             self.cols.append(col)
