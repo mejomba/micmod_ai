@@ -125,7 +125,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.make_disable(form_constraint_read or [])
         self.make_disable(formset_constraint_read or [])
         self.make_hidden(['fiscalyearref', 'sepidar_voucher_id', 'sepidar_voucher_number',
-                          'sepidar_inventory_delivery_id', 'sepidar_inventory_delivery_number'])
+                          'sepidar_inventory_delivery_id', 'sepidar_inventory_delivery_number', 'total_price'])
         if self.instance.pk and self.instance.sepidar_number:
             self.make_hidden(['cancel'])
         # if not access:
