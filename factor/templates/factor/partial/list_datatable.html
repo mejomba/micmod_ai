@@ -30,6 +30,7 @@
         <span>استفاده از فیلتر</span>
         <a href="{% url 'factor:factor.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
         <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-bordered btn-outline-primary mx-1">همه</a>
+        <a href="{% url 'factor:factor.list' %}?q=today" class="btn btn-bordered btn-outline-primary mx-1">فاکتور های امروز</a>
         <a href="{% url 'factor:factor.list' %}?q=include_bazar" class="btn btn-bordered btn-outline-primary mx-1">بازار</a>
         <a href="{% url 'factor:factor.list' %}?q=include_trade" class="btn btn-bordered btn-outline-primary mx-1">خارج</a>
         <a href="{% url 'factor:factor.list' %}?q=all_wh" class="btn btn-bordered btn-outline-success mx-1">موجود در انبار</a>
@@ -51,6 +52,7 @@
                     {% if request.user|has_group:"wh_admin" %}
                     <div class="border border-success bg-light-success rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="forceFactorBox"></div>
                     {% endif %}
+                <div class="border border-danger bg-light-danger rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="total-price-dt"></div>
 
 
                     <div class="row">
@@ -101,6 +103,35 @@
                 q:q
             },
         );
+
+    $('#factor_list').on('init.dt', function () {
+
+        const table = $('#factor_list').DataTable();
+
+        function updateTotal() {
+            let total = 0;
+
+            table.rows({ search: 'applied' }).every(function () {
+                let rowNode = this.node();
+
+                let cell = $(rowNode).find('td').eq(24); //  ستون مبلغ
+
+                let val = cell.text().replaceAll(',', '').trim();
+                val = parseFloat(val) || 0;
+
+                total += val;
+            });
+
+            $('#total-price-dt').text('جمع مبالغ فاکتور ها: ' + total.toLocaleString());
+        }
+
+
+        updateTotal();
+
+        // فراخوانی تابع بعد از هربار فیلتر لیست
+        table.on('draw.dt', updateTotal);
+    });
+
     });
     </script>
 {#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
