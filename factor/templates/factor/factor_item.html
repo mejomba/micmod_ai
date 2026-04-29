@@ -133,8 +133,8 @@
             <div class="col-2">
                 <div class="d-flex flex-column gap-1">
                     <span class="d-flex">
-                        <span class="me-3 bold w-40">نوع ارز:</span>
-                        <span>{{ quotation.currency_ref }}</span>
+                        <span class="me-3 bold w-40">نوع و نرخ ارز:</span>
+                        <span>{{ quotation.currency_ref }} / {% get_last_currency_amount quotation.currency_ref %} </span>
                     </span>
                     <span class="d-flex">
                         {% render_field_by_order form form.is_official label='in-line' margin_b=1 %}
@@ -1035,12 +1035,14 @@ function factor_calculate_price(target, direct_target=null) {
         m_sum = 0
     }
     debugger
+    const total_price_field = document.querySelector('#id_total_price')
     const t_prices = document.querySelector('.factor_total_price')
     const additionElm = document.querySelector('#id_addition')
     const taxElm = document.querySelector('#id_tax')
     const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
     const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
     t_prices.innerText = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    total_price_field.value = m_sum + additionValue + topTaxValue
     //for (let i = 0; i < t_prices.length; i++) {
         //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
     //}
