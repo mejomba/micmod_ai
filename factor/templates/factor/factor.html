@@ -233,6 +233,7 @@
         const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
         const qi_price = row.querySelector('.qi_price')
         const Alert = document.querySelector('.factor-alert')
+        const diff_price_alert = row.querySelector('.diff_price_alert')
         if (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price)){
             elem.classList.add('border-danger')
             elem.classList.add('text-danger')
@@ -247,6 +248,26 @@
             elem.classList.remove('border-danger')
             elem.classList.remove('text-danger')
         }
+
+        const diff = (parseFloat(elem.value) - parseFloat(qi_price.dataset.price)) / parseFloat(elem.value) * 100
+        // ✅ حالا بررسی اختلاف
+    if (Math.abs(diff) > 10) {
+        elem.classList.add('border-danger');
+        diff_price_alert.classList.remove('d-none');
+        // diff_price_alert.classList.add('badge');
+        // diff_price_alert.classList.add('badge-danger');
+        // diff_price_alert.classList.add('rounded');
+        diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۱۰٪ است.';
+
+    }
+    else {
+        elem.classList.remove('border-danger');
+        // diff_price_alert.classList.remove('badge');
+        // diff_price_alert.classList.remove('badge-danger');
+        // diff_price_alert.classList.remove('rounded');
+        diff_price_alert.classList.add('d-none');
+        diff_price_alert.textContent = ''
+    }
     }
 
     function check_all_price(){
