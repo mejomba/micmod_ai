@@ -615,7 +615,7 @@ class Delivery(BaseModeWF):
     CHAPAR = 'CHAPAR'
     BARBARI = 'BARBARI'
     CUSTOMER_PAKE = 'CUSTOMER_PAKE'
-    DELIVERY_TYPE_CHOICES = ((POST, _('Post')), (TIPAX, _('TIPAX')), (PICKUP, _('PICKUP_IN_PERSON')), (CUSTOM, _('CUSTOM')), (PAKE, _('PAKE')), (CHAPAR, 'چاپار'), (BARBARI, 'باربری'), (CUSTOMER_PAKE, 'CUSTOMER_PAKE'))
+    DELIVERY_TYPE_CHOICES = ((POST, _('Post')), (TIPAX, _('TIPAX')), (PICKUP, _('PICKUP_IN_PERSON')), (CUSTOM, _('CUSTOM')), (PAKE, _('PAKE')), (CHAPAR, 'چاپار'), (BARBARI, 'باربری'), (CUSTOMER_PAKE, 'پیک مشتری'))
 
     # factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, related_name='factor_delivery')
     type = models.CharField(max_length=250, verbose_name=_('delivery_type'), choices=DELIVERY_TYPE_CHOICES)

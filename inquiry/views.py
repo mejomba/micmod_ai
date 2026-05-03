@@ -2454,7 +2454,7 @@ class SupplierAutocomplete(autocomplete.Select2ListView):
 
         filtered = {
             k: v for k, v in data.items()
-            if len(re.findall(r'[\u0600-\u06FF]', v)) >= 1
+            if len(re.findall(r'[\u0600-\u06FF]', v)) >= 0
         }
 
         if q:

@@ -6,7 +6,7 @@
 {#{% load quotation_tag %}#}
 {% load more_tags %}
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+{#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
@@ -18,7 +18,7 @@
 <link href="{% static 'css/custom.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
 <link href="{% static 'css/print/print.min.css' %}" id="app-style" rel="stylesheet" type="text/css"/>
 <link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet"/>
-<link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>
+{#<link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css"/>#}
 <link href="{% static 'custom_libs/toastr/toastr.min.css' %}" rel="stylesheet"/>
 <link href="{% static 'css/style.bundle.css_v7.2.9.css' %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
@@ -35,29 +35,18 @@
     </style>
 
 <div class="container" dir="rtl">
-    <div>
-        <a href="{% url "factor:factor.print" id=data.pk %}?action=wh_exit_permit&location_url_params={{ location_url_params }}"
-           class="button print mb-5 mt-5 btn btn-primary btn-bordered ">
-            {% if with_location == '0' %}
-                بدون موقعیت در انبار
-            {% elif with_location == '1' %}
-                با موقعیت در انبار
-            {% endif %}
-        </a>
 
-        <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
-    </div>
     <div>
     {% if request.user.base_group == 'wh' %}
         <span class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="calculate-button">پرینت لیبل کالا</span>
     {% endif %}
     </div>
 
-    <div class="row">
+    <div class="row " style="margin: 0">
 
-        <div class="col text-center py-2">
-            <h1>میکرومدرن</h1>
-            <span class="font-size-20 mb-5">مجوز خروج انبار(فروش)</span>
+        <div class="col text-center">
+            <h3>میکرومدرن</h3>
+            <span class="font-size-16 mb-5">مجوز خروج انبار(فروش)</span>
         </div>
     </div>
 
@@ -188,7 +177,7 @@
 
 
 <div class="container" dir="rtl">
-    <div class="row row-cols-2 border border-dark">
+    <div class="row row-cols-2 border border-dark font-size-11">
         <div class="col mb-10">
             <span class="mt-2">
                 صادر کننده:
@@ -203,6 +192,18 @@
         </div>
     </div>
 </div>
+<div class="container">
+{#        <a href="{% url "factor:factor.print" id=data.pk %}?action=wh_exit_permit&location_url_params={{ location_url_params }}"#}
+{#           class="button print mb-5 mt-5 btn btn-primary btn-bordered ">#}
+{#            {% if with_location == '0' %}#}
+{#                بدون موقعیت در انبار#}
+{#            {% elif with_location == '1' %}#}
+{#                با موقعیت در انبار#}
+{#            {% endif %}#}
+{#        </a>#}
+
+        <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+    </div>
 <br>
 <br>
 <br>

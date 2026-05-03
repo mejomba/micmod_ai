@@ -679,12 +679,11 @@ class SepidarApiCall:
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
         q = request.GET.get('q', '')
-        x = q.replace('ی',  'ي').replace('ک', 'ك')
-        # endpoint += '&struct_name=whit_full_name'
+        x = q.replace('ی', 'ي').replace('ک', 'ك')
         endpoint += f"&name__icontains={x}"
         res = requests.get(endpoint, headers=cls.headers)
         if res.ok:
-            res = {x.get('dlref'): x.get('name') + x.get('lastname', '') for x in res.json().get('results')}
+            res = {x.get('dlref'): x.get('name') + ' ' + x.get('lastname', '') for x in res.json().get('results')}
             return res
 
         return dict()
