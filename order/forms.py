@@ -13,12 +13,14 @@ from core.forms import CustomBaseModelForm, CustomBaseForm
 from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT
 from dal import autocomplete
 
+from django.forms import inlineformset_factory, formset_factory
+# from .models import OrderPayment, OrderPaymentItem
+
 
 class PriceInquiryResultChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         # return ''
         return f"{obj.supplier} - {obj.inquiry_type} - ({obj.price}) - {obj.price_update_date.date()}"
-
 
 
 class OrderForm(CustomBaseModelForm):
@@ -303,6 +305,7 @@ class GIOItemForm(CustomBaseModelForm):
             self.fields['gio'].queryset = self.fields['gio'].queryset.filter(id=getattr(gio, 'pk', gio))
             self.make_hidden(['gio'])
 
+GIOItemFormSet = formset_factory(GIOItemForm, extra=1)
 
 class OrderPaymentForm(CustomBaseModelForm):
     file_model = File
@@ -438,8 +441,6 @@ class OrderPaymentItemForm(CustomBaseModelForm):
             self.fields['payment'].queryset = self.fields['payment'].queryset.filter(id=getattr(payment, 'pk', payment))
 
 
-from django.forms import inlineformset_factory, formset_factory
-from .models import OrderPayment, OrderPaymentItem
 
 order_payment_item_fields = ['order', 'payment', 'description', 'total_amount']
 

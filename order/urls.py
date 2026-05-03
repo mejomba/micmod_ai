@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
     PaymentItemDataTableListView, OrderAndSepidar, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
-    ACNTListView, ACNTDataTableListView
+    ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView
 
 from .views import CustomerRequestOrderViewSet
 
@@ -76,4 +76,6 @@ urlpatterns = [
     path('wh_packing_view/', views.wh_packing_view, name='wh_packing_view'),
     path('wh_packing_view/<int:sepidar_buy_factor_id>/', views.wh_packing_view, name='wh_packing_view'),
     path('portal_reserve/<int:sku>/', views.portal_reserve_, name='portal_reserve_'),
+    path('quick_gio/', QuickGIOView.as_view(), name='quick_gio'),
+    path('quick_gio_datatable/', QuickGIODataTableListView.as_view(), name='quick_gio.datatable'),
 ]

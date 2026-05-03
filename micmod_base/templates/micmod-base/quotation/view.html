@@ -29,10 +29,11 @@
     <div class="border rounded mb-5 p-3">
         <div class="d-flex justify-content-between">
             <span class="d-flex align-items-center gap-3">
-                <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded p-2 bg-light-primary" onclick="openModal(event)" id="openExportModal">
+                <button data-quotation-id="{{ form.instance.pk }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg" class="border border-primary rounded p-2 bg-light-primary cursor-pointer" onclick="openModal(event)" id="openExportModal">
                     خروجی اکسل
                 </button>
-                <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="border border-primary rounded text-black p-2 bg-light-primary">بازگشت به لیست</a>
+                <a href="{% url 'micmod_base:quotations.list' %}?q=active" class="cursor-pointer border border-primary rounded text-black p-2 bg-light-primary">بازگشت به لیست</a>
+                <a class="border border-primary rounded text-black p-2 bg-light-primary cursor-pointer" href="{% url 'factor:factor.view' %}?q_id={{ form.instance.pk }}" target="_blank">ایجاد فاکتور</a>
                 <span class="tooltip_">
                     <a class="fw-bold" href="{% url 'micmod_base:quotations.create' %}" target="_blank">
                         <i class="ki-duotone ki-plus-circle fs-2x">

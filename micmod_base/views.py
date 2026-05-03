@@ -1163,7 +1163,7 @@ class QuotationListDatatable(CustomAjaxDatatableView):
 
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
         row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.id,)),
+            reverse('extra_data:customer.update', args=(obj.customer_party_id.id,)),
             obj.customer_party_id.title if obj.customer_party_id else '-'
         )
 

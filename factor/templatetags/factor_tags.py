@@ -17,3 +17,11 @@ def supply_locations(item: "models.Item", prefix, counter, factor_item=None, use
     context['factor_item'] = factor_item
     context['user'] = user
     return context
+
+
+@register.simple_tag
+def get_last_currency_amount(currency):
+    from inquiry.models import CurrencyAmount
+    currency_amount = CurrencyAmount.objects.filter(currency=currency.id).order_by('-id').first()
+    open_rate = currency_amount.open_rate
+    return int(open_rate)
