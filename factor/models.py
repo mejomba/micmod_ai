@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.contrib import messages
 from django.db.models import F, Sum, FloatField
@@ -346,6 +346,17 @@ class FactorItem(BaseModel):
                 if int(code) == int(wh_code):
                     x = quantity - self.goods_code.reserved_count_in_portal(wh_code)
                     return min([float(x) if x > 0 else 0, float(self.quantity), (self.reserve_count or 0)])
+        else:
+            res2 = SepidarApiCall.get_stock_quantity([self.goods_code.sepidar_id_0])
+            res2 = res2.get('res')
+            if res2:
+                wh_code = self.get_sepidar_stock_code_from_selected_supply_location()
+                for name_code, quantity in res2.items():
+                    code = name_code[1]  # re.search(r'(code: (\d+))', code).group(2)
+                    if int(code) == int(wh_code):
+                        x = quantity - self.goods_code.reserved_count_in_portal(wh_code)
+                        return min([float(x) if x > 0 else 0, float(self.quantity), (self.reserve_count or 0)])
+        return 0
 
     def selected_order(self):
         """
@@ -378,194 +389,205 @@ class FactorItem(BaseModel):
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        oo = None
-        if not self.reserve_count:
-            self.reserve_count = 0
-        unselect, select_order, select_wh, select_bazar, deselect_bazar = self.selected_order()
-        if self.pk is None:
-            if not self.quantity:
-                return
-            if unselect or select_bazar:
-                """ایجاد سفارش کامل"""
-                o1 = Order.create_with_rel(factor_item=self)[0]
-                self.supply_locations = o1
-                self.supply_location = o1.pk
-            elif select_order:
-                """ایجاد سفارش کامل"""
-                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
-                o2 = Order.objects.filter(pk=self.supply_location).first()
-                o1 = Order.create_with_rel(o2=o2, factor_item=self)[0]
-                self.supply_locations = o1
-            elif select_wh:
+        with transaction.atomic():
+            oo = None
+            if not self.reserve_count:
+                self.reserve_count = 0
+            unselect, select_order, select_wh, select_bazar, deselect_bazar = self.selected_order()
+            if self.pk is None:
+                if not self.quantity:
+                    return
+                if unselect or select_bazar:
+                    """ایجاد سفارش کامل"""
+                    o1 = Order.create_with_rel(factor_item=self)[0]
+                    self.supply_locations = o1
+                    self.supply_location = o1.pk
+                elif select_order:
+                    """ایجاد سفارش کامل"""
+                    """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
+                    o2 = Order.objects.filter(pk=self.supply_location).first()
+                    o1 = Order.create_with_rel(o2=o2, factor_item=self)[0]
+                    self.supply_locations = o1
+                elif select_wh:
 
-                quantity = self.quantity_for_wh_order()
-                sepidar_free_quantity = quantity
-                if quantity < self.reserve_count:
-                    '''محاسبه تعداد قرض گرفتن از رزرو دیگران'''
-                    oo_id = self.extra_data.request.POST.get(f'factoritem_set-{self.extra_data.idx}-reserve_selection') or 0
-                    oo = OrderOrder.objects.filter(pk=oo_id).first()
-                    available_for_barrow = oo.quantity if oo else 0
+                    quantity = self.quantity_for_wh_order()
+                    sepidar_free_quantity = quantity
+                    if quantity < self.reserve_count:
+                        '''محاسبه تعداد قرض گرفتن از رزرو دیگران'''
+                        oo_id = self.extra_data.request.POST.get(f'factoritem_set-{self.extra_data.idx}-reserve_selection') or 0
+                        oo = OrderOrder.objects.filter(pk=oo_id).first()
+                        available_for_barrow = oo.quantity if oo else 0
 
-                    quantity = min(self.reserve_count, quantity + available_for_barrow)
+                        quantity = min(self.reserve_count, quantity + available_for_barrow)
 
-                    '''تغییر تعداد در سفارش میانی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
-                    if oo:
-                        total_barrow = min(abs(self.reserve_count - sepidar_free_quantity), available_for_barrow)
-                        oo.quantity -= total_barrow
-                        oo.editor_user = self.editor_user
+                        '''تغییر تعداد در سفارش میانی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                        if oo:
+                            total_barrow = min(abs(self.reserve_count - sepidar_free_quantity), available_for_barrow)
+                            oo.quantity -= total_barrow
+                            oo.editor_user = self.editor_user
+                            oo.save()
+
+                            '''تغییر تعداد در سفارش اصلی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                            order_rel = oo.order_rel
+                            order_rel.quantity -= total_barrow
+                            order_rel.editor_user = self.extra_data.request.user
+                            order_rel.save()
+
+                    """ایجاد سفارش کامل"""
+                    """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
+
+                    """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
+                    data_base = {
+                        "order_title": "رزرو انبار (خودکار توسط سیستم)",
+                        # "status": "1",
+                        "item": self.qi.goods_code_fk,
+                        "production_lead_time": 10,  # self.qi.lead_time,
+                        "quantity": quantity,  # self.quantity,
+                        "cancel": False,
+                        "is_over": False,
+                        "qi": self.qi,
+                        'commitment_date_to_customer': self.qi.supply_date,
+                        "creator_user": self.extra_data.request.user,
+                        "editor_user": self.extra_data.request.user,
+                        'is_bazar': False,
+                        'is_wh': True,
+                        'sepidar_wh_code': int(self.supply_location[4:])
+                    }
+                    o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
+                    o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)
+                    self.supply_locations = o1
+            elif self.pk:
+                if not self.quantity:
+                    self.is_deleted = True
+                    for oo in self.supply_locations.order_base_items.all():
+                        # oo.delete()
+                        oo.is_deleted = True
                         oo.save()
+                    self.supply_locations.is_deleted = True
+                    self.supply_locations.save()
+                    super().save(force_insert, force_update, using, update_fields)
+                    total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
+                    if total_quantity >= self.qi.quantity:
+                        self.qi.is_over = True
+                    else:
+                        self.qi.is_over = False
+                    self.qi.save()
+                    return
 
-                        '''تغییر تعداد در سفارش اصلی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
-                        order_rel = oo.order_rel
-                        order_rel.quantity -= total_barrow
-                        order_rel.editor_user = self.extra_data.request.user
-                        order_rel.save()
+                if select_bazar:
+                    """حذف سفارش هایی میانی و تبدیل سفارش به نوع بازار"""
+                    for oo in self.supply_locations.order_base_items.all():
+                        oo.delete()
+                    self.supply_locations.cancel = False
+                    self.supply_locations.is_bazar = True
+                    self.supply_locations.item = self.goods_code
+                    self.supply_locations.quantity = self.quantity
+                    self.supply_locations.extra_data.request = self.extra_data.request
+                    self.supply_locations.save()
 
-                """ایجاد سفارش کامل"""
-                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
+                elif unselect:
+                    pass
+                elif self.supply_locations.is_bazar and deselect_bazar:
+                    self.supply_locations.is_bazar = False
+                    self.supply_locations.save()
 
-                """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
-                data_base = {
-                    "order_title": "رزرو انبار (خودکار توسط سیستم)",
-                    # "status": "1",
-                    "item": self.qi.goods_code_fk,
-                    "production_lead_time": 10,  # self.qi.lead_time,
-                    "quantity": quantity,  # self.quantity,
-                    "cancel": False,
-                    "is_over": False,
-                    "qi": self.qi,
-                    'commitment_date_to_customer': self.qi.supply_date,
-                    "creator_user": self.extra_data.request.user,
-                    "editor_user": self.extra_data.request.user,
-                    'is_bazar': False,
-                    'is_wh': True,
-                    'sepidar_wh_code': int(self.supply_location[4:])
-                }
-                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
-                o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self, sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)
-                self.supply_locations = o1
-        elif self.pk:
-            if not self.quantity:
-                self.is_deleted = True
-                for oo in self.supply_locations.order_base_items.all():
-                    # oo.delete()
-                    oo.is_deleted = True
-                    oo.save()
-                self.supply_locations.is_deleted = True
-                self.supply_locations.save()
-                super().save(force_insert, force_update, using, update_fields)
-                total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
+                elif select_order:
+                    """بروز سفارش کامل"""
+                    """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
+                    o2 = Order.objects.filter(pk=self.supply_location).first()
+                    if o2.trade_lock_order:
+                        raise ValueError(f'سفارش {o2} توسط بازرگانی شروع شده است و ردیف فاکتور {self.index + 1} قابل تغییر نمیباشد.')
+                    o2.item = self.goods_code
+                    o2.save()
+                    # o1 = Order.create_with_rel(o2=o2, factor_item=self)[0]
+                    # self.supply_locations = o1
+                elif select_wh:
+                    self.reserve_count = self.quantity
+                    oo = self.supply_locations.order_base_items.first()
+                    if oo:
+                        try:
+                            oo.delete()
+                        except Exception as e:
+                            oo.is_deleted = True
+                            oo.save()
+
+                    quantity = self.quantity_for_wh_order()
+                    sepidar_free_quantity = quantity
+                    if quantity < self.reserve_count:
+                        '''محاسبه تعداد قرض گرفتن از رزرو دیگران'''
+                        oo_id = self.extra_data.request.POST.get(
+                            f'factoritem_set-{self.extra_data.idx}-reserve_selection') or 0
+                        oo = OrderOrder.objects.filter(pk=oo_id).first()
+                        available_for_barrow = oo.quantity if oo else 0
+
+                        quantity = min(self.reserve_count, quantity + available_for_barrow)
+
+                        '''تغییر تعداد در سفارش میانی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                        if oo:
+                            total_barrow = min(abs(self.reserve_count - sepidar_free_quantity), available_for_barrow)
+                            oo.quantity -= total_barrow
+                            oo.editor_user = self.editor_user
+                            oo.save()
+
+                            '''تغییر تعداد در سفارش اصلی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
+                            order_rel = oo.order_rel
+                            order_rel.quantity -= total_barrow
+                            order_rel.editor_user = self.extra_data.request.user
+                            order_rel.save()
+
+                    """ایجاد سفارش کامل"""
+                    """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
+
+                    """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
+                    data_base = {
+                        "order_title": "رزرو انبار (خودکار توسط سیستم)",
+                        # "status": "1",
+                        "item": self.goods_code,
+                        "production_lead_time": 10,  # self.qi.lead_time,
+                        "quantity": quantity,  # self.quantity,
+                        "cancel": False,
+                        "is_over": False,
+                        "qi": self.qi,
+                        'commitment_date_to_customer': self.qi.supply_date,
+                        "creator_user": self.extra_data.request.user,
+                        "editor_user": self.extra_data.request.user,
+                        'is_bazar': False,
+                        'is_wh': True,
+                        'sepidar_wh_code': int(self.supply_location[4:])
+                    }
+                    o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
+                    o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self,
+                                                   sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)
+                    self.supply_locations = o1
+
+                    """
+                    x = fi.reserve_count - order_rel.quantity
+                    order_rel.quantity += x
+                    
+                    oo = oo.order_base == fi.supply_location
+                    oo.quantity = fi.reserve_count
+                    """
+                    # order_rel = oo.order_rel if oo else None
+                    # order_rel.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                    # oo.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
+                    # oo.sepidar_wh_code = self.supply_location.split('__')[1]
+                    # order_rel.save()
+                    # oo.save()
+
+            super().save(force_insert, force_update, using, update_fields)
+            if oo:
+                oo.fi = self
+                oo.save()
+
+            total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
+            if not self.qi.is_over:
                 if total_quantity >= self.qi.quantity:
+                    self.qi.is_over = True
+                if self.quantity >= self.qi.quantity:
                     self.qi.is_over = True
                 else:
                     self.qi.is_over = False
-                self.qi.save()
-                return
-
-            if select_bazar:
-                """حذف سفارش هایی میانی و تبدیل سفارش به نوع بازار"""
-                for oo in self.supply_locations.order_base_items.all():
-                    oo.delete()
-                self.supply_locations.cancel = False
-                self.supply_locations.is_bazar = True
-                self.supply_locations.save()
-
-            elif unselect:
-                pass
-            elif self.supply_locations.is_bazar and deselect_bazar:
-                self.supply_locations.is_bazar = False
-                self.supply_locations.save()
-
-            elif select_order:
-                """بروز سفارش کامل"""
-                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده"""
-                o2 = Order.objects.filter(pk=self.supply_location).first()
-                o1 = Order.create_with_rel(o2=o2, factor_item=self)[0]
-                # self.supply_locations = o1
-            elif select_wh:
-
-                oo = self.supply_locations.order_base_items.first()
-                if oo:
-                    oo.is_deleted = True
-                    oo.save()
-
-                quantity = self.quantity_for_wh_order()
-                sepidar_free_quantity = quantity
-                if quantity < self.reserve_count:
-                    '''محاسبه تعداد قرض گرفتن از رزرو دیگران'''
-                    oo_id = self.extra_data.request.POST.get(
-                        f'factoritem_set-{self.extra_data.idx}-reserve_selection') or 0
-                    oo = OrderOrder.objects.filter(pk=oo_id).first()
-                    available_for_barrow = oo.quantity if oo else 0
-
-                    quantity = min(self.reserve_count, quantity + available_for_barrow)
-
-                    '''تغییر تعداد در سفارش میانی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
-                    if oo:
-                        total_barrow = min(abs(self.reserve_count - sepidar_free_quantity), available_for_barrow)
-                        oo.quantity -= total_barrow
-                        oo.editor_user = self.editor_user
-                        oo.save()
-
-                        '''تغییر تعداد در سفارش اصلی دیگران که رزرو انبار بوده بعد از قرض گرفتن'''
-                        order_rel = oo.order_rel
-                        order_rel.quantity -= total_barrow
-                        order_rel.editor_user = self.extra_data.request.user
-                        order_rel.save()
-
-                """ایجاد سفارش کامل"""
-                """ایجاد سفارش میانی به اندازه ظرفیت سفارش انتخاب شده به همراه اطلاعات کد انبار"""
-
-                """generate order with quantity min(sepidar_wh_quantity, fi.quantity)"""
-                data_base = {
-                    "order_title": "رزرو انبار (خودکار توسط سیستم)",
-                    # "status": "1",
-                    "item": self.qi.goods_code_fk,
-                    "production_lead_time": 10,  # self.qi.lead_time,
-                    "quantity": quantity,  # self.quantity,
-                    "cancel": False,
-                    "is_over": False,
-                    "qi": self.qi,
-                    'commitment_date_to_customer': self.qi.supply_date,
-                    "creator_user": self.extra_data.request.user,
-                    "editor_user": self.extra_data.request.user,
-                    'is_bazar': False,
-                    'is_wh': True,
-                    'sepidar_wh_code': int(self.supply_location[4:])
-                }
-                o1_as_o2 = Order.create_with_rel(data_base=data_base, factor_item=self)[0]
-                o1, oo = Order.create_with_rel(o2=o1_as_o2, factor_item=self,
-                                               sepidar_wh_code=int(self.supply_location[4:]), is_wh=True)
-                self.supply_locations = o1
-
-                """
-                x = fi.reserve_count - order_rel.quantity
-                order_rel.quantity += x
-                
-                oo = oo.order_base == fi.supply_location
-                oo.quantity = fi.reserve_count
-                """
-                # order_rel = oo.order_rel if oo else None
-                # order_rel.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
-                # oo.quantity += (self.quantity_for_wh_order() or 0) - (oo.quantity or 0)
-                # oo.sepidar_wh_code = self.supply_location.split('__')[1]
-                # order_rel.save()
-                # oo.save()
-
-        super().save(force_insert, force_update, using, update_fields)
-        if oo:
-            oo.fi = self
-            oo.save()
-
-        total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
-        if not self.qi.is_over:
-            if total_quantity >= self.qi.quantity:
-                self.qi.is_over = True
-            if self.quantity >= self.qi.quantity:
-                self.qi.is_over = True
-            else:
-                self.qi.is_over = False
-        self.qi.save()
+            self.qi.save()
 
     def total_supply(self):
         s = sum([x.quantity for x in self.supply_locations.order_base_items.all()])
@@ -590,7 +612,10 @@ class Delivery(BaseModeWF):
     PICKUP = 'PICKUP'
     CUSTOM = 'CUSTOM'
     PAKE = 'PAKE'
-    DELIVERY_TYPE_CHOICES = ((POST, _('Post')), (TIPAX, _('TIPAX')), (PICKUP, _('PICKUP_IN_PERSON')), (CUSTOM, _('CUSTOM')) , (PAKE, _('PAKE')))
+    CHAPAR = 'CHAPAR'
+    BARBARI = 'BARBARI'
+    CUSTOMER_PAKE = 'CUSTOMER_PAKE'
+    DELIVERY_TYPE_CHOICES = ((POST, _('Post')), (TIPAX, _('TIPAX')), (PICKUP, _('PICKUP_IN_PERSON')), (CUSTOM, _('CUSTOM')), (PAKE, _('PAKE')), (CHAPAR, 'چاپار'), (BARBARI, 'باربری'), (CUSTOMER_PAKE, 'CUSTOMER_PAKE'))
 
     # factor = models.ForeignKey(Factor, on_delete=models.DO_NOTHING, related_name='factor_delivery')
     type = models.CharField(max_length=250, verbose_name=_('delivery_type'), choices=DELIVERY_TYPE_CHOICES)

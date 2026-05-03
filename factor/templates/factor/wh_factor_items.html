@@ -348,7 +348,7 @@
         </div>
         <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
     {% if flow_state_index == 5 and not form.instance.sepidar_id %}
-        <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
+        <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
 {#    {% else %}#}
 {#        <span class="btn btn-sm btn-secondary my-1" data-bs-toggle="tooltip" data-bs-title="شماره فاکتور سپیدار {{ form.instance.sepidar_id }}">فاکتور به سپیدار ارسال شده</span>#}
     {% endif %}
@@ -996,5 +996,9 @@
             printWindow.print();
             printWindow.close();
         }, 300);
+    }
+    function hideBtn(event){
+            event.currentTarget.classList.add('d-none')
+            event.currentTarget.nextElementSibling.innerText = 'در حال ارسال به سپیدار'
     }
     </script>

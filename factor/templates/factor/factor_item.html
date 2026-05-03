@@ -81,15 +81,15 @@
                     </span>
                     <span class="d-flex">
                         <span class="bold w-25">توضیحات:</span>
-                        <span>{{ quotation.description|default_if_none:'-' }}</span>
+                        <span class="font-size-11 ms-1">{{ quotation.description|default_if_none:'-' }}</span>
                     </span>
                 </div>
             </div>
             <div class="col-2">
                 <div class="d-flex flex-column gap-2">
                     <span class="d-flex">
-                        <span class="bold w-35">روش پرداخت:</span>
-                        <span>{{ quotation.sale_type }}</span>
+                        <span class="bold w-35">نوع قیمت دهی:</span>
+                        <span>{{ quotation.get_payment_method_display }}</span>
                     </span>
                     <span class="d-flex">
                         <span class=" bold w-35">نوع فروش:</span>
@@ -632,6 +632,7 @@
                         <span class="w-75">
                             {% supply_locations qi.goods_code_fk form_s.prefix forloop.counter0 factor_item.instance %}
                             <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
+                            <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_location }}</span>
                         </span>
                         <span class="w-25">
                             <input type="checkbox" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-is_bazar" class="" >
@@ -933,6 +934,18 @@
             }
         })
     }
+
+    function price_util(net_price, totalDiscount, taxValue, price, qty){
+        var p = numberWithCommas(net_price - totalDiscount + taxValue)
+        debugger
+        if (p){
+            return p
+        } else if (p === '') {
+            return 0
+        } else {
+            return numberWithCommas(price * qty)
+        }
+    }
 function factor_calculate_price(target, direct_target=null) {
         debugger
     let elem;
@@ -1011,12 +1024,13 @@ function factor_calculate_price(target, direct_target=null) {
         {#elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
         {#elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
         {#elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
-        total_price.innerHTML = numberWithCommas(net_price - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        total_price.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)
     } else {
         {#elem.querySelector('[name*="MAC"]').innerHTML = net_price#}
         {#elem.querySelector('[name*="tax_value"]').innerHTML = taxValue#}
         {#elem.querySelector('[name*="discount_value"]').innerHTML = totalDiscount#}
-        total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)
+        {#total_price.innerHTML = numberWithCommas((price * qty) - totalDiscount + taxValue) || numberWithCommas(price * qty)#}
+        total_price.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)
     }
     calculated_price = net_price - totalDiscount + tax
 
@@ -1038,6 +1052,7 @@ function factor_calculate_price(target, direct_target=null) {
     const taxElm = document.querySelector('#id_tax')
     const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
     const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
+    {#t_prices.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)#}
     t_prices.innerText = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
     //for (let i = 0; i < t_prices.length; i++) {
         //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()

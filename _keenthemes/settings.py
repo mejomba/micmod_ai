@@ -154,6 +154,7 @@ MIDDLEWARE = [
     'simple_history.middleware.HistoryRequestMiddleware',
     'core.middleware.RequestTimingMiddleware',
     'core.middleware.InternalIPRestrictionMiddleware',
+    # 'core.middleware.WebSocketCompressMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -469,9 +470,14 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
             "hosts": [(REDIS_URL, 6379)],
+            "capacity": 2000,  # تعداد پیام در صف
+            "expiry": 10,  # انقضای پیام (ثانیه)
         },
     },
 }
+# محدودیت نرخ ارسال
+RATELIMIT_WEBSOCKET = '5/s'  # 5 پیام در ثانیه
+
 # ========== celery settings ==========
 # CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 # CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379'
@@ -819,7 +825,7 @@ SEPIDAR_CONST_DATA = {
     'karmozd_sarafi': 606,  # کارمزد صرافی code:611408
     'transportation_vaset': 407,  # واسط کرایه حمل موجودی code:111507
     'wh_to_wh_vaset': 496,  # واسط انتقال بین انبار code:111506
-    'fiscalyearref': 46,  # سال مالی جاری
+    'fiscalyearref': 48,  # سال مالی جاری
     'no_name_vendor_rmb': 5962,  # تامین کننده یوآنی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32592
     'no_name_vendor_ero': 5961,  # تامین کننده یورویی هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32591
     'no_name_vendor_usd': 5960,  # تامین کننده دلاری هایی که در سپیدار وجود ندارند به این کد سپیداری ارجاع داده میشوند, code=32590

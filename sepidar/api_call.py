@@ -37,6 +37,7 @@ class SepidarApiCall:
         "v2": {
             'login': f'{protocol}://{host}:{port}/api_log/token/',
             'stock_quantity': f'{protocol}://{host}:{port}/api2/itemstocksummary/',
+            'stock_quantity_list': f'{protocol}://{host}:{port}/api2/functions/stock_quantity_list/', # دریافت موجودی تمام کالاها
             'all_items': f'{protocol}://{host}:{port}/sepidar_api/item/?structure_name=top_x_item',
             'receipt_item': f'{protocol}://{host}:{port}/api2/inventoryreceiptitem/',
             'receipt': f'{protocol}://{host}:{port}/api2/inventoryreceipt/',
@@ -97,11 +98,20 @@ class SepidarApiCall:
             return {}
 
     @classmethod
+    def get_stock_quantity_list(cls, itemref_list=None, year=None):
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity_list')
+        res = requests.get(endpoint, headers=cls.headers)
+        if res.ok:
+            return res.json()['data']
+        else:
+            return res.json()['errors']
+
+    @classmethod
     def get_stock_quantity(cls, itemref, year: Optional[str] = None, *args, **kwargs):
         cls.setup()
         if year is None:
             year = jdatetime.date.today().year
-        year = 1404
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
         endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}'
         res = requests.get(endpoint, headers=cls.headers)
@@ -124,7 +134,6 @@ class SepidarApiCall:
         cls.setup()
         if year is None:
             year = jdatetime.date.today().year
-        year = 1404
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('stock_quantity')
         endpoint += f'?itemref={itemref[0]}&fiscalyearref__title={str(year)}&stockref__stockid={stock}'
         res = requests.get(endpoint, headers=cls.headers)
@@ -671,6 +680,7 @@ class SepidarApiCall:
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('bazar_supplier')
         q = request.GET.get('q', '')
         x = q.replace('ی',  'ي').replace('ک', 'ك')
+        # endpoint += '&struct_name=whit_full_name'
         endpoint += f"&name__icontains={x}"
         res = requests.get(endpoint, headers=cls.headers)
         if res.ok:

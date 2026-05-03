@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        .realtime-field-changing {
+            transition: background-color 0.3s;
+            background-color: #fff3e0;
+        }
+    </style>
+</head>
+<body>
+form id: {{ form.id }}
+    <form id="main-form" data-form-id="{{ form.id }}">
+        {% csrf_token %}
+        <input type="text" name="field1" class="realtime-field">
+        <input type="text" name="field2" class="realtime-field">
+        <select name="field3">
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+        </select>
+    </form>
+
+    <script src="{% static 'js/form_ws/form-realtime.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('main-form');
+            const formId = form.dataset.formId;
+            makeFormReactive(form, formId);
+        });
+
+        // ذخیره محلی به عنوان پشتیبان
+        function saveToLocalBackup(formId, data) {
+            localStorage.setItem(`form_backup_${formId}`, JSON.stringify({
+                data: data,
+                timestamp: Date.now()
+            }));
+        }
+
+        // بازیابی از پشتیبان محلی هنگام قطعی
+        function restoreFromBackup(formId) {
+            const backup = localStorage.getItem(`form_backup_${formId}`);
+            if (backup) {
+                const { data, timestamp } = JSON.parse(backup);
+                if (Date.now() - timestamp < 3600000) { // کمتر از 1 ساعت
+                    return data;
+                }
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>

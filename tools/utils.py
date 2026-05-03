@@ -602,3 +602,30 @@ def wf_cache(timeout=20):
         return wrapper
     return deco
 
+
+def parse_number(num_str: str):
+    """
+    تبدیل رشته عدد به int یا float بر اساس وجود اعشار
+    """
+    try:
+        int_section = None
+        float_section = None
+        num_str = str(num_str)
+        num_str_list = num_str.split('.')
+
+        if len(num_str_list) == 2:
+            int_section = int(num_str_list[0])
+            float_section = int(num_str_list[1])
+        elif len(num_str_list) == 1:
+            int_section = int(num_str_list[0])
+            float_section = None
+
+        if float_section:
+            return float(num_str)
+        elif int_section is not None:
+            return int(int_section)
+
+        int('x')  # only for raise ValueError
+
+    except ValueError:
+        raise ValueError(f"عدد معتبر نیست: {num_str}")

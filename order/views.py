@@ -28,7 +28,7 @@ from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
 from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
-from tools.utils import is_ajax
+from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
@@ -2039,7 +2039,7 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
     else:
         if sepidar_buy_factor_id < 0:
             import ast
-            orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, is_wh=False).exclude(buy_factors=[])
+            orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, receipt_in_wh=False).exclude(buy_factors=[])
             trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
             for item in trade_orders:
                 print(item.order)
@@ -2079,3 +2079,43 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             return JsonResponse({'res': res.json()})
 
 
+def portal_reserve_(request, sku, *args, **kwargs):
+    if sku:
+        oos = OrderOrder.objects.filter(item_id=sku,
+                                        fi__factor__sepidar_id__isnull=True,
+                                        is_deleted=False,
+                                        order_base__sepidar_wh_code__isnull=False) #.select_related('fi__creator_user', 'fi__index', 'fi__factor')
+        order_receipt_in_wh = Order.objects.filter(item_id=sku, is_wh=True, receipt_in_wh=True,
+                                                   is_deleted=False, factor_items__factor__sepidar_id__isnull=True,
+                                                   cancel=False, is_kasri=False)
+        out = list()
+        for oo in oos:
+            creator_user = oo.fi.creator_user
+            quantity = oo.quantity
+            factor_id = oo.fi.factor.pk
+            row = oo.fi.index
+            if row:
+                row += 1
+            else:
+                row = '-'
+
+            out.append({'creator_user': creator_user, 'quantity': parse_number(quantity), 'factor': factor_id, 'row_index': row})
+
+        for o in order_receipt_in_wh:
+            creator_user = o.creator_user
+            quantity = o.quantity
+            factor_id = o.factor_items.all().values_list('factor_id', flat=True)
+            row = 0  # 'o.fi.index'
+            if row:
+                row += 1
+            else:
+                row = '-'
+
+            out.append({'creator_user': creator_user, 'quantity': parse_number(quantity), 'factor': factor_id, 'row_index': row})
+
+        context = {'data': out, 'sku': sku}
+        html = render_to_string('order/partial/portal_reserve.html', context=context)
+        return JsonResponse({'res': html})
+
+    else:
+        return JsonResponse({'res': ' خطا در دریافت کد کالا'})

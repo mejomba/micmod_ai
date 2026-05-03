@@ -1,6 +1,7 @@
 import datetime
 import time
 
+from django.core.cache import cache
 from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
 from django.contrib import messages
@@ -122,6 +123,7 @@ class FactorView(LoginRequiredMixin, BaseView):
 
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
+                cache.delete('all_stock_quantity')
                 return
             else:
                 self.after_sepidar_error()

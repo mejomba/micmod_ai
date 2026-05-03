@@ -57,15 +57,20 @@
         <div class=" text-center font-size-12" name="quantity" >{{ form.instance.quantity|default_if_none:0|intcomma }}</div>
         <div class="quantity_en d-none" name="quantity_hidden" >{{ form.instance.quantity}}</div>
     </td>
-<!-- GOODS LAST PRICE -->
+<!-- FEE -->
     <td class="font-size-11 replace-digits">
 {#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}
         <div class="total_count text-center font-size-12" name="unit_price" >{{ form.instance.sepidar_fee|default_if_none:0|floatformat:digit|intcomma }}</div>
     </td>
-<!-- FEE -->
+<!-- FEE 2 -->
+    <td class="font-size-11 replace-digits">
+{#        <div class="total_count bold text-center font-size-10" name="unit_price" >{{ form.instance.goods_last_price|default_if_none:0|floatformat:digit|intcomma }}</div>#}
+        <div class="total_count text-center font-size-12" name="unit_price2" >{{ form.instance.sepidar_fee|default_if_none:0|floatformat:digit|intcomma }}</div>
+    </td>
+
+<!-- total price -->
     <td class="font-size-11 bold replace-digits">
         <div class="fee text-center persian-digit" name="fee" id="id_total_count"></div>
         <div class="fee_en " name="fee">{{ form.instance.row_price|default_if_none:0|floatformat:'-2g'|intcomma}}</div>
     </td>
-
 </tr>

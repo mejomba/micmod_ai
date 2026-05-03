@@ -117,6 +117,7 @@ def generate_direct_factor(request, quotation: Quotation):
                     'price': qi.fee,
                     'quantity': qi.quantity,
                     'delivery_time': qi.delivery_time,
+                    'discount_per_item': qi.discount_per_item,
                     # 'supply_locations': order,
                     "creator_user": request.user,
                     "editor_user": request.user,

@@ -1,0 +1,40 @@
+{% load humanize %}
+
+    <p>رزرو های کالای {{ sku }} در پرتال</p>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Tahoma, sans-serif;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+
+<table>
+    <thead>
+        <tr>
+            <th>کارشناس</th>
+            <th>تعداد</th>
+            <th>فاکتور</th>
+            <th>سطر</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for d in data %}
+        <tr>
+            <td>{{ d.creator_user }}</td>
+            <td>{{ d.quantity|floatformat:'-2g' }}</td>
+            <td>{{ d.factor }}</td>
+            <td>{{ d.row_index }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

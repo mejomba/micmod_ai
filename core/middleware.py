@@ -3,6 +3,7 @@ import logging
 
 from django.http import HttpResponseForbidden
 import ipaddress
+import zlib
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,8 @@ class InternalIPRestrictionMiddleware:
             print(e)
         print(client_ip)
 
-        if not self.is_internal_ip(client_ip, request):
-            return HttpResponseForbidden("Access denied: External IP not allowed.")
+        # if not self.is_internal_ip(client_ip, request):
+        #     return HttpResponseForbidden("Access denied: External IP not allowed.")
 
         return self.get_response(request)
 
@@ -81,3 +82,16 @@ class InternalIPRestrictionMiddleware:
                 return True
         except ValueError:
             return False
+
+
+class WebSocketCompressMiddleware:
+    async def receive(self, app, scope, receive, send):
+        async def compressed_send(message):
+            if message['type'] == 'websocket.send' and len(message.get('text', '')) > 1000:
+                # فشرده‌سازی پیام‌های بزرگ
+                compressed = zlib.compress(message['text'].encode())
+                message['bytes'] = compressed
+                del message['text']
+            await send(message)
+
+        return await app(scope, receive, compressed_send)

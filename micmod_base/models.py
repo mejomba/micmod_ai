@@ -1043,13 +1043,17 @@ class QuotationItem(BaseModel):
         self.save()
 
     def fee_(self):
-        if self.final_price:
-            return self.final_price
+        final_fee = max(self.final_price, self.final_price2)
+        if final_fee:
+            return final_fee
+
+        # if self.final_price:
+        #     return self.final_price
         if not self.price_method:
             return None
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
-            return self.final_price or 0
+            return final_fee or 0
         if iqr.quotation_item.quotation.currency_ref.title == 'ریال':
             currency_ref = 'RIAL'
         else:

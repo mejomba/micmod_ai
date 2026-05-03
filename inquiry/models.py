@@ -344,14 +344,27 @@ class PriceInquiryResult(BaseModel):
                 # if d:
                 #     self.extra_data._rmb_final_price_ = d
                 for k, v in self.extra_data._rmb_final_price_.items():
-                    if k.lower() in ['express', 'air']:
-                        self.extra_data._rmb_final_price_[k] = {'duration': self.extra_data._rmb_final_price_[k]['duration'],
-                                                                'method': self.extra_data._rmb_final_price_[k]['method'],
-                                                                'price': self.extra_data._rmb_final_price_[k]['price'] * 1.35}
+                    if k.lower() in ['express']:
+                        express_extra_percent = (settings.express_extra_percent or 0) / 100
+                        self.extra_data._rmb_final_price_[k] = {
+                            'duration': self.extra_data._rmb_final_price_[k]['duration'],
+                            'method': self.extra_data._rmb_final_price_[k]['method'],
+                            'price': self.extra_data._rmb_final_price_[k]['price'] * (
+                                    1 + express_extra_percent)}
+                    elif k.lower() in ['air']:
+                        air_extra_percent = (settings.air_extra_percent or 0) / 100
+                        self.extra_data._rmb_final_price_[k] = {
+                            'duration': self.extra_data._rmb_final_price_[k]['duration'],
+                            'method': self.extra_data._rmb_final_price_[k]['method'],
+                            'price': self.extra_data._rmb_final_price_[k]['price'] * (
+                                    1 + air_extra_percent)}
                     elif k.lower() in ['sea']:
-                        self.extra_data._rmb_final_price_[k] = {'duration': self.extra_data._rmb_final_price_[k]['duration'],
-                                                                'method': self.extra_data._rmb_final_price_[k]['method'],
-                                                                'price': self.extra_data._rmb_final_price_[k]['price'] * 1.25}
+                        sea_extra_percent = (settings.sea_extra_percent or 0) / 100
+                        self.extra_data._rmb_final_price_[k] = {
+                            'duration': self.extra_data._rmb_final_price_[k]['duration'],
+                            'method': self.extra_data._rmb_final_price_[k]['method'],
+                            'price': self.extra_data._rmb_final_price_[k]['price'] * (
+                                    1 + sea_extra_percent)}
                 return self.extra_data._rmb_final_price_
             except Exception as e:
                 show_error(e, __file__)

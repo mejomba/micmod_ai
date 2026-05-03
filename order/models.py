@@ -276,7 +276,6 @@ class Order(BaseModeWF):
             return None
         """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
-        year = 1404
         stock_qty_api = SepidarApiCall.get_stock_item_pair_quantity([self.item.sepidar_id_0], self.oo.sepidar_wh_code, year)
         if stock_qty_api:
             if stock_qty_api.get('results'):
@@ -473,7 +472,7 @@ class Order(BaseModeWF):
             data_base = {
                 "order_title": "خودکار توسط سیستم",
                 # "status": "1",
-                "item": factor_item.qi.goods_code_fk,
+                "item": factor_item.goods_code, #qi.goods_code_fk,
                 "production_lead_time": 5,  # TODO self.qi.lead_time,
                 "quantity": factor_item.quantity,
                 "cancel": True if o2 else False,
@@ -583,7 +582,7 @@ class Order(BaseModeWF):
         57: "انبار رزرو رايكا",
         58: "انبار رزرو JRC",
         59: "انبار مركزي 2",
-        60: "انبار رزرو آقاي چاوشي",
+        60: "انبار رزرو خانم مرادي",
         61: "انبار نمونه",
         62: "انبار قرنطينه",
         63: "انبار بازار",
@@ -651,7 +650,7 @@ class OrderOrder(BaseModel):
         57: "انبار رزرو رايكا",
         58: "انبار رزرو JRC",
         59: "انبار مركزي 2",
-        60: "انبار رزرو آقاي چاوشي",
+        60: "انبار رزرو خانم مرادي",
         61: "انبار نمونه",
         62: "انبار قرنطينه",
         63: "انبار بازار",

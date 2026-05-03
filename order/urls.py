@@ -75,4 +75,5 @@ urlpatterns = [
     path('get_wh_reserve_order/', views.get_wh_reserve_order, name='get_wh_reserve_order'),
     path('wh_packing_view/', views.wh_packing_view, name='wh_packing_view'),
     path('wh_packing_view/<int:sepidar_buy_factor_id>/', views.wh_packing_view, name='wh_packing_view'),
+    path('portal_reserve/<int:sku>/', views.portal_reserve_, name='portal_reserve_'),
 ]

@@ -444,6 +444,16 @@ def show_order_list_detail(obj, model):
     return context
 
 
+@register.inclusion_tag('extra_data/partials/inquiry_detail.html')
+def inquiry_detail(obj, model):
+    from translator import get_text as _
+    context = {'data': {}}
+    fields = [f.name for f in model._meta.get_fields() if f.concrete]
+    for field in fields:
+        context['data'].update({_(field): getattr(obj, field, None)})
+    return context
+
+
 @register.filter
 def is_select2(field):
     return getattr(field, 'select2', None)

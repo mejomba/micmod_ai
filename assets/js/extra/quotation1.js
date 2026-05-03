@@ -1767,14 +1767,23 @@ function checkPrice(row=null) {
     }
 
     // ✅ حالا بررسی اختلاف
-    if (Math.abs(diff) > 10) {
+    if (Math.abs(diff) > 50) {
+        final_price.classList.add('border-danger');
+        diff_price_alert.classList.remove('d-none');
+        // diff_price_alert.classList.add('badge');
+        // diff_price_alert.classList.add('badge-danger');
+        // diff_price_alert.classList.add('rounded');
+        diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۵۰٪ است. ذخیره پیش فاکتور ممکن نیست.';
+        //document.querySelector('#global-action-button').classList.add('d-none')
+
+    } else if (Math.abs(diff) > 10){
         final_price.classList.add('border-danger');
         diff_price_alert.classList.remove('d-none');
         // diff_price_alert.classList.add('badge');
         // diff_price_alert.classList.add('badge-danger');
         // diff_price_alert.classList.add('rounded');
         diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۱۰٪ است.';
-
+        //document.querySelector('#global-action-button').classList.remove('d-none')
     }
     else {
         final_price.classList.remove('border-danger');
@@ -1783,5 +1792,6 @@ function checkPrice(row=null) {
         // diff_price_alert.classList.remove('rounded');
         diff_price_alert.classList.add('d-none');
         diff_price_alert.textContent = ''
+        //document.querySelector('#global-action-button').classList.remove('d-none')
     }
 }

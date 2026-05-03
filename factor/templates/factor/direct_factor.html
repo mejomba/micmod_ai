@@ -369,11 +369,11 @@ function get_supply_locations(event){
 
 function sync_supply_location(event){
         debugger
-        const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')
+        {#const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')#}
         const supply_location = event.currentTarget.parentElement.parentElement.querySelector('[id$="-supply_location"]')
-        supply_locations.value = event.currentTarget.value
+        {#supply_locations.value = event.currentTarget.value#}
         supply_location.value = event.currentTarget.value
-        const row = findAncestor(event.currentTarget, 'factor_item')
+        const row = findAncestor(event.currentTarget, 'item')
 
         try {
             let need_more

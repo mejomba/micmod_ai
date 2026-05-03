@@ -36,7 +36,7 @@
         <!-- Start right Content here -->
         <!-- ============================================================== -->
     <div class="d-flex align-items-baseline my-3">
-                    {% if request.user.base_group == 'accounting' %}
+                    {% if request.user.base_group == 'accounting' or request.user|has_group:'factor_direct_access' %}
                         <a href="{% url 'factor:factor.list' %}" class="btn btn-sm my-1 ms-3 {% if not request.GET.q %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="فاکتور هایی که نیاز به تایید مالی دارند و هنوز تایید نشده اند">در جریان</a>
                         <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-sm my-1 ms-3 {% if request.GET.q == 'all' %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="تمام فاکتور های ثبت شده در پرتال">همه</a>
                     {% endif %}

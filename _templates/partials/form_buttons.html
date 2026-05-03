@@ -91,6 +91,7 @@
 
 
 </div>
+    <div class="text-center bg-light-primary rounded p-8 d-none w-75 bold" style="position: fixed; top: 40px;" id="id_pleas_wait"></div>
 {% endif %}
 <span class="footer-toggle">&#10148;</span>
 {#{% endif %}#}
@@ -100,3 +101,17 @@
         padding: 0rem;
 }
 </style>
+
+<script>
+    const global_action_btn = document.querySelector('#global-action-button')
+    const pleas_wait = document.querySelector('#id_pleas_wait')
+
+
+    const draft_btn = document.querySelector('#submit_draft')
+    draft_btn && draft_btn.addEventListener('click', function (){
+        debugger
+        global_action_btn.classList.add('d-none')
+        pleas_wait.classList.remove('d-none')
+        pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    })
+</script>

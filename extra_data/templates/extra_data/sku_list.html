@@ -142,6 +142,7 @@
 
         </div>
         <!-- end main content-->
+    {% include 'core/partial/empty_modal.html' %}
 {% endblock content %}
 
 {% block extra_js %}
@@ -312,6 +313,26 @@
             pk_values: pk_values.value.split(',').map(Number)
         }
         custom_ajax_post_data(JSON.stringify(post_data), '/extra_data/item/list/update/', $('#change_all_value_response'))
+    }
+
+    function getPortalReserveQuantity(event){
+        const md = document.querySelector('#id-empty-modal-body')
+        const sku = event.currentTarget.dataset.sku
+        const new_url = `/order/portal_reserve/${sku}/`
+        $.ajax({
+        type: 'GET',
+        url: new_url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            md.innerHTML = data['res'];
+        },
+        error: function (err) {
+            md.innerHTML = err
+        },
+    });
     }
     </script>
 {% endblock extra_js %}

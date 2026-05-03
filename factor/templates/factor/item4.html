@@ -254,9 +254,13 @@
                             <div class="select2 selected_price_code" name="selected_price_code"></div>
                         </div>
                         <div class="d-flex">
-                            <span>
+                            <span class="d-flex">
                                 <label for="{{ form_s.prefix }}-reserve_count">محل تامین</label>
                                 {% supply_locations form_s.instance.goods_code_fk form_s.prefix 0 factor_item.instance %}
+                                <span class="row-price pt-1 bg-success d-non">
+                                        <input type="text" name="{{ form_s.prefix }}-supply_location" value="" class="form-control" id="id_{{ form_s.prefix }}-supply_location">
+                                    </span>
+
                             </span>
                             <span>
                                 <label for="{{ form_s.prefix }}-reserve_count">تعداد رزرو</label>

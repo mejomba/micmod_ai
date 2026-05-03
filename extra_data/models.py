@@ -27,7 +27,7 @@ from queryable_properties.properties import queryable_property
 
 from transportation.models import TradeTransportationMethod
 from dw.models import DimOrder
-
+from django.core.cache import cache
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
@@ -200,6 +200,9 @@ class PriceSettings(AbsBaseModel):
     max_discount_for_final_step = models.FloatField(default=-13, verbose_name=_('max_discount_for_final_step'))
     delivery_in_china = models.BooleanField(default=False, verbose_name=_('delivery_in_china'))
     permission_json = models.JSONField(null=True, blank=True, verbose_name=_('permission_json'))
+    air_extra_percent = models.PositiveSmallIntegerField(_('درصد اضافی (هوایی)'), null=True, blank=True)
+    sea_extra_percent = models.PositiveSmallIntegerField(_('درصد اضافی (دریایی)'), null=True, blank=True)
+    express_extra_percent = models.PositiveSmallIntegerField(_('درصد اضافی (اکسپرس)'), null=True, blank=True)
 
     # auto_complete = 'title'
     @staticmethod
@@ -429,7 +432,6 @@ class Item(BaseModel):
     def supply_locations_(self):
         """ WARN__: this function has massive execution time"""
         year = jdatetime.date.today().year
-        year = 1404
         res = []
         stock_qty_api = SepidarApiCall.get_stock_quantity([self.sepidar_id_0], year)
         api_res = stock_qty_api.get('res')
@@ -1093,3 +1095,23 @@ class ItemPrice(BaseModel):
     part_number = models.CharField(_('part_number'), max_length=255, default="")
     purchase_group = models.CharField(_('purchase_group'), max_length=255, default="")
     sales_group = models.CharField(_('sales_group'), max_length=255, default="")
+
+
+class ItemStockSummary(models.Model):
+    last_update_date = models.DateTimeField(auto_now=True)
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='stock_summary')
+    stockref = models.IntegerField()
+    quantity = models.FloatField()
+    fiscalyearref = models.IntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['item', 'stockref', 'fiscalyearref'],
+                name='unique_item_stockref_fiscalyearref'
+            )
+        ]
+
+    @classmethod
+    def update(cls):
+        pass

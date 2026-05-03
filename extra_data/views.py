@@ -1110,3 +1110,10 @@ class CustomerAddressView(LoginRequiredMixin, BaseView):
         context = self.get_context_data()
         res = render_to_string(self.template_name, context=context, request=self.request)
         return JsonResponse({'res': res, 'jss': '', 'csss': ''})
+
+
+def websoket(request, *args, **kwargs):
+    iw = ItemWeight.objects.get(pk=100)
+    form = ItemWeightForm(instance=iw)
+    form.id = iw.pk
+    return render(request, 'extra_data/item-realtime.html', context={'form': form})

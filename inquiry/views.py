@@ -1,6 +1,8 @@
 import re
 import datetime
 import threading
+import time
+
 from django.contrib import messages
 from django.core.cache import cache
 from django.conf import settings
@@ -19,8 +21,8 @@ from accounts.templatetags.accounts_tag import has_one_group
 from ajax_datatable.views import AjaxDatatableView
 
 from jalali_date.templatetags.jalali_tags import to_jalali
-from django.db.models import IntegerField, F, Q, When, Case
-from django.db.models.functions import Cast
+from django.db.models import IntegerField, F, Q, When, Case, Sum, Value, FloatField
+from django.db.models.functions import Cast, Coalesce
 
 from dw.models import DimOrder
 from micmod_base.models import QuotationItem
@@ -35,7 +37,7 @@ from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, Sal
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm, CurrencyAmountForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry, \
     CurrencyAmount
-from extra_data.models import Item, PriceSettings, ItemWeight
+from extra_data.models import Item, PriceSettings, ItemWeight, ItemStockSummary
 from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
 
@@ -45,6 +47,7 @@ from .tasks import update_price_list, update_components, db_backup, cleanup_file
 
 from tools.utils import round_price
 from dal import autocomplete
+from tools.utils import parse_number
 
 
 class PriceInquiryFileCreateView(LoginRequiredMixin,
@@ -182,18 +185,22 @@ class PriceInquiryFileUpdateView(LoginRequiredMixin,
 
 class SkuListDataTableView(CustomAjaxDataTable):
     model = Item
+    show_date_filters = True
+    show_column_filters = True
     title = 'sku_list'
     length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
     search_values_separator = '+'
     not_search_values_separator = '|'
-    render_row_details_template_name = 'sku_list_detail.html'
+    render_row_details_template_name = 'inquiry_detail_on_item_list.html'
     from translator import get_text as _
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'visible': False, "orderable": True},
         {'name': 'sku_int', 'searchable': True, 'visible': True, 'title': _('sku'), 'className': 'py-1 ',
          'defaultContent': '<a href"#">test</a>'},
-        {'name': 'part_number', 'visible': True, 'title': _('part_number'), 'className': 'py-1 part_number_search'},
+        {'name': 'part_number', 'visible': True, 'title': f"<div style='width:90px'>{_('part_number')}</div>", 'className': 'py-1 part_number_search'},
+        {'name': 'sepidar_qty', 'visible': True, 'title': "<div style='width:100px'>موجودی سپیدار</div>", 'className': 'py-1', 'orderable': False, 'searchable': False},
+        {'name': 'free_qty', 'visible': True, 'title': "<div style='width:100px'>موجودی آزاد</div>", 'className': 'py-1', 'orderable': False, 'searchable': False},
         {'name': 'parent', 'visible': True, 'searchable': True, 'lookup_field': '__sku__icontains'},
         {'name': 'brand', 'visible': True, 'title': _('brand'), 'className': 'py-1 ', 'lookup_field': '__title__icontains'},
         {'name': 'sale_group', 'visible': True, 'title': _('group sell'), 'className': 'py-1 sale_group_search', 'lookup_field': '__title__icontains'},
@@ -272,7 +279,9 @@ class SkuListDataTableView(CustomAjaxDataTable):
                 res = SepidarApiCall.get_all_items(page)
             pass
 
-        return qs
+        ordered_qs = qs.annotate(total_quantity=Coalesce(Sum('stock_summary__quantity'), Value(0, output_field=FloatField()))).order_by('-total_quantity')
+
+        return ordered_qs
 
     def get_column_defs(self, request):
         column = super().get_column_defs(request)
@@ -281,7 +290,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
             column.append({'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_avg', 'visible': True, 'title': '<div style="max-width:50px;max-width: 60px;text-wrap: auto;">میانگین وزن پکیج</div>', 'searchable': False, 'orderable': False} not in column else ''
             column.append({'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False}) if {'name': 'package_weight_diff', 'visible': True, 'title': '<div style="max-width: 70px;text-wrap: auto;">اختلاف میانگین پکیج و وزن نهایی</div>', 'searchable': False, 'orderable': False} not in column else ''
         else:
-            column = column[:16]
+            column = column[:18]
         if (request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True)) and ('express_extra_cost_percentage' != column[-1].get('name') or 'package_weight_diff' != column[-1].get('name')):
             column.append({'name': 'extra_cost_percentage', 'visible': True}) if {'name': 'extra_cost_percentage', 'visible': True} not in column else ''
             column.append({'name': 'sea_extra_cost_percentage', 'visible': True}) if {'name': 'sea_extra_cost_percentage', 'visible': True} not in column else ''
@@ -290,7 +299,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
         elif request.user.is_superuser or 'total_admin' in request.user.groups.values_list('name', flat=True) and 'express_extra_cost_percentage' == column[-1].get('name'):
             pass
         else:
-            column = column[:16]
+            column = column[:18]
 
         if request.user.groups.filter(name='CEO').exists():
             for row in self.column_defs:
@@ -325,6 +334,69 @@ class SkuListDataTableView(CustomAjaxDataTable):
         row['weight_percentage'] = f'<b class="{x}">% {obj.weight_percentage}</b>' \
             if obj.weight_percentage else '<p>-</p>'
         row['duplicate_item'] = f'<a href="/extra_data/item/create/?object_id={obj.pk}&ctt_id={obj.content_type().id}&request_type=duplicate" class="" target="_blank"><i class="ki-duotone ki-copy fs-2qx"></i></a>'
+
+        sepidar_qty_str, free_qty_str = self.qty_str(obj)
+        row['sepidar_qty'] = sepidar_qty_str
+        row['free_qty'] = free_qty_str
+
+
+        # ========================
+        # row['sepidar_qty'] = obj.total_quantity
+        # row['free_qty'] = 'x'
+        # ========================
+
+    def x(self, obj):
+        obj.stock_summary.all()
+    def qty_str(self, obj):
+        all_stock_quantity = cache.get('all_stock_quantity')
+        if not all_stock_quantity:
+            print('not in cache...')
+            all_stock_quantity = SepidarApiCall.get_stock_quantity_list()
+            l = []
+            for item, stocks in all_stock_quantity.items():
+                for stock, quantity in stocks.items():
+                    stock_code = stock.split('__')[0]
+                    iss = ItemStockSummary(item_id=item, quantity=quantity, fiscalyearref=settings.SEPIDAR_CONST_DATA['fiscalyearref'], stockref=stock_code)
+                    l.append(iss)
+            ItemStockSummary.objects.bulk_create(
+                l,  # لیست اشیاء
+                update_conflicts=True,  # فعال کردن حالت upsert
+                update_fields=['quantity'],  # فیلدهایی که در صورت وجود به‌روز شوند
+                unique_fields=['item', 'fiscalyearref', 'stockref'],  # فیلد(های) منحصربفرد برای تشخیص رکورد موجود
+                batch_size=500
+            )
+
+            cache.set('all_stock_quantity', all_stock_quantity, 3000)
+            print('set in cache...')
+
+        stocks = all_stock_quantity.get(str(obj.sku))
+        if not stocks:
+            return 0, 0
+        sepidar_qty_str = ''
+        free_qty_str = ''
+        reserve_detail_btn = ''
+        for code_name, sepidar_quantity in stocks.items():
+            code, name = code_name.split('__')
+
+            portal_reserve = obj.reserved_count_in_portal(code)
+            free = sepidar_quantity - portal_reserve
+
+            sepidar_qty_str += f'{name.replace("انبار", "")}: {parse_number(sepidar_quantity):,} <br>'
+            free_qty_str += f'{name.replace("انبار", "")}: {parse_number(free):,} <br>'
+
+            if portal_reserve:
+                reserve_detail_btn = f'''<span class="cursor-pointer" data-sku={obj.sku} onclick="getPortalReserveQuantity(event)" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
+                                            <i class="ki-duotone ki-question-2 fs-1 text-primary">
+                                             <span class="path1"></span>
+                                             <span class="path2"></span>
+                                             <span class="path3"></span>
+                                            </i>
+                                        </span>'''
+
+        free_qty_str += reserve_detail_btn
+        sepidar_qty_str += f'\n<hr> جمع: {parse_number(obj.total_quantity):,}'
+
+        return sepidar_qty_str, free_qty_str
 
 
 def sku_list(request):
@@ -2353,7 +2425,7 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
             {'name': 'currency', 'visible': True, 'title': _('نوع ارز'),  'orderable': False, 'lookup_field': '__title__icontains' },
             # {'name': 'customs',  'title': "<div class='px-3' style='width:40px;'>یو گمرکی</div>"},
             {'name': 'open_rate',  'title': _('rate')},
-            # {'name': 'new_order', 'title': "<div class='px-3' style='width:40px;'>یو سفارش جدید</div>"},
+            {'name': 'created_date', 'title': "<div class='px-3' style='width:40px;'>تاریخ ایجاد</div>"},
             # {'name': 'talar', 'title': "<div class='px-3' style='width:40px;'>یو تالار</div>", "searchable": False},
         ]
 
@@ -2370,6 +2442,7 @@ class CurrencyAmountDatatableView(CustomAjaxDatatableView):
             obj.currency.title if obj.currency else '_'
         )
         row['open_rate'] = "{:,}".format(int(obj.open_rate))
+        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
 
 
 class SupplierAutocomplete(autocomplete.Select2ListView):
