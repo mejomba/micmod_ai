@@ -425,7 +425,8 @@
           "permission": {
             "groups": [
               "accounting_user",
-              "trade_user"
+              "trade_user",
+              "currency_amount"
             ]
           },
           "icon": "credit-cart\n",

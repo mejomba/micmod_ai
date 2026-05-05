@@ -578,6 +578,7 @@ class QuotationItem(BaseModel):
 
     price_method = models.CharField(max_length=128, verbose_name=_('price_method'), null=True, blank=True)
     final_price = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
+    final_price2 = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
@@ -1043,17 +1044,17 @@ class QuotationItem(BaseModel):
         self.save()
 
     def fee_(self):
-        final_fee = max(self.final_price, self.final_price2)
-        if final_fee:
-            return final_fee
+        # final_fee = max(self.final_price, self.final_price2)
+        # if final_fee:
+        #     return final_fee
 
-        # if self.final_price:
-        #     return self.final_price
+        if self.final_price:
+            return self.final_price
         if not self.price_method:
             return None
         iqr = self.quotation_item_rel.all().last()
         if iqr is None:
-            return final_fee or 0
+            return 0
         if iqr.quotation_item.quotation.currency_ref.title == 'ریال':
             currency_ref = 'RIAL'
         else:

@@ -729,7 +729,7 @@ class ItemWeight(AbsBaseModel):
     weight = models.FloatField(verbose_name=_('weight'))
 
     def __str__(self):
-        return f'{self.sku}'
+        return f'{self.pk}'
 
 
 class CustomerGroup(AbsBaseModel):

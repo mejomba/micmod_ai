@@ -128,8 +128,8 @@ class FactorModelForm(CustomBaseModelForm):
                           'sepidar_inventory_delivery_id', 'sepidar_inventory_delivery_number', 'total_price'])
         if self.instance.pk and self.instance.sepidar_number:
             self.make_hidden(['cancel'])
-        # if not access:
-        #     self.make_disable(self.fields)
+        if self.form_state == 7:
+            self.make_hidden(['self_discount', 'qi'])
 
 
 class FactorItemModelForm(CustomBaseModelForm):

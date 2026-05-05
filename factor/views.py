@@ -39,7 +39,7 @@ from core.views import BaseView, Base
 from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm
 from factor.models import Factor, FactorItem, Delivery
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
-from tools.utils import to_jalali_date, show_error, timer
+from tools.utils import to_jalali_date, show_error, timer, parse_number
 import json
 
 
@@ -248,7 +248,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
-        if obj_before_save.accounting_confirm:
+        if obj_before_save and obj_before_save.accounting_confirm:
             self.object.accounting_confirm = True
         self.object.save()
         return res
@@ -569,6 +569,7 @@ class FactorListDatatable(AjaxDatatableView):
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
+        row['total_price'] = f'{parse_number(obj.total_price):,}'
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in
                                        obj.comments.filter(comment_title='S')]) if not obj.accounting_confirm else ''  # "S" is accounting not approve factor
 
