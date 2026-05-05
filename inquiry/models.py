@@ -8,14 +8,14 @@ from django.dispatch import receiver
 from itertools import chain
 
 from accounts.models import User
-from core.models import CHOICE
+from core.models import CHOICE, Work
 from tools.utils import c_get, round_price, show_error
 
 from django.template.loader import render_to_string
 
 from micmod_base.base import CurrencyExchange
 from micmod_base.base import BaseModel, Currency, AbsBaseModel
-from micmod_base.models import QuotationItem
+from micmod_base.models import QuotationItem, Quotation
 from translator import get_text as _
 from queryable_properties.properties import queryable_property
 from tools.form_tools import get_dif_percentage
@@ -622,7 +622,56 @@ class PriceInquiryResult(BaseModel):
                 if (self.active and self != res and self.inquiry_type == res.inquiry_type and res.active) and condition:
                     res.active = False
                     res.save()
+            # PriceInquiryResult.objects.filter(
+            #     sku=sku,
+            #     inquiry_type=self.inquiry_type,
+            #     active=True
+            # ).exclude(
+            #     pk=self.pk
+            # ).filter(
+            #     variants_json=self.variants_json
+            # ).update(active=False)
 
+    def cheaper_price(self):
+        old_prices = PriceInquiryResult.objects.filter(
+            sku=self.sku,
+            inquiry_type=self.inquiry_type,
+            active=True
+        ).exclude(pk=self.pk)
+
+        cheaper_prices = old_prices.filter(price__gt=self.price)
+        if not cheaper_prices.exists():
+            return []
+
+        price_filter = Q(quotation__sepidar_number__isnull=True) | Q(quotation__cancel=True)
+
+        qs = (
+            QuotationItem.objects
+            .filter(
+                price_filter,
+                goods_code_fk__items__in=cheaper_prices
+            )
+            .values_list(
+                'quotation__pk',
+                'quotation__creator_user',
+                'index'
+            )
+            .distinct()
+        )
+
+
+        for item in qs:
+            user = item.quotation.creator_user
+            quotation_number = item.quotation.pk
+
+            work = Work.objects.create(
+                from_user=None,
+                title="کاهش قیمت",
+                body=f"برای پیش‌فاکتور {quotation_number} قیمت پایین‌تر ثبت شد",
+                address=f"/quotation/{quotation_number}",
+            )
+
+            work.to_users.set([user])
     def save(self, *args, **kwargs):
         # deactivate other PriceInquiryFile
         if self.price_inquiry_file and self.active:
