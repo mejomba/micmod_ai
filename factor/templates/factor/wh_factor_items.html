@@ -397,7 +397,7 @@
                     {% for hidden_field in factor_item.hidden_fields %}
                         {{ hidden_field }}
                     {% endfor %}
-{#                    <input type="hidden" name="factoritem_set-{{ forloop.counter0 }}-qi" value="{{ factor_item.instance.qi }}">#}
+                    <input type="hidden" name="factoritem_set-{{ forloop.counter0 }}-qi" value="{{ factor_item.instance.qi.pk }}">
                 </div>
                 <div class="row mb-1 text-center bg-white border rounded shadow-sm factor_item" id="id_factor_item" style="height: fit-content">
                     <!--factor item information and input (update)-->

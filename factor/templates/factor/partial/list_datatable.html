@@ -109,6 +109,7 @@
         const table = $('#factor_list').DataTable();
 
         function updateTotal() {
+            debugger
             let total = 0;
 
             table.rows({ search: 'applied' }).every(function () {

@@ -1417,7 +1417,7 @@ debugger
     row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
 
     if (isOfficial && isOfficial.checked){
-        tax = 12
+        tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
             tax_discount = (net_price - row_discount - row_discount_base_percentage) * (

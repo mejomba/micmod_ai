@@ -608,6 +608,8 @@ def parse_number(num_str: str):
     تبدیل رشته عدد به int یا float بر اساس وجود اعشار
     """
     try:
+        if num_str is None or num_str == 'None':
+            return 0
         int_section = None
         float_section = None
         num_str = str(num_str)
