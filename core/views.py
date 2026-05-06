@@ -1757,13 +1757,15 @@ class WorkNotify(View):
             start = (page - 1) * page_size
             end = page * page_size
             out = list()
-            temp = dict()
-            notifs = Work.objects.filter(to_users=user).order_by('seen', '-last_update_date')[start:end]
+            notifs = Work.objects.filter(to_users=user, seen=False).order_by('seen', '-last_update_date')[start:end]
             for notif in notifs:
+                temp = dict()
                 temp['title'] = notif.title
                 temp['body'] = notif.body
                 temp['from_user'] = notif.from_user.username
                 temp['address'] = notif.address
+                temp['seen'] = notif.seen
+                temp['pk'] = notif.pk
 
                 out.append(temp)
             return JsonResponse({'res': out})
@@ -1791,14 +1793,14 @@ class WorkNotify(View):
     def read_all_notif(self, request, *args, **kwargs):
         user = self.request.user
         if user.is_authenticated:
-            Work.objects.filter(to_user=user).update(seen=True)
+            Work.objects.filter(to_users__in=[user]).update(seen=True)
             return JsonResponse({'res': 'ok'}, status=200)
         else:
             return JsonResponse({'res': 'لاگین منقضی شده است دوباره وارد شوید'}, status=401)
 
     def read_one_notif(self, request, *args, **kwargs):
         user = self.request.user
-        pk = json.loads(self.request.body)
+        pk = self.request.GET.get('pk', None)
         if user.is_authenticated and pk:
             Work.objects.filter(pk=pk).update(seen=True)
             return JsonResponse({'res': 'ok'}, status=200)

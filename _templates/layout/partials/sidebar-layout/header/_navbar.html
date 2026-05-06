@@ -377,28 +377,62 @@ function removePin(el) {
     });
 }
 
-function readAllNotif(event){
-    const url = '/core/ajax/work_notify?view_name=read_all_notif'
+{#function readOneNotif(event){#}
+{#    const target = event.currentTarget#}
+{#    const url = `/core/ajax/work_notify?view_name=read_one_notif&pk=${target.dataset.pk}`#}
+{#    target.innerText = 'در حال انجام'#}
+{#    $.ajax({#}
+{#        type: 'GET',#}
+{#        url: url,#}
+{#        dataType: 'json',#}
+{#        cache: false,#}
+{#        processData: false,#}
+{#        contentType: false,#}
+{#        success: function (data) {#}
+{#            const NewBadge = findAncestor(target, 'notif-item').querySelector('.new_notif')#}
+{#            NewBadge.classList.add('d-none')#}
+{#            target.innerText = 'انجام شد'#}
+{#        },#}
+{#        error: function () {#}
+{#            target.innerHtml = 'خطا'#}
+{#        },#}
+{#    });#}
+//}
+
+function readOneNotif(event){
     const target = event.currentTarget
-    target.innerText = 'در حال انجام'
+    const pk = target.dataset.pk
+
+    const url = `/core/ajax/work_notify?view_name=read_one_notif&pk=${pk}`
+
+    target.disabled = true
+
     $.ajax({
         type: 'GET',
         url: url,
-        dataType: 'json',
-        cache: false,
-        processData: false,
-        contentType: false,
-        success: function (data) {
-            const allNewBadge = document.querySelectorAll('.new_notif')
-            allNewBadge && allNewBadge.forEach(function(item){
-                item.classList.add('d-none')
-            })
-            target.innerText = 'انجام شد'
-        },
-        error: function () {
-            target.innerHtml = 'خطا'
-        },
-    });
+        success: function () {
+
+            const item = findAncestor(target, 'notif-item')
+
+            // حذف استایل unread
+            item.classList.remove('border-primary')
+            item.classList.add('bg-light', 'read')
+
+            // حذف badge
+            const badge = item.querySelector('.badge')
+            if (badge) badge.remove()
+
+            const icon = item.querySelector('.notif-icon i')
+            if (icon){
+                icon.classList.remove('text-danger')
+                {#icon.classList.add('text-muted')#}
+
+            }
+
+            // حذف دکمه
+            target.remove()
+        }
+    })
 }
 
 function ajax_notify_click(){
@@ -407,9 +441,9 @@ function ajax_notify_click(){
         <div onclick="readAllNotif(event)" class="bg-primary p-2 text-center text-white cursor-pointer font-size-14 ms-4 me-3 " style="position: fixed; width: stretch; bottom: 0">
             علامت گذاری همه به عنوان خوانده شده
         </div>
-        .....
+        <div id="notify-body"></div>
     </div>
-    
+
     `
     const url = '/core/ajax/work_notify?view_name=list'
 
@@ -422,30 +456,66 @@ function ajax_notify_click(){
         contentType: false,
         success: function (data) {
             debugger
-            data['res']
-            let html = `
-            <div class="col">
-                <div class="notify-item-header mt-3 d-flex justify-content-between align-items-start">
-                    <h3>
-                        <a href="#">عنوان پیام دیدن عنوان پیام دیدن عنوان پیام دیدن عنوان پیام دیدن پیش فاکتور ۱۲۳۴۵</a>
-                    </h3>
-                    <span class="badge badge-danger new_notif">جدید</span>
-                </div>
-                <div class="notify-item-content" style="border-right: 3px solid grey">
-                    <div class="notify-item-body px-3">
-                        <p class="font-size-14">یک متن جهت توضیح این نوتیفای ممکن اس توسط کاربر یا خودکار ایجاد شده باید حتی mant englisi وسطش dashte باشه</p>
-                    </div>
-                    <div class="notify-item-footer px-3">
-                        <div class="d-flex gap-1 align-items-baseline">
-                            <label for="time">یاد آوری مجدد</label>
-                            <input type="datetime-local">
-                            <div class="btn btn-sm btn-primary">تایید</div>
-                        </div>
-                        <div class="hover-link py-2 cursor-pointer">علامت گذاری به عنوان خوانده شده</div>
-                    </div>
-                </div>
+            let html = ''
+            const res = data['res']
+            res.forEach(function (item){
+                html += `
+<style>
+   .notif-item {
+       transition: all 0.2s ease;
+   }
+   .notif-item.read {
+       background: #f8f9fa;
+   }
+   /* استایل کمکی برای اطمینان از چیدمان */
+   .notif-content {
+       display: flex;
+       align-items: center;
+       width: 100%;
+   }
+</style>
+
+<div class="notif-item p-3 mb-2 rounded ${item.seen ? 'bg-light' : 'bg-white border-start border-4 border-primary'}">
+    <!-- اضافه کردن w-100 برای اشغال تمام عرض -->
+    <div class="d-flex align-items-center justify-content-between w-100">
+
+        <!-- بخش متن و آیکون -->
+        <div class="d-flex align-items-start flex-grow-1">
+            ${!item.seen ? `
+                <span class="ms-2 notif-icon">
+                    <i class="ki-duotone ki-notification-circle text-danger fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </span>
+            ` : ''}
+
+            <div class="me-3">
+                <a href="${item.address}" class="fw-bold text-dark text-decoration-none d-block">
+                    ${item.title}
+                </a>
+                <p class="mb-0 text-muted mt-1 text-black">
+                    ${item.body}
+                </p>
             </div>
-            `
+        </div>
+
+        <!-- بخش دکمه - با استفاده از ms-auto به سمت مخالف پرتاب می‌شود -->
+        <div class="flex-shrink-0 ms-4">
+            ${!item.seen ? `
+            <button class="btn btn-sm btn-light-success border border-success text-success px-3 py-1"
+                    onclick="readOneNotif(event)"
+                    data-pk="${item.pk}">
+                ✓
+            </button>
+            ` : ''}
+        </div>
+
+    </div>
+</div>
+`
+            })
+            document.querySelector('#notify-body').innerHTML = html
             console.log(data)
         },
         error: function () {
