@@ -533,7 +533,6 @@ function get_customer_accounting_info(){
 function get_customer_dax(){
     const customer_dl_id = document.querySelector('#customer_dl_id')
     if (customer_dl_id){
-        debugger
         const url = `/extra_data/get_customer_dax/${customer_dl_id.textContent}`
         const el = $('#id_customer_dax')
         custom_ajax_get(null, url, el)

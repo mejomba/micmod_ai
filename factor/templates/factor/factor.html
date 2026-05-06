@@ -234,7 +234,7 @@
         const qi_price = row.querySelector('.qi_price')
         const Alert = document.querySelector('.factor-alert')
         const diff_price_alert = row.querySelector('.diff_price_alert')
-        if (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price)){
+        if (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price)){
             elem.classList.add('border-danger')
             elem.classList.add('text-danger')
             Alert.classList.add('alert-danger')
@@ -271,14 +271,13 @@
     }
 
     function check_all_price(){
-        debugger
         const Alert = document.querySelector('.factor-alert')
         const rows = document.querySelectorAll('.sortable-item') //findAncestor(event.currentTarget, 'row').parentElement.parentElement
 
         rows.forEach(function (item){
             const qi_price = item.querySelector('.qi_price')
             const elem = item.querySelector("input[name*='-price']")
-            if (qi_price && (parseFloat(elem.value) !== parseFloat(qi_price.dataset.price))){
+            if (qi_price && (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price))){
                 elem.classList.add('border-danger')
                 elem.classList.add('text-danger')
                 Alert.classList.add('alert-danger')
@@ -359,5 +358,6 @@
     <script src="{% static 'js/local/sortable.min.js' %}"></script>
 <script>
 generate_drag_drop()
+addCommaSeperator(true)
 </script>
 {% endblock extra_js %}

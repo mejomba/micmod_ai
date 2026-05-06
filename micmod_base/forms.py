@@ -249,7 +249,8 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
 
         self.fields['goods_code'].name = 'goods_code'
         self.fields['quantity'].widget.attrs['class'] += ' quantity comma-seperator  w-100'
-        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black s-0'
+        self.fields['final_price'].widget.attrs['class'] += ' replace-digits bold text-black s-0 comma-seperator'
+        # self.fields['final_price'].widget.attrs['onkeyup'] = "formatNumber(event)"
 
         self.make_optional(['bazar_price_code', 'trade_price_code'])
         self.make_required(['quantity'])
@@ -279,6 +280,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             self.fields['task_start2'].widget.attrs['onchange'] = "post_ajax_data(event)"
             self.fields['task_start2'].widget.attrs[
                 'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+
 
         except Exception as e:
             pass

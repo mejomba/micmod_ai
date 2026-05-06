@@ -347,7 +347,7 @@
         </div>
         <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
     {% if flow_state_index == 5 and not form.instance.sepidar_id %}
-        <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
+        <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
 {#    {% else %}#}
 {#        <span class="btn btn-sm btn-secondary my-1" data-bs-toggle="tooltip" data-bs-title="شماره فاکتور سپیدار {{ form.instance.sepidar_id }}">فاکتور به سپیدار ارسال شده</span>#}
     {% endif %}
@@ -814,7 +814,6 @@
             }
 
 
-            debugger
             totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
             if (tax) {
                 const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
@@ -824,7 +823,6 @@
             }
             const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
             if (currency_ref == 1) {
-                debugger
                 net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
                 taxValue = parseInt(taxValue)
                 totalDiscount = parseInt(totalDiscount)
@@ -842,7 +840,6 @@
 
             var items = document.querySelectorAll('[class*="row-total-price"]')
             let m_sum = 0
-            debugger
             for (let i = 0; i < items.length; i++) {
                 val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
                 if (!isNaN(val)) {
@@ -852,7 +849,6 @@
             if (!m_sum) {
                 m_sum = 0
             }
-            debugger
             const t_prices = document.querySelector('.factor_total_price')
             const additionElm = document.querySelector('#id_addition')
             const taxElm = document.querySelector('#id_tax')

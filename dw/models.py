@@ -308,6 +308,21 @@ class DimOrder(models.Model):
         group by sku, order_id
         '''
 
+
+
+        qry = f'''
+        SELECT 
+    ROW_NUMBER() OVER (ORDER BY customer_type) AS order_id,
+    customer_type,
+    SUM(remaining_qty) AS total_remaining_qty
+FROM [MicmodDW].[dbo].[dim_order]
+WHERE sku = {sku_} 
+  AND status_str = N'جاری'
+GROUP BY customer_type
+'''
+
+        order_inway_list = [x for x in cls.objects.raw(qry)]
+        return order_inway_list
         for item in cls.objects.raw(qry):
             return item
 

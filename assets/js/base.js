@@ -1,3 +1,27 @@
+// document.querySelectorAll('.replace-digits').forEach()
+function formatNumber(event) {
+    debugger
+    let value = event.currentTarget.value
+  if (!value) return "";
+
+  // حذف هر چیزی به جز عدد و نقطه
+  value = value.toString().replace(/[^\d.]/g, "");
+
+  // جلوگیری از چند نقطه
+  const parts = value.split(".");
+  const integerPart = parts[0];
+  const decimalPart = parts[1] !== undefined ? parts[1] : null;
+
+  // فرمت سه‌رقمی بخش صحیح
+  const formattedInt = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  // برگرداندن نتیجه
+  const final = decimalPart !== null
+    ? `${formattedInt}.${decimalPart}`
+    : formattedInt;
+  event.currentTarget.value = final
+
+}
 function findAncestor(el, cls) {
     if (el.classList.contains(cls)) {
         return el
@@ -82,21 +106,41 @@ function convertToInt() {
 }
 
 // convertToInt()
-function commaSeperator(n, step=null, sep=null) {
-    let c = 0;
-    let nwc = n;
-    if (!step){step = 3}
-    for (let i = 0; i <= n.length; i++) {
-        if (i % step === 0 && i !== 0 && i !== n.length) {
-            if (sep){
-                nwc = nwc.insert(i + c, sep)
-            }else {
-                nwc = nwc.insert(i + c, ',')
-            }
-            c++;
-        }
-    }
-    return nwc
+function commaSeperator(value, step=null, sep=',') {
+    debugger
+    if (!value) return "";
+
+  // حذف هر چیزی به جز عدد و نقطه
+  value = value.toString().replace(/[^\d.]/g, "");
+
+  // جلوگیری از چند نقطه
+  const parts = value.split(".");
+  const integerPart = parts[0];
+  const decimalPart = parts[1] !== undefined ? parts[1] : null;
+
+  // فرمت سه‌رقمی بخش صحیح
+  const formattedInt = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+
+  if (decimalPart !== null && decimalPart !== "0"){
+      return `${formattedInt}.${decimalPart}`
+  } else {
+      return formattedInt
+  }
+
+    // let c = 0;
+    // let nwc = n;
+    // if (!step){step = 3}
+    // for (let i = 0; i <= n.length; i++) {
+    //     if (i % step === 0 && i !== 0 && i !== n.length) {
+    //         if (sep){
+    //             nwc = nwc.insert(i + c, sep)
+    //         }else {
+    //             nwc = nwc.insert(i + c, ',')
+    //         }
+    //         c++;
+    //     }
+    // }
+    // return nwc
 }
 
 function numberWithCommas(x, digits = 2) {
@@ -107,22 +151,25 @@ function numberWithCommas(x, digits = 2) {
 }
 
 function addCommaSeperator(on_load=null, step=null, sep=',') {
+    debugger
     let inputNumberValue;
     let numberWithComma;
 
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.addEventListener('keyup', function (e) {
-            inputNumberValue = e.currentTarget.value.replaceAll(sep, '').reverse_string();
+            debugger
+            inputNumberValue = e.currentTarget.value.replaceAll(sep, '') //.reverse_string();
             numberWithComma = inputNumberValue;
             numberWithComma = commaSeperator(inputNumberValue, step, sep)
-            e.currentTarget.value = numberWithComma.reverse_string()
+            e.currentTarget.value = numberWithComma //numberWithComma.reverse_string()
         })
         if (on_load){
-            inputNumberValue = item.value.replaceAll(sep, '').reverse_string();
+            debugger
+            inputNumberValue = item.value.replaceAll(sep, '') //.reverse_string();
             numberWithComma = inputNumberValue;
             numberWithComma = commaSeperator(inputNumberValue, step, sep)
-            item.value = numberWithComma.reverse_string()
+            item.value = numberWithComma //numberWithComma.reverse_string()
         }
     })
 }
@@ -149,6 +196,7 @@ function shomare_kart(on_load=null) {
 }
 
 function removeCommaSeperator(str=null) {
+    debugger
     if (str !== null){
         try {
             return str.replaceAll(',', '')
@@ -834,3 +882,54 @@ function generate_drag_drop(container_id='sortable-container', draggable_items_s
             }
         }
     }
+
+
+
+//========= حالت ذخیره اطلاعات وقتی روی دکمه های ذخیره کننده فرم میزنن برای جلوگیری از تکرار درخواست و حذف جداکننده هزارگان ===========
+const global_action_btn = document.querySelector('#global-action-button')
+const pleas_wait = document.querySelector('#id_pleas_wait')
+
+
+const draft_btn = document.querySelector('#submit_draft')
+const next_btn = document.querySelector('#submit_next')
+const back_btn = document.querySelector('#submit_back')
+const send_factor_to_sepidar_btn = document.querySelector('#send_factor_to_sepidar')
+
+function show_global_action_btn(){
+    global_action_btn.classList.remove('d-none')
+    pleas_wait.classList.add('d-none')
+}
+
+send_factor_to_sepidar_btn && send_factor_to_sepidar_btn.addEventListener('click', function (){
+    removeCommaSeperator()
+    global_action_btn.classList.add('d-none')
+    pleas_wait.classList.remove('d-none')
+    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    setTimeout(show_global_action_btn, 12000)
+})
+
+draft_btn && draft_btn.addEventListener('click', function (){
+    removeCommaSeperator()
+    global_action_btn.classList.add('d-none')
+    pleas_wait.classList.remove('d-none')
+    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    setTimeout(show_global_action_btn, 12000)
+})
+
+next_btn && next_btn.addEventListener('click', function (){
+    removeCommaSeperator()
+    global_action_btn.classList.add('d-none')
+    pleas_wait.classList.remove('d-none')
+    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    setTimeout(show_global_action_btn, 12000)
+})
+
+back_btn && back_btn.addEventListener('click', function (){
+    removeCommaSeperator()
+    global_action_btn.classList.add('d-none')
+    pleas_wait.classList.remove('d-none')
+    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    setTimeout(show_global_action_btn, 12000)
+})
+
+//=====================

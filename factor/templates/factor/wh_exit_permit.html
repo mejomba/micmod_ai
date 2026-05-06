@@ -92,17 +92,17 @@
         <table class="table table-bordered border-dark mb-0">
             <thead>
             <tr>
-                <th scope="col">ردیف</th>
-                <th scope="col">کد کالا</th>
-                <th scope="col" >عنوان کالا</th>
-                <th scope="col">مقدار</th>
-                <th scope="col">واحد</th>
+                <th scope="col" class="font-size-11">ردیف</th>
+                <th scope="col" class="font-size-11">کد کالا</th>
+                <th scope="col" class="font-size-11">عنوان کالا</th>
+                <th scope="col" class="font-size-11">مقدار</th>
+                <th scope="col" class="font-size-11">واحد</th>
                 {% if with_location == '0' %}
-                <th scope="col">موقعیت در انبار</th>
+                <th scope="col" class="font-size-11">موقعیت در انبار</th>
                 {% elif with_location == '1' %}
 
                 {% endif %}
-                <th scope="col">توضیحات</th>
+                <th scope="col" class="font-size-11">توضیحات</th>
             </tr>
             </thead>
             {% for form_ in formset %}
@@ -142,7 +142,7 @@
                 </div>
                 <div class="col m-0 p-0 text-center border-left">
 
-                    <p class=" my-1" >{% sum_quantity data as total_quantity %} {{ total_quantity|intcomma }}</p>
+                    <p class=" my-1" >{% sum_quantity data as total_quantity %} {{ total_quantity|floatformat:'-2g' }}</p>
 
                 </div>
             </div>
@@ -150,24 +150,24 @@
     </div>
 </div>
 
-<div class="container pt-20" dir="rtl">
+<div class="container pt-2" dir="rtl">
 
         <div class="col"></div>
 </div>
 <div class="container" dir="rtl">
-    <div class="row row-cols-2 border border-dark">
+    <div class="row row-cols-1 border border-dark">
         <div class=" mt-2">
             <p class="bold">
                 توضیحات:
             </p>
-            <p class="font-size-15">
+            <span class="font-size-11">
                 لطفا درصورت تایید حواله، تاییدیه آن را ظرف 48 ساعت فکس نمایید، در غیر این‌صورت شرکت میکرومدرن
                 هیچ مسئولیتی در قبال مغایرات احتمالی ندارد.
                 مدت زمان مرجوع کالا حداکثر 72 ساعت می‌باشد.کالاهای اختصاصی که جهت مشتری سفارش گذاری و تامین شده باشند، قابلیت مرجوع ندارند(مگر اشکال کیفی که مورد تایید فنی میکرومدرن قرار گیرد).
-            </p>
+            </span>
         </div>
         <div class="col-11 col-md-11">
-            <p class="mb-10 mt-2">
+            <p class="">
                 {{ data.description|default_if_none:"-"|linebreaks }}
             </p>
         </div>
@@ -177,15 +177,15 @@
 
 
 <div class="container" dir="rtl">
-    <div class="row row-cols-2 border border-dark font-size-11">
-        <div class="col mb-10">
-            <span class="mt-2">
+    <div class="row row-cols-2 ark font-size-11">
+        <div class="col my-1">
+            <span class="">
                 صادر کننده:
             </span>
             <span>{{ data.q.creator_user }}</span>
         </div>
-        <div class="col border border-right border-dark">
-            <span class="mt-2">
+        <div class="col my-1">
+            <span class="">
               تحویل گیرنده:
             </span>
             <span class="ms-3">{{ data.q.customer_party_id.title }}</span>

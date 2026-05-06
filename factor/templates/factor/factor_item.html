@@ -330,7 +330,7 @@
     {% endif %}
 
     {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.is_superuser %}
-        <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
+        <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar" id="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
     {% endif %}
 
 
@@ -483,16 +483,16 @@
                         {% endif %}
                     </span>
                     <span class="col-1 text-center px-0">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity comma-seperator" value="{{ factor_item.instance.quantity|default_if_none:0 }}" >
 {#                        {% render_field_by_order factor_item factor_item.quantity %}#}
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" {% if factor_item.instance.pk %} readonly {% endif %}>
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" {% if factor_item.instance.pk %} readonly {% endif %}>
                     </span>
                     <span class="col-2 text-center">
                         <div class="d-flex flex-column">
                             <span class="d-flex">
 {#                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" placeholder="روز به عدد" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
-                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.price|default_if_none:0 }}" >
-                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ factor_item.instance.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center">
+                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ factor_item.instance.price|default_if_none:0 }}" >
+                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ factor_item.instance.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center comma-seperator">
                                 </span>
                             <span class="d-flex gap-1 justify-content-center mt-1">
                                 <span class="row-discount pt-1 text-success"></span>
@@ -609,19 +609,20 @@
                                 </span>
                             </span>
                         {% endif %}
+                    <span class="pt-1 bold font-size-12 diff_price_alert badge badge-danger"></span>
                     </span>
                     <span class="col-1 text-center px-1">
-                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
+                        <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity comma-seperator" value="{% if factor_item.instance.pk is None and update %} 0 {% else %} {{ qi.remaining_quantity_in_factor|default_if_none:0 }} {% endif %} " >
 {#                    {% render_field_by_order factor_item factor_item.quantity %}#}
-                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.reserve_count|default_if_none:qi.quantity }}" >
+                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ factor_item.instance.reserve_count|default_if_none:qi.quantity }}" >
                     </span>
                     <span class="col-2 text-center px-1">
 {#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
                         <div class="d-flex flex-column">
                             <span class="d-flex">
 {#                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-lead_time" placeholder="روز به عدد" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ factor_item.instance.lead_time }}" >#}
-                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0" value="{{ qi.fee|default_if_none:0 }}" >
-                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ qi.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center">
+                                <input type="text" onkeyup="check_price(event); factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-price" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ qi.fee|default_if_none:0 }}" >
+                                <input type="text" onkeyup="factor_calculate_price(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-discount_per_item" value="{{ qi.discount_per_item|default_if_falsy:0 }}" class="LTR-RTL w-100 rounded font-size-11 text-center comma-seperator">
                                 </span>
                             <span class="d-flex gap-1 justify-content-center mt-1">
                                 <span class="row-discount pt-1 text-success"></span>
@@ -837,7 +838,6 @@
 
     setTimeout(function(){
         document.querySelectorAll('input[name*="-goods_code"]').forEach(function (item){
-            debugger
             if (!item.hasAttribute("readonly")){
                 item.addEventListener('keyup', function (e) {
                 e.preventDefault()
@@ -939,7 +939,6 @@
 
     function price_util(net_price, totalDiscount, taxValue, price, qty){
         var p = numberWithCommas(net_price - totalDiscount + taxValue)
-        debugger
         if (p){
             return p
         } else if (p === '') {
@@ -978,12 +977,11 @@ function factor_calculate_price(target, direct_target=null) {
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
-    debugger
 
     // price
     let price = final_price ? parseFloat(final_price.innerHTML.replaceAll(',', '')) : NaN
     if (isNaN(price)) {
-        price = final_price ? final_price.value : 0
+        price = final_price ? final_price.value.replaceAll(',', '') : 0
     }
 
     row_discount_amount = parseFloat(elem.querySelector('input[name$="-discount_per_item"]').value.replaceAll(',', '')) || 0
@@ -1009,7 +1007,6 @@ function factor_calculate_price(target, direct_target=null) {
     }
 
 
-    debugger
     totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
     if (tax){
         const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
@@ -1019,7 +1016,6 @@ function factor_calculate_price(target, direct_target=null) {
     }
     const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
     if (currency_ref == 1){
-        debugger
         net_price_after_tax_discount = parseInt(net_price_after_tax_discount)
         taxValue = parseInt(taxValue)
         totalDiscount = parseInt(totalDiscount)
@@ -1038,7 +1034,6 @@ function factor_calculate_price(target, direct_target=null) {
 
     var items = document.querySelectorAll('[class*="row-total-price"]')
     let m_sum = 0
-    debugger
     for (let i = 0; i < items.length; i++) {
         val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
         if (!isNaN(val)) {
@@ -1048,7 +1043,6 @@ function factor_calculate_price(target, direct_target=null) {
     if (!m_sum) {
         m_sum = 0
     }
-    debugger
     const total_price_field = document.querySelector('#id_total_price')
     const t_prices = document.querySelector('.factor_total_price')
     const additionElm = document.querySelector('#id_addition')
@@ -1191,5 +1185,7 @@ flatpickr("#id_collecting_start_time_1", {
             printWindow.close();
         }, 300);
     }
+
+
 
 </script>

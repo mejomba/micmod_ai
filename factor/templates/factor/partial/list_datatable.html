@@ -26,6 +26,7 @@
 
 {% block content %}
 
+{% if request.user.base_group == 'sales' %}
     <div class="border rounded mb-5 p-3">
         <span>استفاده از فیلتر</span>
         <a href="{% url 'factor:factor.list' %}?q=active" class="btn btn-primary mx-1">در جریان</a>
@@ -35,12 +36,13 @@
         <a href="{% url 'factor:factor.list' %}?q=include_trade" class="btn btn-bordered btn-outline-primary mx-1">خارج</a>
         <a href="{% url 'factor:factor.list' %}?q=all_wh" class="btn btn-bordered btn-outline-success mx-1">موجود در انبار</a>
     </div>
+    {% endif %}
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
     <div class="d-flex align-items-baseline my-3">
-                    {% if request.user.base_group == 'accounting' or request.user|has_group:'factor_direct_access' %}
+                    {% if request.user.base_group == 'accounting' %}
                         <a href="{% url 'factor:factor.list' %}" class="btn btn-sm my-1 ms-3 {% if not request.GET.q %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="فاکتور هایی که نیاز به تایید مالی دارند و هنوز تایید نشده اند">در جریان</a>
                         <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-sm my-1 ms-3 {% if request.GET.q == 'all' %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="تمام فاکتور های ثبت شده در پرتال">همه</a>
                     {% endif %}
@@ -52,7 +54,7 @@
                     {% if request.user|has_group:"wh_admin" %}
                     <div class="border border-success bg-light-success rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="forceFactorBox"></div>
                     {% endif %}
-                <div class="border border-danger bg-light-danger rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="total-price-dt"></div>
+                <div class="border border-danger bg-light-danger rounded  mb-10 text-start sticky-top d-inline-block" id="total-price-dt"></div>
 
 
                     <div class="row">
@@ -123,7 +125,7 @@
                 total += val;
             });
 
-            $('#total-price-dt').text('جمع مبالغ فاکتور ها: ' + total.toLocaleString());
+            {#$('#total-price-dt').text('جمع مبالغ فاکتور ها: ' + total.toLocaleString());#}
         }
 
 

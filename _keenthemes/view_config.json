@@ -99,8 +99,8 @@
             "deadlines": [0],
             "form_constraints": [{
               "group": "sales_user",
-              "hide": ["self_discount","accounting_confirm","final_check", "official_factor_send_with_this_factor","official_factor_for_this_factor", "deliver_to_customer", "packing_json", "wh_user", "checker"],
-              "read": ["checker", "collecting_start_time", "wh_user"]
+              "hide": ["final_check", "official_factor_send_with_this_factor","official_factor_for_this_factor", "deliver_to_customer", "packing_json", "wh_user", "checker"],
+              "read": ["accounting_confirm","checker", "collecting_start_time", "wh_user"]
             }],
             "formset_constraints": [
               {
@@ -115,8 +115,8 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "sales_admin",
-              "hide": ["wh_user", "collecting_start_time","accounting_confirm", "final_check", "official_factor_send_with_this_factor", "official_factor_for_this_factor","checker", "deliver_to_customer","packing_json"],
-              "read": ["checker", "collecting_start_time", "wh_user"]
+              "hide": ["wh_user", "collecting_start_time", "final_check", "official_factor_send_with_this_factor", "official_factor_for_this_factor","checker", "deliver_to_customer","packing_json"],
+              "read": ["checker", "collecting_start_time","accounting_confirm" ,"wh_user"]
             }],
             "formset_constraints": [
               {
@@ -132,18 +132,18 @@
             "form_constraints": [
               {
               "group": "wh_admin",
-              "hide": ["deliver_to_customer","accounting_confirm","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
-              "read": ["official_value", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
               {
               "group": "factor_assign_user",
-              "hide": ["deliver_to_customer","accounting_confirm","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
-              "read": ["official_value", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["official_factor_send_with_this_factor","wh_user", "to_be_collected", "deliver_type","force_factor", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
-              "read": ["is_official","official_value","self_discount", "deliver_method", "official_value", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["self_discount","official_factor_send_with_this_factor","wh_user", "to_be_collected", "deliver_type","force_factor", "require_official_factor_with_delivery", "deliver_to_customer", "final_check"],
+              "read": ["is_official","official_value", "deliver_method", "official_value", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             },
             {
               "group": "sales_user",
@@ -174,13 +174,18 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "factor_collector",
-              "hide": ["force_factor", "deliver_to_customer","accounting_confirm","official_factor_send_with_this_factor", "official_factor_for_this_factor","collecting_end_time", "self_discount"],
-              "read": ["is_official","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+              "hide": ["force_factor", "deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","collecting_end_time", "self_discount"],
+              "read": ["accounting_confirm","is_official","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+            },
+            {
+              "group": "wh_admin",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["force_factor","packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time"],
-              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["self_discount","force_factor","packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time"],
+              "read": ["is_official","official_value", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],
             "formset_constraints": [
@@ -202,13 +207,18 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "factor_final_check",
-              "hide": ["deliver_to_customer","accounting_confirm","official_factor_send_with_this_factor","collecting_end_time" ,"self_discount", "force_factor"],
-              "read": ["is_official","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time" ,"self_discount", "force_factor"],
+              "read": ["is_official","accounting_confirm","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+            },
+            {
+              "group": "wh_admin",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
-              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["self_discount","packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
+              "read": ["is_official","official_value", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],
             "formset_constraints": [
@@ -230,13 +240,18 @@
             "deadlines": [1],
             "form_constraints": [{
               "group": "factor_send_or_delivery",
-              "hide": ["collecting_end_time", "self_discount", "force_factor","accounting_confirm"],
-              "read": ["is_official","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "to_be_collected", "collecting_start_time"]
+              "hide": ["collecting_end_time", "self_discount", "force_factor"],
+              "read": ["is_official","official_value","accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "to_be_collected", "collecting_start_time"]
+            },
+            {
+              "group": "wh_admin",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
-              "read": ["is_official","official_value","self_discount", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
+              "hide": ["self_discount","packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
+              "read": ["is_official","official_value", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],
             "formset_constraints": [
@@ -259,11 +274,16 @@
             "form_constraints": [{
               "group": "factor_delivery_approve",
               "hide": ["packing_json", "collecting_end_time", "self_discount", "force_factor"],
-              "read": ["is_official","official_value", "need_factor_document", "deliver_type"]
+              "read": ["accounting_confirm","is_official","official_value", "need_factor_document", "deliver_type"]
+            },
+            {
+              "group": "wh_admin",
+              "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor", "is_official"],
+              "read": ["official_value","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
-              "hide": ["packing_json", "self_discount","official_factor_send_with_this_factor", "wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
+              "hide": ["self_discount","packing_json", "official_factor_send_with_this_factor","wh_user", "to_be_collected", "require_official_factor_with_delivery", "deliver_to_customer", "final_check", "collecting_end_time", "force_factor"],
               "read": ["is_official","official_value", "deliver_type" ,"deliver_method", "official_value", "is_official", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time"]
             }
             ],

@@ -39,12 +39,12 @@
         {% endif %}
         {% if flow_state_index %}
             {% if wf_access2 %}
-                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار"/>
+                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار" id="submit_back" />
             {% else %}
-                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" {% if not allow_back %} disabled {% endif %} name="back" value="عودت کار"/>
+                <input type="submit" class="btn btn-outline-danger btn-bordered me-1" {% if not allow_back %} disabled {% endif %} name="back" value="عودت کار" id="submit_back" />
             {% endif %}
         {% elif flow_state_index and finish and not wf_last_step_is_open %}
-            <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار"/>
+            <input type="submit" class="btn btn-outline-danger btn-bordered me-1" disabled value="عودت کار" id="submit_back" />
         {% endif %}
         {% if duplicate %}
             <button type="submit" name="duplicate" class="" style="border: none; background-color: inherit">
@@ -72,7 +72,7 @@
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ذخیره" id="submit_save"/>
         {% endif %}
         {% if flow_state_index %}
-            <input type="button" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار"/>
+            <input type="button" class="btn btn-outline-danger btn-bordered me-1" disabled name="back" value="عودت کار" id="submit_back" />
         {% endif %}
     {% endif %}
 
@@ -91,8 +91,9 @@
 
 
 </div>
-    <div class="text-center bg-light-primary rounded p-8 d-none w-75 bold" style="position: fixed; top: 40px;" id="id_pleas_wait"></div>
 {% endif %}
+
+<div class="text-center bg-info rounded p-8 d-none w-25 bold mx-auto text-white" style="position: fixed; top: 45%; right: 40%; z-index: 2147483640!important;" id="id_pleas_wait"></div>
 <span class="footer-toggle">&#10148;</span>
 {#{% endif %}#}
 <style>
@@ -101,17 +102,3 @@
         padding: 0rem;
 }
 </style>
-
-<script>
-    const global_action_btn = document.querySelector('#global-action-button')
-    const pleas_wait = document.querySelector('#id_pleas_wait')
-
-
-    const draft_btn = document.querySelector('#submit_draft')
-    draft_btn && draft_btn.addEventListener('click', function (){
-        debugger
-        global_action_btn.classList.add('d-none')
-        pleas_wait.classList.remove('d-none')
-        pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    })
-</script>

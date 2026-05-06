@@ -8,10 +8,11 @@ String.prototype.reverse_string=function() {return this.split("").reverse().join
 window.addEventListener('load', (event) => {
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
+        debugger
         if (item.tagName === 'INPUT'){
-            item.value = commaSeperator(item.value.toString().reverse_string()).reverse_string()
+            item.value = commaSeperator(item.value)
         } else {
-            item.innerText = commaSeperator(item.innerText.toString().reverse_string()).reverse_string()
+            item.innerText = commaSeperator(item.innerText)
         }
     })
     // get form template and total number of forms from management form

@@ -881,7 +881,7 @@ function display_price(row){
                 </div>`)
             }
         })
-        debugger
+
         checkPrice(row)
         final_price.addEventListener('keyup', () => checkPrice(row));
 
@@ -1324,7 +1324,6 @@ function findAncestor(el, cls) {
 }
 
 function round_rial(x){
-    debugger
     const currency = parseInt(document.getElementById('id_currency_ref').value)
     if (currency != 1){
         return x
@@ -1401,7 +1400,7 @@ function calculate_price(target) {
     if (isNaN(qty)) {
         qty = quantity.value.replaceAll(',', '')
     }
-debugger
+
     // price
     let price = parseFloat(final_price.innerHTML.replaceAll(',', ''))
     if (isNaN(price)) {
@@ -1731,7 +1730,6 @@ function toggle_submit_buttons(status){
 
 
 function checkPrice(row=null) {
-    debugger;
     let prices = []
     const diff_price_alert = row.querySelector('.diff_price_alert')
     const final_price = row.querySelector('input[name*="-final_price"]')

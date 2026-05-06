@@ -64,6 +64,7 @@ class FactorView(LoginRequiredMixin, BaseView):
     formset_model = FactorItem
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
+    wf_last_step_is_open = True
 
     allow_perms = [f'{model._meta.app_label}.view_{model._meta.model_name}',
                 f'{model._meta.app_label}.add_{model._meta.model_name}',
