@@ -654,37 +654,43 @@ class PriceInquiryResult(BaseModel):
             .values_list(
                 'quotation__pk',
                 'quotation__creator_user',
-                'index'
+
             )
             .distinct()
         )
 
 
         for item in qs:
-            user = item.quotation.creator_user
-            quotation_number = item.quotation.pk
+            user = item[1]
+            quotation_number = item[0]
+            body = f"""
+            برای کالای {self.sku} در پیش فاکتور 
+            <a href="/micmod_base/quotation/view/{quotation_number}" class="fw-bold text-primary" target="_blank">
+                {quotation_number}
+            </a>
+            قیمت کمتری ثبت شده است.
+            """
 
             work = Work.objects.create(
-                from_user=None,
+                from_user=self.extra_data.request.user,
                 title="کاهش قیمت",
-                body=f"برای پیش‌فاکتور {quotation_number} قیمت پایین‌تر ثبت شد",
+                body=body,
                 address=f"/quotation/{quotation_number}",
             )
 
             work.to_users.set([user])
+
     def save(self, *args, **kwargs):
         # deactivate other PriceInquiryFile
+        self.cheaper_price()
         if self.price_inquiry_file and self.active:
             self.deactivate_other()
         elif self.active:
-            print(self.sku)
             self.deactivate_other()
-        print('=== save inquiry result === ')
+
         if self.price_inquiry_file:
-            print('=== IF: ', self.sku, self.price_inquiry_file.item)
             self.sku = self.price_inquiry_file.item
         elif not self.sku:
-            print('=== else: ', self.sku)
             raise ValueError('فیلد اجباری')
 
         super().save(*args, **kwargs)
