@@ -7,11 +7,11 @@ from django.contrib import messages
 from django.db.models import F, Sum, FloatField
 
 from accounts.models import User
-from core.models import BaseModel, BaseManager, BaseModeWF
+from core.models import BaseModel, BaseManager, BaseModeWF, BaseModel2
 from extra_data.models import Item, CustomerAddress
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
-from order.models import Order, OrderOrder
+from order.models import Order, OrderOrder, OrderBazar, WhReserve
 from tools import const
 from tools.utils import show_error, round_rial
 
@@ -604,6 +604,34 @@ class FactorOrder(BaseModeWF):
     fi = models.ForeignKey(FactorItem, on_delete=models.DO_NOTHING, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=True, blank=True)
     quantity = models.FloatField(_('quantity'), default=0)
+
+
+class FactorItemSupplyLocation(BaseModel2):
+    fi = models.ForeignKey(FactorItem, on_delete=models.DO_NOTHING, null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='order_fis')
+    order_bazar = models.ForeignKey(OrderBazar, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='order_bazar_fis')
+    wh_reserve = models.ForeignKey(WhReserve, on_delete=models.DO_NOTHING, null=True, blank=True, related_name='wh_reserve_fis')
+    quantity = models.FloatField(_('quantity'))
+    wh_receipt_quantity = models.FloatField(null=True, blank=True)  # اگر یک سفارش به چند فاکتور آیتم وصل باشد ممکن است چون بخشی از سفارش در انبار رسید شده همه ردیف فاکتور ها تامین نشوند. ما بر اساس این فیلد متوجه میشویم که چه تعدادی تامین شده
+    wh_code = models.PositiveIntegerField(null=True, blank=True)  # همه محل تامین هایی یک ردیف فاکتور در هنگام ارسال به سپیدار باید کد انبار داشته باشند و همه یک کد باشن
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['fi', 'order'],
+                name='unique_fi_order'
+            ),
+
+            models.UniqueConstraint(
+                fields=['fi', 'order_bazar'],
+                name='unique_fi_order_bazar'
+            ),
+
+            models.UniqueConstraint(
+                fields=['fi', 'wh_reserve'],
+                name='unique_fi_wh_reserve'
+            ),
+        ]
 
 
 class Delivery(BaseModeWF):

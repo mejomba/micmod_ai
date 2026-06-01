@@ -13,10 +13,15 @@ urlpatterns = [
     path('', include(router.urls)),
     path('view/', views.FactorView.as_view(), name='factor.view'),
     path('view/<int:pk>/', views.FactorView.as_view(), name='factor.view'),
+
+    path('view/safe/', views.SafeFactorView.as_view(), name='safe.factor.view'),
+    path('view/safe/<int:pk>/', views.SafeFactorView.as_view(), name='safe.factor.view'),
+
     path('direct/', views.DirectFactorView.as_view(), name='factor.direct'),
     path('list/', views.FactorsList.as_view(), name='factor.list'),
     path('search/', views.search_factor_view, name='factor.search'),
     path('ajax/get_quotation_items_for_factor/<int:pk>/', views.get_quotation_items_for_factor, name='factor.get_quotation_items_for_factor'),
+    path('ajax/get_quotation_items_for_factor/<int:pk>/safe/', views.safe_get_quotation_items_for_factor, name='safe.factor.get_quotation_items_for_factor'),
     path('factor/list/datatable/', views.FactorListDatatable.as_view(), name='factor.list.datatable'),
     path('factor/print/<int:id>/', views.print_view, name='factor.print'),
     path('delivery/', views.DeliveryList.as_view(), name='delivery.view'),
