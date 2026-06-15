@@ -33,6 +33,11 @@ class Contract(BaseModeWF):
     def contract_title(self):
         return f'PCBA_{self.pk}'
 
+    @property
+    def contract_cost(self):
+        total = (self.customer_total_board_count * self.pad_count * self.pad_cost) + self.first_setup_cost
+        return total
+
 
 class CustomerItemReceipt(BaseModeWF):
     INCOMPLETE = '1'
