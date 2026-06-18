@@ -29,4 +29,5 @@ urlpatterns = [
     path('ajax/empty_checker/', views.empty_checker, name='empty_checker'),
     path('ajax/factor_today_total_price/', views.factor_today_total_price, name='factor_today_total_price'),
     # path('ajax/factor_and_sepidar/', FactorAndSepidar.as_view(), name='factor_and_sepidar'),
+    path('ajax/factor_today_total_price/', views.factor_today_total_price, name='factor_today_total_price'),
 ]

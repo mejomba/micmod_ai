@@ -105,7 +105,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                       widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
-                                                                 'size': '10'}), required=True if request and request.user.base_group == 'wh' else False
+                                                                 'size': '10'}), required=True if request and request.user.base_group == 'wh_admin' else False
                                                       )
         self.fields['collecting_end_time'] = forms.DateTimeField(required=False)
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
@@ -164,6 +164,8 @@ class FactorItemModelForm(CustomBaseModelForm):
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
             if request and not request.user.is_superuser and form_constraint:
+                if self.form_state + 1 == len(form_constraint):
+                    self.form_state -= 1
                 for item in form_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = form_constraint[self.form_state]
@@ -171,6 +173,8 @@ class FactorItemModelForm(CustomBaseModelForm):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if request and not request.user.is_superuser and formset_constraint:
+                if self.form_state + 1 == len(form_constraint):
+                    self.form_state -= 1
                 for item in formset_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = formset_constraint[self.form_state]

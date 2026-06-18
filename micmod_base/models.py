@@ -624,6 +624,99 @@ class QuotationItem(BaseModel):
     objects = QuotationItemManager()
 
     @property
+    def enter_to_inquiry_state(self):
+        qry = f'''
+            	WITH q_workflow AS (
+          SELECT 
+          id as id,
+              id as workflow_id,
+              object_id,
+              current_state_name as state,
+              created_date as start_date,
+              LEAD(created_date) OVER (PARTITION BY object_id ORDER BY created_date) AS end_date
+          FROM workflow_workflow
+          WHERE content_type_id = 10
+    )
+    ,first_inquiry_date AS (
+        SELECT 
+               object_id, 
+               min(start_date) AS first_inquiry_date
+        FROM q_workflow 
+        WHERE state = N'استعلام قیمت'
+        GROUP BY object_id
+    )
+    ,quotation_inquiry as (
+    SELECT 
+    	qi.id as id,
+      qi.id as quotation_item_ref,
+      q.id as quotation_ref,
+      trade_price_code_id as inquiry_result_ref,
+      case when qi.created_date > f.first_inquiry_date then qi.created_date else f.first_inquiry_date end as need_inquiry_date,
+      goods_code as sku,
+      case when assigned_trade_user_id is not null or assigned_trade_user2_id is not null then 1 else 0 end as is_assigned,
+      COALESCE(
+          LEAST(assigned_trade_user_date, assigned_trade_user_date2),
+          assigned_trade_user_date,
+          assigned_trade_user_date2
+      ) AS assigned_date,
+      case when task_start=TRUE is not null or task_start2=TRUE is not null then 1 else 0 end as is_started,
+      COALESCE(
+          LEAST(task_start_date, task_start_date2),
+          task_start_date,
+          task_start_date2
+      ) AS start_date,
+      foreign_price_inquiry_done_date as done_date,
+      N'خارجی' as inquiry_type
+    FROM micmod_base_quotationitem as qi 
+    left join first_inquiry_date as f on f.object_id = qi.quotation_id
+    left join micmod_base_quotation as q on q.id=qi.quotation_id
+    WHERE  need_foreign_price_inquiry=TRUE and q.is_deleted=FALSE and qi.is_deleted=FALSE
+
+    union 
+
+
+    SELECT 
+        qi.id as id,
+      qi.id as quotation_item_ref,
+      q.id as quotation_ref,
+      bazar_price_code_id as inquiry_result_ref,
+      case when qi.created_date > f.first_inquiry_date then qi.created_date else f.first_inquiry_date end as need_inquiry_date,
+      goods_code as sku,
+      null as is_assigned,
+      null as assigned_date,
+      null as is_started,
+      null as start_date,
+      local_price_inquiry_done_date as done_date,
+      N'داخلی' as inquiry_type
+    FROM micmod_base_quotationitem as qi
+    left join first_inquiry_date as f on f.object_id = qi.quotation_id
+    left join micmod_base_quotation as q on q.id=qi.quotation_id
+    WHERE need_local_price_inquiry=TRUE and q.is_deleted=FALSE and qi.is_deleted=FALSE
+    )
+
+    SELECT 
+    	   id,
+    	   quotation_item_ref, 
+           quotation_ref,  
+           inquiry_result_ref, 
+           need_inquiry_date, 
+           sku, is_assigned, 
+           assigned_date::date, 
+           is_started, 
+           start_date::date,  
+           done_date::date, inquiry_type,
+           round(EXTRACT(EPOCH FROM ( assigned_date - need_inquiry_date)) / 3600 )AS assign_delay_hour,
+           round(EXTRACT(EPOCH FROM ( start_date - need_inquiry_date)) / 3600) AS start_delay_hour,
+           round(EXTRACT(EPOCH FROM ( COALESCE(done_date, NOW()) - need_inquiry_date)) / 3600) AS total_delay_hour
+    FROM quotation_inquiry where quotation_item_ref={self.pk}
+    '''
+        data = self.__class__.objects.raw(qry)
+        try:
+            return data[0].need_inquiry_date
+        except Exception as e:
+            return '-'
+
+    @property
     def price_json_for_template(self):
         out = self.price_json
         all_match_express = any(item['type'] == 'express' for item in self.price_json)

@@ -76,11 +76,14 @@
 
                 <div class="bg-white row rounded mt-10 mx-5 px-5 py-20 pt-10 border" style="width: 97%;">
                     <div class="row align-items-center mb-7 bold">
-                        <div class="col-2"><span class="ms-10">تعداد|تعداد در پیش‌ها </span></div>
+                        <div class="col-2 justify-content-around">
+                            <span class="ms-10">تعداد </span>
+                            <span class="ms-10">تعداد در پیش‌ها </span>
+                        </div>
                         <div class="col-3">کالا</div>
                         <div class="col-2">پارت نامبر مشتری</div>
                         <div class="col-2">کد کالای مشتری</div>
-                        <div class="col-2 ms-10">توضیحات مشتری</div>
+                        <div class="col-3">توضیحات مشتری</div>
                     </div>
                     {% for item in obj.items.all %}
                         <input type="hidden" name="total_rows" value="{{ obj.items.count }}">
@@ -106,22 +109,22 @@
 {#                                <div class="rounded bg-light-primary" name="id_item-{{ forloop.counter0}}">{{ item.product_id|default_if_none:"-" }}</div>#}
                                 {% get_item item.product_id as sku %}
                                 {% if sku %}
-                                	<div name="{{ forloop.counter0}}" class="rounded  ms-3 mt-3 px-3 " style="width: 100px; height: 27px;">{{ sku }}</div>
+                                	<div name="{{ forloop.counter0}}" class="rounded  mt-3 px-2 " style=" height: 27px;"><span class="bg-light-primary px-1 rounded">{{ sku }}</span> {{ sku.part_number }}</div>
                                 {% else %}
                                     <div class="d-flex">
-                                    <div name="{{ forloop.counter0}}" class="rounded ms-3 mt-3 px-3 " style="width: 100px; height: 27px;">{{ item.product_id }}</div>
+                                    <div name="{{ forloop.counter0}}" class="rounded mt-3 px-3 " style="width: 100px; height: 27px;">{{ item.product_id }}</div>
                                     <div id="id_item-{{ forloop.counter0 }}_select2"></div>
 {#                                    <span name="item_placeholder-{{ forloop.counter0 }}" class="d-none">{{ item.product_id.sku }}</span>#}
                                 </div>
                                 {% endif %}
                             </div>
                             <div class="col-2 mb-3">
-                                <div class="rounded" name="customer_sku-{{ forloop.counter0}}">{{ item.customer_sku }}</div>
-                            </div>
-                            <div class="col-2 mb-3">
                                 <div class="rounded" name="customer_part_number-{{ forloop.counter0}}">{{ item.customer_part_number|default_if_none:"-" }}</div>
                             </div>
-                            <div class="col-2 mb-3 ms-10">
+                            <div class="col-2 mb-2">
+                                <div class="rounded" name="customer_sku-{{ forloop.counter0}}">{{ item.customer_sku }}</div>
+                            </div>
+                            <div class="col-3 mb-3">
                                 <div class="rounded" name="customer_description-{{ forloop.counter0}}">{{ item.customer_description|default_if_falsy:"-" }}</div>
                             </div>
 

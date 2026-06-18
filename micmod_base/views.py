@@ -336,7 +336,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     'Rate': self.object.sale_type.currency.current_rate() or 1,
                     'ExpirationDate': str(self.object.expiration_date),
                     'CustomerRef': self.object.customer_party_id.sepidar_party_id,  # 11
-                    'SaleTypeRef': self.object.sale_type.pk,
+                    'SaleTypeRef': self.object.sale_type.sepidar_id or self.object.sale_type.pk,
                   #  'AddressRef': '1',  # optional
                     'DiscountOnCustomer': 0,
                     'Price': self.object.price or 1,

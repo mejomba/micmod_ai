@@ -48,6 +48,9 @@
                                     {% get_comment_user_list form_s request.user comment_type='trade_inquiry' %}
                                 {{ form_s.repeated_goods_code_count|safe }}
                                     <div class="mt-14">
+                                        <span class="position-absolute" data-bs-toggle="tooltip" data-bs-placement="top" style="bottom: 0; right: 100px" aria-label="زمان ورود به استعلام" data-bs-original-title="زمان ورود به استعلام" data-original-title="" title="" data-kt-initialized="1">
+                                            {{ form_s.instance.enter_to_inquiry_state }}
+                                        </span>
                                         <!-- Progress bar 1 -->
                                         <div class="progress-circle mx-auto position-absolute" data-value='20' style="bottom: 3px; right: 3px;">
                                           <span class="progress-left">

@@ -188,7 +188,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
     show_date_filters = True
     show_column_filters = True
     title = 'sku_list'
-    length_menu = [[25, 50, 100, -1], [25, 50, 100, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[25, 50, 100, 500], [25, 50, 100, 500]]
     search_values_separator = '+'
     not_search_values_separator = '|'
     render_row_details_template_name = 'inquiry_detail_on_item_list.html'
@@ -376,6 +376,8 @@ class SkuListDataTableView(CustomAjaxDataTable):
         free_qty_str = ''
         reserve_detail_btn = ''
         for code_name, sepidar_quantity in stocks.items():
+            if sepidar_quantity == 0:
+                continue
             code, name = code_name.split('__')
 
             portal_reserve = obj.reserved_count_in_portal(code)
@@ -606,7 +608,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
     initial_order = [["price_update_date", "des"], ]
-    length_menu = [[15, 25, 50, -1], [15, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[15, 25, 50, 100], [15, 25, 50, 100]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
@@ -770,6 +772,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
     sku_or_partnumber_filter = Q(sku=sku) | Q(part_number=sku)
     item_sku = Item.objects.filter(sku_or_partnumber_filter).first()
+    real_item_sku = item_sku
     parent = item_sku.parent
     if parent:
         item_sku = parent
@@ -832,6 +835,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     if request.GET:
         html = render_to_string('inquiry/partial/partial_inquiry_result_for_sales.html', {'form': form,
                                                                                           "sku": item_sku,
+                                                                                          "real_sku": real_item_sku,
                                                                                           'item': item,
                                                                                           'trade_price': price,
                                                                                           'bazar_price': bazar_price,

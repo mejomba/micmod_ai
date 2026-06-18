@@ -587,7 +587,7 @@ def zip_(a, b):
 def merge_dict_common_key(x, y):
     merged = []
     try:
-        for key in x.keys() & y.keys():
+        for key in sorted(x.keys() & y.keys()):
             merged.append({
                 'key': key,
                 'dict1': x[key],
