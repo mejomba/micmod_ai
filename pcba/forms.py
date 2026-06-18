@@ -181,6 +181,14 @@ class ProductionDayActivitiesForm(CustomBaseModelForm):
             'contract': ProjectItemListFormContractWidget,
             'goods_code_fk': ProjectItemListFormGoodsCodeWidget,
             'customer_party_id': ProductionDayActivitiesFormCustomerWidget,
+            'start_time': forms.TimeInput(
+                attrs={'type': 'time'},
+                format='%H:%M'
+            ),
+            'end_time': forms.TimeInput(
+                attrs={'type': 'time'},
+                format='%H:%M'
+            )
         }
 
     def __init__(self, *args, **kwargs):
