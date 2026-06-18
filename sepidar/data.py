@@ -166,7 +166,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
 
         currency_amount = CurrencyAmount.objects.filter(currency=currency).order_by('id').last()
         try:
-            rate = float(currency_amount.open_rate) or 1
+            rate = float(obj.currency_amount) if obj.currency_amount else float(currency_amount.open_rate) or 1
         except Exception:
             rate = 1
 

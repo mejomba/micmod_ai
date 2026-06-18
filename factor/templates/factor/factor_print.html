@@ -3,7 +3,6 @@
 {% load static %}
 {% load more_tags %}
 
-{#<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">#}
 <link href="/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css">
 <link href="/assets/plugins/global/plugins.bundle.rtl.css" rel="stylesheet" type="text/css">
@@ -33,7 +32,7 @@
 
 <div class="container" dir="rtl">
     <div>
-        <a href="javascript:window.print()" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
+        <a href="#" class="noprint button btn btn-primary btn-bordered mb-5 mt-5" id="id_print_btn">پرینت</a>
     </div>
     <div>
     {% if request.user.base_group == 'wh' %}
@@ -55,8 +54,8 @@
                     | S{{ data.sepidar_number }}
                 {% endif %}
             </span><br>
-            <span data-key="date">تاریخ: </span><span dir="rtl" >{{ data.q.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span><br>
-            <span data-key="validity_date">تاریخ اعتبار: </span><span dir="rtl">{{ data.q.expiration_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span>
+            <span data-key="date">تاریخ: </span>
+            <span dir="rtl" id="print-date">{{ data.q.request_date|to_jalali:'%y-%m-%d'|default_if_none:"-" }}</span><br>
         </div>
     </div>
     <div class="row border border-dark" style="background-color: #f7fafc">
@@ -70,22 +69,21 @@
 
 <div class="container border border-dark" dir="rtl">
     <div class="row">
-
         <div class="col">
             <span data-key="seller_name">نام فروشنده : </span><span class="ms-5">
-            {% if data.q.is_official  %}
+            {% if data.q.is_official %}
                 رهاورد تجارت آینده
             {% else %}
-            میکرومدرن
-        {% endif %}
-        </span>
+                میکرومدرن
+            {% endif %}
+            </span>
             <p data-key="national_id">شناسه ملی: </p>
             <p data-key="address">نشانی: </p>
         </div>
         <div class="col">
             <span data-key="economical_number">شماره اقتصادی:</span>
             <span class="ms-5">
-            {% if data.q.is_official  %}
+            {% if data.q.is_official %}
                 411563971988
             {% endif %}
             </span>
@@ -113,40 +111,38 @@
     <div class="row">
         <div class="col-5">
             <div class="d-flex gap-3">
-                <div class="">
+                <div>
                     <p data-key="buyer_name">نام خریدار : </p>
                     <p data-key="address">نشانی: </p>
                 </div>
-                <div class="">
-                    <p class="">{{ data.q.customer_party_id.title|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.address|default_if_none:"-" }}</p>
+                <div>
+                    <p>{{ data.q.customer_party_id.title|default_if_none:"-" }}</p>
+                    <p>{{ data.q.customer_party_id.address|default_if_none:"-" }}</p>
                 </div>
             </div>
         </div>
         <div class="col-3">
             <div class="d-flex gap-3">
-                <div class="">
+                <div>
                     <p data-key="economical_number">شماره اقتصادی:</p>
                     <p data-key="phone">تلفن:</p>
                 </div>
-                <div class="">
-                    <p class="">{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
-                    <p class="">{{ data.q.customer_party_id.phone|default_if_none:"-" }}</p>
+                <div>
+                    <p>{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
+                    <p>{{ data.q.customer_party_id.phone|default_if_none:"-" }}</p>
                 </div>
             </div>
         </div>
         <div class="col-4">
-        <div class="d-flex gap-3">
-        <div class="">
-            <p data-key="national_number">شماره ثبت/شماره ملی : </p>
-            <p data-key="postal_code">کد پستی: </p>
-
-        </div>
-        <div class="">
-            <p data-key="national_number">{{ data.q.customer_party_id.national_code|default_if_none:"-" }} </p>
-            <p data-key="postal_code">-</p>
-
-        </div>
+            <div class="d-flex gap-3">
+                <div>
+                    <p data-key="national_number">شماره ثبت/شماره ملی : </p>
+                    <p data-key="postal_code">کد پستی: </p>
+                </div>
+                <div>
+                    <p>{{ data.q.customer_party_id.national_code|default_if_none:"-" }}</p>
+                    <p>-</p>
+                </div>
             </div>
         </div>
     </div>
@@ -169,9 +165,8 @@
             <tr>
                 <th scope="col">ردیف</th>
                 <th scope="col">کد کالا</th>
-                <th scope="col" >شرح کالا/ خدمت</th>
+                <th scope="col">شرح کالا/ خدمت</th>
                 <th scope="col">تعداد/ مقدار</th>
-{#                <th scope="col">واحد</th>#}
                 {% if not request.user.base_group == 'wh' %}
                     <th scope="col">مبلغ واحد</th>
                     <th scope="col">مبلغ کل</th>
@@ -192,6 +187,7 @@
         </table>
     </div>
 </div>
+
 {% if not request.user.base_group == 'wh' %}
 <div class="container" dir="rtl">
     <div class="row row-cols-3">
@@ -206,17 +202,16 @@
                     <p class="border-bottom border-dark my-1 ps-1">اضافات</p>
                     <p class="border-bottom border-dark my-1 ps-1">تخفیف</p>
                     <p class="border-bottom border-dark my-1 ps-1">مالیات و عوارض</p>
-                    <p class=" my-1 ps-1">مبلغ پرداختی</p>
-
+                    <p class="my-1 ps-1">مبلغ پرداختی</p>
                 </div>
                 <div class="col m-0 p-0 text-center">
-                {% with data.payment as payment %}
-                    <p class="border-bottom border-dark my-1" >{{ payment.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    {% with data.payment as payment %}
+                    <p class="border-bottom border-dark my-1">{{ payment.0|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.1|floatformat:'-2g'|default_if_none:0 }}</p>
                     <p class="border-bottom border-dark my-1">{{ payment.2|floatformat:'-2g'|default_if_none:0 }}</p>
-                    <p class="border-bottom border-dark my-1" >{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
-                    <p class=" my-1" >{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
-                {% endwith %}
+                    <p class="border-bottom border-dark my-1">{{ payment.3|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    <p class="my-1">{{ payment.4|floatformat:'-2g'|default_if_none:0|intcomma }}</p>
+                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -225,13 +220,12 @@
 
 <div class="container" dir="rtl">
     <div class="row row-cols-2">
-
         <div class="col mt-6" style="border: 2px solid black;">
             <div class="row row-cols-3">
                 <div class="col">شرایط و نحوه ی سفارش</div>
                 <div class="col d-flex">
                     <div class="d-flex">
-                        <p class="px-3 mt-1"> نقدی</p>
+                        <p class="px-3 mt-1">نقدی</p>
                         <div class="border border-dark mt-1" style="width: 20px; height: 20px;"></div>
                     </div>
                 </div>
@@ -240,166 +234,121 @@
                         <p class="px-3 mt-1">غیر نقدی</p>
                         <div class="border border-dark mt-1" style="width: 20px; height: 20px;"></div>
                     </div>
-{#                    <div class="form-check">#}
-{#                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" checked>#}
-{#                        <label class="form-check-label" for="flexCheckDefault" >#}
-{#                            نقدی#}
-{#                        </label>#}
-{#                    </div>#}
-{#                    <div class="form-check">#}
-{#                        <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked">#}
-{#                        <label class="form-check-label" for="flexCheckChecked">#}
-{#                            غیر نقدی#}
-{#                        </label>#}
-{#                    </div>#}
                 </div>
             </div>
         </div>
         <div class="col"></div>
-
     </div>
 </div>
+
 <div class="container" dir="rtl">
     <div class="row row-cols-2 border border-dark">
         <div class="col-1 col-md-1 mt-2">
-            <p>
-                توضیحات:
-            </p>
+            <p>توضیحات:</p>
         </div>
         <div class="col-11 col-md-11">
-            <p class="mb-10 mt-2">
-                {{ data.description|default_if_none:"-"|linebreaks }}
-            </p>
+            <p class="mb-10 mt-2">{{ data.description|default_if_none:"-"|linebreaks }}</p>
         </div>
     </div>
-
 </div>
-
 
 <div class="container" dir="rtl">
     <div class="row row-cols-2 border border-dark">
         <div class="col mb-10">
-            <p class="mt-2">
-                مهر و امضاء فروشنده
-            </p>
+            <p class="mt-2">مهر و امضاء فروشنده</p>
         </div>
         <div class="col border border-right border-dark">
-            <p class="mt-2">
-              مهر و امضاء خریدار
-            </p>
+            <p class="mt-2">مهر و امضاء خریدار</p>
         </div>
     </div>
 </div>
-<br>
-<br>
-<br>
-<br>
-<div id="result-container">
-            </div>
+<br><br><br><br>
+<div id="result-container"></div>
 {% endif %}
-{% block extra_js %}
-    <script src="{% static 'js/base.js' %}"></script>
 
-    <div id="result-container" style="display:none;"></div>
+{% block extra_js %}
+<script src="{% static 'js/base.js' %}"></script>
+<div id="result-container" style="display:none;"></div>
 
 <script>
-document.getElementById('calculate-button').addEventListener('click', function() {
-    debugger
-    const rows = document.querySelectorAll('[id^="id_goods_code-"]'); // همه ردیف‌ها
+/* ── تبدیل میلادی به جلالی ── */
+function gregorianToJalali(gy, gm, gd) {
+    var g_days_in_month = [31,28,31,30,31,30,31,31,30,31,30,31];
+    var j_days_in_month = [31,31,31,31,31,31,30,30,30,30,30,29];
+    gy -= 1600; gm -= 1; gd -= 1;
+    var g_d_no = 365*gy + Math.floor((gy+3)/4) - Math.floor((gy+99)/100) + Math.floor((gy+399)/400);
+    for (var i = 0; i < gm; i++) g_d_no += g_days_in_month[i];
+    if (gm > 1 && ((gy%4===0 && gy%100!==0) || (gy%400===0))) g_d_no++;
+    g_d_no += gd;
+    var j_d_no = g_d_no - 79;
+    var j_np = Math.floor(j_d_no / 12053); j_d_no %= 12053;
+    var jy = 979 + 33*j_np + 4*Math.floor(j_d_no / 1461);
+    j_d_no %= 1461;
+    if (j_d_no >= 366) { jy += Math.floor((j_d_no-1)/365); j_d_no = (j_d_no-1) % 365; }
+    for (i = 0; i < 11 && j_d_no >= j_days_in_month[i]; i++) j_d_no -= j_days_in_month[i];
+    return [jy, i+1, j_d_no+1];
+}
 
-    // ✅ متغیر برای جمع کردن همه خروجی‌ها
-    let allHTML = '';
+/* ── دکمه پرینت: تاریخ امروز رو ست کن، بعد پرینت بگیر ── */
+document.getElementById('id_print_btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    var today  = new Date();
+    var jDate  = gregorianToJalali(today.getFullYear(), today.getMonth()+1, today.getDate());
+    var dateStr = jDate[0] + '-'
+                + String(jDate[1]).padStart(2, '0') + '-'
+                + String(jDate[2]).padStart(2, '0');
+    document.getElementById('print-date').textContent = dateStr;
+    window.print();
+});
 
-    rows.forEach(rowEl => {
-        const rowId = rowEl.id.replace('id_goods_code-', '');
+/* ── دکمه پرینت لیبل کالا ── */
+document.getElementById('calculate-button') && document.getElementById('calculate-button').addEventListener('click', function () {
+    var rows = document.querySelectorAll('[id^="id_goods_code-"]');
+    var allHTML = '';
 
-        const productCode = document.getElementById(`id_goods_code-${rowId}`)?.innerText?.trim() || '-';
-        const totalQuantityStr = document.getElementById(`id_quantity-${rowId}`)?.innerText?.trim() || '0';
-        const qtyPerPackageStr = document.getElementById(`id_batch_count-${rowId}`)?.innerText?.trim() || '0';
+    rows.forEach(function (rowEl) {
+        var rowId          = rowEl.id.replace('id_goods_code-', '');
+        var productCode    = document.getElementById('id_goods_code-' + rowId)?.innerText?.trim() || '-';
+        var totalQuantity  = parseInt(document.getElementById('id_quantity-'    + rowId)?.innerText?.trim() || '0', 10);
+        var qtyPerPackage  = parseInt(document.getElementById('id_batch_count-' + rowId)?.innerText?.trim() || '0', 10);
 
-        const totalQuantity = parseInt(totalQuantityStr, 10);
-        const qtyPerPackage = parseInt(qtyPerPackageStr, 10);
-
-        // بررسی صحت مقادیر
         if (isNaN(totalQuantity) || isNaN(qtyPerPackage) || totalQuantity <= 0) return;
 
-        let finalQtyPerPackage = qtyPerPackage;
-        let specialCaseMessage = '';
+        var finalQty = qtyPerPackage || totalQuantity;
+        var specialMsg = qtyPerPackage === 0
+            ? '<p class="text-warning">⚠️ به دلیل صفر بودن تعداد در بسته، مقدار برابر با ' + finalQty + ' در نظر گرفته شد.</p>'
+            : '';
 
-        if (qtyPerPackage === 0) {
-            finalQtyPerPackage = totalQuantity;
-            specialCaseMessage = `<p class="text-warning">⚠️ به دلیل صفر بودن تعداد در بسته، مقدار برابر با ${finalQtyPerPackage} در نظر گرفته شد.</p>`;
-        }
+        var fullPacks   = Math.floor(totalQuantity / finalQty);
+        var remainder   = totalQuantity % finalQty;
+        var breakdown   = [];
+        for (var i = 0; i < fullPacks; i++) breakdown.push(finalQty);
+        if (remainder > 0) breakdown.push(remainder);
 
-        const fullPackagesCount = Math.floor(totalQuantity / finalQtyPerPackage);
-        const remainder = totalQuantity % finalQtyPerPackage;
-
-        const packageBreakdown = [];
-        for (let i = 0; i < fullPackagesCount; i++) packageBreakdown.push(finalQtyPerPackage);
-        if (remainder > 0) packageBreakdown.push(remainder);
-
-        const breakdownString = packageBreakdown.join(' + ');
-
-        // ✅ هر ردیف را به متن کل اضافه می‌کنیم
-        allHTML += `
-            <div style="border:1px dashed #ccc; margin-bottom:15px; padding:10px; border-radius:8px;">
-                <h4>کالا: ${productCode}</h4>
-                <p><strong>تعداد کل:</strong> ${totalQuantity}</p>
-                <p><strong>تعداد در هر بسته:</strong> ${qtyPerPackage}</p>
-                ${specialCaseMessage}
-                <p><strong>بسته‌های کامل:</strong> ${fullPackagesCount}</p>
-                <p><strong>تفکیک بسته‌ها:</strong> ${breakdownString}</p>
-            </div>
-        `;
+        allHTML += '<div style="border:1px dashed #ccc;margin-bottom:15px;padding:10px;border-radius:8px;">' +
+            '<h4>کالا: ' + productCode + '</h4>' +
+            '<p><strong>تعداد کل:</strong> ' + totalQuantity + '</p>' +
+            '<p><strong>تعداد در هر بسته:</strong> ' + qtyPerPackage + '</p>' +
+            specialMsg +
+            '<p><strong>بسته‌های کامل:</strong> ' + fullPacks + '</p>' +
+            '<p><strong>تفکیک بسته‌ها:</strong> ' + breakdown.join(' + ') + '</p>' +
+            '</div>';
     });
 
-    // ✅ نتیجه نهایی را فقط در یک تب نمایش بده
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
-        alert('مرورگر اجازه باز کردن تب جدید را نداد. لطفاً پاپ‌آپ‌ها را فعال کنید.');
-        return;
-    }
+    var printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) { alert('مرورگر اجازه باز کردن تب جدید را نداد. لطفاً پاپ‌آپ‌ها را فعال کنید.'); return; }
 
     printWindow.document.open();
-    printWindow.document.write(`
-        <html dir="rtl" lang="fa">
-        <head>
-            <meta charset="utf-8">
-            <title>پرینت فاکتور</title>
-            <style>
-                body {
-                    font-family: sans-serif;
-                    padding: 20px;
-                    direction: rtl;
-                    background: #fff;
-                    color: #333;
-                }
-                h2 {
-                    text-align: center;
-                    border-bottom: 2px solid #999;
-                    padding-bottom: 8px;
-                }
-                .text-warning {
-                    color: red;
-                    font-weight: bold;
-                }
-            </style>
-        </head>
-        <body>
-            <h2>جزئیات بسته‌بندی فاکتور</h2>
-            ${allHTML}
-            <script>
-                // ✅ بستن خودکار تب بعد از پرینت
-                window.onafterprint = function() { window.close(); };
-                window.print();
-            <\/script>
-        </body>
-        </html>
-    `);
+    printWindow.document.write(
+        '<html dir="rtl" lang="fa"><head><meta charset="utf-8"><title>پرینت فاکتور</title>' +
+        '<style>body{font-family:sans-serif;padding:20px;direction:rtl;background:#fff;color:#333;}' +
+        'h2{text-align:center;border-bottom:2px solid #999;padding-bottom:8px;}' +
+        '.text-warning{color:red;font-weight:bold;}</style></head><body>' +
+        '<h2>جزئیات بسته‌بندی فاکتور</h2>' + allHTML +
+        '<script>window.onafterprint=function(){window.close();};window.print();<\/script>' +
+        '</body></html>'
+    );
     printWindow.document.close();
 });
 </script>
-
-
-
 {% endblock extra_js %}
