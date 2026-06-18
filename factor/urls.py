@@ -25,5 +25,8 @@ urlpatterns = [
     path('wh/packing/', views.WhPacking.as_view(), name='wh.packing'),
     path('ajax/get_supply_locations/<int:sku>/<int:factor_item_pk>/', views.get_supply_locations, name='get_supply_locations'),
     path('ajax/show_force_factor/', views.show_force_factor, name='show_force_factor'),
+    path('ajax/show_all_supplied_factor/', views.show_all_supplied_factor, name='show_all_supplied_factor'),
+    path('ajax/empty_checker/', views.empty_checker, name='empty_checker'),
+    path('ajax/factor_today_total_price/', views.factor_today_total_price, name='factor_today_total_price'),
     # path('ajax/factor_and_sepidar/', FactorAndSepidar.as_view(), name='factor_and_sepidar'),
 ]
