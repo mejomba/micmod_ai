@@ -1,11 +1,15 @@
+from decimal import Decimal
+
 import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone
 from django.views import View
 
 from core.views import BaseView
@@ -50,7 +54,8 @@ class ContractListDatatable(AjaxDatatableView):
         {'name': 'ic_pad_count', 'visible': True, 'orderable': True},
         {'name': 'first_setup_cost', 'visible': True},
         {'name': 'finish', 'visible': True, 'searchable': True, 'orderable': True},
-        {'name': 'second_setup_cost', 'visible': True}
+        {'name': 'second_setup_cost', 'visible': True},
+        {'name': 'total_contract_cost', 'visible': True, 'title': 'Total Cost', 'className': 'py-1 border', 'orderable': False, 'searchable': False}
     ]
 
     def get_initial_queryset(self, request=None):
@@ -77,6 +82,8 @@ class ContractListDatatable(AjaxDatatableView):
             reverse('pcba:contracts.view', args=(obj.id,)),
             obj.goods_code_fk.sku if obj.goods_code_fk else '-'
         )
+        row['total_contract_cost'] = obj.contract_cost if obj.contract_cost else 0
+
 
 
 class ContractView(LoginRequiredMixin, BaseView):
@@ -431,3 +438,23 @@ def get_parents(request):
 
     obj['total_count'] = count
     return JsonResponse(obj,safe=False)
+
+
+def today_contract_cost(request):
+    q = request.GET.get('q')
+    if q == 'today_contract_cost':
+        today = timezone.now().date()
+        contracts = Contract.objects.filter(created_date__date=today)
+        sum_con = sum([con.contract_cost for con in contracts])
+        return JsonResponse({'today_contract_cost': sum_con},safe=False)
+    return JsonResponse({'error': 'Invalid'}, safe=False)
+
+
+def this_year_contract_cost(request):
+    q = request.GET.get('q')
+    if q == 'this_year_contract_cost':
+        this_year = timezone.now().year
+        contracts = Contract.objects.filter(created_date__year=this_year)
+        sum_con = sum([con.contract_cost for con in contracts])
+        return JsonResponse({'this_year_contract_cost': sum_con}, safe=False)
+    return JsonResponse({'error': 'Invalid'}, safe=False)
