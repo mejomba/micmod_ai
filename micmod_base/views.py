@@ -186,9 +186,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return super().get(request, *args, **kwargs)
 
     def check_last_update(self):
-        return True
-        qis_last_update = json.loads(self.request.POST.get('qis_last_update_datetime', "{}")) or self.request.GET.get('qis_last_update_datetime')
-        q_last_update = self.request.POST.get('last_update_datetime') or self.request.GET.get('last_update_datetime').replace(' ', '+')
+        qis_last_update = (json.loads(self.request.POST.get('qis_last_update_datetime', "{}"))
+                           or self.request.GET.get('qis_last_update_datetime'))
+        q_last_update = (self.request.POST.get('last_update_datetime')
+                         or self.request.GET.get('last_update_datetime').replace(' ', '+'))
         if is_ajax(self.request):
             qis_last_update = json.loads(qis_last_update)
 
@@ -196,7 +197,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             return False
 
         for qi in self.object.quotation.all():
-            if qi_last_update:=qis_last_update.get(str(qi.pk)):
+            if qi_last_update := qis_last_update.get(str(qi.pk)):
                 qi_last_update = qi_last_update.replace(' ', '+')
                 if datetime.fromisoformat(qi_last_update).replace(microsecond=0) != qi.last_update_date.replace(microsecond=0):
                     return False
