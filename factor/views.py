@@ -1,7 +1,8 @@
 import datetime
 import time
+from decimal import Decimal
 
-from django.core.cache import cache
+from django.db.models.functions import Coalesce, Cast
 from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
 from django.contrib import messages
@@ -9,7 +10,7 @@ from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Sum, Case, When, F, DecimalField, ExpressionWrapper, OuterRef, Subquery, Min
 from django.forms import inlineformset_factory
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import render, redirect
@@ -30,6 +31,7 @@ from core.permissions import HasShopPermission
 from extra_data.models import Item, CustomerAddress
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
+from inquiry.models import CurrencyAmount
 from micmod_base.serializers import CustomerRequestSerializer
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
@@ -39,12 +41,15 @@ from core.views import BaseView, Base
 from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm
 from factor.models import Factor, FactorItem, Delivery
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
-from tools.utils import to_jalali_date, show_error, timer, parse_number
+from tools.utils import to_jalali_date, show_error, timer, is_ajax
 import json
+from datetime import datetime
 
 
 class FactorView(LoginRequiredMixin, BaseView):
     template_name = 'factor/factor.html'
+    conflict_template_name = 'factor/partial/conflict_view.html'
+    post_conflict_template_name = 'factor/partial/conflict_post_view.html'
     form_class = FactorModelForm
     model = Factor
     form_struct = {
@@ -64,7 +69,6 @@ class FactorView(LoginRequiredMixin, BaseView):
     formset_model = FactorItem
     formset_fk_field = 'factoritem_set'
     related_name_fk = 'factoritem_set'
-    wf_last_step_is_open = True
 
     allow_perms = [f'{model._meta.app_label}.view_{model._meta.model_name}',
                 f'{model._meta.app_label}.add_{model._meta.model_name}',
@@ -124,7 +128,6 @@ class FactorView(LoginRequiredMixin, BaseView):
 
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
-                cache.delete('all_stock_quantity')
                 return
             else:
                 self.after_sepidar_error()
@@ -156,7 +159,36 @@ class FactorView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
+    def check_last_update(self):
+        fis_last_update = (json.loads(self.request.POST.get('fis_last_update_datetime', "{}"))
+                           or self.request.GET.get('fis_last_update_datetime'))
+        f_last_update = (self.request.POST.get('last_update_datetime')
+                         or self.request.GET.get('last_update_datetime').replace(' ', '+'))
+        if is_ajax(self.request):
+            fis_last_update = json.loads(fis_last_update)
+
+        if f_last_update and self.object.last_update_date.replace(microsecond=0) != datetime.fromisoformat(f_last_update).replace(microsecond=0):
+            return False
+
+        for fi in self.object.factoritem_set.all():
+            if fi_last_update := fis_last_update.get(str(fi.pk)):
+                fi_last_update = fi_last_update.replace(' ', '+')
+                if datetime.fromisoformat(fi_last_update).replace(microsecond=0) != fi.last_update_date.replace(microsecond=0):
+                    return False
+        return True
+
+    def get(self, request, *args, **kwargs):
+        if is_ajax(self.request):
+            if not self.check_last_update():
+                html = render_to_string(self.conflict_template_name, {'conflict': True, 'obj': self.object})
+                return JsonResponse({'res': html}, safe=False)
+            else:
+                return JsonResponse({'res': ''}, safe=False)
+        return super().get(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
+        if not self.check_last_update():
+            return render(request, self.post_conflict_template_name, {'conflict': True, 'obj': self.object})
         if self.object is None:
             pass
             # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
@@ -262,6 +294,11 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['f_warning'] = []
         if not self.object:
             return context
+
+        last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
+        context['last_update_datetime'] = last_update_datetime
+        fis = {fi.pk: fi.last_update_date.isoformat() for fi in self.object.factoritem_set.all()} if self.object else {}
+        context['fis_last_update_datetime'] = json.dumps(fis)
         context['section_id'] = 'factor'
         context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
         context['form'].enable = True if self.wf_access else False
@@ -570,7 +607,6 @@ class FactorListDatatable(AjaxDatatableView):
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
-        row['total_price'] = f'{parse_number(obj.total_price):,}'
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in
                                        obj.comments.filter(comment_title='S')]) if not obj.accounting_confirm else ''  # "S" is accounting not approve factor
 
@@ -608,6 +644,8 @@ class FactorListDatatable(AjaxDatatableView):
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
+            {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True,
+             'className': 'border'},
             {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
              'lookup_field': '__to_user__username__icontains', 'className': 'border'},
             {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
@@ -659,9 +697,6 @@ class FactorListDatatable(AjaxDatatableView):
              'className': 'border'},
             {'name': 'official_factor_send_with_this_factor', 'visible': True, 'orderable': True,
              'title': f"<div style='width:80px; text-wrap:auto;'>{_('official_factor_send_with_this_factor')}</div>",
-             'className': 'border'},
-            {'name': 'total_price', 'visible': True, 'orderable': True,
-             'title': f"<div style='width:80px; text-wrap:auto;'>جمع مبلغ </div>",
              'className': 'border'},
         ]:
             self.cols.append(col)
@@ -906,6 +941,26 @@ def show_force_factor(request, *args, **kwargs):
     return JsonResponse({'res': ''}, safe=False)
 
 
+def show_all_supplied_factor(request, *args, **kwargs):
+    user = request.user
+    if user.is_authenticated and user.base_group == 'wh' or user.is_superuser:
+        factors = Factor.objects.filter(last_work_flow__current_state_name__in=['تخصیص کارشناس انبار'])
+        supplied_factors = [factor.id for factor in factors if factor.is_all_supplied]
+        for f in factors:
+            x = f.is_all_supplied
+
+        return JsonResponse({'res': supplied_factors, 'count': len(supplied_factors)}, safe=False)
+    return JsonResponse({'res': ''}, safe=False)
+
+
+def empty_checker(request, *args, **kwargs):
+    from tools import const
+    if request.user.base_group == 'accounting' or request.user.is_superuser:
+        factors = list(Factor.objects.filter(checker__isnull=True,
+                                             last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES)
+                       .values_list('pk', flat=True))
+        return JsonResponse({'res': factors, 'count': len(factors)}, safe=False)
+    return JsonResponse({'res': ''}, safe=False)
 class FactorAndSepidar(View):
     valid_view = ('trade_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
     valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview', 'wh_to_wh_preview')
@@ -1144,3 +1199,48 @@ class FactorAndSepidar(View):
         html = render_to_string('order/partial/sepidar/wh_to_wh_sepidar_response.html', context=context)
 
         return JsonResponse({'res': html})
+
+
+def factor_today_total_price(request, *args, **kwargs):
+    user = request.user
+    q = request.GET.get('q')
+    APPROVAL_STATE = 'تایید مدیر فروش'
+    if q == 'my_today_factor_price':
+        today = timezone.now().date()
+        all_approved_today = (Factor.objects.filter(Q(is_deleted=False) & ~Q(last_work_flow__current_state_name='پیش‌نویس')).annotate(first_approval_data=Min(
+            'workflows__created_date',
+            filter=Q(workflows__current_state_name=APPROVAL_STATE)
+        )).filter(first_approval_data__date=today).values_list('pk', flat=True)
+        )
+        # qry = (Q(created_date__date=today) & ~Q(last_work_flow__current_state_name='پیش‌نویس') & Q(is_deleted=False))
+        factors = Factor.objects.filter(pk__in=all_approved_today)
+        user_groups_name = user.groups.values_list('name', flat=True)\
+            if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
+        if 'sales_admin' in user_groups_name:
+            qs = factors.filter().distinct()
+        elif 'sales_user' in user_groups_name:
+            qs = factors.filter(creator_user=user).distinct()
+        else:
+            qs = Factor.objects.none()
+        # total = qs.aggregate(total=Sum('total_price'))['total'] or 0
+        rate_subquery = CurrencyAmount.objects.filter(
+            currency=OuterRef('currency_ref')
+        ).order_by('-id').values('open_rate')[:1]  # یا بر اساس تاریخ
+
+        qs = qs.annotate(
+            o_rate=Subquery(rate_subquery)
+        ).annotate(
+            calculated_price=Case(
+                When(currency_ref=1, then=F('total_price')),
+                default=ExpressionWrapper(
+                    F('total_price') * F('o_rate'),
+                    output_field=DecimalField(max_digits=20, decimal_places=2)
+                ),
+                output_field=DecimalField(max_digits=20, decimal_places=2)
+            )
+        )
+
+        total = qs.aggregate(
+            total=Coalesce(Sum('calculated_price'), Decimal('0'))
+        )['total']
+        return JsonResponse({'total_price': total})
