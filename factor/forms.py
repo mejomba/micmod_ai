@@ -110,6 +110,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['collecting_end_time'] = forms.DateTimeField(required=False)
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
+        self.fields['currency_amount'].widget.attrs.update({'class': 'form-control narrow-input', 'style': 'width: 70%;'})
 
         if request and request.user.base_group == 'accounting':
             self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
