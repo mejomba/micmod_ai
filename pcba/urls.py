@@ -23,6 +23,8 @@ urlpatterns = [
     path('item/in/customer/receipt/', ItemInCustomerReceiptView.as_view(), name='item.in.customer.receipt.view'),
     path('item/in/customer/receipt/<int:pk>/', ItemInCustomerReceiptView.as_view(), name='item.in.customer.receipt.view'),
     path('contracts/select2/', get_contracts, name='contracts.select2.view'),
-    path('parent/select2/', get_parents, name='parent.select2.view')
+    path('parent/select2/', get_parents, name='parent.select2.view'),
+    path('ajax/today_contract_cost/', today_contract_cost, name='today_contract_cost'),
+    path('ajax/this_year_contract_cost/', this_year_contract_cost, name='this_year_contract_cost'),
 ]
 
