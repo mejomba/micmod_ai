@@ -74,7 +74,7 @@
 </div>
 
     <div class="sticky-top bg-white">
-        <div class="overflow-hidden col pt-2 mb-8" id="factor-header" style="height: fit-content; max-height: 450px; transition: all ease 0.3s;">
+        <div class="overflow-hidden col pt-2 pb-8" id="factor-header" style="height: fit-content; max-height: 450px; transition: all ease 0.3s;">
         <!-- سطر اول سربرگ فاکتور -->
             <input type="hidden" name="customer" value="{{ form.instance.q.customer_party_id.sepidar_party_id }}">
             <div class="row row-cols-4 bg-white">
@@ -421,7 +421,7 @@
                             </div>
                             <div class="col-1 text-start px-0">
                                 <span type="text"
-                                      class="w-100 rounded s-0 mb-1"> {{ factor_item.instance.quantity|default_if_none:0|intcomma }}
+                                      class="w-100 rounded s-0 mb-1"> {{ factor_item.instance.quantity|default_if_none:0|floatformat:"-2g" }}
                                 </span>
                             </div>
 

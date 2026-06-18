@@ -28,6 +28,7 @@ from queryable_properties.properties import queryable_property
 from transportation.models import TradeTransportationMethod
 from dw.models import DimOrder
 from django.core.cache import cache
+from django.conf import settings
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")
@@ -230,7 +231,8 @@ class PriceSettings(AbsBaseModel):
     def get_discount_based_payment_method(self, payment_method, currency):
         for line in self.discount_based_payment_method:
             if payment_method == line['title']:
-                return line.get(currency.title_en.lower(), line.get('rial_percentage'))
+                currency_prefix = currency.title_en.lower()
+                return line.get(f'{currency_prefix}_percentage')
         return 0
 
     def __str__(self):
@@ -1005,7 +1007,24 @@ class Customer(AbsBaseModel):
             super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 
 
+    def get_sepidar_credit(self):
+        credit = 'در دسترس نیست'
 
+        qry = f'''select 
+            [ReceiptChequeId] as id,
+            sum(rc.[amount]) as sum_check,
+            rc.[DlRef] as dl_ref
+            from RPA.ReceiptCheque rc 
+            left join RPA.ReceiptHeader as rh on rc.ReceiptHeaderRef=rh.ReceiptHeaderId where rc.State=1 and rc.[description] like '%%ضم%%' and FiscalYearRef={settings.SEPIDAR_CONST_DATA.get("fiscalyearref")} and rc.DlRef={self.sepidar_dl_id}
+            group by rc.DlRef, [ReceiptChequeId]'''
+
+        try:
+            credit = Customer.objects.raw(qry, using='sepidar')
+            credit = float(credit[0].sum_check)
+        except Exception as e:
+            credit = 'در دسترس نیست'
+
+        return credit
 
     @staticmethod
     def get_list(text):
@@ -1022,6 +1041,11 @@ class CustomerDocuments(AbsBaseModel):
     DOC_CHOICES = (
         ("A", _("id_card")),
         ("B", _("image_meet_in_person")),
+        ("C", _("روزنامه رسمی")),
+        ("D", _("اساس نامه")),
+        ("E", _("آگهی تغییرات")),
+        ("F", _("اضهارنامه ثبت تاسیس")),
+        ("G", _("چک ضمانت")),
     )
     path = models.FileField(verbose_name=_('file'), upload_to=uploaded_file_path, null=True, blank=True)
     doc_type = models.CharField(_('doc_type'), max_length=1, choices=DOC_CHOICES)
@@ -1041,6 +1065,7 @@ class CustomerContract(AbsBaseModel):
     CONTRACT_TYPE = (
         ("A", _('contract')),
         ("B", _('sorat_jalase')),
+        ("C", _('الحاقیه (تمدید) قرارداد')),
     )
     contract_date = models.DateField(_('contract_date'), null=True, blank=True)
     contract_due_date = models.DateField(_('contract_due_date'), null=True, blank=True)

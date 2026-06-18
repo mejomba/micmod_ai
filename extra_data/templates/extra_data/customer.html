@@ -98,6 +98,11 @@
     <div class="row row-cols-6 bg-white rounded border my-10 pt-10 position-relative shadow">
         <h4 class="position-absolute" style="top: -10px">اطلاعات مالی</h4>
         {% render_field_by_order form form.z_safte form.z_cheque_s form.z_cheque_ns form.z_no form.z_max_credit_rafi form.extra_credit form.i_type1_target form.customer_sale_type form.customer_grade form.accounting_user form.risk_status label='on-border' margin_b=4 %}
+        <div class="col">
+            <span class="me-1 font-size-11">جمع چکهای ضمانت (سپیدار):</span> <br>
+            <span>{{ customer_credit|floatformat:'-2g' }}</span>
+        </div>
+
     </div>
 
     <div class="row bg-white rounded border my-10 pt-10 position-relative shadow">

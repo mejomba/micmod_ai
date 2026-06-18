@@ -606,7 +606,9 @@ class Order(BaseModeWF):
         87: "انبار آذين",
         88: "انبار مواد اوليه ايروان",
         89: "انبار محصول ايروان",
-        90: "انبار کالای بین راهی لوئیز"
+        90: "انبار کالای بین راهی لوئیز",
+        91: "انبار کالای بین راهی ایران",
+        92: "انبار آقای هادی رفیع اصفهان"
     }
 
     @property
@@ -674,7 +676,9 @@ class OrderOrder(BaseModel):
         87: "انبار آذين",
         88: "انبار مواد اوليه ايروان",
         89: "انبار محصول ايروان",
-        90: "انبار کالای بین راهی لوئیز"
+        90: "انبار کالای بین راهی لوئیز",
+        91: "انبار کالای بین راهی ایران",
+        92: "انبار آقای هادی رفیع اصفهان"
     }
 
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),
@@ -747,7 +751,7 @@ class PackingItem(BaseModeWF):
     quantity = models.FloatField(_('quantity'), null=True, blank=True)
     ruined_quantity = models.FloatField(_('ruined_quantity'), null=True, blank=True)
     # arrive_date = models.DateField(_('arrive_date'), null=True, blank=True) Todo: check this
-    arrived_quantity = models.FloatField(null=True, blank=True)
+    # arrived_quantity = models.FloatField(null=True, blank=True)
     price = models.FloatField(_('price'), null=True, blank=True)
     packing = models.ForeignKey(Packing, on_delete=models.DO_NOTHING, related_name='packing_item_rel')
     carton_number = models.CharField(_('carton_number'), max_length=100, null=True, blank=True)

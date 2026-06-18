@@ -1,6 +1,7 @@
 from django import forms
 from django.db.models import Q
 from django_select2.forms import ModelSelect2MultipleWidget
+from jalali_date.widgets import AdminJalaliDateWidget
 
 from core.forms import CustomBaseModelForm
 from files.models import File, Image
@@ -402,9 +403,10 @@ class CurrencyAmountForm(CustomBaseModelForm):
         exclude = ['group']
 
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['created_date'] = JalaliDateField(label=_('created_date'), widget=AdminJalaliDateWidget(attrs={'class': 'form-control'}), required=True)
+
     #     request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
     #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
     #         request = access = c.get('request')

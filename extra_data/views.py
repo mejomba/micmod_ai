@@ -467,6 +467,7 @@ class CustomerView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
+        context['customer_credit'] = self.object.get_sepidar_credit() if self.object else 'در دسترس نیست'
         return context
 
     # def form_valid(self, form):

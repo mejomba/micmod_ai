@@ -633,6 +633,7 @@ class PriceInquiryResult(BaseModel):
             # ).update(active=False)
 
     def cheaper_price(self):
+        return
         old_prices = PriceInquiryResult.objects.filter(
             sku=self.sku,
             inquiry_type=self.inquiry_type,
@@ -806,6 +807,7 @@ class CurrencyAmount(BaseModel):
     open_rate = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'))
     # new_order = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('new_order'))
     # talar = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('talar'))
+    created_date = models.DateTimeField(_('create_date'), auto_now_add=True)
 
     def __str__(self):
         return f'{self.currency.title}({self.currency.title_en})'

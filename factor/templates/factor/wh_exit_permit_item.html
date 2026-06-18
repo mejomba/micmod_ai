@@ -3,7 +3,7 @@
 {% load jalali_tags %}
 {% load humanize %}
 {% load quotation_tag %}
-<tr class=" item">
+<tr class=" item {% if not form.instance.supply_locations.is_wh %} bg-secondary {% endif %}">
     {% for hidden in form.hidden_fields %}
         {{ hidden }}
     {% endfor %}

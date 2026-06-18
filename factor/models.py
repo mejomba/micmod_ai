@@ -107,7 +107,7 @@ class Factor(SLSDoc):
 
         if base_group == 'wh':
             total_filter = comm_filter & wh_filter
-            qs = cls.objects.filter(total_filter).exclude(factoritem__supply_locations__is_wh=False).distinct()
+            qs = cls.objects.filter(total_filter).distinct()
         if base_group == 'sales':
             # total_filter = comm_filter & wh_filter
             qs = cls.objects.get_access_object(request.user, q=q, lst=False)
@@ -459,13 +459,19 @@ class FactorItem(BaseModel):
             elif self.pk:
                 if not self.quantity:
                     self.is_deleted = True
+                    object_to_delete = dict()
+                    object_to_delete['oo'] = []
                     for oo in self.supply_locations.order_base_items.all():
-                        # oo.delete()
-                        oo.is_deleted = True
-                        oo.save()
-                    self.supply_locations.is_deleted = True
-                    self.supply_locations.save()
+                        object_to_delete['oo'].append(oo)
+
+                    object_to_delete['supply_locations'] = self.supply_locations
+                    self.supply_locations = None
                     super().save(force_insert, force_update, using, update_fields)
+
+                    for oo_to_delete in object_to_delete['oo']:
+                        oo_to_delete.delete()
+                    object_to_delete['supply_locations'].delete()
+
                     total_quantity, total_quantity_wh = self.qi.total_quantity_in_factor
                     if total_quantity >= self.qi.quantity:
                         self.qi.is_over = True

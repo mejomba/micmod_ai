@@ -95,6 +95,8 @@ class ProductionDayActivities(BaseModeWF):
     BOTTOM_ASSEMBLY = '10'
     TOP_OVEN = '11'
     BOTTOM_OVEN = '12'
+    DIP_ASSEMBLY = '13'
+    GLUING = '14'
 
     # ASSEMBLY CHOICES
     TIN_DOUGH = '1'
@@ -103,9 +105,10 @@ class ProductionDayActivities(BaseModeWF):
     ASSEMBLY_CHOICES = [(TIN_DOUGH, _('خمیر قلع')), (GLUE, _('چسب'))]
     ACTIVITY_CHOICES = [(COUNTING_AND_ITEM_LIST, _('شمارش و لیست قطعات')),
                         (DEVICE_FIRST_SETUP, _('ستاپ اولیه دستگاه')), (DEVICE_SECOND_SETUP, _('ستاپ ثانویه دستگاه')),
-                        (ASSEMBLY, _('مونتاژ')), (TOP_ASSEMBLY, _('مونتاژ TOP')), (BOTTOM_ASSEMBLY, _('مونتاژ BOTTOM')),
-                        (OVEN, _('آون')), (TOP_OVEN, _('آون TOP')), (BOTTOM_OVEN, _('آون BOTTOM')),
-                        (QS, _('QC')), (PACKING, _('بسته‌بندی')), (DELIVERY, _('ارسال'))]
+                        (GLUING, _('خمیر زدن')), (ASSEMBLY, _('مونتاژ')), (TOP_ASSEMBLY, _('مونتاژ TOP')),
+                        (BOTTOM_ASSEMBLY, _('مونتاژ BOTTOM')), (OVEN, _('آون')), (TOP_OVEN, _('آون TOP')),
+                        (BOTTOM_OVEN, _('آون BOTTOM')), (QS, _('QC')), (PACKING, _('بسته‌بندی')),
+                        (DELIVERY, _('ارسال')), (DIP_ASSEMBLY, _('مونتاژ DIP')), ]
 
     contract = models.ForeignKey(Contract, on_delete=models.DO_NOTHING, related_name='production_contract', verbose_name='قرارداد')
     goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING, related_name='production_goods_code', verbose_name='کد کالا')

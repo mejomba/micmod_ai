@@ -30,6 +30,7 @@ from core.permissions import HasShopPermission
 from extra_data.models import Item, CustomerAddress
 from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
+from inquiry.models import CurrencyAmount
 from micmod_base.serializers import CustomerRequestSerializer
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
@@ -41,6 +42,9 @@ from factor.models import Factor, FactorItem, Delivery
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
 from tools.utils import to_jalali_date, show_error, timer, parse_number
 import json
+from django.db.models import Q, Sum, Case, When, F, DecimalField, ExpressionWrapper, OuterRef, Subquery
+from decimal import Decimal
+from django.db.models.functions import Coalesce, Cast
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -249,8 +253,10 @@ class FactorView(LoginRequiredMixin, BaseView):
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
-        if obj_before_save and obj_before_save.accounting_confirm:
+        if obj_before_save and obj_before_save.accounting_confirm and self.state_index > 1:
             self.object.accounting_confirm = True
+        if obj_before_save and obj_before_save.is_official and self.state_index > 1:
+            self.object.is_official = True
         self.object.save()
         return res
 
@@ -571,6 +577,7 @@ class FactorListDatatable(AjaxDatatableView):
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
         row['total_price'] = f'{parse_number(obj.total_price):,}'
+        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in
                                        obj.comments.filter(comment_title='S')]) if not obj.accounting_confirm else ''  # "S" is accounting not approve factor
 
@@ -612,10 +619,12 @@ class FactorListDatatable(AjaxDatatableView):
              'lookup_field': '__to_user__username__icontains', 'className': 'border'},
             {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
              'lookup_field': '__current_state_name__icontains', 'className': 'border'},
+            {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
             {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'title': 'شماره سپیدار', 'className': 'border'},
             {'name': 'sepidar_inventory_delivery_number', 'visible': True, 'orderable': True, 'title': 'حواله سپیدار', 'className': 'border'},
             {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
-            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+            {'name': 'description', 'visible': True, 'title': '<div style="width:150px;">توضیحات</div>',
+             'orderable': True, 'searchable': True,
              'lookup_field': '__icontains', 'className': 'border'},
         ]:
             self.cols.append(col)
@@ -669,6 +678,9 @@ class FactorListDatatable(AjaxDatatableView):
 
     def accounting_column_defs(self, request):
         for col in [
+            {'name': 'total_price', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:80px; text-wrap:auto;'>جمع مبلغ </div>",
+             'className': 'border'},
             {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
@@ -684,7 +696,8 @@ class FactorListDatatable(AjaxDatatableView):
              'lookup_field': '__current_state_name__icontains', 'className': 'border'},
             {'name': 'sepidar_number', 'visible': True, 'orderable': True, 'title': 'شماره سپیدار', 'className': 'border'},
             {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
-            {'name': 'description', 'visible': True, 'orderable': True, 'searchable': True,
+            {'name': 'description', 'visible': True, 'title': '<div style="width:150px;">توضیحات</div>',
+             'orderable': True, 'searchable': True,
              'lookup_field': '__icontains', 'className': 'border'},
             {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
              'searchable': True, 'className': 'border'},
@@ -704,6 +717,9 @@ class FactorListDatatable(AjaxDatatableView):
             {'name': 'official_factor_send_with_this_factor', 'visible': True, 'orderable': True,
              'title': f"<div style='width:80px; text-wrap:auto;'>{_('official_factor_send_with_this_factor')}</div>",
              'className': 'border'},
+            {'name': 'total_price', 'visible': True, 'orderable': True,
+             'title': f"<div style='width:80px; text-wrap:auto;'>جمع مبلغ </div>",
+             'className': 'border'},
         ]:
             self.cols.append(col)
         return self.cols
@@ -713,6 +729,8 @@ class FactorListDatatable(AjaxDatatableView):
             AjaxDatatableView.render_row_tools_column_def(),
             {'name': 'pk', 'visible': False, 'className': 'currency-search'},
             {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
+            {'name': 'created_date', 'visible': True, 'orderable': True,
+             'title': "<div style='min-width:60px'>تاریخ</div>", 'className': 'border'},
             {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'),
              'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
             {'name': 'last_work_flow__to_user', 'visible': True, 'searchable': True, 'title': "متعلق به",
@@ -1144,3 +1162,46 @@ class FactorAndSepidar(View):
         html = render_to_string('order/partial/sepidar/wh_to_wh_sepidar_response.html', context=context)
 
         return JsonResponse({'res': html})
+
+
+def factor_today_total_price(request, *args, **kwargs):
+    user = request.user
+    q = request.GET.get('q')
+    # qs = []
+    # total_price = 0
+    if q == 'my_today_factor_price':
+        today = timezone.now().date()
+        qry = (Q(created_date__date=today) & ~Q(last_work_flow__current_state_name='پیش‌نویس') & Q(is_deleted=False))
+        factors = Factor.objects.filter(qry)
+        user_groups_name = user.groups.values_list('name', flat=True)\
+            if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
+        if user.is_superuser:
+            qs = factors.filter().distinct()
+        elif 'sales_admin' in user_groups_name:
+            qs = factors.filter().distinct()
+        elif 'sales_user' in user_groups_name:
+            qs = factors.filter(creator_user=user).distinct()
+        else:
+            qs = Factor.objects.none()
+        # total = qs.aggregate(total=Sum('total_price'))['total'] or 0
+        rate_subquery = CurrencyAmount.objects.filter(
+            currency=OuterRef('currency_ref')
+        ).order_by('-id').values('open_rate')[:1]  # یا بر اساس تاریخ
+
+        qs = qs.annotate(
+            o_rate=Subquery(rate_subquery)
+        ).annotate(
+            calculated_price=Case(
+                When(currency_ref=1, then=F('total_price')),
+                default=ExpressionWrapper(
+                    F('total_price') * F('o_rate'),
+                    output_field=DecimalField(max_digits=20, decimal_places=2)
+                ),
+                output_field=DecimalField(max_digits=20, decimal_places=2)
+            )
+        )
+
+        total = qs.aggregate(
+            total=Coalesce(Sum('calculated_price'), Decimal('0'))
+        )['total']
+        return JsonResponse({'total_price': total})
