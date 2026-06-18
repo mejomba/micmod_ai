@@ -9,6 +9,7 @@ from django.db.models import F, Sum, FloatField
 from accounts.models import User
 from core.models import BaseModel, BaseManager, BaseModeWF
 from extra_data.models import Item, CustomerAddress
+from inquiry.models import CurrencyAmount
 from micmod_base.base import SLSDoc, DeliveryTime
 from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
 from order.models import Order, OrderOrder
@@ -77,7 +78,7 @@ class Factor(SLSDoc):
     accounting_confirm = models.BooleanField(_('accounting_confirm'), default=False)
     force_factor = models.BooleanField(_('force_factor'), default=False)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
-
+    currency_amount = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'), null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):
         if not self.q.sales_admin_confirm:
