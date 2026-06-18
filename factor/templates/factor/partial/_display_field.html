@@ -1,0 +1,16 @@
+{% load jalali_tags %}
+
+<div class="f only-show">
+  <label><span data-key="{{ f.name }}"></span> <i class="ti ti-lock" aria-hidden="true"></i></label>
+  <div class="ro">
+    {% if f.kind == "bool" %}
+      {% if f.value %}<span class="badge ok">بله</span>{% else %}<span class="badge no">خیر</span>{% endif %}
+    {% elif f.kind == "date" %}
+      {% if f.value %}{{ f.value|to_jalali:"%Y-%m-%d" }}{% else %}—{% endif %}
+    {% elif f.kind == "datetime" %}
+      {% if f.value %}{{ f.value|to_jalali:"%Y-%m-%d %H:%M" }}{% else %}—{% endif %}
+    {% else %}
+      {{ f.value|default:"—" }}
+    {% endif %}
+  </div>
+</div>

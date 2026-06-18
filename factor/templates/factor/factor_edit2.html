@@ -1,0 +1,794 @@
+{#{{ item_formset.management_form }}#}
+{#{% for item_form in item_formset %}#}
+{#  {{ item_form.as_p }}#}
+{#{% endfor %}#}
+
+
+
+
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ویرایش فاکتور</title>
+{#<link rel="preconnect" href="https://fonts.googleapis.com">#}
+{#<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">#}
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #181c27;
+    --surface2:  #1e2335;
+    --border:    #2a2f45;
+    --border2:   #363d58;
+    --accent:    #4f7cff;
+    --accent2:   #7b9fff;
+    --danger:    #ff4f6b;
+    --success:   #2dd87e;
+    --warning:   #f5a623;
+    --text:      #e8ecf7;
+    --text2:     #8a93b8;
+    --text3:     #5a6180;
+    --radius:    10px;
+    --radius-sm: 6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Vazirmatn', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .page-wrapper {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .topbar-brand .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ── Main content ── */
+  .content {
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .page-title .badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent2);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .page-subtitle {
+    color: var(--text3);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* ── Section card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+    transition: border-color .2s;
+  }
+
+  .card:focus-within {
+    border-color: var(--border2);
+  }
+
+  .card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title svg { opacity: .6; }
+
+  .card-body {
+    padding: 24px;
+  }
+
+  /* ── Form grid ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .form-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.span-2 { grid-column: span 2; }
+  .form-group.span-full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: .04em;
+  }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 9px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .checkbox-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .checkbox-row label {
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    letter-spacing: normal;
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6180' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    padding-left: 32px;
+  }
+
+  .errorlist {
+    list-style: none;
+    margin-top: 4px;
+  }
+
+  .errorlist li {
+    font-size: 11px;
+    color: var(--danger);
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--border);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text3);
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .btn-ghost:hover { color: var(--text); background: var(--surface2); }
+
+  .btn-danger-ghost {
+    background: transparent;
+    color: var(--danger);
+    padding: 5px 10px;
+    font-size: 12px;
+    opacity: .7;
+  }
+
+  .btn-danger-ghost:hover { opacity: 1; background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+  .btn-add {
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    color: var(--success);
+    border: 1px dashed color-mix(in srgb, var(--success) 40%, transparent);
+    width: 100%;
+    justify-content: center;
+    margin-top: 12px;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .2s;
+  }
+
+  .btn-add:hover {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    border-color: var(--success);
+    transform: none;
+  }
+
+  .btn svg { flex-shrink: 0; }
+
+  /* ── Items table ── */
+  .items-table-wrap {
+    overflow-x: auto;
+  }
+
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+  }
+
+  .items-table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 10px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface2) 50%, transparent);
+    white-space: nowrap;
+  }
+
+  .items-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+
+  .items-table tbody tr:last-child { border-bottom: none; }
+  .items-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+
+  .items-table tbody tr.row-deleted {
+    opacity: .4;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--danger) 5%, transparent);
+  }
+
+  .items-table td {
+    padding: 10px 14px;
+    vertical-align: middle;
+  }
+
+  .items-table td input,
+  .items-table td select {
+    padding: 7px 10px;
+    font-size: 13px;
+    min-width: 90px;
+  }
+
+  .items-table td input[type="checkbox"] {
+    width: 15px; height: 15px;
+  }
+
+  .row-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    width: 32px;
+    height: 32px;
+    background: var(--surface2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .delete-cell {
+    text-align: center;
+    width: 50px;
+  }
+
+  /* hidden delete checkbox, use button instead */
+  .delete-check { display: none; }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* ── Sticky footer ── */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: color-mix(in srgb, var(--surface) 95%, transparent);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 90;
+  }
+
+  .save-bar-hint {
+    font-size: 12px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .save-bar-hint .indicator {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--warning);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .3; }
+  }
+
+  .save-bar-actions { display: flex; gap: 10px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all .3s;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .topbar { padding: 0 16px; }
+    .save-bar { padding: 12px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols-2, .form-grid.cols-3 { grid-template-columns: 1fr; }
+    .form-group.span-2 { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <a href="#" class="topbar-brand">
+      <span class="dot"></span>
+      سیستم فروش
+    </a>
+    <div class="topbar-actions">
+      <a href="#" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        بازگشت به لیست
+      </a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="content">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">
+          ویرایش فاکتور
+          {% if factor.pk %}
+          <span class="badge"># {{ factor.pk }}</span>
+          {% endif %}
+        </div>
+        <p class="page-subtitle">
+          {% if factor.q %}
+          پیش‌فاکتور: {{ factor.q }} &nbsp;·&nbsp;
+          {% endif %}
+          آخرین ویرایش: {% now "j N Y - H:i" %}
+        </p>
+      </div>
+    </div>
+
+    <form method="post" id="factorForm" novalidate>
+      {% csrf_token %}
+
+      <!-- ── Factor fields ── -->
+      {% if form.fields %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            اطلاعات فاکتور
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+
+            {% for field in form %}
+              {% if field.field.widget.input_type == 'checkbox' %}
+                <div class="form-group checkbox-row">
+                  {{ field }}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+
+              {% elif field.field.widget.input_type == 'textarea' %}
+                <div class="form-group span-full">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+
+              {% else %}
+                <div class="form-group">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ── Factor items ── -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            ردیف‌های فاکتور
+          </span>
+          <span id="rowCount" style="font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div class="card-body" style="padding:0;">
+
+          {{ item_formset.management_form }}
+
+          <div class="items-table-wrap">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width:44px;">#</th>
+                  {% for field in item_formset.empty_form.visible_fields %}
+                    {% if field.name != 'DELETE' %}
+                      <th>{{ field.label }}</th>
+                    {% endif %}
+                  {% endfor %}
+                  <th style="width:50px;"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody">
+                {% for item_form in item_formset %}
+                <tr class="item-row" data-index="{{ forloop.counter0 }}">
+                  <td><div class="row-num">{{ forloop.counter }}</div></td>
+                  {% for field in item_form.visible_fields %}
+                    {% if field.name == 'DELETE' %}
+                      {{ field }}  {# hidden but present for formset management #}
+                    {% else %}
+                      <td>
+                        {{ field }}
+                        {% if field.errors %}
+                          <ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                      </td>
+                    {% endif %}
+                  {% endfor %}
+                  {% for field in item_form.hidden_fields %}{{ field }}{% endfor %}
+                  <td class="delete-cell">
+                    <button type="button" class="btn btn-danger-ghost delete-row-btn" title="حذف ردیف">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr id="emptyRow">
+                  <td colspan="20" style="text-align:center;padding:32px;color:var(--text3);font-size:13px;">
+                    ردیفی وجود ندارد. با دکمه زیر ردیف جدید اضافه کنید.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Add row button -->
+          <div style="padding:0 16px 16px;">
+            <button type="button" id="addRowBtn" class="btn btn-add">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              افزودن ردیف جدید
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </form>
+  </main>
+
+  <!-- Sticky save bar -->
+  <div class="save-bar">
+    <div class="save-bar-hint">
+      <span class="indicator"></span>
+      تغییرات ذخیره نشده
+    </div>
+    <div class="save-bar-actions">
+      <a href="#" class="btn btn-secondary">انصراف</a>
+      <button type="submit" form="factorForm" class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        ذخیره تغییرات
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- Empty form template for JS cloning -->
+<template id="emptyFormTpl">
+  <tr class="item-row" data-index="__prefix__">
+    <td><div class="row-num">__num__</div></td>
+    {% for field in item_formset.empty_form.visible_fields %}
+      {% if field.name == 'DELETE' %}
+        {# handled separately #}
+      {% else %}
+        <td>{{ field }}</td>
+      {% endif %}
+    {% endfor %}
+    {% for field in item_formset.empty_form.hidden_fields %}{{ field }}{% endfor %}
+    <input type="hidden" name="{{ item_formset.empty_form.prefix }}-DELETE" value="">
+    <td class="delete-cell">
+      <button type="button" class="btn btn-danger-ghost delete-row-btn" title="حذف ردیف">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </td>
+  </tr>
+</template>
+
+<script>
+(function () {
+  const body      = document.getElementById('itemsBody');
+  const addBtn    = document.getElementById('addRowBtn');
+  const tpl       = document.getElementById('emptyFormTpl');
+  const totalFld  = document.querySelector('[name$="-TOTAL_FORMS"]');
+  const rowCount  = document.getElementById('rowCount');
+  const toast     = document.getElementById('toast');
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  function showToast(msg, ms = 2200) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), ms);
+  }
+
+  function updateRowNumbers() {
+    const rows = body.querySelectorAll('.item-row:not(.row-deleted)');
+    rows.forEach((row, i) => {
+      const num = row.querySelector('.row-num');
+      if (num) num.textContent = i + 1;
+    });
+    const total = body.querySelectorAll('.item-row').length;
+    rowCount.textContent = total + ' ردیف';
+  }
+
+  // ── add row ───────────────────────────────────────────────────────────────
+
+  addBtn.addEventListener('click', function () {
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    const idx = parseInt(totalFld.value, 10);
+    const html = tpl.innerHTML
+      .replace(/__prefix__/g, idx)
+      .replace(/__num__/g, idx + 1);
+
+    const tmp = document.createElement('tbody');
+    tmp.innerHTML = html;
+    const newRow = tmp.firstElementChild;
+
+    // wire up the delete button in the new row
+    newRow.querySelector('.delete-row-btn')
+          ?.addEventListener('click', () => handleDelete(newRow));
+
+    body.appendChild(newRow);
+    totalFld.value = idx + 1;
+    updateRowNumbers();
+
+    // focus first input
+    newRow.querySelector('input:not([type=hidden]), select')?.focus();
+    showToast('ردیف جدید اضافه شد');
+  });
+
+  // ── delete row ────────────────────────────────────────────────────────────
+
+  function handleDelete(row) {
+    const deleteInput = row.querySelector('input[name$="-DELETE"]');
+    if (deleteInput) {
+      // existing DB row: mark for deletion
+      deleteInput.value = 'on';
+      row.classList.add('row-deleted');
+      showToast('ردیف حذف خواهد شد پس از ذخیره');
+    } else {
+      // new row not yet saved: just remove from DOM
+      row.remove();
+      totalFld.value = parseInt(totalFld.value, 10) - 1;
+      showToast('ردیف حذف شد');
+    }
+    updateRowNumbers();
+  }
+
+  // wire existing delete buttons
+  body.querySelectorAll('.delete-row-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleDelete(btn.closest('.item-row')));
+  });
+
+  // ── dirty state indicator ─────────────────────────────────────────────────
+
+  const saveHint = document.querySelector('.save-bar-hint');
+  let isDirty = false;
+
+  document.getElementById('factorForm').addEventListener('input', () => {
+    if (!isDirty) {
+      isDirty = true;
+      saveHint.querySelector('.indicator').style.background = 'var(--warning)';
+    }
+  });
+
+  document.getElementById('factorForm').addEventListener('submit', () => {
+    isDirty = false;
+    saveHint.querySelector('.indicator').style.background = 'var(--success)';
+  });
+
+  // ── init ──────────────────────────────────────────────────────────────────
+
+  updateRowNumbers();
+})();
+</script>
+</body>
+</html>

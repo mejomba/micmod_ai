@@ -1,0 +1,395 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ویرایش فاکتور {% if factor %}#{{ factor.pk }}{% endif %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F6F2; --surface: #FFFFFF; --surface-2: #F1EFE8;
+    --border: #D3D1C7; --border-focus: #7F77DD;
+    --text-primary: #2C2C2A; --text-secondary: #5F5E5A; --text-muted: #888780;
+    --accent: #534AB7; --accent-light: #EEEDFE; --accent-dark: #3C3489;
+    --danger: #A32D2D; --danger-light: #FCEBEB;
+    --success: #0F6E56; --success-light: #E1F5EE;
+    --warning: #854F0B; --warning-light: #FAEEDA;
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --transition: 0.18s ease;
+    --font: 'Vazirmatn', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  .page-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  .header-inner { max-width: 1200px; margin: 0 auto; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .header-title { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .header-badge { background: var(--accent-light); color: var(--accent); font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .main-content { max-width: 1200px; margin: 0 auto; padding: 2rem; display: grid; gap: 1.5rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+  .card-icon { width: 28px; height: 28px; background: var(--accent-light); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 15px; }
+  .card-body { padding: 1.5rem; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem 1.5rem; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label { font-size: 12px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.02em; }
+  input[type="text"], input[type="number"], input[type="datetime-local"], select, textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 13.5px; color: var(--text-primary); background: var(--surface);
+    transition: border-color var(--transition), box-shadow var(--transition); outline: none; appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(83,74,183,0.12); }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888780' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 12px center; padding-left: 32px; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+  .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .checkbox-row label { font-size: 13px; color: var(--text-primary); cursor: pointer; letter-spacing: 0; font-weight: 400; }
+
+  .form-error { font-size: 11.5px; color: var(--danger); margin-top: 3px; }
+  .errorlist { list-style: none; background: var(--danger-light); border: 1px solid #F09595; border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 13px; color: var(--danger); }
+
+  .items-wrap { overflow-x: auto; }
+  table.items-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+  table.items-table thead th { padding: 10px 12px; text-align: right; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-muted); background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.items-table tbody tr { border-bottom: 1px solid var(--border); transition: background var(--transition); }
+  table.items-table tbody tr:hover { background: var(--surface-2); }
+  table.items-table tbody tr.deleted-row { opacity: 0.35; }
+  table.items-table td { padding: 8px 10px; vertical-align: middle; }
+  table.items-table td input[type="text"], table.items-table td input[type="number"], table.items-table td select { padding: 7px 10px; font-size: 13px; min-width: 80px; }
+  table.items-table td input[type="hidden"] { display: none; }
+  .col-idx { width: 40px; text-align: center; color: var(--text-muted); font-size: 12px; }
+  .col-del { width: 48px; text-align: center; }
+
+  .row-number { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--surface-2); font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+
+  .delete-row-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all var(--transition); font-size: 15px; line-height: 1; }
+  .delete-row-btn:hover { background: var(--danger-light); border-color: #F09595; color: var(--danger); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius-md); font-family: var(--font); font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all var(--transition); border: 1px solid transparent; text-decoration: none; white-space: nowrap; line-height: 1; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text-primary); }
+  .btn-outline-accent { background: var(--accent-light); color: var(--accent); border-color: #AFA9EC; }
+  .btn-outline-accent:hover { background: #CECBF6; }
+  .btn-sm { padding: 6px 12px; font-size: 12.5px; border-radius: var(--radius-sm); }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-success { background: var(--success-light); color: var(--success); }
+  .badge-warning { background: var(--warning-light); color: var(--warning); }
+  .badge-danger  { background: var(--danger-light);  color: var(--danger); }
+  .badge-accent  { background: var(--accent-light);  color: var(--accent); }
+
+  .page-footer { background: var(--surface); border-top: 1px solid var(--border); padding: 1rem 2rem; position: sticky; bottom: 0; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+  .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .footer-info { font-size: 12.5px; color: var(--text-muted); }
+
+  .empty-rows { padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .empty-rows-icon { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--surface-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 22px; }
+
+  .section-divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+  .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-radius: var(--radius-md); font-size: 13px; margin-bottom: 1rem; }
+  .alert-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #F09595; }
+
+  .table-checkbox { display: flex; justify-content: center; }
+  .table-checkbox input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+  @media (max-width: 768px) {
+    .main-content { padding: 1rem; } .page-header { padding: 0 1rem; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      ویرایش فاکتور
+      {% if factor %}<span class="header-badge">#{{ factor.pk }}</span>{% endif %}
+    </div>
+    <div class="header-actions">
+      <a href="#" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        بازگشت
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+<form method="post" id="factor-form" novalidate>
+  {% csrf_token %}
+  <div class="main-content">
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+      <span>⚠</span>
+      <div>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+    </div>
+    {% endif %}
+
+    <!-- اطلاعات کلی فاکتور -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          اطلاعات کلی فاکتور
+        </div>
+        {% if factor %}
+        <div style="display:flex;gap:8px;align-items:center;">
+          {% if factor.is_official %}<span class="badge badge-accent">رسمی</span>{% endif %}
+          {% if factor.cancel %}<span class="badge badge-danger">لغو شده</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if form.errors %}
+        <ul class="errorlist">
+          {% for field in form %}{% if field.errors %}{% for error in field.errors %}<li>⚠ {{ field.label }}: {{ error }}</li>{% endfor %}{% endif %}{% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="form-grid">
+          {% for field in form %}
+            {% if field.field.widget.input_type != 'checkbox' %}
+              <div class="form-group {% if field.field.widget.attrs.rows %}full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}{% for error in field.errors %}<span class="form-error">⚠ {{ error }}</span>{% endfor %}{% endif %}
+                {% if field.help_text %}<span style="font-size:11.5px;color:var(--text-muted);">{{ field.help_text }}</span>{% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <!-- checkboxها -->
+      <div class="section-divider" style="margin:1rem 0 0.75rem;"></div>
+{#        {% for field in form %}{% if field.field.widget.input_type == 'checkbox' %}<div class="section-divider" style="margin:1rem 0 0.75rem;"></div>{% endif %}{% endfor %}#}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 1.5rem;">
+          {% for field in form %}
+            {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="checkbox-row">
+              {{ field }}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ردیف‌های فاکتور -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:#E1F5EE;color:#0F6E56;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </div>
+          ردیف‌های فاکتور
+          <span id="row-count-badge" class="badge badge-accent" style="margin-right:4px;">{{ item_formset.total_form_count }} ردیف</span>
+        </div>
+        <button type="button" id="add-row-btn" class="btn btn-outline-accent btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          افزودن ردیف
+        </button>
+      </div>
+      {{ item_formset.management_form }}
+
+      <div class="items-wrap">
+        <table class="items-table" id="items-table">
+          <thead>
+            <tr>
+              <th class="col-idx">#</th>
+              {% for field in item_formset.forms.0.visible_fields %}
+                {% if field.name != 'DELETE' %}<th>{{ field.label }}</th>{% endif %}
+              {% endfor %}
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody">
+            {% for item_form in item_formset %}
+              <tr class="item-row" data-index="{{ forloop.counter0 }}">
+                <td class="col-idx"><span class="row-number">{{ forloop.counter }}</span></td>
+              <span>hidden fields</span>
+                {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+                {% for field in item_form.visible_fields %}
+                  {% if field.name == 'DELETE' %}
+                  {% elif field.field.widget.input_type == 'checkbox' %}
+                    <td><div class="table-checkbox">{{ field }}</div>{% if field.errors %}<div class="form-error">{{ field.errors|join:", " }}</div>{% endif %}</td>
+                  {% else %}
+                    <td>{{ field }}{% if field.errors %}<div class="form-error">{{ field.errors|join:", " }}</div>{% endif %}</td>
+                  {% endif %}
+                {% endfor %}
+                <td class="col-del">
+                  {% if item_form.instance.pk %}
+                    <span style="display:none;">{{ item_form.DELETE }}</span>
+                    <button type="button" class="delete-row-btn" title="حذف ردیف" onclick="markDelete(this)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  {% else %}
+                    <button type="button" class="delete-row-btn" title="حذف ردیف" onclick="removeNewRow(this)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr id="empty-notice"><td colspan="20">
+                <div class="empty-rows">
+                  <div class="empty-rows-icon">📋</div>
+                  هیچ ردیفی وجود ندارد. برای افزودن کالا دکمه «افزودن ردیف» را بزنید.
+                </div>
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- قالب مخفی برای ردیف جدید -->
+      <div id="empty-form-template" style="display:none;">
+        <table><tbody>
+          <tr class="item-row new-row" data-index="__prefix__">
+            <td class="col-idx"><span class="row-number">—</span></td>
+            {% for hidden in item_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% for field in item_formset.empty_form.visible_fields %}
+              {% if field.name == 'DELETE' %}
+              {% elif field.field.widget.input_type == 'checkbox' %}
+                <td><div class="table-checkbox">{{ field }}</div></td>
+              {% else %}
+                <td>{{ field }}</td>
+              {% endif %}
+            {% endfor %}
+            <td class="col-del">
+              <button type="button" class="delete-row-btn" title="حذف ردیف" onclick="removeNewRow(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody></table>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-footer">
+    <div class="footer-inner">
+      <div class="footer-info">
+        {% if factor %}
+          آخرین ویرایش:
+          {% if factor.history.first %}
+            {{ factor.history.first.history_date|date:"Y/m/d H:i" }} — {{ factor.history.first.history_user }}
+          {% else %}—{% endif %}
+        {% endif %}
+      </div>
+      <div style="display:flex;gap:10px;">
+        <a href="#" class="btn btn-ghost">انصراف</a>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          ذخیره تغییرات
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var PREFIX = 'factoritem_set';
+
+  function getCount(){ return parseInt(document.getElementById('id_'+PREFIX+'-TOTAL_FORMS').value,10); }
+  function setCount(n){ document.getElementById('id_'+PREFIX+'-TOTAL_FORMS').value = n; }
+
+  function updateBadge(){
+    var active = document.querySelectorAll('#items-tbody tr.item-row:not(.deleted-row)').length;
+    var b = document.getElementById('row-count-badge');
+    if(b) b.textContent = active + ' ردیف';
+  }
+  function updateNumbers(){
+    var rows = document.querySelectorAll('#items-tbody tr.item-row:not(.deleted-row)');
+    rows.forEach(function(r,i){ var n=r.querySelector('.row-number'); if(n) n.textContent=i+1; });
+  }
+
+  document.getElementById('add-row-btn').addEventListener('click', function(){
+    var en = document.getElementById('empty-notice');
+    if(en) en.remove();
+
+    var tpl = document.getElementById('empty-form-template');
+    var newRow = tpl.querySelector('tr').cloneNode(true);
+    var idx = getCount();
+
+    newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, idx);
+    newRow.setAttribute('data-index', idx);
+
+    var active = document.querySelectorAll('#items-tbody tr.item-row:not(.deleted-row)').length;
+    var num = newRow.querySelector('.row-number');
+    if(num) num.textContent = active + 1;
+
+    document.getElementById('items-tbody').appendChild(newRow);
+    setCount(idx + 1);
+    updateBadge();
+
+    var first = newRow.querySelector('input[type="text"],input[type="number"],select');
+    if(first) first.focus();
+  });
+
+  window.markDelete = function(btn){
+    var row = btn.closest('tr');
+    var del = row.querySelector('input[name$="-DELETE"]');
+    if(del){ del.checked = true; }
+    row.classList.add('deleted-row');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.93"/></svg>';
+    btn.title = 'بازگرداندن';
+    btn.onclick = function(){ undoDelete(btn); };
+    updateNumbers(); updateBadge();
+  };
+
+  window.undoDelete = function(btn){
+    var row = btn.closest('tr');
+    var del = row.querySelector('input[name$="-DELETE"]');
+    if(del){ del.checked = false; }
+    row.classList.remove('deleted-row');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+    btn.title = 'حذف ردیف';
+    btn.onclick = function(){ markDelete(btn); };
+    updateNumbers(); updateBadge();
+  };
+
+  window.removeNewRow = function(btn){
+    var row = btn.closest('tr');
+    row.remove();
+    setCount(Math.max(0, getCount()-1));
+    updateNumbers(); updateBadge();
+  };
+
+  document.getElementById('factor-form').addEventListener('submit', function(){
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> در حال ذخیره...';
+  });
+
+  updateBadge();
+  updateNumbers();
+})();
+</script>
+</body>
+</html>

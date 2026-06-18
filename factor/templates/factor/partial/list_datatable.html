@@ -54,7 +54,7 @@
                     {% if request.user|has_group:"wh_admin" %}
                     <div class="border border-success bg-light-success rounded px-5 py-3 mb-10 text-start sticky-top d-inline-block" id="forceFactorBox"></div>
                     {% endif %}
-                <div class="border border-danger bg-light-danger rounded  mb-10 text-start sticky-top d-inline-block" id="total-price-dt"></div>
+                <div class="border border-danger bg-light-danger rounded  mb-10 text-start sticky-top d-inline-block p-3" id="total-price-dt"></div>
 
 
                     <div class="row">
@@ -125,7 +125,7 @@
                 total += val;
             });
 
-            {#$('#total-price-dt').text('جمع مبالغ فاکتور ها: ' + total.toLocaleString());#}
+            $('#total-price-dt').text('جمع مبالغ فاکتور ها: ' + total.toLocaleString());
         }
 
 

@@ -1,0 +1,280 @@
+{% load more_tags %}
+
+<div class="sortable-item " id="invoice-rows">
+{#        <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">#}
+{#        <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">#}
+{#        <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">#}
+{#        <input type="hidden" value="{{ qi.quotation.addition|default_if_falsy:0 }}" id="id_addition">#}
+{#        <input type="hidden" value="{{ qi.quotation.tax|default_if_falsy:0 }}" id="id_tax">#}
+
+            <!-- update factor item -->
+
+            <div class="hidden-section">
+            {% for hidden_field in form_s_item.hidden_fields %}
+                {{ hidden_field }}
+            {% endfor %}
+            </div>
+
+            <!--factor item information and input (update)-->
+            <div class="row align-items-center mb-1 bg-white border rounded shadow-sm " id="id_factor_item" style="height: fit-content; min-height: 80px">
+
+            <!--goods_code (update)-->
+                <div class="col-1">
+{#                    {% render_field_by_order form_s_item form_s_item.goods_code %}#}
+                    <input type="text" onkeyup="get_sku_info()" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ form_s_item.instance.goods_code.sku }}" >
+                </div>
+
+            <!--partnumber (update)-->
+                <div class="col-3">
+                    <div class="d-flex flex-column">
+                        {{ form_s_item.part_number_show }}
+
+                        {% if form_s_item.instance.goods_code.part_number != form_s_item.instance.part_number_show %}
+                            <div>
+                                <span>پارت نامبر اصلی: </span>
+                                <span data-key="" class="bg-light-info mt-2 p-1 rounded font-size-11 ms-3" style="width: fit-content;">{{ form_s_item.instance.goods_code.part_number }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            <!--quantity (update)-->
+                <div class="col-1">
+                    <span>{% render_field_by_order form_s_item form_s_item.quantity margin_b=0 %}</span>
+                </div>
+
+            <!--price (update)-->
+                <div class="col-1">
+                    <span>{% render_field_by_order form_s_item form_s_item.price margin_b=0 %}</span>
+                </div>
+
+            <!--discount_per_item (update)-->
+                <div class="col-1">
+                    <span>{% render_field_by_order form_s_item form_s_item.discount_per_item margin_b=0 %}</span>
+                </div>
+
+            <!--row_total_price (update)-->
+                <div class="col-1">
+                    <span class="row-total-price">245,000</span>
+                </div>
+
+            <!--supply_locations and actions (update)-->
+                <div class="col-4">
+                    <div class="d-flex justify-content-between">
+                        <div>
+
+
+
+{#                        begin clude#}
+                            {# ========== جایگزین بخش «محل تامین در اینجا قرار میگیرد» ========== #}
+                            <div class="flex-grow-1 me-2">
+                              <div class="sp-cell" data-required="{{ form_s_item.instance.quantity }}">
+
+                                {# داده‌ی نهایی که با فرم سابمیت می‌شود #}
+                                <input type="hidden" name="{{ form_s_item.prefix }}-supply_locations" class="sp-data" value="[]">
+
+                                {# خلاصه‌ی داخل سلول (چیپ‌ها)؛ JS پر می‌کند #}
+                                <div class="sp-summary sp-empty">
+                                  <span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>
+                                </div>
+
+                                {# پنل ویرایش #}
+                                  <div class="sp-panel" hidden>
+                                      {% include "factor/partial/_supply_panel_content.html" with supply=form_s_item.instance.supply quantity=form_s_item.instance.quantity %}
+                                  </div>
+{#                                <div class="sp-panel" hidden>#}
+{##}
+                                  {# ─────── انبار (فقط اگر آیتمی دارد) ─────── #}
+{#                                  {% if form_s_item.instance.supply.warehouses %}#}
+{#                                    <div class="sp-group sp-g-warehouse">انبار</div>#}
+{#                                    {% for w in form_s_item.instance.supply.warehouses %}#}
+{#                                      <div class="sp-src" data-group="warehouse" data-id="{{ w.id }}"#}
+{#                                           data-name="{{ w.name }}" data-is-new="false">#}
+{#                                        <label class="sp-src-main">#}
+{#                                          <input type="checkbox" class="sp-check sp-check-main"#}
+{#                                                 {% if w.preselected_qty_free %}checked{% endif %}>#}
+{#                                          <div class="sp-info">#}
+{#                                            <span class="sp-name">{{ w.name }}</span>#}
+{#                                            <span class="sp-meta">سپیدار: <b>{{ w.sepidar_qty|floatformat:'-2g' }}</b> · آزاد: <b>{{ w.free_qty|floatformat:'-2g' }}</b></span>#}
+{#                                          </div>#}
+{#                                          <input type="number" class="sp-qty sp-qty-free" min="0" max="{{ w.free_qty }}"#}
+{#                                                 value="{{ w.preselected_qty_free|default_if_none:''|default:'' }}"#}
+{#                                                 placeholder="تعداد"#}
+{#                                                 {% if not w.preselected_qty_free %}disabled{% endif %}>#}
+{#                                        </label>#}
+{##}
+{#                                        {% if w.other_reserves %}#}
+{#                                          <div class="sp-src-others">#}
+{#                                            <button type="button" class="sp-others-toggle">#}
+{#                                              <span class="sp-chev">▸</span>از رزروهای دیگران#}
+{#                                              <span class="sp-others-cap">(تا {{ w.other_reserves_total|floatformat:'-2g' }})</span>#}
+{#                                            </button>#}
+{#                                            <div class="sp-others-list" hidden>#}
+{#                                              {% for r in w.other_reserves %}#}
+{#                                                <label class="sp-reserve" data-reserve-id="{{ r.id }}" data-max="{{ r.qty|add:r.preselected_qty }}">#}
+{#                                                  <input type="checkbox" class="sp-check sp-check-reserve"#}
+{#                                                         {% if r.preselected_qty %}checked{% endif %}>#}
+{#                                                  <div class="sp-reserve-info">#}
+{#                                                    <span class="sp-reserve-name">{{ r.owner }}</span>#}
+{#                                                    <span class="sp-reserve-meta">موجود: {{ r.qty|floatformat:'-2g' }} <span>فاکتور {{ r.factor.pk }}</span> </span>#}
+{#                                                  </div>#}
+{#                                                  <input type="number" class="sp-qty sp-qty-reserve" min="0" max="{{ r.qty|add:r.preselected_qty }}"#}
+{#                                                         value="{{ r.preselected_qty|default_if_none:''|default:'' }}"#}
+{#                                                         placeholder="تعداد"#}
+{#                                                         {% if not r.preselected_qty %}disabled{% endif %}>#}
+{#                                                </label>#}
+{#                                              {% endfor %}#}
+{#                                            </div>#}
+{#                                          </div>#}
+{#                                        {% endif %}#}
+{#                                      </div>#}
+{#                                    {% endfor %}#}
+{#                                  {% endif %}#}
+{##}
+                                  {# ─────── سفارش بازار + گزینه‌ی «جدید» ─────── #}
+{#                                  <div class="sp-group sp-g-market">سفارش بازار</div>#}
+{#                                  {% for m in form_s_item.instance.supply.market_orders %}#}
+{#                                    <div class="sp-src" data-group="market" data-id="{{ m.id }}"#}
+{#                                         data-name="{{ m.name }}" data-is-new="false">#}
+{#                                      <label class="sp-src-main">#}
+{#                                        <input type="checkbox" class="sp-check sp-check-main"#}
+{#                                               {% if m.preselected_qty_free %}checked{% endif %}>#}
+{#                                        <div class="sp-info">#}
+{#                                          <span class="sp-name">{{ m.name }}</span>#}
+{#                                          <span class="sp-meta">تعداد: <b>{{ m.total_qty|floatformat:"-2g" }}</b> · آزاد: <b>{{ m.free_qty|floatformat:'-2g' }}</b></span>#}
+{#                                        </div>#}
+{#                                        <input type="number" class="sp-qty sp-qty-free" min="0" max="{{ m.free_qty }}"#}
+{#                                               value="{{ m.preselected_qty_free|default_if_none:''|default:'' }}"#}
+{#                                               placeholder="تعداد"#}
+{#                                               {% if not m.preselected_qty_free %}disabled{% endif %}>#}
+{#                                      </label>#}
+{#                                      {% if m.other_reserves %}#}
+{#                                        <div class="sp-src-others">#}
+{#                                          <button type="button" class="sp-others-toggle">#}
+{#                                            <span class="sp-chev">▸</span>از رزروهای دیگران#}
+{#                                            <span class="sp-others-cap">(تا {{ m.other_reserves_total|floatformat:'-2g' }})</span>#}
+{#                                          </button>#}
+{#                                          <div class="sp-others-list" hidden>#}
+{#                                            {% for r in m.other_reserves %}#}
+{#                                              <label class="sp-reserve" data-reserve-id="{{ r.id }}" data-max="{{ r.qty }}">#}
+{#                                                <input type="checkbox" class="sp-check sp-check-reserve"#}
+{#                                                       {% if r.preselected_qty %}checked{% endif %}>#}
+{#                                                <div class="sp-reserve-info">#}
+{#                                                  <span class="sp-reserve-name">{{ r.owner }}</span>#}
+{#                                                  <span class="sp-reserve-meta">موجود: {{ r.qty|floatformat:'-2g' }}</span>#}
+{#                                                </div>#}
+{#                                                <input type="number" class="sp-qty sp-qty-reserve" min="0" max="{{ r.qty }}"#}
+{#                                                       value="{{ r.preselected_qty|default_if_none:''|default:'' }}"#}
+{#                                                       placeholder="تعداد"#}
+{#                                                       {% if not r.preselected_qty %}disabled{% endif %}>#}
+{#                                              </label>#}
+{#                                            {% endfor %}#}
+{#                                          </div>#}
+{#                                        </div>#}
+{#                                      {% endif %}#}
+{#                                    </div>#}
+{#                                  {% endfor %}#}
+{#                                  <div class="sp-src sp-new" data-group="market" data-id=""#}
+{#                                       data-name="سفارش بازار جدید" data-is-new="true">#}
+{#                                    <label class="sp-src-main">#}
+{#                                      <input type="checkbox" class="sp-check sp-check-main">#}
+{#                                      <div class="sp-info">#}
+{#                                        <span class="sp-name">سفارش بازار <span class="bold">جدید</span></span>#}
+{#                                        <span class="sp-meta">هنگام ذخیره ساخته می‌شود</span>#}
+{#                                      </div>#}
+{#                                      <input type="number" class="sp-qty sp-qty-free" min="0" placeholder="تعداد" disabled>#}
+{#                                    </label>#}
+{#                                  </div>#}
+{##}
+                                  {# ─────── سفارش خارجی + گزینه‌ی «جدید» ─────── #}
+{#                                  <div class="sp-group sp-g-foreign">سفارش خارجی</div>#}
+{#                                  {% for f in form_s_item.instance.supply.foreign_orders %}#}
+{#                                    <div class="sp-src" data-group="foreign" data-id="{{ f.id }}"#}
+{#                                         data-name="{{ f.name }}" data-is-new="false">#}
+{#                                      <label class="sp-src-main">#}
+{#                                        <input type="checkbox" class="sp-check sp-check-main"#}
+{#                                               {% if f.preselected_qty_free %}checked{% endif %}>#}
+{#                                        <div class="sp-info">#}
+{#                                          <span class="sp-name">{{ f.name }}</span>#}
+{#                                          <span class="sp-meta">تعداد: <b>{{ f.total_qty|floatformat:'-2g' }}</b> · آزاد: <b>{{ f.free_qty|floatformat:'-2g' }}</b></span>#}
+{#                                        </div>#}
+{#                                        <input type="number" class="sp-qty sp-qty-free" min="0" max="{{ f.free_qty }}"#}
+{#                                               value="{{ f.preselected_qty_free|default_if_none:''|default:'' }}"#}
+{#                                               placeholder="تعداد"#}
+{#                                               {% if not f.preselected_qty_free %}disabled{% endif %}>#}
+{#                                      </label>#}
+{#                                      {% if f.other_reserves %}#}
+{#                                        <div class="sp-src-others">#}
+{#                                          <button type="button" class="sp-others-toggle">#}
+{#                                            <span class="sp-chev">▸</span>از رزروهای دیگران#}
+{#                                            <span class="sp-others-cap">(تا {{ f.other_reserves_total|floatformat:'-2g' }})</span>#}
+{#                                          </button>#}
+{#                                          <div class="sp-others-list" hidden>#}
+{#                                            {% for r in f.other_reserves %}#}
+{#                                              <label class="sp-reserve" data-reserve-id="{{ r.id }}" data-max="{{ r.qty }}">#}
+{#                                                <input type="checkbox" class="sp-check sp-check-reserve"#}
+{#                                                       {% if r.preselected_qty %}checked{% endif %}>#}
+{#                                                <div class="sp-reserve-info">#}
+{#                                                  <span class="sp-reserve-name">{{ r.owner }}</span>#}
+{#                                                  <span class="sp-reserve-meta">موجود: {{ r.qty|floatformat:'-2g' }}</span>#}
+{#                                                </div>#}
+{#                                                <input type="number" class="sp-qty sp-qty-reserve" min="0" max="{{ r.qty }}"#}
+{#                                                       value="{{ r.preselected_qty|default_if_none:''|default:'' }}"#}
+{#                                                       placeholder="تعداد"#}
+{#                                                       {% if not r.preselected_qty %}disabled{% endif %}>#}
+{#                                              </label>#}
+{#                                            {% endfor %}#}
+{#                                          </div>#}
+{#                                        </div>#}
+{#                                      {% endif %}#}
+{#                                    </div>#}
+{#                                  {% endfor %}#}
+{#                                  <div class="sp-src sp-new" data-group="foreign" data-id=""#}
+{#                                       data-name="سفارش خارجی جدید" data-is-new="true">#}
+{#                                    <label class="sp-src-main">#}
+{#                                      <input type="checkbox" class="sp-check sp-check-main">#}
+{#                                      <div class="sp-info">#}
+{#                                        <span class="sp-name">سفارش خارجی جدید</span>#}
+{#                                        <span class="sp-meta">هنگام ذخیره ساخته می‌شود</span>#}
+{#                                      </div>#}
+{#                                      <input type="number" class="sp-qty sp-qty-free" min="0" placeholder="تعداد" disabled>#}
+{#                                    </label>#}
+{#                                  </div>#}
+{##}
+{#                                  <div class="sp-footer">#}
+{#                                    <div class="sp-foot-line"><span>مورد نیاز</span><b>{{ form_s_item.instance.quantity|floatformat:'-2g' }}</b></div>#}
+{#                                    <div class="sp-foot-line"><span>تأمین‌شده</span><b class="sp-sup">0</b></div>#}
+{#                                    <div class="sp-foot-status"></div>#}
+{#                                  </div>#}
+{#                                </div>#}
+                              </div>
+                            </div>
+                            {# ====================== پایان ====================== #}
+{#                        end clude#}
+
+
+
+                        </div>
+                        <div>
+                            <a class="mx-4 tooltip_ cursor-pointer"
+                            data-bs-toggle="modal"
+                            data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ form_s_item.instance|model_name }}"
+                            data-object_id="{{ form_s_item.instance.pk }}"
+                            data-app_name="{{ form_s_item.instance|app_label }}"
+                            name="name_change_log">
+                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                            </i>
+                        </a>
+                        </div>
+                    </div>
+                </div>
+
+        </div>
+
+        </div>
