@@ -1236,7 +1236,9 @@ def factor_today_total_price(request, *args, **kwargs):
         factors = Factor.objects.filter(pk__in=all_approved_today)
         user_groups_name = user.groups.values_list('name', flat=True)\
             if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
-        if 'sales_admin' in user_groups_name:
+        if user.is_superuser:
+            qs = factors.filter().distinct()
+        elif 'sales_admin' in user_groups_name:
             qs = factors.filter().distinct()
         elif 'sales_user' in user_groups_name:
             qs = factors.filter(creator_user=user).distinct()
@@ -1248,7 +1250,9 @@ def factor_today_total_price(request, *args, **kwargs):
         ).order_by('-id').values('open_rate')[:1]  # یا بر اساس تاریخ
 
         qs = qs.annotate(
-            o_rate=Subquery(rate_subquery)
+            o_rate=Coalesce(
+                F('currency_amount'),
+                Subquery(rate_subquery))
         ).annotate(
             calculated_price=Case(
                 When(currency_ref=1, then=F('total_price')),
