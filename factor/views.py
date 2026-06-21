@@ -977,7 +977,7 @@ def empty_checker(request, *args, **kwargs):
     from tools import const
     if request.user.base_group == 'accounting' or request.user.is_superuser:
         factors = list(Factor.objects.filter(checker__isnull=True,
-                                             last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES)
+                                             last_work_flow__current_state_name__in=const.ACCOUNTING_FACTOR_STATES).order_by('-id')
                        .values_list('pk', flat=True))
         return JsonResponse({'res': factors, 'count': len(factors)}, safe=False)
     return JsonResponse({'res': ''}, safe=False)
