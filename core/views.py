@@ -421,6 +421,7 @@ class BaseView(UserPassesTestMixin,
         try:
             flow_user_groups = self.flow_config.get('flow_users_groups', [])
             try:
+                self.state_index = self.get_flow_index(self.object) if self.state_index is None else self.state_index
                 belong_to_groups = self.flow_config.get('flow_users_groups')[self.state_index] if self.has_flow else None
                 belong_to_group = belong_to_groups[0] if isinstance(belong_to_groups, list) else belong_to_groups
             except Exception as e:
