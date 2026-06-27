@@ -796,6 +796,23 @@ class BaseModel(AbsBaseModel):
         abstract = True
 
 
+class BaseModel2(AbsBaseModel):
+    pass
+
+    class Meta:
+        abstract = True
+
+    def save_user(self, request=None):
+        try:
+            if self.creator_user:
+                self.editor_user = request.user
+            else:
+                self.creator_user = request.user
+                self.editor_user = request.user
+        except Exception as e:
+            print('error: ', e.__traceback__.tb_lineno, e)
+
+
 class BaseModeWF(BaseModel):
     ...
     last_work_flow = models.ForeignKey(WorkFlow, null=True, blank=True, verbose_name=_('las_work_flow'),
