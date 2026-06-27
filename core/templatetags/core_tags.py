@@ -156,15 +156,18 @@ def get_list(field):
     m_list = []
     objs = field.subwidgets
     selected_str = ''
-    for obj in objs:
-        value = obj.data['value'] if isinstance(obj.data['value'],str) else obj.data['value'].value
-        m_list.append(
-            (value,
-             obj.data['label'],
-             'selected' if obj.data['selected'] else ''))
-        if obj.data['selected']:
-            selected_str = obj.data['label'] if obj.data['label'] != '---------' else ''
-    return {'list': m_list, 'selected_str': selected_str}
+    try:
+        for obj in objs:
+            value = obj.data['value'] if isinstance(obj.data['value'],str) else obj.data['value'].value
+            m_list.append(
+                (value,
+                 obj.data['label'],
+                 'selected' if obj.data['selected'] else ''))
+            if obj.data['selected']:
+                selected_str = obj.data['label'] if obj.data['label'] != '---------' else ''
+        return {'list': m_list, 'selected_str': selected_str}
+    except Exception as e:
+        return {'list': m_list, 'selected_str': selected_str}
 
 @register.filter
 def get_base_model(field):
