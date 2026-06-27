@@ -106,7 +106,7 @@ function convertToInt() {
 }
 
 // convertToInt()
-function commaSeperator(value, step=null, sep=',') {
+function commaSeperator(value, step=3, sep=',') {
     debugger
     if (!value) return "";
 
@@ -118,8 +118,9 @@ function commaSeperator(value, step=null, sep=',') {
   const integerPart = parts[0];
   const decimalPart = parts[1] !== undefined ? parts[1] : null;
 
-  // فرمت سه‌رقمی بخش صحیح
-  const formattedInt = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  // فرمت سه‌رقمی بخش صحیح+
+    const regex = new RegExp(`\\B(?=(\\d{${step}})+(?!\\d))`, 'g');
+  const formattedInt = integerPart.replace(regex, sep);
 
   if (decimalPart !== null && decimalPart !== "0"){
       return `${formattedInt}.${decimalPart}`
@@ -151,7 +152,6 @@ function numberWithCommas(x, digits = 2) {
 }
 
 function addCommaSeperator(on_load=null, step=null, sep=',') {
-    debugger
     let inputNumberValue;
     let numberWithComma;
 
@@ -895,6 +895,8 @@ const next_btn = document.querySelector('#submit_next')
 const back_btn = document.querySelector('#submit_back')
 const send_factor_to_sepidar_btn = document.querySelector('#send_factor_to_sepidar')
 
+const main_form = document.querySelector('#main-form')
+
 function show_global_action_btn(){
     global_action_btn.classList.remove('d-none')
     pleas_wait.classList.add('d-none')
@@ -909,19 +911,43 @@ send_factor_to_sepidar_btn && send_factor_to_sepidar_btn.addEventListener('click
 })
 
 draft_btn && draft_btn.addEventListener('click', function (){
-    removeCommaSeperator()
-    global_action_btn.classList.add('d-none')
-    pleas_wait.classList.remove('d-none')
-    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 12000)
+    if (main_form){
+        if (main_form.checkValidity()){
+            removeCommaSeperator()
+            global_action_btn.classList.add('d-none')
+            pleas_wait.classList.remove('d-none')
+            pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+            setTimeout(show_global_action_btn, 12000)
+        } else {
+            form.reportValidity()
+        }
+    } else {
+        removeCommaSeperator()
+        global_action_btn.classList.add('d-none')
+        pleas_wait.classList.remove('d-none')
+        pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+        setTimeout(show_global_action_btn, 12000)
+    }
 })
 
 next_btn && next_btn.addEventListener('click', function (){
-    removeCommaSeperator()
-    global_action_btn.classList.add('d-none')
-    pleas_wait.classList.remove('d-none')
-    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 12000)
+    if (main_form){
+        if (main_form.checkValidity()) {
+            removeCommaSeperator()
+            global_action_btn.classList.add('d-none')
+            pleas_wait.classList.remove('d-none')
+            pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+            setTimeout(show_global_action_btn, 12000)
+        } else {
+            form.reportValidity()
+        }
+    } else {
+        removeCommaSeperator()
+        global_action_btn.classList.add('d-none')
+        pleas_wait.classList.remove('d-none')
+        pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+        setTimeout(show_global_action_btn, 12000)
+    }
 })
 
 back_btn && back_btn.addEventListener('click', function (){
