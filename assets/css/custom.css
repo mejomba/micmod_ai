@@ -198,6 +198,9 @@ footer.footer{
     margin-left: -680px;
 }
 
+.p-5px {
+    padding: 5px !important;
+}
 /* image gallery slider */
 .slider-card-container {
     position: absolute;

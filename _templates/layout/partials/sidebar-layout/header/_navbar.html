@@ -1,6 +1,8 @@
 {% load accounts_tag %}
 {% load core_tags %}
 
+<div id="page-title" class="font-size-18 bold mt-2"></div>
+
 <!--begin::Navbar-->
 <div class="app-navbar flex-lg-shrink-0">
 
@@ -575,6 +577,9 @@ function sendWorkNotif(event){
     }); // end ajax
 
     }
+
+    const title = document.querySelector('title').textContent;
+document.querySelector('#page-title').innerHTML = title
 </script>
 
 {% endblock extra_js %}
