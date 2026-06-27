@@ -6,7 +6,7 @@ from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
 from accounts.models import User
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF, BaseManager
+from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
@@ -208,6 +208,15 @@ class Order(BaseModeWF):
     price_inquiry_result = models.ForeignKey(PriceInquiryResult, on_delete=models.DO_NOTHING, related_name='orders', verbose_name='inquiry', null=True, blank=True)
     is_kasri = models.BooleanField(default=False, verbose_name=_('is_kasri'))
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
+
+    @property
+    def display_name(self):
+        return f'{self.creator_user} - ID:{self.pk}'
+        if self.final_item:
+            return f'{self.pk} -- {self.final_item.part_number}'
+        else:
+            return f'{self.pk}'
+        return Order.sepidar_wh_map.get(self.sepidar_wh_code)
 
     def __str__(self):
         if self.final_item:
@@ -606,7 +615,9 @@ class Order(BaseModeWF):
         87: "انبار آذين",
         88: "انبار مواد اوليه ايروان",
         89: "انبار محصول ايروان",
-        90: "انبار کالای بین راهی لوئیز"
+        90: "انبار کالای بین راهی لوئیز",
+        91: "انبار کالای بین راهی ایران",
+        92: "انبار آقای هادی رفیع اصفهان"
     }
 
     @property
@@ -615,6 +626,34 @@ class Order(BaseModeWF):
         if not name:
             name = 'سفارش'
         return name
+
+
+class OrderBazar(BaseModeWF):
+    order_title = models.CharField(max_length=255, blank=True, null=True)
+    order_number = models.CharField(max_length=16, blank=True, null=True)
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
+    cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
+    quantity = models.FloatField(default=0)  # ⬅ ضروری
+    price = models.FloatField(null=True, blank=True)  # اگر قیمت پیشنهادی دارید
+    is_over = models.BooleanField(default=False)  # ⬅ lifecycle
+    receipt_in_wh = models.BooleanField(default=False)  # ⬅ هنگام تحویل به انبار
+    sepidar_wh_code = models.IntegerField(null=True, blank=True)  # ⬅ کد انبار مقصد
+    supplier = models.CharField(max_length=255, blank=True, null=True)  # اختیاری
+
+    @property
+    def display_name(self):
+        return f'{self.creator_user} - ID:{self.pk}'
+
+
+class WhReserve(BaseModel2):
+    quantity = models.FloatField()
+    sepidar_wh_code = models.IntegerField()
+    item = models.ForeignKey(Item, on_delete=models.DO_NOTHING)
+    cancel = models.BooleanField(default=False)
+
+    @property
+    def display_name(self):
+        return f'{Order.sepidar_wh_map.get(self.sepidar_wh_code)} - ID: {self.pk}'
 
 
 class OrderOrder(BaseModel):
@@ -674,7 +713,9 @@ class OrderOrder(BaseModel):
         87: "انبار آذين",
         88: "انبار مواد اوليه ايروان",
         89: "انبار محصول ايروان",
-        90: "انبار کالای بین راهی لوئیز"
+        90: "انبار کالای بین راهی لوئیز",
+        91: "انبار کالای بین راهی ایران",
+        92: "انبار آقای هادی رفیع اصفهان"
     }
 
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),

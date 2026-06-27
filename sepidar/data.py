@@ -85,6 +85,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
     @classmethod
     def get_inventory_purchase_invoice_item_data(cls, obj, request=None, grouped=None):
 
+        total_price = obj.get('total_price')
         rate = obj.get('rate') or 1
         all_tax = obj.get('tax') or 0
         all_duty = obj.get('duty') or 0
@@ -98,12 +99,14 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         for idx, row_data in grouped.items():
             if idx == '0' or idx == 0:
                 continue  # first row is empty in bazar order trade order start idx from 1 => (enumerate(order, start=1)
-
+            discount_weight = (row_data.get('price', 0) * row_data.get('quantity', 0) / total_price)
+            tax_weight = (row_data.get('price', 0) / all_tax) if all_tax else 1
+            tax = row_data.get('tax', 0) + all_tax * tax_weight
             itemref = row_data.get('itemref')
             fee = row_data.get('price') or 0
             quantity = row_data.get('quantity') or 0
             fee, quantity = map(float, (fee, quantity))
-            discount = (row_data.get('discount') or 0) + (all_discount / row_count)
+            discount = (row_data.get('discount') or 0) + (all_discount * discount_weight)
             description = row_data.get('description')
             addition = row_data.get('addition') or 0
 
@@ -128,8 +131,8 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "discountinbasecurrentcy": round(discount * rate, 4) if rate != 1 else 0,
                 "addition": round(addition, 4),
                 "additioninbasecurrency": round(addition * rate, 4) if rate != 1 else 0,
-                "tax": round(all_tax / row_count, 4),
-                "taxinbasecurrency": round((all_tax / row_count) * rate, 4) if rate != 1 else 0,
+                "tax": round(tax, 4),
+                "taxinbasecurrency": round(tax * rate, 4) if rate != 1 else 0,
                 "duty": round(all_duty / row_count, 4),
                 "dutyinbasecurrency": round((all_duty / row_count) * rate, 4) if rate != 1 else 0,
                 "transportprice": None,  # همیشه null

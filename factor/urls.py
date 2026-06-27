@@ -2,7 +2,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .select2 import select2_search
 from .views import CustomerRequestFactorViewSet
+from .v.supply import supply_fragment_view
 
 router = DefaultRouter()
 router.register(r'customer-request-factor', CustomerRequestFactorViewSet, basename='customer-factor')
@@ -20,8 +22,10 @@ urlpatterns = [
     path('direct/', views.DirectFactorView.as_view(), name='factor.direct'),
     path('list/', views.FactorsList.as_view(), name='factor.list'),
     path('search/', views.search_factor_view, name='factor.search'),
+
     path('ajax/get_quotation_items_for_factor/<int:pk>/', views.get_quotation_items_for_factor, name='factor.get_quotation_items_for_factor'),
     path('ajax/get_quotation_items_for_factor/<int:pk>/safe/', views.safe_get_quotation_items_for_factor, name='safe.factor.get_quotation_items_for_factor'),
+
     path('factor/list/datatable/', views.FactorListDatatable.as_view(), name='factor.list.datatable'),
     path('factor/print/<int:id>/', views.print_view, name='factor.print'),
     path('delivery/', views.DeliveryList.as_view(), name='delivery.view'),
@@ -30,5 +34,8 @@ urlpatterns = [
     path('wh/packing/', views.WhPacking.as_view(), name='wh.packing'),
     path('ajax/get_supply_locations/<int:sku>/<int:factor_item_pk>/', views.get_supply_locations, name='get_supply_locations'),
     path('ajax/show_force_factor/', views.show_force_factor, name='show_force_factor'),
-    # path('ajax/factor_and_sepidar/', FactorAndSepidar.as_view(), name='factor_and_sepidar'),
+    path('<int:pk>/supply-fragment/', supply_fragment_view, name='factor_supply_fragment',),
+
+    path("select2/<str:key>/", select2_search, name="select2-search"),
+
 ]

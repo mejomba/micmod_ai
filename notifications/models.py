@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -112,3 +113,43 @@ class Messages(BaseContentType):
             obj.read_status = ReadStatus.Read
             obj.save()
 
+
+# begin clude
+# models.py (یا notifications/models.py)
+
+
+class SupplyNotification(models.Model):
+    RESERVE_TAKEN    = 'reserve_taken'
+    RESERVE_RETURNED = 'reserve_returned'
+    KIND_CHOICES = [
+        (RESERVE_TAKEN,    'برداشت از رزرو شما'),
+        (RESERVE_RETURNED, 'بازگشت رزرو'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='supply_notifications',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        help_text='کسی که این رویداد را ایجاد کرد (در RESERVE_RETURNED می‌تواند None باشد)',
+    )
+    kind = models.CharField(max_length=32, choices=KIND_CHOICES)
+    factor_item = models.ForeignKey(
+        'factor.FactorItem', on_delete=models.CASCADE, related_name='+',
+        help_text='ردیف فاکتور منشأ (آن‌که از رزرو این کاربر برداشت/بازگردانده شد)',
+    )
+    qty = models.FloatField()
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['user', 'is_read', '-created_at'])]
+
+    def __str__(self):
+        return f"{self.user} — {self.get_kind_display()} — {self.qty}"
+
+#  end clude

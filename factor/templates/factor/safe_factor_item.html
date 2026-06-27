@@ -230,20 +230,19 @@
         return el;
     }
 
-    function get_sku_info(){
-        document.querySelectorAll('input[name*="-goods_code"]').forEach(function (item){
+    function get_sku_info(item){
             if (!item.hasAttribute("readonly")){
-                item.addEventListener('keyup', function (e) {
-                e.preventDefault()
-                const goodsName = item.parentElement.parentElement.parentElement.querySelector('input[name*="-part_number_show"]')
+                const goodsName = item.querySelector('input[name*="-part_number_show"]')
+                const sku = item.querySelector('input[name*="-goods_code"]')
                 $.ajax({
                     type: 'GET',
-                    url: `/micmod_base/get_sku/?sku=${item.value}`,
+                    url: `/micmod_base/get_sku/?sku=${sku.value}`,
                     dataType: 'json',
                     cache: false,
                     processData: false,
                     contentType: false,
                     success: function (data) {
+                        debugger
                         if (data['res']){
                             item.classList.remove('border-danger')
                             item.classList.add('border-success')
@@ -264,11 +263,10 @@
                         console.log('error')
                     }
                 }); // end ajax
-            })
             }
-        })
     }
     setTimeout(function(){
+        return ''
         document.querySelectorAll('input[name*="-goods_code"]').forEach(function (item){
             if (!item.hasAttribute("readonly")){
                 item.addEventListener('keyup', function (e) {
@@ -380,7 +378,7 @@
         }
     }
 function factor_calculate_price(target, direct_target=null) {
-        debugger
+
     let elem;
     if (!direct_target) {
         elem = findAncestor(target, "factor_item_self")
@@ -407,13 +405,13 @@ function factor_calculate_price(target, direct_target=null) {
     // qty
     let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
     if (isNaN(qty)) {
-        qty = quantity.value.replaceAll(',', '')
+        qty = parseFloat(quantity.value.replaceAll(',', ''))
     }
 
     // price
     let price = final_price ? parseFloat(final_price.innerHTML.replaceAll(',', '')) : NaN
     if (isNaN(price)) {
-        price = final_price ? final_price.value.replaceAll(',', '') : 0
+        price = final_price ? parseFloat(final_price.value.replaceAll(',', '')) : 0
     }
 
     row_discount_amount = parseFloat(elem.querySelector('input[name$="-discount_per_item"]').value.replaceAll(',', '')) || 0
@@ -479,6 +477,12 @@ function factor_calculate_price(target, direct_target=null) {
     //for (let i = 0; i < t_prices.length; i++) {
         //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
     //}
+
+    if (parseFloat(total_price.innerHTML.replace(',', '')) < 0){
+        total_price.classList.add('text-danger')
+    } else {
+        total_price.classList.remove('text-danger')
+    }
 
 }
 window.setTimeout(factor_calculate_price_all_rows, 600)

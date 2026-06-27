@@ -3,7 +3,7 @@
 {# انتظار context: supply (dict) و quantity (number) #}
 
 {% if supply.warehouses %}
-  <div class="sp-group sp-g-warehouse">انبار</div>
+  <div class="sp-group sp-g-warehouse">انبار <span class="text-danger">فقط انتخاب یک انبار مجاز است</span></div>
   {% for w in supply.warehouses %}
     <div class="sp-src" data-group="warehouse" data-id="{{ w.id }}"
          data-name="{{ w.name }}" data-is-new="false">

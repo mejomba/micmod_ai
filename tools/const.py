@@ -145,3 +145,15 @@ ACCOUNTING_FACTOR_STATES = [
     "جمع‌‌آوری",
     "چک نهایی"
 ]
+
+SALE_FACTOR_STATES = [
+    'پیش‌نویس',
+    'پیش نویس',
+    "تایید مدیر فروش",
+]
+
+FACTOR_OPEN_FOR_RESERVE_STATE = [
+    'پیش‌نویس',
+    'پیش نویس',
+    "تایید مدیر فروش",
+]

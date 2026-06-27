@@ -376,7 +376,13 @@
         discount_calculated_element.innerHTML = formatNumber(total_row_discount + all_discount) || '0'
         addition_calculated_element.innerHTML = formatNumber(total_row_addition) || '0'
         tax_calculated_element.innerHTML = formatNumber(all_tax) || '0'
-        netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'
+        if (Number(net_price) <= 0){
+            submitBuyFactor.classList.add('d-none')
+            netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'
+        } else {
+            submitBuyFactor.classList.remove('d-none')
+            netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'
+        }
 
         document.querySelector('input[name="total_price"]').value = total_row_price
     }

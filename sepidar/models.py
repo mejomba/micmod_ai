@@ -829,3 +829,28 @@ class APILogs(core.models.AbsBaseModel):
         log_data['api_response'] = response_json
         log = APILogs.objects.create(**log_data) if save else None
         return response.status_code, response_json, log
+
+
+class SepidarItemStock(models.Model):
+    itemstocksummaryid = models.IntegerField(db_column='ItemStockSummaryID',primary_key=True)  # Field name made lowercase.
+    stockref = models.IntegerField(db_column='StockRef')  # Field name made lowercase.
+    itemref = models.ForeignKey(Item, models.DO_NOTHING, db_column='ItemRef', related_name='stock_summaries')  # Field name made lowercase.
+    tracingref = models.IntegerField(db_column='TracingRef', blank=True, null=True)  # Field name made lowercase.
+    order = models.IntegerField(db_column='Order', blank=True, null=True)  # Field name made lowercase.
+    unitref = models.IntegerField(db_column='UnitRef')  # Field name made lowercase.
+    inputquantity = models.DecimalField(db_column='InputQuantity', max_digits=19, decimal_places=4)  # Field name made lowercase.
+    outputquantity = models.DecimalField(db_column='OutputQuantity', max_digits=19, decimal_places=4)  # Field name made lowercase.
+    quantity = models.DecimalField(db_column='Quantity', max_digits=20, decimal_places=4, editable=False, blank=True, null=True)  # Field name made lowercase.
+    salequantity = models.DecimalField(db_column='SaleQuantity', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    fiscalyearref = models.IntegerField(db_column='FiscalYearRef')  # Field name made lowercase.
+    salewithreservequantity = models.DecimalField(db_column='SaleWithReserveQuantity', max_digits=19, decimal_places=4, blank=True, null=True)  # Field name made lowercase.
+    feedfromclosingoperation = models.BooleanField(db_column='FeedFromClosingOperation')  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = '[INV].[ItemStockSummary]'
+
+    @property
+    def display_name(self):
+        from order.models import Order
+        return Order.sepidar_wh_map.get(self.stockref)

@@ -113,9 +113,15 @@
             return repo.text;
         }
         var $container = $(`
-        <div class='d-flex'>
+        <div class='row'>
+<div class="col-9">
 <span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
 <span>${repo.text}</span>
+</div>
+<div class="col-3">
+<span>${numberWithCommas(repo.stock_qty) || 0}</span> <br>
+<span>${numberWithCommas(repo.stock_qty_res) || 0}</span>
+</div>
 </div>
 `);
         return ($container)

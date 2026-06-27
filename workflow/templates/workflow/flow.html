@@ -55,7 +55,7 @@
             {% now "Ymd" as today_str %}
             {% for f in flow %}
                 <td>{{ forloop.revcounter }}</td>
-                <td class="d-flex">{{ f.from_user }}
+                <td class="d-flex">{{ f.creator_user }}
 {#                    <div>#}
 {#                        {% if f.from_user.profile %}#}
 {#                            <img src="{{ f.from_user.profile.get_user_image }}" alt="user_image__{{ f.from_user.profile.firstname }}" class="rounded-circle" width="32" height="32">#}

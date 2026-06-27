@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.urls import reverse
 from django.views import View
+from django.views.generic import DetailView
 from jalali_date import datetime2jalali
 from jalali_date.templatetags.jalali_tags import to_jalali
 from rest_framework import viewsets
@@ -36,11 +37,16 @@ from sepidar.models import Dl
 from translator import get_text as _
 
 from core.views import BaseView, Base
-from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm
-from factor.models import Factor, FactorItem, Delivery
+from factor.forms import FactorModelForm, FactorItemFormset, FactorItemModelForm, DeliveryForm, \
+    FACTOR_FIELDS_BY_PERMISSION, \
+    FACTOR_ITEM_FIELDS_BY_PERMISSION, FactorItemForm, FactorEditForm, FactorItemInlineFormSetBase
+from factor.models import Factor, FactorItem, Delivery, FactorItemSupplyLocation
 from micmod_base.models import Quotation, QuotationItem, CustomerRequest
 from tools.utils import to_jalali_date, show_error, timer, parse_number
 import json
+
+from workflow.models import WorkFlow
+from .services.supply import SupplyLocationService
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -620,7 +626,7 @@ class FactorListDatatable(AjaxDatatableView):
             obj.q.id if obj.q else '-'
         )
         row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('factor:factor.view', args=(obj.id,)),
+            reverse('factor:safe.factor.view', args=(obj.id,)),
             obj.pk if obj.pk else '-'
         )
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
@@ -631,6 +637,7 @@ class FactorListDatatable(AjaxDatatableView):
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
         row['checker'] = " ".join([x.username for x in obj.checker.all()])
         row['total_price'] = f'{parse_number(obj.total_price):,}'
+        row['created_date'] = '%s' % to_jalali_date(obj.created_date)
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in
                                        obj.comments.filter(comment_title='S')]) if not obj.accounting_confirm else ''  # "S" is accounting not approve factor
 
@@ -773,6 +780,7 @@ class FactorListDatatable(AjaxDatatableView):
             AjaxDatatableView.render_row_tools_column_def(),
             {'name': 'pk', 'visible': False, 'className': 'currency-search'},
             {'name': 'id', 'visible': True, 'orderable': True, 'title': _('code'), 'className': 'border'},
+            {'name': 'created_date', 'visible': True, 'orderable': True, 'title': "<div style='min-width:60px'>تاریخ</div>", 'className': 'border'},
             {'name': 'q__customer_party_id', 'visible': True, 'title': _('customer'),
              'lookup_field': '__title__icontains', 'searchable': True, 'className': 'border'},
             {'name': 'last_work_flow__to_user', 'visible': True, 'searchable': True, 'title': "متعلق به",
@@ -968,10 +976,10 @@ def show_force_factor(request, *args, **kwargs):
 
 class SafeFactorView(LoginRequiredMixin, BaseView):
     template_name = 'factor/safe_factor.html'
-    form_class = FactorModelForm
+    form_class = FactorEditForm
     model = Factor
     form_struct = {
-        'form': FactorModelForm,
+        'form': FactorEditForm,
         'childes': [
             {
                 'form': FactorItemFormset,
@@ -1077,12 +1085,77 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             return obj
 
     def get_success_url(self):
-        return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('factor:safe.factor.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         if self.object is None:
-            pass
-            # import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
+            is_new = True
+        else:
+            is_new = False
+
+        self.get_form_kwargs()
+
+        self.object = self.get_object()
+        form = self.get_form()
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        form.instance.extra_data.request = self.request
+        self.object = form.save()
+
+        if form.file_model and form.file_groups_2:
+            self.object.save_file(request=self.request,
+                              file_groups=form.file_groups_2,
+                              file_model=form.file_model,
+                              obj=self.object,
+                              input_prefix='file'
+                              )
+
+        form_set = self._build_item_formset(data=request.POST, instance=self.object)
+        if not form_set.is_valid():
+            return self.render_to_response(self.get_context_data(form_s=form_set))
+
+        service = SupplyLocationService()
+        try:
+            with transaction.atomic():
+                instances = form_set.save(commit=False)  # حذف‌ها را خودمان مدیریت می‌کنیم
+
+                # ۱) ردیف‌های حذف‌شده: آزادسازی SL + اعتبارسنجی قفل + حذف ردیف
+                for obj in form_set.deleted_objects:
+                    service.delete_factor_item(obj, request.user)
+
+                # ۲) ذخیره‌ی ردیف‌های باقی‌مانده
+                for instance in instances:
+                    instance.extra_data.request = self.request
+                    instance.save()
+
+                # ۳) save_m2m امن — فقط فرم‌هایی که این متد را دارند
+                for form in form_set.saved_forms:
+                    if hasattr(form, 'save_m2m'):
+                        form.save_m2m()
+
+                # ۳) sync محل تامین فقط برای ردیف‌های غیرحذفی
+                for idx, form in enumerate(form_set.forms):
+                    if form.instance.pk and not form.cleaned_data.get('DELETE'):
+                        raw = request.POST.get(f'factoritem_set-{idx}-supply_locations')
+                        selections = json.loads(raw or '[]')
+                        service.sync_factor_item(form.instance, selections, request.user)
+
+                wf_obj = self.submit_flow(is_new=is_new)
+                self.object.last_work_flow = wf_obj
+                self.object.save()
+        except ValidationError as e:
+            form_set._non_form_errors = form_set.error_class([str(e)])
+            form_set.non_form_errors = form_set.error_class([str(e)])
+            return self.render_to_response(self.get_context_data(form_s=form_set))
+
+        # wf_form = self.workflow_form(data=self.request.POST, initial=self.wf_initial, content_type_model=self.model,
+        #                              current_user=self.request.user)
+        # if wf_form.is_valid():
+        #     wf_obj = wf_form.save()
+        #     self.object.last_work_flow = wf_obj
+        #     self.object.save()
+
+        return redirect(self.get_success_url())
 
         if 'new_address' in self.request.POST:
             self.save_new_address()
@@ -1097,21 +1170,101 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             self.object.save()
         return super().post(request, *args, **kwargs)
 
-    def disconnect_history(self, model):
-        for (receiver_key, receiver) in post_save.receivers:
-            if hasattr(receiver, "__self__") and isinstance(receiver.__self__, HistoricalRecords):
-                hist_obj = receiver.__self__
-                if 'factor' in str(hist_obj.cls):
-                    post_save.disconnect(receiver, sender=model)
+    def submit_flow(self, is_new):
+        groups = {
+                    0: {"group": "sales_user", "state_name": "پیش‌نویس"},
+                    1: {"group": "sales_admin", "state_name": "تایید مدیر فروش"},
+                    2: {"group": "wh_admin", "state_name": "تخصیص کارشناس انبار"},
+                    3: {"group": "factor_collector", "state_name": "جمع‌‌آوری"},
+                    4: {"group": "factor_final_check", "state_name": "چک نهایی"},
+                    5: {"group": "factor_send_or_delivery", "state_name": "ارسال یا تحویل"},
+                    6: {"group": "factor_delivery_approve", "state_name": "تایید تحویل"},
+                    7: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
+                }
 
-        # for receiver in m2m_changed.receivers[:]:
-        #     if "update_change_reason" in str(receiver) or "update_change_reason" in str(receiver[1]):
-        #         m2m_changed.disconnect(receiver[1], sender=model)
+        last_flow = self.object.last_work_flow
+        current_state_index = self.state_index
+        if 0 < current_state_index < 7:
+            next_state_index = getattr(self, 'state_index') + 1
+            previews_state_index = getattr(self, 'state_index') - 1
+
+        if current_state_index == 0:
+            next_state_index = getattr(self, 'state_index') + 1
+            previews_state_index = 0
+
+        if current_state_index == 7:
+            next_state_index = 7
+            previews_state_index = getattr(self, 'state_index') - 1
+
+        current_group_name = groups.get(current_state_index).get('group')
+        next_group_name = groups.get(next_state_index).get('group')
+        previews_group_name = groups.get(previews_state_index).get('group')
+
+        current_state_name = groups.get(current_state_index).get('state_name')
+        next_state_name = groups.get(next_state_index).get('state_name')
+        previews_state_name = groups.get(previews_state_index).get('state_name')
+
+        if 'next' in self.request.POST:  # 3 next
+            current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=next_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+                to_user = next_state_user.first()
+
+            wf = WorkFlow.objects.create(action='next', flow_name='factor',creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=3, from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=next_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+        elif 'draft' in self.request.POST and is_new:  # 5 first draft
+            wf = WorkFlow.objects.create(action='draft', flow_name='factor', wf_status=5,
+                                         creator_user=self.request.user,
+                                         editor_user=self.request.user,
+                                         from_user=self.request.user,
+                                         to_user=self.request.user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        elif 'back' in self.request.POST:  # 2 back
+            current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+                to_user = previews_state_user.first()
+
+            wf = WorkFlow.objects.create(action='back', flow_name='factor',creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=2,
+                                         from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=previews_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        elif 'change_user' in self.request.POST:  # 4 change user
+            to_user = self.request.POST.get('to_current_group_user')
+            wf = WorkFlow.objects.create(action='change user', flow_name='factor', creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=4,
+                                         from_user=last_flow.to_user,
+                                         to_user_id=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        return last_flow
 
     def form_valid(self, form):
-        self.disconnect_history(Factor)
-        self.disconnect_history(FactorItem)
-
         try:
             condition = self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST
         except Exception as e:
@@ -1120,6 +1273,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             self.form.instance.collecting_end_time = timezone.now()
         obj_before_save = self.object
         res = super().form_valid(form)
+        self.factor_service()
 
         if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 0:
             # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله پیش نویس هستیم" and 'next':
@@ -1164,8 +1318,6 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
 
-        # self.reconnect_history(Factor)
-        # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
         if obj_before_save and obj_before_save.accounting_confirm:
             self.object.accounting_confirm = True
@@ -1174,93 +1326,184 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
 
     @timer
     def get_context_data(self, **kwargs):
+        print('get context data')
         context = super().get_context_data(**kwargs)
-        if not self.object:
-            context['allow_next'] = False
-        context['f_warning'] = []
-        if not self.object:
-            return context
-        context['section_id'] = 'factor'
-        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
-        context['form'].enable = True if self.wf_access else False
-        context['update'] = True if self.object else False
-        context['obj'] = self.object
-        context['quotation'] = self.object.q if self.object else None
-        qis = self.object.q.quotation.select_related('goods_code_fk') if self.object else None
-        FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
-        context['form_s'] = FactorItemFormset(instance=self.object, form_kwargs={
-                                                  "constraint": {
-                                                      "wf_access": self.wf_access,
-                                                      'form_state': self.state_index,
-                                                      'form_state_name': self.flow_config.get('flow_state_list')[self.state_index],
-                                                      'request': self.request,
-                                                      'form_constraint': self.flow_config.get("flow_form_constraint"),
-                                                      'formset_constraint': self.flow_config.get('flow_formset_constraint')
-                                                      }
-                                              },
-                                              queryset=FactorItem.objects.filter(factor=self.object))
+        if self.request.method == "POST":
+            context["form_s"] = context['form_s']
+            context["form"] = self._build_factor_form(
+                data=self.request.POST,
+                instance=self.object,
+            )
+        else:
+            context["form_s"] = self._build_item_formset(
+                instance=self.object,
+            )
+        context["factor"] = self.object
+        context["object"] = self.object
+        context["app_name"] = 'factor'
 
-        exclude_qi = set()
-        context['factoritem_qi_pair'] = []
-
-        ''' the for loop get 2 second of execution time for 30 rows '''
-
-        for factor_item_form in context['form_s'].forms:
-            for qi in qis:
-                factor_item_form_instance_pk = factor_item_form.instance.pk
-                if factor_item_form_instance_pk:
-                    exclude_qi.add(factor_item_form.instance.qi.pk)
-                if factor_item_form_instance_pk and factor_item_form.instance.qi.pk == qi.pk:
-                    if qi.is_over:
-                        """(qi is_over, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
-                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
-                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
-                                                             )
-                        break
-                    else:
-                        """(qi, factor item)"""
-                        context['factoritem_qi_pair'].append((qi, factor_item_form, False,
-                                                              qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
-                                                              qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id))
-                                                             )
-                        break
-        exclude_qi_qs = qis.filter(~Q(id__in=exclude_qi))
-        empty_pair = [(qi, context['form_s'][-1], True if idx == 0 else False,
-                       qi.goods_code_fk.appearance_or_real_part_number_(customer=qi.quotation.customer_party_id),
-                       qi.goods_code_fk.part_number != qi.goods_code_fk.appearance_or_real_part_number(qi.quotation.customer_party_id)) for idx, qi in enumerate(exclude_qi_qs)]
-        context['factoritem_qi_pair'].extend(empty_pair)
-
-
-        if self.object:
-            self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M') if self.object.created_date else None
-            self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M') if self.object.last_update_date else None
-            self.object.collecting_start_time = datetime2jalali(self.object.collecting_start_time).strftime('%y/%m/%d-%H:%M') if self.object.collecting_start_time else None
-        context['data'] = self.object
-        context['app_name'] = self.request.resolver_match.app_name
-        context['submit_copy'] = False
-
-        # طبق صورت جلسه فاکتور اگه نیاز به تایید مالی باشد اما تایید مالی انجام نشده باشد اجازه عبور از مرحله جمع آوری ندارد
-        if self.object and self.state_index == 4 and (self.object.need_financial_approval and not self.object.accounting_confirm):
-            context['f_warning'].append('نیاز به تایید مالی دارد.')
-            context['allow_next'] = False
-
-        if self.object and self.state_index == 5 and not self.object.sepidar_id:
-            context['allow_next'] = False
-            context['f_warning'].append('فاکتور به سپیدار ارسال نشده')
-
-        if self.object:
-            if self.object and self.state_index >= 0 and not self.object.is_all_supplied:
-                context['f_warning'].append('سفارش در راه دارد یا تمام کالاها در انبار موجود نیست')
-                if self.state_index == 2:
-                    context['allow_next'] = False
-
-            if self.state_index == 6 and not self.object.files.filter(group=3).exists():
-                context['allow_next'] = False
-                context['f_warning'].append('اسناد تحویل آپلود نشده است')
-
-            if self.object.sepidar_id:
-                context['allow_back'] = False
-                context['f_warning'].append('فاکتوری که به سپیدار ارسال شده امکان عودت ندارد')
 
         return context
+
+    def _get_factor_allowed_fields(self):
+        # permissions = _get_permission_list(self.request.user)
+        permissions = self.request.user.get_all_permissions()
+        user_exist_perm = []
+        allowed_hidden = []
+        allowed_edit = []
+        allowed_show = []
+        for p in permissions:
+            exist_perm = FACTOR_FIELDS_BY_PERMISSION.get(p, None)
+            if exist_perm:
+                user_exist_perm.append(exist_perm)
+
+        for perm in user_exist_perm:
+            if perm:
+                data = perm.get(self.state_index or 0)
+                if data:
+                    allowed_hidden += data['hidden']
+                    allowed_edit += data['edit']
+                    allowed_show += data['show']
+
+        if not allowed_edit:
+            raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+        return allowed_edit, allowed_hidden, allowed_show
+
+    def _get_factor_item_allowed_fields(self):
+        # permissions = _get_permission_list(self.request.user)
+        permissions = self.request.user.get_all_permissions()
+        user_exist_perm = []
+        allowed_hidden = []
+        allowed_edit = []
+        for p in permissions:
+            exist_perm = FACTOR_ITEM_FIELDS_BY_PERMISSION.get(p, None)
+            if exist_perm:
+                user_exist_perm.append(exist_perm)
+
+        for perm in user_exist_perm:
+            if perm:
+                data = perm.get(self.state_index or 0)
+                if data:
+                    allowed_hidden += data['hidden']
+                    allowed_edit += data['edit']
+
+        if not allowed_edit:
+            raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+        return allowed_edit, allowed_hidden
+
+    def _get_factor_item_formset(self, user, *args, **kwargs):
+        """
+        یک inline formset برای FactorItem با فیلدهای محدودشده بر اساس گروه کاربر برمی‌گرداند.
+        """
+        edit, hidden = self._get_factor_item_allowed_fields()
+
+        # یک فرم پویا با فیلدهای مجاز می‌سازیم
+        class _FactorItemForm(FactorItemForm):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, allowed_fields=edit, allowed_hidden=hidden, **kwargs)
+
+        FactorItemInlineFormset = inlineformset_factory(
+            Factor,
+            FactorItem,
+            form=_FactorItemForm,
+            formset=FactorItemInlineFormSetBase,
+            extra=0,  # ردیف خالی اضافه نمی‌شود؛ در template با JS مدیریت کنید
+            can_delete=True,
+        )
+        return FactorItemInlineFormset(*args, **kwargs)
+
+    def _build_factor_form(self, **kwargs):
+        allowed, hidden, show = self._get_factor_allowed_fields()
+        return FactorEditForm(allowed_fields=allowed, allowed_hidden=hidden, only_show=show, **kwargs)
+
+    def _build_item_formset(self, **kwargs):
+        return self._get_factor_item_formset(self.request.user, **kwargs)
+
+    # ── django UpdateView hooks ───────────────────────────────────────────────
+
+    def get_form(self, form_class=None):
+        return self._build_factor_form(**self.get_form_kwargs())
+
+from django import forms
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.edit import UpdateView
+from django.urls import reverse_lazy
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.forms import inlineformset_factory
+from django.db import transaction
+
+from .models import Factor, FactorItem
+
+
+
+
+# ─── View ─────────────────────────────────────────────────────────────────────
+
+class FactorEditView(LoginRequiredMixin, UpdateView):
+    """
+    ویرایش فاکتور + ردیف‌های FactorItem به صورت inline.
+
+    URL:
+        path('factors/<int:pk>/edit/', FactorEditView.as_view(), name='factor_edit'),
+    """
+
+    model = Factor
+    template_name = "factor/factor_edit.html"
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    def _get_factor_allowed_fields(self):
+        group = _get_group_key(self.request.user)
+        allowed = FACTOR_FIELDS_BY_PERMISSION.get(group, [])
+        if not allowed:
+            raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+        return allowed
+
+    def _build_factor_form(self, **kwargs):
+        allowed = self._get_factor_allowed_fields()
+        return FactorEditForm(allowed_fields=allowed, **kwargs)
+
+    def _build_item_formset(self, **kwargs):
+        return get_factor_item_formset(self.request.user, **kwargs)
+
+    # ── django UpdateView hooks ───────────────────────────────────────────────
+
+    def get_form(self, form_class=None):
+        return self._build_factor_form(**self.get_form_kwargs())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.method == "POST":
+            context["item_formset"] = self._build_item_formset(
+                data=self.request.POST,
+                instance=self.object,
+            )
+        else:
+            context["item_formset"] = self._build_item_formset(
+                instance=self.object,
+            )
+        context["factor"] = self.object
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        item_formset = context["item_formset"]
+
+        if not item_formset.is_valid():
+            return self.form_invalid(form)
+
+        with transaction.atomic():
+            form.instance.editor_user = self.request.user
+            self.object = form.save()
+
+            items = item_formset.save(commit=False)
+            for item in items:
+                item.editor_user = self.request.user
+                item.save()
+            for deleted in item_formset.deleted_objects:
+                deleted.delete()
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy("safe_factor.view", kwargs={"pk": self.object.pk})

@@ -168,7 +168,7 @@
                 <div class="d-flex gap-5 align-items-center my-10">
                     <span>به شماره حساب/کارت</span>
                     <div class="col mb-3">
-                        <input type="text" id="id_shomare-kart" class="underline_dash_border s-1 text-center shomare-kart" {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
+                        <input type="text" id="id_shomare-kart" class="underline_dash_border s-1 text-center shomare-kart " {% if form.fields.to_account.disabled %} disabled {% endif %} name="{{ form.to_account.name }}" {% if form.to_account.value != None %}value="{{ form.to_account.value|stringformat:'s' }}"{% endif %}>
                         {{ form.to_account.errors }}
                     </div>
                     <span>پرداخت نمایید</span>
