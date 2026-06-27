@@ -80,7 +80,7 @@ class CustomBaseModelForm(forms.ModelForm):
 
         for field in self.fields:
             if not isinstance(self.fields[field].widget, CheckboxInput):
-                self.fields[field].widget.attrs['class'] = 'form-control'
+                self.fields[field].widget.attrs['class'] = self.fields[field].widget.attrs.get('class', "") + ' form-control '
             # if isinstance(self.fields[field].widget, (DateTimeInput, DateInput)):
             if isinstance(self.fields[field].widget, DateTimeInput):
                 # self.fields[field] = JalaliDateField(label=_(field), widget=AdminJalaliDateWidget, required=True)
