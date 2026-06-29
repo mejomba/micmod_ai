@@ -1,0 +1,616 @@
+{% load i18n %}
+{% load factor_tags %}
+{% load humanize %}
+{% load jalali_tags %}
+{% load more_tags %}
+{% load core_tags %}
+{% load accounts_tag %}
+
+
+{{ form_s.management_form }}
+{{ form_s.non_form_errors }}
+
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{{ form.media }}
+<style>
+    .select2-selection--multiple{
+        padding-right: 5px !important;
+        padding-top: 7px !important;
+    }
+    .select2-selection__clear{
+        color: red !important;
+    }
+    .select2-selection__choice{
+        padding-right: 3px !important;
+    }
+    .select2-container--default[dir="rtl"] .select2-selection--multiple .select2-selection__choice__remove{
+        border-left: none;
+    }
+
+</style>
+
+
+<div class="mt-1 d-flex gap-2">
+<span class="btn btn-primary d-none">ارسال فاکتور به سپیدار</span>
+    {% if is_need_sales_admin_confirmation %}
+        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger" style="width: fit-content; background-color: #fff6f6">
+            این فاکتور نیاز به تایید مدیر فروش دارد
+        </div>
+    {% endif %}
+    {% for f_warning in f_warning %}
+        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ f_warning }}</div>
+    {% endfor %}
+    {% if factor.sepidar_error %}
+        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ sepidar_error }}</div>
+    {% endif %}
+</div>
+
+{#<div class="bg-white rounded border pb-5 row">#}
+
+    <div id="sortable-container" class="col-12">
+    {% for form_s_item in form_s %}
+        <div class="sortable-item factor_item_self" id="invoice-rows">
+            {% include "factor/partial/_factor_item_row_create.html" with form_s_item=form_s_item %}
+        </div>
+    {% endfor %}
+    </div>
+{% include 'core/partial/empty_modal.html' %}
+{% include 'core/partial/empty_modal_lg.html' %}
+{#</div>#}
+{#<div class="mt-10 pt-10"></div>#}
+
+<script>
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function init_packing_json_modal(event){
+        debugger
+        const url = event.currentTarget.dataset.url
+        const kt_empty_modal_body = $('#id-empty-modal-body-lg')
+        custom_ajax_get(null, url, kt_empty_modal_body)
+    }
+
+    function buildPackingJSON() {
+        let result = {};
+
+        // انتخاب همه ردیف‌ها به جز ردیف هدر
+        document.querySelectorAll(".tr-body").forEach(tr => {
+            // شماره ردیف (row)
+            let row = parseInt(tr.querySelector("td[id^='row-'] input").value.trim());
+            let row_id = parseInt(tr.querySelector("td[id^='row_id-'] input").value.trim());
+
+            // کد کالا (sku)
+            let sku
+            debugger
+            try {
+                sku = parseInt(tr.querySelector("td[id^='sku-']").textContent.trim());
+                if (!sku){sku = parseInt(tr.querySelector("td[id^='sku-'] input").value.trim());}
+            } catch (e) {
+                sku = parseInt(tr.querySelector("td[id^='sku-'] input").value.trim());
+            }
+
+            // تعداد (quantity)
+            let quantity = parseInt(tr.querySelector("td[id^='quantity-'] input").value.trim());
+
+            // partnumber
+            let partnumber = tr.querySelector("td[id^='partnumber-'] input").value.trim();
+
+            // نام پگ (pack_name)
+            let packName = tr.querySelector("td[id^='pack_name-'] input").value.trim();
+            if (!packName) return; // اگه نام پگ خالی بود، این ردیف رو رد کن
+
+            // اضافه کردن به آرایه داخل result
+            if (!result[packName]) {
+                result[packName] = [];
+            }
+
+            result[packName].push({
+                sku: sku,
+                partnumber: partnumber,
+                row: row,
+                row_id: row_id,
+                quantity: quantity
+            });
+        });
+
+        console.log(result)
+
+        return result;
+    }
+
+    function update_wh_packing_json(event){
+        debugger
+        let packingData = buildPackingJSON();
+
+        let inputPackingJson = document.querySelector("textarea[name='packing_json']");
+        if (inputPackingJson) {
+            inputPackingJson.value = JSON.stringify(packingData);
+        }
+    }
+
+    function addWhPackingRow(){
+
+        let tbody = document.getElementById("id_packing-table-body");
+        let lastRow = tbody.querySelectorAll("tr").length;
+        let newRowNumber = lastRow;
+
+        // ساخت ردیف جدید
+        let tr = document.createElement("tr");
+        tr.classList.add('tr-body')
+        tr.id = `row-${newRowNumber}`;
+        tr.innerHTML = `
+            <td class="d-none bg-warning" id="row_id-${newRowNumber}">
+                <input type="text" value="${newRowNumber}" style="max-width: 45px" class="narrow-input">
+            </td>
+            <td class="ps-1" id="row-${newRowNumber}">
+                <input type="text" value="${newRowNumber}" style="max-width: 45px" class="narrow-input">
+            </td>
+            <td id="sku-${newRowNumber}">
+                <input type="text" style="max-width: 100px" class="narrow-input">
+            </td>
+            <td class="text-start" id="partnumber-${newRowNumber}">
+                <input type="text" value="" style="width: 650px" class="narrow-input">
+            </td>
+            <td id="quantity-${newRowNumber}" class="text-right">
+                <input type="text" value="" class="narrow-input" style="width: 100px">
+            </td>
+            <td id="pack_name-${newRowNumber}" class="text-right">
+                <input type="text" name="packing_name" class="narrow-input" style="width: 200px">
+            </td>
+
+            <td>
+                <div class="d-flex gap-2 justify-content-end">
+                    <div onclick="duplicate_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-copy text-primary fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
+                    <div onclick="remove_wh_packing_row(event)" class="delete-row-btn">
+                        <i class="ki-duotone ki-trash text-danger fs-2 cursor-pointer">
+                         <span class="path1"></span>
+                         <span class="path2"></span>
+                         <span class="path3"></span>
+                         <span class="path4"></span>
+                         <span class="path5"></span>
+                        </i>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    }
+
+
+    function numberWithCommas(x, digits = 2) {
+        if (x == '' || x == null || isNaN(x)) return ''
+        x = parseFloat(x)
+        let res = (x.toLocaleString('en-US', {maximumFractionDigits: digits}))//t_replaceDigits
+        return res
+    }
+
+    document.querySelectorAll('.checkbox_is_bazar').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+            // Find the closest parent container
+            const parentClass = this.closest('.parent-class');
+            if (parentClass) {
+                // Select the corresponding supply location within the same parent
+                const supplyLocation = parentClass.querySelector('.disabled_supply_locations');
+                if (supplyLocation) {
+                    supplyLocation.disabled = this.checked;
+                }
+            }
+        });
+
+        const parentClass = checkbox.closest('.parent-class');
+            if (parentClass) {
+                // Select the corresponding supply location within the same parent
+                const supplyLocation = parentClass.querySelector('.disabled_supply_locations');
+                if (supplyLocation) {
+                    supplyLocation.disabled = checkbox.checked;
+                }
+            }
+    });
+
+
+    function findAncestor(el, cls) {
+        if (el.classList.contains(cls)) {
+            return el
+        }
+        while ((el = el.parentElement) && !el.classList.contains(cls)) ;
+        return el;
+    }
+
+    function get_sku_info(item){
+            if (!item.hasAttribute("readonly")){
+                const goodsName = item.querySelector('input[name*="-part_number_show"]')
+                const sku = item.querySelector('input[name*="-goods_code"]')
+                $.ajax({
+                    type: 'GET',
+                    url: `/micmod_base/get_sku/?sku=${sku.value}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        debugger
+                        if (data['res']){
+                            item.classList.remove('border-danger')
+                            item.classList.add('border-success')
+                            goodsName.classList.remove('text-danger')
+                            goodsName.classList.remove('border-danger')
+                            goodsName.classList.add('border-success')
+                            goodsName.value = data['part_number']
+                            item.after('')
+                        } else {
+                            item.classList.add('border-danger')
+                            item.classList.remove('border-success')
+                            goodsName.value = 'کد نامعتبر'
+                            goodsName.classList.add('text-danger')
+                            goodsName.classList.add('border-danger')
+                        }
+                    },
+                    error: function () {
+                        console.log('error')
+                    }
+                }); // end ajax
+            }
+    }
+    setTimeout(function(){
+        return ''
+        document.querySelectorAll('input[name*="-goods_code"]').forEach(function (item){
+            if (!item.hasAttribute("readonly")){
+                item.addEventListener('keyup', function (e) {
+                e.preventDefault()
+                const goodsName = item.parentElement.parentElement.parentElement.querySelector('input[name*="-part_number_show"]')
+                $.ajax({
+                    type: 'GET',
+                    url: `/micmod_base/get_sku/?sku=${item.value}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        if (data['res']){
+                            item.classList.remove('border-danger')
+                            item.classList.add('border-success')
+                            goodsName.classList.remove('text-danger')
+                            goodsName.classList.remove('border-danger')
+                            goodsName.classList.add('border-success')
+                            goodsName.value = data['part_number']
+                            item.after('')
+                        } else {
+                            item.classList.add('border-danger')
+                            item.classList.remove('border-success')
+                            goodsName.value = 'کد نامعتبر'
+                            goodsName.classList.add('text-danger')
+                            goodsName.classList.add('border-danger')
+                        }
+                    },
+                    error: function () {
+                        console.log('error')
+                    }
+                }); // end ajax
+            })
+            }
+        })
+    }, 1000)
+
+    //const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]');
+    document.querySelectorAll('[id*="id_comment__"]') && document.querySelectorAll('[id*="id_comment__"]').forEach(function (item){
+        item.addEventListener('click', function (e){
+            e.preventDefault()
+            let comment_url = item.dataset.form_url;
+            let comment_url_rel = item.dataset.form_url_rel
+            comment_url += comment_url_rel
+            const pk = item.dataset.pk;
+            const comment_type = item.dataset.comment_type
+            const comment_input_id = comment_url.replace('/', '_')
+            const comment_form = document.getElementById(comment_input_id);
+            const comment_element = $('#id-empty-modal-body')
+            const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+            const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+            const title = commentFormGroup.querySelector('[id*="title"]')
+            const content = commentFormGroup.querySelector('[id*="content"]')
+            const father = findAncestor(item, "symbol-group")
+            const commentCounter = item.nextElementSibling
+            if (father){
+                const images = father.querySelectorAll('img')
+                images.forEach(function (img){
+                    img.classList.remove('border')
+                    commentCounter.innerHTML = '0'
+                })
+            }
+            debugger
+            if (title && content) {comment_url += `?comment_title=${title.options[title.selectedIndex].value}&comment_content=${content.value}&comment_type=${comment_type}`} else {comment_url += `?comment_type=${comment_type}`}
+            custom_ajax_get(comment_form, comment_url, comment_element)
+        }) // end eventListener
+    }) // end forEach
+
+    function addCommentInput(){
+        const pkElement = document.querySelector('[id*="object_id__"]')
+        const pk = pkElement.dataset.pk
+        const ctt_id = pkElement.dataset.ctt_id
+
+        const commentFormGroup = document.querySelector(`[id*="comment-form-group__${pk}"]`)
+        const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
+        commentFormGroup.innerHTML = ''
+        commentFormGroup.appendChild(commentFormForCopy)
+    }
+
+    function factor_calculate_price_all_rows(){
+        const fis = document.querySelectorAll('.factor_item_self')
+        fis && fis.forEach(function (factor_row){
+            factor_calculate_price(null, factor_row)
+        })
+    }
+
+    function factor_item_back_to_the_game(item){ // این همون تابعی هست که وقتی یک ردیف حذف شده فاکتور دوباره به فاکتور برمیگرده ایندکس ها را تنظیم میکند
+        debugger
+        let local_index = 0
+        document.querySelectorAll(`[class*=sortable-item]`).forEach(function (item){
+            if (item.querySelector('[id*="factor_item"]').style.height !== '0px' && item.querySelector('input[name*=quantity]').value.trim() !== '0'){
+                item.querySelector(`input[id*=-index]`).value = local_index
+                local_index += 1
+            } else {
+                item.querySelector(`input[id*=-index]`).value = local_index + 1000
+            }
+        })
+    }
+
+    function price_util(net_price, totalDiscount, taxValue, price, qty){
+        var p = numberWithCommas(net_price - totalDiscount + taxValue)
+        if (p){
+            return p
+        } else if (p === '') {
+            return 0
+        } else {
+            return numberWithCommas(price * qty)
+        }
+    }
+function factor_calculate_price(target, direct_target=null) {
+
+    let elem;
+    if (!direct_target) {
+        elem = findAncestor(target, "factor_item_self")
+    } else {
+        elem = direct_target
+    }
+    const final_price = elem.querySelector('input[name$="-price"]')
+    const total_price = elem.querySelector('[class*="row-total-price"]')
+    const quantity = elem.querySelector('input[name$="-quantity"]')
+    const selfDiscount = document.querySelector('input[name$="self_discount"]') // تخفیف روی همه
+    const isOfficial =  document.querySelector('#id_is_official')
+    const isOfficialValue = document.querySelector('input[name$="official_value"]')
+    let isOfficialValue_number = 0
+    let tax = 0;
+    let taxValue = 0
+    let row_discount = 0
+    let row_discount_amount = 0
+    let tax_discount = 0
+    let row_discount_base_percentage = 0
+    let totalDiscount = 0
+    let net_price = 0
+    let net_price_after_tax_discount = 0
+    let calculated_price = 0
+    // qty
+    let qty = parseFloat(quantity.innerHTML.replaceAll(',', ''))
+    if (isNaN(qty)) {
+        qty = parseFloat(quantity.value.replaceAll(',', ''))
+    }
+
+    // price
+    let price = final_price ? parseFloat(final_price.innerHTML.replaceAll(',', '')) : NaN
+    if (isNaN(price)) {
+        price = final_price ? parseFloat(final_price.value.replaceAll(',', '')) : 0
+    }
+
+    row_discount_amount = parseFloat(elem.querySelector('input[name$="-discount_per_item"]').value.replaceAll(',', '')) || 0
+    {#row_discount_amount = parseFloat(elem.querySelector('input[name$="-row-discount"]').value.replaceAll(',', '')) || 0#}
+    row_discount = row_discount_amount * qty
+    // net_price = (price - row_discount_amount) * qty
+    net_price = price * qty
+    net_price_after_tax_discount = net_price
+
+    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    //row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
+    row_discount_base_percentage = net_price * (selfDiscountValue/100)
+
+    if (isOfficial && isOfficial.checked){
+        tax = 10
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue.value);
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
+            // tax_discount = net_price * (isOfficialValue_number / 100)
+        }
+        net_price_after_tax_discount = net_price - tax_discount
+    }
+
+
+    totalDiscount = row_discount + tax_discount + row_discount_base_percentage //((price * qty) * selfDiscountValue/100)
+    if (tax){
+        const final_tax_value = Math.max(tax - isOfficialValue_number, 0)
+        taxValue = (net_price - totalDiscount) * (tax/100)
+    } else {
+        taxValue = 0
+    }
+    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    if (currency_ref == 1){
+        taxValue = parseInt(taxValue)
+        totalDiscount = parseInt(totalDiscount)
+        total_price.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)
+    } else {
+        total_price.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)
+    }
+    calculated_price = net_price - totalDiscount + tax
+
+    var items = document.querySelectorAll('[class*="row-total-price"]')
+    let m_sum = 0
+    for (let i = 0; i < items.length; i++) {
+        val = parseFloat(items[i].innerHTML.replaceAll(',', ''))
+        if (!isNaN(val)) {
+            m_sum += val
+        }
+    }
+    if (!m_sum) {
+        m_sum = 0
+    }
+    const total_price_field = document.querySelector('#id_total_price')
+    const t_prices = document.querySelector('.factor_total_price')
+    const additionElm = document.querySelector('#id_addition')
+    const taxElm = document.querySelector('#id_tax')
+    const additionValue = additionElm.value ? parseFloat(additionElm.value) : 0
+    const topTaxValue = taxElm.value ? parseFloat(taxElm.value) : 0
+    {#t_prices.innerHTML = price_util(net_price, totalDiscount, taxValue, price, qty)#}
+    t_prices.innerText = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    total_price_field.value = m_sum + additionValue + topTaxValue
+    //for (let i = 0; i < t_prices.length; i++) {
+        //t_prices[i].innerHTML = numberWithCommas(m_sum + additionValue + topTaxValue, 0).toString()
+    //}
+
+    if (parseFloat(total_price.innerHTML.replace(',', '')) < 0){
+        total_price.classList.add('text-danger')
+    } else {
+        total_price.classList.remove('text-danger')
+    }
+
+}
+window.setTimeout(factor_calculate_price_all_rows, 600)
+
+setTimeout(factor_calculate_price_all_rows, 1000)
+
+    function delete_factor_item(item){
+        debugger
+        const row = findAncestor(item, "factor_item_self")
+        const full_row = findAncestor(row, 'factor_item')
+        const quantity = row.querySelector('.quantity')
+        if (quantity){
+            quantity.value = 0
+            quantity.classList.add('text-danger')
+            quantity.classList.add('border-danger')
+            full_row.style.height = '0'
+            full_row.style.minHeight = '0'
+            full_row.style.overflow = 'hidden'
+            let local_index = 0
+            document.querySelectorAll(`[class*=sortable-item]`).forEach(function (item){
+                if (item.querySelector('[id*="factor_item"]').style.height !== '0px'){
+                    debugger
+                    item.querySelector(`input[id*=-index]`).value = local_index
+                    local_index += 1
+                } else {
+                    item.querySelector(`input[id*=-index]`).value = local_index + 1000
+                }
+            })
+        }
+    }
+
+    let factorHeaderOpen = true;
+    function factor_header_toggle(event){
+        debugger
+            const factor_header = document.querySelector("#factor-header")
+            const factor_item_header = document.querySelector("#factor-item-header")
+            const factorHeaderToggle = event.currentTarget
+        if (factor_header.style.height === "0px" || factor_header.style.height === "") {
+            factor_header.style.height = `${factor_header.scrollHeight}px`;
+            } else {
+                factor_header.style.height = 0;
+            }
+
+            if (factorHeaderOpen) {
+                factorHeaderToggle.innerText = ' نمایش اطلاعات سربرگ';
+                factorHeaderOpen = !factorHeaderOpen
+                factor_item_header.style.top = 0
+            } else {
+                factorHeaderToggle.innerText = 'مخفی کردن اطلاعات سربرگ';
+                factorHeaderOpen = !factorHeaderOpen;
+                factor_item_header.style.top = `${factor_header.scrollHeight}px`;
+            }
+        }
+
+        function readOnlyInput(){
+            const readonly_input = document.querySelectorAll('[data-readonlyinput]')
+            readonly_input && readonly_input.forEach(function (item){
+                item.querySelectorAll('input').forEach(function (input_element){
+                    if (!input_element.dataset.exempt){
+                        input_element.readOnly = true
+                    }
+                })
+            })
+        }
+
+        setTimeout(readOnlyInput, 500)
+
+function get_supply_locations(event){
+        debugger
+        const elem = event.currentTarget
+        elem.innerHTML = '<option value="" class="font-size-10">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</option>'
+        const row = findAncestor(elem, 'sortable-item')
+        const goods_code = row.querySelector('input[name$="-goods_code"]').value
+        const factor_item_pk = row.querySelector('input[id^="id_factoritem_set-"][id$="-id"]')?.value
+        const url = window.location.origin + `/factor/ajax/get_supply_locations/${goods_code}/${factor_item_pk || 0}`
+        custom_ajax_get(null, url, $(elem))
+        elem.blur();
+    }
+
+</script>
+
+{#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">#}
+    <script src="{% static 'js/local/flatpicker.js' %}"></script>
+
+<script>
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+flatpickr("#id_collecting_start_time_1", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i:S",  // HH:MM:SS
+    time_24hr: true,
+    enableSeconds: false
+});
+
+    function printElement(elementId) {
+
+        const content = document.getElementById(elementId).innerHTML;
+        const printWindow = window.open('', '', 'width=900,height=700');
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print</title>
+
+                <style>
+                    body { padding: 20px; direction: rtl}
+                </style>
+
+            </head>
+            <body>
+                ${content}
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    }
+
+
+
+</script>

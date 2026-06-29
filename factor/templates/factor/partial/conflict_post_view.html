@@ -1,0 +1,18 @@
+{% extends 'partials/base_level2.html' %}
+
+
+
+{% block content_ %}
+
+<div class="mt-10  p-3  rounded alert alert-danger">
+<h5 class="text-danger"> تغییرات شما ذخیره نشده است.</h5>
+    <p class="text-black">
+        این فاکتور توسط کاربر دیگری تغییر کرده است. لطفا با کلیک روی
+        <a href="{% url 'factor:factor.view' pk=obj.pk %}" class="btn btn-sm btn-outline-danger btn-bordered">
+        این دکمه
+        </a>
+        صفحه را دوباره بارگذاری کنید.
+    </p>
+
+</div>
+{% endblock content_ %}

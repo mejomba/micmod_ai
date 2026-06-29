@@ -16,7 +16,12 @@
                 <div class="col-1">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="bold font-size-11 row-number"></span>
+                        {% if form_s_item.goods_code %}
                         <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku }}" >
+                            {% else %}
+                            <span class="w-80">{{ form_s_item.instance.goods_code }}</span>
+                        {% endif %}
+
                     </div>
                     <small style="opacity: 0.25; position: absolute; bottom: 0; right: 2px">ID:{{ form_s_item.instance.pk }}</small>
                 </div>
@@ -24,7 +29,7 @@
             <!--partnumber (update)-->
                 <div class="col-3">
                     <div class="d-flex flex-column">
-                        {{ form_s_item.part_number_show }}
+                        {{ form_s_item.part_number_show|default_if_falsy:form_s_item.instance.part_number_show }}
 
                         {% if form_s_item.instance.goods_code.part_number != form_s_item.instance.part_number_show %}
                             <div class="mt-2 font-size-11">
@@ -37,22 +42,37 @@
 
             <!--quantity (update)-->
                 <div class="col-1">
-                    <span>{% render_field_by_order form_s_item form_s_item.quantity margin_b=0 %}</span>
+                    {% if form_s_item.quantity.hidden or not form_s_item.quantity %}
+                        <span>{{ form_s_item.instance.quantity|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.quantity }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.quantity margin_b=0 %}</span>#}
                 </div>
 
             <!--price (update)-->
                 <div class="col-1">
-                    <span>{% render_field_by_order form_s_item form_s_item.price margin_b=0 %}</span>
+                    {% if form_s_item.price.hidden or not form_s_item.price %}
+                        <span>{{ form_s_item.instance.price|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.price }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.price margin_b=0 %}</span>#}
                 </div>
 
             <!--discount_per_item (update)-->
                 <div class="col-1">
-                    <span>{% render_field_by_order form_s_item form_s_item.discount_per_item margin_b=0 %}</span>
+                    {% if form_s_item.discount_per_item.hidden or not form_s_item.discount_per_item %}
+                        <span>{{ form_s_item.instance.discount_per_item|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.discount_per_item }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.discount_per_item margin_b=0 %}</span>#}
                 </div>
 
             <!--row_total_price (update)-->
                 <div class="col-1">
-                    <span class="row-total-price">245,000</span>
+                    <span class="row-total-price"></span>
                 </div>
 
             <!--supply_locations and actions (update)-->
@@ -61,16 +81,15 @@
                         <div>
 
 
-
 {#                        begin clude#}
                             {# ========== جایگزین بخش «محل تامین در اینجا قرار میگیرد» ========== #}
-                            <div class="flex-grow-1 me-2">
+                            <div class="flex-grow-1 me-2" {% if flow_state_index > 1 %} style="pointer-events: none;" {% endif %}>
                               <div class="sp-cell" data-required="{{ form_s_item.instance.quantity }}">
 
                                 {# داده‌ی نهایی که با فرم سابمیت می‌شود #}
                                 <input type="hidden" name="{{ form_s_item.prefix }}-supply_locations" class="sp-data" value="[]">
 
-                                {# خلاصه‌ی داخل سلول (چیپ‌ها)؛ JS پر می‌کند #}
+{#                                 خلاصه‌ی داخل سلول (چیپ‌ها)؛ JS پر می‌کند #}
                                 <div class="sp-summary sp-empty">
                                   <span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>
                                 </div>

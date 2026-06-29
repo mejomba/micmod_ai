@@ -85,7 +85,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
     @classmethod
     def get_inventory_purchase_invoice_item_data(cls, obj, request=None, grouped=None):
 
-        total_price = obj.get('total_price')
+        total_price = obj.get('total_price') or 0
         rate = obj.get('rate') or 1
         all_tax = obj.get('tax') or 0
         all_duty = obj.get('duty') or 0
@@ -106,7 +106,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             fee = row_data.get('price') or 0
             quantity = row_data.get('quantity') or 0
             fee, quantity = map(float, (fee, quantity))
-            discount = (row_data.get('discount') or 0) + (all_discount * discount_weight)
+            discount = (row_data.get('discount') or 0) + (all_discount / discount_weight)
             description = row_data.get('description')
             addition = row_data.get('addition') or 0
 
@@ -169,7 +169,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
 
         currency_amount = CurrencyAmount.objects.filter(currency=currency).order_by('id').last()
         try:
-            rate = float(currency_amount.open_rate) or 1
+            rate = float(obj.currency_amount) if obj.currency_amount else float(currency_amount.open_rate) or 1
         except Exception:
             rate = 1
 
@@ -192,15 +192,15 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
             "additionfactorinbasecurrency_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
-            "customerrealname_en": obj.q.customer_party_id.title,  # calculate in save
-            "netpriceinbasecurrency": round((price + addition + duty + sum_tax - sum_discount) * rate, 4) if rate != 1 else 0,
+            "customerrealname_en": obj.q.customer_party_id.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
+            "netpriceinbasecurrency": round((price + addition + duty + sum_tax - sum_discount) * rate, 4),
             "currencyref": currency.sepidar_id,  # calculate in base
-            "additioninbasecurrency": round(addition * rate, 4) if rate != 1 else 0,  # calculate in save
+            "additioninbasecurrency": round(addition * rate, 4),  # calculate in save
             "additionfactorinbasecurrency_vatineffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
             "discount": round(sum_discount, 4),
-            "quotationref": obj.q.sepidar_quotation_id,
+            "quotationref": None, #obj.q.sepidar_quotation_id,
             "lastmodifier": obj.editor_user.sepidar_code or 1,  # Todo: set sepidar_code for all portal user
-            "taxinbasecurrency": round(sum_tax * rate, 4) if rate != 1 else 0,  # calculate in save
+            "taxinbasecurrency": round(sum_tax * rate, 4),  # calculate in save
             "version": 1,  # calculate in base
             "slref": slref,  # از آقای مختاری سوال شود
             "creationdate": timezone.now().isoformat(),  # calculate in base
@@ -219,14 +219,14 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "agreementref": None,  # all null
             "additionfactor_vatineffective": 0,  # all 0
             "description": obj.description,
-            "customerrealname": obj.q.customer_party_id.title,  # calculate in save
+            "customerrealname": obj.q.customer_party_id.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
             "addition": round(addition, 4),
-            "dutyinbasecurrency": round(duty * rate, 4) if rate != 1 else 0,
+            "dutyinbasecurrency": round(duty * rate, 4),
             "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
             "tax": round(sum_tax, 4),
-            "discountinbasecurrency": round(sum_discount * rate, 4) if rate != 1 else 0,
+            "discountinbasecurrency": round(sum_discount * rate, 4),
             "lastmodificationdate": obj.last_update_date.isoformat(),
-            "saletyperef": sale_type.pk,
+            "saletyperef": sale_type.sepidar_id or sale_type.pk,
         }
 
         return invoice_data
@@ -259,19 +259,19 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "secondaryquantity": 0.0,  # معمولا 0
                 "fee": round(fi.price, 4),  # unit_price
                 "price": round(row_price, 4),  # total per row: quantity * unit_price
-                "priceinbasecurrency": round(row_price * rate, 4) if rate != 1 else 0,
+                "priceinbasecurrency": round(row_price * rate, 4),
                 "discount": round(discount, 4),
-                "discountinbasecurrency": round(discount * rate, 4) if rate != 1 else 0,
+                "discountinbasecurrency": round(discount * rate, 4),
                 "priceinfodiscountrate": 0.0,  # معمولا صفر (نرخ تخفیف روی قیمت)
                 "customerdiscountrate": fi.customerdiscountrate(row_price, discount),
                 # از اقای مختاری و فروش سوال شود (تخفیف به مشتری)
                 "addition": round(addition / fis_count, 4),  # از اقای مختاری و فروش سوال شود
-                "additioninbasecurrency": round((addition / fis_count) * rate, 4) if rate != 1 else 0,
+                "additioninbasecurrency": round((addition / fis_count) * rate, 4),
                 "tax": round(tax, 4),  # calculate in save از آقای مختاری
-                "taxinbasecurrency": round(tax * rate, 4) if rate != 1 else 0,  # calculate in save از آقای مختاری
+                "taxinbasecurrency": round(tax * rate, 4),  # calculate in save از آقای مختاری
                 "duty": round(duty, 4),  # calculate in save از آقای مختاری
-                "dutyinbasecurrency": round(duty * rate, 4) if rate != 1 else 0,  # calculate in save از آقای مختاری
-                "netpriceinbasecurrency": round((row_price + tax + duty + addition - discount) * rate, 4) if rate != 1 else 0,
+                "dutyinbasecurrency": round(duty * rate, 4),  # calculate in save از آقای مختاری
+                "netpriceinbasecurrency": round((row_price + tax + duty + addition - discount) * rate, 4),
                 "rate": rate,  # fi.factor.rate,  # نده و در سیو از اینویس بگیرش
                 "description": fi.description,
                 "description_en": fi.description,

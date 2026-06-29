@@ -76,12 +76,20 @@
                     <a href="{% url 'extra_data:customer.update' quotation.customer_party_id.pk %}" target="_blank">{{ quotation.customer_party_id.title }} ({{ quotation.customer_code }})</a>
                     </span>
                     <span class="d-flex">
-                        <span class="bold w-25">رتبه مشتری:</span>
+                        <span class="bold w-30">رتبه مشتری:</span>
                         {{ quotation.get_customer_grade_display }}
                     </span>
                     <span class="d-flex">
-                        <span class="bold w-25">توضیحات:</span>
-                        <span class="font-size-11 ms-1">{{ quotation.description|default_if_none:'-' }}</span>
+                        {% if flow_state_index > 1 %}
+                            <span class="bold w-25">توضیحات:</span>
+                            <span class="font-size-11 ms-1">{{ form.instance.description|default_if_none:'-' }}</span>
+                        {% elif flow_state_index < 1 %}
+                            <label for="id_description" class="font-size-11">توضیحات</label>
+                            <textarea name="description" cols="40" rows="1" maxlength="1000" class="form-control" id="id_description">{{ form.instance.description|default_if_none:quotation.description }}</textarea>
+                        {% else %}
+                            <label for="id_description" class="font-size-11">توضیحات</label>
+                            <textarea name="description" cols="40" rows="1" maxlength="1000" class="form-control" id="id_description">{{ form.instance.description|default_if_none:quotation.description }}</textarea>
+                        {% endif %}
                     </span>
                 </div>
             </div>
@@ -134,7 +142,8 @@
                 <div class="d-flex flex-column gap-1">
                     <span class="d-flex">
                         <span class="me-3 bold w-40">نوع و نرخ ارز:</span>
-                        <span>{{ quotation.currency_ref }} / {% get_last_currency_amount quotation.currency_ref %} </span>
+{#                        <span>{{ quotation.currency_ref }} / {% get_last_currency_amount quotation.currency_ref %} </span>#}
+                        <span>{{ form.instance.currency_ref }} / {% get_last_currency_amount form.instance.currency_ref %} </span>
                     </span>
                     <span class="d-flex">
                         {% render_field_by_order form form.is_official label='in-line' margin_b=1 %}
@@ -152,7 +161,7 @@
             </div>
             <div class="col-4">
                 <div class="row row-cols-2">
-                    {% render_field_by_order form form.need_financial_approval form.accounting_confirm form.to_be_collected form.final_check form.require_official_factor_with_delivery form.cancel form.deliver_to_customer form.need_factor_document label='on-border' %}
+                    {% render_field_by_order form form.currency_amount form.need_financial_approval form.accounting_confirm form.to_be_collected form.final_check form.require_official_factor_with_delivery form.cancel form.deliver_to_customer form.need_factor_document label='on-border' %}
                 </div>
             </div>
         </div>
@@ -226,6 +235,18 @@
                 <span>اسناد مالی:</span>
                 {% for file in form.instance.files.all %}
                     {% if file.group == 1 %}
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                            <i class="fas fs-2 fa-file icon-lg"></i>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if request.user|has_group:"sales_user" %}
+        <div class="col-1 d-flex gap-2">
+                <span>فاکتور رسمی:</span>
+                {% for file in form.instance.files.all %}
+                    {% if file.group == 4 %}
                         <a href="{{ file.path.url }}" target="_blank" class="me-1">
                             <i class="fas fs-2 fa-file icon-lg"></i>
                         </a>
@@ -448,11 +469,11 @@
             <div class="col-9 text-center hover_light_primary d-flex flex-column justify-content-center factor_item_self" style="height: fit-content; min-height: 70px;">
                 <div class="row py-2">
                     <span class="col-1 text-center gap-1">
-                        <span class=" cursor-pointer" style=" position: relative">
-                            {% if flow_state_index > 1 %}
+                        <span class=" cursor-pointer" style="position: relative">
+                            {% if flow_state_index > 1 and not request.user.is_superuser %}
                                 <div class="blocker" style="position: absolute; inset: 0; z-index: 10; cursor: not-allowed"></div>
                             {% endif %}
-                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ factor_item.instance.goods_code.sku }}" {% if flow_state_index > 1 %} readonly {% endif %}>
+                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ factor_item.instance.goods_code.sku }}" >
 {#                            {% render_field_by_order factor_item factor_item.goods_code %}#}
                         </span>
                         <div class="mt-1">
@@ -463,7 +484,7 @@
                                 <span class="pt-1 bold font-size-12 diff_price_alert badge badge-danger"></span>
                     </span>
                     <span class="col-4 text-center gap-1" style="position: relative">
-                        {% if flow_state_index > 1 %}
+                        {% if flow_state_index > 1 and not request.user.is_superuser %}
                             <div class="blocker" style="position: absolute; inset: 0; z-index: 10; cursor: not-allowed"></div>
                         {% endif %}
 {#                        <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" class="LTR-RTL w-100 rounded font-size-11 text-center" value="{{ factor_item.instance.part_number_show }}" >#}
@@ -492,7 +513,7 @@
                         <input type="text" onkeyup="check_quantity(event); factor_calculate_price(this); factor_item_back_to_the_game(this)" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-quantity" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 mb-1 quantity comma-seperator" value="{{ factor_item.instance.quantity|default_if_none:0 }}" {% if flow_state_index > 1 %} readonly {% endif %}>
 {#                        {% render_field_by_order factor_item factor_item.quantity %}#}
                         <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-reserve_count" class="LTR-RTL w-100 rounded font-size-11 text-center s-0 comma-seperator" value="{{ factor_item.instance.reserve_count|default_if_none:factor_item.instance.quantity }}" {% if factor_item.instance.pk %} readonly {% endif %} {% if flow_state_index > 1 %} readonly {% endif %}>
-                        {% if flow_state_index > 1 %}
+                        {% if flow_state_index > 1 and not request.user.is_superuser %}
                             <div class="blocker" style="position: absolute; inset: 0; z-index: 10; cursor: not-allowed"></div>
                         {% endif %}
                     </span>
@@ -518,7 +539,7 @@
                                 <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_locations }}</span>
                                 <span class="row-price pt-1 bg-success d-none">{{ factor_item.supply_location }}</span>
                             </div>
-                            {% if flow_state_index > 1 %}
+                            {% if flow_state_index > 1 and not request.user.is_superuser %}
                             <div class="blocker" style="position: absolute; inset: 0; z-index: 10; cursor: not-allowed"></div>
                             {% endif %}
 

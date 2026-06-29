@@ -94,7 +94,7 @@
               "icon": "burger-menu",
               "title": "customer-request",
               "path_key": "custoemr_request/list",
-              "direct_link": "#"
+              "direct_link": "/micmod_base/customer_request/list"
             },
             {
               "icon": "burger-menu",

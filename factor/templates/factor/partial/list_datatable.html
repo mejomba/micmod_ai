@@ -48,6 +48,39 @@
                     {% endif %}
                     </div>
 
+    {% if request.user|has_group:"sales_user" %}
+        <div class="row">
+                <div class="col">
+                    {% include 'factor/partial/factor_today_total_price.html' %}
+                </div>
+                <div class="col"></div>
+            <div class="col"></div>
+
+        </div>
+    {% endif %}
+    {% if request.user|has_group:"wh_user" %}
+        <div class="row">
+                <div class="col">
+                    {% include 'factor/partial/force_factor.html' %}
+                </div>
+                <div class="col">
+                    {% include 'factor/partial/supplied_factor.html' %}
+                </div>
+            <div class="col"></div>
+
+        </div>
+    {% endif %}
+    {% if request.user|has_group:"accounting_user" %}
+        <div class="row">
+                <div class="col">
+                    {% include 'factor/partial/empty_accounting_user.html' %}
+                </div>
+                <div class="col"></div>
+            <div class="col"></div>
+
+        </div>
+    {% endif %}
+
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">

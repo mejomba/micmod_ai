@@ -766,5 +766,6 @@
     "official_factor_send_with_this_factor": "فاکتور های رسمی ارسال شده با این فاکتور",
     "arrived_quantity": "تعداد رسیده",
     "ruined_quantity": "تعداد معیوب",
-    "is_kasri": "کسری انبار"
+    "is_kasri": "کسری انبار",
+    "currency_amount":"نرخ ارز"
 }

@@ -1,0 +1,382 @@
+
+
+<style>
+.ff-card {
+  background: #fff;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  max-width: 560px;
+  font-family: inherit;
+}
+
+.ff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ff-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ff-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.ff-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ff-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+.ff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  animation: ffPulse 2s ease-in-out infinite;
+}
+
+@keyframes ffPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.ff-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: ffPulse 1.2s ease-in-out infinite;
+  display: inline-block;
+}
+
+.ff-refresh-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b7280;
+  font-family: inherit;
+  transition: background 150ms;
+}
+
+.ff-refresh-btn:hover {
+  background: #f9fafb;
+}
+
+.ff-divider {
+  border: none;
+  border-top: 1px solid #fef2f2;
+  margin: 0 0 14px;
+}
+
+.ff-body {
+  min-height: 52px;
+}
+
+.ff-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ff-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  padding: 3px 11px;
+  font-size: 12px;
+  color: #dc2626;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 150ms;
+}
+
+.ff-chip:hover {
+  opacity: 0.75;
+}
+
+.ff-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ff-count-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.ff-count-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ff-count-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #dc2626;
+  line-height: 1;
+}
+
+.ff-timer {
+  font-size: 11px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ff-progress {
+  height: 3px;
+  background: #fef2f2;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.ff-progress-bar {
+  height: 100%;
+  background: #dc2626;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.ff-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ff-skel-chip {
+  height: 26px;
+  border-radius: 20px;
+  background: #fef2f2;
+  animation: ffSkelPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ffSkelPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.ff-empty {
+  font-size: 13px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ff-error {
+  font-size: 13px;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@keyframes ffSpin {
+  to { transform: rotate(360deg); }
+}
+
+.ff-spin {
+  display: inline-block;
+  animation: ffSpin 0.8s linear infinite;
+}
+</style>
+
+<!-- ─── HTML ─── -->
+<div class="ff-card">
+  <div class="ff-header">
+    <div class="ff-title-row">
+      <div class="ff-icon">&#9889;</div>
+      <div>
+        <div class="ff-title">فاکتورهای فوری</div>
+        <div class="ff-subtitle">بروزرسانی خودکار هر ۲ دقیقه</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="ff-badge" id="ffUrgentBadge" style="display:none">
+        <span class="ff-dot"></span> نیاز به توجه
+      </span>
+      <button class="ff-refresh-btn" onclick="ffManualRefresh()" title="بروزرسانی">
+        <span id="ffRefreshIcon">&#8635;</span>
+        <span>بروزرسانی</span>
+      </button>
+    </div>
+  </div>
+
+  <hr class="ff-divider">
+
+  <div class="ff-body" id="ffBody">
+    <div class="ff-skeleton">
+      <div class="ff-skel-chip" style="width:52px"></div>
+      <div class="ff-skel-chip" style="width:66px"></div>
+      <div class="ff-skel-chip" style="width:44px"></div>
+    </div>
+  </div>
+
+  <div class="ff-footer">
+    <div class="ff-count-wrap">
+      <span class="ff-count-label">تعداد فوری</span>
+      <span class="ff-count-val" id="ffCountVal">—</span>
+    </div>
+    <div class="ff-timer">
+      &#9201;
+      <span id="ffTimerLabel">در حال بارگذاری...</span>
+    </div>
+  </div>
+
+  <div class="ff-progress">
+    <div class="ff-progress-bar" id="ffProgressBar"></div>
+  </div>
+</div>
+
+<!-- ─── JavaScript ─── -->
+<script>
+(function () {
+  var API_URL = "/factor/ajax/show_force_factor/";
+
+  var INTERVAL_MS  = 120000; /* 2 دقیقه */
+  var tickLoop     = null;
+  var lastLoadTime = null;   /* زمان آخرین بار لود موفق — Date.now() */
+  var isLoading    = false;  /* جلوگیری از درخواست‌های موازی */
+
+
+  function loadData() {
+    if (isLoading) return;   /* اگه هنوز جواب نداده، دوباره نپرس */
+    isLoading = true;
+
+    var icon     = document.getElementById("ffRefreshIcon");
+    var body     = document.getElementById("ffBody");
+    var countVal = document.getElementById("ffCountVal");
+    var badge    = document.getElementById("ffUrgentBadge");
+
+    icon.className   = "ff-spin";
+    icon.textContent = "↻";
+
+    $.ajax({
+      url: API_URL,
+      method: "GET",
+      success: function (data) {
+        isLoading    = false;
+        lastLoadTime = Date.now(); /* ساعت شروع چرخه جدید */
+
+        icon.className   = "";
+        icon.textContent = "⟳";
+
+        if (!data.res || data.count === 0) {
+          body.innerHTML       = '<div class="ff-empty">&#10003; فاکتور فوری وجود ندارد</div>';
+          countVal.textContent = "0";
+          badge.style.display  = "none";
+        } else {
+          var chips = data.res.map(function (id) {
+            return '<a href="/factor/view/' + id + '" class="ff-chip" target="_blank" >&#9889; ' + id + '</a>';
+          }).join("");
+          body.innerHTML       = '<div class="ff-links">' + chips + '</div>';
+          countVal.textContent = data.count;
+          badge.style.display  = "inline-flex";
+        }
+      },
+      error: function () {
+        isLoading    = false;
+        lastLoadTime = Date.now();
+
+        icon.className   = "";
+        icon.textContent = "⟳";
+        body.innerHTML   = '<div class="ff-error">&#10005; خطا در دریافت اطلاعات</div>';
+      }
+    });
+  }
+
+  /* ────────────────────────────────
+     آپدیت تایمر و بار — هر 500ms
+     همه چیز از روی Date.now() حساب
+     می‌شه → هیچ‌وقت drift نمی‌کنه
+  ──────────────────────────────── */
+  function tick() {
+    if (!lastLoadTime) return;
+
+    var elapsed   = Date.now() - lastLoadTime;
+    var remaining = Math.max(0, INTERVAL_MS - elapsed);
+    var seconds   = Math.ceil(remaining / 1000);
+
+    /* ── نوار پیشرفت ── */
+    var pct = (remaining / INTERVAL_MS) * 100;
+    document.getElementById("ffProgressBar").style.width = pct + "%";
+
+    /* ── برچسب تایمر ── */
+    var m   = Math.floor(seconds / 60);
+    var sec = seconds % 60;
+    document.getElementById("ffTimerLabel").textContent =
+      m + ":" + (sec < 10 ? "0" + sec : sec) + " تا بروزرسانی";
+
+    /* ── وقتی وقت تموم شد، لود کن ── */
+    if (remaining === 0) {
+      loadData();
+    }
+  }
+
+  /* ────────────────────────────────
+     بروزرسانی دستی
+  ──────────────────────────────── */
+  window.ffManualRefresh = function () {
+    loadData();
+  };
+
+  /* ────────────────────────────────
+     شروع
+  ──────────────────────────────── */
+  function ffInit() {
+    /* نوار پیشرفت بدون transition باشه — ما خودمون هر 500ms آپدیتش می‌کنیم */
+    document.getElementById("ffProgressBar").style.transition = "none";
+
+    loadData();
+    tickLoop = setInterval(tick, 500);
+  }
+
+  if (typeof $ === "undefined") {
+    window.addEventListener("load", ffInit);
+  } else {
+    $(document).ready(ffInit);
+  }
+
+})();
+</script>

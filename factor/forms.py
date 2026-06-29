@@ -108,11 +108,12 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                       widget=x(
                                                           attrs={'class': 'jalali_date-date form-control',
-                                                                 'size': '10'}), required=True if request and request.user.base_group == 'wh' else False
+                                                                 'size': '10'}), required=True if request and request.user.base_group == 'wh_admin' else False
                                                       )
         self.fields['collecting_end_time'] = forms.DateTimeField(required=False)
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
+        self.fields['currency_amount'].widget.attrs.update({'class': 'form-control narrow-input', 'style': 'width: 70%;'})
 
         if request and request.user.base_group == 'accounting':
             self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
@@ -166,6 +167,8 @@ class FactorItemModelForm(CustomBaseModelForm):
                 kwargs.pop('constraint')  # remove unnecessary kwargs
 
             if request and not request.user.is_superuser and form_constraint:
+                if self.form_state + 1 == len(form_constraint):
+                    self.form_state -= 1
                 for item in form_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = form_constraint[self.form_state]
@@ -173,6 +176,8 @@ class FactorItemModelForm(CustomBaseModelForm):
                         form_constraint_read = item.get('read')  # form_constraint[self.form_state].get('read')
                         form_constraint_hide = item.get('hide')  # orm_constraint[self.form_state].get('hide')
             if request and not request.user.is_superuser and formset_constraint:
+                if self.form_state + 1 == len(form_constraint):
+                    self.form_state -= 1
                 for item in formset_constraint[self.form_state]:
                     if not isinstance(item, dict):
                         item = formset_constraint[self.form_state]
@@ -459,39 +464,150 @@ FACTOR_FIELDS_BY_PERMISSION = {
                 "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
                 "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
                 "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
-                "currency_amount",
-
+                "currency_amount", "q",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
-            "show": ["delivery_time", "q", "created_date", "need_financial_approval", "wh_user", "checker",
-                     "accounting_confirm", "file_1", "file_3", "file_4"]
+            "show": ["delivery_time", "created_date", "need_financial_approval", "wh_user", "checker",
+                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
         },
         1: {
             "edit": [
                 "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
                 "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
                 "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
-
+                "currency_amount",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
             "show": ["delivery_time", "q", "created_date", "need_financial_approval", "wh_user", "checker",
-                     "accounting_confirm", "file_1", "file_3", "file_4"]
+                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
         },
         2: {
             "edit": [
-                "address", "delivery_time", "deliver_type", "deliver_method",
-                "sale_type", "self_discount", "description", "is_official", "official_value", "accounting_confirm", 'sales_admin_confirm'
+                "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                "currency_amount",
             ],
             "hidden": [
-                "q", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-            ]
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+        },
+        3: {
+            "edit": [
+                "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+        },
+        4: {
+            "edit": [
+                "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+        },
+        5: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4"]
         },
     },
-    "factor.cp_factor_wh": {},
+    "factor.cp_factor_wh": {
+        1: {
+            "edit": [
+
+            ],
+            "hidden": [
+                "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval",
+                     "checker", "accounting_confirm", "file_1"]
+        },
+        2: {
+            "edit": [
+                "collecting_start_time", "address", "deliver_type", "deliver_method",
+                "file_2", "file_3", "file_4", "wh_user"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval",
+                     "checker", "accounting_confirm", "file_1"]
+        },
+        3: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+        4: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4", "final_check"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+        5: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+        6: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+            },
+        7: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+    },
     "factor.cp_factor_accounting": {},
     "factor.cp_factor_admin": {},
     "factor.cp_factor_superuser": {},
@@ -518,18 +634,24 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             ],
             "hidden": [
                 "qi", "factor"
+            ],
+            "show": [
+
             ]
         },
         2: {
             "edit": [
-                "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+                "price", "discount_per_item", "quantity",
             ],
             "hidden": [
-                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+
             ]
         },
     },
-    "cp_factor_item_sales_admin": {
+    "factor.cp_factor_item_sales_admin": {
         0: {
             "edit": [
                 "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
@@ -539,24 +661,66 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             ]
         },
     },
-    "cp_factor_item_z": {
+    "factor.cp_factor_item_wh": {
         1: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
+
             ],
             "hidden": [
-                "qi", "factor"
-            ]
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+            ],
+            "show": ["goods_code", "part_number_show", "quantity",]
         },
-    },
-        1: {
+        2: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
+
             ],
             "hidden": [
-                "q"
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+            ],
+            "show": ["goods_code", "part_number_show", "quantity",]
+        },
+        3: {
+            "edit": [
+                "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ]
         },
+        4: {
+                    "edit": [
+                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+                    ],
+                    "hidden": [
+                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                    ]
+                },
+        5: {
+                    "edit": [
+                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+                    ],
+                    "hidden": [
+                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                    ]
+                },
+        6: {
+                    "edit": [
+                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+                    ],
+                    "hidden": [
+                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                    ]
+                },
+        7: {
+                    "edit": [
+                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+                    ],
+                    "hidden": [
+                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                    ]
+                },
+    }
     }
 
 
@@ -573,14 +737,14 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
     file_file_field = "file"  # نام FileField در مدل File
     file_field_prefix = "file_"
     field_layout = [
-        "customer_party_id", "address", "delivery_time",  "sepidar_number", "sepidar_id", "sepidar_inventory_delivery_number",
+        "q", "customer_party_id", "address", "delivery_time",  "sepidar_number", "sepidar_id", "sepidar_inventory_delivery_number",
         "sepidar_inventory_delivery_id", "sepidar_voucher_number", "sepidar_voucher_id", "fiscalyearref", "factor_self",
         "self_discount", "official_value", "wh_user", "deliver_type", "sale_type", "need_financial_approval",
         "collecting_start_time", "collecting_end_time",
         "official_factor_send_with_this_factor", "official_factor_for_this_factor",
         "checker", "packing_json", "customer_request", "currency_ref",
         "deliver_method", "accounting_confirm", "description",
-        "rate", "total_price", "tax", "final_price", "addition", "tax", "duty", "q", "currency_amount"
+        "rate", "total_price", "tax", "final_price", "addition", "tax", "duty", "currency_amount"
         # checkbox section
         "is_official", "cancel", "deliver_to_customer", "sales_admin_confirm", "final_check", "force_factor",
         "require_official_factor_with_delivery", "to_be_collected", "need_factor_document",
@@ -598,13 +762,14 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         "checker": {"ajax": "checker", "min_input": 0, "placeholder": "انتخاب کارشناس مالی"},  # لوکال M2M
         "address": {"ajax": "address", "placeholder": "جستجوی آدرس", "min_input": 0},
         "customer_party_id": {"ajax": "customer_party_id", "min_input": 2, "placeholder": "انتخاب مشتری"},
+        "q": {"ajax": "q", "min_input": 2, "placeholder": "انتخاب پیش فاکتور"},
     }  # {field: {"ajax": key, "placeholder": str, "min_input": int}}
 
     class Meta:
         model = Factor
         fields = "__all__"
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
+            "description": forms.Textarea(attrs={"rows": 1}),
             "official_factor_send_with_this_factor": forms.TextInput(),
             "official_factor_for_this_factor": forms.TextInput(),
             "collecting_start_time": forms.DateTimeInput(
@@ -623,6 +788,17 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
 
         self._apply_select2()
         self.make_optional(['checker'])
+        self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
+                                                                        widget=x(
+                                                                            attrs={
+                                                                                'class': 'jalali_date-date form-control',
+                                                                                'size': '10'}),
+                                                                        required=False
+                                                                        )
+
+        # self.fields['q'].widget.attrs['data-ajax-url'] = 'aaa'
+        self.fields['q'].widget.attrs['data-on-select'] = 'prefactorSelected'
+        self.fields['q'].widget.attrs['data-detail-url'] = reverse_lazy('factor:prefactor-json', args=[0])
 
         # ========= remove field
         if allowed_fields is not None or allowed_hidden is not None:
@@ -682,7 +858,7 @@ class FactorItemForm(CustomBaseModelForm):
         """permission section: del and hiddel fields"""
         if allowed_fields is not None:
             for field_name in list(self.fields):
-                if field_name not in allowed_fields:
+                if field_name not in allowed_fields and field_name not in allowed_hidden:
                     del self.fields[field_name]
 
         if allowed_hidden is not None:

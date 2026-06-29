@@ -1,0 +1,1605 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+{% load factor_tags %}
+
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+    <style>
+    input {
+        border: 1px solid lightgray;
+        padding: 4px;
+        outline-width: 0;
+        box-sizing: border-box;
+        -webkit-transition: 0.3s;
+        transition: 0.3s;
+    }
+    input:focus {
+        border: 1px solid #858585;
+    }
+    .select2-search__field:focus {
+        border: 2px solid #858585 !important;
+    }
+
+    .js-thousands{
+        direction: ltr;
+    }
+
+    /* ردیف علامت‌خورده برای حذف: کم‌رنگ و غیرقابل‌ویرایش، اما هنوز در فرم */
+    .row-deleted {
+        opacity: 0.3;
+    }
+    /* همه‌ی خانه‌ها قفل شوند به‌جز خانه‌ی دکمه‌ی عملیات */
+    .row-deleted td:not(.row-action) {
+        pointer-events: none;
+        user-select: none;
+    }
+
+
+        {#begin clude#}
+  :root{
+    --bg:#ffffff; --text:#33414f; --muted:#8b97a4; --head:#6b93c0;
+    --border:#e6eaf0; --input-border:#d8dee8; --accent:#4577c4; --accent-soft:#eef4fb;
+    --ok:#2f9e6b; --ok-bg:#e9f7ef;
+    --under:#cf8a2b; --under-bg:#fdf4e6;
+    --over:#d9534f; --over-bg:#fdecec;
+    --c-warehouse:#4577c4; --c-market:#2f9e8c; --c-foreign:#cf8a2b;
+  }
+  body{ margin:0; padding:40px 24px; font-family:"Vazirmatn",Tahoma,sans-serif; background:#f7f9fc; color:var(--text); }
+  table{ border-collapse:collapse; width:100%; max-width:1080px; margin:0 auto;
+    background:var(--bg); border:1px solid var(--border); border-radius:12px; overflow:visible; }
+  thead th{ color:var(--head); font-weight:600; font-size:13px; padding:14px 16px; text-align:center; border-bottom:1px solid var(--border); }
+  tbody td{ padding:14px 16px; text-align:center; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .code{ color:var(--muted); } .qty-need{ font-weight:600; }
+
+  .sp-cell{ position:relative; display:inline-block; text-align:right; min-width:300px; max-width:fit-content; }
+  .sp-summary{ display:flex; flex-direction:column; gap:7px; padding:8px 11px; cursor:pointer;
+    background:var(--bg); border:1px solid var(--input-border); border-radius:8px; transition:border-color .15s, background .15s; }
+  .sp-summary:hover{ border-color:var(--accent); }
+  .sp-cell.sp-open .sp-summary{ border-color:var(--accent); background:var(--accent-soft); }
+  .sp-summary.sp-empty{ flex-direction:row; align-items:center; justify-content:space-between; color:var(--muted); font-size:12.5px; }
+  .sp-chev-main{ font-size:10px; }
+
+  .sp-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .sp-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:20px;
+    font-size:11.5px; background:#f1f4f8; border:1px solid var(--border); max-width:100%; }
+  .sp-cdot{ width:7px; height:7px; border-radius:50%; flex:none; background:var(--muted); }
+  .sp-cname{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .sp-cqty{ font-weight:700; flex:none; }
+  .sp-cothers{ font-size:10.5px; color:var(--muted); flex:none; }
+  .sp-c-warehouse .sp-cdot{ background:var(--c-warehouse); }
+  .sp-c-market    .sp-cdot{ background:var(--c-market); }
+  .sp-c-foreign   .sp-cdot{ background:var(--c-foreign); }
+  .sp-chip-new{ border-style:dashed; }
+  .sp-chip-new .sp-cname::before{ content:"+ "; }
+
+  .sp-status{ display:flex; align-items:center; gap:6px; font-size:11.5px; }
+  .sp-sdot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .sp-status.sp-ok{ color:var(--ok); }      .sp-status.sp-ok .sp-sdot{ background:var(--ok); }
+  .sp-status.sp-under{ color:var(--under); }.sp-status.sp-under .sp-sdot{ background:var(--under); }
+  .sp-status.sp-over{ color:var(--over); }  .sp-status.sp-over .sp-sdot{ background:var(--over); }
+
+  .sp-panel{ position:absolute; top:calc(100% + 6px); right:0; z-index:50; width:440px;
+    max-width:calc(100vw - 40px); max-height:480px; overflow-y:auto;
+    background:var(--bg); border:1px solid var(--border); border-radius:12px;
+    box-shadow:0 8px 28px rgba(40,60,90,.16); padding:6px; }
+  .sp-panel[hidden]{ display:none; }
+
+  .sp-group{ font-size:12px; font-weight:600; color:var(--head); padding:12px 10px 8px;
+    display:flex; align-items:center; gap:6px; }
+  .sp-group::before{ content:""; width:4px; height:14px; border-radius:2px; background:var(--accent); }
+  .sp-g-warehouse::before{ background:var(--c-warehouse); }
+  .sp-g-market::before{ background:var(--c-market); }
+  .sp-g-foreign::before{ background:var(--c-foreign); }
+
+  .sp-src{ border:1px solid var(--border); border-radius:8px; margin:6px 4px; overflow:hidden; transition:opacity .2s; }
+  .sp-src.sp-new{ border: 1px dashed; }
+  .sp-src.sp-locked{ opacity:.45; }
+  .sp-src.sp-locked .sp-others-toggle{ pointer-events:none; }
+
+  .sp-src-main{ display:grid; grid-template-columns:18px 1fr 86px; align-items:center; gap:10px;
+    padding:9px 10px; cursor:pointer; margin:0; }
+  .sp-src-main:hover{ background:var(--accent-soft); }
+  .sp-src.sp-locked .sp-src-main:hover{ background:transparent; cursor:not-allowed; }
+  .sp-check{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+  .sp-check:disabled{ cursor:not-allowed; }
+  .sp-info{ text-align:right; min-width:0; }
+  .sp-name{ font-size:12.5px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-meta{ font-size:10.5px; color:var(--muted); display:block; margin-top:2px; }
+  .sp-meta b{ color:var(--text); font-weight:600; }
+  .sp-qty{ width:100%; padding:5px 6px; text-align:center; font-family:inherit; font-size:12px;
+    border:1px solid var(--input-border); border-radius:6px; background:var(--bg); color:var(--text); }
+  .sp-qty:disabled{ background:#f3f5f8; color:var(--muted); }
+  .sp-qty:focus{ outline:none; border-color:var(--accent); }
+
+  .sp-src-others{ border-top:1px dashed var(--border); background:#fafbfd; }
+  .sp-others-toggle{ width:100%; padding:7px 10px; background:none; border:0; color:var(--muted);
+    font-family:inherit; font-size:11.5px; text-align:right; cursor:pointer;
+    display:flex; align-items:center; gap:6px; }
+  .sp-others-toggle:hover{ color:var(--text); }
+  .sp-others-toggle .sp-chev{ display:inline-block; font-size:9px; transition:transform .15s; }
+  .sp-src.sp-others-open .sp-others-toggle .sp-chev{ transform:rotate(-90deg); }
+  .sp-others-cap{ color:var(--accent); font-weight:600; }
+  .sp-others-list{ padding:2px 6px 8px; }
+  .sp-reserve{ display:grid; grid-template-columns:16px 1fr 72px; align-items:center; gap:8px;
+    padding:6px 10px; border-radius:6px; cursor:pointer; margin-right:14px; margin:0 14px 0 0; }
+  .sp-reserve:hover{ background:#fff; }
+  .sp-reserve-info{ text-align:right; min-width:0; font-size:11.5px; }
+  .sp-reserve-name{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-reserve-meta{ font-size:10px; color:var(--muted); }
+  .sp-qty-reserve{ padding:4px 5px; font-size:11px; }
+
+  .sp-footer{ position:sticky; bottom:0; margin-top:6px; background:var(--bg);
+    border-top:1px solid var(--border); padding:10px; }
+  .sp-foot-line{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+  .sp-foot-line b{ font-weight:600; }
+  .sp-foot-status{ text-align:center; font-size:12px; font-weight:600; padding:6px; border-radius:6px; }
+  .sp-foot-status.sp-ok{ color:var(--ok); background:var(--ok-bg); }
+  .sp-foot-status.sp-under{ color:var(--under); background:var(--under-bg); }
+  .sp-foot-status.sp-over{ color:var(--over); background:var(--over-bg); }
+
+  .debug{ max-width:1080px; margin:24px auto 0; }
+  .debug pre{ background:#0f172a; color:#e2e8f0; padding:14px 16px; border-radius:8px; font-size:11px;
+    direction:ltr; text-align:left; font-family:Menlo,Consolas,monospace; max-height:260px; overflow:auto; }
+  .debug h3{ font-size:13px; color:var(--muted); margin:0 0 6px; }
+
+
+  .sp-cell.sp-loading { opacity: 0.5; pointer-events: none; }
+.sp-cell.sp-loading::after {
+  content: ""; position: absolute; top: 50%; right: 50%;
+  width: 16px; height: 16px; margin: -8px -8px 0 0;
+  border: 2px solid var(--accent); border-top-color: transparent;
+  border-radius: 50%; animation: sp-spin 0.6s linear infinite;
+}
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+{#end clude#}
+    </style>
+
+
+{% endblock extra_css %}
+
+{% block form_content %}
+    <div class="factor-alert alert-dismissible fade position-fixed" role="alert" style="z-index: 5000; bottom: 40px">
+      <span id="alert_message"></span>
+    </div>
+
+    <span class="d-none hidden-section">
+        {% csrf_token %}
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+    </span>
+
+    <!-----------------------------workflow------------------------------->
+    <div class="mt-5 mb-2">
+        {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+    </div>
+
+    <!-----------------------------info------------------------------->
+    <div class="d-flex gap-4 align-items-baseline">
+        <div class="mt- mb-2  bg-light-warning py-2 px-3 rounded font-size-15"
+             style="width: fit-content; margin-top: 0px">
+            <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
+            <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>
+            <span>    آمده است به رنگ</span>
+            <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>
+            <span>    در انتهای لیست نمایش داده میشوند</span>
+        </div>
+        <div class="bg-light">
+            <span class="me-5">فاکتور های مرتبط:</span>
+            {% for other_factor in factor.q.q.all %}
+                {% if factor.pk != other_factor.pk %}
+                    <a class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
+                       href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
+                {% endif %}
+            {% empty %}
+                <span>---</span>
+            {% endfor %}
+        </div>
+    </div>
+
+        <div class="container-fluid" data-factor-pk="{{ factor.pk }}">
+            <div class="row">
+                <div class="col p-0">
+
+                <!-----------------------------factor header on update------------------------------->
+                {{ form.errors }}
+                {% if form_s.errors %}
+                <div class="bg-light-danger text-danger p-5 font-size-16 bold">خطا در ردیف های فاکتور</div>
+                    <div class="d-flex">
+                    {{ form_s.errors }}
+                    {% for e in form_s.errors %}
+                    {{ e }}
+                    {% endfor %}
+
+                    </div>
+                {% endif %}
+
+                    <div class="accordion" id="accordionPanelsStayOpenExample">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="panelsStayOpen-headingOne" style="direction: rtl">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true"
+                                        aria-controls="panelsStayOpen-collapseOne">
+                                    فاکتور {{ factor.pk }} ({{ factor.customer_party_id }})
+                                </button>
+                            </h2>
+                            <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show"
+                                 aria-labelledby="panelsStayOpen-headingOne">
+                                <div class="accordion-body" style="direction: rtl">
+                                    <div class="sticky-top bg-white">
+                                        <div class="overflow-hidden col pt-2 mb-8" id="factor-header"
+                                             style="height: fit-content; max-height: 430px; transition: all ease 0.3s;">
+
+
+
+{#                                        سربرگ جدید فاکتور #}
+                                        {{ form.non_field_errors }}
+{#فیلد های نمایشی#}
+                                        {% if form.only_show %}
+  <div class="factor-readonly col-12">
+    <div class="d-flex gap-8 mb-4">
+      {% for item in form.iter_only_show %}
+        <div class="f only-show">
+          <label>
+            {% if item.label %}
+              <span class="bold font-size-13">{{ item.label }}</span>
+            {% else %}
+              <span data-key="{{ item.name }}" class="bold font-size-13">{{ item.name }}</span>
+            {% endif %}
+            <i class="ti ti-lock" aria-hidden="true"></i>
+          </label>
+          <div class="ro mt-2">
+            {% if item.kind == "bool" %}
+              {% if item.value %}<span class="badge badge-light-success">بله</span>{% else %}<span class="badge badge-light-danger">خیر</span>{% endif %}
+            {% elif item.kind == "date" %}
+              {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d" }}{% else %}—{% endif %}
+            {% elif item.kind == "datetime" %}
+              {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d %H:%M" }}{% else %}—{% endif %}
+            {% elif item.kind == "files" %}
+              {% if item.value %}
+                  {% for f in item.value %}
+                      <a href="/media/{{ f.url }}" target="_blank" rel="noopener">
+                        <i class="fas fs-2 fa-file icon-lg me-1" aria-hidden="true"></i>
+                      </a>
+                  {% endfor %}
+              {% else %}—{% endif %}
+            {% else %}
+              {{ item.value|default:"—" }}
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div style="width: 100%; height: 3px; background-color: #efefef"></div>
+  </div>
+{% endif %}
+
+{#                                        فیلد های قابل ویرایش#}
+                                        <div class="row row-cols-5 mt-8">
+                                        {% for bf in form.iter_editable %}
+                                            <div class="f">
+                                            {% render_field_by_order form bf label='on-border' %}
+                                              {% if bf.errors %}<div class="err">{{ bf.errors }}</div>{% endif %}
+                                            </div>
+                                        {% endfor %}
+                                            {% for h in form.hidden_fields %}{{ h }}{% endfor %}
+                                        </div>
+
+                                            <div class="factor-file row row-cols-5">
+                                            {% for g in form.iter_file_fields %}
+                                              <div class="f file-field">
+                                                <label {% if g.field %}for="{{ g.field.id_for_label }}"{% endif %}>{{ g.label }}</label>
+
+
+                                                  {{ g.field }}
+                                                  {% if g.field.errors %}<div class="err">{{ g.field.errors }}</div>{% endif %}
+
+
+                                                {% if g.files %}
+                                                  <div class="d-flex gap-3">
+                                                    {% for f in g.files %}
+                                                          <a href="{{ f.url }}" target="_blank" rel="noopener">
+                                                            <i class="fas fs-2 fa-file icon-lg" aria-hidden="true"></i>
+                                                          </a>
+                                                    {% endfor %}
+                                                  </div>
+                                                {% elif not g.editable %}
+                                                  <div class="muted">—</div>
+                                                {% endif %}
+                                              </div>
+                                            {% endfor %}
+                                            </div>
+
+                                        </div>
+                                        <span class="factor-header-toggle btn btn-sm btn-secondary my-1"></span>
+        {#                                      onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>#}
+                                        {% if form.instance.pk %}
+                                            <a href="{% url 'order:order_of_factor' form.instance.pk %}" target="_blank"
+                                               class="factor-header-toggle btn btn-sm btn-secondary my-1 ms-3">محل تامین های این
+                                                فاکتور</a>
+                                        {% endif %}
+
+                                        {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.is_superuser %}
+                                            <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar"
+                                                   id="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد.">
+                                        {% endif %}
+
+
+                                        <!-- items header -->
+                                        <div class="text-center">
+                                            <div class="row">
+                                                <!--remove quotation item header-->
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- end accordion -->
+                </div>
+            </div>
+
+        <!--factor item header-->
+        <div class="row py-2 bg-light-primary rounded-left">
+            <span class="col-1 bold">
+                <span data-key="">ردیف/کد کالا</span>
+            </span>
+            <span class="col-3 bold">
+                <span data-key="">پارت نامبر</span>
+            </span>
+            <span class="col-1 bold">
+                <span> تعداد</span>
+            </span>
+            <span class="col-1 bold">
+                <span>قیمت</span>
+            </span>
+            <span class="col-1 bold">
+                <span>تخفیف ردیف</span>
+            </span>
+            <span class="col-1 bold">
+                <span>قیمت کل ردیف</span>
+            </span>
+            <span class="col-4 bold">
+                <span data-key="">محل تامین</span>
+            </span>
+        </div>
+
+<div id="factor-items-container">
+        {% if request.user.is_superuser %}
+            {% include 'factor/safe_factor_item_create.html' with form_s=form_s quotation=quotation %}
+        {% else %}
+            {% include 'factor/safe_factor_item_create.html' with form_s=form_s quotation=quotation %}
+        {% endif %}
+</div>
+{% if flow_state_index < 2 %}
+<button type="button" id="add-factor-item-row" class="btn btn-light-primary">
+  + افزودن ردیف
+</button>
+{% endif %}
+        <div class="mb-20 pb-20"></div>
+
+        {# Template مخفی برای افزودن ردیف جدید — همان محتوای .sortable-item ولی با empty_form #}
+<template id="factor-item-empty-template">
+    <div id="sortable-container" class="col-12">
+  <div class="sortable-item factor_item_self" id="invoice-rows">
+    {# محتوای ردیف باید همان باشد که در for loop هست، فقط با form_s_item=form_s.empty_form #}
+    {# سریع‌ترین راه: محتوای ردیف را به یک partial _factor_item_row.html منتقل کنید #}
+    {% include "factor/partial/_factor_item_row_create.html" with form_s_item=form_s.empty_form %}
+  </div>
+  </div>
+</template>
+
+        </div>
+
+<span class="d-non">
+<div class="debug">
+  <h3>خروجی JSON برای ارسال به سرور (زنده):</h3>
+  <pre id="dbg"></pre>
+</div>
+</span>
+
+
+
+{% endblock form_content %}
+
+{% block before_button %}
+    {% include "micmod-base/base/create_info_bar.html" %}
+{% endblock before_button %}
+
+{% block form_footer_extra %}
+{% include "core/partial/add_formset_button.html" %}
+    {% if form.instance.id %}
+    <div class="px-2 mx-auto">
+    </div>
+        {% if  request.user|has_group:'sales_user' and flow_state_index < 2 %}
+        <div class="d-flex justify-content-between mt-1 ">
+            <div><label class="col-form-label">فاکتور فوری</label></div>
+            <div>
+                <span class="switch switch-brand">
+                    <label>
+                        {{ form.force_factor }}
+                        <span></span>
+                    </label>
+                </span>
+            </div>
+        </div>
+
+        {% else %}
+            <div class="d-flex align-items-baseline">
+            {% if form.instance.force_factor  %}
+                <span>فاکتور فوری: </span>
+                <span class="font-size-20">✔️</span>
+            {% else %}
+                <span>فاکتور فوری: </span>
+                <span class="font-size-20">❌</span>
+            {% endif %}
+            </div>
+        {% endif %}
+
+        <a class="btn btn-outline-dark btn-bordered text-xl-center " id="factor_print"
+             href="{% url 'factor:factor.print' form.instance.id %}?action=factor_print" target="_blank">
+                 پرینت فاکتور
+        </a>
+
+        {% if  request.user|has_group:'wh_user' or request.user.is_supperuser %}
+            <a class="btn btn-outline-dark btn-bordered text-xl-center ms-1" id="wh_exit_permit"
+                 href="{% url 'factor:factor.print' form.instance.id %}?action=wh_exit_permit" target="_blank">
+                حواله خروج
+            </a>
+        {% endif %}
+
+    {% else %}
+        <div class="px-2 mx-auto">
+        </div>
+    {% endif %}
+
+        <div class="d-flex w-25 replace-digits" {% if not form.enable %}disabled="disabled"{% endif %}>
+            <div class="align-items-center text-white bg-info w-100 rounded">
+                <h5 class="d-flex mt-2 px-1 mt-3 text-white bg-info replace-digits">
+                    <div class="w-30 ms-2"> جمع کل</div>
+                    <div class="factor_total_price w-70 text-center "
+                         name="factor_total_price"></div>
+                </h5>
+            </div>
+        </div>
+
+    <textarea name="supply_locations" class="d-non"></textarea>
+    </div>
+    </div>
+
+    {% include 'core/partial/empty_modal_sm.html' %}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+
+{% endblock form_footer_extra %}
+
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/safe_factor.js' %}"></script>
+
+    <script>
+    function check_quantity(event){
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_quantity = row.querySelector('.qi_quantity')
+        const batch_count = row.querySelector('.batch-count')
+        const Alert = document.querySelector('.factor-alert')
+        if (parseFloat(elem.value.replaceAll(',', '')) > parseFloat(qi_quantity.dataset.quantity)){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'تعداد انتخابی بیش از تعداد خواسته شده در پیش فاکتور است!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+            Alert.querySelector('#alert_message').innerText = ''
+        }
+
+        if (parseFloat(elem.value.replaceAll(',', '')) % parseFloat(batch_count.innerText)) {
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText += '   تعداد انتخابی ضریبی از تعداد در بسته نیست'
+            setTimeout(() => {
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
+            }, 7000)
+        }
+    }
+
+    function check_price(event){
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_price = row.querySelector('.qi_price')
+        const Alert = document.querySelector('.factor-alert')
+        const diff_price_alert = row.querySelector('.diff_price_alert')
+        if (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price)){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+        }
+
+        const diff = (parseFloat(elem.value.replaceAll(',', '')) - parseFloat(qi_price.dataset.price)) / parseFloat(elem.value.replaceAll(',', '')) * 100
+        // ✅ حالا بررسی اختلاف
+    if (Math.abs(diff) > 10) {
+        elem.classList.add('border-danger');
+        diff_price_alert.classList.remove('d-none');
+        // diff_price_alert.classList.add('badge');
+        // diff_price_alert.classList.add('badge-danger');
+        // diff_price_alert.classList.add('rounded');
+        diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۱۰٪ است.';
+
+    }
+    else {
+        elem.classList.remove('border-danger');
+        // diff_price_alert.classList.remove('badge');
+        // diff_price_alert.classList.remove('badge-danger');
+        // diff_price_alert.classList.remove('rounded');
+        diff_price_alert.classList.add('d-none');
+        diff_price_alert.textContent = ''
+    }
+    }
+
+    function check_all_price(){
+        const Alert = document.querySelector('.factor-alert')
+        const rows = document.querySelectorAll('.sortable-item') //findAncestor(event.currentTarget, 'row').parentElement.parentElement
+
+        rows.forEach(function (item){
+            const qi_price = item.querySelector('.qi_price')
+            const elem = item.querySelector("input[name*='-price']")
+            if (qi_price && (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price))){
+                elem.classList.add('border-danger')
+                elem.classList.add('text-danger')
+                Alert.classList.add('alert-danger')
+                Alert.classList.add('show')
+                Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+                setTimeout(()=>{
+                    Alert.classList.remove('show')
+                    Alert.classList.remove('alert-danger')
+                }, 7000)
+            }
+        })
+    }
+    setTimeout(check_all_price, 1200)
+    function sync_supply_location(event){
+        const supply_locations = event.currentTarget.parentElement.parentElement.querySelector('[id*="-supply_locations"]')
+        const supply_location = event.currentTarget.parentElement.parentElement.querySelector('[id$="-supply_location"]')
+        supply_locations.value = event.currentTarget.value
+        supply_location.value = event.currentTarget.value
+        const row = findAncestor(event.currentTarget, 'factor_item')
+
+        try {
+            let need_more
+            const text = event.currentTarget.options[event.currentTarget.selectedIndex].text
+            const match = text.match(/آزاد:\s*([\d,]+)/);
+            const reserve_count = row.querySelector('input[name$="-reserve_count"]').value
+
+            if (match) {
+                const value = Number(match[1].replace(/,/g, ''));
+                need_more = Number(reserve_count) > value
+            }
+
+            if (need_more){
+                const wh_code = event.currentTarget.value.split('__')[1]
+                const sku = row.querySelector('input[name$="-goods_code"]').value
+                $.ajax({
+                    type: 'GET',
+                    url: `/order/get_wh_reserve_order/?wh_code=${wh_code}&sku=${sku}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: block_main_container,
+                    success: function (data) {
+                        const reserve_selection = row.querySelector('#reserve_selection')
+                        reserve_selection.innerHTML = ''
+                        reserve_selection.classList.remove('d-none')
+
+                        const empty_option = document.createElement('option');
+                        empty_option.value = ''
+                        empty_option.textContent = 'انتخاب از رزرو دیگران ...'
+                        reserve_selection.appendChild(empty_option);
+
+                        Object.entries(data).forEach(([key, value]) => {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = value;
+                            reserve_selection.appendChild(option);
+                        });
+
+                    },
+                    error: function () {
+
+                    },
+                    complete: release_main_container
+                }); // end ajax
+            } else {
+                const reserve_selection = row.querySelector('#reserve_selection')
+                reserve_selection.innerHTML = ''
+                reserve_selection.classList.add('d-none')
+            }
+        } catch (e){
+            console.log('wh not fount')
+        } // end try catch
+    }
+    </script>
+    <script src="{% static 'js/local/sortable.min.js' %}"></script>
+<script>
+generate_drag_drop()
+addCommaSeperator(true)
+</script>
+
+{#    begin clude#}
+<script>
+const GROUPS = [
+  { key:"warehouse", listKey:"warehouses",     title:"انبار",       allowNew:false,
+    metaFn: s => `سپیدار: <b>${nf(s.sepidar_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` },
+  { key:"market",    listKey:"market_orders",  title:"سفارش بازار", allowNew:true, newName:"سفارش بازار جدید",
+    metaFn: s => `تعداد: <b>${nf(s.total_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` },
+  { key:"foreign",   listKey:"foreign_orders", title:"سفارش خارجی", allowNew:true, newName:"سفارش خارجی جدید",
+    metaFn: s => `تعداد: <b>${nf(s.total_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` }
+];
+
+const parseNum = v => {
+  const s = String(v == null ? '' : v).replace(/,/g, '').trim();
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+};
+const nf = n => {
+  if (n === '' || n == null || isNaN(n)) return '0';
+  return Number(n).toLocaleString('en-US', { maximumFractionDigits: 10 });
+};
+
+/* ساخت کارت یک منبع — pre همان preselection سرور است */
+function buildSourceCard(group, src, isNew){
+  const card = document.createElement("div");
+  card.className = "sp-src" + (isNew ? " sp-new" : "");
+  card.dataset.group = group;
+  card.dataset.id   = isNew ? "" : src.id;
+  card.dataset.name = src.name;
+  card.dataset.isNew = isNew ? "true" : "false";
+
+  const pre = src.preselection || {};
+  const mainChecked = pre.qty_free > 0;
+  const mainVal     = mainChecked ? pre.qty_free : "";
+  const meta = isNew ? "هنگام ذخیره ساخته می‌شود" : GROUPS.find(g=>g.key===group).metaFn(src);
+  const freeMax = isNew ? "" : `max="${src.free_qty}"`;
+
+  card.innerHTML = `
+    <label class="sp-src-main">
+      <input type="checkbox" class="sp-check sp-check-main" ${mainChecked?'checked':''}>
+      <div class="sp-info">
+        <span class="sp-name">${src.name}</span>
+        <span class="sp-meta">${meta}</span>
+      </div>
+      <input type="number" class="sp-qty sp-qty-free" min="0" ${freeMax} value="${mainVal}" placeholder="تعداد" ${mainChecked?'':'disabled'}>
+    </label>`;
+
+  if (!isNew && src.other_reserves && src.other_reserves.length){
+    const fromRes = pre.from_reserves || {};
+    const totalOthers = src.other_reserves.reduce((s,r)=>s+r.qty,0);
+    const others = document.createElement("div");
+    others.className = "sp-src-others";
+    others.innerHTML = `
+      <button type="button" class="sp-others-toggle">
+        <span class="sp-chev">▸</span>از رزروهای دیگران
+        <span class="sp-others-cap">(تا ${nf(totalOthers)})</span>
+      </button>
+      <div class="sp-others-list" hidden>
+        ${src.other_reserves.map(r => {
+          const rv = fromRes[r.id];
+          const rChecked = rv > 0;
+          return `<label class="sp-reserve" data-reserve-id="${r.id}" data-max="${r.qty}">
+            <input type="checkbox" class="sp-check sp-check-reserve" ${rChecked?'checked':''}>
+            <div class="sp-reserve-info">
+              <span class="sp-reserve-name">${r.owner}</span>
+              <span class="sp-reserve-meta">موجود: ${nf(r.qty)}</span>
+            </div>
+            <input type="number" class="sp-qty sp-qty-reserve" min="0" max="${r.qty}" value="${rChecked?rv:''}" placeholder="تعداد" ${rChecked?'':'disabled'}>
+          </label>`;
+        }).join("")}
+      </div>`;
+    card.appendChild(others);
+  }
+  return card;
+}
+
+function stateOf(req, sup){
+  const action_button = document.querySelector('#global-action-button')
+  action_button.classList.remove('d-none')
+  const r = req - sup;
+  if (sup === 0) return { s:"under", t:"" };
+  if (r === 0)   return { s:"ok",    t:"تأمین کامل ✓" };
+  if (r > 0)     return { s:"under", t:`${nf(r)} واحد باقی‌مانده` };
+  if (r < 0){action_button.classList.add('d-none')}
+  return                { s:"over",  t:`${nf(-r)} واحد بیشتر از نیاز` };
+}
+function collectSelections(cell){
+  const out = [];
+  cell.querySelectorAll(".sp-src").forEach(card => {
+    const group = card.dataset.group;
+    const isNew = card.dataset.isNew === "true";
+    const name  = card.dataset.name;
+    const sid   = card.dataset.id || null;
+
+    const mainCb = card.querySelector(".sp-check-main");
+    const mainQ  = card.querySelector(".sp-qty-free");
+    const qty_free = mainCb.checked ? parseNum(mainQ.value) : 0; //mainCb.checked ? (parseInt(mainQ.value,10)||0) : 0;
+
+    const from_reserves = [];
+    card.querySelectorAll(".sp-reserve").forEach(r => {
+      const cb = r.querySelector(".sp-check-reserve");
+      const q  = r.querySelector(".sp-qty-reserve");
+      if (cb.checked){
+        const v = parseNum(q.value); //const v = parseInt(q.value,10) || 0;
+        if (v > 0) from_reserves.push({ reserve_id:r.dataset.reserveId, qty:v });
+      }
+    });
+
+    const others_total = from_reserves.reduce((s,r)=>s+r.qty,0);
+    const total = qty_free + others_total;
+    if (total > 0) out.push({ group, source_id:sid, is_new:isNew, qty_free, from_reserves,
+                              _name:name, _total:total, _others:others_total });
+  });
+  return out;
+}
+
+function refreshDebug(){
+    debugger
+  const out = {};
+  document.querySelectorAll(".sp-cell").forEach((c,i) => { out["row_"+(i+1)] = c.querySelector('.sp-data').value || []; });
+  document.getElementById("dbg").textContent = JSON.stringify(out, null, 2);
+  document.querySelector("textarea[name='supply_locations']").value = JSON.stringify(out);
+}
+
+function updateCell(cell){
+    debugger
+  const required = +cell.dataset.required;
+  const sel = collectSelections(cell);
+  const supplied = sel.reduce((s,x)=>s+x._total, 0);
+  const st = stateOf(required, supplied);
+
+  const payload = sel.map(s => ({ group:s.group, source_id:s.source_id, is_new:s.is_new,
+                                  qty_free:s.qty_free, from_reserves:s.from_reserves }));
+  const dataInput = cell.querySelector('.sp-data');
+    if (dataInput) dataInput.value = JSON.stringify(payload);
+  /* در پروژه‌ی واقعی: cell.querySelector('input[name="supply_locations"]').value = JSON.stringify(payload); */
+
+  const sup = cell.querySelector(".sp-sup"); if (sup) sup.textContent = nf(supplied);
+  const fst = cell.querySelector(".sp-foot-status");
+  if (fst){ fst.className = "sp-foot-status sp-"+st.s; fst.textContent = st.t || "هنوز محل تامینی انتخاب نشده"; }
+
+  const sum = cell.querySelector(".sp-summary");
+  if (!sel.length){
+    sum.className = "sp-summary sp-empty";
+    sum.innerHTML = `<span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>`;
+  } else {
+    sum.className = "sp-summary";
+    const chips = sel.map(s => {
+      const others = s._others > 0
+        ? `<span class="sp-cothers" title="از رزرو دیگران: ${nf(s._others)}">↑${nf(s._others)}</span>` : "";
+      return `<span class="sp-chip sp-c-${s.group}${s.is_new?' sp-chip-new':''}" title="${s._name}">
+        <span class="sp-cdot"></span><span class="sp-cname">${s._name}</span><b class="sp-cqty">${nf(s._total)}</b>${others}</span>`;
+    }).join("");
+    sum.innerHTML = `<div class="sp-chips">${chips}</div>
+      <div class="sp-status sp-${st.s}"><span class="sp-sdot"></span>${nf(supplied)} از ${nf(required)}${st.t?' · '+st.t:''}</div>`;
+  }
+  refreshDebug();
+
+  const factor_row = findAncestor(cell, 'factor_item_self')
+  factor_calculate_price(factor_row)
+}
+
+/* ────── محدودیت «یک انبار در هر ردیف» ────── */
+function applyConstraints(cell){
+  const whCards = [...cell.querySelectorAll('.sp-src[data-group="warehouse"]')];
+  const activeWh = whCards.find(card =>
+    card.querySelector('.sp-check-main:checked') || card.querySelector('.sp-check-reserve:checked'));
+  whCards.forEach(card => {
+    const locked = activeWh && card !== activeWh;
+    card.classList.toggle('sp-locked', locked);
+    card.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.disabled = locked; });
+    card.querySelectorAll('.sp-qty').forEach(q => {
+      if (locked) q.disabled = true;
+      else {
+        const cb = (q.closest('.sp-src-main') || q.closest('.sp-reserve'))?.querySelector('input[type="checkbox"]');
+        q.disabled = !cb || !cb.checked;
+      }
+    });
+  });
+}
+
+function buildSupplyCell(row){
+  const cell = document.createElement("div");
+  cell.className = "sp-cell";
+  cell.dataset.required = row.required;
+
+  const summary = document.createElement("div");
+  summary.className = "sp-summary sp-empty";
+  summary.innerHTML = `<span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>`;
+  const panel = document.createElement("div"); panel.className = "sp-panel"; panel.hidden = true;
+
+  GROUPS.forEach(g => {
+    const list = row.sources[g.listKey] || [];
+    if (!list.length && !g.allowNew) return;
+    const title = document.createElement("div");
+    title.className = "sp-group sp-g-" + g.key;
+    title.textContent = g.title;
+    panel.appendChild(title);
+    list.forEach(s => panel.appendChild(buildSourceCard(g.key, s, false)));
+    if (g.allowNew) panel.appendChild(buildSourceCard(g.key, { id:"", name:g.newName }, true));
+  });
+
+  const footer = document.createElement("div"); footer.className = "sp-footer";
+  footer.innerHTML = `
+    <div class="sp-foot-line"><span>مورد نیاز</span><b>${nf(row.required)}</b></div>
+    <div class="sp-foot-line"><span>تأمین‌شده</span><b class="sp-sup">0</b></div>
+    <div class="sp-foot-status"></div>`;
+  panel.appendChild(footer);
+
+  cell.append(summary, panel);
+
+  /* init: اگر رزرو دیگرانی پیش‌انتخاب شده باشد، expander آن کارت را باز کن */
+  cell.querySelectorAll(".sp-src").forEach(card => {
+    if (card.querySelector(".sp-check-reserve:checked")){
+      card.classList.add("sp-others-open");
+      card.querySelector(".sp-others-list").hidden = false;
+    }
+  });
+  applyConstraints(cell);
+  updateCell(cell);
+  return cell;
+}
+
+document.addEventListener('DOMContentLoaded', function (){
+
+    document.querySelectorAll('.sp-qty').forEach(function (input) {
+      // اگر تمپلیت قدیمی هنوز type="number" دارد، اصلاح کن
+      if (input.type === 'number') input.type = 'text';
+      if (!input.hasAttribute('inputmode')) input.setAttribute('inputmode', 'decimal');
+      // فرمت مقدار اولیه
+      if (input.value) {
+        const v = parseNum(input.value);
+        input.value = v > 0 ? nf(v) : '';
+      }
+    });
+document.querySelectorAll('.sp-cell').forEach(function (cell) {
+  updateCell(cell);
+});
+
+document.querySelectorAll('.sp-cell').forEach(function(cell){
+    updateCell(cell)
+})
+
+function suggestQty(cell, input, max){
+  const required = +cell.dataset.required;
+  let others = 0;
+  cell.querySelectorAll(".sp-qty").forEach(q => {
+    if (q !== input && !q.disabled) others += parseNum(q.value);
+  });
+  let v = Math.max(required - others, 0);
+  if (max != null) v = Math.min(v, max);
+  return v;
+}
+
+document.addEventListener("change", e => {
+  const card = e.target.closest(".sp-src"); if (!card) return;
+  const cell = card.closest(".sp-cell");
+  if (e.target.classList.contains("sp-check-main")){
+    const qty = card.querySelector(".sp-qty-free");
+    if (e.target.checked){
+      qty.disabled = false;
+      const max = qty.getAttribute("max") ? +qty.getAttribute("max") : null;
+      qty.value = suggestQty(cell, qty, max);
+      qty.focus(); qty.select();
+    } else { qty.value = ""; qty.disabled = true; }
+    applyConstraints(cell); updateCell(cell);
+  } else if (e.target.classList.contains("sp-check-reserve")){
+    const r = e.target.closest(".sp-reserve");
+    const qty = r.querySelector(".sp-qty-reserve");
+    if (e.target.checked){
+      qty.disabled = false;
+      qty.value = suggestQty(cell, qty, +r.dataset.max);
+      qty.focus(); qty.select();
+    } else { qty.value = ""; qty.disabled = true; }
+    applyConstraints(cell); updateCell(cell);
+  }
+});
+
+{#document.addEventListener("input", e => {#}
+{#  if (!e.target.classList.contains("sp-qty")) return;#}
+{#  const cell = e.target.closest(".sp-cell");#}
+{#  let v = Math.max(0, parseInt(e.target.value,10) || 0);#}
+{#  const max = e.target.getAttribute("max");#}
+{#  if (max != null && max !== "" && v > +max) v = +max;#}
+{#  if (e.target.value !== "" && String(v) !== e.target.value) e.target.value = v;#}
+{#  updateCell(cell);#}
+//});
+
+// روی focus: ویرگول‌ها را حذف کن تا ویرایش راحت باشد
+document.addEventListener('focusin', function (e) {
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  e.target.value = String(e.target.value || '').replace(/,/g, '');
+});
+
+// روی blur: clamp و فرمت با ویرگول
+document.addEventListener('focusout', function (e) {
+
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  const input = e.target;
+  let v = parseNum(input.value);
+  if (v < 0) v = 0;
+  let max = 0;
+  const max_ = input.getAttribute('max');
+  const max_need = parseNum(findAncestor(input, 'factor_item_self').querySelector('input[name*="-quantity"]').value)
+  if (max_ > max_need){max = max_need} else {max = max_}
+  if (max != null && max !== '' && v > +max) v = +max;
+  input.value = v > 0 ? nf(v) : '';
+  updateCell(input.closest('.sp-cell'));
+});
+
+// روی input: فقط محاسبه‌ی زنده‌ی chip ها و وضعیت — بدون فرمت
+document.addEventListener('input', function (e) {
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  updateCell(e.target.closest('.sp-cell'));
+});
+
+function closeAllPanels(){
+  document.querySelectorAll(".sp-cell.sp-open").forEach(c => {
+    c.classList.remove("sp-open"); c.querySelector(".sp-panel").hidden = true;
+  });
+}
+document.addEventListener("click", e => {
+  const toggle = e.target.closest(".sp-others-toggle");
+  if (toggle){
+    const card = toggle.closest(".sp-src");
+    const list = card.querySelector(".sp-others-list");
+    const open = card.classList.toggle("sp-others-open");
+    list.hidden = !open; return;
+  }
+  const sum = e.target.closest(".sp-summary");
+  if (sum){
+    const cell = sum.closest(".sp-cell");
+    const open = cell.classList.contains("sp-open");
+    closeAllPanels();
+    if (!open){ cell.classList.add("sp-open"); cell.querySelector(".sp-panel").hidden = false; }
+    return;
+  }
+  if (!e.target.closest(".sp-panel")) closeAllPanels();
+});
+
+})
+</script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function (){
+
+        function initSelect2(scope) {
+      $(scope).find("select.select2").each(function () {
+        var $el = $(this);
+        if ($el.hasClass("select2-hidden-accessible")) return;   // قبلاً init شده
+
+        var isMulti = $el.prop("multiple");
+        var placeholder = $el.data("placeholder") || "";
+        var opts = {
+          width: $el.data("width") || "100%",
+          dir: "rtl",
+          placeholder: placeholder,
+          // allowClear فقط برای تک‌انتخابی و فقط وقتی placeholder داریم
+          allowClear: !isMulti && !!$el.data("allow-clear") && !!placeholder,
+          closeOnSelect: !isMulti,
+        };
+
+        var url = $el.data("ajax-url");
+        if (url) {
+          var mi = $el.data("min-input");
+          opts.minimumInputLength = (mi === undefined || mi === "") ? 1 : mi;
+          opts.ajax = {
+              url: url, dataType: "json", delay: 250, cache: true,
+              data: function (p) {
+                var d = { q: p.term, page: p.page || 1 };
+                var extra = $el.data("ajax-extra");          // jQuery خودش JSON معتبر را object می‌کند
+                if (extra && typeof extra === "object") $.extend(d, extra);
+                return d;
+              },
+              processResults: function (d, p) {
+                  console.log('processResults')
+                p.page = p.page || 1;
+                return { results: d.results, pagination: { more: d.pagination.more } };
+              },
+            };
+        }
+
+        try {
+          $el.select2(opts);
+          var onSelect = $el.data("on-select");
+          if (onSelect) {
+            $el.on("select2:select", function (e) {
+              var fn = window.select2Handlers && window.select2Handlers[onSelect];
+              if (typeof fn === "function") fn(e.params.data, $el, e);
+            });
+          }
+        } catch (e) {
+          console.error("Select2 init failed:", $el.attr("name"), e);
+        }
+      });
+        }
+
+        $(function () { initSelect2(document); });
+
+})
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+  // ─── helper ها ───
+  function getCsrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+  function getFactorPk() {
+    return document.querySelector('[data-factor-pk]')?.dataset.factorPk;
+  }
+
+  // ─── ۱) تغییر تعداد ───
+  document.addEventListener('input', function (e) {
+    if (!e.target.matches('input[name$="-quantity"]')) return;
+    const row = e.target.closest('.sortable-item');
+    if (!row) return;
+    const cell = row.querySelector('.sp-cell');
+    if (!cell) return;
+    const newQty = parseFloat(e.target.value) || 0;
+    cell.dataset.required = newQty;
+    // به‌روزرسانی «مورد نیاز» در footer
+    const needEl = cell.querySelector('.sp-foot-line:first-child b');
+    if (needEl) needEl.textContent = nf(newQty);
+    updateCell(cell);
+  });
+
+  // ─── ۲) تغییر کد کالا ───
+  // ذخیره‌ی مقدار قبلی روی focus برای امکان revert
+  document.addEventListener('focusin', function (e) {
+    if (e.target.matches('input[name$="-goods_code"]')) {
+      e.target.dataset.previousValue = e.target.value;
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches('input[name$="-goods_code"]')) return;
+    const input = e.target;
+    const newVal = (input.value || '').trim();
+    const oldVal = (input.dataset.previousValue || '').trim();
+    if (newVal === oldVal) return;
+
+    const row = input.closest('.factor_item_self');
+    if (!row) return;
+    const cell = row.querySelector('.sp-cell');
+    if (!cell) return;
+
+    // بررسی اینکه آیا انتخاب‌های قبلی وجود دارد
+    let currentData = [];
+    try {
+      currentData = JSON.parse(cell.querySelector('.sp-data').value || '[]');
+    } catch (_) {}
+    if (currentData.length > 0) {
+      if (!confirm('با تغییر کد کالا، محل تامین‌های فعلی پاک می‌شوند. ادامه می‌دهید؟')) {
+        input.value = oldVal;
+        return;
+      }
+    }
+    fetchAndReplaceSupply(row, newVal);
+    get_sku_info(row)
+  });
+
+  async function fetchAndReplaceSupply(row, sku) {
+    const cell = row.querySelector('.sp-cell');
+    const panel = cell.querySelector('.sp-panel');
+    const goodsInput = row.querySelector('input[name$="-goods_code"]');
+    const quantityInput = row.querySelector('input[name$="-quantity"]');
+    const idInput = row.querySelector('input[name$="-id"]');
+
+    const factorPk = getFactorPk();
+    if (!factorPk) {
+      alert('شناسه فاکتور یافت نشد (data-factor-pk).');
+      return;
+    }
+
+    const params = new URLSearchParams({
+      goods_code: sku,
+      quantity: quantityInput ? (quantityInput.value || '0') : '0',
+      factor_item_id: idInput ? (idInput.value || '') : '',
+    });
+    const url = `/factor/${factorPk}/supply-fragment/?${params.toString()}`;
+
+    cell.classList.add('sp-loading');
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+      });
+
+      if (resp.status === 403) {
+        const data = await resp.json().catch(() => ({}));
+        alert(data.message || 'تغییر کد کالا مجاز نیست');
+        // revert
+        goodsInput.value = goodsInput.dataset.previousValue || '';
+        return;
+      }
+      if (!resp.ok) {
+        alert('خطا در دریافت اطلاعات کالا (کد ' + resp.status + ')');
+        return;
+      }
+
+      const html = await resp.text();
+      panel.innerHTML = html;
+
+      // reset
+      const dataInput = cell.querySelector('.sp-data');
+      if (dataInput) dataInput.value = '[]';
+      cell.dataset.required = parseFloat(quantityInput?.value) || 0;
+
+      // پنل را بسته نگه دار
+      cell.classList.remove('sp-open');
+      panel.hidden = true;
+
+      // باز اعمال محدودیت‌ها و بازمحاسبه‌ی وضعیت
+      applyConstraints(cell);
+      updateCell(cell);
+
+      // برای change بعدی
+      goodsInput.dataset.previousValue = sku;
+    } catch (err) {
+      console.error(err);
+      alert('خطا در ارتباط با سرور');
+    } finally {
+      cell.classList.remove('sp-loading');
+    }
+  }
+
+  // ─── ۳) افزودن ردیف جدید ───
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#add-factor-item-row');
+    if (!btn) return;
+    addFactorItemRow();
+    renumberRows();
+  });
+
+  function addFactorItemRow() {
+    const template = document.getElementById('factor-item-empty-template');
+    const container = document.getElementById('factor-items-container');
+    const totalInput = document.querySelector('input[name="factoritem_set-TOTAL_FORMS"]');
+    if (!template || !container || !totalInput) {
+      console.error('عناصر لازم برای افزودن ردیف پیدا نشد');
+      return;
+    }
+    const currentTotal = parseInt(totalInput.value, 10);
+    const html = template.innerHTML.replace(/__prefix__/g, currentTotal);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html.trim();
+    const newRow = wrapper.firstElementChild;
+    container.appendChild(newRow);
+
+    totalInput.value = currentTotal + 1;
+
+    // init سلول تامین در ردیف جدید
+    const cell = newRow.querySelector('.sp-cell');
+    if (cell) {
+      applyConstraints(cell);
+      updateCell(cell);
+    }
+    initSelect2(newRow);
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function () {
+    "use strict";
+
+    // فرمت‌کردن: فقط بخش صحیح کاما می‌گیرد، اعشار دست‌نخورده می‌ماند
+    function formatDecimal(raw) {
+        // فقط رقم و نقطه را نگه دار
+        let s = raw.replace(/[^\d.]/g, "");
+
+        // فقط اولین نقطه مجاز است؛ بقیه حذف شوند
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) +
+                s.slice(firstDot + 1).replace(/\./g, "");
+        }
+
+        let [intPart, decPart] = s.split(".");
+        // جداکننده‌ی سه‌رقمی فقط روی بخش صحیح
+        intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        // اگر نقطه تایپ شده بود (حتی بدون رقم بعدش) حفظش کن: "12."
+        return decPart !== undefined ? intPart + "." + decPart : intPart;
+    }
+
+    // تعداد کاراکترهای معنادار (رقم و نقطه) قبل از کرسر — کاما را نشمار
+    const meaningfulCount = (str, pos) =>
+        str.slice(0, pos).replace(/,/g, "").length;
+
+    function applyFormatting(input) {
+        const oldPos = input.selectionStart;
+        const wanted = meaningfulCount(input.value, oldPos);
+
+        input.value = formatDecimal(input.value);
+
+        // بازگرداندن کرسر به جای درست (شمارش رقم/نقطه، نه کاما)
+        let pos = 0, count = 0;
+        for (let i = 0; i < input.value.length; i++) {
+            if (input.value[i] !== ",") count++;
+            pos = i + 1;
+            if (count >= wanted) break;
+        }
+        if (wanted === 0) pos = 0;
+        input.setSelectionRange(pos, pos);
+    }
+
+    // فعال‌سازی روی همه‌ی فیلدها، حتی ردیف‌های داینامیک (event delegation)
+    document.addEventListener("input", function (e) {
+        if (e.target.classList.contains("js-thousands")) {
+            applyFormatting(e.target);
+        }
+    });
+
+    // فرمت اولیه مقادیر موجود (حالت ویرایش فاکتور)
+    document.querySelectorAll(".js-thousands").forEach((el) => {
+        if (el.value) el.value = formatDecimal(el.value);
+    });
+
+    // پاک‌سازی قبل از ارسال به سرور: حذف کاما و نقطه‌ی انتهایی اضافی
+    const form = document.querySelector("#main-form"); // آی‌دی فرم خودت
+    if (form) {
+        form.addEventListener("submit", function () {
+            form.querySelectorAll(".js-thousands").forEach((el) => {
+                let v = el.value.replace(/,/g, "");
+                if (v.endsWith(".")) v = v.slice(0, -1);   // "12." → "12"
+                el.value = v;
+            });
+        });
+    }
+
+        // فقط برای فرمت اولیه‌ی مقادیر لودشده — اعشار صفر را حذف می‌کند
+    function formatInitial(raw) {
+        let s = raw.replace(/[^\d.]/g, "");          // منفی و کاراکتر اضافی حذف
+
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) +
+                s.slice(firstDot + 1).replace(/\./g, "");
+        }
+
+        let [intPart, decPart] = s.split(".");
+
+        // اگر بخش اعشاری فقط صفر (یا خالی) بود، کلاً حذفش کن: 1000.00 → 1000
+        if (decPart !== undefined && /^0*$/.test(decPart)) {
+            decPart = undefined;
+        }
+
+        intPart = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return decPart !== undefined ? intPart + "." + decPart : intPart;
+    }
+
+    // فرمت اولیه مقادیر موجود (حالت ویرایش فاکتور)
+    document.querySelectorAll(".js-thousands").forEach((el) => {
+        if (el.value) el.value = formatInitial(el.value);   // ← تغییر اینجا
+    });
+
+})();
+
+function renumberRows() {
+    debugger
+        const rows = document.querySelectorAll(".factor_item_self");
+        let n = 0;
+
+        rows.forEach((row) => {
+            const cell = row.querySelector(".row-number");
+            if (!cell) return;
+
+            // ۱) ردیف الگوی خالی را نادیده بگیر
+            if (row.querySelector('[name*="__prefix__"]')) {
+                cell.textContent = "";
+                return;
+            }
+
+            // ۲) ردیف‌های علامت‌خورده برای حذف را نشمار
+            const del = row.querySelector('input[name$="-DELETE"]');
+            if (del && del.checked) {
+                cell.textContent = "";
+                return;
+            }
+
+            // ۳) شماره‌ی متوالی
+            cell.textContent = ++n;
+        });
+    }
+
+    // بعد از لود صفحه (برای ردیف‌های موجود)
+    document.addEventListener("DOMContentLoaded", renumberRows);
+
+    // بعد از حذف یا تغییر تیک DELETE
+    document.addEventListener("change", function (e) {
+        if (e.target.matches('input[name$="-DELETE"]')) {
+            renumberRows();
+        }
+    });
+
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".btn-delete-row");
+        if (!btn) return;
+
+        const row = btn.closest("#invoice-rows");
+        if (!row) return;
+
+        const del  = row.querySelector('input[name$="-DELETE"]');
+        const icon = btn.querySelector(".f-icon");
+        if (!del) return;
+
+        if (!del.checked) {
+            // علامت‌گذاری برای حذف
+            del.checked = true;
+            row.classList.add("row-deleted");
+            btn.title = "بازگردانی ردیف";
+            icon.innerHTML = `<i class="ki-duotone ki-arrow-circle-left fs-2 text-black">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                            </i>`
+            row.querySelector('input[name*="goods_code"]').value = row.querySelector('input[name*="goods_code"]').value || 1
+            row.querySelector('input[name*="part_number_show"]').value = row.querySelector('input[name*="part_number_show"]').value || 1
+            row.querySelector('input[name*="quantity"]').value = row.querySelector('input[name*="quantity"]').value || 1
+            row.querySelector('input[name*="price"]').value = row.querySelector('input[name*="price"]').value || 1
+            row.querySelector('input[name*="discount_per_item"]').value = row.querySelector('input[name*="discount_per_item"]').value || 1
+        } else {
+            // بازگردانی
+            del.checked = false;
+            row.classList.remove("row-deleted");
+            btn.title = "حذف ردیف";
+            icon.innerHTML = `<i class="ki-duotone ki-trash fs-2 text-danger">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                            <span class="path3"></span>
+                                            <span class="path4"></span>
+                                            <span class="path5"></span>
+                                        </i>`
+        }
+
+        renumberRows();
+    });
+
+    document.querySelectorAll('#invoice-rows input[name$="-DELETE"]').forEach((del) => {
+        if (del.checked) {
+            const row = del.closest("#invoice-rows");
+            const btn = row.querySelector(".btn-delete-row");
+            row.classList.add("row-deleted");
+            if (btn) {
+                btn.title = "بازگردانی ردیف";
+                btn.querySelector(".f-icon").innerHTML = `<i class="ki-duotone ki-arrow-circle-left">
+                                                             <span class="path1"></span>
+                                                             <span class="path2"></span>
+                                                            </i>`;
+            }
+        }
+    });
+    </script>
+
+    <script>
+    // ================================================================
+        /* ===== پیکربندی — فقط این بخش را با پروژه‌ی خودت تطبیق بده ===== */
+        var PF = {
+          itemPrefix:   'factoritem_set',          // prefix فرم‌ست
+          rowsSelector: '#sortable-container',        // کانتینر ردیف‌ها
+          rowClass:     'factor_item_self',              // کلاس هر ردیف
+          emptyFormId:  'factor-item-empty-template',   // آی‌دی <template> فرم خالی
+          // نگاشت فیلدهای ساده‌ی فاکتور: نام فیلد فرم → کلید JSON
+          factorFields: {
+              description: 'description', date: 'date' , self_discount: 'self_discount',
+              is_official: 'is_official',
+          },
+          // نگاشت فیلدهای Select2 فاکتور: نام فیلد → [کلید id, کلید name]
+          factorSelect2: {
+            customer_party_id: ['customer_party_id', 'customer_name'],
+            currency_ref: ['currency_ref', 'currency_name'],
+            sale_type: ['sale_type', 'sale_type_name'],
+          },
+          // فیلدهای عددی هر ردیف
+          rowFields: ['quantity', 'price', 'discount_per_item', 'part_number_show', 'goods_code'],
+        };
+        /* ============================================================ */
+
+        window.select2Handlers = window.select2Handlers || {};
+        window.select2Handlers.prefactorSelected = function (data, $el) {
+            debugger
+          var hasRows = document.querySelectorAll(
+            PF.rowsSelector + ' .' + PF.rowClass
+          ).length > 0;
+          if (hasRows && !confirm('ردیف‌های فعلی با اطلاعات پیش‌فاکتور جایگزین شوند؟')) {
+            return;
+          }
+
+          // /prefactor/0/json/  →  /prefactor/<id>/json/
+          var url = $el.data('detail-url').replace(/\/0\//, '/' + data.id + '/');
+
+          debugger;
+            console.log("debugger")
+          fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            })
+            .then(fillFactorFromPrefactor)
+            .catch(function (e) {
+              console.error('prefactor fetch failed', e);
+              alert('خطا در دریافت اطلاعات پیش‌فاکتور');
+            });
+        };
+
+        function fillFactorFromPrefactor(pre) {
+            console.log("fillFactorFromPrefactor", pre)
+            debugger
+          // فیلدهای ساده
+          Object.keys(PF.factorFields).forEach(function (name) {
+            setSimple(name, pre[PF.factorFields[name]]);
+          });
+          // فیلدهای Select2
+          Object.keys(PF.factorSelect2).forEach(function (name) {
+            var keys = PF.factorSelect2[name];
+            setSelect2ByName(name, pre[keys[0]], pre[keys[1]]);
+          });
+          // ردیف‌ها
+          clearExistingRows();
+          (pre.rows || []).forEach(addFactorRowFromData);
+          if (typeof renumberRows === 'function') renumberRows();
+        }
+
+        function setSimple(name, value) {
+          var el = document.querySelector('[name="' + name + '"]');
+          if (el) el.value = (value == null ? '' : value);
+        }
+
+        // ست فیلد Select2 + ساخت option انتخاب‌شده تا برچسب خالی نماند
+        function setSelect2ByName(name, id, text) {
+          var $f = $('[name="' + name + '"]');
+          if (!$f.length) return;
+          if (!id) { $f.val(null).trigger('change'); return; }
+          if ($f.find('option[value="' + id + '"]').length === 0) {
+            $f.append(new Option(text || id, id, true, true));
+          }
+          $f.val(String(id)).trigger('change');
+        }
+
+        function totalFormsInput() {
+          return document.getElementById('id_' + PF.itemPrefix + '-TOTAL_FORMS');
+        }
+
+        function clearExistingRows() {
+          document.querySelectorAll(PF.rowsSelector + ' .' + PF.rowClass)
+            .forEach(function (r) { r.remove(); });
+          totalFormsInput().value = 0;   // فقط در create امن است (INITIAL_FORMS=0)
+        }
+
+        function addFactorRowFromData(rowData) {
+          var total = totalFormsInput();
+          var idx = parseInt(total.value, 10);
+
+          debugger
+          var raw = document.getElementById(PF.emptyFormId).innerHTML;
+          var html = raw.replace(/__prefix__/g, idx).trim();
+
+          var t = document.createElement('template');
+          t.innerHTML = html;
+          var row = t.content.firstElementChild;
+          document.querySelector(PF.rowsSelector).appendChild(row);
+          total.value = idx + 1;
+
+          // فیلدهای عددی
+          PF.rowFields.forEach(function (field) {
+            var el = row.querySelector(
+              '[name="' + PF.itemPrefix + '-' + idx + '-' + field + '"]'
+            );
+            if (el && rowData[field] != null) el.value = rowData[field];
+          });
+
+          // Select2 کالا روی ردیف جدید
+          if (typeof initSelect2 === 'function') initSelect2(row);
+          var goods = row.querySelector(
+            '[name="' + PF.itemPrefix + '-' + idx + '-goods_code"]'
+          );
+          if (goods) {
+            var $g = $(goods);
+            if (rowData.goods_id &&
+                $g.find('option[value="' + rowData.goods_id + '"]').length === 0) {
+              $g.append(new Option(rowData.goods_name || rowData.goods_id,
+                                   rowData.goods_id, true, true));
+            }
+            $g.val(rowData.goods_id ? String(rowData.goods_id) : null).trigger('change');
+          }
+
+          // فرمت سه‌رقمی
+          row.querySelectorAll('.js-thousands').forEach(function (el) {
+            if (el.value && typeof formatInitial === 'function') {
+              el.value = formatInitial(el.value);
+            }
+          });
+
+        // لود ویجت محل تامین برای این ردیف بر اساس کالا و تعداد
+          loadSupplyFragment(row, rowData.goods_id, rowData.quantity, idx);
+
+          return row;
+        }
+
+        var SUPPLY_FRAGMENT_URL = '/factor/supply-fragment/';
+        var SP_PANEL_SELECTOR = '.sp-panel-body';   // ← کانتینر بدنه‌ی پنل را با نام واقعی خودت عوض کن
+
+        function loadSupplyFragment(row, goodsId, quantity, idx) {
+          if (!goodsId) return;
+          var cell = row.querySelector('.sp-cell');
+          if (!cell) return;
+          var panel = cell.querySelector(SP_PANEL_SELECTOR) || cell;
+
+          var params = new URLSearchParams({ sku: goodsId, quantity: quantity || 0 , form_index: idx});
+
+          fetch(SUPPLY_FRAGMENT_URL + '?' + params.toString(),
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.text();
+            })
+            .then(function (html) {
+              panel.innerHTML = html;                          // فقط بدنه‌ی پنل
+              if (typeof updateCell === 'function') updateCell(cell);   // sync چیپ‌ها و footer
+            })
+            .catch(function (e) { console.error('supply fragment failed', e); });
+        }
+        //=================================================================
+    </script>
+    {#    end clude#}
+
+
+{% endblock extra_js %}

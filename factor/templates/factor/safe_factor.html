@@ -234,7 +234,7 @@
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                                         data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true"
                                         aria-controls="panelsStayOpen-collapseOne">
-                                    فاکتور {{ factor.pk }} ({{ factor.q.customer_party_id }})
+                                    فاکتور {{ factor.pk }} ({{ factor.customer_party_id }})
                                 </button>
                             </h2>
                             <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show"
@@ -360,7 +360,7 @@
         <!--factor item header-->
         <div class="row py-2 bg-light-primary rounded-left">
             <span class="col-1 bold">
-                <span data-key="">کد کالا</span>
+                <span data-key="">ردیف/کد کالا</span>
             </span>
             <span class="col-3 bold">
                 <span data-key="">پارت نامبر</span>
@@ -391,9 +391,12 @@
             {% include 'factor/safe_factor_item.html' with form_s=form_s quotation=quotation %}
         {% endif %}
 </div>
+{% if flow_state_index < 2 %}
 <button type="button" id="add-factor-item-row" class="btn btn-light-primary">
   + افزودن ردیف
 </button>
+{% endif %}
+        <div class="mb-20 pb-20"></div>
 
         {# Template مخفی برای افزودن ردیف جدید — همان محتوای .sortable-item ولی با empty_form #}
 <template id="factor-item-empty-template">
@@ -408,12 +411,12 @@
 
         </div>
 
-
+<span class="d-non">
 <div class="debug">
   <h3>خروجی JSON برای ارسال به سرور (زنده):</h3>
   <pre id="dbg"></pre>
 </div>
-
+</span>
 
 
 
@@ -962,7 +965,7 @@ document.addEventListener('focusin', function (e) {
 
 // روی blur: clamp و فرمت با ویرگول
 document.addEventListener('focusout', function (e) {
-    debugger
+
   if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
   const input = e.target;
   let v = parseNum(input.value);

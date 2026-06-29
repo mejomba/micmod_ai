@@ -1,0 +1,1074 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load quotation_tag %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+{% load factor_tags %}
+
+{% block title %}
+    ایجاد فاکتور
+{% endblock title %} {"title": ""})
+{% block extra_css %}
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+    <style>
+    input {
+        border: 1px solid lightgray;
+        padding: 4px;
+        outline-width: 0;
+        box-sizing: border-box;
+        -webkit-transition: 0.3s;
+        transition: 0.3s;
+    }
+    input:focus {
+        border: 1px solid #858585;
+    }
+    .select2-search__field:focus {
+        border: 2px solid #858585 !important;
+    }
+
+    .js-thousands{
+        direction: ltr;
+    }
+
+    /* ردیف علامت‌خورده برای حذف: کم‌رنگ و غیرقابل‌ویرایش، اما هنوز در فرم */
+    .row-deleted {
+        opacity: 0.3;
+    }
+    /* همه‌ی خانه‌ها قفل شوند به‌جز خانه‌ی دکمه‌ی عملیات */
+    .row-deleted td:not(.row-action) {
+        pointer-events: none;
+        user-select: none;
+    }
+
+
+        {#begin clude#}
+  :root{
+    --bg:#ffffff; --text:#33414f; --muted:#8b97a4; --head:#6b93c0;
+    --border:#e6eaf0; --input-border:#d8dee8; --accent:#4577c4; --accent-soft:#eef4fb;
+    --ok:#2f9e6b; --ok-bg:#e9f7ef;
+    --under:#cf8a2b; --under-bg:#fdf4e6;
+    --over:#d9534f; --over-bg:#fdecec;
+    --c-warehouse:#4577c4; --c-market:#2f9e8c; --c-foreign:#cf8a2b;
+  }
+  body{ margin:0; padding:40px 24px; font-family:"Vazirmatn",Tahoma,sans-serif; background:#f7f9fc; color:var(--text); }
+  table{ border-collapse:collapse; width:100%; max-width:1080px; margin:0 auto;
+    background:var(--bg); border:1px solid var(--border); border-radius:12px; overflow:visible; }
+  thead th{ color:var(--head); font-weight:600; font-size:13px; padding:14px 16px; text-align:center; border-bottom:1px solid var(--border); }
+  tbody td{ padding:14px 16px; text-align:center; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .code{ color:var(--muted); } .qty-need{ font-weight:600; }
+
+  .sp-cell{ position:relative; display:inline-block; text-align:right; min-width:300px; max-width:fit-content; }
+  .sp-summary{ display:flex; flex-direction:column; gap:7px; padding:8px 11px; cursor:pointer;
+    background:var(--bg); border:1px solid var(--input-border); border-radius:8px; transition:border-color .15s, background .15s; }
+  .sp-summary:hover{ border-color:var(--accent); }
+  .sp-cell.sp-open .sp-summary{ border-color:var(--accent); background:var(--accent-soft); }
+  .sp-summary.sp-empty{ flex-direction:row; align-items:center; justify-content:space-between; color:var(--muted); font-size:12.5px; }
+  .sp-chev-main{ font-size:10px; }
+
+  .sp-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .sp-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:20px;
+    font-size:11.5px; background:#f1f4f8; border:1px solid var(--border); max-width:100%; }
+  .sp-cdot{ width:7px; height:7px; border-radius:50%; flex:none; background:var(--muted); }
+  .sp-cname{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .sp-cqty{ font-weight:700; flex:none; }
+  .sp-cothers{ font-size:10.5px; color:var(--muted); flex:none; }
+  .sp-c-warehouse .sp-cdot{ background:var(--c-warehouse); }
+  .sp-c-market    .sp-cdot{ background:var(--c-market); }
+  .sp-c-foreign   .sp-cdot{ background:var(--c-foreign); }
+  .sp-chip-new{ border-style:dashed; }
+  .sp-chip-new .sp-cname::before{ content:"+ "; }
+
+  .sp-status{ display:flex; align-items:center; gap:6px; font-size:11.5px; }
+  .sp-sdot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .sp-status.sp-ok{ color:var(--ok); }      .sp-status.sp-ok .sp-sdot{ background:var(--ok); }
+  .sp-status.sp-under{ color:var(--under); }.sp-status.sp-under .sp-sdot{ background:var(--under); }
+  .sp-status.sp-over{ color:var(--over); }  .sp-status.sp-over .sp-sdot{ background:var(--over); }
+
+  .sp-panel{ position:absolute; top:calc(100% + 6px); right:0; z-index:50; width:440px;
+    max-width:calc(100vw - 40px); max-height:480px; overflow-y:auto;
+    background:var(--bg); border:1px solid var(--border); border-radius:12px;
+    box-shadow:0 8px 28px rgba(40,60,90,.16); padding:6px; }
+  .sp-panel[hidden]{ display:none; }
+
+  .sp-group{ font-size:12px; font-weight:600; color:var(--head); padding:12px 10px 8px;
+    display:flex; align-items:center; gap:6px; }
+  .sp-group::before{ content:""; width:4px; height:14px; border-radius:2px; background:var(--accent); }
+  .sp-g-warehouse::before{ background:var(--c-warehouse); }
+  .sp-g-market::before{ background:var(--c-market); }
+  .sp-g-foreign::before{ background:var(--c-foreign); }
+
+  .sp-src{ border:1px solid var(--border); border-radius:8px; margin:6px 4px; overflow:hidden; transition:opacity .2s; }
+  .sp-src.sp-new{ border: 1px dashed; }
+  .sp-src.sp-locked{ opacity:.45; }
+  .sp-src.sp-locked .sp-others-toggle{ pointer-events:none; }
+
+  .sp-src-main{ display:grid; grid-template-columns:18px 1fr 86px; align-items:center; gap:10px;
+    padding:9px 10px; cursor:pointer; margin:0; }
+  .sp-src-main:hover{ background:var(--accent-soft); }
+  .sp-src.sp-locked .sp-src-main:hover{ background:transparent; cursor:not-allowed; }
+  .sp-check{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+  .sp-check:disabled{ cursor:not-allowed; }
+  .sp-info{ text-align:right; min-width:0; }
+  .sp-name{ font-size:12.5px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-meta{ font-size:10.5px; color:var(--muted); display:block; margin-top:2px; }
+  .sp-meta b{ color:var(--text); font-weight:600; }
+  .sp-qty{ width:100%; padding:5px 6px; text-align:center; font-family:inherit; font-size:12px;
+    border:1px solid var(--input-border); border-radius:6px; background:var(--bg); color:var(--text); }
+  .sp-qty:disabled{ background:#f3f5f8; color:var(--muted); }
+  .sp-qty:focus{ outline:none; border-color:var(--accent); }
+
+  .sp-src-others{ border-top:1px dashed var(--border); background:#fafbfd; }
+  .sp-others-toggle{ width:100%; padding:7px 10px; background:none; border:0; color:var(--muted);
+    font-family:inherit; font-size:11.5px; text-align:right; cursor:pointer;
+    display:flex; align-items:center; gap:6px; }
+  .sp-others-toggle:hover{ color:var(--text); }
+  .sp-others-toggle .sp-chev{ display:inline-block; font-size:9px; transition:transform .15s; }
+  .sp-src.sp-others-open .sp-others-toggle .sp-chev{ transform:rotate(-90deg); }
+  .sp-others-cap{ color:var(--accent); font-weight:600; }
+  .sp-others-list{ padding:2px 6px 8px; }
+  .sp-reserve{ display:grid; grid-template-columns:16px 1fr 72px; align-items:center; gap:8px;
+    padding:6px 10px; border-radius:6px; cursor:pointer; margin-right:14px; margin:0 14px 0 0; }
+  .sp-reserve:hover{ background:#fff; }
+  .sp-reserve-info{ text-align:right; min-width:0; font-size:11.5px; }
+  .sp-reserve-name{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-reserve-meta{ font-size:10px; color:var(--muted); }
+  .sp-qty-reserve{ padding:4px 5px; font-size:11px; }
+
+  .sp-footer{ position:sticky; bottom:0; margin-top:6px; background:var(--bg);
+    border-top:1px solid var(--border); padding:10px; }
+  .sp-foot-line{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+  .sp-foot-line b{ font-weight:600; }
+  .sp-foot-status{ text-align:center; font-size:12px; font-weight:600; padding:6px; border-radius:6px; }
+  .sp-foot-status.sp-ok{ color:var(--ok); background:var(--ok-bg); }
+  .sp-foot-status.sp-under{ color:var(--under); background:var(--under-bg); }
+  .sp-foot-status.sp-over{ color:var(--over); background:var(--over-bg); }
+
+  .debug{ max-width:1080px; margin:24px auto 0; }
+  .debug pre{ background:#0f172a; color:#e2e8f0; padding:14px 16px; border-radius:8px; font-size:11px;
+    direction:ltr; text-align:left; font-family:Menlo,Consolas,monospace; max-height:260px; overflow:auto; }
+  .debug h3{ font-size:13px; color:var(--muted); margin:0 0 6px; }
+
+
+  .sp-cell.sp-loading { opacity: 0.5; pointer-events: none; }
+.sp-cell.sp-loading::after {
+  content: ""; position: absolute; top: 50%; right: 50%;
+  width: 16px; height: 16px; margin: -8px -8px 0 0;
+  border: 2px solid var(--accent); border-top-color: transparent;
+  border-radius: 50%; animation: sp-spin 0.6s linear infinite;
+}
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+{#end clude#}
+    </style>
+
+
+{% endblock extra_css %}
+
+{% block form_content %}
+
+    <input type="hidden" name="q">
+<!-- search quotation-->
+    <div id="ajax_quotation_items">
+
+        <div class="mb-4 limit_query">
+            <span class="text-muted font-size-14 me-3">محدود کردن جستجو به: </span>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="search_customer" name="search_customer">
+              <label class="form-check-label" for="inlineCheckbox1">نام مشتری</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="search_id" name="search_id" checked>
+              <label class="form-check-label" for="inlineCheckbox2">شناسه پیش فاکتور</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox3" value="search_marketer" name="search_marketer">
+              <label class="form-check-label" for="inlineCheckbox3">نام کارشناس</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox4" value="search_sepidar_id" name="search_sepidar_id">
+              <label class="form-check-label" for="inlineCheckbox4">شناسه سپیدار</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox5" value="search_sku" name="search_sku">
+              <label class="form-check-label" for="inlineCheckbox5">کد کالا</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="inlineCheckbox6" value="search_part_number" name="search_part_number">
+              <label class="form-check-label" for="inlineCheckbox6">پارت نامبر</label>
+            </div>
+
+{#            <div class="form-check form-check-inline">#}
+{#                <a href="{% url 'factor:factor.direct' %}" class="btn btn-primary">فاکتور مستقیم</a>#}
+{#            </div>#}
+        </div>
+        <div class="select2 select_quotation_for_factor" id="id_select_quotation_for_factor" name="select_quotation_for_factor"></div>
+
+{#        <div id="ajax_quotation_items"></div>#}
+</div>
+
+
+{% endblock form_content %}
+
+
+
+    {% include 'core/partial/empty_modal_sm.html' %}
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+
+
+
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/safe_factor.js' %}"></script>
+
+    <script>
+    function check_quantity(event){
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_quantity = row.querySelector('.qi_quantity')
+        const batch_count = row.querySelector('.batch-count')
+        const Alert = document.querySelector('.factor-alert')
+        if (parseFloat(elem.value.replaceAll(',', '')) > parseFloat(qi_quantity.dataset.quantity)){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'تعداد انتخابی بیش از تعداد خواسته شده در پیش فاکتور است!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+            Alert.querySelector('#alert_message').innerText = ''
+        }
+
+        if (parseFloat(elem.value.replaceAll(',', '')) % parseFloat(batch_count.innerText)) {
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText += '   تعداد انتخابی ضریبی از تعداد در بسته نیست'
+            setTimeout(() => {
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+                Alert.querySelector('#alert_message').innerText = ''
+            }, 7000)
+        }
+    }
+
+    function check_price(event){
+        debugger
+        const elem = event.currentTarget
+        const row = findAncestor(event.currentTarget, 'row').parentElement.parentElement
+        const qi_price = row.querySelector('.qi_price')
+        const Alert = document.querySelector('.factor-alert')
+        const diff_price_alert = row.querySelector('.diff_price_alert')
+        if (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price)){
+            elem.classList.add('border-danger')
+            elem.classList.add('text-danger')
+            Alert.classList.add('alert-danger')
+            Alert.classList.add('show')
+            Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+            setTimeout(()=>{
+                Alert.classList.remove('show')
+                Alert.classList.remove('alert-danger')
+            }, 7000)
+        } else {
+            elem.classList.remove('border-danger')
+            elem.classList.remove('text-danger')
+        }
+
+        const diff = (parseFloat(elem.value.replaceAll(',', '')) - parseFloat(qi_price.dataset.price)) / parseFloat(elem.value.replaceAll(',', '')) * 100
+        // ✅ حالا بررسی اختلاف
+    if (Math.abs(diff) > 10) {
+        elem.classList.add('border-danger');
+        diff_price_alert.classList.remove('d-none');
+        // diff_price_alert.classList.add('badge');
+        // diff_price_alert.classList.add('badge-danger');
+        // diff_price_alert.classList.add('rounded');
+        diff_price_alert.textContent = '⚠️ اختلاف قیمت بیش از ۱۰٪ است.';
+
+    }
+    else {
+        elem.classList.remove('border-danger');
+        // diff_price_alert.classList.remove('badge');
+        // diff_price_alert.classList.remove('badge-danger');
+        // diff_price_alert.classList.remove('rounded');
+        diff_price_alert.classList.add('d-none');
+        diff_price_alert.textContent = ''
+    }
+    }
+
+    function check_all_price(){
+        const Alert = document.querySelector('.factor-alert')
+        const rows = document.querySelectorAll('.sortable-item') //findAncestor(event.currentTarget, 'row').parentElement.parentElement
+
+        rows.forEach(function (item){
+            const qi_price = item.querySelector('.qi_price')
+            const elem = item.querySelector("input[name*='-price']")
+            if (qi_price && (parseFloat(elem.value.replaceAll(',', '')) !== parseFloat(qi_price.dataset.price))){
+                elem.classList.add('border-danger')
+                elem.classList.add('text-danger')
+                Alert.classList.add('alert-danger')
+                Alert.classList.add('show')
+                Alert.querySelector('#alert_message').innerText = 'قیمت انتخابی مطابق قیمت پیش فاکتور نیست!'
+                setTimeout(()=>{
+                    Alert.classList.remove('show')
+                    Alert.classList.remove('alert-danger')
+                }, 7000)
+            }
+        })
+    }
+    {#setTimeout(check_all_price, 1200)#}
+    </script>
+    <script src="{% static 'js/local/sortable.min.js' %}"></script>
+<script>
+generate_drag_drop()
+addCommaSeperator(true)
+</script>
+
+{#    begin clude#}
+<script>
+const GROUPS = [
+  { key:"warehouse", listKey:"warehouses",     title:"انبار",       allowNew:false,
+    metaFn: s => `سپیدار: <b>${nf(s.sepidar_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` },
+  { key:"market",    listKey:"market_orders",  title:"سفارش بازار", allowNew:true, newName:"سفارش بازار جدید",
+    metaFn: s => `تعداد: <b>${nf(s.total_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` },
+  { key:"foreign",   listKey:"foreign_orders", title:"سفارش خارجی", allowNew:true, newName:"سفارش خارجی جدید",
+    metaFn: s => `تعداد: <b>${nf(s.total_qty)}</b> · آزاد: <b>${nf(s.free_qty)}</b>` }
+];
+
+const parseNum = v => {
+  const s = String(v == null ? '' : v).replace(/,/g, '').trim();
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+};
+const nf = n => {
+  if (n === '' || n == null || isNaN(n)) return '0';
+  return Number(n).toLocaleString('en-US', { maximumFractionDigits: 10 });
+};
+
+/* ساخت کارت یک منبع — pre همان preselection سرور است */
+function buildSourceCard(group, src, isNew){
+  const card = document.createElement("div");
+  card.className = "sp-src" + (isNew ? " sp-new" : "");
+  card.dataset.group = group;
+  card.dataset.id   = isNew ? "" : src.id;
+  card.dataset.name = src.name;
+  card.dataset.isNew = isNew ? "true" : "false";
+
+  const pre = src.preselection || {};
+  const mainChecked = pre.qty_free > 0;
+  const mainVal     = mainChecked ? pre.qty_free : "";
+  const meta = isNew ? "هنگام ذخیره ساخته می‌شود" : GROUPS.find(g=>g.key===group).metaFn(src);
+  const freeMax = isNew ? "" : `max="${src.free_qty}"`;
+
+  card.innerHTML = `
+    <label class="sp-src-main">
+      <input type="checkbox" class="sp-check sp-check-main" ${mainChecked?'checked':''}>
+      <div class="sp-info">
+        <span class="sp-name">${src.name}</span>
+        <span class="sp-meta">${meta}</span>
+      </div>
+      <input type="number" class="sp-qty sp-qty-free" min="0" ${freeMax} value="${mainVal}" placeholder="تعداد" ${mainChecked?'':'disabled'}>
+    </label>`;
+
+  if (!isNew && src.other_reserves && src.other_reserves.length){
+    const fromRes = pre.from_reserves || {};
+    const totalOthers = src.other_reserves.reduce((s,r)=>s+r.qty,0);
+    const others = document.createElement("div");
+    others.className = "sp-src-others";
+    others.innerHTML = `
+      <button type="button" class="sp-others-toggle">
+        <span class="sp-chev">▸</span>از رزروهای دیگران
+        <span class="sp-others-cap">(تا ${nf(totalOthers)})</span>
+      </button>
+      <div class="sp-others-list" hidden>
+        ${src.other_reserves.map(r => {
+          const rv = fromRes[r.id];
+          const rChecked = rv > 0;
+          return `<label class="sp-reserve" data-reserve-id="${r.id}" data-max="${r.qty}">
+            <input type="checkbox" class="sp-check sp-check-reserve" ${rChecked?'checked':''}>
+            <div class="sp-reserve-info">
+              <span class="sp-reserve-name">${r.owner}</span>
+              <span class="sp-reserve-meta">موجود: ${nf(r.qty)}</span>
+            </div>
+            <input type="number" class="sp-qty sp-qty-reserve" min="0" max="${r.qty}" value="${rChecked?rv:''}" placeholder="تعداد" ${rChecked?'':'disabled'}>
+          </label>`;
+        }).join("")}
+      </div>`;
+    card.appendChild(others);
+  }
+  return card;
+}
+
+function stateOf(req, sup){
+  const action_button = document.querySelector('#global-action-button')
+  action_button.classList.remove('d-none')
+  const r = req - sup;
+  if (sup === 0) return { s:"under", t:"" };
+  if (r === 0)   return { s:"ok",    t:"تأمین کامل ✓" };
+  if (r > 0)     return { s:"under", t:`${nf(r)} واحد باقی‌مانده` };
+  if (r < 0){action_button.classList.add('d-none')}
+  return                { s:"over",  t:`${nf(-r)} واحد بیشتر از نیاز` };
+}
+function collectSelections(cell){
+  const out = [];
+  cell.querySelectorAll(".sp-src").forEach(card => {
+    const group = card.dataset.group;
+    const isNew = card.dataset.isNew === "true";
+    const name  = card.dataset.name;
+    const sid   = card.dataset.id || null;
+
+    const mainCb = card.querySelector(".sp-check-main");
+    const mainQ  = card.querySelector(".sp-qty-free");
+    const qty_free = mainCb.checked ? parseNum(mainQ.value) : 0; //mainCb.checked ? (parseInt(mainQ.value,10)||0) : 0;
+
+    const from_reserves = [];
+    card.querySelectorAll(".sp-reserve").forEach(r => {
+      const cb = r.querySelector(".sp-check-reserve");
+      const q  = r.querySelector(".sp-qty-reserve");
+      if (cb.checked){
+        const v = parseNum(q.value); //const v = parseInt(q.value,10) || 0;
+        if (v > 0) from_reserves.push({ reserve_id:r.dataset.reserveId, qty:v });
+      }
+    });
+
+    const others_total = from_reserves.reduce((s,r)=>s+r.qty,0);
+    const total = qty_free + others_total;
+    if (total > 0) out.push({ group, source_id:sid, is_new:isNew, qty_free, from_reserves,
+                              _name:name, _total:total, _others:others_total });
+  });
+  return out;
+}
+
+function refreshDebug(){
+  const out = {};
+  document.querySelectorAll(".sp-cell").forEach((c,i) => { out["row_"+(i+1)] = c.querySelector('.sp-data').value || []; });
+  document.getElementById("dbg").textContent = JSON.stringify(out, null, 2);
+  document.querySelector("textarea[name='supply_locations']").value = JSON.stringify(out);
+}
+
+function updateCell(cell){
+    debugger
+  const required = +cell.dataset.required;
+  const sel = collectSelections(cell);
+  const supplied = sel.reduce((s,x)=>s+x._total, 0);
+  const st = stateOf(required, supplied);
+
+  const payload = sel.map(s => ({ group:s.group, source_id:s.source_id, is_new:s.is_new,
+                                  qty_free:s.qty_free, from_reserves:s.from_reserves }));
+  const dataInput = cell.querySelector('.sp-data');
+    if (dataInput) dataInput.value = JSON.stringify(payload);
+  /* در پروژه‌ی واقعی: cell.querySelector('input[name="supply_locations"]').value = JSON.stringify(payload); */
+
+  const sup = cell.querySelector(".sp-sup"); if (sup) sup.textContent = nf(supplied);
+  const fst = cell.querySelector(".sp-foot-status");
+  if (fst){ fst.className = "sp-foot-status sp-"+st.s; fst.textContent = st.t || "هنوز محل تامینی انتخاب نشده"; }
+
+  const sum = cell.querySelector(".sp-summary");
+  if (!sel.length){
+    sum.className = "sp-summary sp-empty";
+    sum.innerHTML = `<span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>`;
+  } else {
+    sum.className = "sp-summary";
+    const chips = sel.map(s => {
+      const others = s._others > 0
+        ? `<span class="sp-cothers" title="از رزرو دیگران: ${nf(s._others)}">↑${nf(s._others)}</span>` : "";
+      return `<span class="sp-chip sp-c-${s.group}${s.is_new?' sp-chip-new':''}" title="${s._name}">
+        <span class="sp-cdot"></span><span class="sp-cname">${s._name}</span><b class="sp-cqty">${nf(s._total)}</b>${others}</span>`;
+    }).join("");
+    sum.innerHTML = `<div class="sp-chips">${chips}</div>
+      <div class="sp-status sp-${st.s}"><span class="sp-sdot"></span>${nf(supplied)} از ${nf(required)}${st.t?' · '+st.t:''}</div>`;
+  }
+  refreshDebug();
+
+  const factor_row = findAncestor(cell, 'factor_item_self')
+  factor_calculate_price(factor_row)
+}
+
+/* ────── محدودیت «یک انبار در هر ردیف» ────── */
+function applyConstraints(cell){
+  const whCards = [...cell.querySelectorAll('.sp-src[data-group="warehouse"]')];
+  const activeWh = whCards.find(card =>
+    card.querySelector('.sp-check-main:checked') || card.querySelector('.sp-check-reserve:checked'));
+  whCards.forEach(card => {
+    const locked = activeWh && card !== activeWh;
+    card.classList.toggle('sp-locked', locked);
+    card.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.disabled = locked; });
+    card.querySelectorAll('.sp-qty').forEach(q => {
+      if (locked) q.disabled = true;
+      else {
+        const cb = (q.closest('.sp-src-main') || q.closest('.sp-reserve'))?.querySelector('input[type="checkbox"]');
+        q.disabled = !cb || !cb.checked;
+      }
+    });
+  });
+}
+
+function buildSupplyCell(row){
+  const cell = document.createElement("div");
+  cell.className = "sp-cell";
+  cell.dataset.required = row.required;
+
+  const summary = document.createElement("div");
+  summary.className = "sp-summary sp-empty";
+  summary.innerHTML = `<span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>`;
+  const panel = document.createElement("div"); panel.className = "sp-panel"; panel.hidden = true;
+
+  GROUPS.forEach(g => {
+    const list = row.sources[g.listKey] || [];
+    if (!list.length && !g.allowNew) return;
+    const title = document.createElement("div");
+    title.className = "sp-group sp-g-" + g.key;
+    title.textContent = g.title;
+    panel.appendChild(title);
+    list.forEach(s => panel.appendChild(buildSourceCard(g.key, s, false)));
+    if (g.allowNew) panel.appendChild(buildSourceCard(g.key, { id:"", name:g.newName }, true));
+  });
+
+  const footer = document.createElement("div"); footer.className = "sp-footer";
+  footer.innerHTML = `
+    <div class="sp-foot-line"><span>مورد نیاز</span><b>${nf(row.required)}</b></div>
+    <div class="sp-foot-line"><span>تأمین‌شده</span><b class="sp-sup">0</b></div>
+    <div class="sp-foot-status"></div>`;
+  panel.appendChild(footer);
+
+  cell.append(summary, panel);
+
+  /* init: اگر رزرو دیگرانی پیش‌انتخاب شده باشد، expander آن کارت را باز کن */
+  cell.querySelectorAll(".sp-src").forEach(card => {
+    if (card.querySelector(".sp-check-reserve:checked")){
+      card.classList.add("sp-others-open");
+      card.querySelector(".sp-others-list").hidden = false;
+    }
+  });
+  applyConstraints(cell);
+  updateCell(cell);
+  return cell;
+}
+
+document.addEventListener('DOMContentLoaded', function (){
+
+    document.querySelectorAll('.sp-qty').forEach(function (input) {
+      // اگر تمپلیت قدیمی هنوز type="number" دارد، اصلاح کن
+      if (input.type === 'number') input.type = 'text';
+      if (!input.hasAttribute('inputmode')) input.setAttribute('inputmode', 'decimal');
+      // فرمت مقدار اولیه
+      if (input.value) {
+        const v = parseNum(input.value);
+        input.value = v > 0 ? nf(v) : '';
+      }
+    });
+document.querySelectorAll('.sp-cell').forEach(function (cell) {
+  updateCell(cell);
+});
+
+document.querySelectorAll('.sp-cell').forEach(function(cell){
+    updateCell(cell)
+})
+
+function suggestQty(cell, input, max){
+  const required = +cell.dataset.required;
+  let others = 0;
+  cell.querySelectorAll(".sp-qty").forEach(q => {
+    if (q !== input && !q.disabled) others += parseNum(q.value);
+  });
+  let v = Math.max(required - others, 0);
+  if (max != null) v = Math.min(v, max);
+  return v;
+}
+
+document.addEventListener("change", e => {
+  const card = e.target.closest(".sp-src"); if (!card) return;
+  const cell = card.closest(".sp-cell");
+  if (e.target.classList.contains("sp-check-main")){
+    const qty = card.querySelector(".sp-qty-free");
+    if (e.target.checked){
+      qty.disabled = false;
+      const max = qty.getAttribute("max") ? +qty.getAttribute("max") : null;
+      qty.value = suggestQty(cell, qty, max);
+      qty.focus(); qty.select();
+    } else { qty.value = ""; qty.disabled = true; }
+    applyConstraints(cell); updateCell(cell);
+  } else if (e.target.classList.contains("sp-check-reserve")){
+    const r = e.target.closest(".sp-reserve");
+    const qty = r.querySelector(".sp-qty-reserve");
+    if (e.target.checked){
+      qty.disabled = false;
+      qty.value = suggestQty(cell, qty, +r.dataset.max);
+      qty.focus(); qty.select();
+    } else { qty.value = ""; qty.disabled = true; }
+    applyConstraints(cell); updateCell(cell);
+  }
+});
+
+// روی focus: ویرگول‌ها را حذف کن تا ویرایش راحت باشد
+document.addEventListener('focusin', function (e) {
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  e.target.value = String(e.target.value || '').replace(/,/g, '');
+});
+
+// روی blur: clamp و فرمت با ویرگول
+document.addEventListener('focusout', function (e) {
+
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  const input = e.target;
+  let v = parseNum(input.value);
+  if (v < 0) v = 0;
+  let max = 0;
+  const max_ = input.getAttribute('max');
+  const max_need = parseNum(findAncestor(input, 'factor_item_self').querySelector('input[name*="-quantity"]').value)
+  if (max_ > max_need){max = max_need} else {max = max_}
+  if (max != null && max !== '' && v > +max) v = +max;
+  input.value = v > 0 ? nf(v) : '';
+  updateCell(input.closest('.sp-cell'));
+});
+
+// روی input: فقط محاسبه‌ی زنده‌ی chip ها و وضعیت — بدون فرمت
+document.addEventListener('input', function (e) {
+  if (!e.target.classList || !e.target.classList.contains('sp-qty')) return;
+  updateCell(e.target.closest('.sp-cell'));
+});
+
+function closeAllPanels(){
+  document.querySelectorAll(".sp-cell.sp-open").forEach(c => {
+    c.classList.remove("sp-open"); c.querySelector(".sp-panel").hidden = true;
+  });
+}
+document.addEventListener("click", e => {
+  const toggle = e.target.closest(".sp-others-toggle");
+  if (toggle){
+    const card = toggle.closest(".sp-src");
+    const list = card.querySelector(".sp-others-list");
+    const open = card.classList.toggle("sp-others-open");
+    list.hidden = !open; return;
+  }
+  const sum = e.target.closest(".sp-summary");
+  if (sum){
+    const cell = sum.closest(".sp-cell");
+    const open = cell.classList.contains("sp-open");
+    closeAllPanels();
+    if (!open){ cell.classList.add("sp-open"); cell.querySelector(".sp-panel").hidden = false; }
+    return;
+  }
+  if (!e.target.closest(".sp-panel")) closeAllPanels();
+});
+
+})
+</script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+  // ─── helper ها ───
+  function getCsrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+  function getFactorPk() {
+    return document.querySelector('[data-factor-pk]')?.dataset.factorPk;
+  }
+
+  // ─── ۱) تغییر تعداد ───
+  document.addEventListener('input', function (e) {
+    if (!e.target.matches('input[name$="-quantity"]')) return;
+    const row = e.target.closest('.sortable-item');
+    if (!row) return;
+    const cell = row.querySelector('.sp-cell');
+    if (!cell) return;
+    const newQty = parseFloat(e.target.value) || 0;
+    cell.dataset.required = newQty;
+    // به‌روزرسانی «مورد نیاز» در footer
+    const needEl = cell.querySelector('.sp-foot-line:first-child b');
+    if (needEl) needEl.textContent = nf(newQty);
+    updateCell(cell);
+  });
+
+  // ─── ۲) تغییر کد کالا ───
+  // ذخیره‌ی مقدار قبلی روی focus برای امکان revert
+  document.addEventListener('focusin', function (e) {
+    if (e.target.matches('input[name$="-goods_code"]')) {
+      e.target.dataset.previousValue = e.target.value;
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches('input[name$="-goods_code"]')) return;
+    const input = e.target;
+    const newVal = (input.value || '').trim();
+    const oldVal = (input.dataset.previousValue || '').trim();
+    if (newVal === oldVal) return;
+
+    const row = input.closest('.factor_item_self');
+    if (!row) return;
+    const cell = row.querySelector('.sp-cell');
+    if (!cell) return;
+
+    // بررسی اینکه آیا انتخاب‌های قبلی وجود دارد
+    let currentData = [];
+    try {
+      currentData = JSON.parse(cell.querySelector('.sp-data').value || '[]');
+    } catch (_) {}
+    if (currentData.length > 0) {
+      if (!confirm('با تغییر کد کالا، محل تامین‌های فعلی پاک می‌شوند. ادامه می‌دهید؟')) {
+        input.value = oldVal;
+        return;
+      }
+    }
+    fetchAndReplaceSupply(row, newVal);
+    get_sku_info(row)
+  });
+
+  async function fetchAndReplaceSupply(row, sku) {
+    const cell = row.querySelector('.sp-cell');
+    const panel = cell.querySelector('.sp-panel');
+    const goodsInput = row.querySelector('input[name$="-goods_code"]');
+    const quantityInput = row.querySelector('input[name$="-quantity"]');
+    const idInput = row.querySelector('input[name$="-id"]');
+
+    const factorPk = getFactorPk();
+    if (!factorPk) {
+      alert('شناسه فاکتور یافت نشد (data-factor-pk).');
+      return;
+    }
+
+    const params = new URLSearchParams({
+      goods_code: sku,
+      quantity: quantityInput ? (quantityInput.value || '0') : '0',
+      factor_item_id: idInput ? (idInput.value || '') : '',
+    });
+    const url = `/factor/${factorPk}/supply-fragment/?${params.toString()}`;
+
+    cell.classList.add('sp-loading');
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+      });
+
+      if (resp.status === 403) {
+        const data = await resp.json().catch(() => ({}));
+        alert(data.message || 'تغییر کد کالا مجاز نیست');
+        // revert
+        goodsInput.value = goodsInput.dataset.previousValue || '';
+        return;
+      }
+      if (!resp.ok) {
+        alert('خطا در دریافت اطلاعات کالا (کد ' + resp.status + ')');
+        return;
+      }
+
+      const html = await resp.text();
+      panel.innerHTML = html;
+
+      // reset
+      const dataInput = cell.querySelector('.sp-data');
+      if (dataInput) dataInput.value = '[]';
+      cell.dataset.required = parseFloat(quantityInput?.value) || 0;
+
+      // پنل را بسته نگه دار
+      cell.classList.remove('sp-open');
+      panel.hidden = true;
+
+      // باز اعمال محدودیت‌ها و بازمحاسبه‌ی وضعیت
+      applyConstraints(cell);
+      updateCell(cell);
+
+      // برای change بعدی
+      goodsInput.dataset.previousValue = sku;
+    } catch (err) {
+      console.error(err);
+      alert('خطا در ارتباط با سرور');
+    } finally {
+      cell.classList.remove('sp-loading');
+    }
+  }
+
+  // ─── ۳) افزودن ردیف جدید ───
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#add-factor-item-row');
+    if (!btn) return;
+    addFactorItemRow();
+    renumberRows();
+  });
+
+  function addFactorItemRow() {
+    const template = document.getElementById('factor-item-empty-template');
+    const container = document.getElementById('factor-items-container');
+    const totalInput = document.querySelector('input[name="factoritem_set-TOTAL_FORMS"]');
+    if (!template || !container || !totalInput) {
+      console.error('عناصر لازم برای افزودن ردیف پیدا نشد');
+      return;
+    }
+    const currentTotal = parseInt(totalInput.value, 10);
+    const html = template.innerHTML.replace(/__prefix__/g, currentTotal);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html.trim();
+    const newRow = wrapper.firstElementChild;
+    container.appendChild(newRow);
+
+    totalInput.value = currentTotal + 1;
+
+    // init سلول تامین در ردیف جدید
+    const cell = newRow.querySelector('.sp-cell');
+    if (cell) {
+      applyConstraints(cell);
+      updateCell(cell);
+    }
+    initSelect2(newRow);
+  }
+});
+
+function initSelect2(scope) {
+  $(scope).find("select.select2").each(function () {
+    var $el = $(this);
+    if ($el.hasClass("select2-hidden-accessible")) return;   // قبلاً init شده
+
+    var isMulti = $el.prop("multiple");
+    var placeholder = $el.data("placeholder") || "";
+    var opts = {
+      width: $el.data("width") || "100%",
+      dir: "rtl",
+      placeholder: placeholder,
+      // allowClear فقط برای تک‌انتخابی و فقط وقتی placeholder داریم
+      allowClear: !isMulti && !!$el.data("allow-clear") && !!placeholder,
+      closeOnSelect: !isMulti,
+    };
+
+    var url = $el.data("ajax-url");
+    if (url) {
+      var mi = $el.data("min-input");
+      opts.minimumInputLength = (mi === undefined || mi === "") ? 1 : mi;
+      opts.ajax = {
+          url: url, dataType: "json", delay: 250, cache: true,
+          data: function (p) {
+            var d = { q: p.term, page: p.page || 1 };
+            var extra = $el.data("ajax-extra");          // jQuery خودش JSON معتبر را object می‌کند
+            if (extra && typeof extra === "object") $.extend(d, extra);
+            return d;
+          },
+          processResults: function (d, p) {
+            p.page = p.page || 1;
+            return { results: d.results, pagination: { more: d.pagination.more } };
+          },
+        };
+    }
+
+    try {
+      $el.select2(opts);
+    } catch (e) {
+      console.error("Select2 init failed:", $el.attr("name"), e);
+    }
+  });
+}
+$(function () { initSelect2(document); });
+
+
+(function () {
+    "use strict";
+
+    // فرمت‌کردن: فقط بخش صحیح کاما می‌گیرد، اعشار دست‌نخورده می‌ماند
+    function formatDecimal(raw) {
+        // فقط رقم و نقطه را نگه دار
+        let s = raw.replace(/[^\d.]/g, "");
+
+        // فقط اولین نقطه مجاز است؛ بقیه حذف شوند
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) +
+                s.slice(firstDot + 1).replace(/\./g, "");
+        }
+
+        let [intPart, decPart] = s.split(".");
+        // جداکننده‌ی سه‌رقمی فقط روی بخش صحیح
+        intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        // اگر نقطه تایپ شده بود (حتی بدون رقم بعدش) حفظش کن: "12."
+        return decPart !== undefined ? intPart + "." + decPart : intPart;
+    }
+
+    // تعداد کاراکترهای معنادار (رقم و نقطه) قبل از کرسر — کاما را نشمار
+    const meaningfulCount = (str, pos) =>
+        str.slice(0, pos).replace(/,/g, "").length;
+
+    function applyFormatting(input) {
+        const oldPos = input.selectionStart;
+        const wanted = meaningfulCount(input.value, oldPos);
+
+        input.value = formatDecimal(input.value);
+
+        // بازگرداندن کرسر به جای درست (شمارش رقم/نقطه، نه کاما)
+        let pos = 0, count = 0;
+        for (let i = 0; i < input.value.length; i++) {
+            if (input.value[i] !== ",") count++;
+            pos = i + 1;
+            if (count >= wanted) break;
+        }
+        if (wanted === 0) pos = 0;
+        input.setSelectionRange(pos, pos);
+    }
+
+    // فعال‌سازی روی همه‌ی فیلدها، حتی ردیف‌های داینامیک (event delegation)
+    document.addEventListener("input", function (e) {
+        if (e.target.classList.contains("js-thousands")) {
+            applyFormatting(e.target);
+        }
+    });
+
+    // فرمت اولیه مقادیر موجود (حالت ویرایش فاکتور)
+    document.querySelectorAll(".js-thousands").forEach((el) => {
+        if (el.value) el.value = formatDecimal(el.value);
+    });
+
+    // پاک‌سازی قبل از ارسال به سرور: حذف کاما و نقطه‌ی انتهایی اضافی
+    const form = document.querySelector("#main-form"); // آی‌دی فرم خودت
+    if (form) {
+        form.addEventListener("submit", function () {
+            form.querySelectorAll(".js-thousands").forEach((el) => {
+                let v = el.value.replace(/,/g, "");
+                if (v.endsWith(".")) v = v.slice(0, -1);   // "12." → "12"
+                el.value = v;
+            });
+        });
+    }
+
+        // فقط برای فرمت اولیه‌ی مقادیر لودشده — اعشار صفر را حذف می‌کند
+    function formatInitial(raw) {
+        let s = raw.replace(/[^\d.]/g, "");          // منفی و کاراکتر اضافی حذف
+
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) +
+                s.slice(firstDot + 1).replace(/\./g, "");
+        }
+
+        let [intPart, decPart] = s.split(".");
+
+        // اگر بخش اعشاری فقط صفر (یا خالی) بود، کلاً حذفش کن: 1000.00 → 1000
+        if (decPart !== undefined && /^0*$/.test(decPart)) {
+            decPart = undefined;
+        }
+
+        intPart = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return decPart !== undefined ? intPart + "." + decPart : intPart;
+    }
+
+    // فرمت اولیه مقادیر موجود (حالت ویرایش فاکتور)
+    document.querySelectorAll(".js-thousands").forEach((el) => {
+        if (el.value) el.value = formatInitial(el.value);   // ← تغییر اینجا
+    });
+
+})();
+
+function renumberRows() {
+    debugger
+        const rows = document.querySelectorAll(".factor_item_self");
+        let n = 0;
+
+        rows.forEach((row) => {
+            const cell = row.querySelector(".row-number");
+            if (!cell) return;
+
+            // ۱) ردیف الگوی خالی را نادیده بگیر
+            if (row.querySelector('[name*="__prefix__"]')) {
+                cell.textContent = "";
+                return;
+            }
+
+            // ۲) ردیف‌های علامت‌خورده برای حذف را نشمار
+            const del = row.querySelector('input[name$="-DELETE"]');
+            if (del && del.checked) {
+                cell.textContent = "";
+                return;
+            }
+
+            // ۳) شماره‌ی متوالی
+            cell.textContent = ++n;
+        });
+    }
+
+    // بعد از لود صفحه (برای ردیف‌های موجود)
+    document.addEventListener("DOMContentLoaded", renumberRows);
+
+    // بعد از حذف یا تغییر تیک DELETE
+    document.addEventListener("change", function (e) {
+        if (e.target.matches('input[name$="-DELETE"]')) {
+            renumberRows();
+        }
+    });
+
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".btn-delete-row");
+        if (!btn) return;
+
+        const row = btn.closest("#invoice-rows");
+        if (!row) return;
+
+        const del  = row.querySelector('input[name$="-DELETE"]');
+        const icon = btn.querySelector(".f-icon");
+        if (!del) return;
+
+        if (!del.checked) {
+            // علامت‌گذاری برای حذف
+            del.checked = true;
+            row.classList.add("row-deleted");
+            btn.title = "بازگردانی ردیف";
+            icon.innerHTML = `<i class="ki-duotone ki-arrow-circle-left fs-2 text-black">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                            </i>`
+            row.querySelector('input[name*="goods_code"]').value = row.querySelector('input[name*="goods_code"]').value || 1
+            row.querySelector('input[name*="part_number_show"]').value = row.querySelector('input[name*="part_number_show"]').value || 1
+            row.querySelector('input[name*="quantity"]').value = row.querySelector('input[name*="quantity"]').value || 1
+            row.querySelector('input[name*="price"]').value = row.querySelector('input[name*="price"]').value || 1
+            row.querySelector('input[name*="discount_per_item"]').value = row.querySelector('input[name*="discount_per_item"]').value || 1
+        } else {
+            // بازگردانی
+            del.checked = false;
+            row.classList.remove("row-deleted");
+            btn.title = "حذف ردیف";
+            icon.innerHTML = `<i class="ki-duotone ki-trash fs-2 text-danger">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                            <span class="path3"></span>
+                                            <span class="path4"></span>
+                                            <span class="path5"></span>
+                                        </i>`
+        }
+
+        renumberRows();
+    });
+
+    document.querySelectorAll('#invoice-rows input[name$="-DELETE"]').forEach((del) => {
+        if (del.checked) {
+            const row = del.closest("#invoice-rows");
+            const btn = row.querySelector(".btn-delete-row");
+            row.classList.add("row-deleted");
+            if (btn) {
+                btn.title = "بازگردانی ردیف";
+                btn.querySelector(".f-icon").innerHTML = `<i class="ki-duotone ki-arrow-circle-left">
+                                                             <span class="path1"></span>
+                                                             <span class="path2"></span>
+                                                            </i>`;
+            }
+        }
+    });
+    </script>
+    {#    end clude#}
+
+{% endblock extra_js %}

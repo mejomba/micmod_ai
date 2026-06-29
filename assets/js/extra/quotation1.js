@@ -668,6 +668,8 @@ function refresh_prices() {
     const party_id = document.getElementById('customer_pid').textContent || -1;
     const price_updating = document.querySelector('#price-updating')
     const price_updated = document.querySelector('#price-updated')
+    const global_action_btn = document.querySelector('#global-action-button')
+    global_action_btn && global_action_btn.classList.add('d-none')
     for (let i = 0; i < items.length; i++) {
         if (i === items.length - 1){
             // price_updating.classList.add('d-none')
@@ -1463,6 +1465,8 @@ function calculate_price(target) {
         }
     }
     console.log(`===========================\n============================`)
+    const global_action_btn = document.querySelector('#global-action-button')
+    global_action_btn && global_action_btn.classList.remove('d-none')
     if (!m_sum) {
         m_sum = 0
     }

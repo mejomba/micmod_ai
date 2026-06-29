@@ -1,0 +1,158 @@
+{% load more_tags %}
+
+<div class="sortable-item " id="invoice-rows">
+            <!-- update factor item -->
+
+            <div class="hidden-section">
+            {% for hidden_field in form_s_item.hidden_fields %}
+                {{ hidden_field }}
+            {% endfor %}
+            </div>
+
+            <!--factor item information and input (update)-->
+            <div class="row align-items-center mb-1 bg-white border rounded shadow-sm " id="id_factor_item" style="height: fit-content; min-height: 80px; position: relative">
+
+            <!--goods_code (update)-->
+                <div class="col-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="bold font-size-11 row-number"></span>
+                        {% if form_s_item.goods_code %}
+                        <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku }}" >
+                            {% else %}
+                            <span class="w-80">{{ form_s_item.instance.goods_code }}</span>
+                        {% endif %}
+
+                    </div>
+                    <small style="opacity: 0.25; position: absolute; bottom: 0; right: 2px">ID:{{ form_s_item.instance.pk }}</small>
+                </div>
+
+            <!--partnumber (update)-->
+                <div class="col-3">
+                    <div class="d-flex flex-column">
+                        {{ form_s_item.part_number_show|default_if_falsy:form_s_item.instance.part_number_show }}
+
+                        {% if form_s_item.instance.goods_code.part_number != form_s_item.instance.part_number_show %}
+                            <div class="mt-2 font-size-11">
+                                <span>پارت نامبر اصلی: </span>
+                                <span data-key="" class="bg-light-info mt-2 p-1 rounded font-size-11 ms-3" style="width: fit-content;">{{ form_s_item.instance.goods_code.part_number }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            <!--quantity (update)-->
+                <div class="col-1">
+                    {% if form_s_item.quantity.hidden or not form_s_item.quantity %}
+                        <span>{{ form_s_item.instance.quantity|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.quantity }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.quantity margin_b=0 %}</span>#}
+                </div>
+
+            <!--price (update)-->
+                <div class="col-1">
+                    {% if form_s_item.price.hidden or not form_s_item.price %}
+                        <span>{{ form_s_item.instance.price|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.price }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.price margin_b=0 %}</span>#}
+                </div>
+
+            <!--discount_per_item (update)-->
+                <div class="col-1">
+                    {% if form_s_item.discount_per_item.hidden or not form_s_item.discount_per_item %}
+                        <span>{{ form_s_item.instance.discount_per_item|floatformat:'-4g' }}</span>
+                    {% else %}
+                        <span>{{ form_s_item.discount_per_item }}</span>
+                    {% endif %}
+{#                    <span>{% render_field_by_order form_s_item form_s_item.discount_per_item margin_b=0 %}</span>#}
+                </div>
+
+            <!--row_total_price (update)-->
+                <div class="col-1">
+                    <span class="row-total-price"></span>
+                </div>
+
+            <!--supply_locations and actions (update)-->
+                <div class="col-4">
+                    <div class="d-flex justify-content-between">
+                        <div>
+
+{#                        begin clude#}
+                            {# ========== جایگزین بخش «محل تامین در اینجا قرار میگیرد» ========== #}
+{#                            <div class="flex-grow-1 me-2" {% if flow_state_index > 1 %} style="pointer-events: none;" {% endif %}>#}
+                              <div class="sp-cell" data-required="{{ form_s_item.instance.quantity }}">
+
+                                {# داده‌ی نهایی که با فرم سابمیت می‌شود #}
+                                <input type="hidden" name="{{ form_s_item.prefix }}-supply_locations" class="sp-data" value="[]">
+
+{#                                 خلاصه‌ی داخل سلول (چیپ‌ها)؛ JS پر می‌کند #}
+                                <div class="sp-summary sp-empty">
+                                  <span>انتخاب محل تامین</span><span class="sp-chev-main">▾</span>
+                                </div>
+
+                                {# پنل ویرایش #}
+                                  <div class="sp-panel" hidden>
+                                      {% include "factor/partial/_supply_panel_content_create.html" with supply=form_s_item.instance.supply quantity=form_s_item.instance.quantity %}
+                                  </div>
+                              </div>
+{#                            </div>#}
+                            {# ====================== پایان ====================== #}
+{#                        end clude#}
+
+
+
+                        </div>
+                        <div>
+                            <a class="mx-4 tooltip_ cursor-pointer"
+                            data-bs-toggle="modal"
+                            data-bs-target="#id_kt_empty_modal_lg"
+                            data-model_name="{{ form_s_item.instance|model_name }}"
+                            data-object_id="{{ form_s_item.instance.pk }}"
+                            data-app_name="{{ form_s_item.instance|app_label }}"
+                            name="name_change_log">
+                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                            </i>
+                        </a>
+
+                            <!-- چک‌باکس واقعی DELETE که جنگو می‌سازد، مخفی از دید کاربر -->
+                            <span class="d-none">{{ form_s_item.DELETE }}</span>
+
+                            {% if flow_state_index < 1 %}
+                                <span href="#" class="btn-delete-row me-2 text-danger cursor-pointer" style="position: relative">
+                                    <span class="f-icon">
+                                        <i class="ki-duotone ki-trash fs-2 text-danger">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                            <span class="path3"></span>
+                                            <span class="path4"></span>
+                                            <span class="path5"></span>
+                                        </i>
+                                    </span>
+                                </span>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+
+{#            نمایش خطاهای ردیف فاکتور #}
+            {% if form_s_item.errors %}
+                <div class="d-flex gap-10 bg-light-danger align-items-baseline py-1 px-3 text-left mb-5" style="direction: ltr">
+                    {% for error, value in form_s_item.errors.items %}
+                        <div class="d-flex gap-2 text-danger"><span class="badge badge-danger" data-key="{{ error }}">{{ error }}</span> : {{ value.0 }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+
+        </div>
+
+        </div>

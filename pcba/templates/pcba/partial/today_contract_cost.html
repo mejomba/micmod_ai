@@ -1,0 +1,279 @@
+
+<div class="cw-scope" dir="rtl">
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+
+  <!-- ویجت ۱: قراردادهای امروز -->
+  <section class="cw-card cw-today" aria-label="جمع مبلغ قراردادهای امروز">
+    <div class="cw-main">
+      <header class="cw-head">
+        <span class="cw-pulse cw-pulse-today" aria-hidden="true"></span>
+        <div>
+          <p class="cw-kicker cw-kicker-today">گزارش لحظه‌ای</p>
+          <h2 class="cw-title">جمع قراردادهای امروز</h2>
+        </div>
+        <time class="cw-date" id="cwDate1"></time>
+      </header>
+      <div class="cw-amount-wrap">
+        <div class="cw-amount" id="cwAmount1" aria-live="polite">
+          <span class="cw-placeholder">برای محاسبه دکمه را بزنید</span>
+        </div>
+        <span class="cw-unit" id="cwUnit1" hidden>ریال</span>
+      </div>
+      <p class="cw-hint" id="cwHint1"></p>
+    </div>
+    <button class="cw-btn cw-btn-today" id="cwBtn1" type="button" aria-label="محاسبه قراردادهای امروز">
+      <svg class="cw-btn-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M21 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="cw-spinner" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <!-- ویجت ۲: قراردادهای امسال -->
+  <section class="cw-card cw-year" aria-label="جمع مبلغ قراردادهای امسال" style="">
+    <div class="cw-main">
+      <header class="cw-head">
+        <span class="cw-pulse cw-pulse-year" aria-hidden="true"></span>
+        <div>
+          <p class="cw-kicker cw-kicker-year">گزارش سالانه</p>
+          <h2 class="cw-title">جمع قراردادهای امسال</h2>
+        </div>
+        <time class="cw-date" id="cwDate2"></time>
+      </header>
+      <div class="cw-amount-wrap">
+        <div class="cw-amount" id="cwAmount2" aria-live="polite">
+          <span class="cw-placeholder">برای محاسبه دکمه را بزنید</span>
+        </div>
+        <span class="cw-unit" id="cwUnit2" hidden>ریال</span>
+      </div>
+      <p class="cw-hint" id="cwHint2"></p>
+    </div>
+    <button class="cw-btn cw-btn-year" id="cwBtn2" type="button" aria-label="محاسبه قراردادهای امسال">
+      <svg class="cw-btn-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M21 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="cw-spinner" aria-hidden="true"></span>
+    </button>
+  </section>
+</div>
+
+<style>
+.cw-scope{
+  --green:#1D9E75; --green-soft:#5DCAA5; --green-deep:#085041;
+  --blue:#185FA5;  --blue-soft:#378ADD;  --blue-deep:#0C447C;
+  --ink:#102a4c; --muted:#6b8299; --line:#e2ebf6; --danger:#e11d48;
+  font-family:"Vazirmatn",system-ui,sans-serif;
+  padding:16px;color:var(--ink);
+}
+.cw-scope {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+}
+
+.cw-scope *{box-sizing:border-box;}
+
+.cw-card{
+  position:relative;width:100%;max-width:487px;overflow:hidden;
+  display:flex;align-items:center;gap:16px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(29,158,117,.09), transparent 60%),
+    linear-gradient(180deg,#ffffff 0%,#fbfffd 100%);
+  border:1px solid var(--line);border-radius:16px;
+  padding:14px 18px;
+  box-shadow:0 14px 34px -22px rgba(16,42,76,.28), 0 1px 4px rgba(16,42,76,.05);
+}
+.cw-today::before{
+  content:"";position:absolute;top:0;right:0;width:4px;height:100%;
+  background:linear-gradient(180deg,var(--green-deep),var(--green),var(--green-soft));
+}
+.cw-year{
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(24,95,165,.09), transparent 60%),
+    linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);
+}
+.cw-year::before{
+  content:"";position:absolute;top:0;right:0;width:4px;height:100%;
+  background:linear-gradient(180deg,var(--blue-deep),var(--blue),var(--blue-soft));
+}
+.cw-main{flex:1;min-width:0;}
+
+.cw-head{display:flex;align-items:center;gap:8px;}
+.cw-pulse{
+  width:8px;height:8px;border-radius:50%;flex:none;
+}
+.cw-pulse-today{
+  background:var(--green);
+  box-shadow:0 0 0 0 rgba(29,158,117,.55);
+  animation:cwPulseGreen 2.4s infinite;
+}
+.cw-pulse-year{
+  background:var(--blue);
+  box-shadow:0 0 0 0 rgba(24,95,165,.55);
+  animation:cwPulseBlue 2.4s infinite;
+}
+@keyframes cwPulseGreen{
+  0%{box-shadow:0 0 0 0 rgba(29,158,117,.55)}
+  70%{box-shadow:0 0 0 7px rgba(29,158,117,0)}
+  100%{box-shadow:0 0 0 0 rgba(29,158,117,0)}
+}
+@keyframes cwPulseBlue{
+  0%{box-shadow:0 0 0 0 rgba(24,95,165,.55)}
+  70%{box-shadow:0 0 0 7px rgba(24,95,165,0)}
+  100%{box-shadow:0 0 0 0 rgba(24,95,165,0)}
+}
+.cw-kicker{margin:0;font-size:9px;letter-spacing:.4px;font-weight:600;}
+.cw-kicker-today{color:var(--green);}
+.cw-kicker-year{color:var(--blue);}
+.cw-title{margin:0;font-size:13px;font-weight:700;}
+.cw-date{margin-right:auto;font-size:10px;color:var(--muted);white-space:nowrap;}
+
+.cw-amount-wrap{display:flex;align-items:baseline;gap:6px;margin-top:8px;}
+.cw-amount{
+  font-weight:800;line-height:1.1;letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.cw-today .cw-amount{
+  background:linear-gradient(180deg,var(--green),var(--green-deep));
+  -webkit-background-clip:text;background-clip:text;
+}
+.cw-year .cw-amount{
+  background:linear-gradient(180deg,var(--blue),var(--blue-deep));
+  -webkit-background-clip:text;background-clip:text;
+}
+.cw-placeholder{
+  font-size:12px;font-weight:500;color:var(--muted);
+  -webkit-text-fill-color:var(--muted);background:none;letter-spacing:0;
+}
+.cw-amount.is-error,.cw-amount.is-error .cw-placeholder{
+  -webkit-text-fill-color:var(--danger);color:var(--danger);
+}
+.cw-unit{font-size:11px;color:var(--muted);flex:none;}
+.cw-hint{margin:4px 0 0;font-size:10px;color:var(--muted);min-height:12px;}
+
+.cw-btn{
+  flex:none;width:46px;height:46px;border:none;border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+}
+.cw-btn-today{
+  background:linear-gradient(180deg,var(--green-soft),var(--green));
+  box-shadow:0 8px 18px -8px rgba(29,158,117,.65);
+}
+.cw-btn-year{
+  background:linear-gradient(180deg,var(--blue-soft),var(--blue));
+  box-shadow:0 8px 18px -8px rgba(24,95,165,.65);
+}
+.cw-btn:hover{transform:translateY(-2px);filter:brightness(1.04);}
+.cw-btn-today:hover{box-shadow:0 12px 22px -10px rgba(29,158,117,.75);}
+.cw-btn-year:hover{box-shadow:0 12px 22px -10px rgba(24,95,165,.75);}
+.cw-btn:active{transform:translateY(0);}
+.cw-btn:disabled{cursor:wait;filter:saturate(.6) brightness(.97);transform:none;}
+.cw-btn.is-loading .cw-btn-ico{display:none;}
+.cw-spinner{
+  display:none;width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+  animation:cwSpin .7s linear infinite;
+}
+.cw-btn.is-loading .cw-spinner{display:inline-block;}
+@keyframes cwSpin{to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function(){
+  const DEMO_MODE = false;
+  const ENDPOINTS = {
+    today: "/pcba/ajax/today_contract_cost/?q=today_contract_cost",
+    year:  "/pcba/ajax/this_year_contract_cost/?q=this_year_contract_cost"
+  };
+  const KEYS = { today:'today_contract_cost', year:'this_year_contract_cost' };
+
+  const MAX_FONT=28, MIN_FONT=14;
+  const faNum = n => new Intl.NumberFormat('fa-IR').format(n);
+
+  try {
+    document.getElementById('cwDate1').textContent =
+      new Intl.DateTimeFormat('fa-IR',{day:'numeric',month:'long'}).format(new Date());
+    document.getElementById('cwDate2').textContent =
+      new Intl.DateTimeFormat('fa-IR',{year:'numeric'}).format(new Date());
+  } catch(e){}
+
+  function setLoading(btn, on){
+    btn.classList.toggle('is-loading', on);
+    btn.disabled = on;
+  }
+
+  function fitFont(amountEl, unitEl, text){
+    amountEl.style.fontSize = MAX_FONT + 'px';
+    amountEl.textContent = text;
+    let size = MAX_FONT;
+    const limit = amountEl.parentElement.clientWidth - (unitEl.offsetWidth||20) - 6;
+    while(amountEl.scrollWidth > limit && size > MIN_FONT){ size--; amountEl.style.fontSize = size+'px'; }
+  }
+
+  function countUp(amountEl, unitEl, target){
+    amountEl.classList.remove('is-error');
+    unitEl.hidden = false;
+    fitFont(amountEl, unitEl, faNum(target));
+    const dur=800, t0=performance.now();
+    function frame(now){
+      const p=Math.min((now-t0)/dur,1);
+      const eased=1-Math.pow(1-p,3);
+      amountEl.textContent=faNum(Math.round(target*eased));
+      if(p<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showPlaceholder(amountEl, unitEl, msg, isError){
+    amountEl.style.fontSize='';
+    amountEl.classList.toggle('is-error', !!isError);
+    amountEl.innerHTML='<span class="cw-placeholder">'+msg+'</span>';
+    unitEl.hidden=true;
+  }
+
+  async function fetchTotal(type){
+    if(DEMO_MODE){
+      await new Promise(r=>setTimeout(r,700));
+      return type==='today'
+        ? {today_contract_cost: Math.floor(Math.random()*900_000_000)+1_000_000}
+        : {this_year_contract_cost: Math.floor(Math.random()*9_000_000_000)+100_000_000};
+    }
+    const res=await fetch(ENDPOINTS[type],{
+      method:'GET', headers:{'X-Requested-With':'XMLHttpRequest'}, credentials:'same-origin'
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }
+
+  function setupBtn(btnId, amountId, unitId, hintId, type){
+    const btn    = document.getElementById(btnId);
+    const amount = document.getElementById(amountId);
+    const unit   = document.getElementById(unitId);
+    const hint   = document.getElementById(hintId);
+    btn.addEventListener('click', async () => {
+      setLoading(btn, true); hint.textContent='';
+      try{
+        const data = await fetchTotal(type);
+        const val  = data[KEYS[type]];
+        if(!val && val!==0){
+          showPlaceholder(amount, unit, 'قراردادی برای این بازه ثبت نشده', false);
+        } else {
+          countUp(amount, unit, Number(val));
+          hint.textContent='به‌روزرسانی شد';
+        }
+      } catch(err){
+        showPlaceholder(amount, unit, 'خطا در دریافت اطلاعات', true);
+        hint.textContent='دوباره تلاش کنید.';
+        console.error(err);
+      } finally{ setLoading(btn, false); }
+    });
+  }
+
+  setupBtn('cwBtn1','cwAmount1','cwUnit1','cwHint1','today');
+  setupBtn('cwBtn2','cwAmount2','cwUnit2','cwHint2','year');
+})();
+</script>

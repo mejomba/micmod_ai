@@ -36,6 +36,12 @@
 {% endblock extra_css %}
 
 {% block form_content %}
+
+    <input type="hidden" name="fis_last_update_datetime" value="{{ fis_last_update_datetime }}">
+    <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
+    <input type="hidden" name="factor_id" value="{{ form.instance.pk }}">
+
+
     <div class="factor-alert alert-dismissible fade position-fixed" role="alert" style="z-index: 5000; bottom: 40px">
       <span id="alert_message"></span>
     </div>
@@ -337,6 +343,40 @@
             console.log('wh not fount')
         } // end try catch
     }
+
+
+function lastUpdate() {
+    debugger
+    console.log('debug')
+    let fDateJson = document.querySelector('input[name="last_update_datetime"]').value
+    let fiDateJson = document.querySelector('input[name="fis_last_update_datetime"]').value
+
+
+
+    if (fiDateJson.startsWith('"') && fiDateJson.endsWith('"')) {
+        fiDateJson = fiDateJson.slice(1, -1);
+        fiDateJson = fiDateJson.replace(/\\"/g, '"'); // رفع escape های اضافی
+    }
+    if (fDateJson.startsWith('"') && fDateJson.endsWith('"')) {
+        fDateJson = fDateJson.slice(1, -1);
+    }
+
+    let fiDateJsonObj  = JSON.parse(fiDateJson)
+
+    let fiDateJsonString = JSON.stringify(fiDateJsonObj)
+
+    const factorId = document.querySelector('input[name="factor_id"]').value
+    console.log('fDateJson:', fDateJson);
+    console.log('fiDateJson:', fiDateJson);
+    const url = `/factor/view/${factorId}?last_update_datetime=${fDateJson}&fis_last_update_datetime=${fiDateJsonString}`
+    const el = $('#global-error')
+    custom_ajax_get(null, url, el)
+
+}
+
+setTimeout(lastUpdate, 3600000);
+setInterval(lastUpdate, 3600000);
+
     </script>
     <script src="{% static 'js/local/sortable.min.js' %}"></script>
 <script>

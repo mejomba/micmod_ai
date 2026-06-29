@@ -41,8 +41,8 @@ class InternalIPRestrictionMiddleware:
             print(e)
         print(client_ip)
 
-        # if not self.is_internal_ip(client_ip, request):
-        #     return HttpResponseForbidden("Access denied: External IP not allowed.")
+        if not self.is_internal_ip(client_ip, request):
+            return HttpResponseForbidden("Access denied: External IP not allowed.")
 
         return self.get_response(request)
 
@@ -68,8 +68,8 @@ class InternalIPRestrictionMiddleware:
             ip_addr = ipaddress.ip_address(ip)
             print('ip addr ', ip_addr)
             ip_is_valid = any(ip_addr in network for network in self.ALLOWED_NETWORKS)
-            if request.user.is_authenticated:
-                if '192' in ip and request.user.external_access:
+            if request.user.is_authenticated and ip == '192.168.1.9':
+                if request.user.external_access:
                     return True
                 elif '172' in ip:
                     return True

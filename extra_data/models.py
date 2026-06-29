@@ -28,6 +28,7 @@ from queryable_properties.properties import queryable_property
 from transportation.models import TradeTransportationMethod
 from dw.models import DimOrder
 from django.core.cache import cache
+from django.conf import settings
 
 class DiscountBasedPriceType(models.TextChoices):
     RInv = "0", _("calculate_in_invoice_row")

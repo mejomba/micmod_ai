@@ -151,7 +151,7 @@ function numberWithCommas(x, digits = 2) {
     return res
 }
 
-function addCommaSeperator(on_load=null, step=null, sep=',') {
+function addCommaSeperator(on_load=null, step=3, sep=',') {
     let inputNumberValue;
     let numberWithComma;
 
@@ -893,6 +893,7 @@ const pleas_wait = document.querySelector('#id_pleas_wait')
 const draft_btn = document.querySelector('#submit_draft')
 const next_btn = document.querySelector('#submit_next')
 const back_btn = document.querySelector('#submit_back')
+const save_btn = document.querySelector('#submit_save')
 const send_factor_to_sepidar_btn = document.querySelector('#send_factor_to_sepidar')
 
 const main_form = document.querySelector('#main-form')
@@ -948,6 +949,14 @@ next_btn && next_btn.addEventListener('click', function (){
         pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
         setTimeout(show_global_action_btn, 12000)
     }
+})
+
+save_btn && save_btn.addEventListener('click', function (){
+    removeCommaSeperator()
+    global_action_btn.classList.add('d-none')
+    pleas_wait.classList.remove('d-none')
+    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+    setTimeout(show_global_action_btn, 12000)
 })
 
 back_btn && back_btn.addEventListener('click', function (){

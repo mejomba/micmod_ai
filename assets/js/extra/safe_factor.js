@@ -43,11 +43,11 @@ function set_values(items, value, is_date = false) {
     }
 }
 
-function get_quotation_items(quotation_pk){
+function get_quotation_items_safe(quotation_pk){
     const ajax_quotation_items = $('#ajax_quotation_items')
     debugger
     if (ajax_quotation_items){
-        custom_ajax_get(null, `/factor/ajax/get_quotation_items_for_factor/${quotation_pk}/safe/`, ajax_quotation_items)
+        custom_ajax_get(null, `/factor/ajax/get_quotation_items_for_factor_safe/?pk=${quotation_pk}&view_name=get_quotation_items_for_factor_safe`, ajax_quotation_items)
     }
 }
 
@@ -57,7 +57,7 @@ $(document).ready(function () {
         pageLength: 5,
         ajax: {
             delay: 150,
-            url: '/factor/search',
+            url: '/factor/search/',
             dataType: "json",
             type: "GET",
             data: function (data) {
@@ -131,10 +131,10 @@ $(document).ready(function () {
     });
     $('#id_select_quotation_for_factor').on("select2:select", function (e){
         const data = e.params.data;
-        document.querySelector('input[name="q"]').value = data.id
+        //document.querySelector('input[name="q"]').value = data.id
         document.querySelector('[id*="select2-id_select_quotation_for_factor-container"]')
             .querySelector('span').innerHTML = `${data.customer_title}(${data.customer_party_id}) - ${data.sale_type} - ${data.expiration_date} - پیش فاکتور ${data.quotation_id}`
-        get_quotation_items(data.id)
+        get_quotation_items_safe(data.id)
 
     })
     $('#id_select_quotation_for_factor').on("select2:open", function (e){
@@ -205,7 +205,7 @@ function getUrlParameter(name) {
         if (paramValue) {
             console.log('Found q_id param:', paramValue);
             setTimeout(() => {
-                get_quotation_items(paramValue);
+                get_quotation_items_safe(paramValue);
                 removeUrlParam(paramName);
             }, 200); // delay can be adjusted or removed
         }

@@ -88,6 +88,7 @@ class CustomerRequestSerializer(serializers.ModelSerializer):
         return GenericPaymentSerializer(qs, many=True, fields=['id', 'total_amount', 'g_from_date', 'g_to_date', 'description', 'attachment']).data
 
     def create(self, validated_data):
+        print('create customer request')
         items_data = validated_data.pop('items')
         customer_request = CustomerRequest.objects.create(**validated_data)
 

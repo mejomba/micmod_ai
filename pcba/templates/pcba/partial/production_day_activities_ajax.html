@@ -27,6 +27,10 @@
                     <div class="row row-cols-6">
                         {% render_field_by_order form form.total_assembly_board_count form.assembly_type form.ruined_board_count form.intact_board_count_not_assembly form.delivery_type form.factor_number label='on-border' %}
                     </div>
+                    <div class="row row-cols-4">
+                        {% render_field_by_order form form.work_time form.expert form.start_time form.end_time label='on-border' %}
+                    </div>
+
                     <span class="d-none" id="goods_name">
                             {% if form.instance.pk %}
                                 ({{ form.instance.goods_code_fk }}) -- {{ form.instance.goods_code_fk.part_number }}

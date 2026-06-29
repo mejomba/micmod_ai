@@ -10,6 +10,7 @@ from extra_data.models import Item
 from files.models import File, Image
 from tools.utils import show_error
 from num2fawords import words
+from decimal import Decimal, ROUND_HALF_UP
 
 register = template.Library()
 
@@ -541,6 +542,56 @@ def default_if_falsy(value, arg):
     return value
 
 
+def floatformat_negative(value, decimal_places=4):
+    """
+    معادل floatformat با آرگومان منفی.
+    عدد را تا حداکثر decimal_places رقم اعشار گرد می‌کند،
+    اما اگر عدد صحیح باشد، قسمت اعشار را حذف می‌کند.
+    """
+    try:
+        # برای دقت بیشتر، عدد را به Decimal تبدیل می‌کنیم [citation:4][citation:5]
+        d = Decimal(str(value))
+
+        # اگر عدد صفر باشد، مستقیماً '0' را برمی‌گردانیم
+        if d == 0:
+            return '0'
+
+        # محاسبه واحد گرد کردن (مثلاً برای 4 رقم اعشار: '0.0001')
+        quantize_unit = Decimal('0.' + '0' * (decimal_places - 1) + '1')
+
+        # گرد کردن عدد به تعداد مشخصی رقم اعشار
+        rounded_d = d.quantize(quantize_unit, rounding=ROUND_HALF_UP)
+
+        # بررسی می‌کنیم که آیا عدد گرد شده، جزء اعشاری غیرصفر دارد یا خیر
+        if rounded_d == rounded_d.to_integral_value():
+            # اگر عدد صحیح است، فقط قسمت صحیح را به صورت رشته برمی‌گردانیم
+            return f"{rounded_d:.0f}"
+        else:
+            # در غیر این صورت، عدد را با تعداد رقم اعشار مشخص شده فرمت می‌کنیم
+            return f"{rounded_d:.{decimal_places}f}"
+    except (ValueError, TypeError):
+        # در صورت بروز خطا، مقدار اصلی را برگردانید
+        return value
+
+
+@register.filter(is_safe=False)
+def if_hidden_or_not_allowed(field, alter):
+    """If hidden field or not present return alter value."""
+    return field
+    try:
+        if field.widget_type == 'hidden':
+            print(alter)
+            return alter
+        elif not bool(field):
+            print(alter)
+            return alter
+        else:
+            print(field)
+            return field
+    except Exception as e:
+        return ''
+
+
 @register.inclusion_tag('core/partial/add_payment.html')
 def get_payment_list(form, current_user, size=None, obj_rel=None):
     unseen_comment = list()
@@ -587,7 +638,7 @@ def zip_(a, b):
 def merge_dict_common_key(x, y):
     merged = []
     try:
-        for key in x.keys() & y.keys():
+        for key in sorted(x.keys() & y.keys()):
             merged.append({
                 'key': key,
                 'dict1': x[key],

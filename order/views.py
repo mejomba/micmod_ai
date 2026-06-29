@@ -452,8 +452,8 @@ class BazarOrderDataTableListView(AjaxDatatableView):
         {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
         {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
         {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
-        {'name': 'part_number_s', 'orderable': True, 'title': 'نام کالا', 'visible': True,
-         'lookup_field': '__part_number__icontains', 'className': 'partnumber'},
+        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True,
+         'lookup_field': '__icontains', 'className': 'partnumber'},
         {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
          'lookup_field': '__icontains'},
         {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
@@ -474,7 +474,7 @@ class BazarOrderDataTableListView(AjaxDatatableView):
         row['created_date'] = to_jalali_date(obj.created_date)
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
         row['order_method'] = f'<span>{obj.order_method}</span>'
-        row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+        row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
         row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
