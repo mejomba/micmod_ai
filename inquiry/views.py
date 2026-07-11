@@ -791,7 +791,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
     price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
     final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
-    customer_name = Customer.objects.filter(sepidar_dl_code=party_code).first().name
+    customer_name = Customer.objects.filter(sepidar_dl_code=party_code).first().name if party_code else ''
 
     form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
                                              'price_setting': price_setting_obj,
