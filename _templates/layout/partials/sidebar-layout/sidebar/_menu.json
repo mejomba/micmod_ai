@@ -120,7 +120,7 @@
               "icon": "message-add",
               "title": "create",
               "path_key": "factor/view",
-              "link": "factor:factor.view"
+              "link": "factor:safe.factor.view"
             },
             {
               "icon": "burger-menu",
@@ -155,13 +155,13 @@
               "icon": "message-add",
               "title": "create",
               "path_key": "order/view",
-              "link": "order:order.view"
+              "link": "order:bazar.order.view"
             },
             {
               "icon": "burger-menu",
               "title": "list",
               "path_key": "order/list",
-              "link": "order:order.list",
+              "link": "order:bazar.order.list",
               "count": "order.order:get_qs_count"
             },
             {
@@ -209,9 +209,16 @@
           "menus": [
             {
               "icon": "message-add",
-              "title": "create",
+              "title": "نسخه قدیم",
               "path_key": "order/view",
-              "link": "order:bazar_order.view",
+              "link": "order:bazar_buyfactor.view",
+              "count": "order.order:get_qs_count"
+            },
+            {
+              "icon": "message-add",
+              "title": "نسخه جدید",
+              "path_key": "order/view",
+              "link": "order:new_bazar_buyfactor.view",
               "count": "order.order:get_qs_count"
             }
           ]

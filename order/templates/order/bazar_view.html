@@ -130,7 +130,7 @@
         const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
             $('#bazar_order_list'),
-            "{% url 'order:bazar_order.list.datatable' %}",
+            "{% url 'order:bazar.order.for.buyfactor.list.datatable' %}",
             {
                 processing: true,
                 autoWidth: false,

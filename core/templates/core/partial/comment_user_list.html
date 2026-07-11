@@ -9,11 +9,19 @@
         {% endif %}
     {% endfor %}
 
+{% if obj_rel %}
     <div href="#" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="modal" data-comment_type="{{ comment_type }}" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.comments.content_type.pk }}/{{ obj.pk }}/" data-form_url_rel="{{ obj_rel|app_label }}/{{ obj_rel|model_name }}/{{ obj_rel.comments.content_type.pk }}/{{ obj_rel.pk }}">
         <span class="symbol-label border border-gray-400 bg-white text-gray-700 fs-1 fw-bold">
             <i class="ki-outline ki-messages fs-4"></i>
         </span>
     </div>
+    {% else %}
+    <div href="#" class="symbol symbol-{{ size|default_if_falsy:35 }}px symbol-circle" data-bs-toggle="modal" data-comment_type="{{ comment_type }}" data-bs-target="#id_kt_empty_modal" id="id_comment__{{ obj.pk }}" data-pk="{{ obj.pk }}" data-form_url="/core/{{ obj|app_label }}/{{ obj|model_name }}/{{ obj.comments.content_type.pk }}/{{ obj.pk }}/">
+        <span class="symbol-label border border-gray-400 bg-white text-gray-700 fs-1 fw-bold">
+            <i class="ki-outline ki-messages fs-4"></i>
+        </span>
+    </div>
+{% endif %}
     <span class="badge badge-light-success mx-3 text-wrap fw-bolder">
         {{ unseen_comment_count }}
     </span>

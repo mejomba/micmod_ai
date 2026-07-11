@@ -200,7 +200,12 @@ function getUrlParameter(name) {
      const paramName = 'q_id';
         const paramValue = getUrlParameter(paramName);
         // document.getElementById('quotation_id_for_factor').value = paramValue
-        document.querySelector("input[name='q']").value = paramValue
+        const q = document.querySelector("input[name='q']")
+        if (q){
+            q.value = paramValue
+        } else {
+            return
+        }
 
         if (paramValue) {
             console.log('Found q_id param:', paramValue);

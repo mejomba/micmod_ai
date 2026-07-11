@@ -13,6 +13,7 @@ from sepidar.models import SepidarItemStock  # متصل با using='sepidar'
 from notifications.models import SupplyNotification
 from extra_data.models import ItemStockSummary
 from tools import const
+from tools.utils import timer
 
 
 class SupplyLocationService:
@@ -267,6 +268,8 @@ class SupplyLocationService:
             preview_wh_reserve = factor_item.factoritemsupplylocation_set.filter(wh_reserve__item=factor_item.goods_code).first()
             preview_wh_reserve.quantity += qty
             preview_wh_reserve.save(update_fields=['quantity'])
+            preview_wh_reserve.wh_reserve.quantity += qty
+            preview_wh_reserve.wh_reserve.save(update_fields=['quantity'])
         else:
             # ایجاد رزرو جدید
             new_wh = WhReserve.objects.create(
@@ -412,12 +415,13 @@ class SupplyLocationService:
             sl.original_source_type = 'foreign' if sl.order_id else 'bazar'
             sl.original_source_id = order_obj.pk
 
-        sl.is_deleted = True
-        sl.factor_item = None
-        sl.save(update_fields=[
-            'is_deleted', 'fi',
-            'original_source_type', 'original_source_id',
-        ])
+        sl.delete()
+        # sl.is_deleted = True
+        # sl.fi = None
+        # sl.save(update_fields=[
+        #     'is_deleted', 'fi',
+        #     'original_source_type', 'original_source_id',
+        # ])
 
     # ─── سطح بالا (فاز ۳) ──────────────────────────────
 
@@ -774,13 +778,75 @@ class SupplyLocationService:
         for sl in sls:
             self._release(sl)  # اول محل تامین‌ها آزاد/جدا می‌شوند
 
-        factor_item.delete()  # حالا ردیف بدون cascade روی SLها حذف می‌شود
+        # factor_item.delete()  # حالا ردیف بدون cascade روی SLها حذف می‌شود
+        factor_item.is_deleted = True
+        factor_item.save(update_fields=['is_deleted'])
 
+    EPS = 1e-6
 
+    @transaction.atomic
+    def migrate_bazar_order_to_warehouse(self, order_bazar, wh_code, received_qty):
+        """
+        پس از رسید سفارش بازار در انبار:
+        همه‌ی SLهای متصل به این سفارش به‌صورت FIFO به رزرو انبار تبدیل می‌شوند.
+        - تا جای موجودی رسید: SL با تعداد کامل خودش.
+        - SLهای پایانی که موجودی نمی‌رسد: باز هم تبدیل می‌شوند، ولی با تعداد رسیده
+          (کمبود) و از سفارش جدا می‌شوند. هیچ SLی روی سفارش باقی نمی‌ماند.
+        """
+        sls = list(
+            FactorItemSupplyLocation.objects
+            .select_for_update()
+            .filter(order_bazar_id=order_bazar.pk, is_deleted=False)
+            .filter(fi__isnull=False)  # SL یتیم را رد کن
+            .filter(fi__factor__sepidar_id__isnull=True)  # فقط فاکتورهای ارسال‌نشده
+            .order_by('pk')  # FIFO
+        )
+        if not sls:
+            return
+
+        budget = float(received_qty)
+
+        for sl in sls:
+            fi_wh_sl = FactorItemSupplyLocation.objects.filter(fi=sl.fi, wh_reserve__sepidar_wh_code=2).first()
+            if fi_wh_sl:
+                fi_wh_sl.quantity += sl.quantity
+                fi_wh_sl.wh_reserve.quantity += sl.quantity
+                sl.is_deleted = True
+                order_bazar.is_over = True
+                sl.save(update_fields=['is_deleted'])
+                fi_wh_sl.save(update_fields=['quantity'])
+                order_bazar.save(update_fields=['is_over'])
+            else:
+                # سهم این SL از موجودی رسیده (ممکن است کمتر از quantity باشد = کمبود)
+                receipt = sl.quantity if sl.quantity <= budget else max(budget, 0.0)
+
+                wh = WhReserve.objects.create(
+                    item=order_bazar.item,
+                    sepidar_wh_code=wh_code,
+                    quantity=sl.quantity,  # رزرو به اندازه‌ی نیاز ردیف
+                )
+
+                sl.order_bazar = None  # جدا از سفارش
+                sl.wh_reserve = wh
+                sl.wh_code = wh_code
+                sl.wh_receipt_quantity = receipt  # چقدر واقعاً رسید شد (کمبود اینجا دیده می‌شود)
+                if not sl.original_source_type:
+                    sl.original_source_type = 'bazar_order'
+                    sl.original_source_id = order_bazar.pk
+                sl.save(update_fields=[
+                    'order_bazar', 'wh_reserve', 'wh_code', 'wh_receipt_quantity',
+                    'original_source_type', 'original_source_id',
+                ])
+
+                budget = max(budget - receipt, 0.0)
+
+@timer
 def _wh_entry(sr, others_by_wh, own_wh_qty):
     stockref = sr.stockref
     others = others_by_wh.get(stockref, [])
     others_total = sum(o.quantity for o in others)
+
+    WhReserve.objects.filter(item__sepidar_id_0=sr.pk)
 
     return {
         'id': stockref,
@@ -804,6 +870,7 @@ def _wh_entry(sr, others_by_wh, own_wh_qty):
     }
 
 
+@timer
 def _order_entry(obj, others_by_id, own_qty_by_key, qty_field):
     others = others_by_id.get(obj.id, [])
     # others_total = sum(loc.quantity for loc in others)
@@ -831,6 +898,7 @@ def _order_entry(obj, others_by_id, own_qty_by_key, qty_field):
     }
 
 
+@timer
 def attach_supply(factor_items):
     """
     به ازای هر FactorItem در لیست، .supply را پر می‌کند.
@@ -857,6 +925,7 @@ def attach_supply(factor_items):
     bo_qs = OrderBazar.objects.filter(
                 item_id__in=portal_item_ids,
                 is_over=False,
+                receipt_in_wh=False,
             ).annotate(
                 used=Coalesce(Sum('order_bazar_fis__quantity'), Value(0.0),),
                 used_by_self=Coalesce(
@@ -914,7 +983,7 @@ def attach_supply(factor_items):
             fi__goods_code__in=portal_item_ids,
             quantity__gt=0,
             fi__factor__sepidar_id__isnull=True,
-            fi__factor__last_work_flow__current_state_name__in=const.FACTOR_OPEN_FOR_RESERVE_STATE
+            # fi__factor__last_work_flow__current_state_name__in=const.FACTOR_OPEN_FOR_RESERVE_STATE
         )
         .exclude(fi_id__in=own_item_ids)
         .exclude(order_bazar_id__in=fully_used_bo)  # سفارش‌های بازار پر
@@ -923,7 +992,7 @@ def attach_supply(factor_items):
             'fi__factor__creator_user',
             'wh_reserve',
         )
-    )
+    ).distinct()
 
     others_by_wh = defaultdict(list)
     others_by_bo = defaultdict(list)

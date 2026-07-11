@@ -1,0 +1,153 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+{% load jalali_tags %}
+
+{% block title %}سفارش بازار {{ form.instance.pk }}{% endblock title %}
+{% block extra_css %}
+
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+
+    <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/theme.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/nav_sidebar.js' %}" type="text/javascript" ></script>
+
+    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/jquery.init.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/core.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectBox.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/actions.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectFilter2.js' %}" type="text/javascript" ></script>
+
+{#    <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">#}
+    <style>
+    ul > li {
+        list-style-type: none !important;
+    }
+    .selector-available, .selector-chosen, #id_order_m2m_from, #id_order_m2m_to{
+        width: 300px;
+    }
+    #id_order_m2m_selected_input, #id_order_m2m_input {
+        width: 250px;
+        height: 30px !important;
+        font-size: 1rem;
+    }
+    .selector-chooser{
+        rotate: 180deg;
+    }
+    select, input{
+        height: 3.2rem !important;
+    }
+    .select2-search__field{
+        height: 2.5rem !important;
+    }
+    label {
+        font-size: 1rem;
+    }
+    .rotate_90_animation {
+        transition: rotate 0.3s ease-in-out !important;
+    }
+    .rotate_90_animation:hover {
+      rotate: 90deg !important;
+    }
+    .nav-pills .nav-link.active,
+    .nav-pills .show > .nav-link {
+           background-color: #061b66 !important;
+         }
+    </style>
+{% endblock extra_css %}
+
+
+{% block form_content %}
+{% csrf_token %}
+
+{% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    <span name="item_placeholder" class="d-none">{{ form.instance.item.sku }} - {{ form.instance.item.part_number }}</span>
+
+    {{ form.errors }}
+
+{% with request.user.base_group as user_group %}
+    <span id="{% if user_group == 'trade' %}id_can_alert{% endif %}"></span>
+    <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
+        <div class="row row-cols-4">
+
+            <div class="col-12 mb-3"><div id="id_item_select2"></div></div>
+
+            <div class="col-4">
+            {% render_field_by_order form form.quantity label='on-border' %}
+            </div>
+
+            <div class="col-8">
+            {% render_field_by_order form form.description label='on-border' %}
+            </div>
+
+{#            <div class="overflow-scroll">#}
+{#                <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>#}
+{#                <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>#}
+{##}
+{#                {% if request.user.base_group == 'trade' %}#}
+{#                    {% get_comment_user_list form request.user comment_type='order_error' %}#}
+{#                {% elif request.user.base_group == 'sales' %}#}
+{#                    {% get_comment_user_list form request.user %}#}
+{#                {% else %}#}
+{#                    {% get_comment_user_list form request.user %}#}
+{#                {% endif %}#}
+{##}
+{#                <div class="mt-1"></div>#}
+{#                {% get_payment_list form request.user %}#}
+{#            </div>#}
+{##}
+{#        </div>#}
+
+    </div>
+    </div>
+
+
+
+{% endwith %}
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function (){
+        try {
+            let item_select2_placeholder = document.querySelector('[name="item_placeholder"]').innerText.toString() || "کد کالا"
+            select2_generate('#id_item_select2', '#id_item', '/inquiry/items_list', item_select2_placeholder)
+        } catch (e) {
+            console.log(e)
+            item_select2_placeholder = document.querySelector('[name="item_placeholder"]').innerText.toString() || "کد کالا"
+            select2_generate('#id_item_select2', '#id_item', '/inquiry/items_list', item_select2_placeholder)
+        }
+    })
+
+    </script>
+    <script>
+
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+
+    </script>
+    <script src="{% static 'js/comment.js' %}"></script>
+{% endblock extra_js %}

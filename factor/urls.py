@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .select2 import select2_search, select2_create_factor_from_quotation
-from .views import CustomerRequestFactorViewSet
+from .views import CustomerRequestFactorViewSet, supply_fragment_view
 
 router = DefaultRouter()
 router.register(r'customer-request-factor', CustomerRequestFactorViewSet, basename='customer-factor')
@@ -12,6 +12,7 @@ app_name = 'factor'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('view/cancel/<int:pk>/', views.cancel_factor, name='factor.cancel'),
     path('view/', views.FactorView.as_view(), name='factor.view'),
     path('view/<int:pk>/', views.FactorView.as_view(), name='factor.view'),
 
@@ -28,6 +29,8 @@ urlpatterns = [
 
     path('prefactor/<int:pk>/json/', views.prefactor_json, name='prefactor-json'),
     path('supply-fragment/', views.supply_fragment, name='supply-fragment'),
+    path('<int:pk>/supply-fragment/', supply_fragment_view, name='factor_supply_fragment',),
+
     # path('ajax/get_quotation_items_for_factor/<int:pk>/safe/', views.safe_get_quotation_items_for_factor, name='safe.factor.get_quotation_items_for_factor'),
 
     path('factor/list/datatable/', views.FactorListDatatable.as_view(), name='factor.list.datatable'),

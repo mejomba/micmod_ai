@@ -186,19 +186,19 @@
 
     <!-----------------------------info------------------------------->
     <div class="d-flex gap-4 align-items-baseline">
-        <div class="mt- mb-2  bg-light-warning py-2 px-3 rounded font-size-15"
-             style="width: fit-content; margin-top: 0px">
-            <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>
-            <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>
-            <span>    آمده است به رنگ</span>
-            <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>
-            <span>    در انتهای لیست نمایش داده میشوند</span>
-        </div>
+{#        <div class="mt- mb-2  bg-light-warning py-2 px-3 rounded font-size-15"#}
+{#             style="width: fit-content; margin-top: 0px">#}
+{#            <span>    ردیف پیش فاکتور هایی که تمام تعداد کالاهای آن در</span>#}
+{#            <span class="bg-secondary mx-1 px-2 py-1 rounded">فاکتور(ها)</span>#}
+{#            <span>    آمده است به رنگ</span>#}
+{#            <span class="bg-secondary px-2 py-1 mx-1 rounded text-black">خاکستری</span>#}
+{#            <span>    در انتهای لیست نمایش داده میشوند</span>#}
+{#        </div>#}
         <div class="bg-light">
             <span class="me-5">فاکتور های مرتبط:</span>
             {% for other_factor in factor.q.q.all %}
                 {% if factor.pk != other_factor.pk %}
-                    <a class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
+                    <a target="_blank" class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
                        href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
                 {% endif %}
             {% empty %}
@@ -329,12 +329,12 @@
                                                 فاکتور</a>
                                         {% endif %}
 
-                                        {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.is_superuser %}
-                                            <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar"
-                                                   id="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1"
-                                                   data-bs-toggle="tooltip"
-                                                   data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد.">
-                                        {% endif %}
+{#                                        {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.is_superuser %}#}
+{#                                            <input type="submit" value="ارسال فاکتور به سپیدار" name="send_factor_to_sepidar"#}
+{#                                                   id="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1"#}
+{#                                                   data-bs-toggle="tooltip"#}
+{#                                                   data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد.">#}
+{#                                        {% endif %}#}
 
 
                                         <!-- items header -->
@@ -405,7 +405,7 @@
 
         </div>
 
-<span class="d-non">
+<span class="d-none">
 <div class="debug">
   <h3>خروجی JSON برای ارسال به سرور (زنده):</h3>
   <pre id="dbg"></pre>
@@ -477,7 +477,7 @@
             </div>
         </div>
 
-    <textarea name="supply_locations" class="d-non"></textarea>
+    <textarea name="supply_locations" class="d-none"></textarea>
     </div>
     </div>
 
@@ -1130,11 +1130,11 @@ document.addEventListener("click", e => {
     const quantityInput = row.querySelector('input[name$="-quantity"]');
     const idInput = row.querySelector('input[name$="-id"]');
 
-    const factorPk = getFactorPk();
-    if (!factorPk) {
-      alert('شناسه فاکتور یافت نشد (data-factor-pk).');
-      return;
-    }
+    const factorPk = getFactorPk() || 0;
+    //if (!factorPk) {
+      //alert('شناسه فاکتور یافت نشد (data-factor-pk).');
+      //return;
+    //}
 
     const params = new URLSearchParams({
       goods_code: sku,
@@ -1420,7 +1420,7 @@ function renumberRows() {
             row.classList.add("row-deleted");
             if (btn) {
                 btn.title = "بازگردانی ردیف";
-                btn.querySelector(".f-icon").innerHTML = `<i class="ki-duotone ki-arrow-circle-left">
+                btn.querySelector(".f-icon").innerHTML = `<i class="ki-duotone ki-arrow-circle-left fs-2 text-black">
                                                              <span class="path1"></span>
                                                              <span class="path2"></span>
                                                             </i>`;
@@ -1449,7 +1449,7 @@ function renumberRows() {
             sale_type: ['sale_type', 'sale_type_name'],
           },
           // فیلدهای عددی هر ردیف
-          rowFields: ['quantity', 'price', 'discount_per_item', 'part_number_show', 'goods_code'],
+          rowFields: ['quantity', 'price', 'discount_per_item', 'part_number_show', 'goods_code', 'qi'],
         };
         /* ============================================================ */
 

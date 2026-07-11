@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404
@@ -23,7 +24,8 @@ from rest_framework.response import Response
 
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
-from factor.models import Factor, FactorItem
+from factor.models import Factor, FactorItem, FactorItemSupplyLocation
+from factor.services.supply import SupplyLocationService
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
 from payment.models import PaymentOrder, Payment
@@ -32,8 +34,9 @@ from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
-    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet
-from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, SepidarOrderDocument
+    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm
+from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
+    SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
 from .serializers import OrderSerializer
 import json
@@ -140,7 +143,7 @@ class BazarBuyFactorView(LoginRequiredMixin, View):
     # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
 
     def get_success_url(self):
-        return reverse_lazy('order:bazar_order.view', kwargs={'pk': self.object.pk})
+        return reverse_lazy('order:bazar_buyfactor.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         invoice_form = BazarBuyFactorForm(request.POST)
@@ -437,7 +440,7 @@ class OrderDataTableListView(AjaxDatatableView):
         return super().get_column_defs(request)
 
 
-class BazarOrderDataTableListView(AjaxDatatableView):
+class BazarOrderForBuyFactorDataTableListView(AjaxDatatableView):
     model = Order
     title = 'order_list'
     initial_order = [["id", "des"], ]
@@ -478,6 +481,143 @@ class BazarOrderDataTableListView(AjaxDatatableView):
         row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
+        row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event);calculate_price()" >➕</span>'
+
+
+class BazarOrderDataTableListView(AjaxDatatableView):
+    model = OrderBazar
+    title = 'order_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[10, 25, 50, -1], [10, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+    show_column_filters = True
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
+        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains',
+         'className': 'item'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
+        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True,
+         'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
+        {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
+        {'name': 'order_bazar_fis__fi__factor__id', 'orderable': True, 'title': 'فاکتور', 'visible': True,
+         'lookup_field': '__icontains'},
+        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
+        {'name': 'is_over', 'orderable': True, 'visible': True, 'title': 'خاتمه یافته'},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.all()
+        return qs
+
+    def customize_row(self, row, obj):
+        from tools.utils import to_jalali_date
+        row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+            reverse('order:bazar.order.view', args=(obj.id,)),
+            obj.id if obj.id else '-')
+        row['quantity'] = parse_number(obj.quantity)
+        row['buy_factor_quantity_in_sepidar'] = parse_number(obj.buy_factor_quantity_in_sepidar)
+        row['created_date'] = to_jalali_date(obj.created_date)
+        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
+        row['order_bazar_fis__fi__factor__id'] = f'<span>{", ".join([str(x.fi.factor.pk) for x in obj.order_bazar_fis.all()])}</span>'
+        row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+
+
+class NewBazarBuyFactorView(LoginRequiredMixin, View):
+    template_name = 'order/new_bazar_view.html'
+    form_class = OrderForm
+    model = Order
+    # wf_last_step_is_open = True
+    has_flow = False
+    form_struct = {
+        'form': OrderForm,
+        'childes': [
+            {},
+        ]
+    }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:bazar_order.view', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        invoice_form = BazarBuyFactorForm(request.POST)
+        item_formset = BazarPurchaseItemFormSet(request.POST)
+
+        if invoice_form.is_valid() and item_formset.is_valid():
+            invoice_data = invoice_form.cleaned_data
+            items_data = [f.cleaned_data for f in item_formset if f.cleaned_data]
+            print(invoice_data, items_data)
+            # اینجا می‌تونی پردازش دلخواه رو انجام بدی
+            return self.get_success_url()
+        return super().post(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        invoice_form = BazarBuyFactorForm()
+        item_formset = BazarPurchaseItemFormSet()
+
+        context = {
+            'form': invoice_form,
+            'formset': item_formset,
+        }
+        return render(request, self.template_name, context)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class NewBazarOrderDataTableListView(AjaxDatatableView):
+    model = OrderBazar
+    title = 'order_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[10, 25, 50, -1], [10, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+    show_column_filters = True
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
+        {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
+        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
+        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True,
+         'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'order_bazar_fis__fi__factor__id', 'orderable': True, 'title': 'فاکتور', 'visible': True,
+         'lookup_field': '__icontains'},
+        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
+        {'name': 'description', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': '<div class="px-0">فاکتور خرید</div>', },
+    ]
+
+    def get_initial_queryset(self, request=None):
+        qs = self.model.objects.filter(is_deleted=False, cancel=False, is_over=False).filter(
+            Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)
+        )
+        return qs
+
+    def customize_row(self, row, obj):
+        if obj.pk == 7:
+            pass
+        from tools.utils import to_jalali_date
+        row['quantity'] = parse_number(obj.quantity)
+        row['created_date'] = to_jalali_date(obj.created_date)
+        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
+        row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
+        row['order_bazar_fis__fi__factor__id'] = f'<span>{", ".join([str(x.fi.factor.pk) for x in obj.order_bazar_fis.all()])}</span>'
         row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event);calculate_price()" >➕</span>'
 
 
@@ -523,6 +663,39 @@ class TradeOrderDataTableListView(AjaxDatatableView):
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event);calculate_price()" >➕</span>'
+
+
+class BazarOrderView(LoginRequiredMixin, BaseView):
+    template_name = 'order/bazar_create_update_view.html'
+    form_class = BazarOrderForm
+    model = OrderBazar
+    form_struct = {
+        'form': BazarOrderForm,
+        'childes': [
+            {},
+        ]
+    }
+    # flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+
+    def get_success_url(self):
+        return reverse_lazy('order:bazar.order.view', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class BazarOrderListView(LoginRequiredMixin, ListView):
+    model = Order
+    template_name = 'order/bazar_list.html'
 
 
 class OrderAction(ListView):
@@ -1156,7 +1329,7 @@ class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderAndSepidar(View):
-    valid_view = ('trade_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
+    valid_view = ('trade_buy_factor', 'new_bazar_buy_factor', 'bazar_buy_factor', 'payment_for_order_to_sepidar', 'wh_to_wh_preview', 'wh_to_wh_execute')
     valid_for_get = ('trade_buy_factor_preview', 'payment_for_order_to_sepidar_preview', 'wh_to_wh_preview')
 
     def dispatch(self, request, *args, **kwargs):
@@ -1328,17 +1501,50 @@ class OrderAndSepidar(View):
                     o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
                     o.editor_user = self.request.user
                     o.save()
-                new_btn = """
-                        <button 
-                            type="button" 
-                            id="submit-buy-factor" 
-                            class="btn btn-secondary mt-5 me-5"
-                            onclick="window.location.href = window.location.href">
-                            جدید
-                        </button>
-                        """
+
                 return JsonResponse({
                                         'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span> <a href="/order/bazar/buy_factor/view/?" class="btn btn-sm">جدید</a>'},
+                                    status=201)
+            else:
+                return JsonResponse({'res': res}, status=400)
+        except Exception as e:
+            return JsonResponse({'res': {"error": e.args[0]}}, status=400)
+
+    def new_bazar_buy_factor(self, request, *args, **kwargs):
+        from tools import utils
+        try:
+            body = self.request.body or '{}'
+            data = json.loads(body)
+            grouped = utils.grouped_value(data, target_suffixes=('portal_order_id', '-quantity', '-itemref'))
+            res = SepidarApiCall.buy_factor_to_sepidar(obj=data, request=self.request)
+            if hasattr(res, 'errors'):
+                # messages.error(self.request, res.get('errors'))
+                return JsonResponse({'res': 'fail'})
+
+            elif res and res.get('valid'):
+                buy_factor_number = res.get('number')
+                buy_factor_id = res.get('buy_factor_id')
+                lookup = {(x[1].get('itemref'), x[1].get('quantity')): x[1] for x in grouped.items() if x[0] != '0'}
+                """
+                lookup output like this:
+                lookup = {
+                    (itemref, quantity): {itemref:'x', 'portal_order_id': 'y', 'quantity': 'z'}
+                }
+                """
+                buy_factor_items = {key: value for x in res.get('buy_factor_items') for key, value in x.items()}
+                for key, value in lookup.items():
+                    buy_factor_item = buy_factor_items.get(key)
+                    inventory_purchase_invoice_item_id = buy_factor_item.get('inventory_purchase_invoice_item_id')
+                    order_pk = value.get('portal_order_id')
+                    o = OrderBazar.objects.filter(pk=order_pk).first()
+                    o.buy_factors.append(
+                        {str((buy_factor_id, buy_factor_number)): (inventory_purchase_invoice_item_id, key[1])})
+                    o.buy_factor_quantity_in_sepidar = (o.buy_factor_quantity_in_sepidar or 0) + int(key[1])
+                    o.editor_user = self.request.user
+                    o.save()
+
+                return JsonResponse({
+                                        'res': f'<span class="ms-3"><span class="bg-success text-white rounded p-2">فاکتور خرید به سپیدار ارسال شد، کد: {buy_factor_number}</span></span> <a href="/order/bazar/buy_factor/view/?" class="btn btn-sm btn-primary">جدید</a>'},
                                     status=201)
             else:
                 return JsonResponse({'res': res}, status=400)
@@ -2049,19 +2255,43 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             if "errors" in res:
                 return JsonResponse({'res': res['errors']}, status=500)
             else:
-                for order_id in order_ids:
-                    Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
-                    if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
-                        order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
-                        data = order_document_obj.data
-                        if data.get('bazar'):
-                            data['bazar']['sepidar'].append(res['bazar']['sepidar'])
-                        else:
-                            data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
-                        order_document_obj.data = data
-                        order_document_obj.save()
-                    else:
-                        SepidarOrderDocument.objects.create(order_id=order_id, data=res)
+                # تبدیل محل تامین به رسید شده در انبار
+
+                service = SupplyLocationService()
+                wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+
+                with transaction.atomic():
+                    for order_id in order_ids:
+                        # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
+                        if not order_id:
+                            continue
+                        order = (
+                            OrderBazar.objects
+                            .select_for_update()
+                            .get(pk=order_id)
+                        )
+                        order.receipt_in_wh = True
+                        order.sepidar_wh_code = wh_code
+                        order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
+
+                        # تعداد رسیده‌ی این سفارش از همان payload
+                        qty = float(receipt_quantity.get(str(order_id), 0) or 0)
+
+                        service.migrate_bazar_order_to_warehouse(
+                            order, wh_code, received_qty=order.quantity
+                        )
+
+                # if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
+                #     order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
+                #     data = order_document_obj.data
+                #     if data.get('bazar'):
+                #         data['bazar']['sepidar'].append(res['bazar']['sepidar'])
+                #     else:
+                #         data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
+                #     order_document_obj.data = data
+                #     order_document_obj.save()
+                # else:
+                #     SepidarOrderDocument.objects.create(order_id=order_id, data=res)
 
                 return JsonResponse({'res': f'{res}'})
         except Exception as e:
@@ -2070,11 +2300,22 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
         if sepidar_buy_factor_id < 0:
             import ast
             orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, receipt_in_wh=False).exclude(buy_factors=[])
+            bazar_orders = OrderBazar.objects.filter(buy_factors__isnull=False, is_deleted=False, receipt_in_wh=False).exclude(buy_factors=[])
             trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
             for item in trade_orders:
                 print(item.order)
 
             buy_factor_id_dict = dict()
+            for order in bazar_orders:
+                for buy_factor in order.buy_factors:
+                    for key, value in buy_factor.items():
+                        key_tuple = ast.literal_eval(key)
+                        # key_tuple = key_tuple[0]
+                        if key_tuple in buy_factor_id_dict:
+                            buy_factor_id_dict[key_tuple].append(order.pk)
+                        else:
+                            buy_factor_id_dict[key_tuple] = [order.pk]
+
             for order in orders:
                 for buy_factor in order.buy_factors:
                     for key, value in buy_factor.items():
@@ -2142,6 +2383,16 @@ def portal_reserve_(request, sku, *args, **kwargs):
                 row = '-'
 
             out.append({'creator_user': creator_user, 'quantity': parse_number(quantity), 'factor': factor_id, 'row_index': row})
+
+        whs = WhReserve.objects.filter(item_id=sku, is_deleted=False)
+        for wh in whs:
+            for sl in wh.wh_reserve_fis.all():
+                if not sl.fi.factor.sepidar_id:
+                    creator_user = sl.fi.factor.creator_user
+                    quantity = sl.quantity
+                    factor_id = sl.fi.factor.pk
+                    row = sl.fi.index or '-'
+                    out.append({'creator_user': creator_user, 'quantity': parse_number(quantity), 'factor': factor_id, 'row_index': row})
 
         context = {'data': out, 'sku': sku}
         html = render_to_string('order/partial/portal_reserve.html', context=context)

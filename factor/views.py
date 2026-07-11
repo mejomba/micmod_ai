@@ -2,6 +2,7 @@ import datetime
 import time
 from decimal import Decimal
 
+from django.core.cache import cache
 from django.db.models.functions import Coalesce, Cast
 from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
@@ -12,11 +13,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum, Case, When, F, DecimalField, ExpressionWrapper, OuterRef, Subquery, Min
 from django.forms import inlineformset_factory
-from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponseBadRequest, Http404
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from django.views import View
 from django.views.generic import DetailView
 from jalali_date import datetime2jalali
@@ -27,6 +29,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from simple_history.models import HistoricalRecords
 
+from comments.forms import CommentsForm
 from core.exceptions import StockRefNotFoundError
 from core.permissions import HasShopPermission
 from extra_data.models import Item, CustomerAddress
@@ -54,6 +57,7 @@ from django.db.models.functions import Coalesce, Cast
 
 from workflow.models import WorkFlow
 from .services.supply import SupplyLocationService, attach_supply
+from .services.supply_change_checker import SupplyChangeChecker
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -285,9 +289,6 @@ class FactorView(LoginRequiredMixin, BaseView):
             }
             self.save_flow(self.request, **wf_data)
 
-        if 'send_factor_to_sepidar' in self.request.POST:
-            self.send_factor_to_sepidar()
-
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
@@ -296,6 +297,9 @@ class FactorView(LoginRequiredMixin, BaseView):
         if obj_before_save and obj_before_save.is_official and self.state_index > 1:
             self.object.is_official = True
         self.object.save()
+        if 'send_factor_to_sepidar' in self.request.POST:
+            self.send_factor_to_sepidar()
+        # self.object.save()
         return res
 
     @timer
@@ -604,14 +608,23 @@ class FactorListDatatable(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('micmod_base:quotations.view', args=(obj.q.id,)),
-            obj.q.id if obj.q else '-'
-        )
-        row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('factor:safe.factor.view', args=(obj.id,)),
-            obj.pk if obj.pk else '-'
-        )
+        if obj.q:
+            row['q'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+                reverse('micmod_base:quotations.view', args=(obj.q.id,)),
+                obj.q.id if obj.q else '-'
+            )
+        else:
+            row['q'] = '-'
+        if obj.created_date < parse_datetime("2026-07-08 00:00:00.390205+00"):
+            row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+                reverse('factor:factor.view', args=(obj.id,)),
+                obj.pk if obj.pk else '-'
+            )
+        else:
+            row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+                reverse('factor:safe.factor.view', args=(obj.id,)),
+                obj.pk if obj.pk else '-'
+            )
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__currency_ref'] = obj.q.currency_ref.title if obj.q else ''
         row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
@@ -778,6 +791,7 @@ class FactorListDatatable(AjaxDatatableView):
             {'name': 'last_work_flow__to_user', 'visible': True, 'searchable': True, 'title': "متعلق به",
              'orderable': True,
              'lookup_field': '__username__icontains', 'className': 'border'},
+            {'name': 'request_cancel', 'visible': True, 'orderable': True, 'title': _('درخواست کنسل'), 'className': 'border'},
         ]
         return self.cols
 
@@ -1032,7 +1046,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             self.object.save()
 
     def send_factor_to_sepidar(self):
-        customer = self.object.q.customer_party_id
+        customer = getattr(self.object, 'customer_party_id', None) or self.object.q.customer_party_id
         if not customer.active:
             messages.error(self.request, f'مشتری در پرتال غیر فعال است.')
             self.after_sepidar_error()
@@ -1142,6 +1156,8 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                 for instance in instances:
                     instance.extra_data.request = self.request
                     instance.save()
+                for fi in self.object.factoritem_set.all():
+                    fi.save_comment(self.request, CommentsForm)
 
                 # ۳) save_m2m امن — فقط فرم‌هایی که این متد را دارند
                 for form in form_set.saved_forms:
@@ -1149,15 +1165,22 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                         form.save_m2m()
 
                 # ۳) sync محل تامین فقط برای ردیف‌های غیرحذفی
-                for idx, form in enumerate(form_set.forms):
-                    if form.instance.pk and not form.cleaned_data.get('DELETE'):
-                        raw = request.POST.get(f'factoritem_set-{idx}-supply_locations')
-                        selections = json.loads(raw or '[]')
-                        service.sync_factor_item(form.instance, selections, request.user)
+                if self.state_index < 2:
+                    for idx, form in enumerate(form_set.forms):
+                        if form.instance.pk and not form.cleaned_data.get('DELETE'):
+                            raw = request.POST.get(f'factoritem_set-{idx}-supply_locations')
+                            selections = json.loads(raw or '[]')
+                            service.sync_factor_item(form.instance, selections, request.user)
 
                 wf_obj = self.submit_flow(is_new=is_new)
                 self.object.last_work_flow = wf_obj
+                self.object.save_comment(self.request, CommentsForm)
                 self.object.save()
+                self.tired_q()
+
+                if 'send_factor_to_sepidar' in self.request.POST:
+                    self.send_factor_to_sepidar()
+
         except ValidationError as e:
             form_set._non_form_errors = form_set.error_class([str(e)])
             form_set.non_form_errors = form_set.error_class([str(e)])
@@ -1168,14 +1191,6 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         if 'new_address' in self.request.POST:
             self.save_new_address()
 
-        try:
-            condition = self.object and self.object.last_work_flow.current_state_name == 'چک نهایی' and 'back' in self.request.POST
-        except Exception as e:
-            condition = False
-        if condition:
-            self.object.collecting_end_time = None
-            self.object.extra_data.request = self.request
-            self.object.save()
         return super().post(request, *args, **kwargs)
 
     def submit_flow(self, is_new):
@@ -1228,7 +1243,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                                          wf_description=self.request.POST.get('wf_description'),
                                          state=current_state_name)
             return wf
-        elif 'draft' in self.request.POST and is_new:  # 5 first draft
+        elif 'draft' in self.request.POST and (is_new or not last_flow):  # 5 first draft
             wf = WorkFlow.objects.create(action='draft', flow_name='factor', wf_status=5,
                                          creator_user=self.request.user,
                                          editor_user=self.request.user,
@@ -1271,6 +1286,15 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             return wf
 
         return last_flow
+
+    def tired_q(self):
+        if not self.object.q:
+            return
+
+        try:
+            pass
+        except Exception as e:
+            pass
 
     def form_valid(self, form):
         try:
@@ -1336,18 +1360,70 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         print('get context data')
         context = super().get_context_data(**kwargs)
+        context['f_warning'] = []
+
         if self.request.method == "POST":
+            for f in context['form_s'].forms:
+                f.initial['supply_locations'] = self.request.POST.get(f'{f.prefix}-supply_locations')
+            # [self.request.POST.get(f'{x.prefix}-supply_locations') for x in context['form_s'].forms]
             context["form_s"] = context['form_s']
             context["form"] = self._build_factor_form(
                 data=self.request.POST,
                 instance=self.object,
             )
+            # context['supply_locations'] = self.request.POST.get('supply_locations')
         else:
+            initial = dict()
+            if self.object:
+                if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
+                    context['allow_cancel'] = self.object.last_work_flow.to_user
+                if self.request.user.is_superuser:
+                    context['allow_cancel'] = self.object.last_work_flow.to_user
+
+                if not self.object.is_all_supplied2:
+                    context['f_warning'].append('همه ردیف ها تامین نشده یا سفارش در راه دارد')
+                    if self.state_index >= 4:
+                        context['allow_next'] = False
+
+                if self.object.is_reserve:
+                    context['allow_next'] = False
+                    context['f_warning'].append('فاکتور های رزرو امکان خروج از پیش نویس را ندارند.')
+
+                if self.object and self.state_index == 4 and (self.object.need_financial_approval and not self.object.accounting_confirm):
+                    context['f_warning'].append('نیاز به تایید مالی دارد.')
+                    context['allow_next'] = False
+
+                if self.object and self.state_index == 5 and not self.object.sepidar_id:
+                    context['allow_next'] = False
+                    context['f_warning'].append('فاکتور به سپیدار ارسال نشده')
+
+                if self.object.sepidar_id:
+                    context['allow_back'] = False
+                    context['f_warning'].append('فاکتوری که به سپیدار ارسال شده امکان عودت ندارد')
+
+                exclude_qi_id = self.object.factoritem_set.values_list('qi')
+                other_qi = QuotationItem.objects.filter(quotation=self.object.q).exclude(pk__in=exclude_qi_id)
+                initial = [
+                    {
+                        'goods_code': row.goods_code_fk.pk,  # FK → فقط pk بده
+                        'part_number_show': row.goods_code_fk.part_number or "",
+                        'quantity': row.quantity or 0,
+                        'price': row.final_price or 0,
+                        'discount_per_item': row.discount_per_item or 0,
+                        'qi': row.pk,
+                        'DELETE': True,
+                        # ... سایر فیلدهای FactorItem
+                    }
+                    for row in other_qi
+                ]
+            else:
+                context['allow_next'] = False
             context["form_s"] = self._build_item_formset(
-                instance=self.object,
+                instance=self.object, initial=initial
             )
             if not self.object:
                 self.template_name = 'factor/safe_factor_create.html'
+
         context["factor"] = self.object
         context["object"] = self.object
         context["app_name"] = 'factor'
@@ -1355,6 +1431,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
 
         return context
 
+    @timer
     def dispatch(self, request, *args, **kwargs):
         view_name = self.request.GET.get('view_name', None)
         if view_name in self.__class__.safe_methods and hasattr(self, view_name):
@@ -1385,6 +1462,24 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
 
         if not allowed_edit and not allowed_show:
             raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+        hidden = []
+        edit = []
+        show = []
+        for h in allowed_hidden:
+            if h not in hidden:
+                hidden.append(h)
+
+        for e in allowed_edit:
+            if e not in edit:
+                edit.append(e)
+
+        for s in allowed_show:
+            if s not in show:
+                show.append(s)
+        # allowed_hidden = list(set(allowed_hidden))
+        # allowed_edit = list(set(allowed_edit))
+        # allowed_show = list(set(allowed_show))
+        return edit, hidden, show
         return allowed_edit, allowed_hidden, allowed_show
 
     def _get_factor_item_allowed_fields(self):
@@ -1411,6 +1506,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
         return allowed_edit, allowed_hidden, allowed_show
 
+    @timer
     def _get_factor_item_formset(self, user, data=None, instance=None, initial=None, *args, **kwargs):
         """
         یک inline formset برای FactorItem با فیلدهای محدودشده بر اساس گروه کاربر برمی‌گرداند.
@@ -1446,10 +1542,12 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             kwargs['initial'] = initial
         return FactorItemInlineFormset(*args, **kwargs)
 
+    @timer
     def _build_factor_form(self, data=None, instance=None, initial=None, **kwargs):
         allowed, hidden, show = self._get_factor_allowed_fields()
         return FactorEditForm(allowed_fields=allowed, allowed_hidden=hidden, only_show=show, data=data, instance=instance, initial=initial, **kwargs)
 
+    @timer
     def _build_item_formset(self, data=None, instance=None, initial=None, **kwargs):
         return self._get_factor_item_formset(self.request.user, data=data, instance=instance, initial=initial, **kwargs)
 
@@ -1574,6 +1672,24 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         html = render_to_string('factor/safe_factor_create.html', context, request=self.request)
         return JsonResponse({'res': html})
 
+
+def cancel_factor(request, pk):
+    try:
+        # raise ValueError('kdfjsldfj')
+        service = SupplyLocationService()
+        factor = Factor.objects.get(pk=pk)
+        service.cancel_factor(factor, request.user)
+
+        # success_url = reverse_lazy('factor:safe.factor.view', kwargs={'pk': factor.pk})
+        messages.success(request, 'فاکتور کنسل شد')
+        return JsonResponse({'res': 'فاکتور کنسل شد'})
+    except Exception as e:
+        factor = Factor.objects.get(pk=pk)
+        # success_url = reverse_lazy('factor:safe.factor.view', kwargs={'pk': factor.pk})
+        messages.error(request, str(e))
+        return JsonResponse({'res': str(e)})
+
+
 # factor/views.py
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -1593,6 +1709,7 @@ def prefactor_json(request, pk):
         "id": quotation.pk,
         # ── فیلدهای ساده‌ی فاکتور ──
         "description": quotation.description or "",
+        "self_discount": quotation.self_discount or 0,
         # "date": quotation.date.isoformat() if getattr(quotation, "date", None) else "",
         # ── فیلدهای Select2 فاکتور (id + برچسب) ──
         "customer_party_id": quotation.customer_party_id.sepidar_party_id,
@@ -1609,6 +1726,7 @@ def prefactor_json(request, pk):
                 "quantity": num(r.quantity),
                 "price": num(r.final_price),
                 "discount_per_item": num(getattr(r, "discount_per_item", 0)),
+                "qi": r.pk,
             }
             for r in quotation.quotation.all()
         ],
@@ -1626,7 +1744,7 @@ def supply_fragment(request):
     item = get_object_or_404(Item, pk=sku)
 
     # ردیف موقتِ ذخیره‌نشده فقط برای ساخت supply
-    fi = FactorItem(goods_code=item, quantity=quantity)
+    fi = FactorItem(goods_code=item, quantity=quantity, discount_per_item=0)
     attach_supply([fi])                                # همان تابع موجود تو
     # idx = 0
     # fi.prefix = f'factoritem_set-{idx}'
@@ -1635,6 +1753,61 @@ def supply_fragment(request):
         'supply': fi.supply,
         'quantity': quantity,
         'form_index': form_index
+    })
+
+
+def supply_fragment_view(request, pk):
+    """
+    AJAX endpoint برای دریافت محتوای پنل محل تامین بر اساس کد کالا.
+
+    GET پارامترها:
+      goods_code: مقدار sku کالای جدید
+      quantity: تعداد فعلی ردیف
+      factor_item_id: شناسه ردیف فاکتور (خالی برای ردیف جدید)
+
+    خروجی:
+      200 + HTML  : محتوای داخل sp-panel (سازگار با partial)
+      403 + JSON  : permission denied با پیام
+    """
+    # factor = get_object_or_404(Factor, pk=pk)
+    factor = Factor.objects.filter(pk=pk).first()
+    sku = request.GET.get('goods_code', '').strip()
+    try:
+        quantity = float(request.GET.get('quantity', 0) or 0)
+    except (TypeError, ValueError):
+        quantity = 0
+    factor_item_id = request.GET.get('factor_item_id', '').strip() or None
+
+    factor_item = None
+    if factor_item_id:
+        try:
+            factor_item = FactorItem.objects.get(pk=factor_item_id, factor=factor)
+        except FactorItem.DoesNotExist:
+            raise Http404("ردیف فاکتور یافت نشد")
+
+    # permission check
+    allowed, msg = SupplyChangeChecker.run_all(factor_item, sku, request.user)
+    if not allowed:
+        return JsonResponse({'message': msg or 'تغییر مجاز نیست'}, status=403)
+
+    # واکشی کالا
+    item = Item.objects.filter(sku=sku).first()
+
+    if item is None:
+        # کد کالا نامعتبر — پنل خالی برمی‌گردانیم
+        return render(request, 'factor/partial/_supply_panel_content.html', {
+            'supply': {'warehouses': [], 'market_orders': [], 'foreign_orders': []},
+            'quantity': quantity,
+        })
+
+    # FactorItem موقت (unsaved) — pk=None یعنی هیچ SL ای ندارد
+    # پس attach_supply به‌طور خودکار preselection خالی برمی‌گرداند
+    tmp_fi = FactorItem(factor=factor, goods_code=item, quantity=quantity, discount_per_item=0)
+    attach_supply([tmp_fi])
+
+    return render(request, 'factor/partial/_supply_panel_content.html', {
+        'supply': tmp_fi.supply,
+        'quantity': quantity,
     })
 
 from django import forms

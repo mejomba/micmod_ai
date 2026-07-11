@@ -908,7 +908,7 @@ send_factor_to_sepidar_btn && send_factor_to_sepidar_btn.addEventListener('click
     global_action_btn.classList.add('d-none')
     pleas_wait.classList.remove('d-none')
     pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 12000)
+    setTimeout(show_global_action_btn, 18000)
 })
 
 draft_btn && draft_btn.addEventListener('click', function (){
@@ -918,7 +918,7 @@ draft_btn && draft_btn.addEventListener('click', function (){
             global_action_btn.classList.add('d-none')
             pleas_wait.classList.remove('d-none')
             pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-            setTimeout(show_global_action_btn, 12000)
+            setTimeout(show_global_action_btn, 18000)
         } else {
             form.reportValidity()
         }
@@ -927,7 +927,7 @@ draft_btn && draft_btn.addEventListener('click', function (){
         global_action_btn.classList.add('d-none')
         pleas_wait.classList.remove('d-none')
         pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-        setTimeout(show_global_action_btn, 12000)
+        setTimeout(show_global_action_btn, 18000)
     }
 })
 
@@ -938,7 +938,7 @@ next_btn && next_btn.addEventListener('click', function (){
             global_action_btn.classList.add('d-none')
             pleas_wait.classList.remove('d-none')
             pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-            setTimeout(show_global_action_btn, 12000)
+            setTimeout(show_global_action_btn, 18000)
         } else {
             form.reportValidity()
         }
@@ -947,7 +947,7 @@ next_btn && next_btn.addEventListener('click', function (){
         global_action_btn.classList.add('d-none')
         pleas_wait.classList.remove('d-none')
         pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-        setTimeout(show_global_action_btn, 12000)
+        setTimeout(show_global_action_btn, 18000)
     }
 })
 
@@ -956,7 +956,7 @@ save_btn && save_btn.addEventListener('click', function (){
     global_action_btn.classList.add('d-none')
     pleas_wait.classList.remove('d-none')
     pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 12000)
+    setTimeout(show_global_action_btn, 18000)
 })
 
 back_btn && back_btn.addEventListener('click', function (){
@@ -964,7 +964,7 @@ back_btn && back_btn.addEventListener('click', function (){
     global_action_btn.classList.add('d-none')
     pleas_wait.classList.remove('d-none')
     pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 12000)
+    setTimeout(show_global_action_btn, 18000)
 })
 
 //=====================

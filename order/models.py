@@ -639,6 +639,9 @@ class OrderBazar(BaseModeWF):
     receipt_in_wh = models.BooleanField(default=False)  # ⬅ هنگام تحویل به انبار
     sepidar_wh_code = models.IntegerField(null=True, blank=True)  # ⬅ کد انبار مقصد
     supplier = models.CharField(max_length=255, blank=True, null=True)  # اختیاری
+    buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
+    buy_factor_quantity_in_sepidar = models.FloatField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
     @property
     def display_name(self):

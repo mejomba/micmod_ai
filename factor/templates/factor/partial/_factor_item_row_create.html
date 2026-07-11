@@ -17,7 +17,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="bold font-size-11 row-number"></span>
                         {% if form_s_item.goods_code %}
-                        <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku }}" >
+                        <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku|default_if_falsy:'' }}" >
                             {% else %}
                             <span class="w-80">{{ form_s_item.instance.goods_code }}</span>
                         {% endif %}

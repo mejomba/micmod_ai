@@ -10,7 +10,8 @@ from micmod_base.base import Currency
 from translator import get_text as _
 
 from core.forms import CustomBaseModelForm, CustomBaseForm
-from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT
+from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
+    OrderBazar
 from dal import autocomplete
 
 from django.forms import inlineformset_factory, formset_factory
@@ -126,6 +127,20 @@ class OrderForm(CustomBaseModelForm):
 
         if self.instance.cancel:
             self.make_disable(self.fields)
+
+
+class BazarOrderForm(CustomBaseModelForm):
+    has_comment = True
+
+    class Meta:
+        model = OrderBazar
+        fields = ['item', 'quantity', 'description', 'cancel']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.make_hidden(['item'])
+        self.fields['description'].widget.attrs['rows'] = 1
+
 
 class PackingForm(CustomBaseModelForm):
     class Meta:

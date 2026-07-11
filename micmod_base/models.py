@@ -443,7 +443,7 @@ class Quotation(SLSDoc):
 
     @property
     def not_over_q(self):
-        return 0, 0, 0, 0, 0, 0
+        # return 0, 0, 0, 0, 0, 0
         factored_count = 0
         not_factored_count = 0
         wh_count = 0
@@ -458,7 +458,10 @@ class Quotation(SLSDoc):
 
                 factor_item = item.qi.aggregate(total=Sum('quantity'))['total'] or 0
                 for fi in factor_items:
-                    supply_locations = fi.supply_locations.is_wh
+                    try:
+                        supply_locations = fi.supply_locations.is_wh
+                    except Exception as e:
+                        supply_locations = fi.factoritemsupplylocation_set.filter(wh_reserve__isnull=False).count()
                     if supply_locations:
                         wh_count += 1
                     else:
@@ -796,6 +799,7 @@ class QuotationItem(BaseModel):
 
     @property
     def not_over(self):
+        return
         factored_count = 0
         not_factored_count = 0
         wh_count = 0

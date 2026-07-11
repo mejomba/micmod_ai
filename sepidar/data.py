@@ -33,7 +33,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         if not creator:
             raise Exception("کاربر کد سپیدار ندارد")
         if not supplier:
-            return
+            raise Exception("تامین کننده انتخاب نشده")
         discount = obj.get('discount') or 0
         addition = obj.get('addition') or 0
         rate, price, tax, duty, discount, addition = map(float, (rate, price, tax, duty, discount, addition))
@@ -106,7 +106,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             fee = row_data.get('price') or 0
             quantity = row_data.get('quantity') or 0
             fee, quantity = map(float, (fee, quantity))
-            discount = (row_data.get('discount') or 0) + (all_discount / discount_weight)
+            discount = (row_data.get('discount') or 0) + (all_discount * discount_weight)
             description = row_data.get('description')
             addition = row_data.get('addition') or 0
 
@@ -158,7 +158,8 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         sale_type = obj.sale_type
         # currency = obj.sale_type.currency
 
-        currency = obj.q.currency_ref
+        currency = getattr(obj, 'currency_ref', None) or obj.q.currency_ref
+        customer = getattr(obj, 'customer_party_id', None) or obj.q.customer_party_id
 
         if currency.title_en.lower() != 'rial':
             slref = settings.SEPIDAR_CONST_DATA['hesab_daryaftani_arzi'] #580  # حساب دریافتنی ارزی
@@ -192,7 +193,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
             "additionfactorinbasecurrency_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
-            "customerrealname_en": obj.q.customer_party_id.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
+            "customerrealname_en": customer.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
             "netpriceinbasecurrency": round((price + addition + duty + sum_tax - sum_discount) * rate, 4),
             "currencyref": currency.sepidar_id,  # calculate in base
             "additioninbasecurrency": round(addition * rate, 4),  # calculate in save
@@ -213,13 +214,13 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             # بعدا مکانیزم طوری شود که ریت به صورت روزانه توسط ادمین اپدیت شود در جدول کارنسی و اینجا ملزم ار ان گرفته شود و نده
             "settlementtype": 1,  # همه 1 بودن
             "creator": obj.creator_user.sepidar_code or 1,
-            "customerpartyref": obj.q.customer_party_id_id,
+            "customerpartyref": customer.sepidar_party_id,
             "baseoninventorydelivery": 1,  # 0-1  هست دقیق بررسی شود با چه فرمولی
             # "voucherref": None, base
             "agreementref": None,  # all null
             "additionfactor_vatineffective": 0,  # all 0
             "description": obj.description,
-            "customerrealname": obj.q.customer_party_id.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
+            "customerrealname": customer.title.replace("ی", "ي").replace("ک", "ك"),  # calculate in save
             "addition": round(addition, 4),
             "dutyinbasecurrency": round(duty * rate, 4),
             "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
@@ -236,15 +237,15 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         from inquiry.models import CurrencyAmount
         invoice_item_data = list()
 
-        fis = obj.factoritem_set.all()
-        addition = obj.q.addition or 0
+        fis = obj.factoritem_set.all().order_by('id')
+        addition = getattr(obj, 'addition', None) or getattr(obj.q, 'addition', None) or 0
         fis_count = obj.factoritem_set.count()
         rate = float(kwargs.get('rate', 1))
 
-        for fi in fis:
+        for idx, fi in enumerate(fis):
             row_price = fi.row_price
             discount = fi.discount_value
-            tax = fi.tax
+            tax = fi.tax or 0
             duty = 0  # fi.duty
             fi.description = ''
             stockref = fi.get_sepidar_stock_code_from_selected_supply_location()
@@ -253,7 +254,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             if not stockref:
                 raise StockRefNotFoundError()
             d = {
-                "rowid": fi.index + 1 if fi.index else 1,
+                "rowid": idx + 1,
                 "tracingref": None,  # همیشه نال
                 "quantity": fi.quantity,  # check with sepidar quantity when InventoryDeliveryItem save
                 "secondaryquantity": 0.0,  # معمولا 0
@@ -289,7 +290,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "additionfactorinbasecurrency_vatineffective": 0.0,  # همیشه 0
                 "itemref": fi.goods_code.sepidar_id_0,
                 "stockref": stockref,
-                "quotationitemref": fi.qi.sepidar_id,
+                "quotationitemref": getattr(fi.qi, 'sepidar_id', None) or None,
                 "discountinvoiceitemref": None,  # همیشه null بود
                 "productpackref": None,  # همیشه null بود
                 "discountitemgroupref": None,  # همیشه null بود

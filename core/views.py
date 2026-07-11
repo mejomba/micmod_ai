@@ -1051,7 +1051,10 @@ class CommentsFormView(View):
             sku = getattr(obj, 'goods_code_fk', None)
         if model.__name__.lower() == 'factoritem':
             obj = model.objects.full_queryset(pk=object_id).first()
-            customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+            try:
+                customer = getattr(obj.qi.quotation, 'customer_party_id', None)
+            except Exception as e:
+                customer = getattr(obj.factor, 'customer_party_id', None)
             sku = getattr(obj.qi, 'goods_code_fk', None)
         else:
             obj = model.objects.filter(pk=object_id).first()

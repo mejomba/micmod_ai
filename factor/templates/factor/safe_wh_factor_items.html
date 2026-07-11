@@ -35,31 +35,31 @@
 
 <div class="mt-1 d-flex gap-2">
     <span class="btn btn-primary d-none">ارسال فاکتور به سپیدار</span>
-    {% if is_need_sales_admin_confirmation %}
-        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger"
-             style="width: fit-content; background-color: #fff6f6">
-            این فاکتور نیاز به تایید مدیر فروش دارد
-        </div>
-    {% endif %}
-    {% for f_warning in f_warning %}
-        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ f_warning }}</div>
-    {% endfor %}
+{#    {% if is_need_sales_admin_confirmation %}#}
+{#        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger"#}
+{#             style="width: fit-content; background-color: #fff6f6">#}
+{#            این فاکتور نیاز به تایید مدیر فروش دارد#}
+{#        </div>#}
+{#    {% endif %}#}
+{#    {% for f_warning in f_warning %}#}
+{#        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ f_warning }}</div>#}
+{#    {% endfor %}#}
     {% if obj.sepidar_error %}
         <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ sepidar_error }}</div>
     {% endif %}
 </div>
 
-<div class="d-flex my-3">
-    <span class="me-5">فاکتور های مرتبط</span>
-    {% for factor in quotation.q.all %}
-        {% if form.instance.pk != factor.pk %}
-            <a class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
-               href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>
-        {% endif %}
-    {% empty %}
-        <span>---</span>
-    {% endfor %}
-</div>
+{#<div class="d-flex my-3">#}
+{#    <span class="me-5">فاکتور های مرتبط</span>#}
+{#    {% for factor in quotation.q.all %}#}
+{#        {% if form.instance.pk != factor.pk %}#}
+{#            <a class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"#}
+{#               href="{% url 'factor:factor.view' factor.pk %}">فاکتور {{ factor.pk }}</a>#}
+{#        {% endif %}#}
+{#    {% empty %}#}
+{#        <span>---</span>#}
+{#    {% endfor %}#}
+{#</div>#}
 
 <div class="bg-white rounded border pb-20 mb-20 row">
     <!-- factor header -->
@@ -71,9 +71,9 @@
 </div>
 
 {% for form_s_item in form_s %}
-        <div class="sortable-item factor_item_self" id="invoice-rows">
+{#        <div class="sortable-item factor_item_self" id="invoice-rows">#}
             {% include "factor/partial/_wh_factor_item_row.html" with form_s_item=form_s_item %}
-        </div>
+{#        </div>#}
     {% endfor %}
         {#*******************************************************************************#}
         {% include 'core/partial/empty_modal.html' %}
@@ -320,7 +320,7 @@
             item.addEventListener('click', function (e) {
                 e.preventDefault()
                 let comment_url = item.dataset.form_url;
-                let comment_url_rel = item.dataset.form_url_rel
+                let comment_url_rel = item.dataset.form_url_rel || ''
                 comment_url += comment_url_rel
                 const pk = item.dataset.pk;
                 const comment_type = item.dataset.comment_type

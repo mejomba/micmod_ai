@@ -30,20 +30,20 @@
 </style>
 
 
-<div class="mt-1 d-flex gap-2">
-<span class="btn btn-primary d-none">ارسال فاکتور به سپیدار</span>
-    {% if is_need_sales_admin_confirmation %}
-        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger" style="width: fit-content; background-color: #fff6f6">
-            این فاکتور نیاز به تایید مدیر فروش دارد
-        </div>
-    {% endif %}
-    {% for f_warning in f_warning %}
-        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ f_warning }}</div>
-    {% endfor %}
-    {% if factor.sepidar_error %}
-        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ sepidar_error }}</div>
-    {% endif %}
-</div>
+{#<div class="mt-1 d-flex gap-2">#}
+{#<span class="btn btn-primary d-none">ارسال فاکتور به سپیدار</span>#}
+{#    {% if is_need_sales_admin_confirmation %}#}
+{#        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger" style="width: fit-content; background-color: #fff6f6">#}
+{#            این فاکتور نیاز به تایید مدیر فروش دارد#}
+{#        </div>#}
+{#    {% endif %}#}
+{#    {% for f_warning in f_warning %}#}
+{#        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ f_warning }}</div>#}
+{#    {% endfor %}#}
+{#    {% if factor.sepidar_error %}#}
+{#        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ sepidar_error }}</div>#}
+{#    {% endif %}#}
+{#</div>#}
 
 <div class="bg-white rounded border pb-5 row">
 
@@ -51,9 +51,9 @@
 {#    <div id="sortable-container" {% if not request.user|has_group:"sales_user" %} data-readonlyinput="true" {% endif %}>#}
     <div id="sortable-container" class="col-12">
     {% for form_s_item in form_s %}
-        <div class="sortable-item factor_item_self" id="invoice-rows">
+{#        <div class="sortable-item factor_item_self" id="invoice-rows">#}
             {% include "factor/partial/_factor_item_row.html" with form_s_item=form_s_item %}
-        </div>
+{#        </div>#}
     {% endfor %}
     </div>
 {% include 'core/partial/empty_modal.html' %}
@@ -307,9 +307,10 @@
     //const submitCommentBtns = document.querySelectorAll('[id*="id_comment__"]');
     document.querySelectorAll('[id*="id_comment__"]') && document.querySelectorAll('[id*="id_comment__"]').forEach(function (item){
         item.addEventListener('click', function (e){
+            debugger
             e.preventDefault()
             let comment_url = item.dataset.form_url;
-            let comment_url_rel = item.dataset.form_url_rel
+            let comment_url_rel = item.dataset.form_url_rel || ''
             comment_url += comment_url_rel
             const pk = item.dataset.pk;
             const comment_type = item.dataset.comment_type
@@ -377,19 +378,19 @@
         }
     }
 function factor_calculate_price(target, direct_target=null) {
-
+debugger
     let elem;
     if (!direct_target) {
         elem = findAncestor(target, "factor_item_self")
     } else {
         elem = direct_target
     }
-    const final_price = elem.querySelector('input[name$="-price"]')
+    const final_price = elem.querySelector('input[name$="-price"]') || elem.querySelector('span[name$="-price"]')
     const total_price = elem.querySelector('[class*="row-total-price"]')
-    const quantity = elem.querySelector('input[name$="-quantity"]')
-    const selfDiscount = document.querySelector('input[name$="self_discount"]') // تخفیف روی همه
-    const isOfficial =  document.querySelector('#id_is_official')
-    const isOfficialValue = document.querySelector('input[name$="official_value"]')
+    const quantity = elem.querySelector('input[name$="-quantity"]') || elem.querySelector('span[name$="-quantity"]')
+    const selfDiscount = document.querySelector('input[name$="self_discount"]') || document.querySelector('span[name$="-self_discount"]')  // تخفیف روی همه
+    const isOfficial =  document.querySelector('#id_is_official') || document.querySelector('span[name$="-is_official"]')
+    const isOfficialValue = document.querySelector('input[name$="official_value"]') || document.querySelector('span[name$="-official_value"]')
     let isOfficialValue_number = 0
     let tax = 0;
     let taxValue = 0
@@ -413,14 +414,18 @@ function factor_calculate_price(target, direct_target=null) {
         price = final_price ? parseFloat(final_price.value.replaceAll(',', '')) : 0
     }
 
-    row_discount_amount = parseFloat(elem.querySelector('input[name$="-discount_per_item"]').value.replaceAll(',', '')) || 0
+    let row_discount_value = elem.querySelector('input[name$="-discount_per_item"]')?.value || elem.querySelector('span[name$="-discount_per_item"]').innerHTML
+    row_discount_amount = parseFloat(row_discount_value.replaceAll(',', '')) || 0
     {#row_discount_amount = parseFloat(elem.querySelector('input[name$="-row-discount"]').value.replaceAll(',', '')) || 0#}
     row_discount = row_discount_amount * qty
     // net_price = (price - row_discount_amount) * qty
     net_price = price * qty
     net_price_after_tax_discount = net_price
 
-    let selfDiscountValue = parseFloat(selfDiscount.value.replaceAll(',', ''))
+    let selfDiscountValue = parseFloat(selfDiscount.value?.replaceAll(',', ''))
+    if (selfDiscountValue != 0){
+        selfDiscountValue = parseFloat(selfDiscount.innerHTML.replaceAll(',', ''))
+    }
     //row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
     row_discount_base_percentage = net_price * (selfDiscountValue/100)
 
@@ -428,6 +433,15 @@ function factor_calculate_price(target, direct_target=null) {
         tax = 10
         if (isOfficialValue){
             isOfficialValue_number = parseFloat(isOfficialValue.value);
+            tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
+                        1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
+            // tax_discount = net_price * (isOfficialValue_number / 100)
+        }
+        net_price_after_tax_discount = net_price - tax_discount
+    } else if (isOfficial && isOfficial.dataset.is_official === 'True'){
+        tax = 10
+        if (isOfficialValue){
+            isOfficialValue_number = parseFloat(isOfficialValue?.value) || parseFloat(isOfficialValue.dataset.official_value);
             tax_discount = (net_price - row_discount - row_discount_base_percentage) * (
                         1 - ((100 + tax - isOfficialValue_number) / (100 + tax)))
             // tax_discount = net_price * (isOfficialValue_number / 100)
@@ -443,7 +457,7 @@ function factor_calculate_price(target, direct_target=null) {
     } else {
         taxValue = 0
     }
-    const currency_ref = parseInt(document.getElementById('id_currency_ref').value)
+    const currency_ref = parseInt(document.getElementById('id_currency_ref')?.value) || parseInt(document.querySelector('span[name$="-currency_ref"]').innerHTML)
     if (currency_ref == 1){
         taxValue = parseInt(taxValue)
         totalDiscount = parseInt(totalDiscount)

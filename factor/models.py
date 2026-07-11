@@ -2,9 +2,10 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Q, Value
 from django.contrib import messages
 from django.db.models import F, Sum, FloatField
+from django.db.models.functions import Coalesce
 
 from accounts.models import User
 from core.models import BaseModel, BaseManager, BaseModeWF, BaseModel2
@@ -12,7 +13,7 @@ from extra_data.models import Item, CustomerAddress, Customer
 from core.models import BaseModel, BaseManager, BaseModeWF
 from extra_data.models import Item, CustomerAddress
 from inquiry.models import CurrencyAmount
-from micmod_base.base import SLSDoc, DeliveryTime
+from micmod_base.base import SLSDoc, DeliveryTime, PaymentMethod
 from micmod_base.models import Quotation, SaleType, QuotationItem, CustomerRequestItem, CustomerRequest
 from order.models import Order, OrderOrder, OrderBazar, WhReserve
 from tools import const
@@ -33,13 +34,14 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
+    is_reserve = models.BooleanField(default=False, verbose_name=_(''))
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
                                           db_column='customer_party_id')
     address = models.ForeignKey(CustomerAddress, on_delete=models.DO_NOTHING, null=True, blank=True, verbose_name=_('address'))
     history = HistoricalRecords()
     DELIVER_TYPE_CHOICES = (('in_person', _('in_person')), ('delivery', _('delivery')))
-    q = models.ForeignKey(Quotation, verbose_name=_('پیش فاکتور'), related_name='q', on_delete=models.DO_NOTHING)
+    q = models.ForeignKey(Quotation, verbose_name=_('پیش فاکتور'), related_name='q', on_delete=models.DO_NOTHING, null=True, blank=True)
 
     delivery_time = models.CharField(choices=DeliveryTime, max_length=10, null=True, blank=True,
                                      verbose_name=_('delivery_time'), default="2-3 week")
@@ -62,6 +64,8 @@ class Factor(SLSDoc):
     official_value = models.FloatField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
 
+    payment_method = models.CharField(choices=PaymentMethod, max_length=10, null=True, blank=True,
+                                      verbose_name=_('payment_method'), default="6,2 Month")
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='factors')
 
     need_financial_approval = models.BooleanField(default=True, verbose_name=_('نیاز به تایید مالی'))
@@ -84,14 +88,20 @@ class Factor(SLSDoc):
     force_factor = models.BooleanField(_('force_factor'), default=False)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     currency_amount = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'), null=True, blank=True)
+    request_cancel = models.BooleanField(default=False)
 
     def is_need_sales_admin_confirmation(self):
+        if not self.q:
+            return False
         if not self.q.sales_admin_confirm:
             return True
 
         for fis in self.factoritem_set.select_related('qi'):
-            if fis.qi.fee != fis.price:
-                return True
+            try:
+                if fis.qi.fee != fis.price:
+                    return True
+            except Exception as e:
+                pass
         return False
 
     @classmethod
@@ -149,7 +159,7 @@ class Factor(SLSDoc):
 
     @property
     def get_price(self):
-        obj = Factor.objects.filter(pk=self.pk).annotate(
+        obj = Factor.objects.filter(pk=self.pk, factoritem__is_deleted=False).annotate(
             total=Sum(F('factoritem__price') * F('factoritem__quantity'), output_field=FloatField())).first()
         if obj:
             return obj.total
@@ -158,12 +168,12 @@ class Factor(SLSDoc):
 
     @property
     def sum_tax(self):
-        s = sum([x.tax for x in self.factoritem_set.all()])
+        s = sum([x.tax for x in self.factoritem_set.filter(is_deleted=False)])
         return s
 
     @property
     def sum_discount(self):
-        s = sum([x.discount_value for x in self.factoritem_set.all()])
+        s = sum([x.discount_value for x in self.factoritem_set.filter(is_deleted=False)])
         return s
 
     @property
@@ -175,6 +185,28 @@ class Factor(SLSDoc):
             .all()
         )
         return all(x.supply_locations.is_all_arrival for x in factoritems)
+
+    @property
+    def is_all_supplied2(self):
+        wh_supplied = Coalesce(
+            Sum(
+                'factoritemsupplylocation__quantity',
+                filter=Q(
+                    factoritemsupplylocation__wh_reserve__isnull=False,
+                    factoritemsupplylocation__is_deleted=False,
+                ),
+            ),
+            Value(0.0),
+            output_field=FloatField(),
+        )
+
+        x = not (
+            self.factoritem_set
+            .annotate(shortage=F('quantity') - wh_supplied)
+            .filter(shortage__gt=0.0001)
+            .exists()
+        )
+        return x
 
 
 class FactorItem(BaseModel):
@@ -261,7 +293,8 @@ class FactorItem(BaseModel):
         try:
             if self.factor.is_official:
                 x = (self.net_price - sum(self.discount_tuple)) * (settings.TAX_VALUE / 100)
-                if self.factor.q.currency_ref.title_en == 'Rial':
+                currency_title = getattr(self.factor, 'q.currency_ref.title_en', None) or self.factor.currency_ref.title_en
+                if currency_title == 'Rial':
                     return int(x)
                 return x
             else:
@@ -320,25 +353,47 @@ class FactorItem(BaseModel):
         return self.supply_location and not str(self.supply_location).startswith('wh__')
 
     def get_sepidar_stock_code_from_selected_supply_location(self):
+        # TODO: بعد از تمام شدن فاکتور های قدیمی فقط تابع امن را فراخوانی کن
         try:
             wh_code = self.supply_locations.sepidar_wh_code
             if not wh_code:
                 sp = self.supply_location.split('__')
                 wh_code = sp[1] if len(sp) >= 2 else 0
         except Exception as e:
-            sp = self.supply_location.split('__')
-            wh_code = sp[1] if len(sp) >= 2 else 0
+            if self.supply_location:
+                sp = self.supply_location.split('__')
+                wh_code = sp[1] if len(sp) >= 2 else 0
+            else:
+                return self.get_sepidar_stock_code_from_selected_supply_location_safe
         return wh_code
 
-        """
-        قبلا:
-        اول رشته چک میشد بعد کد انبار سفارش
-        """
-        # sp = self.supply_location.split('__')
-        # wh_code = sp[1] if len(sp) >= 2 else 0
-        # if not wh_code:
-        #     return self.supply_locations.sepidar_wh_code
-        # return wh_code
+    @property
+    def get_sepidar_stock_code_from_selected_supply_location_safe(self):
+        s = set()
+        for sl in self.factoritemsupplylocation_set.all():
+            if sl.wh_reserve:
+                s.add(sl.wh_reserve.sepidar_wh_code)
+            else:
+                raise ValueError('ارسال به سپیدار انجام نشد. برخی از ردیف ها در انبار رسید نشده اند')
+
+        if None in s:
+            raise ValueError('ارسال به سپیدار انجام نشد. برخی از ردیف ها در انبار رسید نشده اند')
+
+        if len(s) > 1:
+            raise ValueError('ارسال به سپیدار انجام نشد. برخی از ردیف ها بیش از یک محل تامین دارند.')
+
+        if len(s) == 0:
+            raise ValueError('ارسال به سپیدار انجام نشد. برای برخی از ردیف ها محل تامین مشخص نشده است')
+
+        if len(s) == 1:
+            x = s.pop()
+            return x
+
+        raise ValueError('ارسال به سپیدار انجام نشد. خطا در شناسایی انبار')
+
+
+
+
 
     def quantity_for_wh_order(self):
         """calculate quantity base on min(fi.quantity, sepidar_wh_quantity, reserve_quantity)"""

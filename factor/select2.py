@@ -28,7 +28,10 @@ SELECT2_SOURCES = {
                          "default_order": ["-id"]},
     "q":                {"qs": Quotation.objects.all(),
                          "search": ["id", "customer_party_id__title__icontains", ],
-                         "default_order": ["-id"]}
+                         "default_order": ["-id"],
+                         # "filters": {"creator_user": "creator_user_id"},  # نام پارامتر GET -> lookup در ORM
+                         # "require_filters": ["creator_user"],
+                         }
         }
 
 

@@ -600,7 +600,7 @@ where FiscalYearRef={curr_year} and ItemRef ={self.sepidar_id} order by s.code""
         qry = """
         select top 5
                 docs.Date
-                ,docs.NetPriceInBaseCurrency/docs.Quantity as fee
+                ,docs.PriceInBaseCurrency/docs.Quantity as fee
                 ,docs.Quantity
                 , Convert(nvarchar(20),st.Title) sales_type
         from

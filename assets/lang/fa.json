@@ -767,5 +767,15 @@
     "arrived_quantity": "تعداد رسیده",
     "ruined_quantity": "تعداد معیوب",
     "is_kasri": "کسری انبار",
-    "currency_amount":"نرخ ارز"
+    "currency_amount":"نرخ ارز",
+    "q": "پیش فاکتور",
+    "is_reserve": "رزرو",
+    "request_cancel": "درخواست کنسلی",
+    "to_be_collected": "جمع آوری شود",
+    "sepidar_number": "شماره سپیدار",
+    "sepidar_inventory_delivery_number": "حواله خروج",
+    "sepidar_voucher_number": "سند حسابداری",
+    "require_official_factor_with_delivery": "الزام به ارسال فاکتور رسمی همراه بار",
+    "need_factor_document": "نیاز به اسناد فاکتور",
+    "checker": "کارشناس مالی"
 }

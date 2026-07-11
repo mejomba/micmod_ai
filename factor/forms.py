@@ -93,9 +93,10 @@ class FactorModelForm(CustomBaseModelForm):
             )
             self.fields['address'].queryset = qs  # CustomerAddress.objects.filter(customer=self.instance.customer_party_id)
         elif self.instance.pk:
+            customer = getattr(self.instance, 'customer_party_id', None) or self.instance.q.customer_party_id
             qs = (
                 CustomerAddress.objects
-                .filter(customer=self.instance.q.customer_party_id)
+                .filter(customer=customer)
                 .annotate(last_used=Max('factor__created_date'))
                 .order_by('-last_used')
             )
@@ -241,7 +242,7 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("widget", MultipleFileInput(attrs={"class": "file-input"}))
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"class": "file-input", "multiple": "on"}))
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
@@ -273,7 +274,10 @@ class FormMX(forms.ModelForm):
         if not self.file_model or not self.file_groups_2:
             return
         existing = self._load_existing_files()  # {i: [File, ...]}
-        only = set(self.only_show)
+        only = []
+        for o in self.only_show:
+            if o not in only:
+                only.append(o)
         for i in range(1, self.file_groups_2 + 1):
             name = f"{self.file_field_prefix}{i}"
             self.file_existing[name] = existing.get(i, [])
@@ -302,7 +306,10 @@ class FormMX(forms.ModelForm):
         """فقط گروه‌های فایلِ ادیتبل (only_showها در iter_only_show می‌آیند)."""
         if not self.file_model or not self.file_groups_2:
             return []
-        only = set(self.only_show)
+        only = []
+        for o in self.only_show:
+            if o not in only:
+                only.append(o)
         out = []
         for i in range(1, self.file_groups_2 + 1):
             name = f"{self.file_field_prefix}{i}"
@@ -335,6 +342,10 @@ class FormMX(forms.ModelForm):
             cust = self._current_customer_id()
             if cust:
                 return {"customer": cust.sepidar_party_id}
+        if name == 'q':
+            q = self._current_user_id()
+            if q:
+                return {'creator_user': q.pk}
         return {}
 
     def _current_customer_id(self):
@@ -342,6 +353,16 @@ class FormMX(forms.ModelForm):
         if not inst or inst.pk is None:
             return None
         return getattr(inst, "customer_party_id", None)  # یا inst.q.customer_id و ...
+
+    def _current_user_id(self):
+        try:
+            user = self.initial.get('constraint').get('request').user
+            return user
+        except Exception as e:
+            inst = self.instance
+            if not inst or inst.pk is None:
+                return None
+            return getattr(inst, "creator_user", None)  # یا inst.q.customer_id و ...
 
     def _apply_select2(self):
         for name, cfg in self.select2_fields.items():
@@ -398,7 +419,10 @@ class FormMX(forms.ModelForm):
     def iter_editable(self):
         """فقط فیلدهای قابل ویرایش (غیرهیدن) به ترتیب field_layout."""
         l = []
-        only = set(self.only_show)
+        only = []
+        for o in self.only_show:
+            if o not in only:
+                only.append(o)
         names = self.field_layout or list(self.fields.keys())
         for name in names:
             if name in only:
@@ -463,21 +487,21 @@ FACTOR_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
                 "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
-                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
-                "currency_amount", "q",
+                "to_be_collected", "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount", "q", "force_factor", "is_reserve",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
             "show": ["delivery_time", "created_date", "need_financial_approval", "wh_user", "checker",
-                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4",]
         },
         1: {
             "edit": [
                 "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
                 "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
-                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
-                "currency_amount",
+                "to_be_collected", "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount", "force_factor"
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
@@ -488,43 +512,74 @@ FACTOR_FIELDS_BY_PERMISSION = {
         2: {
             "edit": [
                 "payment_method", "sale_type", "address", "delivery_time", "description",
-                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
-                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                "deliver_type", "self_discount", "is_official", "official_value", "currency_ref",
+                "request_cancel", "require_official_factor_with_delivery", "need_factor_document",
                 "currency_amount",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
             "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
-                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "deliver_method", ]
         },
         3: {
             "edit": [
                 "payment_method", "sale_type", "address", "delivery_time", "description",
-                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
-                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "deliver_type", "self_discount", "is_official", "official_value", "currency_ref",
+                "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
                 "currency_amount",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
             "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
-                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "deliver_method", ]
         },
         4: {
             "edit": [
                 "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
-                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
-                "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "deliver_type", "self_discount", "is_official", "official_value", "currency_ref",
+                "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
                 "currency_amount",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
             "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
-                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4"]
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "deliver_method"]
         },
         5: {
+            "edit": [
+                "request_cancel",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price", "q",
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        6: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price", "q"
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        7: {
             "edit": [
 
             ],
@@ -535,7 +590,117 @@ FACTOR_FIELDS_BY_PERMISSION = {
                      "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
                      "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
                      "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
-                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4"]
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "force_factor", "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+    },
+    "factor.cp_factor_sales_admin": {
+        0: {
+            "edit": [
+                "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "to_be_collected", "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount", "q", "force_factor", "is_reserve",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["delivery_time", "created_date", "need_financial_approval", "wh_user", "checker",
+                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4",]
+        },
+        1: {
+            "edit": [
+                "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "to_be_collected", "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount", "force_factor",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["delivery_time", "q", "created_date", "need_financial_approval", "wh_user", "checker",
+                     "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q",]
+        },
+        2: {
+            "edit": [
+                "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "request_cancel", "require_official_factor_with_delivery", "need_factor_document",
+                "currency_amount",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected", ]
+        },
+        3: {
+            "edit": [
+                "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+               "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected", ]
+        },
+        4: {
+            "edit": [
+                "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
+                "currency_amount",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "file_2", "file_3", "file_4", "q", "to_be_collected", ]
+        },
+        5: {
+            "edit": [
+                "request_cancel",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price", "q",
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        6: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price", "q"
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        7: {
+            "edit": [
+
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                     "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
+                     "to_be_collected", "cancel", "require_official_factor_with_delivery", "need_factor_document",
+                     "file_2", "currency_amount","delivery_time", "q", "created_date", "need_financial_approval",
+                     "wh_user", "checker", "accounting_confirm", "file_1", "file_3", "file_4", "q", "to_be_collected",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
         },
     },
     "factor.cp_factor_wh": {
@@ -547,7 +712,7 @@ FACTOR_FIELDS_BY_PERMISSION = {
                 "addition", "tax", "duty", "total_price",
             ],
             "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval",
-                     "checker", "accounting_confirm", "file_1"]
+                     "checker", "accounting_confirm", "wh_user", "file_1", "file_2", "file_3", "file_4"]
         },
         2: {
             "edit": [
@@ -587,16 +752,18 @@ FACTOR_FIELDS_BY_PERMISSION = {
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
-            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
         },
         6: {
             "edit": [
-
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4",
             ],
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
-            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
             },
         7: {
             "edit": [
@@ -605,10 +772,87 @@ FACTOR_FIELDS_BY_PERMISSION = {
             "hidden": [
                  "addition", "tax", "duty", "total_price",
             ],
-            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
         },
     },
-    "factor.cp_factor_accounting": {},
+    "factor.cp_factor_accounting": {
+        2: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description"]
+        },
+        3: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description"]
+        },
+        4: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description"]
+        },
+        5: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        6: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+            },
+        7: {
+            "edit": [
+                "file_1", "file_4", "checker", "official_factor_for_this_factor", "accounting_confirm"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "q", "created_date", "self_discount",
+                     "file_2", "file_3", "wh_user", "deliver_method", "sale_type",
+                     "is_official", "official_value", "payment_method", "currency_ref", "currency_amount",
+                     "creator_user", "description",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+    },
     "factor.cp_factor_admin": {},
     "factor.cp_factor_superuser": {},
 }
@@ -625,7 +869,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "qi", "factor"
             ],
             "show": [
-                "quantity"
+
             ]
         },
         1: {
@@ -641,15 +885,71 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         },
         2: {
             "edit": [
-                "price", "discount_per_item", "quantity",
+                "price", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
             ],
             "show": [
-
+                "quantity",
             ]
         },
+        3: {
+            "edit": [
+                "price", "discount_per_item",
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+                "quantity",
+            ]
+        },
+        4: {
+            "edit": [
+                "price", "discount_per_item",
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+                "quantity",
+            ]
+        },
+        5: {
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+                "price", "discount_per_item", "quantity",
+            ]
+        },
+        6: {
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+                "price", "discount_per_item", "quantity",
+            ]
+        },
+        7: {
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
+            ],
+            "show": [
+                "price", "discount_per_item", "quantity",
+            ]
+        },
+
     },
     "factor.cp_factor_item_sales_admin": {
         0: {
@@ -672,55 +972,125 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "show": ["goods_code", "part_number_show", "quantity",]
         },
         2: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+        },
+        3: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+        },
+        4: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+            },
+        5: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+            },
+        6: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+            },
+        7: {
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity",]
+        },
+    },
+    "factor.cp_factor_item_accounting": {
+        1: {
             "edit": [
 
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity",]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
         },
-        3: {
+        2: {
             "edit": [
-                "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
+
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-            ]
+            ],
+            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item",]
+        },
+        3: {
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+            ],
+            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
         },
         4: {
-                    "edit": [
-                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
-                    ],
-                    "hidden": [
-                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-                    ]
-                },
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+            ],
+            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            },
         5: {
-                    "edit": [
-                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
-                    ],
-                    "hidden": [
-                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-                    ]
-                },
+            "edit": [
+
+            ],
+            "hidden": [
+                "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+            ],
+            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            },
         6: {
-                    "edit": [
-                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
-                    ],
-                    "hidden": [
-                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-                    ]
-                },
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            },
         7: {
-                    "edit": [
-                        "goods_code","is_deleted", "part_number_show", "quantity", "price", "discount_per_item",
-                    ],
-                    "hidden": [
-                        "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
-                    ]
-                },
-    }
+                "edit": [
+
+                ],
+                "hidden": [
+                    "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
+                ],
+                "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            },
+        }
     }
 
 
@@ -739,15 +1109,15 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
     field_layout = [
         "q", "customer_party_id", "address", "delivery_time",  "sepidar_number", "sepidar_id", "sepidar_inventory_delivery_number",
         "sepidar_inventory_delivery_id", "sepidar_voucher_number", "sepidar_voucher_id", "fiscalyearref", "factor_self",
-        "self_discount", "official_value", "wh_user", "deliver_type", "sale_type", "need_financial_approval",
-        "collecting_start_time", "collecting_end_time",
+        "self_discount", "official_value", "wh_user", "deliver_type", "payment_method", "sale_type",
+        "need_financial_approval","accounting_confirm", "collecting_start_time", "collecting_end_time",
         "official_factor_send_with_this_factor", "official_factor_for_this_factor",
-        "checker", "packing_json", "customer_request", "currency_ref",
-        "deliver_method", "accounting_confirm", "description",
-        "rate", "total_price", "tax", "final_price", "addition", "tax", "duty", "currency_amount"
+        "checker", "packing_json", "customer_request", "currency_ref", "deliver_method",  "description",
+        # "rate",
+        "total_price", "tax", "final_price", "addition", "tax", "duty", "currency_amount",
         # checkbox section
-        "is_official", "cancel", "deliver_to_customer", "sales_admin_confirm", "final_check", "force_factor",
-        "require_official_factor_with_delivery", "to_be_collected", "need_factor_document",
+        "is_official", "request_cancel", "cancel", "deliver_to_customer", "sales_admin_confirm", "final_check", "force_factor",
+        "require_official_factor_with_delivery", "to_be_collected", "need_factor_document", "is_reserve",
         # file section
         "file_1",  # اسناد مالی
         "file_2",  # اسناد انبار
@@ -787,7 +1157,9 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         self._add_file_fields()
 
         self._apply_select2()
-        self.make_optional(['checker'])
+        self.make_optional(['checker', 'q'])
+        self.make_required(['customer_party_id'])
+
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                                         widget=x(
                                                                             attrs={
@@ -796,11 +1168,13 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
                                                                         required=False
                                                                         )
 
-        # self.fields['q'].widget.attrs['data-ajax-url'] = 'aaa'
         self.fields['q'].widget.attrs['data-on-select'] = 'prefactorSelected'
         self.fields['q'].widget.attrs['data-detail-url'] = reverse_lazy('factor:prefactor-json', args=[0])
 
         # ========= remove field
+        if self.instance.pk and 'q' in allowed_fields:
+            allowed_fields.remove('q')
+            self.only_show.append('q')
         if allowed_fields is not None or allowed_hidden is not None:
             keep = set(allowed_fields or []) | set(allowed_hidden or [])
             for name in list(self.fields):
@@ -840,6 +1214,23 @@ class FactorItemForm(CustomBaseModelForm):
         super().__init__(*args, **kwargs)
 
         """prepare fields default value and widget customization before permission section"""
+        # for name, field in self.fields.items():
+        #     # if not isinstance(field, forms.ModelChoiceField):
+        #     #     continue
+        #     if self.instance and self.instance.pk:
+        #         continue
+        #     if name != 'goods_code':
+        #         continue
+        #     # مقدار مؤثر: data (POST) → initial → instance
+        #     value = self[name].value()
+        #     if not value:
+        #         continue
+        #     pks = value if isinstance(value, (list, tuple)) else [value]
+        #     model = field.queryset.model
+        #     selected = model._default_manager.filter(pk__in=pks)
+        #     if selected.exists():
+        #         # union: گزینه‌ی انتخاب‌شده هم رندر می‌شود، هم برای اعتبارسنجی معتبر می‌ماند
+        #         field.queryset = (field.queryset | selected).distinct()
 
         # self.fields['quantity'].widget.attrs['class'] = self.fields['quantity'].widget.attrs.get('class', '')
         self.fields['price'].widget.attrs['onkeyup'] = "factor_calculate_price(this)"
@@ -854,6 +1245,9 @@ class FactorItemForm(CustomBaseModelForm):
 
         for f in self.fields:
             self.fields[f].widget.attrs['class'] = self.fields[f].widget.attrs.get('class', '') + " p-5px"
+
+        if not self.instance.pk:
+            self.fields['discount_per_item'].initial = 0
 
         """permission section: del and hiddel fields"""
         if allowed_fields is not None:

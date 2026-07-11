@@ -1,6 +1,6 @@
 {% load more_tags %}
 
-<div class="sortable-item " id="invoice-rows">
+<div class="sortable-item factor_item_self" id="invoice-rows">
             <!-- update factor item -->
 
             <div class="hidden-section">
@@ -10,14 +10,14 @@
             </div>
 
             <!--factor item information and input (update)-->
-            <div class="row align-items-center mb-1 bg-white border rounded shadow-sm " id="id_factor_item" style="height: fit-content; min-height: 80px; position: relative">
+            <div class="row align-items-center mb-1 bg-white border rounded shadow-sm {% if not form_s_item.instance.pk %} bg-light-warning {% endif %}" id="id_factor_item" style="height: fit-content; min-height: 80px; position: relative">
 
             <!--goods_code (update)-->
                 <div class="col-1">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="bold font-size-11 row-number"></span>
                         {% if form_s_item.goods_code %}
-                        <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku }}" >
+                        <input type="text" name="{{ form_s_item.prefix }}-goods_code" class="LTR-RTL w-80 rounded text-center font-size-11 goods_code" required value="{{ form_s_item.instance.goods_code.sku|default_if_falsy:form_s_item.goods_code.value|default_if_falsy:'None' }}" >
                             {% else %}
                             <span class="w-80">{{ form_s_item.instance.goods_code }}</span>
                         {% endif %}
@@ -43,7 +43,7 @@
             <!--quantity (update)-->
                 <div class="col-1">
                     {% if form_s_item.quantity.hidden or not form_s_item.quantity %}
-                        <span>{{ form_s_item.instance.quantity|floatformat:'-4g' }}</span>
+                        <span name="{{ form_s_item.prefix }}-quantity">{{ form_s_item.instance.quantity|floatformat:'-4g' }}</span>
                     {% else %}
                         <span>{{ form_s_item.quantity }}</span>
                     {% endif %}
@@ -53,7 +53,7 @@
             <!--price (update)-->
                 <div class="col-1">
                     {% if form_s_item.price.hidden or not form_s_item.price %}
-                        <span>{{ form_s_item.instance.price|floatformat:'-4g' }}</span>
+                        <span name="-price">{{ form_s_item.instance.price|floatformat:'-4g' }}</span>
                     {% else %}
                         <span>{{ form_s_item.price }}</span>
                     {% endif %}
@@ -63,7 +63,7 @@
             <!--discount_per_item (update)-->
                 <div class="col-1">
                     {% if form_s_item.discount_per_item.hidden or not form_s_item.discount_per_item %}
-                        <span>{{ form_s_item.instance.discount_per_item|floatformat:'-4g' }}</span>
+                        <span name="-discount_per_item">{{ form_s_item.instance.discount_per_item|floatformat:'-4g' }}</span>
                     {% else %}
                         <span>{{ form_s_item.discount_per_item }}</span>
                     {% endif %}
@@ -104,9 +104,20 @@
 {#                        end clude#}
 
 
-
                         </div>
                         <div>
+
+                        <div class="mb-1">
+                            {% if request.user.base_group == 'accounting' %}
+                                {% get_comment_user_list form_s_item request.user obj_rel=form_s_item.instance.qi comment_type='factor_accounting' size=25 %}
+                            {% elif request.user.base_group == 'sales' %}
+                                {% get_comment_user_list form_s_item request.user obj_rel=form_s_item.instance.qi size=25 %}
+                            {% else %}
+                                {% get_comment_user_list form_s_item request.user obj_rel=form_s_item.instance.qi size=25 %}
+                            {% endif %}
+                            <div class="position-absolute d-none" id="comment-form-group__{{ form_s_item.instance.pk }}"></div>
+                        </div>
+
                             <a class="mx-4 tooltip_ cursor-pointer"
                             data-bs-toggle="modal"
                             data-bs-target="#id_kt_empty_modal_lg"
@@ -126,7 +137,7 @@
                             <!-- چک‌باکس واقعی DELETE که جنگو می‌سازد، مخفی از دید کاربر -->
                             <span class="d-none">{{ form_s_item.DELETE }}</span>
 
-                            {% if flow_state_index < 1 %}
+                            {% if flow_state_index < 2 %}
                                 <span href="#" class="btn-delete-row me-2 text-danger cursor-pointer" style="position: relative">
                                     <span class="f-icon">
                                         <i class="ki-duotone ki-trash fs-2 text-danger">

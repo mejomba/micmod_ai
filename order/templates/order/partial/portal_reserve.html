@@ -24,7 +24,7 @@
             <th>کارشناس</th>
             <th>تعداد</th>
             <th>فاکتور</th>
-            <th>سطر</th>
+{#            <th>سطر</th>#}
         </tr>
     </thead>
     <tbody>
@@ -33,7 +33,7 @@
             <td>{{ d.creator_user }}</td>
             <td>{{ d.quantity|floatformat:'-2g' }}</td>
             <td>{{ d.factor }}</td>
-            <td>{{ d.row_index }}</td>
+{#            <td>{{ d.row_index }}</td>#}
         </tr>
     {% endfor %}
     </tbody>
