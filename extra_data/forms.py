@@ -56,7 +56,7 @@ class CustomerForm(CustomBaseModelForm):
                   'introduction_method', 'introducer', 'marketer', 'description', 'lat', 'long', 'meet_in_person',
                   'z_no', 'z_cheque_ns', 'z_cheque_s', 'z_safte', 'z_max_credit_rafi', 'cheque_to_delivery',
                   'extra_credit', 'i_type1_target', 'customer_sale_type', 'official_name', 'customer_grade', 'accounting_user',
-                  'risk_status', 'shop_id']
+                  'risk_status', 'shop_id', 'pcb', 'assembly', 'item']
 
     def __init__(self, *args, **kwargs):
         access = None

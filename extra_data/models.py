@@ -991,6 +991,10 @@ class Customer(AbsBaseModel):
     risk_status = models.CharField(max_length=32, verbose_name='وضعیت ریسک', choices=RISK_STATUS_CHOICE, null=True, blank=True)
     shop_id = models.BigIntegerField(_('shop_id'), null=True, blank=True, unique=True)
 
+    pcb = models.BooleanField(_('pcb'), default=False)
+    assembly = models.BooleanField(_('مونتاژ'), default=False)
+    item = models.BooleanField(_('item'), default=False)
+
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
