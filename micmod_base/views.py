@@ -186,6 +186,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         return super().get(request, *args, **kwargs)
 
     def check_last_update(self):
+        return True
         qis_last_update = (json.loads(self.request.POST.get('qis_last_update_datetime', "{}"))
                            or self.request.GET.get('qis_last_update_datetime'))
         q_last_update = (self.request.POST.get('last_update_datetime')
