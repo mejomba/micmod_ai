@@ -85,6 +85,7 @@
 
         $('#select2_sku_c').on("select2:select", function (e) {
             const data = e.params.data;
+            console.log('dataa0', data, $(document).find("#id_party_code_c"))
             $(document).find("#id_sku_c").val(data.id)
             refresh_data(event)
         })
@@ -103,8 +104,59 @@
         })
     }
 
+    function select2_party_code_c(){
+        $('#select2_party_code_c').select2({
+            ajax: {
+                url: '/sepidar/customers_list',
+                dataType: "json",
+                type: "GET",
+                data: function (data) {
+                    return {q: data.term, page: data.page}
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.items,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            placeholder: {
+                text: "مشتری"
+            },
+            allowClear: false,
+            templateResult: formatRepoParty,
+            templateSelection: formatRepoSelection
+        });
+
+        $('#select2_party_code_c').on("select2:select", function (e) {
+            const data = e.params.data;
+            console.log('dataa0', data, $(document).find("#id_party_code_c"))
+            $(document).find("#id_party_code_c").val(data.id)
+            refresh_data(event)
+        })
+
+        $('#select2_party_code_c').on("select2:open", function (e){
+            document.querySelector('.select2-search__field')?.focus();
+            const s2_input = document.querySelector('.select2-search__field')
+            const prev_value = document.querySelector("#id_party_code_c_prev_value")
+            s2_input.addEventListener('input', function (e){
+                if(prev_value){
+                    prev_value.value = s2_input.value
+                }
+            })
+            {#const sku_c = document.querySelector('#id_sku_c')#}
+            s2_input.value = prev_value.value
+        })
+    }
+
     window.addEventListener("DOMContentLoaded", function (){
         select2_sku_c()
+        select2_party_code_c()
     })
 
 
@@ -121,6 +173,21 @@
 <div class="col-3">
 <span>${numberWithCommas(repo.stock_qty) || 0}</span> <br>
 <span>${numberWithCommas(repo.stock_qty_res) || 0}</span>
+</div>
+</div>
+`);
+        return ($container)
+    }
+
+    function formatRepoParty(repo) {
+        if (repo.loading) {
+            return repo.text;
+        }
+        var $container = $(`
+        <div class='row'>
+<div class="col-9">
+<span class="bg-light-success rounded px-1 me-3">${repo.id}</span>
+<span>${repo.text}</span>
 </div>
 </div>
 `);
