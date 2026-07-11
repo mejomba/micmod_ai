@@ -184,7 +184,7 @@
     "expiration_date": "تاریخ انقضا",
     "customer_grade": "رتبه مشتری",
     "delivery_time": "مهلت تحویل",
-    "payment_method": "روش پرداخت",
+    "payment_method": "نوع قیمت‌دهی به مشتری",
     "market_grade": "گرید بازار",
     "special": "ویژه",
     "2-3 week": "2 تا 3 هفته",
@@ -767,5 +767,6 @@
     "arrived_quantity": "تعداد رسیده",
     "ruined_quantity": "تعداد معیوب",
     "is_kasri": "کسری انبار",
-    "currency_amount":"نرخ ارز"
+    "currency_amount":"نرخ ارز",
+    "sale_type": "مدل پرداخت مشتری"
 }
