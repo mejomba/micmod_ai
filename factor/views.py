@@ -283,9 +283,6 @@ class FactorView(LoginRequiredMixin, BaseView):
             }
             self.save_flow(self.request, **wf_data)
 
-        if 'send_factor_to_sepidar' in self.request.POST:
-            self.send_factor_to_sepidar()
-
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
@@ -294,6 +291,10 @@ class FactorView(LoginRequiredMixin, BaseView):
         if obj_before_save and obj_before_save.is_official and self.state_index > 1:
             self.object.is_official = True
         self.object.save()
+
+        if 'send_factor_to_sepidar' in self.request.POST:
+            self.send_factor_to_sepidar()
+
         return res
 
     @timer

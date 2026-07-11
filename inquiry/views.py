@@ -608,7 +608,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
     initial_order = [["price_update_date", "des"], ]
-    length_menu = [[15, 25, 50, 100], [15, 25, 50, 100]]
+    length_menu = [[15, 25, 50, 100, 1000], [15, 25, 50, 100, 1000]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 

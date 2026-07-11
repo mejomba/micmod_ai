@@ -56,6 +56,11 @@
             <input type="submit" class="btn btn-bordered btn-outline-success me-1 px-4" name="submit_duplicate" value="ذخیره" id="submit_save"/>
         {% endif %}
     {% else %}
+        {% if duplicate %}
+            <button type="submit" name="duplicate" class="" style="border: none; background-color: inherit">
+            <i class="ki-duotone ki-copy fs-3qx"></i>
+            </button>
+        {% endif %}
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
             <input type="button" class="btn btn-primary me-1" disabled name="submit" value="ثبت نهایی"/>
         {% elif not finish and has_flow %}

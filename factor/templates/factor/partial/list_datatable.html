@@ -175,46 +175,46 @@
     </script>
 {#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
 
-<script>
-    function fetchForceFactor() {
-        $.ajax({
-            url: "/factor/ajax/show_force_factor/",
-            method: "GET",
-            success: function (data) {
-            const box = $("#forceFactorBox");
-            debugger
-
-            if (!data.res || data.count === 0) {
-                box.html("فاکتور فوری وجود ندارد");
-                return;
-            }
-
-            const links = data.res.map(id =>
-                `<a href="/factor/view/${id}" class="mx-1 text-success bold cursor-pointer hover-link">${id}</a>`
-            ).join("، ");
-
-            box.html(`
-                 <span class="text-success bold">فاکتورهای فوری:</span>
-                 <span class="">${links}</span>
-
-                <br>
-                <span class="text-success bold">تعداد: </span>
-                <span class="text-success bold">${data.count} </span>
-
-`);
-        },
-        error: function () {
-            console.log("Error loading force factors");
-        }
-    });
-}
-
-
-    fetchForceFactor();
-
-    // اجرا هر 2 دقیقه
-    setInterval(fetchForceFactor, 120000);
-</script>
+{#<script>#}
+{#    function fetchForceFactor() {#}
+{#        $.ajax({#}
+{#            url: "/factor/ajax/show_force_factor/",#}
+{#            method: "GET",#}
+{#            success: function (data) {#}
+{#            const box = $("#forceFactorBox");#}
+{#            debugger#}
+{##}
+{#            if (!data.res || data.count === 0) {#}
+{#                box.html("فاکتور فوری وجود ندارد");#}
+{#                return;#}
+{#            }#}
+{##}
+{#            const links = data.res.map(id =>#}
+{#                `<a href="/factor/view/${id}" class="mx-1 text-success bold cursor-pointer hover-link">${id}</a>`#}
+{#            ).join("، ");#}
+{##}
+{#            box.html(`#}
+{#                 <span class="text-success bold">فاکتورهای فوری:</span>#}
+{#                 <span class="">${links}</span>#}
+{##}
+{#                <br>#}
+{#                <span class="text-success bold">تعداد: </span>#}
+{#                <span class="text-success bold">${data.count} </span>#}
+{##}
+{#`);#}
+{#        },#}
+{#        error: function () {#}
+{#            console.log("Error loading force factors");#}
+{#        }#}
+{#    });#}
+//}
+{##}
+{##}
+{#    fetchForceFactor();#}
+{##}
+{#    // اجرا هر 2 دقیقه#}
+{#    setInterval(fetchForceFactor, 120000);#}
+{#</script>#}
 
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
