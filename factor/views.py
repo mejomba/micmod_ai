@@ -2,6 +2,7 @@ import datetime
 import time
 from decimal import Decimal
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Coalesce, Cast
 from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
@@ -35,6 +36,7 @@ from inquiry.models import CurrencyAmount
 from micmod_base.serializers import CustomerRequestSerializer
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
+from tools.const import WH_FACTOR_STATES
 from translator import get_text as _
 
 from core.views import BaseView, Base
@@ -48,6 +50,8 @@ from datetime import datetime
 from django.db.models import Q, Sum, Case, When, F, DecimalField, ExpressionWrapper, OuterRef, Subquery
 from decimal import Decimal
 from django.db.models.functions import Coalesce, Cast
+
+from workflow.models import WorkFlow
 
 
 class FactorView(LoginRequiredMixin, BaseView):
@@ -279,9 +283,6 @@ class FactorView(LoginRequiredMixin, BaseView):
             }
             self.save_flow(self.request, **wf_data)
 
-        if 'send_factor_to_sepidar' in self.request.POST:
-            self.send_factor_to_sepidar()
-
         # self.reconnect_history(Factor)
         # self.reconnect_history(FactorItem)
         self.object.need_financial_approval = True
@@ -290,6 +291,10 @@ class FactorView(LoginRequiredMixin, BaseView):
         if obj_before_save and obj_before_save.is_official and self.state_index > 1:
             self.object.is_official = True
         self.object.save()
+
+        if 'send_factor_to_sepidar' in self.request.POST:
+            self.send_factor_to_sepidar()
+
         return res
 
     @timer
@@ -593,8 +598,17 @@ class FactorListDatatable(AjaxDatatableView):
                 qs = self.model.objects.filter(created_date__date=timezone.now()).distinct()
             elif 'sales_user' in user_groups_name:
                 qs = self.model.objects.filter(creator_user=user, created_date__date=timezone.now()).distinct()
+                return qs
+        elif q == 'not_delivered_items':
+            qs = self.model.objects.filter(is_official=True, last_work_flow__current_state_name='چک نهایی',
+                                           official_factor_for_this_factor__isnull=True)
+        elif q == 'without_accounting_confirm':
+            qs = self.model.objects.filter(accounting_confirm=False, last_work_flow__current_state_name__in=WH_FACTOR_STATES)
+        elif q == 'not_delivered':
+            qs = self.model.objects.filter(accounting_confirm=True, last_work_flow__current_state_name__in=[
+                                            "تخصیص کارشناس انبار", "جمع‌‌آوری", "چک نهایی", "ارسال یا تحویل",
+                                        ])
 
-            return qs
         return qs
 
     def customize_row(self, row, obj):
@@ -691,7 +705,7 @@ class FactorListDatatable(AjaxDatatableView):
              'lookup_field': '__icontains', 'className': 'border'},
             {'name': 'q', 'visible': True, 'title': _('quotation'), 'lookup_field': '__pk__icontains',
              'searchable': True, 'className': 'border'},
-            {'name': 'q__payment_method', 'visible': True, 'title': _('روش پرداخت'), 'lookup_field': '__icontains',
+            {'name': 'q__payment_method', 'visible': True, 'title': _('payment_method'), 'lookup_field': '__icontains',
              'className': 'border'},
             {'name': 'sale_type', 'title': _('sale_type'), 'visible': True, 'searchable': False, 'orderable': True,
              'lookup_field': '__title__icontains', 'className': 'border'},

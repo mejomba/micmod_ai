@@ -37,7 +37,7 @@ from .forms import PriceInquiryFileCreateForm, PriceInquiryResultCreateForm, Sal
     InquiryResultForm, PriceInquiryResult2CreateForm, SupplierModelForm, CurrencyAmountForm
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, AllowedInquiry, \
     CurrencyAmount
-from extra_data.models import Item, PriceSettings, ItemWeight, ItemStockSummary
+from extra_data.models import Item, PriceSettings, ItemWeight, ItemStockSummary, Customer
 from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
 
@@ -608,7 +608,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
     model = PriceInquiryResult
     title = 'inquiry_list'
     initial_order = [["price_update_date", "des"], ]
-    length_menu = [[15, 25, 50, 100], [15, 25, 50, 100]]
+    length_menu = [[15, 25, 50, 100, 1000], [15, 25, 50, 100, 1000]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
 
@@ -747,7 +747,7 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
     dict_ = request.GET or request.POST
     prev_value = dict_.get('prev_value')
     sku = dict_.get('sku_c')
-    party_code = dict_.get('party_code')
+    party_code = dict_.get('party_code_c')
     quantity = dict_.get('quantity') or 1
     price_setting = dict_.get('price_setting')
     currency = dict_.get('currency')
@@ -791,11 +791,12 @@ def inquiry_result_sale_ajax(request, *args, **kwargs):
 
     price_setting_obj = PriceSettings.objects.filter(pk=price_setting).first() if price_setting else None
     final_price_settings = price_setting_obj or price.price_settings if price else PriceSettings.setting()  # use default for price !?
+    customer_name = Customer.objects.filter(sepidar_dl_code=party_code).first().name if party_code else ''
 
     form = SalesPriceInqueryLogForm(initial={'sku': sku, 'sku_c': sku, 'currency': currency or 1,
                                              'price_setting': price_setting_obj,
-                                             'quantity': quantity or 1, 'party_code': party_code,
-                                             'payment_method': payment_method, 'grade': grade,
+                                             'quantity': quantity or 1, 'party_code': party_code, 'party_code_c': party_code,
+                                             'customer_name': customer_name,'payment_method': payment_method, 'grade': grade,
                                              'request': request, 'part_number': item_sku.part_number if item_sku else "",
                                              'trade_price': (price.pk, price.inquiry_type.title) if price else '',
                                              'bazar_price': (bazar_price.pk, bazar_price.inquiry_type.title) if bazar_price else '',

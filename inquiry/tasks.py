@@ -2,10 +2,13 @@ import os
 import datetime, time
 
 from celery import shared_task
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 
 from extra_data.models import Item, ItemPrice
+from factor.models import Factor
 from reminder.models import Reminder
 from reminder.utils import calculate_next_time
 from sepidar.models import Item as SepItem
@@ -14,6 +17,9 @@ from tlg.scripts.sms import send_sms
 from tools.google_sheet import GSheet
 
 from django.conf import settings
+
+from workflow.models import WorkFlow
+
 
 def get_sepidar_quantity():
     items = SepItem.objects.raw("""
@@ -354,3 +360,46 @@ def send_reminder_notification2():
         user_list = [user.phone for user in reminder.user.all()]
         message_format = f'{reminder.title}:\n {reminder.short_text}\n {reminder.long_text}'
         send_sms('', user_list, message_format)
+
+
+@shared_task
+def over_seven_days_factor():
+    from datetime import timedelta
+
+    ct = ContentType.objects.get_for_model(Factor, for_concrete_model=False)
+    seven_days_ago = timezone.now() - timedelta(days=7)
+
+    # آخرین workflow هر فاکتور
+    latest_wf = WorkFlow.objects.filter(
+        object_id=OuterRef('pk'),
+        content_type=ct
+    ).order_by('-created_date')
+
+    # فاکتورهایی که آخرین state‌شون تخصیص انبار و بیش از ۷ روز گذشته
+    factors = Factor.objects.annotate(
+        last_wf_id=Subquery(latest_wf.values('id')[:1]),
+        last_wf_date=Subquery(latest_wf.values('created_date')[:1]),
+        last_wf_state=Subquery(latest_wf.values('current_state_name')[:1]),
+    ).filter(
+        last_wf_state='تخصیص کارشناس انبار',
+        last_wf_date__lte=seven_days_ago
+    )
+
+    # برای هر فاکتور یه workflow جدید بساز
+    new_workflows = []
+    for factor in factors:
+        # آخرین workflow این فاکتور رو بگیر تا اطلاعاتش رو کپی کنیم
+        last_wf = WorkFlow.objects.get(id=factor.last_wf_id)
+
+        new_workflows.append(WorkFlow(
+            content_type=ct,
+            object_id=factor.pk,
+            current_state_name='تایید مدیر فروش',
+            state='پیش‌نویس',
+            from_user=last_wf.to_user,
+            to_user_id=21,
+            # created_by = کاربر سیستم یا همون last_wf.to_user
+        ))
+
+    # یه bulk_create بجای N تا insert جداگانه — بهتره
+    WorkFlow.objects.bulk_create(new_workflows)

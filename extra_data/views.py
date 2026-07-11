@@ -539,6 +539,10 @@ class CustomerDataTableView(AjaxDatatableView):
         {'name': 'creator_user', 'visible': True, 'title': _('creator_user'), 'className': 'py-1 border',
          'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False, 'className': 'text-center'},
+        {'name': 'pcb', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'assembly', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+        {'name': 'item', 'orderable': True, 'visible': True, 'searchable': True, 'className': 'text-center'},
+
     ]
 
     # def get_initial_queryset(self, request=None):

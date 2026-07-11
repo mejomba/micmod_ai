@@ -107,7 +107,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             fee = row_data.get('price') or 0
             quantity = row_data.get('quantity') or 0
             fee, quantity = map(float, (fee, quantity))
-            discount = (row_data.get('discount') or 0) + (all_discount / discount_weight)
+            discount = (row_data.get('discount') or 0) + (all_discount * discount_weight)
             description = row_data.get('description')
             addition = row_data.get('addition') or 0
 

@@ -23,15 +23,25 @@
             <form method="post" target="_blank" action="{% url 'micmod_base:customer_request.view' obj.pk %}">
             {% csrf_token %}
             <input type="hidden" name="customer" id="id_customer">
+            <input type="hidden" name="user" id="id_user">
             <input type="hidden" name="customer_shop" value="{{ obj.customer_shop }}">
                 <div class="row mb-3 py-10 shadow rounded" style="transform: scale(1.09)">
                     <div class="col">
                         <label class="form-label fw-bold mt-5">تاریخ درخواست:</label>
                         <div class="bg-secondary p-2 rounded text-black mb-1">{{ obj.request_date|to_jalali:'%Y/%m/%d' }}</div>
+                        <div class="col">
+                            <span name="user_name" class="d-none"></span>
+                            <label class="form-label fw-bold">کارشناس: </label>
+                            <div id="id_user_select2"></div>
+                        </div>
                     </div>
                     <div class="col mt-5">
                         <label class="form-label fw-bold">شماره تلفن مشتری:</label>
                         <div class="bg-secondary p-2 rounded text-black mb-1">{{ object.0.customer_phone }}</div>
+                        <div class="col">
+                            <label class="form-label fw-bold">نام مشتری فروشگاه:</label>
+                            <div class="bg-secondary p-2 rounded text-black mb-1">{{ obj.request_extra_data|get_item:'customer_name' }}</div>
+                        </div>
                     </div>
                 <div class="col rounded mt-3">
                         {% get_customer obj.customer_shop as customer %}
@@ -175,6 +185,20 @@
             customer_placeholder = document.querySelector('#customer_name')
             customer_placeholder = customer_placeholder.innerText || 'مشتری'
             select2_generate("#id_customer_select2", '#id_customer', '/sepidar/customers_for_shop_list', customer_placeholder, 'sepidar_party_id')
+        }
+
+        try {
+            debugger
+            let user_placeholder =  document.querySelector('[name="user_name"]')
+            if (user_placeholder){
+                user_placeholder = user_placeholder.innerText.toString() || 'کارشناس مربوطه'
+            }
+            user_placeholder && select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder, 'username')
+        } catch (e) {
+            console.log(e)
+            user_placeholder = document.querySelector('#user_name')
+            user_placeholder = customer_placeholder.innerText || 'کارشناس مربوطه'
+            select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder, 'username')
         }
 
         try {
