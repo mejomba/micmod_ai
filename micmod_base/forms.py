@@ -281,6 +281,14 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
             self.fields['task_start2'].widget.attrs[
                 'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
 
+            # self.fields['need_local_price_inquiry'].widget.attrs[
+            #     'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+            # self.fields['need_local_price_inquiry'].widget.attrs['onchange'] = "post_ajax_data(event)"
+
+            self.fields['has_delay'].widget.attrs[
+                'url'] = f'/core/ajax/micmod_base/quotationitem/up_create?pk={self.instance.pk}'
+            self.fields['has_delay'].widget.attrs['onchange'] = "post_ajax_data(event)"
+
 
         except Exception as e:
             pass

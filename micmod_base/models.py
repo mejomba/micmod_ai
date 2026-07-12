@@ -586,10 +586,12 @@ class QuotationItem(BaseModel):
     final_price_sh = models.FloatField(null=True, blank=True, verbose_name=_("final_price"))
 
     need_foreign_price_inquiry = models.BooleanField(verbose_name=_('need_foreign_price_inquiry'), default=False)
+    need_foreign_price_inquiry_date = models.DateTimeField(verbose_name=_('need_foreign_price_inquiry_data'), null=True, blank=True)
     foreign_price_inquiry_done = models.BooleanField(verbose_name=_('foreign_price_inquiry_done'), default=False)
     foreign_price_inquiry_done_date = models.DateTimeField(verbose_name=_('foreign_price_inquiry_done_data'), null=True, blank=True)
 
     need_local_price_inquiry = models.BooleanField(verbose_name=_('need_local_price_inquiry'), default=False)
+    need_local_price_inquiry_date = models.DateTimeField(verbose_name=_('need_local_price_inquiry_date'), null=True, blank=True)
     local_price_inquiry_done = models.BooleanField(verbose_name=_('local_price_inquiry_done'), default=False)
     local_price_inquiry_done_date = models.DateTimeField(verbose_name=_('local_price_inquiry_done_date'), null=True, blank=True)
 
@@ -617,6 +619,7 @@ class QuotationItem(BaseModel):
     has_delay = models.BooleanField(default=False, verbose_name=_('has_delay'))
     delay_reason = models.CharField(max_length=250, verbose_name=_('delay_reason'), null=True, blank=True)
     delay_time = models.CharField(max_length=100, verbose_name=_('delay_time'), null=True, blank=True)
+    delay_start_date = models.DateTimeField(verbose_name=_('delay_start_date'), null=True, blank=True)
     item_in_china = models.BooleanField(_('item_in_china'), default=False)
     price_target = models.FloatField(_('price_target'), null=True, blank=True)
     discount_per_item = models.FloatField(_('discount_per_item'), default=0)
@@ -993,11 +996,17 @@ class QuotationItem(BaseModel):
         return d
 
     def pre_process_on_post_method(self, data=None):
-        obj = self if self.pk else None
-        self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
-        self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
-        self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
-        self.assigned_trade_user_date2 = timezone.now() if (not obj or not obj.assigned_trade_user_date2) and obj.assigned_trade_user2 else self.assigned_trade_user_date2 if obj else None
+        try:
+            obj = self if self.pk else None
+            self.task_start_date = timezone.now() if (not obj or not obj.task_start_date) and self.task_start else obj.task_start_date if obj else None
+            self.task_start_date2 = timezone.now() if (not obj or not obj.task_start_date2) and self.task_start2 else obj.task_start_date2 if obj else None
+            self.assigned_trade_user_date = timezone.now() if (not obj or not obj.assigned_trade_user_date) and obj.assigned_trade_user else self.assigned_trade_user_date if obj else None
+            self.assigned_trade_user_date2 = timezone.now() if (not obj or not obj.assigned_trade_user_date2) and obj.assigned_trade_user2 else self.assigned_trade_user_date2 if obj else None
+            # self.need_foreign_price_inquiry_date = timezone.now() if (not obj or not obj.need_foreign_price_inquiry_date) and obj.need_foreign_price_inquiry else self.need_foreign_price_inquiry_date if obj else None
+            # self.need_local_price_inquiry_date = timezone.now() if (not obj or not obj.need_local_price_inquiry_date) and obj.need_local_price_inquiry else self.need_local_price_inquiry_date if obj else None
+            self.delay_start_date = timezone.now() if (not obj or not obj.delay_start_date) and obj.has_delay else self.delay_start_date if obj else None
+        except Exception as e:
+            print("pre_process_on_post_method: ", str(e))
 
     def progress_from_task_start(self, total_hour=72):
         return utils.progress_value(self.task_start_date, timezone.now(), total_hour)
