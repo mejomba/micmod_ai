@@ -18,7 +18,7 @@ from django.apps import apps
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Item as sepidarItem
 from sepidar.scripts.sepidar_classes import Urls
-from tools.utils import to_jalali_date, set_secret_id
+from tools.utils import to_jalali_date, set_secret_id, parse_number
 from translator import get_text as _
 from sepidar.models import BaseData
 from tools.form_tools import select_cquery
@@ -376,6 +376,59 @@ class Item(BaseModel):
 
     def get_images(self):
         pass
+
+    def qty_str(self):
+        all_stock_quantity = cache.get('all_stock_quantity')
+        if not all_stock_quantity:
+            print('not in cache...')
+            all_stock_quantity = SepidarApiCall.get_stock_quantity_list()
+            l = []
+            for item, stocks in all_stock_quantity.items():
+                for stock, quantity in stocks.items():
+                    stock_code = stock.split('__')[0]
+                    iss = ItemStockSummary(item_id=item, quantity=quantity, fiscalyearref=settings.SEPIDAR_CONST_DATA['fiscalyearref'], stockref=stock_code)
+                    l.append(iss)
+            ItemStockSummary.objects.bulk_create(
+                l,  # لیست اشیاء
+                update_conflicts=True,  # فعال کردن حالت upsert
+                update_fields=['quantity'],  # فیلدهایی که در صورت وجود به‌روز شوند
+                unique_fields=['item', 'fiscalyearref', 'stockref'],  # فیلد(های) منحصربفرد برای تشخیص رکورد موجود
+                batch_size=500
+            )
+
+            cache.set('all_stock_quantity', all_stock_quantity, 30)
+            print('set in cache...')
+
+        stocks = all_stock_quantity.get(str(self.sku))
+        if not stocks:
+            return 0, 0
+        sepidar_qty_str = ''
+        free_qty_str = ''
+        reserve_detail_btn = ''
+        for code_name, sepidar_quantity in stocks.items():
+            if sepidar_quantity == 0:
+                continue
+            code, name = code_name.split('__')
+
+            portal_reserve = self.reserved_count_in_portal(code)
+            free = sepidar_quantity - portal_reserve
+
+            sepidar_qty_str += f'{name.replace("انبار", "")}: {parse_number(sepidar_quantity):,} <br>'
+            free_qty_str += f'{name.replace("انبار", "")}: {parse_number(free):,} <br>'
+
+            if portal_reserve:
+                reserve_detail_btn = f'''<span class="cursor-pointer" data-sku={self.sku} onclick="getPortalReserveQuantity(event)" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
+                                            <i class="ki-duotone ki-question-2 fs-1 text-primary">
+                                             <span class="path1"></span>
+                                             <span class="path2"></span>
+                                             <span class="path3"></span>
+                                            </i>
+                                        </span>'''
+
+        free_qty_str += reserve_detail_btn
+        # sepidar_qty_str += f'\n<hr> جمع: {parse_number(self.total_quantity):,}'
+
+        return sepidar_qty_str, free_qty_str
     
     @staticmethod
     def get_list(text):

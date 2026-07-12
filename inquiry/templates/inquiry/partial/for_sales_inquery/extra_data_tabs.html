@@ -86,8 +86,26 @@
          id="kt_tab_pane_3" role="tabpanel">
         {% if sku %}
             <div class="me-1 row">
-                {% include "core/partial/components/key_value_text.html" with rma_key="sum_stock_amount" rma_value=sku.extra_data.sepidar_data.stocks_sum rma_class="d-flex py-3 col-12" %}
-                {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.stocks rma_title="stock_amount" rma_has_header=True rma_class="col-6" %}
+            <div>
+                <p class="h5 mb-6">اطلاعات موجودی کالا مطابق رزروهای پرتال</p>
+                <div class="d-flex gap-10">
+                    <div>
+                        <div class="h6 mb-3">موجودی سپیدار</div>
+                        {{ sku.qty_str.0|safe }}
+                    </div>
+                    <div>
+                        <div class="h6 mb-3">موجودی آزاد</div>
+                        {{ sku.qty_str.1|safe }}
+                    </div>
+                </div>
+            </div>
+
+                <hr class="my-10">
+                <div>
+                    <div class=" h5">اطلاعات موجودی کالا فقط سپیدار</div>
+                    {% include "core/partial/components/key_value_text.html" with rma_key="sum_stock_amount" rma_value=sku.extra_data.sepidar_data.stocks_sum rma_class="d-flex py-3 col-12" %}
+                    {% include 'core/partial/table.html' with rma_data_frame=sku.extra_data.sepidar_data.stocks rma_title="stock_amount" rma_has_header=True rma_class="col-6" %}
+                </div>
             </div>
         {% endif %}
     </div>
@@ -164,3 +182,25 @@
         {% endif %}
     </div>
 </div>
+{% include 'core/partial/empty_modal.html' %}
+<script>
+    function getPortalReserveQuantity(event){
+        const md = document.querySelector('#id-empty-modal-body')
+        const sku = event.currentTarget.dataset.sku
+        const new_url = `/order/portal_reserve/${sku}/`
+        $.ajax({
+        type: 'GET',
+        url: new_url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            md.innerHTML = data['res'];
+        },
+        error: function (err) {
+            md.innerHTML = err
+        },
+    });
+    }
+</script>
