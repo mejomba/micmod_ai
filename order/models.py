@@ -6,7 +6,7 @@ from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
 
 from accounts.models import User
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2
+from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
@@ -626,6 +626,22 @@ class Order(BaseModeWF):
         if not name:
             name = 'سفارش'
         return name
+
+
+class DelayReasonText(models.Model):
+    title = models.CharField(max_length=255, unique=True)
+
+
+class OrderDelayReason(AbsBaseModel):
+    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='delay_reason', verbose_name=_('order'))
+    quantity = models.FloatField(null=True, blank=True, verbose_name=_('quantity'))
+    reason = models.ForeignKey(DelayReasonText, on_delete=models.DO_NOTHING, related_name='delays', verbose_name=_('reason'))
+    start = models.BooleanField(default=False, verbose_name=_('start'))
+    start_date = models.DateTimeField(verbose_name=_('start_date'))
+    end = models.BooleanField(default=False, verbose_name=_('end'))
+    end_date = models.DateTimeField(null=True, blank=True, verbose_name=_('end_date'))
+    actor = models.ForeignKey(get_user_model(), on_delete=models.DO_NOTHING, verbose_name=_('actor'))
+    description = models.TextField(max_length=2000, null=True, verbose_name=_('description'))
 
 
 class OrderBazar(BaseModeWF):

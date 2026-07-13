@@ -11,7 +11,7 @@ from translator import get_text as _
 
 from core.forms import CustomBaseModelForm, CustomBaseForm
 from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
-    OrderBazar
+    OrderBazar, OrderDelayReason
 from dal import autocomplete
 
 from django.forms import inlineformset_factory, formset_factory
@@ -558,3 +558,10 @@ class ACNTForm(CustomBaseModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['description'].widget.attrs['rows'] = 1
+
+
+class OrderDelayReasonModelForm(CustomBaseModelForm):
+    class Meta:
+        model = OrderDelayReason
+        fields = ['id', 'creator_user', 'editor_user', "order", "quantity",
+                  "reason", "start", "start_date", "end", "end_date", "actor", "description", ]
