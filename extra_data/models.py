@@ -1174,6 +1174,10 @@ class ItemPrice(BaseModel):
     purchase_group = models.CharField(_('purchase_group'), max_length=255, default="")
     sales_group = models.CharField(_('sales_group'), max_length=255, default="")
 
+    parent_air = models.FloatField(null=True, blank=True)
+    parent_sea = models.FloatField(null=True, blank=True)
+    parent_express = models.FloatField(null=True, blank=True)
+
 
 class ItemStockSummary(models.Model):
     last_update_date = models.DateTimeField(auto_now=True)

@@ -40,7 +40,8 @@ def update_price_db(objs):
     to_create = []
     to_update = []
     keys = ['air', 'sea', 'express', "price_update_date", "is_sea_default", "part_number", "purchase_group",
-            "sales_group", "sepidar_quantity", "in_way_count", "quantity_json", "last_update_date"]
+            "sales_group", "sepidar_quantity", "in_way_count", "quantity_json", "last_update_date",
+            "parent_air", "parent_sea", "parent_express", ]
 
     # 3️⃣ تشخیص رکوردهای جدید و قدیمی
     for data in objs:
@@ -148,18 +149,28 @@ def update_price_list():
         # i=0
         for item in items:
             inquiry_obj = item.price
-            # if inquiry_obj:
-            #     inquiry_obj.set_discount_params(quantity=1, customer_grade='C', payment_method='Cash')
-            # else:
-            #     print(f'item has not inquiry: ', item)
-
             sepidar_quantity = items_sepidar_quantity.get(item.sepidar_id_0)
             rmb_final_price = inquiry_obj.rmb_final_price if inquiry_obj else None
             if (inquiry_obj and rmb_final_price) or sepidar_quantity:
-                price = rmb_final_price if inquiry_obj else {'air': {'duration': None, 'method': None, 'price': 0}, 'sea': {'duration': None, 'method': None, 'price': 0}}
+                price = rmb_final_price if inquiry_obj else {'air': {'duration': None, 'method': None, 'price': 0},
+                                                             'sea': {'duration': None, 'method': None, 'price': 0},}
+
+                parent_price = {'parent_air': {'duration': None, 'method': None, 'price': 0},
+                                'parent_sea': {'duration': None, 'method': None, 'price': 0}}
+                if item.parent:
+                    parent = item.parent
+                    inquiry_obj = parent.price
+                    sepidar_quantity = items_sepidar_quantity.get(parent.sepidar_id_0)
+                    rmb_final_price = inquiry_obj.rmb_final_price if inquiry_obj else None
+                    if (inquiry_obj and rmb_final_price) or sepidar_quantity:
+                        parent_price = rmb_final_price if inquiry_obj else parent_price
+
                 price = {k: round(v.get('price'), 5) for k, v in price.items()}
+                parent_price = {'parent_' + str(k): round(v.get('price'), 5) for k, v in parent_price.items()}
+
                 price['sku'] = int(item.sku)
                 price['is_sea_default'] = item.is_sea_default
+
                 prices.append(price)
                 price_for_db.append(
                     {'item': item,
@@ -175,6 +186,9 @@ def update_price_list():
                      "in_way_count": None,
                      "quantity_json": None,
                      "last_update_date": timezone.now(),
+                     "parent_air": parent_price.get('parent_air'),
+                     "parent_sea": parent_price.get('parent_sea'),
+                     "parent_express": parent_price.get('parent_express'),
                      }
                 )
                 # if not y_rate:
