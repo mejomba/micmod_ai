@@ -174,6 +174,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
     def check_last_update(self):
+        return
         fis_last_update = (json.loads(self.request.POST.get('fis_last_update_datetime', "{}"))
                            or self.request.GET.get('fis_last_update_datetime'))
         f_last_update = (self.request.POST.get('last_update_datetime')
@@ -296,6 +297,8 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.accounting_confirm = True
         if obj_before_save and obj_before_save.is_official and self.state_index > 1:
             self.object.is_official = True
+        if obj_before_save and obj_before_save.official_factor_for_this_factor:
+            self.object.official_factor_for_this_factor = obj_before_save.official_factor_for_this_factor
         self.object.save()
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
