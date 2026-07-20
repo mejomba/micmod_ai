@@ -1588,9 +1588,11 @@ class CustomerRequestView(LoginRequiredMixin, View):
         from django.utils import timezone
         try:
             customer = request.POST.get("customer")
+            user_id = request.POST.get('user')
             customer_shop = request.POST.get("customer_shop")
             customer_request = get_object_or_404(CustomerRequest, pk=pk)
             selected_items = request.POST.getlist('selected_items')
+            user = get_user_model().objects.filter(pk=user_id).first()
             # customer_item_request = get_object_or_404(CustomerRequest, pk=self.object.pk)
             customer_instance = None
             if customer:
@@ -1604,6 +1606,7 @@ class CustomerRequestView(LoginRequiredMixin, View):
 
             customer_request.customer = customer_instance
             customer_request.extra_data.request = self.request
+            customer_request.assigned_user = user
             customer_request.save()
             sale_type = SaleType.objects.get(id=2)
 
@@ -1805,6 +1808,7 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         {'name': 'customer_shop', 'visible': True, 'title': _('مشتری فروشگاه'), 'className': 'py-1 border', 'orderable': False},
         {'name': 'customer_phone', 'visible': True, 'title': 'تلفن مشتری', 'orderable': True,},
         {'name': 'cart_id', 'visible': True, 'title': 'شناسه کارت', 'orderable': True},
+        {'name': 'assigned_user', 'visible': True, 'title': 'کارشناس', 'orderable': True},
         # {'name': 'request_extra_data', 'visible': True, 'title': 'کالا', 'orderable': True},
     ]
 

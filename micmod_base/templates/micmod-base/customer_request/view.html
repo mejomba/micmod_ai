@@ -22,8 +22,8 @@
             <!-- Header Section -->
             <form method="post" target="_blank" action="{% url 'micmod_base:customer_request.view' obj.pk %}">
             {% csrf_token %}
-            <input type="hidden" name="customer" id="id_customer">
-            <input type="hidden" name="user" id="id_user">
+            <input type="hidden" name="customer" id="id_customer" value="{{ obj.customer.sepidar_party_id }}">
+            <input type="hidden" name="user" id="id_user" value="{{ obj.user.pk }}">
             <input type="hidden" name="customer_shop" value="{{ obj.customer_shop }}">
                 <div class="row mb-3 py-10 shadow rounded" style="transform: scale(1.09)">
                     <div class="col">
@@ -193,12 +193,12 @@
             if (user_placeholder){
                 user_placeholder = user_placeholder.innerText.toString() || 'کارشناس مربوطه'
             }
-            user_placeholder && select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder, 'username')
+            user_placeholder && select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder)
         } catch (e) {
             console.log(e)
             user_placeholder = document.querySelector('#user_name')
-            user_placeholder = customer_placeholder.innerText || 'کارشناس مربوطه'
-            select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder, 'username')
+            user_placeholder = user_placeholder.innerText || 'کارشناس مربوطه'
+            select2_generate("#id_user_select2", '#id_user', '/sepidar/user_for_shop_list', user_placeholder)
         }
 
         try {
