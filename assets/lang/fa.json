@@ -777,5 +777,9 @@
     "sepidar_voucher_number": "سند حسابداری",
     "require_official_factor_with_delivery": "الزام به ارسال فاکتور رسمی همراه بار",
     "need_factor_document": "نیاز به اسناد فاکتور",
-    "checker": "کارشناس مالی"
+    "checker": "کارشناس مالی",
+    "send_notification":"ارسال پیامک",
+    "access_to_shop_info":"دسترسی به اطلاعات فروشگاه",
+    "can_observe":"امکان نمایش به مشتری",
+    "notify_number": "شماره اطلاع رسانی"
 }

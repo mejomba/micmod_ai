@@ -115,6 +115,7 @@ class FactorModelForm(CustomBaseModelForm):
         self.fields['wh_user'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='wh_user') |
                                                                               Q(groups__name='wh_admin')).distinct(), required=False)
         self.fields['currency_amount'].widget.attrs.update({'class': 'form-control narrow-input', 'style': 'width: 70%;'})
+        self.fields['notify_number'].widget.attrs.update({'class': 'form-control narrow-input font-size-12 pt-3 px-2 text-left', 'style': 'width: 70%;'})
 
         if request and request.user.base_group == 'accounting':
             self.fields['checker'] = forms.ModelMultipleChoiceField(queryset=User.objects.filter(Q(groups__name='accounting_user') |
@@ -613,7 +614,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
     "factor.cp_factor_item_sales": {
         0: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
+                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"
             ],
             "hidden": [
                 "qi", "factor"
@@ -624,7 +625,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         },
         1: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
+                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor"
@@ -635,7 +636,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         },
         2: {
             "edit": [
-                "price", "discount_per_item",
+                "price", "final_amount", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
@@ -646,7 +647,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         },
         3: {
             "edit": [
-                "price", "discount_per_item",
+                "price", "final_amount", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
@@ -657,7 +658,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         },
         4: {
             "edit": [
-                "price", "discount_per_item",
+                "price", "final_amount", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
@@ -674,7 +675,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
             ],
             "show": [
-                "price", "discount_per_item", "quantity",
+                "price", "final_amount", "quantity", "discount_per_item"
             ]
         },
         6: {
@@ -685,7 +686,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
             ],
             "show": [
-                "price", "discount_per_item", "quantity",
+                "price", "final_amount", "quantity", "discount_per_item"
             ]
         },
         7: {
@@ -696,7 +697,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms",
             ],
             "show": [
-                "price", "discount_per_item", "quantity",
+                "price", "final_amount", "quantity", "discount_per_item"
             ]
         },
 
@@ -704,7 +705,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
     "factor.cp_factor_item_sales_admin": {
         0: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "discount_per_item",
+                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
             ],
             "hidden": [
                 "qi", "factor"
@@ -784,7 +785,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
         },
         2: {
             "edit": [
@@ -793,7 +794,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item",]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
         },
         3: {
             "edit": [
@@ -802,7 +803,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
         },
         4: {
             "edit": [
@@ -811,7 +812,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
             },
         5: {
             "edit": [
@@ -820,7 +821,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
             "hidden": [
                 "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
             ],
-            "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+            "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
             },
         6: {
                 "edit": [
@@ -829,7 +830,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "hidden": [
                     "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
                 ],
-                "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+                "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
             },
         7: {
                 "edit": [
@@ -838,7 +839,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
                 "hidden": [
                     "qi", "factor", "total_forms", "initial_forms", "min_num_forms", "max_num_forms"
                 ],
-                "show": ["goods_code", "part_number_show", "quantity", "price", "discount_per_item"]
+                "show": ["goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"]
             },
         }
     }
@@ -957,7 +958,8 @@ class FactorItemForm(CustomBaseModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
             "quantity": forms.TextInput(attrs={"inputmode": "decimal", "class": " js-thousands"}),
             "price": forms.TextInput(attrs={"inputmode": "decimal", "class": " js-thousands"}),
-            "discount_per_item": forms.TextInput(attrs={"inputmode": "decimal", "class": " js-thousands"}),
+            # "discount_per_item": forms.TextInput(attrs={"inputmode": "decimal", "class": " js-thousands"}),
+            "final_amount": forms.TextInput(attrs={"inputmode": "decimal", "class": " js-thousands"}),
         }
 
     def __init__(self, *args, allowed_fields=None, allowed_hidden=None, only_show=None, **kwargs):
@@ -966,11 +968,12 @@ class FactorItemForm(CustomBaseModelForm):
         """prepare fields default value and widget customization before permission section"""
         self.fields['price'].widget.attrs['onkeyup'] = "factor_calculate_price(this)"
         self.fields['discount_per_item'].widget.attrs['onkeyup'] = "factor_calculate_price(this)"
+        self.fields['final_amount'].widget.attrs['onkeyup'] = "factor_calculate_price(this)"
         self.make_required(['quantity', 'price', 'discount_per_item', 'goods_code', 'part_number_show'])
 
         self.fields['quantity'].widget.attrs['required'] = 'required'
         self.fields['price'].widget.attrs['required'] = 'required'
-        self.fields['discount_per_item'].widget.attrs['required'] = 'required'
+        self.fields['final_amount'].widget.attrs['required'] = 'required'
         self.fields['goods_code'].widget.attrs['required'] = 'required'
         self.fields['part_number_show'].widget.attrs['required'] = 'required'
 

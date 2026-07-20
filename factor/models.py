@@ -45,7 +45,7 @@ class Factor(SLSDoc):
 
     delivery_time = models.CharField(choices=DeliveryTime, max_length=10, null=True, blank=True,
                                      verbose_name=_('delivery_time'), default="2-3 week")
-    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
+    description = models.TextField(max_length=2000, null=True, blank=True, verbose_name=_('description'))
     guid = models.UUIDField(_('guid'), default=None, editable=False, null=True, blank=True)
 
     ### sepidar data
@@ -89,6 +89,7 @@ class Factor(SLSDoc):
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     currency_amount = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'), null=True, blank=True)
     request_cancel = models.BooleanField(default=False)
+    notify_number = models.CharField(verbose_name=_('notify_number'), max_length=255, null=True, blank=True)
 
     def is_need_sales_admin_confirmation(self):
         if not self.q:
@@ -178,13 +179,15 @@ class Factor(SLSDoc):
 
     @property
     def is_all_supplied(self):
-        return
-        factoritems = (
-            self.factoritem_set
-            .select_related('supply_locations')
-            .all()
-        )
-        return all(x.supply_locations.is_all_arrival for x in factoritems)
+        try:
+            factoritems = (
+                self.factoritem_set
+                .select_related('supply_locations')
+                .all()
+            )
+            return all(x.supply_locations.is_all_arrival for x in factoritems)
+        except Exception as e:
+            return False
 
     @property
     def is_all_supplied2(self):
@@ -233,8 +236,9 @@ class FactorItem(BaseModel):
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
     customer_request_item = models.ForeignKey(CustomerRequestItem, on_delete=models.DO_NOTHING, null=True, blank=True,
                                               related_name='customer_factor_items')
-    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name=_('description'))
+    description = models.TextField(max_length=2000, null=True, blank=True, verbose_name=_('description'))
 
+    final_amount = models.FloatField(_('final_amount'), null=True, blank=True)
     objects = FactorItemManager()
 
     def customerdiscountrate(self, row_price, discount):
@@ -451,7 +455,7 @@ class FactorItem(BaseModel):
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
+        if False and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
             super().save(force_insert, force_update, using, update_fields)
         else:
             with transaction.atomic():

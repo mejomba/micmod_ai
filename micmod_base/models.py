@@ -143,6 +143,8 @@ class Quotation(SLSDoc):
     sale_type = models.ForeignKey(SaleType, on_delete=models.DO_NOTHING, related_name='quotations')
     is_direct = models.BooleanField(default=False, null=True, blank=True)
     q_price_setting = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='quotation_price_settings', null=True, blank=True)
+    can_observe = models.BooleanField(default=True)
+    notify_number = models.CharField(verbose_name=_('notify_number'), max_length=255, null=True, blank=True)
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
@@ -155,8 +157,11 @@ class Quotation(SLSDoc):
             t_date = Persian(to_date).gregorian_datetime()
             filter_by_time = Q(created_date__range=(f_date, t_date))
         is_sales_admin = current_user.groups.filter(name='sales_admin').exists()
+        is_see_all_user_report = current_user.has_perm('micmod_base.see_all_user_report')
         if is_sales_admin:
-            sales_user = current_user.team.all().order_by('z_index')
+            sales_user = current_user.team.all().order_by('z_index') or current_user.head.team.all().order_by('z_index')
+        elif is_see_all_user_report:
+            sales_user = current_user.head.team.all().order_by('z_index')
         else:
             sales_user = [current_user]
 
@@ -865,22 +870,25 @@ class QuotationItem(BaseModel):
 
     @property
     def total_quantity_in_factor(self):
-        total_quantity = 0
-        total_quantity_wh = 0
-        all_factor_items = self.qi.all()
-        for f in all_factor_items:
-            if f.supply_locations.order_base_items.all().exists():
-                for item in f.supply_locations.order_base_items.all():
-                    if item.sepidar_wh_code:
-                        total_quantity_wh += item.quantity
-                        total_quantity += item.quantity
-                    else:
-                        total_quantity += item.quantity
-            # if f.supply_locations.local_sepidar_wh_code:
-            #     total_quantity_wh += f.quantity if f.quantity else 0
-            else:
-                total_quantity += f.quantity if f.quantity else 0
-        return total_quantity, total_quantity_wh
+        try:
+            total_quantity = 0
+            total_quantity_wh = 0
+            all_factor_items = self.qi.all()
+            for f in all_factor_items:
+                if f.supply_locations.order_base_items.all().exists():
+                    for item in f.supply_locations.order_base_items.all():
+                        if item.sepidar_wh_code:
+                            total_quantity_wh += item.quantity
+                            total_quantity += item.quantity
+                        else:
+                            total_quantity += item.quantity
+                # if f.supply_locations.local_sepidar_wh_code:
+                #     total_quantity_wh += f.quantity if f.quantity else 0
+                else:
+                    total_quantity += f.quantity if f.quantity else 0
+            return total_quantity, total_quantity_wh
+        except Exception as e:
+            return 0, 0
 
     @property
     def remaining_quantity_in_factor(self):

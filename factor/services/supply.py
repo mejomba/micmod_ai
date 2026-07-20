@@ -917,7 +917,7 @@ def attach_supply(factor_items):
     own_item_ids = [fi.id for fi in items]
 
     sepidar_qs = (SepidarItemStock.objects.using('sepidar')
-                  .filter(itemref_id__in=sepidar_ids, quantity__gt=0, fiscalyearref=settings.SEPIDAR_CONST_DATA['fiscalyearref']))
+                  .filter(stockref=2, itemref_id__in=sepidar_ids, quantity__gt=0, fiscalyearref=settings.SEPIDAR_CONST_DATA['fiscalyearref']))
     wh_by_goods = defaultdict(list)
     for r in sepidar_qs:
         wh_by_goods[r.itemref_id].append(r)

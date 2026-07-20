@@ -115,6 +115,7 @@
                                                 <th data-key="sales_type">نوع فروش</th>
                                                 <th data-key="Quantity">تعداد</th>
                                                 <th data-key="Fee">فی</th>
+                                                <th data-key="fee_after_discount">فی بعد تخفیف</th>
                                                 <th data-key="currency">ارز</th>
                                                 <th data-key="Rate">نرخ ارز</th>
                                             </tr>
@@ -135,7 +136,8 @@
                                                     {#                                                        <td>{{ item.coef }}</td>#}
                                                     <td>{{ item.sales_type }}</td>
                                                     <td>{{ item.Quantity|floatformat:0|intcomma }}</td>
-                                                    <td>{{ item.Fee|floatformat:2|intcomma }}</td>
+                                                    <td>{{ item.Fee|floatformat:'-2g'|intcomma }}</td>
+                                                    <td>{{ item.fee_after_discount|floatformat:'-2g'|intcomma }}</td>
                                                     {#                                                        <td>{{ item.Price|floatformat:2|intcomma }}</td>#}
                                                     {#                                                        <td>{{ item.PriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
                                                     {#                                                        <td>{{ item.NetPrice|floatformat:2|intcomma }}</td>#}

@@ -11,7 +11,7 @@ from accounts.models import User
 from translator import get_text as _
 from django.template.loader import render_to_string
 from django.contrib.contenttypes.models import ContentType
-# Create your models here.
+from django.utils import timezone
 
 
 class Groups(AbsBaseModel):
@@ -153,3 +153,267 @@ class SupplyNotification(models.Model):
         return f"{self.user} — {self.get_kind_display()} — {self.qty}"
 
 #  end clude
+
+
+class Notification(AbsBaseModel):
+    action_choice = (("system", "system"), ("force", "force"))
+    CHANNEL_TYPE_CHOICES = (("SMS", "SMS"), ("EMAIL", "EMAIL"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING, related_name='notifications',
+                                     null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    object_state = models.CharField(max_length=255, verbose_name='عنوان منحصر به فرد هر نوع ارسال پیام')
+    action_type = models.CharField(max_length=64, choices=action_choice, null=True, blank=True, verbose_name=('نوع ارسال مثلا سیستمی یا کاربر فورس کرده'))
+    chanel_type = models.CharField(max_length=255, choices=CHANNEL_TYPE_CHOICES, null=True, blank=True, verbose_name=_('روش ارسال مثلا پیامک'))
+    chanel_id = models.CharField(max_length=255, null=True, blank=True, verbose_name='گیرنده: مثلا شماره تلفن یا ایمیل')
+    date = models.DateField(_('date'))
+    text = models.TextField(_('text'))
+
+    # =============== quotation notify
+    @classmethod
+    def notify_customer_for_quotation(cls, quotation):
+        # if quotation.pk < 13500:
+        #     return
+
+        ctt = ContentType.objects.get_for_model(quotation.__class__)
+
+        has_first_notify = cls.objects.filter(object_id=quotation.pk, content_type=ctt, object_state='ثبت پیش فاکتور').exists()
+        has_sepidar_notify = cls.objects.filter(object_id=quotation.pk, content_type=ctt, object_state='ثبت پیش فاکتور در سپیدار').exists()
+        has_yadavar = cls.objects.filter(object_id=quotation.pk, content_type=ctt, object_state='یاد آور خرید پیش فاکتور').exists()
+
+        last_work_flow = quotation.last_work_flow
+
+        if last_work_flow and quotation.can_observe:
+            if not has_first_notify and last_work_flow.current_state_name == 'پیش فاکتور اولیه':
+                cls._quotation_first_notify(quotation, ctt)
+
+            elif not has_sepidar_notify and quotation.sepidar_number:
+                cls._quotation_sepidar_notify(quotation, ctt)
+
+            elif last_work_flow and last_work_flow.current_state_name == 'تایید مشتری' and last_work_flow.created_date < (timezone.now() - timezone.timedelta(hours=72)) and not has_yadavar:
+                cls._quotation_yadavar_notify(quotation, ctt)
+
+    @classmethod
+    def _quotation_first_notify(cls, quotation, ctt):
+        from tlg.scripts.sms import send_sms
+
+        notify_number = quotation.notify_number
+        message = 'درخواست شما جهت بررسی ثبت شد. نتیجه بررسی حداکثر ظرف ۴۸ تا ۷۲ ساعت کاری توسط کارشناس مربوطه به اطلاع شما خواهد رسید.'
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type": ctt,
+                "object_id": quotation.pk,
+                "object_state": 'ثبت پیش فاکتور',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": quotation.notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+
+    @classmethod
+    def _quotation_sepidar_notify(cls, quotation, ctt):
+        from tlg.scripts.sms import send_sms
+
+        notify_number = quotation.notify_number
+        message = 'پیش فاکتور شما صادر گردید. اعتبار قیمت های اعلام شده حداکثر ۴۸ ساعت می باشد. جهت مشاهده جزیات به لینک پیش فاکتور در shop مراجعه فرمایید.'
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type": ctt,
+                "object_id": quotation.pk,
+                "object_state": 'ثبت پیش فاکتور در سپیدار',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": quotation.notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+
+    @classmethod
+    def _quotation_yadavar_notify(cls, quotation, ctt):
+        from tlg.scripts.sms import send_sms
+
+        notify_number = quotation.notify_number
+        message = 'یادآوری: پیش فاکتور صادر شده همچنان در انتظار تایید و اقدام شما می باشد. لطفا در اسرع وقت نسبت به بررسی و ثبت سفارش اقدام فرمایید.'
+        success, res = send_sms('', [notify_number], message)
+
+        if success:
+            data = {
+                "content_type": ctt,
+                "object_id": quotation.pk,
+                "object_state": 'یاد آور خرید پیش فاکتور',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": quotation.notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+    # =============== quotation notify
+
+    # =============== factor notify
+    @classmethod
+    def notify_customer_for_factor(cls, factor):
+        # if factor.pk < 1920:
+        #     return
+
+        ctt = ContentType.objects.get_for_model(factor.__class__)
+
+        last_work_flow = factor.last_work_flow
+        has_sales_admin_confirm = cls.objects.filter(object_id=factor.pk, content_type=ctt, object_state='تایید مدیر فروش فاکتور').exists()
+        has_sent_notify = cls.objects.filter(object_id=factor.pk, content_type=ctt, object_state='تسویه حساب فاکتور').exists()
+
+        if last_work_flow:
+            if last_work_flow.current_state_name == 'تخصیص کارشناس انبار' and not has_sales_admin_confirm:
+                cls._factor_sales_admin_confirm_notify(factor, ctt)
+
+            elif factor.sepidar_number and not has_sent_notify:
+                cls._factor_sent_notify(factor, ctt)
+
+    @classmethod
+    def _factor_sales_admin_confirm_notify(cls, factor, ctt):
+        from tlg.scripts.sms import send_sms
+
+        notify_number = factor.notify_number
+        from factor.models import FactorItemSupplyLocation
+        from django.db.models import Exists, OuterRef
+
+        price = factor.get_price - factor.sum_discount + factor.sum_tax
+
+        trade_order_count = factor.factoritem_set.annotate(
+            has_order_supply=Exists(
+                FactorItemSupplyLocation.objects.filter(
+                    fi=OuterRef('pk'),
+                    order__isnull=False
+                )
+            )
+        ).filter(has_order_supply=True).count()
+
+        if trade_order_count:
+            message = "سند درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. همچنین برای {3} ردیف کالا سفارش خارجی ثبت شده و مطابق برنامه زمانبندی تحویل خواهد شد. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count(), trade_order_count)
+        else:
+            message = "سند درخواست شما به شماره {0} به مبلغ {1} و شامل {2} ردیف کالا صادر گردید. جهت مشاهده جزئیات فاکتور به پنل خود مراجعه فرمایید.".format(factor.pk, f'{price:0.2f}'.rstrip('0').rstrip('.'), factor.factoritem_set.count())
+
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type": ctt,
+                "object_id": factor.pk,
+                "object_state": 'تایید مدیر فروش فاکتور',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": factor.notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+
+    @classmethod
+    def _factor_sent_notify(cls, factor, ctt):
+        from tlg.scripts.sms import send_sms
+
+        notify_number = factor.notify_number
+        deliver_method = _(getattr(factor.deliver_method, 'title', None) or '-')
+
+        message = "فاکتور شماره {0} با شماره حواله {1} از طریق {2} ارسال گردید.".format(factor.pk, factor.sepidar_inventory_delivery_number, deliver_method)
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type": ctt,
+                "object_id": factor.pk,
+                "object_state": 'تسویه حساب فاکتور',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": factor.notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+    # =============== factor notify
+
+    # =============== google sheet order notify
+    @classmethod
+    def notify_customer_for_google_sheet_order(cls, *, notify_number, order_id,
+                                               supp_confirm_date=None,
+                                               departure_date=None,
+                                               declaration_date=None):
+        order_id = order_id.split('-')[1]
+        # ctt = ContentType.objects.get_for_model(Order)
+        has_supp_confirm_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+                                                     object_state='ثبت سفارش').exists()
+        has_departure_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+                                                object_state='شروع حمل سفارش').exists()
+        has_declaration_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+                                         object_state='ترخیص سفارش').exists()
+
+        if not has_supp_confirm_notify and departure_date:
+            cls._google_sheet_order_supp_confirm_notify(notify_number, order_id)
+        elif not has_departure_notify:
+            cls._google_sheet_order_departure_notify(notify_number, order_id)
+        elif not has_declaration_notify:
+            cls._google_sheet_order_declaration_notify(notify_number, order_id)
+
+
+    @classmethod
+    def _google_sheet_order_supp_confirm_notify(cls, notify_number, order_id):
+        from tlg.scripts.sms import send_sms
+
+        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش ثبت شده است\n زمان تقریبی حمل: {1}'.format(0, 1)
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type_id": 104,
+                "object_id": order_id,
+                "object_state": 'ثبت سفارش',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+    # =============== google sheet order notify
+
+    @classmethod
+    def _google_sheet_order_departure_notify(cls, notify_number, order_id):
+        from tlg.scripts.sms import send_sms
+
+        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال حمل است'.format(0)
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type_id": 104,
+                "object_id": order_id,
+                "object_state": 'شروع حمل سفارش',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+    # =============== google sheet order notify
+
+    @classmethod
+    def _google_sheet_order_declaration_notify(cls, notify_number, order_id):
+        from tlg.scripts.sms import send_sms
+
+        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال رسیدن است\n زمان تقریبی رسیدن: {1}'.format()
+        success, res = send_sms('', [notify_number], message)
+        if success:
+            data = {
+                "content_type_id": 104,
+                "object_id": order_id,
+                "object_state": 'ترخیص سفارش',
+                "action_type": 'system',
+                "chanel_type": 'sms',
+                "chanel_id": notify_number,
+                "date": timezone.now(),
+                "text": message,
+            }
+            obj = cls.objects.create(**data)
+    # =============== google sheet order notify

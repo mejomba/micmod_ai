@@ -13,8 +13,6 @@
 {% endblock title %} {"title": ""})
 {% block extra_css %}
     <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
-{#    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">#}
-
     <link href="{% static 'css/modal.css'%}" rel="stylesheet" type="text/css" />
 {% endblock extra_css %}
 
@@ -23,8 +21,6 @@
     <input type="hidden" name="qis_last_update_datetime" value="{{ qis_last_update_datetime }}">
     <input type="hidden" name="last_update_datetime" value="{{ last_update_datetime }}">
     <input type="hidden" name="quotation_id" value="{{ form.instance.pk }}">
-
-
 
     <div class="border rounded mb-5 p-3">
         <div class="d-flex justify-content-between">
@@ -46,7 +42,6 @@
             </span>
         </div>
     </div>
-
 
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
@@ -94,39 +89,36 @@
                                             <h3 class="card-title pb-3" data-key="quotation-information">Quotation
                                                 Information
                                             </h3>
-{#                                            <div class="row">#}
-{#                                                <div class="">#}
-                                                    <div class="row">
-                                                        <div class="col-sm-4 m-0">
-                                                            {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
-                                                            {% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}
-                                                        </div>
-                                                        <div class="col-sm-4">
-                                                            {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
-                                                        </div>
-                                                        <div class="col-sm-4 ms-lg-auto">
-                                                            {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
-                                                        </div>
-                                                        <div class="col-sm-12">
-                                                            <div class="row row-cols-3">
-                                                                {% render_field_by_order form form.addition form.tax label='on-border '%}
-                                                            <div class="col on-border">
-                                                            {% render_field_by_order form form.q_price_setting label='on-border '%}
-{#                                                            <label>تنظیمات قیمت</label>#}
-
-{#                                                                <select name="q_price_setting" id="q_price_setting" class="form-control" onchange="refresh_prices()">#}
-{#                                                                    <option value="1">پیشفرض</option>#}
-{#                                                                    {% for q_price_setting in q_price_settings %}#}
-{#                                                                    <option value="{{ q_price_setting.pk }}">{{ q_price_setting.title }}</option>#}
-{#                                                                    {% endfor %}#}
-{#                                                                </select>#}
-                                                            </div>
-                                                                <div class="d-none">{{ form.market_grade }}</div>
-                                                            </div>
-                                                        </div>
+                                            <div class="row">
+                                                <div class="col-sm-4 m-0">
+                                                    {% render_field_by_order form form.sepidar_number no_input=True label='on-border' margin_b=3 %}
+                                                    {% render_field_by_order form form.title form.status label='on-border' margin_b=3 %}
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    {% render_field_by_order form form.request_date form.expiration_date form.delivery_time label='on-border' margin_b=3 %}
+                                                </div>
+                                                <div class="col-sm-4 ms-lg-auto">
+                                                    {% render_field_by_order form form.currency_ref form.payment_method form.sale_type label='on-border' margin_b=3 %}
+                                                </div>
+                                                <div class="col-sm-12">
+                                                    <div class="row row-cols-3">
+                                                        {% render_field_by_order form form.addition form.tax label='on-border '%}
+                                                    <div class="col on-border">
+                                                    {% render_field_by_order form form.q_price_setting label='on-border '%}
                                                     </div>
-{#                                                </div>#}
-{#                                            </div>#}
+                                                        <div class="d-none">{{ form.market_grade }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12">
+                                                    <div class="row row-cols-3">
+                                                        <div class="col on-border mb-3">
+                                                            <input onload="validateNotifyNumber(event)" onfocusout="validateNotifyNumber(event)" type="text" name="notify_number" maxlength="255" class=" form-control " id="id_notify_number" value="{{ notify_number }}">
+                                                            <label data-key="notify_number" id="None" class="None">Notify number</label>
+                                                        </div>
+                                                        {% render_field_by_order form form.can_observe label='on-border '%}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-sm-5 ms-lg-auto">
@@ -703,6 +695,18 @@ function customerItem(event) {
         },
         complete: release_main_container
     }); // end ajax
+}
+
+function validateNotifyNumber(event){
+    const phoneNumber = event.currentTarget.value
+    if (!phoneNumber || phoneNumber.trim() === '') {
+        return true;
+    }
+
+    const phoneRegex = /^09[0-9]{9}$/;
+    if (!phoneRegex.test(phoneNumber)){
+        alert('شماره اطلاع رسانی معتبر نیست')
+    }
 }
 </script>
 

@@ -147,6 +147,9 @@ class SepidarOrderDocument(models.Model):
 
 class Order(BaseModeWF):
     # SALES #######################################
+    customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
+                                          to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
+                                          db_column='customer_party_id')
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]

@@ -1,11 +1,13 @@
 import os
 import datetime, time
 
+import requests
 from celery import shared_task
 from django.core.cache import cache
 from django.utils import timezone
 
-from extra_data.models import Item, ItemPrice
+from extra_data.models import Item, ItemPrice, CustomerExpert, Customer
+from notifications.models import Notification
 from reminder.models import Reminder
 from reminder.utils import calculate_next_time
 from sepidar.models import Item as SepItem
@@ -14,6 +16,9 @@ from tlg.scripts.sms import send_sms
 from tools.google_sheet import GSheet
 
 from django.conf import settings
+
+from tools.utils import DaxCall, to_jalali_date
+
 
 def get_sepidar_quantity():
     items = SepItem.objects.raw("""
@@ -368,3 +373,32 @@ def send_reminder_notification2():
         user_list = [user.phone for user in reminder.user.all()]
         message_format = f'{reminder.title}:\n {reminder.short_text}\n {reminder.long_text}'
         send_sms('', user_list, message_format)
+
+
+@shared_task
+def google_sheet_order_notify():
+    data = DaxCall.order_notify_dax()
+
+    for item in data:
+        customer_code = item.get("dim_order[customer_code]")
+        order_id = item.get("dim_order[order_id]")
+        supp_confirm_date = item.get("[تایید تامین‌کننده]")
+        departure_date = item.get("[زمان شروع حمل]")
+        declaration_date = item.get("[ترخیص]")
+
+        if customer_code and order_id and (supp_confirm_date or departure_date or declaration_date):
+            customer_expert = CustomerExpert.objects.filter(customer__sepidar_dl_code=customer_code, send_notification=True).last()
+
+            if not customer_expert:
+                continue
+            else:
+                Notification.notify_customer_for_google_sheet_order(notify_number=customer_expert.phone,
+                                                                    order_id=order_id,
+                                                                    supp_confirm_date=supp_confirm_date,
+                                                                    departure_date=departure_date,
+                                                                    declaration_date=declaration_date)
+
+                success, status = send_sms('', [customer_expert.phone], 'text')
+                if success:
+                    pass
+

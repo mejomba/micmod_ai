@@ -176,19 +176,20 @@ select top 3000
         --,g_p.Code purchase_group_code, g_p.Title purchase_group, g_s.Code sales_group_code, g_s.Title sales_group
         ,fy.Title year_title
         ,curr.Title currency
+        ,(docs.Fee*docs.Quantity-docs.Discount)/docs.Quantity fee_after_discount
 from
 (
-select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate, II.Discount
         ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.InvoiceItemID itemId
         ,1 as coef,'invoice' as doc_type
 from [SLS].[Invoice] as I Join [SLS].[InvoiceItem] as II on II.InvoiceRef = I.InvoiceId
 union
-select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate, II.Discount
         ,II.ItemRef, II.Quantity,II.Fee,II.NetPrice,II.NetPriceInBaseCurrency,II.Price,II.PriceInBaseCurrency,II.QuotationItemID itemId
         ,0 as coef,'quotation' as doc_type
 from [SLS].[Quotation] as I Join [SLS].[QuotationItem] as II on II.QuotationRef = I.QuotationId
 union
-select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate
+select I.Date,I.Number,I.FiscalYearRef,I.CustomerPartyRef,I.SaleTypeRef, I.CurrencyRef,I.Rate, II.Discount
         ,II.ItemRef, II.Quantity,II.Fee,-II.NetPrice,-II.NetPriceInBaseCurrency,-II.Price,-II.PriceInBaseCurrency,II.ReturnedInvoiceItemID itemId
         ,-1 as coef,'returned_invoice' as doc_type
 from [SLS].[ReturnedInvoice] as I Join [SLS].[ReturnedInvoiceItem] as II on II.ReturnedInvoiceRef = I.ReturnedInvoiceId

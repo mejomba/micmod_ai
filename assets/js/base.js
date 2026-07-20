@@ -960,11 +960,23 @@ save_btn && save_btn.addEventListener('click', function (){
 })
 
 back_btn && back_btn.addEventListener('click', function (){
-    removeCommaSeperator()
-    global_action_btn.classList.add('d-none')
-    pleas_wait.classList.remove('d-none')
-    pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
-    setTimeout(show_global_action_btn, 18000)
+    if (main_form){
+        if (main_form.checkValidity()) {
+            removeCommaSeperator()
+            global_action_btn.classList.add('d-none')
+            pleas_wait.classList.remove('d-none')
+            pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+            setTimeout(show_global_action_btn, 18000)
+        } else {
+            form.reportValidity()
+        }
+    } else {
+        removeCommaSeperator()
+        global_action_btn.classList.add('d-none')
+        pleas_wait.classList.remove('d-none')
+        pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
+        setTimeout(show_global_action_btn, 18000)
+    }
 })
 
 //=====================

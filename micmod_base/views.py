@@ -26,8 +26,10 @@ from core.permissions import HasShopPermission
 from dw.models import DimCustomer
 from extra_data.models import Item, PriceSettings, Customer
 from factor.forms import FactorItemModelForm, FactorModelForm
-from factor.models import FactorItem
+from factor.models import FactorItem, Factor
+from factor.serializers import FactorSerializer
 from order.models import Order
+from order.serializers import OrderSerializer
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -52,6 +54,7 @@ from tools import const
 from tools.datatable import CustomAjaxDatatableView
 from tools.import_data import import_customers_from_sepidar
 from tools.utils import show_error, to_jalali_date, export_to_excel, is_ajax
+from notifications.models import Notification
 from translator import get_text as _
 from django.views import View
 
@@ -425,6 +428,14 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     qi.create_price_json_for_old_qi()
             self.object.created_date = datetime2jalali(self.object.created_date).strftime('%y/%m/%d-%H:%M')
             self.object.last_update_date = datetime2jalali(self.object.last_update_date).strftime('%y/%m/%d-%H:%M')
+
+            customer_party_id = getattr(self.object, 'customer_party_id', None)
+            if customer_party_id and not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
+                self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
+
+            Notification.notify_customer_for_quotation(self.object)
+
+        context['notify_number'] = getattr(self.object, 'notify_number', '')
         context['data'] = self.object
         context['app_name'] = self.request.resolver_match.app_name
         context['duplicate'] = True
@@ -1587,6 +1598,10 @@ class CustomerRequestView(LoginRequiredMixin, View):
                 customer_instance.shop_id = customer_request.customer_shop
                 customer_instance.extra_data.request = self.request
                 customer_instance.save()
+
+            customer_request.customer = customer_instance
+            customer_request.extra_data.request = self.request
+            customer_request.save()
             sale_type = SaleType.objects.get(id=2)
 
             quotation = Quotation.objects.create(
@@ -1658,9 +1673,6 @@ class CustomerRequestView(LoginRequiredMixin, View):
                     customer_goods_name=customer_part_number,
                 )
 
-
-
-
         except Exception as e:
             # messages.warning(request, f"ردیف {index + 1} ذخیره نشد: {e}")
             messages.error(request, f"خطا در ذخیره پیش‌فاکتور: {e}")
@@ -1697,6 +1709,7 @@ class CustomerRequestViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         return JsonResponse({'detail': 'url with "pk" required'})
 
+
 class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasShopPermission]
     queryset = Quotation.objects.all().order_by('-request_date')
@@ -1715,6 +1728,50 @@ class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return JsonResponse({'detail': 'url with "pk" required'})
+
+
+class CustomerViewSet(viewsets.ModelViewSet):
+    queryset = Quotation.objects.filter(pk=1)
+
+    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/quotation')
+    def quotation_by_customer(self, request, sepidar_party_id=None):
+        queryset = Quotation.objects.filter(customer_party_id_id=sepidar_party_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = QuotationSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = QuotationSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/factor')
+    def factor_by_customer(self, request, sepidar_party_id=None):
+        queryset = Factor.objects.filter(Q(customer_party_id_id=sepidar_party_id) | Q(q__customer_party_id_id=sepidar_party_id)).distinct()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = FactorSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = FactorSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/order')
+    def order_by_customer(self, request, sepidar_party_id=None):
+        queryset = Order.objects.filter(customer_party_id_id=sepidar_party_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = OrderSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = OrderSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/customer-request')
+    def customer_request_by_customer(self, request, sepidar_party_id=None):
+        queryset = CustomerRequest.objects.all().order_by('-request_date').filter(customer=sepidar_party_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CustomerRequestSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = CustomerRequestSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class CustomerRequestList(LoginRequiredMixin,View):
@@ -1741,6 +1798,7 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         {'name': 'customer_code', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False,
          'lookup_field': '__sepidar_dl_code__icontains'},
         {'name': 'customer_title', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__icontains'},
+        {'name': 'customer_quotationss', 'visible': True, 'title': _('پیش فاکتور'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': 'customer_quotations__id__icontains'},
         {'name': 'customer_shop', 'visible': True, 'title': _('مشتری فروشگاه'), 'className': 'py-1 border', 'orderable': False},
         {'name': 'customer_phone', 'visible': True, 'title': 'تلفن مشتری', 'orderable': True,},
         {'name': 'cart_id', 'visible': True, 'title': 'شناسه کارت', 'orderable': True},
@@ -1757,6 +1815,7 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
         row['customer_title'] = obj.customer.title if obj.customer else ''
         row['customer_code'] = obj.customer.sepidar_dl_code if obj.customer else ''
+        row['customer_quotationss'] = getattr(obj.customer_quotations.first(), 'pk', '-')
         # row['customer_shop_title'] = obj.shop if obj.customer_shop else ''
         # row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
         # row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''

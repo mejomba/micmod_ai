@@ -10,9 +10,10 @@
 
 <form method="POST" action="{% if form.instance.pk %}{% url "extra_data:customer_expert.update" form.instance.pk %}{% else %}{% url "extra_data:customer_expert.create" %}{% endif %}"  id="customer-expert-form">
     {% csrf_token %}
-    <div class="row row-cols-5 mx-xl-10 bg-white rounded border my-10 pt-10 position-relative align-items-baseline shadow">
+    <div class="row row-cols-4 mx-xl-10 bg-white rounded border my-10 pt-10 position-relative align-items-baseline shadow">
         <h4 class="position-absolute" style="top: -10px">کارشناس مشتری</h4>
-        {% render_field_by_order form form.customer form.name form.phone form.position form.is_main label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.customer form.name form.phone form.position  label='on-border' margin_b=4 %}
+        {% render_field_by_order form form.is_main form.send_notification form.access_to_shop_info  label='on-border' margin_b=4 %}
     </div>
     <input type="submit" value="ثبت" id="submit-customer-expert" class="btn btn-primary ms-10">
 </form>

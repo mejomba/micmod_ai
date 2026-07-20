@@ -120,7 +120,7 @@
               "icon": "message-add",
               "title": "create",
               "path_key": "factor/view",
-              "link": "factor:safe.factor.view"
+              "link": "factor:factor.view"
             },
             {
               "icon": "burger-menu",
@@ -153,26 +153,13 @@
           "menus": [
             {
               "icon": "message-add",
-              "title": "ایجاد سفارش داخلی",
-              "path_key": "order/view",
-              "link": "order:bazar.order.view"
-            },
-            {
-              "icon": "burger-menu",
-              "title": "لیست سفارش داخلی",
-              "path_key": "order/bazar/list/",
-              "link": "order:bazar.order.list",
-              "count": "order.order:get_qs_count"
-            },
-            {
-              "icon": "message-add",
-              "title": "ایجاد سفارش خارجی",
+              "title": "ایجاد",
               "path_key": "order/view",
               "link": "order:order.view"
             },
             {
               "icon": "burger-menu",
-              "title": "لیست سفارش خارجی",
+              "title": "لیست",
               "path_key": "order/list/",
               "link": "order:order.list",
               "count": "order.order:get_qs_count"
@@ -222,16 +209,9 @@
           "menus": [
             {
               "icon": "message-add",
-              "title": "نسخه قدیم",
+              "title": "ایجاد",
               "path_key": "order/view",
               "link": "order:bazar_buyfactor.view",
-              "count": "order.order:get_qs_count"
-            },
-            {
-              "icon": "message-add",
-              "title": "نسخه جدید",
-              "path_key": "order/view",
-              "link": "order:new_bazar_buyfactor.view",
               "count": "order.order:get_qs_count"
             }
           ]

@@ -71,9 +71,9 @@
 </div>
 
 {% for form_s_item in form_s %}
-{#        <div class="sortable-item factor_item_self" id="invoice-rows">#}
+        {% if form_s_item.instance.pk %}
             {% include "factor/partial/_wh_factor_item_row.html" with form_s_item=form_s_item %}
-{#        </div>#}
+        {% endif %}
     {% endfor %}
         {#*******************************************************************************#}
         {% include 'core/partial/empty_modal.html' %}

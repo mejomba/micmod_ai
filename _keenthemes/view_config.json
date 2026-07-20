@@ -169,7 +169,7 @@
               {
                 "group": "sales_user",
                 "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count"]
+                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count", "is_bazar"]
               }
             ]
           },
@@ -207,7 +207,7 @@
               {
                 "group": "sales_user",
                 "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count"]
+                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count", "is_bazar"]
               },
               {
                 "group": "factor_collector",
@@ -251,7 +251,7 @@
               {
                 "group": "sales_user",
                 "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item"],
-                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count"]
+                "read": ["goods_code", "part_number_show", "supply_locations","supply_location", "reserve_count", "is_bazar"]
               },
               {
                 "group": "factor_final_check",

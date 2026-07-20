@@ -584,6 +584,14 @@ class DaxCall:
         res = requests.get(url, headers=headers)
         return res.json()
 
+    @classmethod
+    def order_notify_dax(cls):
+        url = "http://192.168.1.80:8070/etls/get-dax/4/"
+        headers = {"Authorization": f"Token {settings.TOKEN_8070}"}
+        import requests
+        res = requests.get(url, headers=headers)
+        return res.json()
+
 
 def wf_cache(timeout=20):
     def deco(fn):

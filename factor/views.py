@@ -37,6 +37,7 @@ from factor.cont import disable_all_signals
 from factor.serializers import FactorSerializer
 from inquiry.models import CurrencyAmount
 from micmod_base.serializers import CustomerRequestSerializer
+from notifications.models import Notification
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
 from translator import get_text as _
@@ -174,7 +175,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         return reverse_lazy('factor:factor.view', kwargs={'pk': self.object.pk})
 
     def check_last_update(self):
-        return
+        return True
         fis_last_update = (json.loads(self.request.POST.get('fis_last_update_datetime', "{}"))
                            or self.request.GET.get('fis_last_update_datetime'))
         f_last_update = (self.request.POST.get('last_update_datetime')
@@ -299,6 +300,11 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.is_official = True
         if obj_before_save and obj_before_save.official_factor_for_this_factor:
             self.object.official_factor_for_this_factor = obj_before_save.official_factor_for_this_factor
+
+        customer_party_id = getattr(self.object, 'customer_party_id', None) or self.object.q.customer_party_id
+        if not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
+            self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
+
         self.object.save()
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
@@ -314,6 +320,12 @@ class FactorView(LoginRequiredMixin, BaseView):
         if not self.object:
             return context
 
+        customer_party_id = getattr(self.object, 'customer_party_id', None) or self.object.q.customer_party_id
+        if not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
+            self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
+
+        Notification.notify_customer_for_factor(self.object)
+
         last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
         context['last_update_datetime'] = last_update_datetime
         fis = {fi.pk: fi.last_update_date.isoformat() for fi in self.object.factoritem_set.all()} if self.object else {}
@@ -324,6 +336,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['update'] = True if self.object else False
         context['obj'] = self.object
         context['quotation'] = self.object.q if self.object else None
+        context['notify_number'] = self.object.notify_number
         qis = self.object.q.quotation.select_related('goods_code_fk') if self.object else None
         FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
         context['form_s'] = FactorItemFormset(instance=self.object, form_kwargs={
@@ -618,7 +631,7 @@ class FactorListDatatable(AjaxDatatableView):
             )
         else:
             row['q'] = '-'
-        if obj.created_date < parse_datetime("2026-07-08 00:00:00.390205+00"):
+        if obj.created_date < parse_datetime("2027-07-08 00:00:00.390205+00"):
             row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
                 reverse('factor:factor.view', args=(obj.id,)),
                 obj.pk if obj.pk else '-'
@@ -1102,19 +1115,22 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
             messages.error(self.request, f'{e}')
 
     def save_new_address(self):
-        address = self.request.POST.get('new_address')
-        customer = self.request.POST.get('customer')
-        if address and customer:
-            obj = CustomerAddress.objects.create(address=address, customer_id=customer)
+        try:
+            address = self.request.POST.get('new_address')
+            customer = self.request.POST.get('customer') or self.object.customer_party_id.pk
+            if address and customer:
+                obj = CustomerAddress.objects.create(address=address, customer_id=customer)
 
-            self.request.POST._mutable = True
-            self.request.POST['address'] = obj.pk
-            self.request.POST._mutable = False
+                self.request.POST._mutable = True
+                self.request.POST['address'] = obj.pk
+                self.request.POST._mutable = False
 
-            self.object.extra_data.request = self.request
-            self.object.address = obj
-            self.object.save()
-            return obj
+                self.object.extra_data.request = self.request
+                self.object.address = obj
+                self.object.save()
+                return obj
+        except Exception as e:
+            pass
 
     def get_success_url(self):
         return reverse_lazy('factor:safe.factor.view', kwargs={'pk': self.object.pk})
@@ -1149,6 +1165,8 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         service = SupplyLocationService()
         try:
             with transaction.atomic():
+                for f_s in form_set.forms:
+                    f_s.instance.extra_data.request = self.request
                 instances = form_set.save(commit=False)  # حذف‌ها را خودمان مدیریت می‌کنیم
 
                 # ۱) ردیف‌های حذف‌شده: آزادسازی SL + اعتبارسنجی قفل + حذف ردیف
@@ -1178,11 +1196,18 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                 wf_obj = self.submit_flow(is_new=is_new)
                 self.object.last_work_flow = wf_obj
                 self.object.save_comment(self.request, CommentsForm)
+                customer_party_id = getattr(self.object, 'customer_party_id', None)
+                if customer_party_id and not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
+                    self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
+
                 self.object.save()
                 self.tired_q()
 
                 if 'send_factor_to_sepidar' in self.request.POST:
                     self.send_factor_to_sepidar()
+
+                if 'new_address' in self.request.POST:
+                    self.save_new_address()
 
         except ValidationError as e:
             form_set._non_form_errors = form_set.error_class([str(e)])
@@ -1191,8 +1216,6 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
 
         return redirect(self.get_success_url())
 
-        if 'new_address' in self.request.POST:
-            self.save_new_address()
 
         return super().post(request, *args, **kwargs)
 
@@ -1378,6 +1401,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         else:
             initial = dict()
             if self.object:
+                Notification.notify_customer_for_factor(self.object)
                 if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
                     context['allow_cancel'] = self.object.last_work_flow.to_user
                 if self.request.user.is_superuser:

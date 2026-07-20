@@ -527,7 +527,7 @@ class Item(BaseModel):
                 remaining_quantity = o.remaining_quantity
                 if remaining_quantity > 0:
                     res.append((str(o.pk),
-                                f"🧺 {o.last_work_flow.current_state_name} {o.pk} ام (کل {o.final_quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
+                                f"🧺 {getattr(o.last_work_flow, 'current_state_name', '-')} {o.pk} ام (کل {o.final_quantity:0.20g}) - (آزاد {remaining_quantity:0.20g})  🕘 {o.estimate_arrive_at}"))
 
         return res
 
@@ -1112,6 +1112,8 @@ class CustomerExpert(AbsBaseModel):
     phone = models.CharField(_('phone'), max_length=20, null=True, blank=True, help_text='09123456789 or 0213456789')
     position = models.CharField(_('position'), max_length=200, null=True, blank=True, help_text='')
     is_main = models.BooleanField(_('is_main'), default=False)
+    send_notification = models.BooleanField(default=False, verbose_name=_('send_notification'))
+    access_to_shop_info = models.BooleanField(default=False, verbose_name=_('access_to_shop_info'))
 
 
 class CustomerContract(AbsBaseModel):

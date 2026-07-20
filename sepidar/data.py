@@ -411,6 +411,47 @@ class SepidarDataFactory(metaclass=SingletonMeta):
     @classmethod
     def get_receipt_before_central_wh_data(cls, buy_factor_data, request):
 
+        inventoryreceipt_items = []
+        for idx, ipi in enumerate(buy_factor_data.get('inventorypurchaseinvoice_item'), start=1):
+            currency_rate = ipi.get('currencyrate')
+            if currency_rate and float(currency_rate) == 1.0:
+                currency_rate = None
+
+            inventoryreceipt_items.append({
+                # "inventoryreceiptref": 555,
+                "isreturn": 0,
+                "currencyref": None,
+                "taxcurrencyvalue": None,
+                "dutycurrencyvalue": None,
+                "paritycheck": None,
+                "productorderref": None,
+                "inventorydeliveryitemref": None,
+                "weighingref": None,
+                "baseimportpurchaseinvoiceitemref": None,
+                "allotmenedothercostinbasecurrency": None,
+                "rownumber": ipi.get('rownumber'),
+                "base": 1300,
+                "itemref": ipi.get('itemref'),
+                "tracingref": None,
+                "quantity": ipi.get('quantity'),
+                "remainingquantity": ipi.get('remainingquantity'),
+                "secondaryquantity": ipi.get('secondaryquantity'),
+                "currencyrate": currency_rate,
+                "currencyvalue": None,
+                "fee": ipi.get('fee'),
+                "price": ipi.get('price'),
+                "tax": ipi.get('tax'),
+                "duty": ipi.get('duty'),
+                "transportprice": ipi.get('transportprice'),
+                "transporttax": ipi.get('transporttax'),
+                "transportduty": ipi.get('transportduty'),
+                "transportdescription": ipi.get('transportdescription'),
+                "description": ipi.get('description'),
+                "version": ipi.get('version'),
+                "description_en": ipi.get('description_en'),
+                "basepurchaseinvoiceitemref": ipi.get('inventorypurchaseinvoiceitemid'),
+            })
+
         data = {
             "isreturn": 0,
             "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id'),  # مقدار ثابت که به انبار قبل مرکزی اشاره دارد
@@ -440,42 +481,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "creatorform": 1,
             "description": None,
             "type": 1,
-            "inventoryreceipt_item": [
-                {
-                    # "inventoryreceiptref": 555,
-                    "isreturn": 0,
-                    "currencyref": None,
-                    "taxcurrencyvalue": None,
-                    "dutycurrencyvalue": None,
-                    "paritycheck": None,
-                    "productorderref": None,
-                    "inventorydeliveryitemref": None,
-                    "weighingref": None,
-                    "baseimportpurchaseinvoiceitemref": None,
-                    "allotmenedothercostinbasecurrency": None,
-                    "rownumber": ipi.get('rownumber'),
-                    "base": 1300,
-                    "itemref": ipi.get('itemref'),
-                    "tracingref": None,
-                    "quantity": ipi.get('quantity'),
-                    "remainingquantity": ipi.get('remainingquantity'),
-                    "secondaryquantity": ipi.get('secondaryquantity'),
-                    "currencyrate": ipi.get('currencyrate'),
-                    "currencyvalue": None,
-                    "fee": ipi.get('fee'),
-                    "price": ipi.get('price'),
-                    "tax": ipi.get('tax'),
-                    "duty": ipi.get('duty'),
-                    "transportprice": ipi.get('transportprice'),
-                    "transporttax": ipi.get('transporttax'),
-                    "transportduty": ipi.get('transportduty'),
-                    "transportdescription": ipi.get('transportdescription'),
-                    "description": ipi.get('description'),
-                    "version": ipi.get('version'),
-                    "description_en": ipi.get('description_en'),
-                    "basepurchaseinvoiceitemref": ipi.get('inventorypurchaseinvoiceitemid'),
-                } for idx, ipi in enumerate(buy_factor_data.get('inventorypurchaseinvoice_item'), start=1)
-            ]
+            "inventoryreceipt_item": inventoryreceipt_items
         }
 
         return data

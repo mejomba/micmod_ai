@@ -371,6 +371,36 @@
                                               </div>
                                             {% endfor %}
                                             </div>
+                                        {% if request.user.base_group == 'wh' and flow_state_index == 5 %}
+                                        <span onclick="show_address_input(event)" class="btn btn btn-secondary">آدرس جدید</span>
+                                        <div class="col-5 d-none" id="new_address_container">
+                                            <textarea class="w-100" name="new_address" id="new_address" rows="2" placeholder="آدرس جدید به صورت کامل (پس از وارد نمودن آدرس جدید ذخیره پیش نویس انجام دهید)"></textarea>
+                                            <script>
+                                            function show_address_input(event){
+                                                const new_address_container = document.querySelector('#new_address_container')
+                                                const new_address_textarea = document.querySelector('#new_address')
+                                                const new_address_btn = event.currentTarget
+                                                if (new_address_container){
+                                                    if (new_address_container.classList.contains('d-none')){
+                                                        new_address_btn.textContent = 'انصراف'
+                                                        new_address_container.classList.remove('d-none')
+                                                        new_address_btn.classList.toggle('btn-secondary')
+                                                        new_address_btn.classList.toggle('btn-danger')
+                                                    } else {
+                                                        new_address_container.classList.add('d-none')
+                                                        new_address_textarea.value = ''
+                                                        new_address_btn.textContent = 'آدرس جدید'
+                                                        new_address_btn.classList.toggle('btn-secondary')
+                                                        new_address_btn.classList.toggle('btn-danger')
+                                                    }
+                                                }
+                                            }
+
+                                        </script>
+                                        </div>
+                                        {% endif %}
+
+
 
                                         </div>
 {#                                        <span class="factor-header-toggle btn btn-sm btn-secondary my-1"></span>#}
@@ -419,13 +449,13 @@
             <span class="col-1 bold">
                 <span> تعداد</span>
             </span>
-            <span class="col-1 bold">
+            <span class="col-1 bold {% if request.user.base_group == 'wh' %} d-none {% endif %}">
                 <span>قیمت</span>
             </span>
-            <span class="col-1 bold">
+            <span class="col-1 bold {% if request.user.base_group == 'wh' %} d-none {% endif %}">
                 <span>تخفیف ردیف</span>
             </span>
-            <span class="col-1 bold">
+            <span class="col-1 bold {% if request.user.base_group == 'wh' %} d-none {% endif %}">
                 <span>قیمت کل ردیف</span>
             </span>
             <span class="col-4 bold">
@@ -1503,4 +1533,26 @@ function renumberRows() {
     </script>
     {#    end clude#}
 
+    <script>
+        function show_address_input(event){
+            const new_address_container = document.querySelector('#new_address_container')
+            const new_address_textarea = document.querySelector('#new_address')
+            const new_address_btn = event.currentTarget
+            if (new_address_container){
+                if (new_address_container.classList.contains('d-none')){
+                    new_address_btn.textContent = 'انصراف'
+                    new_address_container.classList.remove('d-none')
+                    new_address_btn.classList.toggle('btn-secondary')
+                    new_address_btn.classList.toggle('btn-danger')
+                } else {
+                    new_address_container.classList.add('d-none')
+                    new_address_textarea.value = ''
+                    new_address_btn.textContent = 'آدرس جدید'
+                    new_address_btn.classList.toggle('btn-secondary')
+                    new_address_btn.classList.toggle('btn-danger')
+                }
+            }
+        }
+
+    </script>
 {% endblock extra_js %}

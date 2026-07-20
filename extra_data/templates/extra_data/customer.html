@@ -304,8 +304,10 @@
                     <div class="col-2">تلفن</div>
                     <div class="col-1">سمت</div>
                     <div class="col-1">اصلی</div>
-                    <div class="col-3">عملیات</div>
-                    <div class="col-3"></div>
+                    <div class="col-1">ارسال پیامک</div>
+                    <div class="col-2">دسترسی به اطلاعات فروشگاه</div>
+                    <div class="col-2">عملیات</div>
+{#                    <div class="col-3"></div>#}
                     </div>
                 {% endif %}
             <div class="row align-items-center">
@@ -335,7 +337,37 @@
                     {% endif %}
 {#                        <span>{{ expert.is_main|yesno:"بله,خیر" }}</span>#}
                     </div>
-                    <div class="col-3">
+                    <div class="col-1">
+                    {% if expert.send_notification %}
+                        <i class="ki-duotone ki-check-circle fs-2 text-success">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                        </i>
+                        {% else %}
+                        <i class="ki-duotone ki-cross-circle fs-2 text-danger">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                        </i>
+                        <span></span>
+                    {% endif %}
+{#                        <span>{{ expert.is_main|yesno:"بله,خیر" }}</span>#}
+                    </div>
+                    <div class="col-2">
+                    {% if expert.access_to_shop_info %}
+                        <i class="ki-duotone ki-check-circle fs-2 text-success">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                        </i>
+                        {% else %}
+                        <i class="ki-duotone ki-cross-circle fs-2 text-danger">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                        </i>
+                        <span></span>
+                    {% endif %}
+{#                        <span>{{ expert.is_main|yesno:"بله,خیر" }}</span>#}
+                    </div>
+                    <div class="col-2">
                         <span>
                         <a href="#" target="_blank" id="" class="me-3 edit-customer-expert tooltip_" data-url="{% url 'extra_data:customer_expert.update' expert.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                             <span class="tooltiptext">ویرایش</span>
@@ -371,7 +403,7 @@
                         </a>
                     </span>
                     </div>
-                    <div class="col-3"></div>
+{#                    <div class="col-3"></div>#}
             {% endfor %}
             {% endwith %}
             <div class="d-flex">

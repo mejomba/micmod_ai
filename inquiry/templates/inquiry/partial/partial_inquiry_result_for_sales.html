@@ -12,8 +12,10 @@
             <div class="mb-8">
                 <div class="select2 s2_sku_c mb-" id="select2_sku_c" name="s2_sku_c">{{ form.initial.sku_c }}</div>
                 <div class="mt-1">
-                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.sku_c }}</span>
-                    <span class="d-none" id="part_number">{{ form.initial.part_number }}</span>
+                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ real_sku.sku }}</span>
+{#                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.sku_c }}</span>#}
+{#                    <span class="d-none" id="part_number">{{ form.initial.part_number }}</span>#}
+                    <span class="d-none" id="part_number">{{ real_sku.part_number }}</span>
                 </div>
             </div>
             <input type="hidden" name="sku_c" maxlength="100" class="form-control" value="{{ form.initial.sku_c }}" onchange="refresh_data(event)" required="" id="id_sku_c">

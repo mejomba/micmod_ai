@@ -111,6 +111,8 @@
 
 {% block form_footer_extra %}
 {% include "core/partial/add_formset_button.html" %}
+    <div class="px-2 mx-auto">
+        </div>
     {% if form.instance.id %}
         {% if  request.user|has_group:'sales_user' and flow_state_index < 2 %}
         <div class="d-flex justify-content-between mt-1 ">

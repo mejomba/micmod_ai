@@ -112,59 +112,59 @@
             </div>
 
 {#        سفارش خارجی موقتا غیر فعال#}
-{#            <div class="sp-group sp-g-foreign">سفارش خارجی</div>#}
-{#            {% for f in supply.foreign_orders %}#}
-{#              <div class="sp-src" data-group="foreign" data-id="{{ f.id }}"#}
-{#                   data-name="{{ f.name }}" data-is-new="false">#}
-{#                <label class="sp-src-main">#}
-{#                  <input type="checkbox" class="sp-check sp-check-main"#}
-{#                         {% if f.preselected_qty_free %}checked{% endif %}>#}
-{#                  <div class="sp-info">#}
-{#                    <span class="sp-name">{{ f.name }}</span>#}
-{#                    <span class="sp-meta">تعداد: <b>{{ f.total_qty|floatformat:'-2g' }}</b> · آزاد: <b>{{ f.free_qty|floatformat:'-2g' }}</b></span>#}
-{#                  </div>#}
-{#                  <input type="text" inputmode="decimal" class="sp-qty sp-qty-free" min="0" max="{{ f.free_qty }}"#}
-{#                         value="{{ f.preselected_qty_free|default_if_none:''|default:'' }}"#}
-{#                         placeholder="تعداد"#}
-{#                         {% if not f.preselected_qty_free %}disabled{% endif %}>#}
-{#                </label>#}
-{#                {% if f.other_reserves %}#}
-{#                  <div class="sp-src-others">#}
-{#                    <button type="button" class="sp-others-toggle">#}
-{#                      <span class="sp-chev">▸</span>از رزروهای دیگران#}
-{#                      <span class="sp-others-cap">(تا {{ f.other_reserves_total|floatformat:'-2g' }})</span>#}
-{#                    </button>#}
-{#                    <div class="sp-others-list" hidden>#}
-{#                      {% for r in f.other_reserves %}#}
-{#                        <label class="sp-reserve" data-reserve-id="{{ r.id }}" data-max="{{ r.qty }}">#}
-{#                          <input type="checkbox" class="sp-check sp-check-reserve"#}
-{#                                 {% if r.preselected_qty %}checked{% endif %}>#}
-{#                          <div class="sp-reserve-info">#}
-{#                            <span class="sp-reserve-name">{{ r.owner }}</span>#}
-{#                            <span class="sp-reserve-meta">موجود: {{ r.qty|floatformat:'-2g' }}</span>#}
-{#                          </div>#}
-{#                          <input type="text" inputmode="decimal" class="sp-qty sp-qty-reserve" min="0" max="{{ r.qty }}"#}
-{#                                 value="{{ r.preselected_qty|default_if_none:''|default:'' }}"#}
-{#                                 placeholder="تعداد"#}
-{#                                 {% if not r.preselected_qty %}disabled{% endif %}>#}
-{#                        </label>#}
-{#                      {% endfor %}#}
-{#                    </div>#}
-{#                  </div>#}
-{#                {% endif %}#}
-{#              </div>#}
-{#            {% endfor %}#}
-{#            <div class="sp-src sp-new" data-group="foreign" data-id=""#}
-{#                 data-name="سفارش خارجی جدید" data-is-new="true">#}
-{#              <label class="sp-src-main">#}
-{#                <input type="checkbox" class="sp-check sp-check-main">#}
-{#                <div class="sp-info">#}
-{#                  <span class="sp-name">سفارش خارجی جدید</span>#}
-{#                  <span class="sp-meta">هنگام ذخیره ساخته می‌شود</span>#}
-{#                </div>#}
-{#                <input type="text" inputmode="decimal" class="sp-qty sp-qty-free" min="0" placeholder="تعداد" disabled>#}
-{#              </label>#}
-{#            </div>#}
+            <div class="sp-group sp-g-foreign">سفارش خارجی</div>
+            {% for f in supply.foreign_orders %}
+              <div class="sp-src" data-group="foreign" data-id="{{ f.id }}"
+                   data-name="{{ f.name }}" data-is-new="false">
+                <label class="sp-src-main">
+                  <input type="checkbox" class="sp-check sp-check-main"
+                         {% if f.preselected_qty_free %}checked{% endif %}>
+                  <div class="sp-info">
+                    <span class="sp-name">{{ f.name }}</span>
+                    <span class="sp-meta">تعداد: <b>{{ f.total_qty|floatformat:'-2g' }}</b> · آزاد: <b>{{ f.free_qty|floatformat:'-2g' }}</b></span>
+                  </div>
+                  <input type="text" inputmode="decimal" class="sp-qty sp-qty-free" min="0" max="{{ f.free_qty }}"
+                         value="{{ f.preselected_qty_free|default_if_none:''|default:'' }}"
+                         placeholder="تعداد"
+                         {% if not f.preselected_qty_free %}disabled{% endif %}>
+                </label>
+                {% if f.other_reserves %}
+                  <div class="sp-src-others">
+                    <button type="button" class="sp-others-toggle">
+                      <span class="sp-chev">▸</span>از رزروهای دیگران
+                      <span class="sp-others-cap">(تا {{ f.other_reserves_total|floatformat:'-2g' }})</span>
+                    </button>
+                    <div class="sp-others-list" hidden>
+                      {% for r in f.other_reserves %}
+                        <label class="sp-reserve" data-reserve-id="{{ r.id }}" data-max="{{ r.qty }}">
+                          <input type="checkbox" class="sp-check sp-check-reserve"
+                                 {% if r.preselected_qty %}checked{% endif %}>
+                          <div class="sp-reserve-info">
+                            <span class="sp-reserve-name">{{ r.owner }}</span>
+                            <span class="sp-reserve-meta">موجود: {{ r.qty|floatformat:'-2g' }}</span>
+                          </div>
+                          <input type="text" inputmode="decimal" class="sp-qty sp-qty-reserve" min="0" max="{{ r.qty }}"
+                                 value="{{ r.preselected_qty|default_if_none:''|default:'' }}"
+                                 placeholder="تعداد"
+                                 {% if not r.preselected_qty %}disabled{% endif %}>
+                        </label>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+            <div class="sp-src sp-new" data-group="foreign" data-id=""
+                 data-name="سفارش خارجی جدید" data-is-new="true">
+              <label class="sp-src-main">
+                <input type="checkbox" class="sp-check sp-check-main">
+                <div class="sp-info">
+                  <span class="sp-name">سفارش خارجی جدید</span>
+                  <span class="sp-meta">هنگام ذخیره ساخته می‌شود</span>
+                </div>
+                <input type="text" inputmode="decimal" class="sp-qty sp-qty-free" min="0" placeholder="تعداد" disabled>
+              </label>
+            </div>
 
             <div class="sp-footer">
               <div class="sp-foot-line"><span>مورد نیاز</span><b>{{ quantity|floatformat:'-2g' }}</b></div>
