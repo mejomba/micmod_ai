@@ -9,7 +9,7 @@ from micmod_base.base import Currency
 from tools.utils import show_error, c_get
 from .models import PriceInquiryFile, PriceInquiryResult, SalesPriceInqueryLog, InquiryResult, Supplier, \
     InquiryResultVariant, CurrencyAmount
-from extra_data.models import Item, PriceSettings
+from extra_data.models import Item, PriceSettings, Customer
 
 from translator import get_text as _
 
@@ -322,10 +322,11 @@ class PriceInquiryResult2CreateForm(CustomBaseModelForm):
 
 class SalesPriceInqueryLogForm(CustomBaseModelForm):
     sku_c = forms.CharField(max_length=100, label=_('sku'))
+    party_code_c = forms.CharField(required=False, label='مشتری')
 
     class Meta:
         model = SalesPriceInqueryLog
-        fields = ['sku_c', 'sku', 'party_code', 'quantity', 'grade', 'payment_method', 'currency', 'price_setting']
+        fields = ['sku_c', 'sku', 'party_code_c', 'party_code', 'quantity', 'grade', 'payment_method', 'currency', 'price_setting']
 
     def __init__(self, *args, **kwargs):
         super(SalesPriceInqueryLogForm, self).__init__(*args, **kwargs)
@@ -335,7 +336,13 @@ class SalesPriceInqueryLogForm(CustomBaseModelForm):
         elif c := self.initial.get('request'):
             request = c
         self.fields['sku'].widget = forms.HiddenInput()
+        self.fields['party_code'].widget = forms.HiddenInput()
         self.fields['payment_method'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
+        # self.fields['party_code'] = forms.ModelChoiceField(
+        #                                                     queryset=Customer.objects.all(),
+        #                                                     widget=forms.Select(attrs={'class': 'form-control'})
+        #                                                 )
+
         self.fields['grade'] = forms.ChoiceField(widget=forms.Select(attrs={'class': 'form-control'}))
         for field_name, field in self.fields.items():
             if 1 == 2:#field_name in ['sku_c','quantity','sku','party_code']:

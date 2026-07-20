@@ -95,6 +95,8 @@ class CustomerRequest(AbsBaseModel):
     customer_phone = models.CharField(_('customer_phone'), max_length=16)
     cart_id = models.BigIntegerField(_('cart_id'))
     request_extra_data = models.JSONField(_('extra_data'), null=True, blank=True)
+    assigned_user = models.ForeignKey(User, verbose_name=_('کارشناس مربوطه'), on_delete=models.DO_NOTHING,
+                                      related_name='customer_requests_assigned_user', null=True, blank=True)
 
 
 class CustomerRequestItem(AbsBaseModel):
@@ -152,6 +154,7 @@ class Quotation(SLSDoc):
     @classmethod
     def sale_user_report(cls, current_user, wf_states, from_date, to_date):
         filter_by_time = Q()
+        sales_user = []
         if from_date and to_date:
             f_date = Persian(from_date).gregorian_datetime()
             t_date = Persian(to_date).gregorian_datetime()

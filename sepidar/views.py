@@ -10,6 +10,7 @@ from django.views.generic.list import ListView
 from django.urls import reverse_lazy, reverse
 
 import sepidar.models
+from accounts.models import User
 from core.views import BaseView
 from micmod_base.base import is_valid
 from .froms import DeviceForm
@@ -114,6 +115,28 @@ def get_customers_for_shop(request):
     #         count += 1
     # obj['total_count'] = count
     # return JsonResponse(obj, safe=False)
+
+def get_user_for_shop(request):
+    q = request.GET.get('q', None)
+    obj = {}
+    count = 0
+    if q:
+
+        if q.isdigit():
+            user_filter = Q(pk__icontains=q)
+        else:
+            user_filter = Q(username__icontains=q)
+        res = User.objects.filter(user_filter)
+        obj['items'] = []
+        for user in res:
+            item = {}
+            item['id'] = user.pk
+            # item['username'] = user.username
+            item['text'] = user.username
+            obj['items'].append(item)
+            count += 1
+    obj['total_count'] = count
+    return JsonResponse(obj, safe=False)
 
 def get_customers_from_pg(request):
     from extra_data.models import Customer

@@ -16,19 +16,28 @@
 {#                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.sku_c }}</span>#}
 {#                    <span class="d-none" id="part_number">{{ form.initial.part_number }}</span>#}
                     <span class="d-none" id="part_number">{{ real_sku.part_number }}</span>
+
+                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.sku_c }}</span>
+                    <span class="bg-light-success me-3 rounded mt-1 d-none">{{ form.initial.party_code_c }}</span>
+                    <span class="d-none" id="part_number">{{ form.initial.part_number }}</span>
+                    <span class="d-none" id="customer_name">{{ form.initial.customer_name }}</span>
+
                 </div>
             </div>
             <input type="hidden" name="sku_c" maxlength="100" class="form-control" value="{{ form.initial.sku_c }}" onchange="refresh_data(event)" required="" id="id_sku_c">
             <input type="hidden" name="prev_value" id="id_prev_value" value="{% if form.initial.search_sku %}{{ form.initial.sku }}{% else %}{{ form.initial.part_number }}{% endif %}">
             {% render_field_by_order form form.sku form.quantity form.currency form.grade form.payment_method form.party_code label='on-border' margin_b=10 %}
             {% render_field_by_order form form.price_setting label='on-border' margin_b=10 %}
+            <div class="select2 s2_party_code_c mb-10" id="select2_party_code_c" name="s2_party_code_c">{{ form.initial.party_code_c }}</div>
+            <input type="hidden"  name="party_code_c" maxlength="100" class="form-control mb-10" value="{{ form.initial.party_code_c }}" onchange="refresh_data(event)" required="" id="id_party_code_c">
+            <input type="hidden" class="mb-10" name="party_code_c_prev_value" id="id_party_code_c_prev_value" value="">
 
             {% if request.user|has_group:"total_admin" %}
                 {% if sku and trade_price %}
                     {% include "core/partial/components/key_value_text.html" with rma_key="price_method" rma_href='/admin/extra_data/pricesettings/'|c_add:trade_price.price_settings.pk|add:'/change/' rma_value=trade_price.price_settings.title rma_class="d-flex py-3" %}
                 {% endif %}
             {% endif %}
-            <input type="checkbox" name="load_sepidar" id="load_sepidar" onchange="refresh_data(event)">
+            <input type="checkbox" name="load_sepidar" id="load_sepidar" class="mt-10" onchange="refresh_data(event)">
             <label for="load_sepidar">دریافت اطلاعات سپیدار</label>
         </div>
         <div class="d-flex gap-1">
@@ -62,16 +71,36 @@
     }
 
     setTimeout(function (){
-        const s2_placeholder = document.querySelector('.select2-selection__placeholder')
+        const s2_placeholder = $('#select2_sku_c').nextAll('.select2-container').find('.select2-selection__placeholder')
         const s2_input = document.querySelector('.select2-search__field')
         const sku_c = document.querySelector('#id_sku_c')
         const part_number = document.querySelector('#part_number')
-        if (s2_placeholder && part_number && sku_c){
-            s2_placeholder.innerHTML = `
+        if (s2_placeholder && part_number && sku_c.value){
+            s2_placeholder.html(`
             <span class="bg-light-success me-3 rounded mt-1">${sku_c.value}</span>
             ${part_number.innerText}
-            `
+            `)
         }
     }, 300)
+
+    setTimeout(function (){
+        const s2_placeholder = $('#select2_party_code_c').nextAll('.select2-container').find('.select2-selection__placeholder')
+        const s2_input = document.querySelector('.select2-search__field')
+        const party_code_c = document.querySelector('#id_party_code_c')
+        const customer_name = document.querySelector('#customer_name')
+        if (s2_placeholder && party_code_c.value && customer_name){
+            s2_placeholder.html(`
+            <span class="bg-light-success me-3 rounded mt-1">${party_code_c.value}</span>
+            ${customer_name.innerText}
+            `)
+        }
+    }, 300)
+
+    try {
+        select2_party_code_c()
+    } catch (err){
+        console.log(err)
+    }
+
 
 </script>

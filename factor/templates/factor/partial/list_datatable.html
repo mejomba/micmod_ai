@@ -35,6 +35,8 @@
         <a href="{% url 'factor:factor.list' %}?q=include_bazar" class="btn btn-bordered btn-outline-primary mx-1">بازار</a>
         <a href="{% url 'factor:factor.list' %}?q=include_trade" class="btn btn-bordered btn-outline-primary mx-1">خارج</a>
         <a href="{% url 'factor:factor.list' %}?q=all_wh" class="btn btn-bordered btn-outline-success mx-1">موجود در انبار</a>
+        <a href="{% url 'factor:factor.list' %}?q=without_accounting_confirm" class="btn btn-bordered btn-outline-success mx-1">بدون تایید مالی</a>
+        <a href="{% url 'factor:factor.list' %}?q=not_delivered" class="btn btn-bordered btn-outline-success mx-1">ارسال نشده</a>
     </div>
     {% endif %}
 
@@ -45,6 +47,7 @@
                     {% if request.user.base_group == 'accounting' %}
                         <a href="{% url 'factor:factor.list' %}" class="btn btn-sm my-1 ms-3 {% if not request.GET.q %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="فاکتور هایی که نیاز به تایید مالی دارند و هنوز تایید نشده اند">در جریان</a>
                         <a href="{% url 'factor:factor.list' %}?q=all" class="btn btn-sm my-1 ms-3 {% if request.GET.q == 'all' %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="تمام فاکتور های ثبت شده در پرتال">همه</a>
+                        <a href="{% url 'factor:factor.list' %}?q=not_delivered_items" class="btn btn-sm my-1 ms-3 {% if request.GET.q == 'all' %} btn-primary {% else %} btn-secondary {% endif %}" data-bs-toggle="tooltip" data-bs-title="فاکتورهایی که کالا هنوز ارسال نشده استه">فاکتور های ارسال نشده</a>
                     {% endif %}
                     </div>
 
@@ -172,46 +175,46 @@
     </script>
 {#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
 
-<script>
-    function fetchForceFactor() {
-        $.ajax({
-            url: "/factor/ajax/show_force_factor/",
-            method: "GET",
-            success: function (data) {
-            const box = $("#forceFactorBox");
-            debugger
-
-            if (!data.res || data.count === 0) {
-                box.html("فاکتور فوری وجود ندارد");
-                return;
-            }
-
-            const links = data.res.map(id =>
-                `<a href="/factor/view/${id}" class="mx-1 text-success bold cursor-pointer hover-link">${id}</a>`
-            ).join("، ");
-
-            box.html(`
-                 <span class="text-success bold">فاکتورهای فوری:</span>
-                 <span class="">${links}</span>
-
-                <br>
-                <span class="text-success bold">تعداد: </span>
-                <span class="text-success bold">${data.count} </span>
-
-`);
-        },
-        error: function () {
-            console.log("Error loading force factors");
-        }
-    });
-}
-
-
-    fetchForceFactor();
-
-    // اجرا هر 2 دقیقه
-    setInterval(fetchForceFactor, 120000);
-</script>
+{#<script>#}
+{#    function fetchForceFactor() {#}
+{#        $.ajax({#}
+{#            url: "/factor/ajax/show_force_factor/",#}
+{#            method: "GET",#}
+{#            success: function (data) {#}
+{#            const box = $("#forceFactorBox");#}
+{#            debugger#}
+{##}
+{#            if (!data.res || data.count === 0) {#}
+{#                box.html("فاکتور فوری وجود ندارد");#}
+{#                return;#}
+{#            }#}
+{##}
+{#            const links = data.res.map(id =>#}
+{#                `<a href="/factor/view/${id}" class="mx-1 text-success bold cursor-pointer hover-link">${id}</a>`#}
+{#            ).join("، ");#}
+{##}
+{#            box.html(`#}
+{#                 <span class="text-success bold">فاکتورهای فوری:</span>#}
+{#                 <span class="">${links}</span>#}
+{##}
+{#                <br>#}
+{#                <span class="text-success bold">تعداد: </span>#}
+{#                <span class="text-success bold">${data.count} </span>#}
+{##}
+{#`);#}
+{#        },#}
+{#        error: function () {#}
+{#            console.log("Error loading force factors");#}
+{#        }#}
+{#    });#}
+//}
+{##}
+{##}
+{#    fetchForceFactor();#}
+{##}
+{#    // اجرا هر 2 دقیقه#}
+{#    setInterval(fetchForceFactor, 120000);#}
+{#</script>#}
 
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>

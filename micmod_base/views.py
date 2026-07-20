@@ -1185,10 +1185,13 @@ class QuotationListDatatable(CustomAjaxDatatableView):
         row['quotation__goods_code_fk'] = '-'
 
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.profile.first_name if obj.last_work_flow else ''
-        row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-            reverse('extra_data:customer.update', args=(obj.customer_party_id.id,)),
-            obj.customer_party_id.title if obj.customer_party_id else '-'
-        )
+        if obj.customer_party_id:
+            row['customer_party_id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+                reverse('extra_data:customer.update', args=(obj.customer_party_id.id,)),
+                obj.customer_party_id.title if obj.customer_party_id else '-'
+            )
+        else:
+            row['customer_party_id'] = '-'
 
         counter = obj.get_inquiry_result_count
         over = obj.not_over_q

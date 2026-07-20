@@ -24,6 +24,7 @@ class AdminUser(UserAdmin, BaseJsonFieldAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "external_access",
                     "is_customer",
                     "is_bi_user",
                     "groups",
