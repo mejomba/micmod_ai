@@ -23,7 +23,7 @@
             <form method="post" target="_blank" action="{% url 'micmod_base:customer_request.view' obj.pk %}">
             {% csrf_token %}
             <input type="hidden" name="customer" id="id_customer" value="{{ obj.customer.sepidar_party_id }}">
-            <input type="hidden" name="user" id="id_user" value="{{ obj.user.pk }}">
+            <input type="hidden" name="user" id="id_user" value="{{ obj.assigned_user.pk }}">
             <input type="hidden" name="customer_shop" value="{{ obj.customer_shop }}">
                 <div class="row mb-3 py-10 shadow rounded" style="transform: scale(1.09)">
                     <div class="col">

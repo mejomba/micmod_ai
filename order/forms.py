@@ -81,7 +81,7 @@ class OrderForm(CustomBaseModelForm):
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
         self.fields['commitment_date_to_customer'] = JalaliDateField(label=_('commitment_date_to_customer'),
                                                       widget=AdminJalaliDateWidget(attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
-        self.make_hidden(['item', 'qi', 'item_trade'])
+        self.make_hidden(['item', 'qi', 'item_trade', 'customer_party_id'])
         self.fields['description_sale'].widget.attrs['rows'] = 6
         self.fields['description_trade'].widget.attrs['rows'] = 3
         # self.fields['quantity_trade'].widget.attrs['value'] = self.instance.quantity_trade or self.instance.quantity

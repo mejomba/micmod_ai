@@ -542,6 +542,7 @@ class SupplyStatus(AbsBaseModel):
 
 
 class QuotationItem(BaseModel):
+    pre_paid_amount = models.FloatField(verbose_name='مبلغ پیش پرداخت', null=True, blank=True)
     final_amount = models.FloatField(null=True, blank=True)
     supply_date = models.DateField(_('supply_date'), null=True, blank=True)
     supply_status = models.ForeignKey(SupplyStatus, verbose_name=_('supply_status'), on_delete=models.DO_NOTHING, null=True, blank=True)

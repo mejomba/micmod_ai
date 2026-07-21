@@ -7,6 +7,7 @@ from order.models import Order
 from order.serializers import OrderSerializer
 from payment.models import GenericPaymentItem
 from payment.serializers import GenericPaymentSerializer
+from workflow.serializers import WorkflowSerializer
 from .models import CustomerRequest, CustomerRequestItem, QuotationItem, Quotation
 
 from core.serializers import CustomFieldModelSerializer
@@ -17,16 +18,24 @@ class QuotationItemSerializer(CustomFieldModelSerializer):
     request_date = serializers.CharField(source='quotation.request_date', read_only=True)
     fee = serializers.SerializerMethodField()
     fee_after_discount = serializers.SerializerMethodField()
+    row_total_price = serializers.SerializerMethodField()
+    row_tax = serializers.SerializerMethodField()
 
     class Meta:
         model = QuotationItem
         fields = '__all__'
 
     def get_fee(self, obj):
-        return getattr(obj, 'final_price', 0) or 0 + getattr(obj, 'addition', 0) or 0
+        return obj.fee + + getattr(obj, 'addition', 0) or 0
 
     def get_fee_after_discount(self, obj):
         return self.get_fee(obj) - getattr(obj, 'discount_per_item', 0) or 0
+
+    def get_row_total_price(self, obj):
+        return obj.price
+
+    def get_row_tax(self, obj):
+        return obj.tax
 
 
 class CustomerQuotationSerializer(CustomFieldModelSerializer):
@@ -44,6 +53,7 @@ class CustomerQuotationSerializer(CustomFieldModelSerializer):
 
 class QuotationSerializer(CustomFieldModelSerializer):
     quotation_items = SerializerMethodField()
+    last_work_flow = WorkflowSerializer()
 
     class Meta:
         model = Quotation
@@ -52,7 +62,9 @@ class QuotationSerializer(CustomFieldModelSerializer):
 
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()
-        return QuotationItemSerializer(qs, many=True, fields=['id', 'fee', 'fee_after_discount', 'quantity', 'goods_code_fk', 'part_number', 'request_date']).data
+        fields = ['id', 'fee', 'fee_after_discount', 'quantity', 'goods_code_fk', 'part_number', 'request_date',
+                  'discount_per_item', 'row_total_price', 'row_tax']
+        return QuotationItemSerializer(qs, many=True, fields=fields).data
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):

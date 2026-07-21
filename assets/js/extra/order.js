@@ -16,6 +16,14 @@ try {
     select2_generate('#id_item_trade_select2', '#id_item_trade', '/inquiry/items_list', item_select2_placeholder)
 }
 
+try {
+    let customer_select2_placeholder = document.querySelector('[name="customer_placeholder"]').innerText.toString() || "مشتری"
+    select2_generate('#id_customer_party_id_select2', '#id_customer_party_id', '/sepidar/customers_for_shop_list', customer_select2_placeholder, 'sepidar_party_id')
+} catch (e) {
+    console.log(e)
+    customer_select2_placeholder = document.querySelector('[name="customer_placeholder"]').innerText.toString() || "مشتری"
+    select2_generate('#id_customer_party_id_select2', '#id_customer_party_id', '/sepidar/customers_for_shop_list', customer_select2_placeholder, 'sepidar_party_id')
+}
 
 if (!$('#id_trade_commitment_date').data("datepicker")){
     $('#id_trade_commitment_date').datepicker({

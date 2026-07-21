@@ -1,7 +1,7 @@
 {% load jalali_tags %}
 {% load more_tags %}
 
-<div class="w-20" style="position: relative; top: -50px;">
+<div class="w-20 pt-5" style="position: relative; top: -50px;">
     <ul class="list-group list-group-flush">
 {#        <li class="list-group-item d-flex justify-content-between align-items-start {% if form.instance.cancel %} bg-light-danger {% else %} bg-light-success {% endif %}" id="id-order-cancel-status">#}
 {#            <div class="form-check form-switch form-check-custom form-check-success form-check-solid w-100">#}
@@ -18,7 +18,7 @@
             <div class="ms-2 me-auto">
                 مشتری
             </div>
-            <span class="badge bg-light-info rounded-pill">{{ form.instance.qi.quotation.customer_party_id|default_if_falsy:"-" }}</span>
+            <span class="badge bg-light-info rounded-pill">{{ form.instance.qi.quotation.customer_party_id|default_if_falsy:form.instance.customer_party_id }}</span>
         </li>
 
         <li class="list-group-item d-flex justify-content-between align-items-start">

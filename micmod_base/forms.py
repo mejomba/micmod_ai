@@ -311,7 +311,7 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                   'assigned_trade_user', 'lead_time', 'assigned_trade_user2', 'task_start', 'task_start2',
                   'task_start_date', 'task_start_date2', 'has_delay', 'delay_reason', 'delay_time', 'item_in_china',
                   'selected_price_code', 'price_json', 'sales_description', 'supply_status', 'customer_request_item',
-                  "supply_date",
+                  "supply_date", "pre_paid_amount",
                   #'bazar_selected_price_code', 'trade_selected_price_code'
                   ]
         widgets = {
@@ -477,7 +477,7 @@ qi_fields = [
     'stock_amount_res', 'goods_min_price', 'goods_max_price',
     'goods_q_last_sale', 'goods_q_last_price', 'goods_q_total_sales', 'need_local_price_inquiry',
     'local_price_inquiry_done', 'need_foreign_price_inquiry', 'foreign_price_inquiry_done', 'description',
-    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json',
+    'item_in_china', 'goods_code_fk', 'discount_per_item', 'selected_price_code', 'price_json', 'pre_paid_amount',
     'sales_description', 'supply_status', 'supply_date', 'customer_request_item',  #'bazar_selected_price_code', 'trade_selected_price_code'
     ]
 

@@ -24,7 +24,7 @@ from comments.forms import CommentsForm
 from core.models import BaseModelAuto
 from core.permissions import HasShopPermission
 from dw.models import DimCustomer
-from extra_data.models import Item, PriceSettings, Customer
+from extra_data.models import Item, PriceSettings, Customer, CustomerExpert
 from factor.forms import FactorItemModelForm, FactorModelForm
 from factor.models import FactorItem, Factor
 from factor.serializers import FactorSerializer
@@ -1737,11 +1737,19 @@ class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Quotation.objects.filter(pk=1)
+    def get_queryset(self):
+        return CustomerExpert.objects.all()
 
-    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/quotation')
-    def quotation_by_customer(self, request, sepidar_party_id=None):
-        queryset = Quotation.objects.filter(customer_party_id_id=sepidar_party_id)
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/quotation')
+    def quotation_list_by_customer(self, request, phone=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False, access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else: customer = None
+
+        queryset = Quotation.objects.filter(customer_party_id=customer) if customer else Quotation.objects.none()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = QuotationSerializer(page, many=True)
@@ -1749,9 +1757,39 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer = QuotationSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/factor')
-    def factor_by_customer(self, request, sepidar_party_id=None):
-        queryset = Factor.objects.filter(Q(customer_party_id_id=sepidar_party_id) | Q(q__customer_party_id_id=sepidar_party_id)).distinct()
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/quotation/(?P<q_id>[^/.]+)')
+    def quotation_by_customer(self, request, phone=None, q_id=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = Quotation.objects.filter(customer_party_id=customer, pk=q_id) if customer else Quotation.objects.none()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = QuotationSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = QuotationSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/factor/(?P<f_id>[^/.]+)')
+    def factor_by_customer(self, request, phone=None, f_id=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = Factor.objects.filter(Q(customer_party_id=customer) | Q(
+            q__customer_party_id=customer)).filter(pk=f_id).distinct() if customer else Factor.objects.none()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = FactorSerializer(page, many=True)
@@ -1759,9 +1797,37 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer = FactorSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/order')
-    def order_by_customer(self, request, sepidar_party_id=None):
-        queryset = Order.objects.filter(customer_party_id_id=sepidar_party_id)
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/factor')
+    def factor_list_by_customer(self, request, phone=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = Factor.objects.filter(Q(customer_party_id=customer) | Q(q__customer_party_id=customer)).distinct() if customer else Factor.objects.none()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = FactorSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = FactorSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/order/(?P<o_id>[^/.]+)')
+    def order_by_customer(self, request, phone=None, o_id=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = Order.objects.filter(customer_party_id_id=customer, pk=o_id)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = OrderSerializer(page, many=True)
@@ -1769,9 +1835,56 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer = OrderSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='(?P<sepidar_party_id>[^/.]+)/customer-request')
-    def customer_request_by_customer(self, request, sepidar_party_id=None):
-        queryset = CustomerRequest.objects.all().order_by('-request_date').filter(customer=sepidar_party_id)
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/order')
+    def order_list_by_customer(self, request, phone=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = Order.objects.filter(customer_party_id_id=customer)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = OrderSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = OrderSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/customer-request/(?P<request_id>[^/.]+)')
+    def customer_request_by_customer(self, request, phone=None, request_id=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = CustomerRequest.objects.all().order_by('-request_date').filter(customer=customer, pk=request_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CustomerRequestSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = CustomerRequestSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/customer-request')
+    def customer_request_list_by_customer(self, request, phone=None):
+        exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                              access_to_shop_info=True).exists()
+
+        if exist_customer_expert:
+            customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                     access_to_shop_info=True).last().customer
+        else:
+            customer = None
+
+        queryset = CustomerRequest.objects.all().order_by('-request_date').filter(customer=customer)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = CustomerRequestSerializer(page, many=True)

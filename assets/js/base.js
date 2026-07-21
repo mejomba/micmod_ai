@@ -603,6 +603,7 @@ function select2_generate(select2_element, target_element, url, placeholder, id_
         afterSelect(select2_element, target_element, id_field)
     } else {
         $(select2_element).on("select2:select", function (e) {
+            debugger
             const data = e.params.data;
             const element_to_show = "select2-" + target_element.substring(1) + "_select2-container"
             $(document).find(target_element).val(data[id_field])
