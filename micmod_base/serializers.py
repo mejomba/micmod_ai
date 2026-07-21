@@ -55,11 +55,31 @@ class QuotationSerializer(CustomFieldModelSerializer):
     quotation_items = SerializerMethodField()
     last_work_flow = WorkflowSerializer()
     workflow_state_list = SerializerMethodField()
+    creator_user = SerializerMethodField()
+    total_price = SerializerMethodField()
+    total_price_after_discount = SerializerMethodField()
+    sale_type = SerializerMethodField()
+    currency_ref = SerializerMethodField()
 
     class Meta:
         model = Quotation
         fields = '__all__'
         # fields = ['id', 'request_date', 'quotation', 'created_date']
+
+    def get_total_price(self, obj):
+        return '000'
+
+    def get_total_price_after_discount(self, obj):
+        return '000'
+
+    def get_sale_type(self, obj):
+        return getattr(obj.sale_type, 'title', None) or None
+
+    def get_currency_ref(self, obj):
+        return f'{obj.currency_ref}'
+
+    def get_creator_user(self, obj):
+        return f'{obj.creator_user}'
 
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()

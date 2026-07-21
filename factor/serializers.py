@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
+from workflow.serializers import WorkflowSerializer
 from .models import Factor, FactorItem
 from core.serializers import CustomFieldModelSerializer
 
@@ -17,10 +18,31 @@ class FactorSerializer(CustomFieldModelSerializer):
     # factoritem_set = FactorItemSerializer(many=True)
     factor_items = SerializerMethodField()
     workflow_state_list = SerializerMethodField()
+    last_work_flow = WorkflowSerializer()
+    creator_user = SerializerMethodField()
+    total_price = SerializerMethodField()
+    total_price_after_discount = SerializerMethodField()
+    sale_type = SerializerMethodField()
+    currency_ref = SerializerMethodField()
 
     class Meta:
         model = Factor
         fields = '__all__'
+
+    def get_total_price(self, obj):
+        return '000'
+
+    def get_total_price_after_discount(self, obj):
+        return '000'
+
+    def get_sale_type(self, obj):
+        return getattr(obj.sale_type, 'title', None) or None
+
+    def get_currency_ref(self, obj):
+        return f'{obj.currency_ref}'
+
+    def get_creator_user(self, obj):
+        return f'{obj.creator_user}'
 
     def get_factor_items(self, obj, **kwargs):
         qs = obj.factoritem_set.all()
