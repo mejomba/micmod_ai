@@ -40,12 +40,6 @@
             </div>
             <span class="badge bg-light-info rounded-pill">{{ form.instance.created_date|default_if_none:"-"|to_jalali:'%Y/%m/%d' }}</span>
         </li>
-        <li class="list-group-item d-flex justify-content-between align-items-start">
-            <div class="ms-2 me-auto">
-                تامین از بازار
-            </div>
-            <span class="badge bg-light-info rounded-pill">{{ form.instance.is_bazar|yesno:"بله,خیر" }}</span>
-        </li>
 
         <li class="list-group-item d-flex justify-content-between align-items-start">
             <div class="ms-2 me-auto">
