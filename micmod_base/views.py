@@ -1759,17 +1759,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='(?P<phone>[^/.]+)/quotation/(?P<q_id>[^/.]+)')
     def quotation_by_customer(self, request, phone=None, q_id=None):
-        # exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
-        #                                                       access_to_shop_info=True).exists()
-        #
-        # if exist_customer_expert:
-        #     customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
-        #                                              access_to_shop_info=True).last().customer
-        # else:
-        #     customer = None
-        #
-        # queryset = Quotation.objects.filter(customer_party_id=customer, pk=q_id) if customer else Quotation.objects.none()
-
         exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
                                                               access_to_shop_info=True).exists()
 
