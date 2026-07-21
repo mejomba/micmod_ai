@@ -54,6 +54,7 @@ class CustomerQuotationSerializer(CustomFieldModelSerializer):
 class QuotationSerializer(CustomFieldModelSerializer):
     quotation_items = SerializerMethodField()
     last_work_flow = WorkflowSerializer()
+    workflow_state_list = SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -65,6 +66,9 @@ class QuotationSerializer(CustomFieldModelSerializer):
         fields = ['id', 'fee', 'fee_after_discount', 'quantity', 'goods_code_fk', 'part_number', 'request_date',
                   'discount_per_item', 'row_total_price', 'row_tax']
         return QuotationItemSerializer(qs, many=True, fields=fields).data
+
+    def get_workflow_state_list(self, obj):
+        return ["پیش فاکتور اولیه", "استعلام قیمت", "تایید پیش فاکتور", "تایید مشتری", "تایید کارشناس", "مرحله نهایی",]
 
 
 class CustomerRequestItemSerializer(serializers.ModelSerializer):
