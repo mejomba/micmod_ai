@@ -1779,7 +1779,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         else:
             customer = None
 
-        queryset = Quotation.objects.filter(customer_party_id_id__in=customer) if customer else Quotation.objects.none()
+        queryset = Quotation.objects.filter(customer_party_id_id__in=customer, pk=q_id) if customer else Quotation.objects.none()
 
         page = self.paginate_queryset(queryset)
         if page is not None:
