@@ -1746,10 +1746,10 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         if exist_customer_expert:
             customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
-                                                     access_to_shop_info=True).values_list('customer', flat=True)
+                                                     access_to_shop_info=True).values_list('customer__sepidar_party_id', flat=True)
         else: customer = None
 
-        queryset = Quotation.objects.filter(customer_party_id__in=customer) if customer else Quotation.objects.none()
+        queryset = Quotation.objects.filter(customer_party_id_id__in=customer) if customer else Quotation.objects.none()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = QuotationSerializer(page, many=True)
