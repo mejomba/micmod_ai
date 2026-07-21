@@ -40,6 +40,7 @@ class QuotationItemSerializer(CustomFieldModelSerializer):
 
 class CustomerQuotationSerializer(CustomFieldModelSerializer):
     quotation_items = SerializerMethodField()
+    total_discount = SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -50,6 +51,9 @@ class CustomerQuotationSerializer(CustomFieldModelSerializer):
         qs = obj.quotation.all()
         return QuotationItemSerializer(qs, many=True,).data
 
+    def get_total_discount(self, obj):
+        return '000'
+
 
 class QuotationSerializer(CustomFieldModelSerializer):
     quotation_items = SerializerMethodField()
@@ -58,6 +62,7 @@ class QuotationSerializer(CustomFieldModelSerializer):
     creator_user = SerializerMethodField()
     total_price = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
+    total_discount = SerializerMethodField()
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
 
@@ -65,6 +70,9 @@ class QuotationSerializer(CustomFieldModelSerializer):
         model = Quotation
         fields = '__all__'
         # fields = ['id', 'request_date', 'quotation', 'created_date']
+
+    def get_total_discount(self, obj):
+        return '000'
 
     def get_total_price(self, obj):
         return '000'
