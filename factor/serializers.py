@@ -8,10 +8,17 @@ from core.serializers import CustomFieldModelSerializer
 
 class FactorItemSerializer(CustomFieldModelSerializer):
     # factor = FactorSerializer(read_only=True)
+    supply_status = SerializerMethodField()
 
     class Meta:
         model = FactorItem
         fields = '__all__'
+
+    def get_supply_status(self, obj):
+        if obj.factoritemsupplylocation_set.filter(order__isnull=False).exists():
+            return False
+        else:
+            return True
 
 
 class FactorSerializer(CustomFieldModelSerializer):
@@ -22,12 +29,16 @@ class FactorSerializer(CustomFieldModelSerializer):
     creator_user = SerializerMethodField()
     total_price = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
+    total_discount = SerializerMethodField()
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
 
     class Meta:
         model = Factor
         fields = '__all__'
+
+    def get_total_discount(self, obj):
+        return '000'
 
     def get_total_price(self, obj):
         return '000'

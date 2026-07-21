@@ -84,7 +84,7 @@ class QuotationSerializer(CustomFieldModelSerializer):
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()
         fields = ['id', 'fee', 'fee_after_discount', 'quantity', 'goods_code_fk', 'part_number', 'request_date',
-                  'discount_per_item', 'row_total_price', 'row_tax']
+                  'discount_per_item', 'row_total_price', 'row_tax', 'delivery_time', 'description']
         return QuotationItemSerializer(qs, many=True, fields=fields).data
 
     def get_workflow_state_list(self, obj):
