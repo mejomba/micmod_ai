@@ -14,6 +14,7 @@ class FactorItemSerializer(CustomFieldModelSerializer):
     total_price = SerializerMethodField()
     total_discount = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
+    tax = SerializerMethodField()
 
     class Meta:
         model = FactorItem
@@ -34,6 +35,9 @@ class FactorItemSerializer(CustomFieldModelSerializer):
     def get_total_price_after_discount(self, obj):
         return self.get_total_price(obj) - self.get_total_discount(obj)
 
+    def get_total_tax(self, obj):
+        return getattr(obj, 'tax', None) or 0
+
     def get_supply_status(self, obj):
         if obj.factoritemsupplylocation_set.filter(order__isnull=False).exists():
             return False
@@ -50,6 +54,7 @@ class FactorSerializer(CustomFieldModelSerializer):
     total_price = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
     total_discount = SerializerMethodField()
+    total_tax = SerializerMethodField()
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
 
@@ -58,13 +63,16 @@ class FactorSerializer(CustomFieldModelSerializer):
         fields = '__all__'
 
     def get_total_discount(self, obj):
-        return '000'
+        return getattr(obj, 'sum_discount', None) or 0
 
     def get_total_price(self, obj):
-        return '000'
+        return getattr(obj, 'get_price', None) or 0
 
     def get_total_price_after_discount(self, obj):
-        return '000'
+        return self.get_total_price(obj) - self.total_discount(obj)
+
+    def get_total_tax(self, obj):
+        return getattr(obj, 'sum_tax', None) or 0
 
     def get_sale_type(self, obj):
         return getattr(obj.sale_type, 'title', None) or None
