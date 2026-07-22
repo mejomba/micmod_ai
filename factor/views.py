@@ -325,7 +325,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         if not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
             self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
 
-        Notification.notify_customer_for_factor(self.object)
+        Notification.notify_customer_for_factor(self.object, self.request)
 
         last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
         context['last_update_datetime'] = last_update_datetime
@@ -1411,7 +1411,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         else:
             initial = dict()
             if self.object:
-                Notification.notify_customer_for_factor(self.object)
+                Notification.notify_customer_for_factor(self.object, self.request)
                 if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
                     context['allow_cancel'] = self.object.last_work_flow.to_user
                 if self.request.user.is_superuser:
