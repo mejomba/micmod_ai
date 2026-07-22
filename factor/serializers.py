@@ -14,7 +14,7 @@ class FactorItemSerializer(CustomFieldModelSerializer):
     total_price = SerializerMethodField()
     total_discount = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
-    tax = SerializerMethodField()
+    total_tax = SerializerMethodField()
 
     class Meta:
         model = FactorItem
