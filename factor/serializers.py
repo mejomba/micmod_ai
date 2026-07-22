@@ -18,10 +18,10 @@ class FactorItemSerializer(CustomFieldModelSerializer):
         fields = '__all__'
 
     def get_total_discount(self, obj):
-        return getattr(obj, 'discount_per_item', None) or 0 * getattr(obj, 'quantity', None) or 0
+        return getattr(obj, 'discount_value', None) or 0
 
     def get_total_price(self, obj):
-        return getattr(obj, 'price', None) or 0 * getattr(obj, 'quantity', None) or 0
+        return getattr(obj, 'row_price', None) or 0
 
     def get_total_price_after_discount(self, obj):
         return self.get_total_price(obj) - self.get_total_discount(obj)
