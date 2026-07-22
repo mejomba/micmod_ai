@@ -57,6 +57,7 @@ class FactorSerializer(CustomFieldModelSerializer):
     total_tax = SerializerMethodField()
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
+    deliver_method = SerializerMethodField()
 
     class Meta:
         model = Factor
@@ -82,6 +83,13 @@ class FactorSerializer(CustomFieldModelSerializer):
 
     def get_creator_user(self, obj):
         return f'{obj.creator_user}'
+
+    def get_deliver_method(self, obj):
+        # return getattr(obj.deliver_method, 'type', None) or None
+        if obj.deliver_method:
+            return obj.deliver_method.get_type_display()
+        else:
+            return None
 
     def get_factor_items(self, obj, **kwargs):
         qs = obj.factoritem_set.all()
