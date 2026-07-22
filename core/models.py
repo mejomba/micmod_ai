@@ -90,7 +90,7 @@ class BaseManager(models.Manager):
         model_name = self.model.__name__
         if q == 'all' or q == 'pay' or q == 'sales_user' or q == 'delivery':
             direct_access = f'{model_name.lower()}_direct_access'
-        if user.is_superuser or self.is_public or direct_access in user_groups_list:
+        if user.is_superuser or self.is_public or direct_access in user_groups_list or direct_access in user.user_permissions.values_list('name', flat=True):
             return self.model.objects.all()
         content_type = ContentType.objects.filter(model=self.model._meta.model_name,
                                                   app_label=self.model._meta.app_label).first()
