@@ -433,7 +433,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             if customer_party_id and not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
                 self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
 
-            Notification.notify_customer_for_quotation(self.object)
+            Notification.notify_customer_for_quotation(self.object, self.request)
 
         context['notify_number'] = getattr(self.object, 'notify_number', '')
         context['data'] = self.object

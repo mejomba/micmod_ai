@@ -5,6 +5,7 @@ from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib import messages as django_message
 from django.db import models
 from core.models_contenttype import AbsBaseModel, Q, BaseContentType
 from accounts.models import User
@@ -171,7 +172,7 @@ class Notification(AbsBaseModel):
 
     # =============== quotation notify
     @classmethod
-    def notify_customer_for_quotation(cls, quotation):
+    def notify_customer_for_quotation(cls, quotation, request):
         # if quotation.pk < 13500:
         #     return
 
@@ -185,16 +186,16 @@ class Notification(AbsBaseModel):
 
         if last_work_flow and quotation.can_observe:
             if not has_first_notify and last_work_flow.current_state_name == 'پیش فاکتور اولیه':
-                cls._quotation_first_notify(quotation, ctt)
+                cls._quotation_first_notify(quotation, ctt, request)
 
             elif not has_sepidar_notify and quotation.sepidar_number:
-                cls._quotation_sepidar_notify(quotation, ctt)
+                cls._quotation_sepidar_notify(quotation, ctt, request)
 
             elif last_work_flow and last_work_flow.current_state_name == 'تایید مشتری' and last_work_flow.created_date < (timezone.now() - timezone.timedelta(hours=72)) and not has_yadavar:
-                cls._quotation_yadavar_notify(quotation, ctt)
+                cls._quotation_yadavar_notify(quotation, ctt, request)
 
     @classmethod
-    def _quotation_first_notify(cls, quotation, ctt):
+    def _quotation_first_notify(cls, quotation, ctt, request):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
@@ -212,9 +213,11 @@ class Notification(AbsBaseModel):
                 "text": message,
             }
             obj = cls.objects.create(**data)
+            m = f"پیامک ثبت پیش فاکتور ارسال شد. \n {message}"
+            django_message.success(request, m)
 
     @classmethod
-    def _quotation_sepidar_notify(cls, quotation, ctt):
+    def _quotation_sepidar_notify(cls, quotation, ctt, request):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
@@ -232,9 +235,11 @@ class Notification(AbsBaseModel):
                 "text": message,
             }
             obj = cls.objects.create(**data)
+            m = f"پیامک ثبت پیش فاکتور در سپیدار ارسال شد. \n {message}"
+            django_message.success(request, m)
 
     @classmethod
-    def _quotation_yadavar_notify(cls, quotation, ctt):
+    def _quotation_yadavar_notify(cls, quotation, ctt, request):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
@@ -257,7 +262,7 @@ class Notification(AbsBaseModel):
 
     # =============== factor notify
     @classmethod
-    def notify_customer_for_factor(cls, factor):
+    def notify_customer_for_factor(cls, factor, request):
         # if factor.pk < 1920:
         #     return
 
@@ -269,13 +274,13 @@ class Notification(AbsBaseModel):
 
         if last_work_flow:
             if last_work_flow.current_state_name == 'تخصیص کارشناس انبار' and not has_sales_admin_confirm:
-                cls._factor_sales_admin_confirm_notify(factor, ctt)
+                cls._factor_sales_admin_confirm_notify(factor, ctt, request)
 
             elif factor.sepidar_number and not has_sent_notify:
-                cls._factor_sent_notify(factor, ctt)
+                cls._factor_sent_notify(factor, ctt, request)
 
     @classmethod
-    def _factor_sales_admin_confirm_notify(cls, factor, ctt):
+    def _factor_sales_admin_confirm_notify(cls, factor, ctt, request):
         from tlg.scripts.sms import send_sms
 
         notify_number = factor.notify_number
@@ -311,9 +316,11 @@ class Notification(AbsBaseModel):
                 "text": message,
             }
             obj = cls.objects.create(**data)
+            m = f"پیامک تایید فاکتور ارسال شد. \n {message}"
+            django_message.success(request, m)
 
     @classmethod
-    def _factor_sent_notify(cls, factor, ctt):
+    def _factor_sent_notify(cls, factor, ctt, request):
         from tlg.scripts.sms import send_sms
 
         notify_number = factor.notify_number
@@ -333,6 +340,8 @@ class Notification(AbsBaseModel):
                 "text": message,
             }
             obj = cls.objects.create(**data)
+            m = f"پیامک تسویه حساب فاکتور ارسال شد. \n {message}"
+            django_message.success(request, m)
     # =============== factor notify
 
     # =============== google sheet order notify
