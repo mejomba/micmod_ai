@@ -1788,8 +1788,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         else:
             customer = None
 
-        queryset = Factor.objects.filter(Q(customer_party_id=customer) | Q(
-            q__customer_party_id=customer)).filter(pk=f_id).distinct() if customer else Factor.objects.none()
+        queryset = Factor.objects.filter(Q(customer_party_id_id__in=customer) | Q(
+            q__customer_party_id_id__in=customer)).filter(pk=f_id).distinct() if customer else Factor.objects.none()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = FactorSerializer(page, many=True)
@@ -1808,7 +1808,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         else:
             customer = None
 
-        queryset = Factor.objects.filter(Q(customer_party_id=customer) | Q(q__customer_party_id=customer)).distinct() if customer else Factor.objects.none()
+        queryset = Factor.objects.filter(Q(customer_party_id_id__in=customer) | Q(q__customer_party_id_id__in=customer)).distinct() if customer else Factor.objects.none()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = FactorSerializer(page, many=True)
