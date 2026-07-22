@@ -9,9 +9,11 @@ from core.serializers import CustomFieldModelSerializer
 class FactorItemSerializer(CustomFieldModelSerializer):
     # factor = FactorSerializer(read_only=True)
     supply_status = SerializerMethodField()
-    total_price = SerializerMethodField()
-    total_price_after_discount = SerializerMethodField()
-    total_discount = SerializerMethodField()
+    get_fee = SerializerMethodField()
+    get_fee_after_discount = SerializerMethodField()
+    get_total_price = SerializerMethodField()
+    get_total_discount = SerializerMethodField()
+    get_total_price_after_discount = SerializerMethodField()
 
     class Meta:
         model = FactorItem
