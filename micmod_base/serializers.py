@@ -20,19 +20,26 @@ class QuotationItemSerializer(CustomFieldModelSerializer):
     fee_after_discount = serializers.SerializerMethodField()
     row_total_price = serializers.SerializerMethodField()
     row_tax = serializers.SerializerMethodField()
+    row_total_discount = serializers.SerializerMethodField()
 
     class Meta:
         model = QuotationItem
         fields = '__all__'
 
     def get_fee(self, obj):
-        return obj.fee + + getattr(obj, 'addition', 0) or 0
+        return obj.fee_()
 
     def get_fee_after_discount(self, obj):
         return self.get_fee(obj) - getattr(obj, 'discount_per_item', 0) or 0
 
+    def get_row_total_discount(self, obj):
+        return obj.discount_value
+
     def get_row_total_price(self, obj):
-        return obj.price
+        return obj.row_price
+
+    def get_row_total_price_after_discount(self, obj):
+        return self.get_row_total_price(obj) - self.get_row_total_discount(obj)
 
     def get_row_tax(self, obj):
         return obj.tax
