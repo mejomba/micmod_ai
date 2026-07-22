@@ -23,6 +23,7 @@ from werkzeug.exceptions import MethodNotAllowed
 from comments.forms import CommentsForm
 from core.models import BaseModelAuto
 from core.permissions import HasShopPermission
+from core.serializers import StandardResultsSetPagination
 from dw.models import DimCustomer
 from extra_data.models import Item, PriceSettings, Customer, CustomerExpert
 from factor.forms import FactorItemModelForm, FactorModelForm
@@ -1737,6 +1738,7 @@ class CustomerRequestQuotationViewSet(viewsets.ModelViewSet):
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return CustomerExpert.objects.all()
 
