@@ -32,7 +32,12 @@
                         <div class="col">
                             <span name="user_name" class="d-none"></span>
                             <label class="form-label fw-bold">کارشناس: </label>
-                            <div id="id_user_select2"></div>
+
+                            {% if not obj.customer_quotations.all %}
+                                <div id="id_user_select2"></div>
+                            {% else %}
+                                <div class="bg-secondary p-2 rounded text-black mb-1">{{ obj.assigned_user }}</div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col mt-5">
@@ -104,7 +109,7 @@
                         <input type="hidden" name="id_item-{{ forloop.counter0}}" id="id_item-{{ forloop.counter0}}" value="{{ item.product_id }}">
                         <div class="row align-items-center {% if not forloop.counter0|divisibleby:'2' %} bg-light-active {% endif %}">
                             <div class="col-2 mb-3">
-                                <input type="checkbox" name="selected_items" value="{{ forloop.counter0 }}">
+                               {% if not obj.customer_quotations.all %} <input type="checkbox" name="selected_items" value="{{ forloop.counter0 }}"> {% endif %}
                                 <span class="me-3"><b>{{ forloop.counter}})  </b></span>
                                 <input class="narrow-input" style="width: 40%;" name="id_quantity-{{ forloop.counter0 }}" value="{{ item.quantity }}" required >
                                 <span class="bold">|</span>
@@ -142,11 +147,13 @@
                     {% endfor %}
                 </div>
                 <!-- Submit -->
+                {% if not obj.customer_quotations.all %}
                 <div class="row mt-3">
                     <div class="col text-end">
-                        <button type="submit" class="btn btn-primary" >ثبت</button>
+                        <button type="submit" class="btn btn-primary submit_customer_request" >ثبت</button>
                     </div>
                 </div>
+                {% endif %}
                 </div>
 
         </div>
@@ -231,5 +238,26 @@
         checkboxes.forEach(cb => cb.checked = !cb.checked);
     });
 
+    submit_btn = document.querySelector('.submit_customer_request')
+        submit_btn.onclick = function () {
+        this.disabled = true
+    };
+    $('.submit_customer_request').on('click', function () {
+    let btn = $(this);
+
+    btn.prop('disabled', true);
+
+    $.ajax({
+        url: '/micmod_base/customer-request',
+        type: 'POST',
+        data: $('#form').serialize(),
+        success: function () {
+            btn.addClass('d-none');
+        },
+        error: function () {
+            btn.prop('disabled', false); // 👈 برگرد
+        }
+    });
+});
     </script>
 {% endblock extra_js %}
