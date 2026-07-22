@@ -1784,7 +1784,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         if exist_customer_expert:
             customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
-                                                     access_to_shop_info=True).last().customer
+                                                     access_to_shop_info=True).values_list('customer__sepidar_party_id', flat=True)
         else:
             customer = None
 
@@ -1804,7 +1804,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         if exist_customer_expert:
             customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
-                                                     access_to_shop_info=True).last().customer
+                                                     access_to_shop_info=True).values_list('customer__sepidar_party_id', flat=True)
         else:
             customer = None
 
