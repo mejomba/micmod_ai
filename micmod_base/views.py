@@ -1636,7 +1636,7 @@ class CustomerRequestView(LoginRequiredMixin, View):
                 "from_user": self.request.user,
                 "to_user": self.request.user,
                 # get_user_model().objects.filter(groups__name='order_admin').first(),
-                "current_state_name": const.WF__ORDER__FIRST_CURRENT_STATE_NAME,
+                "current_state_name": const.WF__QUOTATION__FIRST_STATE,
             }
             wf = WorkFlow.objects.create(**flow_data)
             quotation.last_work_flow = wf
