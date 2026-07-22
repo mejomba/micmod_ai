@@ -27,7 +27,7 @@ class QuotationItemSerializer(CustomFieldModelSerializer):
         fields = '__all__'
 
     def get_fee(self, obj):
-        return obj.fee_()
+        return obj.fee_() or 0
 
     def get_fee_after_discount(self, obj):
         return self.get_fee(obj) - getattr(obj, 'discount_per_item', 0) or 0
