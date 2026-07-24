@@ -35,5 +35,4 @@
         const commentFormForCopy = document.getElementById(`id_comment_form_for_copy__${pk}`)
         commentFormGroup.innerHTML = ''
         commentFormGroup.appendChild(commentFormForCopy)
-        alert('addCommentInput')
     }

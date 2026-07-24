@@ -455,7 +455,7 @@ class FactorItem(BaseModel):
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if False and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
+        if False: # and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
             super().save(force_insert, force_update, using, update_fields)
         else:
             with transaction.atomic():

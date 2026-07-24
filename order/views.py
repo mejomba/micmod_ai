@@ -273,7 +273,7 @@ class OrderDataTableListView(AjaxDatatableView):
         q = request.POST.get('q')
         user_group = request.user.base_group
         if request.user.groups.filter(name='mac'):
-            return self.model.objects.filter(is_deleted=False, currency_id=2).distinct()
+            return self.model.objects.filter(is_deleted=False, currency_id=2, apply_mac=True).distinct()
         if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
         elif user_group == 'bazar':
@@ -323,7 +323,10 @@ class OrderDataTableListView(AjaxDatatableView):
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
         row['part_number_s'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
-        row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
+        try:
+            row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
+        except Exception as e:
+            row['qi__quotation__customer_party_id'] = ''
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['item_trade__part_number'] = f'<span>{obj.item_trade.part_number}</span>' if obj.item_trade else ""
         o = obj.workflows.filter(current_state_name='تایید مهندس').first()
@@ -426,14 +429,14 @@ class OrderDataTableListView(AjaxDatatableView):
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': _("id"), 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
-                {'name': 'order_title', 'orderable': True, 'visible': True, 'title': _("title")},
-                {'name': 'last_work_flow', 'title': _('status'), 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'order_title', 'orderable': True, 'visible': True, 'title': "title"},
+                {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'part_number_s', 'orderable': True, 'title': 'part number', 'visible': True, 'lookup_field': '__part_number__icontains'},
                 # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True, 'lookup_field': '__title__icontains'},
                 # {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'quantity', },
-                {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'created_date', 'title': 'created date', 'orderable': True, 'visible': True, },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'sales description'},
             ]
 

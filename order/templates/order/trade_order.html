@@ -411,8 +411,7 @@
                                 <span>{{ packing_item.quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2 s-05">
-                                اصلاح
-{#                                <span>{{ packing_item.arrived_quantity|intcomma|default_if_none:"-" }}</span>#}
+                                <span>{{ packing_item.arrived_quantity|intcomma|default_if_none:"-" }}</span>
                             </div>
                             <div class="col-1 py-2 s-05">
                                 <span>{{ packing_item.packing.arrival_date|default_if_falsy:"-"|to_jalali:'%Y-%m-%d' }}</span>
