@@ -31,8 +31,18 @@ class OrderForm(CustomBaseModelForm):
         model = Order
         exclude = ['group', 'last_work_flow']
 
+    def order_first_state_access(self):
+        if self.request.user.has_perm():
+            pass
+
+    def order_second_state_access(self):
+        pass
+
+    def order_third_state_access(self):
+        pass
+
     def __init__(self, *args, **kwargs):
-        request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
+        self.request = self.access = self.form_constraint = self.formset_constraint = self.form_constraint_read = self.form_constraint_hide = self.formset_constraint_read = self.formset_constraint_hide = None
         if self.form_state is None:
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
                 self.form_state = c.get('form_state')
@@ -41,22 +51,22 @@ class OrderForm(CustomBaseModelForm):
 
         if self.form_state is not None:
             if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
-                form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
-                formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
-                request = c.pop('request')  # remove unnecessary kwargs
-                access = c.get('wf_access')
+                self.form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
+                self.formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
+                self.request = c.pop('request')  # remove unnecessary kwargs
+                self.access = c.get('wf_access')
             elif kwargs.get('constraint'):
-                form_constraint = kwargs.get('constraint').get('form_constraint')
-                formset_constraint = kwargs.get('constraint').get('formset_constraint')
-                request = kwargs.get('constraint').get('request')
-                access = kwargs.get('constraint').get('wf_access')
+                self.form_constraint = kwargs.get('constraint').get('form_constraint')
+                self.formset_constraint = kwargs.get('constraint').get('formset_constraint')
+                self.request = kwargs.get('constraint').get('request')
+                self.access = kwargs.get('constraint').get('wf_access')
                 kwargs.pop('constraint')  # remove unnecessary kwargs
-            if form_constraint:
-                form_constraint_read = form_constraint[self.form_state].get('read')
-                form_constraint_hide = form_constraint[self.form_state].get('hide')
-            if formset_constraint:
-                formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-                formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+            if self.form_constraint:
+                self.form_constraint_read = self.form_constraint[self.form_state].get('read')
+                self.form_constraint_hide = self.form_constraint[self.form_state].get('hide')
+            if self.formset_constraint:
+                self.formset_constraint_read = self.formset_constraint[self.form_state][0].get('read')
+                self.formset_constraint_hide = self.formset_constraint[self.form_state][0].get('hide')
         super(OrderForm, self).__init__(*args, **kwargs)
         qs = Supplier.objects.filter(base_group='trade')
         self.fields['supplier_trade'] = forms.ModelChoiceField(
@@ -90,7 +100,7 @@ class OrderForm(CustomBaseModelForm):
             self.make_disable(['quantity'])
         if self.instance.is_bazar:
             self.make_hidden(['transportation_method', 'order_type'])
-        if request and request.user.base_group == 'trade':
+        if self.request and self.request.user.base_group == 'trade':
             self.make_required(['price_trade'])
 
         illegal_order_ids = list(map(lambda x: x.pk, filter(lambda x: x.remaining_quantity < 0, Order.objects.filter(Q(pk__in=self.instance.order_base_items.all().values_list('order_rel', flat=True)) )))) if self.instance.pk else []
@@ -106,22 +116,22 @@ class OrderForm(CustomBaseModelForm):
             self.initial.update({'production_lead_time': self.instance.qi.lead_time_day})
             # self.fields['production_lead_time'].initial = self.instance.qi.lead_time_day
 
-        if request and not request.user.is_superuser and form_constraint_read and '__all__' in form_constraint_read:
+        if self.request and not self.request.user.is_superuser and self.form_constraint_read and '__all__' in self.form_constraint_read:
             self.make_disable(self.fields)
 
-        elif request and not request.user.is_superuser:
-            if form_constraint_hide:
-                self.make_hidden(form_constraint_hide)
-            if form_constraint_read:
-                self.make_disable(form_constraint_read)
-                if 'supplier_trade' in form_constraint_read:
+        elif self.request and not self.request.user.is_superuser:
+            if self.form_constraint_hide:
+                self.make_hidden(self.form_constraint_hide)
+            if self.form_constraint_read:
+                self.make_disable(self.form_constraint_read)
+                if 'supplier_trade' in self.form_constraint_read:
                     self.fields['supplier_trade'].widget.attrs['disabled'] = "disabled"
-            if formset_constraint_hide:
-                self.make_hidden(formset_constraint_hide)
-            if formset_constraint_read:
-                self.make_disable(formset_constraint_read)
+            if self.formset_constraint_hide:
+                self.make_hidden(self.formset_constraint_hide)
+            if self.formset_constraint_read:
+                self.make_disable(self.formset_constraint_read)
 
-            if not access:
+            if not self.access:
                 self.make_disable(self.fields)
                 self.enable = False
 

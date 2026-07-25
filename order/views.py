@@ -274,6 +274,9 @@ class OrderDataTableListView(AjaxDatatableView):
         user_group = request.user.base_group
         if request.user.groups.filter(name='mac'):
             return self.model.objects.filter(is_deleted=False, currency_id=2, apply_mac=True).distinct()
+
+        return self.model.objects.all()
+
         if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
         elif user_group == 'bazar':

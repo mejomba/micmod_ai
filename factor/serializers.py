@@ -46,7 +46,6 @@ class FactorItemSerializer(CustomFieldModelSerializer):
 
 
 class FactorSerializer(CustomFieldModelSerializer):
-    # factoritem_set = FactorItemSerializer(many=True)
     factor_items = SerializerMethodField()
     workflow_state_list = SerializerMethodField()
     last_work_flow = WorkflowSerializer()
@@ -58,6 +57,8 @@ class FactorSerializer(CustomFieldModelSerializer):
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
     deliver_method = SerializerMethodField()
+    customer_party_id = SerializerMethodField()
+    customer_phone = SerializerMethodField()
 
     class Meta:
         model = Factor
@@ -90,6 +91,23 @@ class FactorSerializer(CustomFieldModelSerializer):
             return obj.deliver_method.get_type_display()
         else:
             return None
+    def get_customer_party_id(self, obj):
+        customer = getattr(obj, 'customer_party_id', None)
+        if not customer:
+            q = obj.q
+            if q:
+                customer = getattr(obj.q, 'customer_party_id')
+
+        return customer.title if customer else None
+
+    def get_customer_phone(self, obj):
+        customer = getattr(obj, 'customer_party_id', None)
+        if not customer:
+            q = obj.q
+            if q:
+                customer = getattr(obj.q, 'customer_party_id')
+
+        return customer.phone if customer else None
 
     def get_factor_items(self, obj, **kwargs):
         qs = obj.factoritem_set.all()

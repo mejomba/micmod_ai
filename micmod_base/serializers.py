@@ -68,24 +68,35 @@ class QuotationSerializer(CustomFieldModelSerializer):
     workflow_state_list = SerializerMethodField()
     creator_user = SerializerMethodField()
     total_price = SerializerMethodField()
+    total_tax = SerializerMethodField()
     total_price_after_discount = SerializerMethodField()
     total_discount = SerializerMethodField()
     sale_type = SerializerMethodField()
     currency_ref = SerializerMethodField()
+    customer_phone = SerializerMethodField()
+    customer_party_id = SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for item in self.instance:
+            item.payment_data = item.payment
 
     class Meta:
         model = Quotation
         fields = '__all__'
         # fields = ['id', 'request_date', 'quotation', 'created_date']
 
+    def get_total_tax(self, obj):
+        return obj.payment_data[3]
+
     def get_total_discount(self, obj):
-        return '000'
+        return obj.payment_data[2]
 
     def get_total_price(self, obj):
-        return '000'
+        return obj.payment_data[0]
 
     def get_total_price_after_discount(self, obj):
-        return '000'
+        return obj.payment_data[4]
 
     def get_sale_type(self, obj):
         return getattr(obj.sale_type, 'title', None) or None
@@ -95,6 +106,14 @@ class QuotationSerializer(CustomFieldModelSerializer):
 
     def get_creator_user(self, obj):
         return f'{obj.creator_user}'
+
+    def get_customer_party_id(self, obj):
+        customer = getattr(obj, 'customer_party_id', None)
+        return customer.title if customer else None
+
+    def get_customer_phone(self, obj):
+        customer = getattr(obj, 'customer_party_id', None)
+        return customer.phone if customer else None
 
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()
