@@ -75,7 +75,6 @@ class QuotationSerializer(CustomFieldModelSerializer):
     currency_ref = SerializerMethodField()
     customer_phone = SerializerMethodField()
     customer_party_id = SerializerMethodField()
-    address = SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,10 +114,6 @@ class QuotationSerializer(CustomFieldModelSerializer):
     def get_customer_phone(self, obj):
         customer = getattr(obj, 'customer_party_id', None)
         return customer.phone if customer else None
-
-    def get_address(self, obj):
-        customer = getattr(obj, 'customer_party_id', None)
-        return customer.address
 
     def get_quotation_items(self, obj):
         qs = obj.quotation.all()
