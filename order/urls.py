@@ -7,6 +7,8 @@ from .views import PaymentView, PaymentListView, PaymentDataTableListView, Payme
     ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView
 
 from .views import CustomerRequestOrderViewSet
+from .select2 import order_select2_search
+
 
 router = DefaultRouter()
 router.register(r'customer-request-order', CustomerRequestOrderViewSet, basename='customer-order')
@@ -17,6 +19,8 @@ urlpatterns = [
     path('', include(router.urls)),
     #  order
     path('view/', views.OrderView.as_view(), name='order.view'),
+    path('view/safe/', views.SafeOrderView.as_view(), name='order.view.safe'),
+    path('view/safe/<int:pk>/', views.SafeOrderView.as_view(), name='order.view.safe'),
     path('bazar/buy_factor/view/', views.BazarBuyFactorView.as_view(), name='bazar_buyfactor.view'),
     path('new_bazar/buy_factor/view/', views.NewBazarBuyFactorView.as_view(), name='new_bazar_buyfactor.view'),
     # path('trade/buy_factor/view/', views.TradeBuyFactorView.as_view(), name='trade_buy_factor_order.view'),
@@ -32,6 +36,7 @@ urlpatterns = [
     path('new_bazar/list/datatable/', views.NewBazarOrderDataTableListView.as_view(), name='new_bazar_order.list.datatable'),
     # path('trade/list/datatable/', views.TradeOrderDataTableListView.as_view(), name='trade_order.list.datatable'),
     path('ajax/order_order/add/', views.ajax_order_order_add, name='order_order.add'),
+    path("select2/<str:key>/", order_select2_search, name="order.select2-search"),
 
     #  packing
     path('packing/view/', views.PackingView.as_view(), name='packing.view'),

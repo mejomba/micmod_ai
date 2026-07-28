@@ -24,7 +24,7 @@ class FactorItemSerializer(CustomFieldModelSerializer):
         return obj.fee_()
 
     def get_fee_after_discount(self, obj):
-        return self.get_fee(obj) - getattr(obj, 'discount_per_item', None) or 0
+        return obj.fee_after_discount
 
     def get_total_price(self, obj):
         return self.get_fee(obj) * obj.quantity

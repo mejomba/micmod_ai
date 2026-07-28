@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Permission
 from django_select2 import forms as s2forms
 from django import forms
 
@@ -33,3 +34,8 @@ class ProfileForm(CustomBaseModelForm):
         super().__init__(*args, **kwargs)
         self.make_hidden(['user'])
 
+
+class PermissionForm(CustomBaseModelForm):
+    class Meta:
+        model = Permission
+        fields = '__all__'

@@ -9,13 +9,71 @@ from inquiry.models import Supplier, PriceInquiryResult
 from micmod_base.base import Currency
 from translator import get_text as _
 
-from core.forms import CustomBaseModelForm, CustomBaseForm
+from core.forms import CustomBaseModelForm, CustomBaseForm, FormMX
 from order.models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     OrderBazar, OrderDelayReason
 from dal import autocomplete
 
 from django.forms import inlineformset_factory, formset_factory
-# from .models import OrderPayment, OrderPaymentItem
+
+class OrderSafeForm(FormMX, CustomBaseModelForm):
+    has_comment = True
+    field_layout = [
+        "customer_party_id", "order_title", "order_number", "item",
+        "transportation_method", "commitment_date_to_customer", "quantity", "description_sale", "order_type", "price",
+        "item_trade", "quantity_trade", "po_number_trade", "supplier_trade", "price_trade", "description_trade",
+        "apply_mac", "mohandes_confirmation", "trade_commitment_date", "production_lead_time", "trade_lock_order",
+        "supplier_mac", "price_mac", "part_number_mac", "po_number_mac", "quantity_mac", "description_mac",
+        "sales_admin_confirmation", "cancel", "qi", "currency", "order_m2m", "customer_request_item",
+        "buy_factors", "buy_factor_quantity_in_sepidar", "order_report_data", "sepidar_wh_code", "receipt_in_wh",
+        "price_inquiry_result", "trade_user", "is_bazar", "is_wh", "is_over", "is_kasri", "sales_admin_cancel",
+    ]
+    select2_url_name = "order:order.select2-search"  # نام URL ویوی سرچ AJAX
+    select2_fields = {
+        "currency": {},  # لوکال
+        "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
+        "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
+        "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
+        "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
+        # "price_inquiry_result": {"ajax": "price_inquiry_result", "min_input": 2, "placeholder": "نتیجه استعلام قیمت کالا"},
+        "trade_user": {"ajax": "trade_user", "min_input": 2, "placeholder": "کارشناس بازرگانی"},
+        "customer_party_id": {"ajax": "customer_party_id", "min_input": 2, "placeholder": "انتخاب مشتری"},
+        "qi": {"ajax": "qi", "min_input": 2, "placeholder": "انتخاب پیش فاکتور"},
+    }
+
+    class Meta:
+        model = Order
+        fields = "__all__"
+        widgets = {
+            "description_sale": forms.Textarea(attrs={"rows": 1}),
+        }
+
+    def __init__(self, *args, allowed_fields=None, allowed_hidden=None, only_show=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.only_show = list(only_show or [])
+        self.allowed_fields = list(allowed_fields or [])
+        self._add_file_fields()
+        self._apply_select2()
+
+        # ========= remove field
+        if self.instance.pk and 'q' in allowed_fields:
+            allowed_fields.remove('q')
+            self.only_show.append('q')
+        if allowed_fields is not None or allowed_hidden is not None:
+            keep = set(allowed_fields or []) | set(allowed_hidden or [])
+            for name in list(self.fields):
+                if name not in keep:
+                    self.fields.pop(name)
+
+        # ========= hide field
+        if allowed_hidden is not None:
+            for field_name in list(self.fields):
+                if field_name in allowed_hidden:
+                    self.fields[field_name].widget = self.fields[field_name].hidden_widget()
+
+        for name in self.only_show:  # only_show نباید در فرم باشد (دفاعی)
+            self.fields.pop(name, None)
 
 
 class PriceInquiryResultChoiceField(forms.ModelChoiceField):
@@ -31,14 +89,56 @@ class OrderForm(CustomBaseModelForm):
         model = Order
         exclude = ['group', 'last_work_flow']
 
+    def run_access(self):
+        if self.form_state == 0:
+            return self.order_zero_state_access()
+        elif self.form_state == 1:
+            return self.order_first_state_access()
+        elif self.form_state == 2:
+            return self.order_second_state_access()
+        elif self.form_state == 3:
+            return self.order_third_state_access()
+        elif self.form_state == 4:
+            return self.order_forth_state_access()
+        elif self.form_state == 5:
+            return self.order_fiveth_state_access()
+        elif self.form_state == 6:
+            return self.order_sixth_state_access()
+        elif self.form_state == 7:
+            return self.order_seventh_state_access()
+        elif self.form_state == 8:
+            return self.order_eighth_state_access()
+
+    def order_zero_state_access(self):
+        user = self.request.user
+        if user.has_perm('order.zero_state'):
+            self.access = True
+        else:
+            self.access = False
+
     def order_first_state_access(self):
-        if self.request.user.has_perm():
+        if self.request.user.has_perm('x'):
             pass
 
     def order_second_state_access(self):
         pass
 
     def order_third_state_access(self):
+        pass
+
+    def order_forth_state_access(self):
+        pass
+
+    def order_fiveth_state_access(self):
+        pass
+
+    def order_sixth_state_access(self):
+        pass
+
+    def order_seventh_state_access(self):
+        pass
+
+    def order_eighth_state_access(self):
         pass
 
     def __init__(self, *args, **kwargs):

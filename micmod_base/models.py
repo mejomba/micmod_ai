@@ -113,6 +113,7 @@ class CustomerRequestItem(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))

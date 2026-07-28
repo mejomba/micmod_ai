@@ -413,6 +413,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['q_warn'] = []
         context['heading'] = _('create')
         context['pageview'] = _('quotation')
 
@@ -442,6 +443,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         context['duplicate'] = True
 
         if self.object:
+            if self.object.can_observe and self.object.last_work_flow.current_state_name == 'تایید مشتری':
+                context['allow_next'] = False
+                context['q_warn'].append('پیش فاکتور هایی که امکان نمایش به مشتری دارند باید توسط مشتری در پنل شاپ تایید شوند')
             qis = self.object.quotation.all()
             counter = 0
             for qi in qis:

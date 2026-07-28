@@ -1,0 +1,91 @@
+{% extends 'partials/base_level2.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load jalali_tags %}
+{% load humanize %}
+{% load more_tags %}
+{% load accounts_tag %}
+
+{% block title %}IMEI Register List {% endblock title %} {"title": ""})
+{% block extra_css %}
+
+    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+{% endblock extra_css %}
+
+    <!-- ============================================================== -->
+    <!-- Start right Content here -->
+    <!-- ============================================================== -->
+    {% block form_content %}
+        {% csrf_token %}
+        {{ form.errors }}
+        <div class="row row-cols-md-6 row-cols-1 bg-white rounded shadow pt-6 pb-4 align-items-end">
+            {% render_field_by_order form form.name form.content_type form.codename label='on-border' margin_b=4 %}
+        </div>
+
+        <div class="table-responsive p-2">
+            <table id="permission_list" width="100%" class="m-table table-striped table-bordered w-100">
+
+            </table>
+        </div>
+    {% endblock %}
+
+{% block content %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="{% static 'js/local/jquery3.6.4.jquery.slim.min.js' %}"></script>
+    <script src="{% static 'js/local/popper1.16.1.min.js' %}"></script>
+    <script src="{% static 'js/local/bootstrap4.6.2.bootstrap.bundle.min.js' %}"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+
+    <script>
+    $('*[id*=_x]').on('hide.bs.modal', function (e) {
+            console.log('hide')
+          if (formFooterContainer) {
+              formFooterContainer.classList.add('position-fixed')
+          }
+      });
+
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
+        AjaxDatatableViewUtils.initialize_table(
+            $('#permission_list'),
+            "{% url 'accounts:permissions.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+                q:q
+            },
+        );
+    });
+    </script>
+
+
+{% endblock extra_js %}

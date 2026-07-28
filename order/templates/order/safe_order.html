@@ -1,0 +1,764 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+{% load jalali_tags %}
+
+{% block title %}سفارش {{ form.instance.pk }}{% endblock title %}
+{% block extra_css %}
+
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+
+
+    <script src="{% static 'js/m2mselector.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/theme.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/nav_sidebar.js' %}" type="text/javascript" ></script>
+
+    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/jquery.init.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/core.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/admin/RelatedObjectLookups.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectBox.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/actions.js' %}" type="text/javascript" ></script>
+    <script src="{% static 'admin/js/SelectFilter2.js' %}" type="text/javascript" ></script>
+
+    <link rel="stylesheet" href="{% static 'css/m2m_selector.css' %}">
+    <style>
+    ul > li {
+        list-style-type: none !important;
+    }
+    .selector-available, .selector-chosen, #id_order_m2m_from, #id_order_m2m_to{
+        width: 300px;
+    }
+    #id_order_m2m_selected_input, #id_order_m2m_input {
+        width: 250px;
+        height: 30px !important;
+        font-size: 1rem;
+    }
+    .selector-chooser{
+        rotate: 180deg;
+    }
+    select, input{
+        height: 3.2rem !important;
+    }
+    .select2-search__field{
+        height: 2.5rem !important;
+    }
+    label {
+        font-size: 1rem;
+    }
+    .rotate_90_animation {
+        transition: rotate 0.3s ease-in-out !important;
+    }
+    .rotate_90_animation:hover {
+      rotate: 90deg !important;
+    }
+    .nav-pills .nav-link.active,
+    .nav-pills .show > .nav-link {
+           background-color: #061b66 !important;
+         }
+    </style>
+{% endblock extra_css %}
+
+
+{% block form_content %}
+{% csrf_token %}
+
+        <div class="mb-2">
+            {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
+        </div>
+
+{% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {{ form.errors }}
+    {{ form.non_field_errors }}
+
+    <div class="row">
+        <div class="col-12 ">
+            {% if form.only_show %}
+                <div class="order-only-show d-flex flex-wrap">
+                    {% for item in form.iter_only_show %}
+                    <div class="f only-show me-10 mt-4">
+                      <label>
+                        {% if item.label %}
+                          <span class="bold font-size-13">{{ item.label }}</span>
+                        {% else %}
+                          <span data-key="{{ item.name }}" class="bold font-size-13">{{ item.name }}</span>
+                        {% endif %}
+                        <i class="ti ti-lock" aria-hidden="true"></i>
+                      </label>
+                      <div class="ro mt-2">
+                        {% if item.kind == "bool" %}
+                          {% if item.value %}<span class="badge badge-light-success">بله</span>{% else %}<span class="badge badge-light-danger">خیر</span>{% endif %}
+                        {% elif item.kind == "date" %}
+                          {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d" }}{% else %}—{% endif %}
+                        {% elif item.kind == "datetime" %}
+                          {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d %H:%M" }}{% else %}—{% endif %}
+                        {% elif item.kind == "files" %}
+                          {% if item.value %}
+                              {% for f in item.value %}
+                                  <a href="/media/{{ f.url }}" target="_blank" rel="noopener">
+                                    <i class="fas fs-2 fa-file icon-lg me-1" aria-hidden="true"></i>
+                                  </a>
+                              {% endfor %}
+                          {% else %}—{% endif %}
+                        {% else %}
+                          {{ item.value|default:"—" }}
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+    <div class="col-12 my-6">
+        <div style="height: 1px; background-color: #ccc"></div>
+    </div>
+        <div class="col-12">
+            <div class="row row-cols-5">
+                {% for bf in form.iter_editable %}
+                    <div class="col">
+                    {% render_field_by_order form bf label='on-border' %}
+                      {% if bf.errors %}<div class="err">{{ bf.errors }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+
+                {% for g in form.iter_file_fields %}
+                  <div class="f file-field col">
+                    <label {% if g.field %}for="{{ g.field.id_for_label }}"{% endif %}>{{ g.label }}</label>
+                      {{ g.field }}
+                      {% if g.field.errors %}<div class="err">{{ g.field.errors }}</div>{% endif %}
+
+                    {% if g.files %}
+                      <div class="d-flex gap-3">
+                        {% for f in g.files %}
+                              <a href="/media/{{ f.url }}" target="_blank" rel="noopener">
+                                <i class="fas fs-2 fa-file icon-lg" aria-hidden="true"></i>
+                              </a>
+                        {% endfor %}
+                      </div>
+                    {% elif not g.editable %}
+                      <div class="muted">—</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-scroll">
+        <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
+        <div class="position-absolute d-none" id="generic-payment-form-group__{{ form.instance.pk }}"></div>
+
+        {% if request.user.base_group == 'trade' %}
+            {% get_comment_user_list form request.user comment_type='order_error' %}
+        {% elif request.user.base_group == 'sales' %}
+            {% get_comment_user_list form request.user %}
+        {% else %}
+            {% get_comment_user_list form request.user %}
+        {% endif %}
+
+        <div class="mt-1"></div>
+{#                {% get_payment_list form request.user %}#}
+    </div>
+
+
+
+
+    {% if flow_state_index == 7 %}
+    <div class="card card-custom mb-20">
+        <div class="card-header">
+            <div class="card-toolbar">
+                <ul class="nav nav-light-danger nav-bold nav-pills font-size-15">
+                    <li class="nav-item">
+                        <a class="nav-link active bg-light" data-toggle="tab" href="#kt_tab_pane_1">
+                            <span class="nav-icon"><i class="flaticon2-chat-1"></i></span>
+                            <span class="nav-text d-flex gap-2">اسناد پرداخت
+                            <i class="ki-duotone ki-two-credit-cart fs-2">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                             <span class="path5"></span>
+                            </i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_2">
+                            <span class="nav-icon"><i class="flaticon2-drop"></i></span>
+                            <span class="nav-text d-flex gap-2">تحویل در دفتر چین
+                            <i class="ki-duotone ki-delivery-geolocation fs-2">
+                             <span class="path1"></span>
+                             <span class="path2"></span>
+                             <span class="path3"></span>
+                             <span class="path4"></span>
+                             <span class="path5"></span>
+                            </i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link bg-light" data-toggle="tab" href="#kt_tab_pane_3">
+                            <span class="nav-icon"><i class="flaticon2-drop"></i></span>
+                            <span class="nav-text d-flex gap-2">بسته بندی
+                                <i class="ki-duotone ki-cube-3 fs-2">
+                                 <span class="path1"></span>
+                                 <span class="path2"></span>
+                                </i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+            <!-- PAYMENT -->
+                <div class="tab-pane fade show active" id="kt_tab_pane_1" role="tabpanel" aria-labelledby="kt_tab_pane_1">
+{#                {% with order.total_pay_percent as pay_in_percent %}#}
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.payment_info.0 }}">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ order.payment_info.0 }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.payment_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.payment_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                            <a href="{% url 'order:order.payment.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن پرداخت جدید
+                                +
+                            </a>
+{#                            <div class="progress">#}
+{#                                <div class="progress-bar text-black" role="progressbar" style="width: {{ pay_in_percent }}%" aria-valuenow="{{ pay_in_percent }}"#}
+{#                                     aria-valuemin="0" aria-valuemax="100">{{ pay_in_percent }}%</div>#}
+{#                            </div>#}
+                        </div>
+                    </div>
+{#                {% endwith %}#}
+                    {% if payment_items %}
+                        <div class="row align-items-center pb-2 mb-3 bold">
+                            <div class="col-1 "><span class="ms-6">Order-No</span></div>
+                            <div class="col-1 ">Date</div>
+                            <div class="col-1 ">Destination currency</div>
+                            <div class="col-1 ">Currency</div>
+                            <div class="col-1">Rate</div>
+                            <div class="col-1">Amount</div>
+                            <div class="col-1">Pay date</div>
+                            <div class="col-1">Bank Info</div>
+                            <div class="col-1">Paid amount</div>
+                            <div class="col-1">Refrence</div>
+                            <div class="col-1">description</div>
+                            <div class="col-1">Files</div>
+                        </div>
+                    {% endif %}
+
+                    {% for payment_item in payment_items %}
+                        <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                            <div class="col-1 py-2">
+{#                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
+                                <span>{{ payment_item.order.pk|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span class="d-flex flex-column">
+                                    <span>{{ payment_item.from_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                    <span>{{ payment_item.to_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                                </span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.destination_currency|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.bank.currency|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ payment_item.exchange_rate|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.created_date|to_jalali:'%Y/%m/%d'|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.bank|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.total_amount|intcomma|default_if_falsy:'-' }}</span>
+                            </div>
+                            <div class="col-1 py-2">
+                                <span>{{ payment_item.refrence|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1">
+                                {{ payment_item.description|default_if_none:"-" }}
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <div class="row row-cols-2">
+                                    <div class="col">
+                                        {% for file in payment_item.files.all %}
+                                        <a href="{{ file.path.url }}" target="_blank"><i class="fas fa-file-upload icon-lg fs-2"></i></a>
+                                        {% empty %}
+                                            <span>-</span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col">
+                                        <a href="{% url 'order:order.payment.update' payment_item.payment.pk %}" target="_blank">مشاهده</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+{#                <span class="tooltip_">#}
+{#                <a class="fw-bold" href="/micmod_base/quotations/create" target="_blank">#}
+{#                    <i class="ki-duotone ki-plus-circle fs-3x">#}
+{#                        <span class="tooltiptext font-size-12">پرداخت جدید</span>#}
+{#                        <span class="path1"></span>#}
+{#                        <span class="path2"></span>#}
+{#                    </i>#}
+{#                </a>#}
+            </span>
+                </div>
+            <!-- GIO -->
+                <div class="tab-pane fade" id="kt_tab_pane_2" role="tabpanel" aria-labelledby="kt_tab_pane_2">
+                <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.gio_info.0 }}">
+                              <span class="progress-left">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <span class="progress-right">
+                                  <span class="progress-bar border-primary"></span>
+                              </span>
+                              <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                <div class="small">{{ order.gio_info.0 }}%</div>
+                              </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.gio_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.gio_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                            <a href="{% url 'order:gio.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن GIO جدید
+                                +
+                            </a>
+                        </div>
+                </div>
+                    {% if gio_items %}
+                        <div class="row align-items-center pb-2 mb-3 bold">
+                            <div class="col-2 "><span class="ms-6">تعداد </span></div>
+                            <div class="col-3 ">GIO</div>
+                            <div class="col-3">توضیحات</div>
+                            <div class="col-4"></div>
+{#                            <div class="col-2"></div>#}
+                        </div>
+                    {% endif %}
+                    {% for gio in gio_items %}
+                        <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                            <div class="col-2 py-2">
+                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                <span>{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-3 py-2 s-05">
+                                <span>{{ gio.gio.pk|default_if_none:"-" }}</span>
+                                <span>--</span>
+                                <span>{{ gio.gio.gio_date|default_if_none:"-"|to_jalali:"%Y/%m/%d" }}</span>
+                            </div>
+                            <div class="col-3 py-2 ">
+                                <span>{{ gio.description|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-4">
+                                <a href="{% url 'order:gio.update' gio.gio.pk %}" target="_blank">مشاهده</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            <!-- PACKING -->
+                <div class="tab-pane fade" id="kt_tab_pane_3" role="tabpanel" aria-labelledby="kt_tab_pane_3">
+
+                    <div class="d-flex mb-3">
+                        <div class="w-20 d-flex p-2 border rounded align-items-center">
+                            <div class="progress-circle" data-value="{{ order.packing_info.0 }}">
+                                  <span class="progress-left">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <span class="progress-right">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                    <div class="small">{{ order.packing_info.0 }}%</div>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="s-05">{{ order.packing_info.1|floatformat:"-3g"|intcomma }}</span>
+                                <span class="mx-1">از</span>
+                                <span class="s-05">{{ order.packing_info.2|floatformat:"-3g"|intcomma }}</span>
+                            </div>
+                            <a href="{% url 'order:packing.view' %}" class="ms-5 hover-link" target="_blank">
+                                افزودن PACKING جدید
+                                +
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if packing_items %}
+                        <div class="row align-items-center pb-2 mb-3 bold">
+                            <div class="col-1 "><span class="ms-6">sum qty</span></div>
+                            <div class="col-1 ">sum arrived qty</div>
+                            <div class="col-1 ">max arrive date</div>
+                            <div class="col-1 ">packing id</div>
+                            <div class="col-1">packing no</div>
+{#                            <div class="col-2">max status</div>#}
+                            <div class="col-1">tp icn</div>
+{#                            <div class="col-2">packing number</div>#}
+                            <div class="col-1">TP Method</div>
+{#                            <div class="col-2">packing id</div>#}
+                            <div class="col-2">shipment type</div>
+                            <div class="col-3"></div>
+                        </div>
+                    {% endif %}
+
+                    {% for packing_item in packing_items %}
+                        <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                            <div class="col-1 py-2">
+                                <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                <span>{{ packing_item.quantity|intcomma|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ packing_item.arrived_quantity|intcomma|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 s-05">
+                                <span>{{ packing_item.packing.arrival_date|default_if_falsy:"-"|to_jalali:'%Y-%m-%d' }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.pk|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.packing_number|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-1 py-2 ">
+                                {% with packing_item.order.transportation_method as tp %}
+                                    {% if tp == 'express' %}
+                                        <span class="me-5">⚡</span>
+                                    {% elif tp == 'air' %}
+                                        <span class="me-5">🚀</span>
+                                    {% elif tp == 'sea' %}
+                                        <span class="me-5">🚢</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="col-1 py-2 ">
+                                <span class="me-5">{{ packing_item.order.transportation_method|default_if_none:"-" }}</span>
+                            </div>
+                            <div class="col-2 py-2 ">
+                                <span class="me-5">{{ packing_item.packing.shipment_type|default_if_none:"-" }}</span>
+                            </div>
+{#                            <div class="col-5 py-2" direction="rtl">#}
+{#                                <span>{{ packing_item.order|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.pk|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.title|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.last_work_flow.current_state_name|default_if_none:"-"  }}</span>#}
+{#                                <span>{{ packing_item.order.quantity|default_if_none:"-"  }}</span>#}
+{#                            </div>#}
+                            <div class="col-3">
+                                <a href="{% url 'order:packing.update' packing_item.packing.pk %}" target="_blank">مشاهده</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="mt-20 pt-20"></div>
+    {% endif %}
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+{% endblock form_content %}
+
+{% block extra_js %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'js/extra/order.js' %}"></script>
+    <script>
+function order_add(event){
+    const order_form_container = event.currentTarget.parentElement.parentElement.nextElementSibling
+
+    if (order_form_container){
+        const order_base = order_form_container.querySelector('.order_base')
+        const order_rel = order_form_container.querySelector('.order_rel')
+        const row = event.currentTarget.parentElement.parentElement
+        let order_base_value;
+        let order_rel_value;
+
+        document.querySelectorAll('.order_form_container').forEach(function (item){
+            if (item !== order_form_container){
+                item.classList.add('d-none')
+            } else {
+                order_form_container.classList.toggle('d-none')
+            }
+        })
+
+        if (order_base && order_rel){
+            order_base_value = order_base.dataset.order_base
+            order_rel_value = row.querySelector('.available_order_rel').innerText
+            order_base.innerHTML = order_base_value
+            order_rel.innerHTML = order_rel_value
+        }
+
+    }
+}
+
+const need_quantity = document.querySelector('#need_quantity')
+function check_order_quantity(event){
+    debugger
+    event.currentTarget.style.outline = 0
+    event.currentTarget.style.border = "2px solid"
+    const order_quantity_message = event.currentTarget.parentElement.querySelector('.order_quantity_message')
+    const remaining_quantity = event.currentTarget.parentElement.parentElement.parentElement.previousElementSibling.querySelector('.remaining_quantity')
+    const order_order_submit = event.currentTarget.parentElement.querySelector('.order_order_submit')
+    const current_value = parseFloat(event.currentTarget.value)
+    if (need_quantity){
+        debugger
+        if ((current_value > parseFloat(removeCommaSeperator(need_quantity.innerText))) && (current_value > parseFloat(removeCommaSeperator(remaining_quantity.innerText)))) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس و نیاز سفارش است'
+            order_order_submit.classList.add('d-none')
+        } else if (current_value > parseFloat(removeCommaSeperator(remaining_quantity.innerText))){
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از موجودی در دسترس است!'
+            order_order_submit.classList.add('d-none')
+        } else if (current_value > parseFloat(removeCommaSeperator(need_quantity.innerText))) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'تعداد بیش از نیاز سفارش است'
+            order_order_submit.classList.add('d-none')
+        } else if (!current_value) {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'مقدار نامعتبر'
+            order_order_submit.classList.add('d-none')
+        } else {
+            event.currentTarget.style.borderColor = 'green'
+            order_quantity_message.innerText = ''
+            order_order_submit.classList.remove('d-none')
+        }
+    } else {
+            event.currentTarget.style.borderColor = 'red'
+            order_quantity_message.innerText = 'سفارش تامین شده'
+            order_order_submit.classList.add('d-none')
+        }
+
+}
+function submit_order_order(event){
+    event.preventDefault()
+    debugger
+    const order_quantity = event.currentTarget.parentElement.querySelector('.order_order_quantity')
+    if (order_quantity){
+        if (parseFloat(removeCommaSeperator(order_quantity.value)) > parseFloat(removeCommaSeperator(need_quantity.innerText))){
+            console.log('confirm modal')
+        }
+    }
+    let post_data = JSON.stringify({
+        "order_base_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_base').innerText),
+        "order_rel_id": parseFloat(event.currentTarget.parentElement.querySelector('.order_rel').innerText),
+        "quantity": parseFloat(removeCommaSeperator(order_quantity.value))
+    })
+    const url = '/order/ajax/order_order/add/'
+    const order_order_report_element = document.querySelector('#order_order_report_ajax')
+    custom_ajax_post_data(post_data, url, order_order_report_element, false)
+}
+
+const DeleteCustomerExpert = document.querySelectorAll('.delete-order-order')
+DeleteCustomerExpert.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+const gio_item = document.querySelector('#gio_item')
+    gio_item && gio_item.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                debugger
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditGioItem = document.querySelectorAll('.edit-gio-item')
+    const DeleteGioItem = document.querySelectorAll('.delete-gio-item')
+    EditGioItem && EditGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: element.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteGioItem && DeleteGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+const packing_item = document.querySelector('#packing_item')
+    packing_item && packing_item.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditPackingItem = document.querySelectorAll('.edit-packing-item')
+    const DeletePackingItem = document.querySelectorAll('.delete-packing-item')
+    EditPackingItem && EditPackingItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: element.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeletePackingItem && DeletePackingItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+function percentageToDegrees(percentage) {
+            return percentage / 100 * 360
+          }
+        function progressPercentage (){
+            const elements = document.querySelectorAll(".progress-circle")
+            elements.forEach(function (item){
+                let value = item.getAttribute('data-value');
+                let left = item.querySelector('.progress-left .progress-bar')
+                let right = item.querySelector('.progress-right .progress-bar')
+
+                if (value > 0) {
+                  if (value <= 50) {
+                    right.style.transform = 'rotate(' + percentageToDegrees(value) + 'deg)'
+                  } else {
+                    right.style.transform = 'rotate(180deg)'
+                    {#right.css('transform', 'rotate(180deg)')#}
+                    left.style.transform = 'rotate(' + percentageToDegrees(value - 50) + 'deg)'
+                    {#left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')#}
+                  }
+                }
+            })
+        }
+        progressPercentage()
+
+    function handelOrderPriceDiff(){
+        const id_price = document.querySelector('#id_price')
+        const id_price_trade = document.querySelector('#id_price_trade')
+        const id_price_mac = document.querySelector('#id_price_mac')
+        const id_can_alert = document.querySelector('#id_can_alert')
+        if (id_can_alert && id_price_trade && id_price_mac && id_price_mac.value && id_price_trade.value !== id_price_mac.value && !id_price.value){
+            const msg = `قیمت اعلامی از جانب MAC با قیمت اعلامی بازرگانی متفاوت است \n\n MAC: ${id_price_trade.value} \n TRADE: ${id_price_mac.value}`
+            {#document.querySelector('#global-error').innerHTML = msg#}
+            alert(msg)
+        }
+    }
+
+    window.setTimeout(handelOrderPriceDiff, 1000)
+
+    document.querySelectorAll('input').forEach(function (item){
+        item.addEventListener('keydown', function (e){
+            if (e.key === 'Enter'){
+                e.preventDefault()
+                alert('استفاده از کلید Enter مجاز نیست')
+            }
+        })
+    })
+
+    </script>
+    <script src="{% static 'js/comment.js' %}"></script>
+{% endblock extra_js %}

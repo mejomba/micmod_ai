@@ -31,7 +31,7 @@ class QuotationForm(CustomBaseModelForm):
                   "description", "id", 'sepidar_number', 'self_discount', 'addition', 'duty', 'tax',
                   "is_official", "official_value", 'cancel', 'force_inquiry', 'sale_type', 'is_direct',
                   'sales_admin_confirm', 'description_sales', 'customer_request', 'q_price_setting', 'can_observe',
-                  'notify_number']
+                  'notify_number', "prepayment"]
 
         widgets = {
             'description': forms.Textarea(attrs={"rows": 1}),

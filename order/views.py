@@ -2,13 +2,15 @@ from datetime import timedelta
 
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
@@ -22,6 +24,7 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from comments.forms import CommentsForm
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
 from factor.models import Factor, FactorItem, FactorItemSupplyLocation
@@ -32,9 +35,11 @@ from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow
+from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
-    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm
+    TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
+    OrderSafeForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -47,6 +52,273 @@ from collections import OrderedDict
 #
 #     for item in items.goods_code:
 #         order_item = OrderItem.objects.create(order__title=item)
+
+
+class SafeOrderView(LoginRequiredMixin, BaseView):
+    safe_methods = set()
+    template_name = 'order/safe_order.html'
+    form_class = OrderSafeForm
+    model = Order
+    form_struct = {
+        'form': OrderSafeForm,
+        'childes': [{},]
+    }
+    flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'OrderView')
+    has_flow = True
+    wf_last_step_is_open = True
+    formset_model = FactorItem
+
+    def dispatch(self, request, *args, **kwargs):
+        view_name = self.request.GET.get('view_name', None)
+        if view_name in self.__class__.safe_methods and hasattr(self, view_name):
+            method = getattr(self, view_name)
+            return method(request, *args, **kwargs)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        return self._build_order_form(**self.get_form_kwargs())
+
+    def _build_order_form(self, data=None, instance=None, initial=None, **kwargs):
+        allowed, hidden, show = self._get_order_allowed_fields()
+        return OrderSafeForm(allowed_fields=allowed, allowed_hidden=hidden, only_show=show, data=data,
+                             instance=instance, initial=initial, **kwargs)
+
+    def _get_order_allowed_fields(self):
+        permissions = self.request.user.get_all_permissions()
+        user_exist_perm = []
+        allowed_hidden = []
+        allowed_edit = []
+        allowed_show = []
+        for p in permissions:
+            exist_perm = ORDER_FIELDS_BY_PERMISSION.get(p, None)
+            if exist_perm:
+                user_exist_perm.append(exist_perm)
+
+        for perm in user_exist_perm:
+            if perm:
+                data = perm.get(self.state_index or 0)
+                if data:
+                    allowed_hidden += data['hidden']
+                    allowed_edit += data['edit']
+                    allowed_show += data['show']
+
+        if not allowed_edit and not allowed_show:
+            raise PermissionDenied("شما دسترسی لازم برای ویرایش این سفارش را ندارید.")
+        hidden = []
+        edit = []
+        show = []
+        for h in allowed_hidden:
+            if h not in hidden:
+                hidden.append(h)
+
+        for e in allowed_edit:
+            if e not in edit:
+                edit.append(e)
+
+        for s in allowed_show:
+            if s not in show:
+                show.append(s)
+        return edit, hidden, show
+
+    def get_success_url(self):
+        return reverse_lazy('order:order.view.safe', kwargs={'pk': self.object.pk})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if self.object is None:
+                is_new = True
+            else:
+                is_new = False
+
+            self.get_form_kwargs()
+
+            self.object = self.get_object()
+            self.form = self.get_form()
+            if not self.form.is_valid():
+                return self.render_to_response(self.get_context_data(form=self.form))
+            self.form.instance.extra_data.request = self.request
+            self.object = self.form.save()
+
+            if self.form.file_model and self.form.file_groups_2:
+                self.object.save_file(request=self.request,
+                                      file_groups=self.form.file_groups_2,
+                                      file_model=self.form.file_model,
+                                      obj=self.object,
+                                      input_prefix='file'
+                                      )
+
+            self.object.save_comment(self.request, CommentsForm)
+            self.submit_flow(is_new)
+
+        except Exception as e:
+            self.form._non_form_errors = self.form.error_class([str(e)])
+            return self.render_to_response(self.get_context_data(form=self.form))
+
+        return redirect(self.get_success_url())
+
+    def submit_flow(self, is_new):
+        groups = {
+                    0: {"group": "sales_user", "state_name": "پیش نویس"},
+                    1: {"group": "sales_admin", "state_name": "تایید مدیر فروش"},
+                    2: {"group": "wh_admin", "state_name": "تایید بازرگانی"},
+                    3: {"group": "factor_collector", "state_name": "تایید مهندس"},
+                    4: {"group": "factor_final_check", "state_name": "ارسال به تامین کننده"},
+                    5: {"group": "factor_send_or_delivery", "state_name": "تایید تامین کننده"},
+                    6: {"group": "factor_delivery_approve", "state_name": "تایید نهایی بازرگانی"},
+                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت/GIO/PACKING"},
+                    8: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
+                }
+
+        last_flow = self.object.last_work_flow
+        current_state_index = self.state_index
+        if 0 < current_state_index < 8:
+            next_state_index = getattr(self, 'state_index') + 1
+            previews_state_index = getattr(self, 'state_index') - 1
+
+        if current_state_index == 0:
+            next_state_index = getattr(self, 'state_index') + 1
+            previews_state_index = 0
+
+        if current_state_index == 8:
+            next_state_index = 8
+            previews_state_index = getattr(self, 'state_index') - 1
+
+        current_group_name = groups.get(current_state_index).get('group')
+        next_group_name = groups.get(next_state_index).get('group')
+        previews_group_name = groups.get(previews_state_index).get('group')
+
+        current_state_name = groups.get(current_state_index).get('state_name')
+        next_state_name = groups.get(next_state_index).get('state_name')
+        previews_state_name = groups.get(previews_state_index).get('state_name')
+
+        if 'next' in self.request.POST:  # 3 next
+            current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=next_group_name)
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.latest("pk").from_user
+            else:
+                next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+                to_user = next_state_user.last()
+
+            wf = WorkFlow.objects.create(action='next', flow_name='order',creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=3, from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=next_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+        elif 'draft' in self.request.POST and (is_new or not last_flow):  # 5 first draft
+            wf = WorkFlow.objects.create(action='draft', flow_name='order', wf_status=5,
+                                         creator_user=self.request.user,
+                                         editor_user=self.request.user,
+                                         from_user=self.request.user,
+                                         to_user=self.request.user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        elif 'back' in self.request.POST:  # 2 back
+            current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+                to_user = previews_state_user.first()
+
+            wf = WorkFlow.objects.create(action='back', flow_name='order',creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=2,
+                                         from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=previews_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        elif 'change_user' in self.request.POST:  # 4 change user
+            to_user = self.request.POST.get('to_current_group_user')
+            wf = WorkFlow.objects.create(action='change user', flow_name='order', creator_user=self.request.user,
+                                         editor_user=self.request.user, wf_status=4,
+                                         from_user=last_flow.to_user,
+                                         to_user_id=to_user,
+                                         content_type=self.model.content_type(), object_id=self.object.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=self.request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        return last_flow
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
+        context['section_id'] = 'order'
+
+        if self.request.method == "POST":
+            context["form"] = self._build_order_form(
+                data=self.request.POST,
+                instance=self.object,
+            )
+        else:
+            if self.object:
+                ...
+
+        if self.state_index == 7:
+            context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
+            context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
+            context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
+        return context
+
+    def form_valid(self, form):
+        from tools import const
+        res = super().form_valid(form)
+        if 'back' in self.request.POST and self.state_index == 4 and not self.object.mohandes_confirmation:
+            flow_data = {
+                "wf_status": 2,  # back
+                "action": 'ایجاد خودکار',
+                "flow_name": 'سفارش',
+                "state": const.WF__ORDER__4_STATE,
+                "wf_description": "بدون نیاز به تایید مهندس",
+                "belong_to_group": 'trade_order',
+                "object_id": self.object.pk,
+                "content_type": ContentType.objects.get_for_model(self.object),
+                "creator_user": self.request.user,
+                "editor_user": self.request.user,
+                "from_user": self.request.user,
+                "to_user": self.request.user,  # get_user_model().objects.filter(groups__name='order_admin').first(),
+                "current_state_name": const.WF__ORDER__5_CURRENT_STATE_NAME,
+            }
+
+            wf = WorkFlow.objects.create(**flow_data)
+            self.object.last_work_flow = wf
+            self.object.extra_data.request = self.request
+            self.object.save()
+        if 'mohandes_confirmation' not in self.request.POST and self.state_index == 2 and 'change_user' not in self.request.POST and 'back' not in self.request.POST and 'next' in self.request.POST:
+            flow_data = {
+                "wf_status": 3,  # next
+                "action": 'ایجاد خودکار',
+                "flow_name": 'سفارش',
+                "state": const.WF__ORDER__4_STATE,
+                "wf_description": "بدون نیاز به تایید مهندس",
+                "belong_to_group": 'trade_order',
+                "object_id": self.object.pk,
+                "content_type": ContentType.objects.get_for_model(self.object),
+                "creator_user": self.request.user,
+                "editor_user": self.request.user,
+                "from_user": self.request.user,
+                "to_user": self.request.user,  # get_user_model().objects.filter(groups__name='order_admin').first(),
+                "current_state_name": const.WF__ORDER__5_CURRENT_STATE_NAME,
+            }
+
+            wf = WorkFlow.objects.create(**flow_data)
+            self.object.last_work_flow = wf
+            self.object.extra_data.request = self.request
+            self.object.save()
+        return res
 
 
 class OrderView(LoginRequiredMixin, BaseView):
@@ -266,9 +538,6 @@ class OrderDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
-        # qs = self.model.get_qs(self.request, lst=False)  # super().get_initial_queryset(request)
-        # if request.user.is_superuser:
-        #     return qs
 
         q = request.POST.get('q')
         user_group = request.user.base_group
