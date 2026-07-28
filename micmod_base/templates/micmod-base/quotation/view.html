@@ -43,6 +43,13 @@
         </div>
     </div>
 
+    <div class="mb-3">
+    {% for warn in q_warn %}
+    <span class="p-2 border border-danger text-danger rounded">{{ warn }}</span>
+    {% endfor %}
+
+    </div>
+
     <div class="bg-light-danger text-danger p-8 rounded d-none position-sticky sticky-top w-80 mx-auto" id="expire_inquiry_error">
     <span class="mx-3 bold">استفاده از استعلام های بازار پس از ۷۲ ساعت مجاز نیست</span>
         <span class="">ردیف(های)</span>
@@ -116,6 +123,7 @@
                                                             <label data-key="notify_number" id="None" class="None">Notify number</label>
                                                         </div>
                                                         {% render_field_by_order form form.can_observe label='on-border '%}
+                                                        {% render_field_by_order form form.prepayment label='on-border '%}
                                                     </div>
                                                 </div>
                                             </div>

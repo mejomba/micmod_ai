@@ -266,7 +266,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "priceinfodiscountrate": 0.0,  # معمولا صفر (نرخ تخفیف روی قیمت)
                 "customerdiscountrate": fi.customerdiscountrate(row_price, discount),
                 # از اقای مختاری و فروش سوال شود (تخفیف به مشتری)
-                "addition": round(addition / fis_count, 4),  # از اقای مختاری و فروش سوال شود
+                "addition": round(addition / fis_count, 4) if rate != 1 else int(addition / fis_count),  # از اقای مختاری و فروش سوال شود
                 "additioninbasecurrency": round((addition / fis_count) * rate, 4),
                 "tax": round(tax, 4),  # calculate in save از آقای مختاری
                 "taxinbasecurrency": round(tax * rate, 4),  # calculate in save از آقای مختاری
@@ -380,7 +380,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
                 "version": 1,
                 "vendordlref": supplier_currency.split('___')[0],
                 "invoicenumber": None,  # گفتن که ازش استفاده نمیکنن و کلا ۴ رکورد در دیتابیس هست که اینو دارن
-                "date": timezone.now().isoformat(),
+                "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
                 "currencyref": supplier_currency.split('___')[1],
                 "currencyrate": rate or 1,  # Todo این چطوری حساب میشه؟
                 "totalprice": round(totalprice, 4),

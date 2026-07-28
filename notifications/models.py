@@ -13,6 +13,9 @@ from translator import get_text as _
 from django.template.loader import render_to_string
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+import re
+
+phone_patern = r'^09[0-9]{9}$'
 
 
 class Groups(AbsBaseModel):
@@ -199,6 +202,11 @@ class Notification(AbsBaseModel):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
+        try:
+            if not re.match(phone_patern, notify_number):
+                return
+        except Exception as e:
+            return
         message = 'درخواست شما جهت بررسی ثبت شد. نتیجه بررسی حداکثر ظرف ۴۸ تا ۷۲ ساعت کاری توسط کارشناس مربوطه به اطلاع شما خواهد رسید.'
         success, res = send_sms('', [notify_number], message)
         if success:
@@ -221,6 +229,11 @@ class Notification(AbsBaseModel):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
+        try:
+            if not re.match(phone_patern, notify_number):
+                return
+        except Exception as e:
+            return
         message = 'پیش فاکتور شما صادر گردید. اعتبار قیمت های اعلام شده حداکثر ۴۸ ساعت می باشد. جهت مشاهده جزیات به لینک پیش فاکتور در shop مراجعه فرمایید.'
         success, res = send_sms('', [notify_number], message)
         if success:
@@ -243,6 +256,11 @@ class Notification(AbsBaseModel):
         from tlg.scripts.sms import send_sms
 
         notify_number = quotation.notify_number
+        try:
+            if not re.match(phone_patern, notify_number):
+                return
+        except Exception as e:
+            return
         message = 'یادآوری: پیش فاکتور صادر شده همچنان در انتظار تایید و اقدام شما می باشد. لطفا در اسرع وقت نسبت به بررسی و ثبت سفارش اقدام فرمایید.'
         success, res = send_sms('', [notify_number], message)
 
@@ -284,6 +302,11 @@ class Notification(AbsBaseModel):
         from tlg.scripts.sms import send_sms
 
         notify_number = factor.notify_number
+        try:
+            if not re.match(phone_patern, notify_number):
+                return
+        except Exception as e:
+            return
         from factor.models import FactorItemSupplyLocation
         from django.db.models import Exists, OuterRef
 
@@ -324,6 +347,11 @@ class Notification(AbsBaseModel):
         from tlg.scripts.sms import send_sms
 
         notify_number = factor.notify_number
+        try:
+            if not re.match(phone_patern, notify_number):
+                return
+        except Exception as e:
+            return
         deliver_method = _(getattr(factor.deliver_method, 'title', None) or '-')
 
         message = "فاکتور شماره {0} با شماره حواله {1} از طریق {2} ارسال گردید.".format(factor.pk, factor.sepidar_inventory_delivery_number, deliver_method)

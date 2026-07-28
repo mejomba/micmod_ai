@@ -462,7 +462,7 @@ class MultipleFileField(forms.FileField):
 
 class FormMX(forms.ModelForm):
     file_model = File  # مدل File (generic FK)
-    file_groups_2 = None  # تعداد اسلات‌های فایل
+    file_groups_2 = 0  # تعداد اسلات‌های فایل
     file_labels = dict()
     file_group_field = "group"  # فیلدی در File که شماره‌ی گروه را نگه می‌دارد (توصیه‌شده)
     file_file_field = "file"  # نام FileField در مدل File
@@ -632,7 +632,8 @@ class FormMX(forms.ModelForm):
             if o not in only:
                 only.append(o)
         names = self.field_layout or list(self.fields.keys())
-        for name in names:
+        # for name in names:
+        for name in self.allowed_fields:
             if name in only:
                 continue
             if name in self.fields:

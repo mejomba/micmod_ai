@@ -2,6 +2,7 @@ import datetime
 import time
 from decimal import Decimal
 
+import requests
 from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Coalesce, Cast
@@ -106,6 +107,64 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.extra_data.request = self.request
             self.object.save()
 
+    def send_buy_factor_to_shop(self):
+        try:
+            customer = getattr(self.object, 'customer_party_id', None) or getattr(self.object.q, 'customer_party_id', None)
+            if not customer:
+                return
+
+            if customer.pk == 1:
+                pass
+            customer_request = None
+            # if getattr(self.object, 'q', None) and getattr(self.object.q, 'customer_request'):
+            #     customer_request = self.object.q.customer_request
+
+            l = list()
+            for fi in self.object.factoritem_set.all():
+                product_access_token = cache.get("product_access_token")
+                if not product_access_token:
+                    req = requests.get("https://products.micromodernonline.ir/api2/token/")
+                    if req.status_code == 200:
+                        res = req.json()
+                        product_access_token = res.get('access')
+                        cache.set('product_access_token', product_access_token, 20)
+
+                product_req = requests.get(f"https://products.micromodernonline.ir/api2/myapp-product/?sepidar_sku={fi.goods_code.pk}",
+                                           headers={"Authorization": f"Bearer {product_access_token}"}
+                                           )
+                if product_req.status_code == 200:
+                    res = product_req.json()
+                    product_id = res.get('id')
+                    if not product_id:
+                        raise ValueError('کد کالای فروشگاه پیدا نشد. فاکتور خرید فروشگاه ثبت نشد. لطفا با داخلی 991 تماس بگیرید')
+
+                l.append({
+                    "user": 3,
+                    "quantity": getattr(getattr(fi.qi, 'customer_request_item', None), 'quantity', None),
+                    # تعداد در درخواست مشتری
+                    "received_quantity": fi.quantity,  # تعداد در ردیف فاکتور
+                    "unit_price": fi.fee_(),  # فی ردیف
+                    "discounted_unit_price": fi.fee_after_discount,  # فی بعد از تخفیف
+                    "discount_per_unit": fi.discount_per_item,  # discount per item
+                    "product": product_id  # شناسه محصول در پروداکت
+                })
+
+            d = {
+                "source_invoice_no": f"{self.object.pk}",
+                "purchase_items": l,
+                "source_warehouse_name": "انبارمرکزی",
+                "description": "test",
+                "status": "purchase_status-invoiced_purchase" # همین عبارت بفرست
+            }
+            shop_token_request = requests.get('https://shop.micromodernonline.ir/core/access_token/')
+            if shop_token_request.status_code == 200:
+                shop_access_token = shop_token_request.json().get("tokens").get("access_token").get("value")
+                requests.post(
+                    f"https://micmodshop.ir/api2/sales-purchaseorder/{self.object.shop_buy_factor_id or 0}/?struct_name=purchase_detail&ignore_readonly_fields"
+                    , json=d, headers={"Authorization": f"Bearer {shop_access_token}"})
+        except Exception as e:
+            pass
+
     def send_factor_to_sepidar(self):
         customer = self.object.q.customer_party_id
         if not customer.active:
@@ -145,6 +204,7 @@ class FactorView(LoginRequiredMixin, BaseView):
 
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
+                self.send_buy_factor_to_shop()
                 return
             else:
                 self.after_sepidar_error()
@@ -1162,11 +1222,11 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
 
         if form.file_model and form.file_groups_2:
             self.object.save_file(request=self.request,
-                              file_groups=form.file_groups_2,
-                              file_model=form.file_model,
-                              obj=self.object,
-                              input_prefix='file'
-                              )
+                                  file_groups=form.file_groups_2,
+                                  file_model=form.file_model,
+                                  obj=self.object,
+                                  input_prefix='file'
+                                  )
 
         form_set = self._build_item_formset(data=request.POST, instance=self.object)
         if not form_set.is_valid():
@@ -1407,7 +1467,6 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
                 data=self.request.POST,
                 instance=self.object,
             )
-            # context['supply_locations'] = self.request.POST.get('supply_locations')
         else:
             initial = dict()
             if self.object:
@@ -1478,7 +1537,6 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         return super().dispatch(request, *args, **kwargs)
 
     def _get_factor_allowed_fields(self):
-        # permissions = _get_permission_list(self.request.user)
         permissions = self.request.user.get_all_permissions()
         user_exist_perm = []
         allowed_hidden = []
@@ -1949,7 +2007,7 @@ def factor_today_total_price(request, *args, **kwargs):
             if hasattr(request, 'user') else request.groups.values_list('name', flat=True)
         if user.is_superuser:
             qs = factors.filter().distinct()
-        elif 'sales_admin' in user_groups_name:
+        elif 'sales_admin' in user_groups_name or user.pk == 52: # خانم زند
             qs = factors.filter().distinct()
         elif 'sales_user' in user_groups_name:
             qs = factors.filter(creator_user=user).distinct()

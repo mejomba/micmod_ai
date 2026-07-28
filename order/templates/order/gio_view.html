@@ -32,20 +32,20 @@
         {% render_field_by_order form form.gio_date form.quantity form.description form.sepidar_buy_factor_response_json  label='on-border' %}
         <div class="col-12">
             <div id="to-sepidar-wrapper">
-{#                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}#}
-{#                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>#}
-{#                {% endif %}#}
-{#                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>#}
-{#                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>#}
-{#                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام 111 ثبت میشود.</span>#}
-
+                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}
+                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>
+                {% endif %}
+                <br>
+                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>
+                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>
+                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام no_name_supplier ثبت میشود.</span>
 
                 <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded">
                     وضعیت تامین کننده برای یک یا چند ردیف قابل تایید نیست.
                 </span>
             </div>
 
-            <div id="sepidar-preview"></div>
+            <div id="sepidar-preview" class="mt-3"></div>
         </div>
 {#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
             <div class="" id="gio_item_container">

@@ -21,6 +21,7 @@ import ast
 from django.contrib.humanize.templatetags.humanize import intcomma,number_format
 from tools.myjalali import JalalyDate
 import re
+from django.core.cache import cache
 
 # Register tags as an adapter for the Theme class usage in the HTML template
 
@@ -145,10 +146,17 @@ def humanized_format(value, digits=None, use_l10n=True):
 def get_object_count(user, count_str):
     app_model, q = count_str.split(':')
     app, model = app_model.split(".")
-    model_ = apps.get_model(app, model)
-    function = getattr(model_, q, None)
-    if function:
-        return function(user)
+    cache_key = f'{count_str}__{user.pk}'
+    data = cache.get(cache_key)
+    if data:
+        return data
+    else:
+        model_ = apps.get_model(app, model)
+        function = getattr(model_, q, None)
+        if function:
+            data = function(user)
+            cache.set(cache_key, data, 300)
+            return data
 
 
 @register.simple_tag

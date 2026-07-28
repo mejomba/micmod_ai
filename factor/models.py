@@ -34,6 +34,7 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
+    shop_buy_factor_id = models.IntegerField(null=True, blank=True)
     is_reserve = models.BooleanField(default=False, verbose_name=_(''))
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
@@ -328,7 +329,9 @@ class FactorItem(BaseModel):
             print(e)
             return 0
 
-
+    @property
+    def fee_after_discount(self):
+        return self.fee_() - getattr(self, 'discount_per_item', None) or 0
 
     @property
     def is_wh(self):
@@ -455,7 +458,7 @@ class FactorItem(BaseModel):
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if False and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
+        if False: # and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
             super().save(force_insert, force_update, using, update_fields)
         else:
             with transaction.atomic():
