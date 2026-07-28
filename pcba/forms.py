@@ -78,7 +78,7 @@ class ContractForm(CustomBaseModelForm):
         super(ContractForm, self).__init__(*args, **kwargs)
         self.make_hidden(['customer_party_id', 'goods_code_fk',])
 
-        request = kwargs.get('initial').get('constraint').get('request')
+        # request = kwargs.get('initial').get('constraint').get('request')
         user_groups = request.user.groups.values_list('name', flat=True)
         if request and not request.user.is_superuser and 'pcba_admin' not in user_groups:
             # if 'pcba_user' in user_groups:
