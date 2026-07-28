@@ -233,6 +233,7 @@ class Quotation(SLSDoc):
 
     @classmethod
     def get_qs(cls, request):
+        from django.db.models import Exists, OuterRef
         q = request.POST.get('q')
         qs = cls.objects.get_access_object(request.user, q=q, quotation=True, lst=False).filter(is_direct=False)
         if q == 'is_inquiry':
@@ -240,15 +241,44 @@ class Quotation(SLSDoc):
             #     Q(quotation__local_price_inquiry_done=True) & Q(quotation__need_local_price_inquiry=True)
             # qs = qs.filter(f).distinct()
 
-            qs = qs.filter(Q(quotation__need_foreign_price_inquiry=True) | Q(quotation__need_local_price_inquiry=True), cancel=False, last_work_flow__current_state_name='استعلام قیمت').exclude(
-                        quotation__is_deleted=False,
-                        quotation__need_foreign_price_inquiry=True,
-                        quotation__foreign_price_inquiry_done=False
-                    ).exclude(
-                        quotation__is_deleted=False,
-                        quotation__need_local_price_inquiry=True,
-                        quotation__local_price_inquiry_done=False
-                    ).distinct()
+            # ردیف فعالی که نیاز به استعلام خارجی داره
+            has_active_foreign = QuotationItem.objects.filter(
+                quotation_id=OuterRef('pk'),
+                is_deleted=False,
+                need_foreign_price_inquiry=True,
+            )
+
+
+            has_active_local = QuotationItem.objects.filter(
+                quotation_id=OuterRef('pk'),
+                is_deleted=False,
+                need_local_price_inquiry=True,
+            )
+
+
+            has_pending_foreign = QuotationItem.objects.filter(
+                quotation_id=OuterRef('pk'),
+                is_deleted=False,
+                need_foreign_price_inquiry=True,
+                foreign_price_inquiry_done=False,
+            )
+
+
+            has_pending_local = QuotationItem.objects.filter(
+                quotation_id=OuterRef('pk'),
+                is_deleted=False,
+                need_local_price_inquiry=True,
+                local_price_inquiry_done=False,
+            )
+
+            qs = qs.filter(
+                cancel=False,
+                last_work_flow__current_state_name='استعلام قیمت',
+            ).filter(
+                Q(Exists(has_active_foreign)) | Q(Exists(has_active_local))
+            ).exclude(
+                Exists(has_pending_foreign) | Exists(has_pending_local)
+            ).distinct()
         return qs
 
     @classmethod
