@@ -213,6 +213,18 @@ class Order(BaseModeWF):
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
 
     @property
+    def _item(self):
+        return f'{self.item.sku}: {self.item.part_number}'
+
+    @property
+    def _item_trade(self):
+        return f'{self.item_trade.sku}: {self.item_trade.part_number}'
+
+    @property
+    def _item_mac(self):
+        return f'{self.item_mac.sku}: {self.item_mac.part_number}'
+
+    @property
     def display_name(self):
         return f'{self.creator_user} - ID:{self.pk}'
         if self.final_item:

@@ -33,7 +33,7 @@ class FactorItemSerializer(CustomFieldModelSerializer):
         return getattr(obj, 'discount_value', None) or 0
 
     def get_total_price_after_discount(self, obj):
-        return self.get_total_price(obj) - self.get_total_discount(obj)
+        return obj.total_price_after_discount
 
     def get_total_tax(self, obj):
         return getattr(obj, 'tax', None) or 0

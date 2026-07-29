@@ -50,6 +50,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, \
     QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
+from services.shop.api_call import ShopApiCall
 from tlg.scripts.sms import send_sms
 from tools import const
 from tools.datatable import CustomAjaxDatatableView
@@ -400,6 +401,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         flow_object.save()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
+
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
             self.object.save()
         except Exception as e:
             pass

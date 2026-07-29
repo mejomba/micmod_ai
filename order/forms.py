@@ -89,26 +89,6 @@ class OrderForm(CustomBaseModelForm):
         model = Order
         exclude = ['group', 'last_work_flow']
 
-    def run_access(self):
-        if self.form_state == 0:
-            return self.order_zero_state_access()
-        elif self.form_state == 1:
-            return self.order_first_state_access()
-        elif self.form_state == 2:
-            return self.order_second_state_access()
-        elif self.form_state == 3:
-            return self.order_third_state_access()
-        elif self.form_state == 4:
-            return self.order_forth_state_access()
-        elif self.form_state == 5:
-            return self.order_fiveth_state_access()
-        elif self.form_state == 6:
-            return self.order_sixth_state_access()
-        elif self.form_state == 7:
-            return self.order_seventh_state_access()
-        elif self.form_state == 8:
-            return self.order_eighth_state_access()
-
     def order_zero_state_access(self):
         user = self.request.user
         if user.has_perm('order.zero_state'):

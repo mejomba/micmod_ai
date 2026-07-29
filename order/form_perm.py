@@ -280,6 +280,82 @@ ORDER_FIELDS_BY_PERMISSION = {
                      "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
         },
     },
+    "order.cp_order_mac": {
+        1: {
+            "edit": [
+                "trade_lock_order",
+            ],
+            "hidden": [
+
+            ],
+            "show": ["request_date", "quantity_trade", "quantity_mac", "order_number",
+                     "q", "production_lead_time", "order_type", "price", "ptice_mac", "currency", "supplier_trade",
+                     "supplier_mac"]
+        },
+        2: {
+            "edit": [
+                "item_trade", "quantity_trade", "price", "currency", "supplier_trade", "price_inquiry_result",
+                "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
+                "apply_mac", "description_trade", "trade_user", "po_number_trade",
+            ],
+            "hidden": [
+
+            ],
+            "show": ["request_date", "quantity_trade", "quantity_mac", "order_number",
+                     "q", "production_lead_time", "order_type", "price", "ptice_mac", "currency", "supplier_trade",
+                     "supplier_mac", ]
+        },
+        3: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+        4: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4", "final_check"
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "delivery_time", "q", "created_date", "need_financial_approval", "wh_user",
+                     "checker", "accounting_confirm", "file_1", "collecting_start_time"]
+        },
+        5: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+        },
+        6: {
+            "edit": [
+                "address", "deliver_type", "deliver_method", "file_2", "file_3", "file_4",
+            ],
+            "hidden": [
+                 "addition", "tax", "duty", "total_price",
+            ],
+            "show": ["customer_party_id", "wh_user", "checker", "accounting_confirm", "file_1", "collecting_start_time",
+                     "sepidar_number", "sepidar_inventory_delivery_number", "sepidar_voucher_number", ]
+            },
+        7: {
+            "edit": [
+                "item_mac", "quantity_mac", "po_number_mac", "supplier_mac", "price_mac",
+                "description_mac"
+            ],
+            "hidden": [
+
+            ],
+            "show": ["price", "_item", "_item_trade", "part_number"]
+        },
+    },
     "factor.cp_factor_accounting": {
         2: {
             "edit": [

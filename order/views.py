@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
+from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
@@ -388,6 +388,13 @@ class OrderView(LoginRequiredMixin, BaseView):
             self.object.save()
         return res
 
+    def get(self, request, *args, **kwargs):
+        get = super().get(request, *args, **kwargs)
+        if self.request.user.base_group == 'mac' and not self.object.apply_mac:
+            raise PermissionDenied()
+        else:
+            return get
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
@@ -541,8 +548,12 @@ class OrderDataTableListView(AjaxDatatableView):
 
         q = request.POST.get('q')
         user_group = request.user.base_group
+
+        if user_group == 'sales':
+            return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
+
         if request.user.groups.filter(name='mac'):
-            return self.model.objects.filter(is_deleted=False, currency_id=2, apply_mac=True).distinct()
+            return self.model.objects.filter(is_deleted=False, apply_mac=True).distinct()
 
         return self.model.objects.all()
 

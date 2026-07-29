@@ -113,6 +113,8 @@ class CustomerRequestItem(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
+    payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
     prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
