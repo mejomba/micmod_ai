@@ -300,7 +300,8 @@
         });
         data['currency'] = currency
         data['supplier'] = supplier
-        custom_ajax_post_data(JSON.stringify(data), '/order/ajax/order_and_sepidar/?view_name=new_bazar_buy_factor', $('#ajax-response'))
+        {#custom_ajax_post_data(JSON.stringify(data), '/order/ajax/order_and_sepidar/?view_name=new_bazar_buy_factor', $('#ajax-response'))#}
+        custom_ajax_post_data(JSON.stringify(data), '/order/ajax/order_and_sepidar/?view_name=bazar_buy_factor', $('#ajax-response'))
         submitBuyFactor.classList.add('d-none')
     })
 

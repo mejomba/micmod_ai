@@ -176,8 +176,8 @@ class Notification(AbsBaseModel):
     # =============== quotation notify
     @classmethod
     def notify_customer_for_quotation(cls, quotation, request):
-        # if quotation.pk < 13500:
-        #     return
+        if quotation.pk < 13329:
+            return
 
         ctt = ContentType.objects.get_for_model(quotation.__class__)
 
@@ -281,8 +281,8 @@ class Notification(AbsBaseModel):
     # =============== factor notify
     @classmethod
     def notify_customer_for_factor(cls, factor, request):
-        # if factor.pk < 1920:
-        #     return
+        if factor.pk < 2004:
+            return
 
         ctt = ContentType.objects.get_for_model(factor.__class__)
 
@@ -378,6 +378,7 @@ class Notification(AbsBaseModel):
                                                supp_confirm_date=None,
                                                departure_date=None,
                                                declaration_date=None):
+        return
         order_id = order_id.split('-')[1]
         # ctt = ContentType.objects.get_for_model(Order)
         has_supp_confirm_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
