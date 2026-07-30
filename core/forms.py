@@ -619,7 +619,7 @@ class FormMX(forms.ModelForm):
         def _val(o):
             return o.pk if vfield == "pk" else getattr(o, vfield)
 
-        choices = [(_val(o), field.label_from_instance(o)) for o in objs]
+        choices = [(_val(o), getattr(o, 'select2_html_after_selection', None) or field.label_from_instance(o)) for o in objs]
         if not is_m2m:
             choices = [("", field.empty_label or "---------")] + choices
         field.widget.choices = choices

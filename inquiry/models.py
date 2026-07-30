@@ -7,6 +7,8 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from itertools import chain
 
+from django.utils.safestring import mark_safe
+
 from accounts.models import User
 from core.models import CHOICE, Work
 from tools.utils import c_get, round_price, show_error
@@ -101,6 +103,14 @@ class PriceInquiryResult(BaseModel):
     lead_time = models.CharField(max_length=32, null=True, blank=True, verbose_name=_('lead_time'))
 
     # trade_expire = models.SmallIntegerField(default=1000)
+
+    @property
+    def select2_html_respo_text(self):
+        return mark_safe(f'{self.supplier} - <span class="bg-light-success px-1 rounded"> <b>{self.price}</b> {getattr(self.currency_type, "title_en", None)} </span> <br> {self.price_update_date.date()} - {self.inquiry_type}')
+
+    @property
+    def select2_html_after_selection(self):
+        return mark_safe(f'{self.supplier} - {self.price} <span class="bg-light-success px-1 rounded">{getattr(self.currency_type, "title_en", None)}</span>')
 
     @property
     def variant_show(self):

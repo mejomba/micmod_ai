@@ -45,7 +45,7 @@ class ShopApiCall:
             'login': f'{shop_url}/core/access_token/',
             'create_shop_buy_factor': f'{shop_url}/api2/sales-purchaseorder/0/?struct_name=purchase_detail&ignore_readonly_fields',
             'update_shop_buy_factor': f'{shop_url}/api2/sales-purchaseorder/{0}/?struct_name=purchase_detail&ignore_readonly_fields',
-            "shop_document": f"{shop_url}/api2/sales-supplyrequestdocument/{0}/?struct_name=doc_detail&ignore_readonly_fields"
+            "shop_document": f"{shop_url}/api2/sales-supplyrequestdocument/",
         },
     }
 
@@ -151,20 +151,24 @@ class ShopApiCall:
 
     @classmethod
     def create_or_update_shop_document(cls, obj):
+        supply_request = getattr(obj, 'customer_request_id', None) or getattr(getattr(obj, 'q', None), 'customer_request_id', None)
+        if not supply_request:
+            return
+
         cls.setup()
         endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('shop_document')
-        endpoint = endpoint.format(obj.shop_document_id)
+        endpoint += f"{getattr(obj, 'shop_document_id', None) or 0}/?struct_name=doc_detail&ignore_readonly_fields"
 
         d = {
             "id": getattr(obj, 'shop_document_id', None) or 0, # باید روی اسناد پرتال این شناسه ذخیره شود و با همین شناسه آپدیت ها ارسال شود یا صفر برای ایجاد سند
             "doc_type": str(obj.__class__.__name__),  # عنوان سند quotation/factor
             "doc_number": obj.pk,  # شناسه سند در پرتال این فیلد با داک تایپ در سمت شاپ یونیک شده
             "description": getattr(obj, 'description', ""),
-            "supply_request": getattr(obj, 'customer_request_id', None) or getattr(getattr(obj, 'q', None), 'customer_request_id', None),  # شماره درخواست مشتری
-            "prepayment": getattr(obj, 'prepayment', None) or 0,
-            "supplier_source": "shop" if getattr(obj, "is_official", None) else "rahavard",  # shop/rahavard
+            "supply_request": supply_request,  # شماره درخواست مشتری
+            "prepayment": (getattr(obj, 'prepayment', None) or 0) / 10,
+            "supplier_source": "rahavard" if getattr(obj, "is_official", None) else "shop",  # shop/rahavard
             "doc_status": getattr(getattr(obj, 'last_work_flow', None), 'current_state_name', None),
-            "final_price": obj.payment[4],  # قیمت پس از تخفیف و مالیات
+            "final_price": obj.payment[4] / 10,  # قیمت پس از تخفیف و مالیات
             "doc_title": f"{str(obj.__class__.__name__)}_{obj.pk}",
         }
 

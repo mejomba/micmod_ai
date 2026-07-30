@@ -113,6 +113,7 @@ class CustomerRequestItem(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    shop_document_id = models.IntegerField(null=True, blank=True)
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
     prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)

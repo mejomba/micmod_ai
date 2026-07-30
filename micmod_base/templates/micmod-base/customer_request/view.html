@@ -238,26 +238,30 @@
         checkboxes.forEach(cb => cb.checked = !cb.checked);
     });
 
-    submit_btn = document.querySelector('.submit_customer_request')
-        submit_btn.onclick = function () {
-        this.disabled = true
-    };
+    {#submit_btn = document.querySelector('.submit_customer_request')#}
+    {#    submit_btn.onclick = function () {#}
+    {#    this.disabled = true#}
+    {#        window.location.reload()#}
+    //};
     $('.submit_customer_request').on('click', function () {
-    let btn = $(this);
+        setTimeout(function (){
+            window.location.reload()
+        }, 1000)
+    {#let btn = $(this);#}
 
-    btn.prop('disabled', true);
+    {#btn.prop('disabled', true);#}
 
-    $.ajax({
-        url: '/micmod_base/customer-request',
-        type: 'POST',
-        data: $('#form').serialize(),
-        success: function () {
-            btn.addClass('d-none');
-        },
-        error: function () {
-            btn.prop('disabled', false); // 👈 برگرد
-        }
-    });
+    {#$.ajax({#}
+    {#    url: '/micmod_base/customer-request',#}
+    {#    type: 'POST',#}
+    {#    data: $('#form').serialize(),#}
+    {#    success: function () {#}
+    {#        btn.addClass('d-none');#}
+    {#    },#}
+    {#    error: function () {#}
+    {#        btn.prop('disabled', false); // 👈 برگرد#}
+    {#    }#}
+    //});
 });
     </script>
 {% endblock extra_js %}

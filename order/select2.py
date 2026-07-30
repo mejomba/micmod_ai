@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 
 from extra_data.models import Customer, Item
-from inquiry.models import Supplier
+from inquiry.models import Supplier, PriceInquiryResult
 from micmod_base.models import Quotation, QuotationItem
 from django.contrib.auth import get_user_model
 
@@ -14,7 +14,7 @@ SELECT2_SOURCES = {
                           'value_field': 'sepidar_party_id'},
 
     "item":             {"qs": Item.objects.all(),
-                         "search": ["name__icontains", "sku__icontains"],
+                         "search": ["part_number__icontains", "sku__icontains"],
                          "default_order": ["-id"]},
 
     "supplier":          {"qs": Supplier.objects.all(),
@@ -23,6 +23,10 @@ SELECT2_SOURCES = {
 
     "trade_user":        {"qs": get_user_model().objects.filter(groups__name='trade_user'),
                           "search": ["first_name__icontains", "username__icontains"],
+                          "default_order": ["-id"]},
+
+    "inquiry":           {"qs": PriceInquiryResult.objects.filter(creator_user__groups__name='trade_user', active=True),
+                          "search": ["sku__sku"],
                           "default_order": ["-id"]},
 
     "qi":                {"qs": QuotationItem.objects.all(),
@@ -61,6 +65,6 @@ def order_select2_search(request, key):
     rows = list(qs[(page - 1) * size: page * size + 1])
     more = len(rows) > size
     vf = src.get("value_field", "pk")
-    results = [{"id": (o.pk if vf == "pk" else getattr(o, vf)), "text": str(o)}
+    results = [{"id": (o.pk if vf == "pk" else getattr(o, vf)), "text": getattr(o, 'select2_html_respo_text', None) or str(o)}
                for o in rows[:size]]
     return JsonResponse({"results": results, "pagination": {"more": more}})

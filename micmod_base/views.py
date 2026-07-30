@@ -233,8 +233,16 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
         res = super().form_valid(form)
         if 'direct' in self.request.GET:
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
+            self.object.save()
             return generate_direct_factor(self.request, self.object)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
+            self.object.save()
             return res
         if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
@@ -1688,6 +1696,11 @@ class CustomerRequestView(LoginRequiredMixin, View):
                     customer_goods_code=customer_sku,
                     customer_goods_name=customer_part_number,
                 )
+
+            shop_document_id = ShopApiCall.create_or_update_shop_document(quotation)
+            quotation.shop_document_id = shop_document_id
+            quotation.extra_data.request = self.request
+            quotation.save()
 
         except Exception as e:
             # messages.warning(request, f"ردیف {index + 1} ذخیره نشد: {e}")

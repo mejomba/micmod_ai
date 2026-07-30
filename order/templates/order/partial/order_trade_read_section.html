@@ -24,19 +24,11 @@
                             <small>{{ trade_price.inquiry_type.title }}</small>
                         </div>
                       <small class="float-end mt-1">{{ trade_price.variants_json|default_if_falsy:'' }}</small>
-{#                          {% for key in trade_price.trade_transportation_method_json.keys %}#}
-{#                          <small class="float-end mt-1 me-2">{{ key|default_if_falsy:'' }}</small>#}
-{#                          {% endfor %}#}
-
-{#                            <span class="text-success cursor-pointer select-inquiry" id="select-inquiry" onclick="selectInquiry(event)">انتخاب</span>#}
-{#                            <span class="ms-4 text-danger cursor-pointer d-none" id="deselect-inquiry" onclick="deselectInquiry(event)">حذف</span>#}
-{#                            <span data-inquiry_pk="{{ trade_price.pk }}" id="inquiry_pk" class="d-none"></span>#}
-{#                            <span data-inquiry_currency_pk="{{ trade_price.currency_type.pk }}" id="inquiry_currency_pk" class="d-none"></span>#}
-{#                            <span data-inquiry_price_value="{{ trade_price.price }}" id="inquiry_price_value" class="d-none"></span>#}
                       </div>
                 {% endfor %}
 
-</div>
+            </div>
+
             </div>
         </div>
         <div class="w-60 p-1" style="border-right: 2px solid grey">

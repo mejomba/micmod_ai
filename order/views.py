@@ -85,7 +85,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                              instance=instance, initial=initial, **kwargs)
 
     def _get_order_allowed_fields(self):
-        permissions = self.request.user.get_all_permissions()
+        # permissions = self.request.user.get_all_permissions()
+        permissions = {
+                f"{perm.content_type.app_label}.{perm.codename}"
+                for perm in self.request.user.user_permissions.all()
+            }
         user_exist_perm = []
         allowed_hidden = []
         allowed_edit = []
@@ -126,19 +130,21 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         try:
-            if self.object is None:
+            if not self.object or not self.object.pk:
                 is_new = True
             else:
                 is_new = False
 
             self.get_form_kwargs()
 
-            self.object = self.get_object()
+            # self.object = self.get_object()
             self.form = self.get_form()
             if not self.form.is_valid():
                 return self.render_to_response(self.get_context_data(form=self.form))
             self.form.instance.extra_data.request = self.request
             self.object = self.form.save()
+            if not self.object:
+                self.object = self.get_object()
 
             if self.form.file_model and self.form.file_groups_2:
                 self.object.save_file(request=self.request,
@@ -149,7 +155,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                                       )
 
             self.object.save_comment(self.request, CommentsForm)
-            self.submit_flow(is_new)
+            wf_obj = self.submit_flow(is_new=is_new)
+            self.object.last_work_flow = wf_obj
+            self.object.extra_data.request = self.request
+            self.object.save()
 
         except Exception as e:
             self.form._non_form_errors = self.form.error_class([str(e)])
@@ -166,7 +175,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                     4: {"group": "factor_final_check", "state_name": "ارسال به تامین کننده"},
                     5: {"group": "factor_send_or_delivery", "state_name": "تایید تامین کننده"},
                     6: {"group": "factor_delivery_approve", "state_name": "تایید نهایی بازرگانی"},
-                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت/GIO/PACKING"},
+                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت / PACKING / GIO"},
                     8: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
                 }
 
@@ -201,7 +210,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                 to_user = next_state_user.last()
 
             wf = WorkFlow.objects.create(action='next', flow_name='order',creator_user=self.request.user,
-                                         editor_user=self.request.user, wf_status=3, from_user=last_flow.to_user,
+                                         editor_user=self.request.user, wf_status=3, from_user=getattr(last_flow, "to_user", None) or self.request.user,
                                          to_user=to_user,
                                          content_type=self.model.content_type(), object_id=self.object.pk,
                                          belong_to_group=current_group_name, current_state_name=next_state_name,
@@ -257,6 +266,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
         context['section_id'] = 'order'
+
+        if self.state_index > 1 and self.request.user.base_group == 'sales':
+            """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
+            context['allow_next'] = False
+            context['allow_back'] = False
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(

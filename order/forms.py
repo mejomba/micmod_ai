@@ -35,10 +35,9 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
         "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
         "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
-        # "price_inquiry_result": {"ajax": "price_inquiry_result", "min_input": 2, "placeholder": "نتیجه استعلام قیمت کالا"},
-        "trade_user": {"ajax": "trade_user", "min_input": 2, "placeholder": "کارشناس بازرگانی"},
+        "price_inquiry_result": {"ajax": "inquiry", "min_input": 0, "placeholder": "جستجو با کد کالا"},
+        "trade_user": {"ajax": "trade_user", "min_input": 0, "placeholder": "کارشناس بازرگانی"},
         "customer_party_id": {"ajax": "customer_party_id", "min_input": 2, "placeholder": "انتخاب مشتری"},
-        "qi": {"ajax": "qi", "min_input": 2, "placeholder": "انتخاب پیش فاکتور"},
     }
 
     class Meta:
@@ -56,12 +55,19 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self._add_file_fields()
         self._apply_select2()
 
+        # ========= customize fields before permission apply
+        self.make_required(['price', 'item', 'quantity', 'currency'])
+        self.fields['description_sale'].widget.attrs['rows'] = 1
+        self.fields['description_trade'].widget.attrs['rows'] = 1
+        self.fields['description_mac'].widget.attrs['rows'] = 1
+
         # ========= remove field
-        if self.instance.pk and 'q' in allowed_fields:
-            allowed_fields.remove('q')
+        if self.instance.pk and 'q' in self.allowed_fields:
+            self.allowed_fields.remove('q')
             self.only_show.append('q')
-        if allowed_fields is not None or allowed_hidden is not None:
-            keep = set(allowed_fields or []) | set(allowed_hidden or [])
+
+        if self.allowed_fields is not None or allowed_hidden is not None:
+            keep = set(self.allowed_fields or []) | set(allowed_hidden or [])
             for name in list(self.fields):
                 if name not in keep:
                     self.fields.pop(name)
