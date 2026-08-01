@@ -4,7 +4,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel",
+                "sales_admin_cancel", "is_bazar",
             ],
             "hidden": [
 
@@ -130,7 +130,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel",
+                "sales_admin_cancel", "is_bazar",
             ],
             "hidden": [
 
