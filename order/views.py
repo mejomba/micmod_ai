@@ -130,6 +130,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         try:
+            self.auto_complete()
             if not self.object or not self.object.pk:
                 is_new = True
             else:

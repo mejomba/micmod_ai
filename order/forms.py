@@ -33,8 +33,8 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "currency": {},  # لوکال
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
-        "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
-        "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
+        # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
+        # "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
         "price_inquiry_result": {"ajax": "inquiry", "min_input": 0, "placeholder": "جستجو با کد کالا"},
         "trade_user": {"ajax": "trade_user", "min_input": 0, "placeholder": "کارشناس بازرگانی"},
         "customer_party_id": {"ajax": "customer_party_id", "min_input": 2, "placeholder": "انتخاب مشتری"},

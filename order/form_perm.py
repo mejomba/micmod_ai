@@ -257,12 +257,11 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["item_trade", "quantity_trade", "price", "currency", "supplier_trade", "_price_inquiry_result",
+            "show": ["item_trade", "quantity_trade", "price", "currency", "supplier_trade", "supplier_mac", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "supplier_trade",
-                     "supplier_mac"]
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency",]
         },
         2: {
             "edit": [
@@ -364,12 +363,11 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["item_trade", "quantity_trade", "price_trade", "currency", "supplier_trade", "_price_inquiry_result",
+            "show": ["item_trade", "quantity_trade", "price_trade", "currency", "supplier_trade", "supplier_mac", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "supplier_trade",
-                     "supplier_mac"]
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency",]
         },
         2: {
             "edit": [
