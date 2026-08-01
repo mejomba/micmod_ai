@@ -22,6 +22,7 @@ import string
 import random
 from django.conf import settings
 from functools import wraps
+from django.apps import apps
 
 def c_get(obj, attrs_str, default_value=None):
     try:
@@ -591,6 +592,14 @@ class DaxCall:
         import requests
         res = requests.get(url, headers=headers)
         return res.json()
+
+    @classmethod
+    def process_order_notifications(cls):
+        data = cls.order_notify_dax()
+
+        Notification = apps.get_model('notifications', 'Notification')
+        Notification.notify_customer_for_google_sheet_order(data=data)
+
 
 
 def wf_cache(timeout=20):
