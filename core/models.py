@@ -20,6 +20,7 @@ from workflow.models import WorkFlow, FlowAdminGroup
 from translator import get_text as _
 from django.contrib.contenttypes.fields import GenericRelation
 from django.apps import apps
+from django.conf import settings
 
 
 from tools import utils
@@ -333,6 +334,49 @@ class BaseModelAuto:
 
 
 class BaseFunctions():
+
+    @staticmethod
+    def get_flow_config(file, view):
+        from translator import get_text as _
+        res = {
+            'flow_name': '',
+            'flow_action': '',
+            'flow_state_list': [],
+            'flow_users_groups': [],
+            'flow_deadline': [],
+            'flow_form_constraint': [],
+            'flow_formset_constraint': []
+        }
+
+        with open(file, 'r', encoding='utf-8') as f:
+            json_config: dict = json.load(f)
+            cfg = json_config.get(view)
+
+        if view.lower() in settings.MULTI_GROUP_ACCESS_VIEW:
+            if wf_config := cfg.get('workflow'):
+                res['flow_name'] = _(wf_config.get('name'))
+                res['flow_action'] = _(wf_config.get('action'))
+                if config_list := wf_config.get('list'):
+                    for config in config_list:
+                        res['flow_state_list'].append(config.get('state'))
+                        res['flow_users_groups'].append(config.get('groups'))
+                        res['flow_deadline'].append(config.get('deadlines'))
+                        res['flow_form_constraint'].append(config.get('form_constraints'))
+                        res['flow_formset_constraint'].append(config.get('formset_constraints'))
+        else:
+            if wf_config := cfg.get('workflow'):
+                res['flow_name'] = _(wf_config.get('name'))
+                res['flow_action'] = _(wf_config.get('action'))
+                if config_list := wf_config.get('list'):
+                    for config in config_list:
+                        res['flow_state_list'].append(config.get('state'))
+                        res['flow_users_groups'].append(config.get('group'))
+                        res['flow_deadline'].append(config.get('deadline'))
+                        res['flow_form_constraint'].append(config.get('form_constraint'))
+                        res['flow_formset_constraint'].append(config.get('formset_constraint'))
+
+        return res
+
     def log_error(self, e):
         print('error: ', e.__traceback__.tb_lineno, e, 's')
 
@@ -817,6 +861,50 @@ class BaseModeWF(BaseModel):
     ...
     last_work_flow = models.ForeignKey(WorkFlow, null=True, blank=True, verbose_name=_('las_work_flow'),
                                        on_delete=models.DO_NOTHING, related_name='%(app_label)s_wf_%(model_name)s')
+
+    def submit_flow(self, request, is_new):
+        self.flow_config = None
+        raise NotImplemented
+
+    def get_flow(self):
+        content_type = ContentType.objects.filter(model=self._meta.model_name, app_label=self._meta.app_label).first()
+        return WorkFlow.objects.filter(object_id=getattr(self, f'{WorkFlow._meta.pk.name}', None),
+                                       content_type=content_type).order_by(WorkFlow._meta.pk.name)
+
+    def get_last_flow(self):
+        try:
+            return self.get_flow().order_by('id').last() if self.get_flow() else None
+        except Exception as e:
+            print('error: ', __name__, 'line', e.__traceback__.tb_lineno, e)
+            return None
+
+    def _get_flow_state(self):
+        try:
+            if f := self.get_last_flow():
+                return f.state
+        except Exception as e:
+            print('error: ', __name__, 'line', e.__traceback__.tb_lineno, e)
+            return None
+
+    def get_flow_index(self):
+        state_list = self.flow_config.get('flow_state_list')
+
+        if s := self._get_flow_state():
+            if state_list.index(s) + 1 == len(state_list):
+                self.active_state = False
+            if f := self.get_last_flow():
+                if f.wf_status == 1:  # if draft
+                    return state_list.index(s) if state_list.index(s) < len(state_list) - 1 else len(state_list) - 1
+                elif f.wf_status == 2:  # if back
+                    return state_list.index(s) - 1 if state_list.index(s) < len(state_list) - 1 else len(state_list) - 2
+                elif f.wf_status == 4:  # if change user
+                    return state_list.index(s)
+                elif f.wf_status == 5:  # if first draft
+                    return 0
+
+            return state_list.index(s) + 1 if state_list.index(s) < len(state_list) - 1 else len(state_list) - 1
+        else:
+            return 0
 
     class Meta:
         abstract = True
