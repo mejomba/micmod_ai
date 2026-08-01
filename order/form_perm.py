@@ -379,7 +379,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
         3: {
             "edit": [
@@ -391,7 +391,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
         4: {
             "edit": [
@@ -403,7 +403,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
         5: {
             "edit": [
@@ -415,7 +415,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
         6: {
             "edit": [
@@ -427,7 +427,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
             },
         7: {
             "edit": [
@@ -439,7 +439,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
         8: {
             "edit": [
@@ -451,7 +451,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "is_kasri", "commitment_date_to_customer", "title"]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
         },
     },
     "order.cp_order_total_admin": {
@@ -470,7 +470,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         1: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "description_sale", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -493,7 +493,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         3: {
             "edit": [
@@ -507,7 +507,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         4: {
             "edit": [
@@ -521,7 +521,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         5: {
             "edit": [
@@ -535,7 +535,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         6: {
             "edit": [
@@ -549,7 +549,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         7: {
             "edit": [
@@ -563,7 +563,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
         8: {
             "edit": [
@@ -577,7 +577,7 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "description_sale",]
         },
     },
 }
