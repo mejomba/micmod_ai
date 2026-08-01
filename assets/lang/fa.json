@@ -783,5 +783,11 @@
     "can_observe":"امکان نمایش به مشتری",
     "notify_number": "شماره اطلاع رسانی",
     "sale_type": "مدل پرداخت مشتری",
-    "prepayment": "پیش پرداخت"
+    "prepayment": "پیش پرداخت",
+    "_item_trade": "کالا بازرگانی",
+    "_item": "کالا",
+    "_final_item": "کالا نهایی",
+    "_final_quantity": "تعداد نهایی",
+    "_description_sale": "توضیحات فروش",
+    "price_inquiry_result": "استعلام مربوطه"
 }

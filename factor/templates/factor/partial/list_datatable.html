@@ -51,7 +51,7 @@
                     {% endif %}
                     </div>
 
-    {% if request.user|has_group:"sales_user" %}
+    {% if request.user|has_group:"sales_user" or request.user.pk == 52 %}
         <div class="row">
                 <div class="col">
                     {% include 'factor/partial/factor_today_total_price.html' %}

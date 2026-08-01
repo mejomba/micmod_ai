@@ -33,12 +33,11 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "currency": {},  # لوکال
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
-        "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
-        "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
-        # "price_inquiry_result": {"ajax": "price_inquiry_result", "min_input": 2, "placeholder": "نتیجه استعلام قیمت کالا"},
-        "trade_user": {"ajax": "trade_user", "min_input": 2, "placeholder": "کارشناس بازرگانی"},
+        # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
+        # "supplier_mac": {"ajax": "supplier", "min_input": 2, "placeholder": "select supplier (mac)"},
+        "price_inquiry_result": {"ajax": "inquiry", "min_input": 0, "placeholder": "جستجو با کد کالا"},
+        "trade_user": {"ajax": "trade_user", "min_input": 0, "placeholder": "کارشناس بازرگانی"},
         "customer_party_id": {"ajax": "customer_party_id", "min_input": 2, "placeholder": "انتخاب مشتری"},
-        "qi": {"ajax": "qi", "min_input": 2, "placeholder": "انتخاب پیش فاکتور"},
     }
 
     class Meta:
@@ -56,12 +55,19 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self._add_file_fields()
         self._apply_select2()
 
+        # ========= customize fields before permission apply
+        self.make_required(['price_trade', 'item', 'quantity', 'currency'])
+        self.fields['description_sale'].widget.attrs['rows'] = 1
+        self.fields['description_trade'].widget.attrs['rows'] = 1
+        self.fields['description_mac'].widget.attrs['rows'] = 1
+
         # ========= remove field
-        if self.instance.pk and 'q' in allowed_fields:
-            allowed_fields.remove('q')
+        if self.instance.pk and 'q' in self.allowed_fields:
+            self.allowed_fields.remove('q')
             self.only_show.append('q')
-        if allowed_fields is not None or allowed_hidden is not None:
-            keep = set(allowed_fields or []) | set(allowed_hidden or [])
+
+        if self.allowed_fields is not None or allowed_hidden is not None:
+            keep = set(self.allowed_fields or []) | set(allowed_hidden or [])
             for name in list(self.fields):
                 if name not in keep:
                     self.fields.pop(name)
@@ -88,26 +94,6 @@ class OrderForm(CustomBaseModelForm):
     class Meta:
         model = Order
         exclude = ['group', 'last_work_flow']
-
-    def run_access(self):
-        if self.form_state == 0:
-            return self.order_zero_state_access()
-        elif self.form_state == 1:
-            return self.order_first_state_access()
-        elif self.form_state == 2:
-            return self.order_second_state_access()
-        elif self.form_state == 3:
-            return self.order_third_state_access()
-        elif self.form_state == 4:
-            return self.order_forth_state_access()
-        elif self.form_state == 5:
-            return self.order_fiveth_state_access()
-        elif self.form_state == 6:
-            return self.order_sixth_state_access()
-        elif self.form_state == 7:
-            return self.order_seventh_state_access()
-        elif self.form_state == 8:
-            return self.order_eighth_state_access()
 
     def order_zero_state_access(self):
         user = self.request.user

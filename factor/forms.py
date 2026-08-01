@@ -137,6 +137,8 @@ class FactorModelForm(CustomBaseModelForm):
         if self.form_state == 7:
             self.make_hidden(['self_discount', 'qi'])
 
+        self.fields.pop('shop_buy_factor_id')
+
 
 class FactorItemModelForm(CustomBaseModelForm):
     class Meta:
@@ -206,6 +208,7 @@ class FactorItemModelForm(CustomBaseModelForm):
             self.make_disable(self.fields)
 
         self.make_enable(['supply_location'])
+        # self.fields.pop('quantity')
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code', 'price',

@@ -32,7 +32,7 @@
             {{ form.is_wh }}
             {{ form.trade_user }}
             {{ form.trade_lock_order }}
-            {{ form.is_bazar }}
+{#            {{ form.is_bazar }}#}
         </div>
             <div class="col-8"><div id="id_item_select2"></div></div>
             <div class="col-4 mb-3"><div id="id_customer_party_id_select2"></div></div>
@@ -41,7 +41,7 @@
             {% render_field_by_order form form.commitment_date_to_customer form.order_type label='on-border' %}
             <div class="col-8 t">
                 <div class="d-flex pb-20">
-                    {% render_field_by_order form form.is_kasri form.sales_admin_cancel label='on-border' %}
+                    {% render_field_by_order form form.is_bazar form.is_kasri form.sales_admin_cancel label='on-border' %}
 {#                    <div class="{% if form.instance.cancel %} bg-light-danger rounded {% endif %} col ps-2">#}
 {#                        {% render_field_by_order form form.cancel label='on-border' %}#}
 {#                    </div>#}

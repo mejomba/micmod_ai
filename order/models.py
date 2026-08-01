@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
+from django.utils.formats import number_format
+from django.utils.safestring import mark_safe
 
 from accounts.models import User
 from micmod_base.base import Currency
@@ -213,6 +215,18 @@ class Order(BaseModeWF):
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
 
     @property
+    def _item(self):
+        return f'{self.item.sku}: {self.item.part_number}'
+
+    @property
+    def _item_trade(self):
+        return f'{self.item_trade.sku}: {self.item_trade.part_number}'
+
+    @property
+    def _item_mac(self):
+        return f'{self.item_mac.sku}: {self.item_mac.part_number}'
+
+    @property
     def display_name(self):
         return f'{self.creator_user} - ID:{self.pk}'
         if self.final_item:
@@ -350,6 +364,25 @@ class Order(BaseModeWF):
         return quantity
 
     @property
+    def _final_quantity(self):
+        decimal_pos = 0
+        qty = self.final_quantity
+        if qty.imag:
+            decimal_pos = 2
+        return f'{number_format(value=qty, decimal_pos=decimal_pos, use_l10n=True, force_grouping=True)}'
+
+    @property
+    def _price_inquiry_result(self):
+        try:
+            return mark_safe(f'{self.price_inquiry_result.supplier} {self.price_inquiry_result.price} {self.price_inquiry_result.currency_type.title_en}')
+        except Exception as e:
+            return '---'
+
+    @property
+    def _description_sale(self):
+        return self.description_sale
+
+    @property
     def total_paid(self):
         s = 0
         for payment in self.order_payment_items.all():
@@ -427,6 +460,11 @@ class Order(BaseModeWF):
             return self.item_trade
         else:
             return self.item
+
+    @property
+    def _final_item(self):
+        """property for use in template show item and part_number"""
+        return f'{self.final_item}: {self.final_item.part_number}'
 
     @property
     def computed_price(self):

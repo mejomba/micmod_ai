@@ -779,6 +779,8 @@ PRODUCT_API_PROTOCOL = os.environ.get('PRODUCT_API_PROTOCOL')
 PRODUCT_API_HOST = os.environ.get('PRODUCT_API_HOST')
 PRODUCT_API_PORT = os.environ.get('PRODUCT_API_PORT')
 PRODUCT_API_VERSION = os.environ.get('PRODUCT_API_VERSION')
+SHOP_API_VERSION = os.environ.get('PRODUCT_API_VERSION') or 'v1'
+SHOP_URL = os.environ.get('SHOP_URL') or 'https://shop.micromodernonline.ir/'
 
 # LOGGING = {
 #     'version': 1,

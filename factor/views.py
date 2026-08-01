@@ -42,6 +42,7 @@ from micmod_base.serializers import CustomerRequestSerializer
 from notifications.models import Notification
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
+from services.shop.api_call import ShopApiCall
 from tools.const import WH_FACTOR_STATES
 from translator import get_text as _
 
@@ -107,64 +108,6 @@ class FactorView(LoginRequiredMixin, BaseView):
             self.object.extra_data.request = self.request
             self.object.save()
 
-    def send_buy_factor_to_shop(self):
-        try:
-            customer = getattr(self.object, 'customer_party_id', None) or getattr(self.object.q, 'customer_party_id', None)
-            if not customer:
-                return
-
-            if customer.pk == 1:
-                pass
-            customer_request = None
-            # if getattr(self.object, 'q', None) and getattr(self.object.q, 'customer_request'):
-            #     customer_request = self.object.q.customer_request
-
-            l = list()
-            for fi in self.object.factoritem_set.all():
-                product_access_token = cache.get("product_access_token")
-                if not product_access_token:
-                    req = requests.get("https://products.micromodernonline.ir/api2/token/")
-                    if req.status_code == 200:
-                        res = req.json()
-                        product_access_token = res.get('access')
-                        cache.set('product_access_token', product_access_token, 20)
-
-                product_req = requests.get(f"https://products.micromodernonline.ir/api2/myapp-product/?sepidar_sku={fi.goods_code.pk}",
-                                           headers={"Authorization": f"Bearer {product_access_token}"}
-                                           )
-                if product_req.status_code == 200:
-                    res = product_req.json()
-                    product_id = res.get('id')
-                    if not product_id:
-                        raise ValueError('کد کالای فروشگاه پیدا نشد. فاکتور خرید فروشگاه ثبت نشد. لطفا با داخلی 991 تماس بگیرید')
-
-                l.append({
-                    "user": 3,
-                    "quantity": getattr(getattr(fi.qi, 'customer_request_item', None), 'quantity', None),
-                    # تعداد در درخواست مشتری
-                    "received_quantity": fi.quantity,  # تعداد در ردیف فاکتور
-                    "unit_price": fi.fee_(),  # فی ردیف
-                    "discounted_unit_price": fi.fee_after_discount,  # فی بعد از تخفیف
-                    "discount_per_unit": fi.discount_per_item,  # discount per item
-                    "product": product_id  # شناسه محصول در پروداکت
-                })
-
-            d = {
-                "source_invoice_no": f"{self.object.pk}",
-                "purchase_items": l,
-                "source_warehouse_name": "انبارمرکزی",
-                "description": "test",
-                "status": "purchase_status-invoiced_purchase" # همین عبارت بفرست
-            }
-            shop_token_request = requests.get('https://shop.micromodernonline.ir/core/access_token/')
-            if shop_token_request.status_code == 200:
-                shop_access_token = shop_token_request.json().get("tokens").get("access_token").get("value")
-                requests.post(
-                    f"https://micmodshop.ir/api2/sales-purchaseorder/{self.object.shop_buy_factor_id or 0}/?struct_name=purchase_detail&ignore_readonly_fields"
-                    , json=d, headers={"Authorization": f"Bearer {shop_access_token}"})
-        except Exception as e:
-            pass
-
     def send_factor_to_sepidar(self):
         customer = self.object.q.customer_party_id
         if not customer.active:
@@ -204,7 +147,12 @@ class FactorView(LoginRequiredMixin, BaseView):
 
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
-                self.send_buy_factor_to_shop()
+
+                shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
+                self.object.shop_buy_factor_id = shop_buy_factor_pk
+                self.object.extra_data.request = self.request
+                self.object.save()
+                messages.success(self.request, f'فاکتور خرید برای شاپ ایجاد شد کد: {shop_buy_factor_pk}')
                 return
             else:
                 self.after_sepidar_error()
@@ -295,11 +243,6 @@ class FactorView(LoginRequiredMixin, BaseView):
         #     if "update_change_reason" in str(receiver) or "update_change_reason" in str(receiver[1]):
         #         m2m_changed.disconnect(receiver[1], sender=model)
 
-    # @staticmethod
-    # def reconnect_history(model):
-    #     from simple_history import register
-    #     register(model)
-
     def form_valid(self, form):
         self.disconnect_history(Factor)
         self.disconnect_history(FactorItem)
@@ -370,6 +313,11 @@ class FactorView(LoginRequiredMixin, BaseView):
         self.object.save()
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
+
+        shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+        self.object.shop_document_id = shop_document_id
+        self.object.extra_data.request = self.request
+        self.object.save()
         return res
 
     @timer

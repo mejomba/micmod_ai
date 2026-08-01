@@ -142,6 +142,10 @@ class QuotationForm(CustomBaseModelForm):
         self.fields['official_value'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
         self.fields['official_value'].widget.attrs['required'] = 'required'
         self.fields['self_discount'].widget.attrs['onchange'] = 'refresh_front_prices()'  # 'refresh_prices()'
+        self.fields.pop('customer_request', None)
+        self.fields.pop('shop_document_id', None)
+        self.fields.pop('shop_payment_id', None)
+        self.fields.pop('payment_status', None)
 
 
 class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):

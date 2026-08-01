@@ -377,6 +377,14 @@ class Item(BaseModel):
     def get_images(self):
         pass
 
+    @property
+    def select2_html_respo_text(self):
+        return mark_safe(f'<span class="bg-light-success px-1 rounded">{self.sku}</span> - {self.part_number}')
+
+    @property
+    def select2_html_after_selection(self):
+        return mark_safe(f'<span class="bg-light-success">{self.sku}</span> - {self.part_number}')
+
     def qty_str(self):
         all_stock_quantity = cache.get('all_stock_quantity')
         if not all_stock_quantity:

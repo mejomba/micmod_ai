@@ -35,6 +35,7 @@ class FactorItemManager(BaseManager):
 
 class Factor(SLSDoc):
     shop_buy_factor_id = models.IntegerField(null=True, blank=True)
+    shop_document_id = models.IntegerField(null=True, blank=True)
     is_reserve = models.BooleanField(default=False, verbose_name=_(''))
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
@@ -330,8 +331,27 @@ class FactorItem(BaseModel):
             return 0
 
     @property
+    def total_discount_per_item(self):
+        try:
+            return self.discount_value / self.quantity
+        except Exception as e:
+            return 0
+
+    @property
     def fee_after_discount(self):
-        return self.fee_() - getattr(self, 'discount_per_item', None) or 0
+        """"""
+        try:
+            return self.fee_() - self.total_discount_per_item
+        except Exception as e:
+            return 0
+
+    @property
+    def total_price_after_discount(self):
+        """مجموع قیمت ردیف بعد از همه تخفیف ها"""
+        try:
+            return self.fee_after_discount * self.quantity
+        except Exception as e:
+            return 0
 
     @property
     def is_wh(self):
@@ -397,10 +417,6 @@ class FactorItem(BaseModel):
             return x
 
         raise ValueError('ارسال به سپیدار انجام نشد. خطا در شناسایی انبار')
-
-
-
-
 
     def quantity_for_wh_order(self):
         """calculate quantity base on min(fi.quantity, sepidar_wh_quantity, reserve_quantity)"""

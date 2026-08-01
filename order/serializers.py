@@ -12,4 +12,4 @@ class OrderSerializer(CustomFieldModelSerializer):
 
     def get_workflow_state_list(self, obj):
         return ["پیش نویس", "تایید مدیر فروش", "تایید بازرگانی", "تایید مهندس", "ارسال به تامین کننده",
-                "تایید تامین کننده", "تایید نهایی بازرگانی", "پرداخت/GIO/PACKING", "مرحله نهایی"]
+                "تایید تامین کننده", "تایید نهایی بازرگانی", "پرداخت / PACKING / GIO", "مرحله نهایی"]

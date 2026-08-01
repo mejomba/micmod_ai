@@ -28,6 +28,10 @@ class ProductResponseManager(metaclass=SingletonMeta):
         pass
 
     @staticmethod
+    def products(res):
+        return res.json().get('products')[0]
+
+    @staticmethod
     def product_image_and_datasheet(res):
         """ implement change on api response """
         images = []
@@ -48,7 +52,7 @@ class ProductApiCall:
     data = SepidarDataFactory()
     response_manager = ProductResponseManager()
     protocol = settings.PRODUCT_API_PROTOCOL  # http
-    host = settings.PRODUCT_API_HOST  # '192.168.1.243'
+    host = settings.PRODUCT_API_HOST  # '192.168.1.73'
     port = settings.PRODUCT_API_PORT  # '1010'
     token = ''
     headers = {}
@@ -111,7 +115,7 @@ class ProductApiCall:
         endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('products')
         endpoint += f'?sepidar_skus={skus}'
         res = requests.get(endpoint, headers=cls.headers)
-        res = getattr(cls.response_manager, (response_function or 'default'))(res)
+        res = getattr(cls.response_manager, (response_function or 'products'))(res)
         return res
 
         if res.ok:

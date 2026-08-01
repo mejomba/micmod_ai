@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
+from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
@@ -85,7 +85,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                              instance=instance, initial=initial, **kwargs)
 
     def _get_order_allowed_fields(self):
-        permissions = self.request.user.get_all_permissions()
+        # permissions = self.request.user.get_all_permissions()
+        permissions = {
+                f"{perm.content_type.app_label}.{perm.codename}"
+                for perm in self.request.user.user_permissions.all()
+            }
         user_exist_perm = []
         allowed_hidden = []
         allowed_edit = []
@@ -126,19 +130,22 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         try:
-            if self.object is None:
+            self.auto_complete()
+            if not self.object or not self.object.pk:
                 is_new = True
             else:
                 is_new = False
 
             self.get_form_kwargs()
 
-            self.object = self.get_object()
+            # self.object = self.get_object()
             self.form = self.get_form()
             if not self.form.is_valid():
                 return self.render_to_response(self.get_context_data(form=self.form))
             self.form.instance.extra_data.request = self.request
             self.object = self.form.save()
+            if not self.object:
+                self.object = self.get_object()
 
             if self.form.file_model and self.form.file_groups_2:
                 self.object.save_file(request=self.request,
@@ -149,7 +156,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                                       )
 
             self.object.save_comment(self.request, CommentsForm)
-            self.submit_flow(is_new)
+            wf_obj = self.submit_flow(is_new=is_new)
+            self.object.last_work_flow = wf_obj
+            self.object.extra_data.request = self.request
+            self.object.save()
 
         except Exception as e:
             self.form._non_form_errors = self.form.error_class([str(e)])
@@ -166,7 +176,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                     4: {"group": "factor_final_check", "state_name": "ارسال به تامین کننده"},
                     5: {"group": "factor_send_or_delivery", "state_name": "تایید تامین کننده"},
                     6: {"group": "factor_delivery_approve", "state_name": "تایید نهایی بازرگانی"},
-                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت/GIO/PACKING"},
+                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت / PACKING / GIO"},
                     8: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
                 }
 
@@ -201,7 +211,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                 to_user = next_state_user.last()
 
             wf = WorkFlow.objects.create(action='next', flow_name='order',creator_user=self.request.user,
-                                         editor_user=self.request.user, wf_status=3, from_user=last_flow.to_user,
+                                         editor_user=self.request.user, wf_status=3, from_user=getattr(last_flow, "to_user", None) or self.request.user,
                                          to_user=to_user,
                                          content_type=self.model.content_type(), object_id=self.object.pk,
                                          belong_to_group=current_group_name, current_state_name=next_state_name,
@@ -257,6 +267,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         context['app_name'] = self.request.resolver_match.app_name
         context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
         context['section_id'] = 'order'
+
+        if self.state_index > 1 and self.request.user.base_group == 'sales':
+            """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
+            context['allow_next'] = False
+            context['allow_back'] = False
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(
@@ -387,6 +402,13 @@ class OrderView(LoginRequiredMixin, BaseView):
             self.object.extra_data.request = self.request
             self.object.save()
         return res
+
+    def get(self, request, *args, **kwargs):
+        get = super().get(request, *args, **kwargs)
+        if self.request.user.base_group == 'mac' and not self.object.apply_mac:
+            raise PermissionDenied()
+        else:
+            return get
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -541,8 +563,16 @@ class OrderDataTableListView(AjaxDatatableView):
 
         q = request.POST.get('q')
         user_group = request.user.base_group
+
+        if user_group == 'sales':
+            return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
+
         if request.user.groups.filter(name='mac'):
-            return self.model.objects.filter(is_deleted=False, currency_id=2, apply_mac=True).distinct()
+            return self.model.objects.filter(is_deleted=False, apply_mac=True).distinct()
+
+        if request.user.groups.filter(name='trade_user'):
+            return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
+                ~Q(order_title__icontains='خودکار')).filter(~Q(last_work_flow__current_state_name="پیش نویس"))
 
         return self.model.objects.all()
 
@@ -605,7 +635,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['co_conf'] = f'<span>{o.created_date.strftime("%Y-%b-%d %H:%m")}</span>' if o else ""
 
         row['order_number'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:order.view', args=(obj.id,)),
+            reverse('order:order.view.safe', args=(obj.id,)),
             obj.order_number if obj.order_number else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
@@ -2530,31 +2560,47 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             if "errors" in res:
                 return JsonResponse({'res': res['errors']}, status=500)
             else:
+                for order_id in order_ids:
+                    Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True,
+                                                             sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get(
+                                                                 'central_wh_id'))
+                    if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
+                        order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
+                        data = order_document_obj.data
+                        if data.get('bazar'):
+                            data['bazar']['sepidar'].append(res['bazar']['sepidar'])
+                        else:
+                            data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
+                        order_document_obj.data = data
+                        order_document_obj.save()
+                    else:
+                        SepidarOrderDocument.objects.create(order_id=order_id, data=res)
+
                 # تبدیل محل تامین به رسید شده در انبار
 
-                service = SupplyLocationService()
-                wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
-
-                with transaction.atomic():
-                    for order_id in order_ids:
-                        # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
-                        if not order_id:
-                            continue
-                        order = (
-                            OrderBazar.objects
-                            .select_for_update()
-                            .get(pk=order_id)
-                        )
-                        order.receipt_in_wh = True
-                        order.sepidar_wh_code = wh_code
-                        order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
-
-                        # تعداد رسیده‌ی این سفارش از همان payload
-                        qty = float(receipt_quantity.get(str(order_id), 0) or 0)
-
-                        service.migrate_bazar_order_to_warehouse(
-                            order, wh_code, received_qty=order.quantity
-                        )
+                # service = SupplyLocationService()
+                # wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+                #
+                # with transaction.atomic():
+                #     for order_id in order_ids:
+                #         # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
+                #         if not order_id:
+                #             continue
+                #         order = (
+                #             OrderBazar.objects
+                #             .select_for_update()
+                #             .get(pk=order_id)
+                #         )
+                #         order.receipt_in_wh = True
+                #         order.sepidar_wh_code = wh_code
+                #         order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
+                #
+                #         # تعداد رسیده‌ی این سفارش از همان payload
+                #         qty = float(receipt_quantity.get(str(order_id), 0) or 0)
+                #
+                #         service.migrate_bazar_order_to_warehouse(
+                #             order, wh_code, received_qty=order.quantity
+                #         )
 
                 # if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
                 #     order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
@@ -2623,6 +2669,113 @@ def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
             return JsonResponse({'res': data_})
         else:
             return JsonResponse({'res': res.json()})
+
+# def wh_packing_view(request, sepidar_buy_factor_id=-1, *args, **kwargs):
+# این نسخه ای هست که با سفارش های جدید کار میکنه
+#     template_name = 'order/wh_packing_list.html'
+#
+#     if request.method == 'POST':
+#         try:
+#             order_ids = request.GET.get('order_ids', '').split(',')
+#             receipt_quantity = json.loads(request.body)
+#             obj = {'receipt_quantity': receipt_quantity, "sepidar_buy_factor_id": sepidar_buy_factor_id, 'user': request.user.sepidar_code}
+#             res = SepidarApiCall.wh_receipt_from_bazar(obj, request)
+#             if "errors" in res:
+#                 return JsonResponse({'res': res['errors']}, status=500)
+#             else:
+#                 # تبدیل محل تامین به رسید شده در انبار
+#
+#                 service = SupplyLocationService()
+#                 wh_code = settings.SEPIDAR_CONST_DATA.get('central_wh_id')
+#
+#                 with transaction.atomic():
+#                     for order_id in order_ids:
+#                         # Order.objects.filter(pk=order_id).update(is_wh=True, receipt_in_wh=True, sepidar_wh_code=settings.SEPIDAR_CONST_DATA.get('central_wh_id'))
+#                         if not order_id:
+#                             continue
+#                         order = (
+#                             OrderBazar.objects
+#                             .select_for_update()
+#                             .get(pk=order_id)
+#                         )
+#                         order.receipt_in_wh = True
+#                         order.sepidar_wh_code = wh_code
+#                         order.save(update_fields=['receipt_in_wh', 'sepidar_wh_code'])
+#
+#                         # تعداد رسیده‌ی این سفارش از همان payload
+#                         qty = float(receipt_quantity.get(str(order_id), 0) or 0)
+#
+#                         service.migrate_bazar_order_to_warehouse(
+#                             order, wh_code, received_qty=order.quantity
+#                         )
+#
+#                 # if SepidarOrderDocument.objects.filter(order_id=order_id).exists():
+#                 #     order_document_obj = SepidarOrderDocument.objects.get(order=order_id)
+#                 #     data = order_document_obj.data
+#                 #     if data.get('bazar'):
+#                 #         data['bazar']['sepidar'].append(res['bazar']['sepidar'])
+#                 #     else:
+#                 #         data['bazar'] = {'sepidar': [res['bazar']['sepidar']]}
+#                 #     order_document_obj.data = data
+#                 #     order_document_obj.save()
+#                 # else:
+#                 #     SepidarOrderDocument.objects.create(order_id=order_id, data=res)
+#
+#                 return JsonResponse({'res': f'{res}'})
+#         except Exception as e:
+#             return JsonResponse({'res': str(e)}, status=500)
+#     else:
+#         if sepidar_buy_factor_id < 0:
+#             import ast
+#             orders = Order.objects.filter(buy_factors__isnull=False, is_deleted=False, is_bazar=True, receipt_in_wh=False).exclude(buy_factors=[])
+#             bazar_orders = OrderBazar.objects.filter(buy_factors__isnull=False, is_deleted=False, receipt_in_wh=False).exclude(buy_factors=[])
+#             trade_orders = PackingItem.objects.filter(packing__last_work_flow__current_state_name='انبار').select_related('order', 'packing__last_work_flow').distinct()
+#             for item in trade_orders:
+#                 print(item.order)
+#
+#             buy_factor_id_dict = dict()
+#             for order in bazar_orders:
+#                 for buy_factor in order.buy_factors:
+#                     for key, value in buy_factor.items():
+#                         key_tuple = ast.literal_eval(key)
+#                         # key_tuple = key_tuple[0]
+#                         if key_tuple in buy_factor_id_dict:
+#                             buy_factor_id_dict[key_tuple].append(order.pk)
+#                         else:
+#                             buy_factor_id_dict[key_tuple] = [order.pk]
+#
+#             for order in orders:
+#                 for buy_factor in order.buy_factors:
+#                     for key, value in buy_factor.items():
+#                         key_tuple = ast.literal_eval(key)
+#                         # key_tuple = key_tuple[0]
+#                         if key_tuple in buy_factor_id_dict:
+#                             buy_factor_id_dict[key_tuple].append(order.pk)
+#                         else:
+#                             buy_factor_id_dict[key_tuple] = [order.pk]
+#
+#             context = {"buy_factor_id_dict": buy_factor_id_dict}
+#             return render(request, template_name, context=context)
+#
+#         res = SepidarApiCall.get('inventorypurchaseinvoice', sepidar_buy_factor_id)
+#
+#         if res.ok:
+#             data = res.json()
+#             data_ = {
+#                 'vendor': data['fk_strs']['vendordlref'],
+#                 'items': [
+#                     {
+#                         'sku': row['sku'],
+#                         'partnumber': row['fk_strs']['itemref'],
+#                         'quantity': row['quantity'],
+#                         'remaining_quantity': row['remainingquantity'],
+#                         'id': row['inventorypurchaseinvoiceitemid']
+#                     } for row in data['inventorypurchaseinvoice_item']
+#                 ]
+#             }
+#             return JsonResponse({'res': data_})
+#         else:
+#             return JsonResponse({'res': res.json()})
 
 
 def portal_reserve_(request, sku, *args, **kwargs):

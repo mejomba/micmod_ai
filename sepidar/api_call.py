@@ -508,7 +508,7 @@ class SepidarApiCall:
                     'version': 1,
                     "fiscalyearref": cls.const.get('fiscalyearref'),
 
-                    "date": timezone.now().isoformat(),
+                    "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
                     "creationdate": timezone.now().isoformat(),
                     "lastmodificationdate": timezone.now().isoformat(),
                     "creator": request.user.sepidar_code,

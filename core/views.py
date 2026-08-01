@@ -167,6 +167,32 @@ class BaseView(UserPassesTestMixin,
             self.form_class = self.form_struct.get('form')
         return self.form_class
 
+    def auto_complete(self):
+        self.request.POST._mutable = True
+        for key, value in list(self.request.POST.items()):
+            if key.__contains__("__auto__"):
+                model_str, key = key.split("__auto__")
+                model = get_function(model_str)  # self.form_class.base_fields[key].queryset.model
+                value = value.strip()
+                if value:
+                    obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
+                    if not obj and model.insert_new:
+                        if model.__name__.lower() == 'creditcard':
+                            obj = model.objects.create(**{model.auto_complete: value,
+                                                          'credit_card_number': self.request.POST.get('to_account'),
+                                                          'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
+                        else:
+                            obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
+                        obj.extra_data.request = self.request
+                        obj.save()
+                        obj.auto_complete_func()
+
+                    value = getattr(obj, 'pk', -1)
+                self.request.POST[key] = value
+        self.request.POST._mutable = False
+
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
 

@@ -18,6 +18,7 @@ from datetime import timedelta, datetime
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERROR
 from werkzeug.exceptions import MethodNotAllowed
 
 from comments.forms import CommentsForm
@@ -50,6 +51,7 @@ from micmod_base.base import CurrencyExchange
 from micmod_base.forms import QuotationForm, QuotationItemForm2, CurrencyExchangeForm, QuotationItemFormset, \
     QuotationItemFormset, InquiryResultFormset, TimeForm, CustomerRequestForm, CustomerRequestItemForm, qi_fields
 from sepidar.models import Dl
+from services.shop.api_call import ShopApiCall
 from tlg.scripts.sms import send_sms
 from tools import const
 from tools.datatable import CustomAjaxDatatableView
@@ -232,8 +234,16 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
         res = super().form_valid(form)
         if 'direct' in self.request.GET:
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
+            self.object.save()
             return generate_direct_factor(self.request, self.object)
         if 'back' in self.request.POST or 'change_user' in self.request.POST:
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
+            self.object.save()
             return res
         if not self.object.is_official and not self.request.POST.get('official_value'):
             self.object.official_value = 0
@@ -400,6 +410,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                         flow_object.save()
             if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
                 ...
+
+            shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
+            self.object.shop_document_id = shop_document_id
+            self.object.extra_data.request = self.request
             self.object.save()
         except Exception as e:
             pass
@@ -1684,6 +1698,11 @@ class CustomerRequestView(LoginRequiredMixin, View):
                     customer_goods_name=customer_part_number,
                 )
 
+            shop_document_id = ShopApiCall.create_or_update_shop_document(quotation)
+            quotation.shop_document_id = shop_document_id
+            quotation.extra_data.request = self.request
+            quotation.save()
+
         except Exception as e:
             # messages.warning(request, f"ردیف {index + 1} ذخیره نشد: {e}")
             messages.error(request, f"خطا در ذخیره پیش‌فاکتور: {e}")
@@ -1897,6 +1916,37 @@ class CustomerViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = CustomerRequestSerializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='(?P<phone>[^/.]+)/quotation/(?P<q_id>[^/.]+)/approve')
+    def customer_quotation_approve(self, request, phone, q_id):
+        try:
+            exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                                  access_to_shop_info=True).exists()
+
+            if exist_customer_expert:
+                customer = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
+                                                         access_to_shop_info=True).values_list('customer__sepidar_party_id', flat=True)
+            else:
+                customer = None
+
+            quotation_qs = Quotation.objects.filter(customer_party_id_id__in=customer,
+                                                 pk=q_id) if customer else None
+
+            quotation = quotation_qs.first()
+            if quotation and quotation.last_work_flow.current_state_name == "تایید مشتری":
+                wf = quotation.submit_flow(request, is_new=False)
+                quotation.last_work_flow = wf
+                quotation.payment_status = "payed"
+                quotation.shop_payment_id = self.request.POST.get('payment_id')
+                quotation.extra_data.request = request
+                quotation.save()
+
+                serializer = QuotationSerializer(quotation_qs, many=True)
+                return Response(serializer.data)
+            else:
+                return Response({"detail": "quotation not found"}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CustomerRequestList(LoginRequiredMixin,View):

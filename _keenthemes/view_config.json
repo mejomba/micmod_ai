@@ -153,8 +153,8 @@
             "formset_constraints": [
               {
                 "group": "wh_admin",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "is_bazar"],
-                "read": ["official_value", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item"]
+                "hide": ["qi", "index", "price", "goods_code", "supply_location", "part_number_show", "discount_per_item", "is_bazar"],
+                "read": ["official_value", "quantity", "goods_code", "part_number_show","price", "index","quantity", "delivery_time","custom_price", "supply_locations","supply_location", "reserve_count","discount_per_item"]
               },
               {
                 "group": "factor_assign_user",
@@ -211,8 +211,8 @@
               },
               {
                 "group": "factor_collector",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
-                "read": []
+                "hide": ["qi", "index", "price", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
+                "read": ["quantity"]
               },
               {
                 "group": "accounting_user",
@@ -255,8 +255,8 @@
               },
               {
                 "group": "factor_final_check",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
-                "read": []
+                "hide": ["qi", "index", "price", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
+                "read": ["quantity"]
               },
               {
                 "group": "accounting_user",
@@ -288,8 +288,8 @@
             "formset_constraints": [
               {
                 "group": "factor_send_or_delivery",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
-                "read": []
+                "hide": ["qi", "index", "price", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
+                "read": ["quantity"]
               },
               {
                 "group": "accounting_user",
@@ -321,8 +321,8 @@
             "formset_constraints": [
               {
                 "group": "factor_delivery_approve",
-                "hide": ["qi", "index", "price", "quantity", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
-                "read": []
+                "hide": ["qi", "index", "price", "goods_code", "supply_location", "part_number_show", "discount_per_item", "reserve_count", "is_bazar"],
+                "read": ["quantity"]
               },
               {
                 "group": "accounting_user",
@@ -466,7 +466,7 @@
           },
           {
             "state": "تایید تامین کننده",
-            "group": "mac",
+            "group": "trade_order",
             "deadline": 3,
             "form_constraint": {
               "hide": [],
