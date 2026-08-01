@@ -56,7 +56,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self._apply_select2()
 
         # ========= customize fields before permission apply
-        self.make_required(['price', 'item', 'quantity', 'currency'])
+        self.make_required(['price_trade', 'item', 'quantity', 'currency'])
         self.fields['description_sale'].widget.attrs['rows'] = 1
         self.fields['description_trade'].widget.attrs['rows'] = 1
         self.fields['description_mac'].widget.attrs['rows'] = 1

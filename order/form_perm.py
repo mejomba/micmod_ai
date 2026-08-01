@@ -261,12 +261,12 @@ ORDER_FIELDS_BY_PERMISSION = {
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "price", "ptice_mac", "currency", "supplier_trade",
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "supplier_trade",
                      "supplier_mac"]
         },
         2: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -279,7 +279,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         3: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -292,7 +292,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         4: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -305,7 +305,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         5: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -318,7 +318,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         6: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -331,7 +331,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             },
         7: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -344,7 +344,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         8: {
             "edit": [
-                "item_trade", "po_number_trade", "quantity_trade", "price", "currency", "supplier_trade",
+                "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
             ],
@@ -364,11 +364,11 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["item_trade", "quantity_trade", "price", "currency", "supplier_trade", "_price_inquiry_result",
+            "show": ["item_trade", "quantity_trade", "price_trade", "currency", "supplier_trade", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "price", "ptice_mac", "currency", "supplier_trade",
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "supplier_trade",
                      "supplier_mac"]
         },
         2: {
@@ -472,7 +472,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         1: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -486,7 +486,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         2: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -500,7 +500,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         3: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -514,7 +514,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         4: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -528,7 +528,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         5: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -542,7 +542,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         6: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -556,7 +556,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         7: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",
@@ -570,7 +570,7 @@ ORDER_FIELDS_BY_PERMISSION = {
         8: {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
-                "order_type", "price", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
+                "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
                 "price_inquiry_result", "is_kasri",

@@ -83,7 +83,7 @@
             {% if form.only_show %}
                 <div class="order-only-show d-flex flex-wrap">
                     {% for item in form.iter_only_show %}
-                    <div class="f only-show ms-2 me-8 my-4">
+                    <div class="f only-show ms-2 me-8 my-4" style="max-width: 300px">
                       <label>
                         {% if item.label %}
                           <span class="bold font-size-13">{{ item.label }}</span>
@@ -161,7 +161,7 @@
                     {% for trade_price in trade_price_list %}
                           <div class="list-group-item  list-group-item-action inquiry-item" aria-current="true">
                             <div class="d-flex w-100 justify-content-between">
-                                <small>{{ trade_price.last_update_date|date }}</small>
+                                <small>{{ trade_price.last_update_date|date:"Y-d-m" }}</small>
                                 <span class="mb-1"> {{ trade_price.supplier }}</span>
                             </div>
                             <div class="d-flex flex-row-reverse gap-1">
