@@ -154,8 +154,8 @@
             {
               "icon": "message-add",
               "title": "ایجاد",
-              "path_key": "order/view",
-              "link": "order:order.view"
+              "path_key": "order/view/safe",
+              "link": "order:order.view.safe"
             },
             {
               "icon": "burger-menu",

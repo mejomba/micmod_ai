@@ -634,7 +634,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['co_conf'] = f'<span>{o.created_date.strftime("%Y-%b-%d %H:%m")}</span>' if o else ""
 
         row['order_number'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:order.view', args=(obj.id,)),
+            reverse('order:order.view.safe', args=(obj.id,)),
             obj.order_number if obj.order_number else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
