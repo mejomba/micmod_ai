@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
@@ -116,6 +117,7 @@ class Quotation(SLSDoc):
     shop_document_id = models.IntegerField(null=True, blank=True)
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
+    shop_payment_id = models.CharField(max_length=128, null=True, blank=True, verbose_name="شماره پرداخت شاپ")
     prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
@@ -154,6 +156,106 @@ class Quotation(SLSDoc):
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+    def submit_flow(self, request, is_new):
+        self.flow_config = self.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
+        groups = {
+            0: {"group": "sales_user", "state_name": "پیش فاکتور اولیه"},
+            1: {"group": "sales_user", "state_name": "استعلام قیمت"},
+            2: {"group": "sales_user", "state_name": "تایید پیش فاکتور"},
+            3: {"group": "sales_user", "state_name": "تایید مشتری"},
+            4: {"group": "sales_user", "state_name": "تایید کارشناس"},
+            5: {"group": "sales_user", "state_name": "مرحله نهایی"},
+        }
+
+        last_flow = self.last_work_flow
+        current_state_index = self.get_flow_index()
+
+        if 0 < current_state_index < 5:
+            next_state_index = current_state_index + 1
+            previews_state_index = current_state_index - 1
+
+        if current_state_index == 0:
+            next_state_index = 1
+            previews_state_index = 0
+
+        if current_state_index == 5:
+            next_state_index = 5
+            previews_state_index = 4
+
+        current_group_name = groups.get(current_state_index).get('group')
+        next_group_name = groups.get(next_state_index).get('group')
+        previews_group_name = groups.get(previews_state_index).get('group')
+
+        current_state_name = groups.get(current_state_index).get('state_name')
+        next_state_name = groups.get(next_state_index).get('state_name')
+        previews_state_name = groups.get(previews_state_index).get('state_name')
+
+        # 3 next
+        if 'next' in request.POST:
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=next_group_name)
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.latest("pk").from_user
+            else:
+                next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+                to_user = next_state_user.last()
+
+            wf = WorkFlow.objects.create(action='next', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=3,
+                                         from_user=getattr(last_flow, "to_user", None) or request.user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=next_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 5 first draft
+        elif 'draft' in request.POST and (is_new or not last_flow):
+            wf = WorkFlow.objects.create(action='draft', flow_name='quotation', wf_status=5,
+                                         creator_user=request.user,
+                                         editor_user=request.user,
+                                         from_user=request.user,
+                                         to_user=request.user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 2 back
+        elif 'back' in request.POST:
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+                to_user = previews_state_user.first()
+
+            wf = WorkFlow.objects.create(action='back', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=2,
+                                         from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=previews_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 4 change user
+        elif 'change_user' in request.POST:
+            to_user = request.POST.get('to_current_group_user')
+            wf = WorkFlow.objects.create(action='change user', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=4,
+                                         from_user=last_flow.to_user,
+                                         to_user_id=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        return last_flow
 
     @classmethod
     def sale_user_report(cls, current_user, wf_states, from_date, to_date):
