@@ -485,6 +485,8 @@ def export_to_excel(objects, config_json):
                 value = getattr(obj, field, None) if not isinstance(obj, dict) else obj.get(field)
             if isinstance(value, datetime.datetime) and value.tzinfo is not None:
                 value = to_jalali_date(value.replace(tzinfo=None))
+            elif isinstance(value, datetime.date):
+                value = to_jalali_date(value)
             row[label] = value
         data.append(row)
 
