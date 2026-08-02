@@ -1919,6 +1919,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='(?P<phone>[^/.]+)/quotation/(?P<q_id>[^/.]+)/approve')
     def customer_quotation_approve(self, request, phone, q_id):
+        """approve quotation by customer phone and q_id"""
         try:
             exist_customer_expert = CustomerExpert.objects.filter(phone=phone, is_deleted=False,
                                                                   access_to_shop_info=True).exists()
@@ -1931,6 +1932,28 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
             quotation_qs = Quotation.objects.filter(customer_party_id_id__in=customer,
                                                  pk=q_id) if customer else None
+
+            quotation = quotation_qs.first()
+            if quotation and quotation.last_work_flow.current_state_name == "تایید مشتری":
+                wf = quotation.submit_flow(request, is_new=False)
+                quotation.last_work_flow = wf
+                quotation.payment_status = "payed"
+                quotation.shop_payment_id = self.request.POST.get('payment_id')
+                quotation.extra_data.request = request
+                quotation.save()
+
+                serializer = QuotationSerializer(quotation_qs, many=True)
+                return Response(serializer.data)
+            else:
+                return Response({"detail": "quotation not found"}, status=HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='quotation/(?P<q_id>[^/.]+)/approve')
+    def customer_quotation_approve(self, request, q_id):
+        """approve quotation only by q_id"""
+        try:
+            quotation_qs = Quotation.objects.filter(pk=q_id)
 
             quotation = quotation_qs.first()
             if quotation and quotation.last_work_flow.current_state_name == "تایید مشتری":
