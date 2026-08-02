@@ -336,7 +336,7 @@
     }
 
     const createSku = document.getElementById('id_create_sku')
-    createSku.addEventListener('click', function (){
+    createSku && createSku.addEventListener('click', function (){
         debugger
         const part_number = document.getElementById('id_part_number').value || document.getElementById('id_part_number').textContent
         const targeturl = `/extra_data/item/create/?part_number=${part_number}`

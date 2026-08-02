@@ -45,6 +45,9 @@ function get_translate(){
         item.addEventListener('click', () => translate_handler(item.dataset.lang))
         console.log(item.dataset.lang)
     })
+
+    const current_lang = localStorage.getItem('Dason-language')
+    current_lang && translate_handler(current_lang)
 }
 try {
 !function (n) {
