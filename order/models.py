@@ -212,6 +212,7 @@ class Order(BaseModeWF):
     receipt_in_wh = models.BooleanField(default=False)
     price_inquiry_result = models.ForeignKey(PriceInquiryResult, on_delete=models.DO_NOTHING, related_name='orders', verbose_name='inquiry', null=True, blank=True)
     is_kasri = models.BooleanField(default=False, verbose_name=_('is_kasri'))
+    is_sample = models.BooleanField(default=False, verbose_name=_('is_sample'))
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
 
     @property
@@ -398,7 +399,7 @@ class Order(BaseModeWF):
         total_price = self.total_price
         pay_in_percent = total_pay = is_complete = None
         total_pay, pay_in_percent = self.order_payment_items.aggregate(total_pay=Sum("total_amount"), pay_in_percent=Sum("total_amount")/total_price*100).values()
-        return int(pay_in_percent or 0), total_pay, total_price, is_complete
+        return int(pay_in_percent or 0), total_pay, total_price, (is_complete or False)
 
     @property
     def gio_info(self):
