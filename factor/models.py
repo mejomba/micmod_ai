@@ -1,3 +1,7 @@
+import secrets
+import string
+import random
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -34,6 +38,8 @@ class FactorItemManager(BaseManager):
 
 
 class Factor(SLSDoc):
+    ENTITY_CODE = 1
+
     shop_buy_factor_id = models.IntegerField(null=True, blank=True)
     shop_document_id = models.IntegerField(null=True, blank=True)
     is_reserve = models.BooleanField(default=False, verbose_name=_(''))
@@ -92,6 +98,28 @@ class Factor(SLSDoc):
     currency_amount = models.DecimalField(max_digits=14, decimal_places=4, verbose_name=_('rate'), null=True, blank=True)
     request_cancel = models.BooleanField(default=False)
     notify_number = models.CharField(verbose_name=_('notify_number'), max_length=255, null=True, blank=True)
+    tracking_code = models.CharField(
+        max_length=20,
+        editable=False,
+        db_index=True,
+        null=True,
+        blank=True
+    )
+
+    @classmethod
+    def generate_tracking_code(cls, object_id):
+        password = random.randint(10000, 99999)
+        return f"{cls.ENTITY_CODE}{password}{object_id}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            super().save(*args, **kwargs)
+
+        if not self.tracking_code:
+            self.tracking_code = self.generate_tracking_code(self.pk)
+            Factor.objects.filter(pk=self.pk).update(tracking_code=self.tracking_code)
+        else:
+            super().save(*args, **kwargs)
 
     def is_need_sales_admin_confirmation(self):
         if not self.q:

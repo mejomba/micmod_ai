@@ -1,4 +1,5 @@
 import json
+import random
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -114,6 +115,7 @@ class CustomerRequestItem(AbsBaseModel):
 
 
 class Quotation(SLSDoc):
+    ENTITY_CODE = 2
     shop_document_id = models.IntegerField(null=True, blank=True)
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
@@ -153,9 +155,34 @@ class Quotation(SLSDoc):
     q_price_setting = models.ForeignKey(PriceSettings, on_delete=models.DO_NOTHING, related_name='quotation_price_settings', null=True, blank=True)
     can_observe = models.BooleanField(default=True)
     notify_number = models.CharField(verbose_name=_('notify_number'), max_length=255, null=True, blank=True)
+    tracking_code = models.CharField(
+        max_length=20,
+        editable=False,
+        db_index=True,
+        null=True,
+        blank=True
+    )
+
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
+
+
+
+    @classmethod
+    def generate_tracking_code(cls, object_id):
+        password = random.randint(10000, 99999)
+        return f"{cls.ENTITY_CODE}{password}{object_id}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            super().save(*args, **kwargs)
+
+        if not self.tracking_code:
+            self.tracking_code = self.generate_tracking_code(self.pk)
+            Quotation.objects.filter(pk=self.pk).update(tracking_code=self.tracking_code)
+        else:
+            super().save(*args, **kwargs)
 
     def submit_flow(self, request, is_new):
         self.flow_config = self.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'QuotationsView')
