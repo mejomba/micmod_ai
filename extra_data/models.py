@@ -1098,6 +1098,18 @@ class Customer(AbsBaseModel):
         # Select sepidar_dl_code as code, title as name, sepidar_dl_id, * From public.extra_data_customer where sepidar_dl_code='{text}'""")
         return res
 
+    @staticmethod
+    def get_customer_notify_number(customer_code):
+        notify_number = None
+        customer = Customer.objects.filter(sepidar_dl_code=customer_code).first()
+        expert = CustomerExpert.objects.filter(
+            customer=customer,
+            send_notification=True
+        ).order_by('-id').first()
+        if expert:
+            notify_number = expert.phone
+        return notify_number
+
     def __str__(self):
         return f'{self.title}'
 

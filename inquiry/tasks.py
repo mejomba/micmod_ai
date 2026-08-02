@@ -449,3 +449,8 @@ def over_seven_days_factor():
     # یه bulk_create بجای N تا insert جداگانه — بهتره
     WorkFlow.objects.bulk_create(new_workflows)
 
+
+@shared_task
+def send_order_notifications():
+    from tools.utils import DaxCall
+    DaxCall.process_order_notifications()

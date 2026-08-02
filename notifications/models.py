@@ -1,5 +1,6 @@
 import asyncio
 import json
+from collections import defaultdict
 
 from django.conf import settings
 from channels.db import database_sync_to_async
@@ -7,6 +8,8 @@ from channels.layers import get_channel_layer
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib import messages as django_message
 from django.db import models
+
+from django.apps import apps
 from core.models_contenttype import AbsBaseModel, Q, BaseContentType
 from accounts.models import User
 from translator import get_text as _
@@ -165,6 +168,7 @@ class Notification(AbsBaseModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.DO_NOTHING, related_name='notifications',
                                      null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
+    fake_object_id = models.CharField(max_length=255, null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
     object_state = models.CharField(max_length=255, verbose_name='عنوان منحصر به فرد هر نوع ارسال پیام')
     action_type = models.CharField(max_length=64, choices=action_choice, null=True, blank=True, verbose_name=('نوع ارسال مثلا سیستمی یا کاربر فورس کرده'))
@@ -373,85 +377,164 @@ class Notification(AbsBaseModel):
     # =============== factor notify
 
     # =============== google sheet order notify
+
+    # @classmethod
+    # def notify_customer_for_google_sheet_order(cls, *, notify_number, order_id,
+    #                                            supp_confirm_date=None,
+    #                                            departure_date=None,
+    #                                            declaration_date=None):
+    #     return
+    #     order_id = order_id.split('-')[1]
+    #     # ctt = ContentType.objects.get_for_model(Order)
+    #     has_supp_confirm_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+    #                                                  object_state='ثبت سفارش').exists()
+    #     has_departure_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+    #                                             object_state='شروع حمل سفارش').exists()
+    #     has_declaration_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
+    #                                      object_state='ترخیص سفارش').exists()
+    #
+    #     if not has_supp_confirm_notify and departure_date:
+    #         cls._google_sheet_order_supp_confirm_notify(notify_number, order_id)
+    #     elif not has_departure_notify:
+    #         cls._google_sheet_order_departure_notify(notify_number, order_id)
+    #     elif not has_declaration_notify:
+    #         cls._google_sheet_order_declaration_notify(notify_number, order_id)
+
+
+
     @classmethod
-    def notify_customer_for_google_sheet_order(cls, *, notify_number, order_id,
-                                               supp_confirm_date=None,
-                                               departure_date=None,
-                                               declaration_date=None):
-        return
-        order_id = order_id.split('-')[1]
-        # ctt = ContentType.objects.get_for_model(Order)
-        has_supp_confirm_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
-                                                     object_state='ثبت سفارش').exists()
-        has_departure_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
-                                                object_state='شروع حمل سفارش').exists()
-        has_declaration_notify = cls.objects.filter(object_id=order_id, content_type_id=104,
-                                         object_state='ترخیص سفارش').exists()
-
-        if not has_supp_confirm_notify and departure_date:
-            cls._google_sheet_order_supp_confirm_notify(notify_number, order_id)
-        elif not has_departure_notify:
-            cls._google_sheet_order_departure_notify(notify_number, order_id)
-        elif not has_declaration_notify:
-            cls._google_sheet_order_declaration_notify(notify_number, order_id)
-
-
-    @classmethod
-    def _google_sheet_order_supp_confirm_notify(cls, notify_number, order_id):
+    def notify_customer_for_google_sheet_order(cls, *, data):
         from tlg.scripts.sms import send_sms
+        Customer = apps.get_model('extra_data', 'Customer')
 
-        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش ثبت شده است\n زمان تقریبی حمل: {1}'.format(0, 1)
-        success, res = send_sms('', [notify_number], message)
-        if success:
-            data = {
-                "content_type_id": 104,
-                "object_id": order_id,
-                "object_state": 'ثبت سفارش',
-                "action_type": 'system',
-                "chanel_type": 'sms',
-                "chanel_id": notify_number,
-                "date": timezone.now(),
-                "text": message,
-            }
-            obj = cls.objects.create(**data)
-    # =============== google sheet order notify
+        phone_pattern = r'^09[0-9]{9}$'
+        ctt_id = 104
 
-    @classmethod
-    def _google_sheet_order_departure_notify(cls, notify_number, order_id):
-        from tlg.scripts.sms import send_sms
+        last_step_map = {
+            "supp": "ثبت سفارش",
+            "departure": "شروع حمل سفارش",
+            "declaration": "ترخیص سفارش"
+        }
+        message_map = {
+            "supp": 'برای پیش‌فاکتور های شما {0} ردیف سفارش ثبت شده است\n زمان تقریبی حمل: {1}',
+            "departure": 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال حمل است. زمان تقریبی حمل: {1}',
+            "declaration": 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال رسیدن است\n زمان تقریبی رسیدن: {1}',
+        }
 
-        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال حمل است'.format(0)
-        success, res = send_sms('', [notify_number], message)
-        if success:
-            data = {
-                "content_type_id": 104,
-                "object_id": order_id,
-                "object_state": 'شروع حمل سفارش',
-                "action_type": 'system',
-                "chanel_type": 'sms',
-                "chanel_id": notify_number,
-                "date": timezone.now(),
-                "text": message,
-            }
-            obj = cls.objects.create(**data)
-    # =============== google sheet order notify
+        already_sent_set = set(
+            cls.objects.filter(content_type_id=ctt_id)
+            .values_list('fake_object_id', 'object_state')
+        )
 
-    @classmethod
-    def _google_sheet_order_declaration_notify(cls, notify_number, order_id):
-        from tlg.scripts.sms import send_sms
+        result = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'dates': []}))
 
-        message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال رسیدن است\n زمان تقریبی رسیدن: {1}'.format()
-        success, res = send_sms('', [notify_number], message)
-        if success:
-            data = {
-                "content_type_id": 104,
-                "object_id": order_id,
-                "object_state": 'ترخیص سفارش',
-                "action_type": 'system',
-                "chanel_type": 'sms',
-                "chanel_id": notify_number,
-                "date": timezone.now(),
-                "text": message,
-            }
-            obj = cls.objects.create(**data)
+        for item in data:
+            customer_code = item['dim_order[customer_code]']
+            last_step = item['[last_step]']
+            status_str = item['dim_order[status_str]']
+            date = item['dim_order[last_end_date_shamsi]']
+            current_step = last_step_map.get(last_step)
+
+            if status_str == 'کامل' or not current_step:
+                continue
+            if (customer_code, current_step) in already_sent_set:
+                continue
+
+            result[customer_code][last_step]['count'] += 1
+            result[customer_code][last_step]['dates'].append(date)
+
+        for customer_code, steps in result.items():
+            notify_number = Customer.get_customer_notify_number(customer_code)
+            if not notify_number or not re.match(phone_pattern, notify_number):
+                continue
+
+            for last_step, info in steps.items():
+                if info['count'] == 0:
+                    continue
+
+                current_step = last_step_map[last_step]
+                dates_sorted = sorted(info['dates'])
+
+                if len(dates_sorted) == 1:
+                    date_str = dates_sorted[0]
+                else:
+                    date_str = f"{dates_sorted[0]} الی {dates_sorted[-1]}"
+
+                message = message_map[last_step].format(info['count'], date_str)
+
+                success, res = send_sms('', [notify_number], message)
+                if success:
+                    cls.objects.create(
+                        content_type_id=ctt_id,
+                        fake_object_id=customer_code,
+                        object_state=current_step,
+                        action_type='system',
+                        chanel_type='sms',
+                        chanel_id=notify_number,
+                        date=timezone.now(),
+                        text=message,
+                    )
+
+    # @classmethod
+    # def _google_sheet_order_supp_confirm_notify(cls, notify_number, order_id, state_order_count, date):
+    #     from tlg.scripts.sms import send_sms
+    #
+    #     ctt_id = 104
+    #
+    #     message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش ثبت شده است\n زمان تقریبی حمل: {1}'.format(state_order_count, date)
+    #     success, res = send_sms('', [notify_number], message)
+    #     if success:
+    #         data = {
+    #             "content_type_id": ctt_id,
+    #             "object_id": order_id,
+    #             "object_state": 'ثبت سفارش',
+    #             "action_type": 'system',
+    #             "chanel_type": 'sms',
+    #             "chanel_id": notify_number,
+    #             "date": timezone.now(),
+    #             "text": message,
+    #         }
+    #         obj = cls.objects.create(**data)
+    # # =============== google sheet order notify
+    #
+    # @classmethod
+    # def _google_sheet_order_departure_notify(cls, notify_number, order_id, state_order_count, date):
+    #     from tlg.scripts.sms import send_sms
+    #     ctt_id = 104
+    #
+    #     message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال حمل است. زمان تقریبی حمل{1}'.format(state_order_count, date)
+    #     success, res = send_sms('', [notify_number], message)
+    #     if success:
+    #         data = {
+    #             "content_type_id": ctt_id,
+    #             "object_id": order_id,
+    #             "object_state": 'شروع حمل سفارش',
+    #             "action_type": 'system',
+    #             "chanel_type": 'sms',
+    #             "chanel_id": notify_number,
+    #             "date": timezone.now(),
+    #             "text": message,
+    #         }
+    #         obj = cls.objects.create(**data)
+    # # =============== google sheet order notify
+    #
+    # @classmethod
+    # def _google_sheet_order_declaration_notify(cls, notify_number, order_id, state_order_count, date):
+    #     from tlg.scripts.sms import send_sms
+    #     ctt_id = 104
+    #
+    #     message = 'برای پیش‌فاکتور های شما {0} ردیف سفارش در حال رسیدن است\n زمان تقریبی رسیدن: {1}'.format(state_order_count, date)
+    #     success, res = send_sms('', [notify_number], message)
+    #     if success:
+    #         data = {
+    #             "content_type_id": ctt_id,
+    #             "object_id": order_id,
+    #             "object_state": 'ترخیص سفارش',
+    #             "action_type": 'system',
+    #             "chanel_type": 'sms',
+    #             "chanel_id": notify_number,
+    #             "date": timezone.now(),
+    #             "text": message,
+    #         }
+    #         obj = cls.objects.create(**data)
     # =============== google sheet order notify
