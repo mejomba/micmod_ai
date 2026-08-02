@@ -67,6 +67,42 @@
             {% render_field_by_order form  form.site_urls margin_b=6 %}
             </span>
             {% include 'extra_data/partials/list_input.html' with id='id_site_urls' %}
+
+            </div>
+            <div class="w-100">
+                <div id="image-gallery"
+                 class="w-100 bg-light rounded-bottom-5 {{ rma_body_class|default:'mh-800px scroll-y' }}">
+                <div class="d-flex gap-1" id="image-wrapper">
+                    {% for image in form.instance.images.all %}
+                        <div class="text-center p-3 image">
+                            <div class="img-wrapper card-rounded border-gray-300 border" style="max-width: 150px; !important;">
+                                <a href="{{ image.path.url }}" target="_blank"><img src="{{ image.path.url }}" style="max-width: 150px;"
+                                                                    class="img-responsive" alt={{ image.alt }}></a>
+{#                                <div class="img-overlay">#}
+{#                                    <i class="fa fa-plus-circle" aria-hidden="true"></i>#}
+{#                                </div>#}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div><!-- End row -->
+                <div class="d-flex border border-top px-2" id="file-wrapper">
+                    {% for file in form.instance.files.all %}
+                        <div class="text-center py-5 pe-4">
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ file.name }}">
+                                <i class="fas fs-2 fa-file icon-lg text-primary"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                    {% for file in rma_files %}
+                        <div class="text-center py-5 pe-4">
+                        <a href="{{ file.path.url }}" target="_blank" class="me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ file.name }}">
+                                <i class="fas fs-2 fa-file icon-lg"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div><!-- End row -->
+            </div><!-- End image gallery -->
+            </div>
             </div>
         </div>
 {#        {% if request.user|has_group:'total_admin' %}#}
@@ -258,4 +294,56 @@
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
     <script src="{% static 'js/image_gallery_slider.js' %}"></script>
     {{ form.media.js }}
+
+    <script>
+    $.ajax({
+        type: 'GET',
+        url: `/extra_data/item/image_and_datasheet/${document.querySelector('#id_sku').value}/?view_name=get_image_and_datasheet&response_function=product_image_and_datasheet`,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            debugger
+            const image_wrapper = document.querySelector('#image-wrapper')
+            const file_wrapper = document.querySelector('#file-wrapper')
+            const res = data['res'];
+            const images = res.images
+            const datasheets = res.datasheets
+
+            images.forEach(function (item){
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div class="text-center px-5 py-5 image">
+                        <div class="img-wrapper card-rounded border-gray-300 border" style="max-width: 150px; !important;">
+                            <a href="http://192.168.1.73:1010/${ item }" target="_blank"><img src="http://192.168.1.73:1010/${ item }"
+                                class="img-responsive" style="max-width: 150px;" alt=""></a>
+                        </div>
+                    </div>
+                `.trim();
+
+                image_wrapper.appendChild(div.firstElementChild);
+                }
+            )
+
+            datasheets.forEach(function (item){
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div class="text-center py-5 pe-4">
+                        <a href="http://192.168.1.73:1010${ item }" target="_blank" class="me-1"
+                           data-bs-toggle="tooltip" data-bs-placement="top" title="${item}">
+                            <i class="fas fs-2 fa-file icon-lg text-primary"></i>
+                        </a>
+                    </div>
+                `.trim();
+
+                file_wrapper.prepend(div.firstElementChild);
+            })
+
+        },
+        error: function () {},
+    });
+</script>
+
+
 {% endblock extra_js %}

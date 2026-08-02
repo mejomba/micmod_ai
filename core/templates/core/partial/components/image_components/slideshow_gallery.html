@@ -10,7 +10,7 @@
                     {% for image in rma_images %}
                         <div class="text-center px-5 py-5 image">
                             <div class="img-wrapper card-rounded mw-100 border-gray-300 border">
-                                <a href="{{ image.path.url }}"><img src="{{ image.path.url }}"
+                                <a href="{{ image.path.url }}"><img src="{{ image.path.url }}" style="max-width: 150px;"
                                                                     class="img-responsive" alt={{ image.alt }}></a>
                                 <div class="img-overlay">
                                     <i class="fa fa-plus-circle" aria-hidden="true"></i>
@@ -69,7 +69,7 @@
                     <div class="text-center px-5 py-5 image">
                         <div class="img-wrapper card-rounded mw-100 border-gray-300 border">
                             <a href="http://192.168.1.73:1010/${ item }"><img src="http://192.168.1.73:1010/${ item }"
-                                class="img-responsive" alt=""></a>
+                                class="img-responsive" style="max-width: 150px;" alt=""></a>
                             <div class="img-overlay">
                                 <i class="fa fa-plus-circle" aria-hidden="true"></i>
                             </div>
