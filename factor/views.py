@@ -149,10 +149,11 @@ class FactorView(LoginRequiredMixin, BaseView):
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
 
                 shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
-                self.object.shop_buy_factor_id = shop_buy_factor_pk
-                self.object.extra_data.request = self.request
-                self.object.save()
-                messages.success(self.request, f'فاکتور خرید برای شاپ ایجاد شد کد: {shop_buy_factor_pk}')
+                if shop_buy_factor_pk:
+                    self.object.shop_buy_factor_id = shop_buy_factor_pk
+                    self.object.extra_data.request = self.request
+                    self.object.save()
+                    messages.success(self.request, f'فاکتور خرید برای شاپ ایجاد شد کد: {shop_buy_factor_pk}')
                 return
             else:
                 self.after_sepidar_error()
