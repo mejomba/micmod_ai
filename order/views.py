@@ -265,7 +265,8 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
-        context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
+        context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
+        context['trade_parent_price_list'] = self.object.item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.item.parent else self.object.item.items.none()
         context['section_id'] = 'order'
 
         if self.state_index > 1 and self.request.user.base_group == 'sales':
