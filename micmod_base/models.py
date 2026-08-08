@@ -163,10 +163,6 @@ class Quotation(SLSDoc):
         blank=True
     )
 
-    shop_zero_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_zero_quantity'), help_text='تعداد فروش به شاپ نباید موجودی کالا را کمتر از این عدد کند. در صورت نداشتن مقدار فروش در شاپ مجاز نیست')
-    shop_min_order_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_order_min_quantity'), help_text='حداقل تعداد فروش به شاپ. اگر مقدار نداشته باشد حداقل فروش 1 است.')
-    shop_limit_quantity = models.FloatField(null=True, blank=True, help_text='بیشتر از این تعداد در شاپ نمیرود. اگر تعین نشود تعداد این کالا در شاپ نمایش داده نمیشود.')
-
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
 
