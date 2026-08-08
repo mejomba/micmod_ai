@@ -921,7 +921,7 @@ draft_btn && draft_btn.addEventListener('click', function (){
             pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
             setTimeout(show_global_action_btn, 18000)
         } else {
-            form.reportValidity()
+            main_form.reportValidity()
         }
     } else {
         removeCommaSeperator()
@@ -941,7 +941,7 @@ next_btn && next_btn.addEventListener('click', function (){
             pleas_wait.innerHTML = 'در حال ذخیره اطلاعات....'
             setTimeout(show_global_action_btn, 18000)
         } else {
-            form.reportValidity()
+            main_form.reportValidity()
         }
     } else {
         removeCommaSeperator()
