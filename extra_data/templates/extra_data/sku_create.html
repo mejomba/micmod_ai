@@ -40,7 +40,8 @@
             </div>
         </div>
         <div class="row row-cols-md-6 row-cols-1 pt-6 pb-4 bg-white align-items-end">
-            {% render_field_by_order form form.brand form.quality form.sale_group form.purchase_group form.customs_group form.package2 form.batch_type form.batch_count crispy=False label='on-border' margin_b=4 %}
+            {% render_field_by_order form form.purchase_group form.sale_group form.customs_group form.package2 form.brand form.quality form.batch_type form.batch_count form.count_in_box form.count_in_main_box form.location_in_wh form.creator_user form.editor_user crispy=False label='on-border' margin_b=4 %}
+                {% render_field_by_order form form.shop_zero_quantity form.shop_min_order_quantity form.shop_limit_quantity crispy=False label='on-border' %}
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.image_1 target='Image' crispy=True %}
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.image_2 target='Image' crispy=True %}
             {% include 'files/partial/modal_base_on_field.html' with obj=obj field=form.file_1 target='File' crispy=True %}

@@ -372,6 +372,10 @@ class Item(BaseModel):
     trade_transportation_method_json = models.JSONField(_('trade_transportation_method_json'), null=True, blank=True)
     site_urls = models.JSONField(default=list, verbose_name='مراجع مشابه', null=True, blank=True)
     item_price_json = models.JSONField(_("item_price_json"), null=True, blank=True)
+
+    shop_zero_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_zero_quantity'), help_text='تعداد فروش به شاپ نباید موجودی کالا را کمتر از این عدد کند. اگر تعیین نشود فروش در شاپ مجاز نیست')
+    shop_min_order_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_order_min_quantity'), help_text='حداقل تعداد فروش به شاپ. اگر تعیین نشود حداقل فروش 1 است.')
+    shop_limit_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_limit_quantity'), help_text='حداکثر موجودی که در شاپ نمایش داده میشود. اگر تعین نشود موجودی این کالا در شاپ نمایش داده نمیشود.')
     objects = BaseManager(is_public=True)
 
     def get_images(self):
@@ -761,6 +765,49 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
             print(item)
             cls.objects.update_or_create(sku=item.sku,part_number=item.title,brand=item.goods_group,quality=1,group_sell=item.sales_group,
                                          group_buy=item.purchase_group,group_customs="",package=item.package)
+
+    def free_qty_dict(self):
+        all_stock_quantity = cache.get('all_stock_quantity')
+        if not all_stock_quantity:
+            print('not in cache...')
+            all_stock_quantity = SepidarApiCall.get_stock_quantity_list()
+            l = []
+            for item, stocks in all_stock_quantity.items():
+                for stock, quantity in stocks.items():
+                    stock_code = stock.split('__')[0]
+                    iss = ItemStockSummary(item_id=item, quantity=quantity,
+                                           fiscalyearref=settings.SEPIDAR_CONST_DATA['fiscalyearref'],
+                                           stockref=stock_code)
+                    l.append(iss)
+            ItemStockSummary.objects.bulk_create(
+                l,  # لیست اشیاء
+                update_conflicts=True,  # فعال کردن حالت upsert
+                update_fields=['quantity'],  # فیلدهایی که در صورت وجود به‌روز شوند
+                unique_fields=['item', 'fiscalyearref', 'stockref'],  # فیلد(های) منحصربفرد برای تشخیص رکورد موجود
+                batch_size=500
+            )
+
+            cache.set('all_stock_quantity', all_stock_quantity, 30)
+            print('set in cache...')
+
+        stocks = all_stock_quantity.get(str(self.sku))
+        if not stocks:
+            return 0, 0
+
+        out = dict()
+        for code_name, sepidar_quantity in stocks.items():
+            if sepidar_quantity == 0:
+                continue
+            code, name = code_name.split('__')
+
+            portal_reserve = self.reserved_count_in_portal(code)
+            free = sepidar_quantity - portal_reserve
+            out[code] = {
+                    "sepidar": sepidar_quantity,
+                    "free": free
+                }
+
+        return out
 
 
 class ItemRakedManager(models.Manager):

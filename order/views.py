@@ -273,6 +273,9 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
             context['allow_next'] = False
             context['allow_back'] = False
+        else:
+            context['allow_next'] = True
+            context['allow_back'] = True
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(

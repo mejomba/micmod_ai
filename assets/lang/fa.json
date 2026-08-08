@@ -795,5 +795,8 @@
     "gio_date": "تاریخ gio",
     "is_sample": "سفارش نمونه",
     "is_force_order": "سفارش فوری",
-    "show_alt": "مشابه"
+    "show_alt": "مشابه",
+    "shop_zero_quantity": "موجودی صفر شاپ",
+    "shop_min_order_quantity": "حداقل سفارش شاپ",
+    "shop_limit_quantity": "محدودیت موجودی شاپ"
 }

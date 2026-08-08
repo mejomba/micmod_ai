@@ -192,7 +192,9 @@ def to_jalali_date(time):
         return '1000-01-01'
 
 
-def show_error(e, file):
+def show_error(e, file, output=None):
+    if output:
+        return f"error: file: {file}, traceback: {e.__traceback__.tb_lineno} e: {e}"
     print("error: ", file, e.__traceback__.tb_lineno, e)
 
 

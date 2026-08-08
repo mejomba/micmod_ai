@@ -228,7 +228,7 @@
 
 
     {% if flow_state_index == 7 %}
-        {% if request.user.base_group == 'trade' or request.user.is_superuser %}
+        {% if request.user.base_group == 'trade' or request.user.base_group == 'mac' or request.user.is_superuser %}
     <div class="card card-custom mb-20">
         <div class="card-header">
             <div class="card-toolbar">
