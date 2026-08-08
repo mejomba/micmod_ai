@@ -557,7 +557,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
         # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
         {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-        {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+        {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -695,7 +695,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
             ]
@@ -722,7 +722,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
