@@ -14,9 +14,13 @@ from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy, reverse
 from django.views import generic, View
-from rest_framework import status
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.permissions import HasShopPermission
 from micmod_base.forms import QuotationForm, QuotationItemFormset
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs, Device
@@ -37,6 +41,7 @@ from inquiry.forms import SkuCreateForm, InquiryResultForm
 from inventory.models import ReceiptDetail
 
 from translator import get_text as _
+from .serializers import ItemSerializer
 from .task import link_item_packages
 
 
@@ -1122,3 +1127,78 @@ def websoket(request, *args, **kwargs):
     form = ItemWeightForm(instance=iw)
     form.id = iw.pk
     return render(request, 'extra_data/item-realtime.html', context={'form': form})
+
+
+class ItemViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, HasShopPermission]
+    queryset = Item.objects.all().order_by('-created_date')
+    serializer_class = ItemSerializer
+    http_method_names = ['get']
+
+    @staticmethod
+    def update_and_clean(data, subtract_value, limit_value):
+        """
+        روی دیکشنری پیمایش می‌کند، مقدار free را منهای subtract_value می‌کند
+        و اگر صفر یا منفی شد، کلید معادلش را حذف می‌کند
+
+        Args:
+            data: دیکشنری ورودی
+            subtract_value: عددی که از free کم می‌شود
+        """
+        # لیستی برای ذخیره کلیدهایی که باید حذف شوند
+        keys_to_remove = []
+
+        # پیمایش روی کلیدهای سطح اول (899)
+        for outer_key, outer_value in data.items():
+            # پیمایش روی کلیدهای سطح دوم (2, 28, 51, 73)
+            for inner_key, inner_value in outer_value.items():
+                # مقدار free را منهای عدد مورد نظر می‌کنیم
+                new_free = inner_value['free'] - subtract_value
+
+                # اگر صفر یا منفی شد، کلید را برای حذف علامت‌گذاری می‌کنیم
+                if new_free <= 0:
+                    keys_to_remove.append(outer_key)
+                else:
+                    # در غیر این صورت مقدار جدید را جایگزین می‌کنیم
+                    data[outer_key][inner_key]['free'] = min(new_free, limit_value)
+
+        # حذف کلیدهای علامت‌گذاری شده
+        for outer_key in keys_to_remove:
+            del data[outer_key]
+            # # اگر دیکشنری داخلی خالی شد، خود کلید خارجی را هم حذف می‌کنیم
+            # if not data[outer_key]:
+            #     del data[outer_key]
+
+        return data
+
+    @action(detail=False, methods=['get'], url_path='stock-free-quantity')
+    def stock_free_quantity(self, request, *args, **kwargs):
+        try:
+            skus = request.GET.get('skus')
+            out = dict()
+            out_after_clean = dict()
+            if skus:
+                skus = skus.split(',')
+                items = Item.objects.filter(sku__in=skus)
+                for item in items:
+                    zero_quantity = item.shop_zero_quantity
+                    limit_quantity = item.shop_limit_quantity
+                    min_order_quantity = item.shop_min_order_quantity
+                    if not zero_quantity:
+                        continue
+                    if not limit_quantity:
+                        continue
+
+                    out[item.sku] = item.free_qty_dict()
+
+                    out_after_clean = self.update_and_clean(out, zero_quantity, limit_quantity)
+
+                    out_after_clean[item.sku].update({
+                        'zero_quantity': zero_quantity,
+                        'limit_quantity': limit_quantity,
+                        'min_order_quantity': min_order_quantity or 1,
+                    })
+
+            return Response(out_after_clean)
+        except Exception as e:
+            return Response(show_error(e, __file__, output=True))
