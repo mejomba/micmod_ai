@@ -268,6 +268,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -281,6 +282,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -294,6 +296,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -307,6 +310,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -320,6 +324,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -333,6 +338,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -346,6 +352,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -459,7 +466,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -473,7 +480,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "description_sale", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -487,7 +494,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -501,7 +508,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -515,7 +522,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -529,7 +536,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -543,7 +550,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -557,7 +564,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -571,7 +578,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 

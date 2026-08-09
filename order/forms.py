@@ -31,6 +31,8 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
     select2_url_name = "order:order.select2-search"  # نام URL ویوی سرچ AJAX
     select2_fields = {
         "currency": {},  # لوکال
+        "pay_operator": {},  # لوکال
+        "buy_operator": {},  # لوکال
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
         # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},

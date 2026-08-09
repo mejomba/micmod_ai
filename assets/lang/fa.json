@@ -799,5 +799,10 @@
     "shop_zero_quantity": "موجودی صفر شاپ",
     "shop_min_order_quantity": "حداقل سفارش شاپ",
     "shop_limit_quantity": "محدودیت موجودی شاپ",
-    "_weight": "وزن"
+    "_weight": "وزن",
+    "me": "خودم",
+    "mac": "مک",
+    "luise": "لویس",
+    "buy_operator": "مسئول خرید",
+    "pay_operator": "مسئول پرداخت"
 }
