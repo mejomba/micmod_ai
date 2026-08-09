@@ -25,7 +25,7 @@
                 <div class="col {% if not field.field.widget.input_type == 'checkbox' %}{{ label }}{% endif %} {% if margin_b is not None %} mb-{{ margin_b }}{% else %} mb-3 {% endif %}{% if field.errors %} field-error {% endif %}">
                 {% include 'core/partial/auto_complete_field.html' with field=field %}
                 <label data-key="{{ field|get_field_name }}"
-                       id={{ id }} class="{{ css }}">{% if label_text %}
+                       id={{ id }} class="{{ css }} {% if field.field.required %} text-danger {% endif %}">{% if label_text %}
                     {{ label_text }}{% else %}{{ field.label }}{% endif %}</label>
                 {% if field.help_text %}
                 <span style="position: absolute; top: -5px; left: 5px;" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ field.help_text }}">

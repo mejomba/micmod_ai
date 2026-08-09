@@ -647,6 +647,7 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['total_price'] = f'<span>{parse_number(obj.total_price):,}</span>'
         row['is_kasri'] = f'<span class="badge badge-success">بله</span>' if obj.is_kasri else f'<span class="badge badge-danger">خیر</span>'
+        row['is_force_order'] = f'<span class="badge badge-success">بله</span>' if obj.is_force_order else f'<span class="badge badge-danger">خیر</span>'
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
@@ -740,6 +741,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
+                {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
                 {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
                 # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
