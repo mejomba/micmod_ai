@@ -3,8 +3,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
+from django.utils import timezone
 from django.utils.formats import number_format
 from django.utils.safestring import mark_safe
+import datetime
 
 from accounts.models import User
 from micmod_base.base import Currency
@@ -215,6 +217,48 @@ class Order(BaseModeWF):
     is_sample = models.BooleanField(default=False, verbose_name=_('is_sample'))
     is_force_order = models.BooleanField(default=False, verbose_name=_('is_force_order'))
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
+
+    @property
+    def trade_work_day(self):
+        today_tehran = timezone.localtime(timezone.now()).date()
+
+        # زمان هدف: ساعت 16:00:00 امروز در تهران
+        target_time_naive = datetime.datetime.combine(today_tehran, datetime.time(16, 0, 0))
+        target_time_aware = timezone.make_aware(target_time_naive, timezone.get_current_timezone())
+
+        last_work_flow = self.last_work_flow
+        if last_work_flow and last_work_flow.current_state_name == 'تایید بازرگانی' and last_work_flow.created_date >= target_time_aware:
+            return 'فردا'
+        else:
+            return '-'
+    @property
+    def final_purchase_group(self):
+        try:
+            return self.final_item.purchase_group.title
+        except Exception as e:
+            return
+
+    @property
+    def final_weight(self):
+        try:
+            return self.final_item.weight
+        except Exception as e:
+            return 0
+
+    @property
+    def final_total_weight(self):
+        try:
+            return round(self.final_weight * self.final_quantity, 4)
+        except Exception as e:
+            return 0
+
+    @property
+    def _weight(self):
+        try:
+            weight = self.final_weight
+            return mark_safe(f'{weight} - <u>{weight * self.final_quantity}</u>')
+        except Exception as e:
+            return 'error'
 
     @property
     def _item(self):

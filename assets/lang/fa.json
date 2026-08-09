@@ -798,5 +798,6 @@
     "show_alt": "مشابه",
     "shop_zero_quantity": "موجودی صفر شاپ",
     "shop_min_order_quantity": "حداقل سفارش شاپ",
-    "shop_limit_quantity": "محدودیت موجودی شاپ"
+    "shop_limit_quantity": "محدودیت موجودی شاپ",
+    "_weight": "وزن"
 }

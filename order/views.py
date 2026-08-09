@@ -265,8 +265,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
-        context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
-        context['trade_parent_price_list'] = self.object.item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.item.parent else self.object.item.items.none()
+        if self.object:
+            context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
+            context['trade_parent_price_list'] = self.object.item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.item.parent else self.object.item.items.none()
+
         context['section_id'] = 'order'
 
         if self.state_index > 1 and self.request.user.base_group == 'sales':
@@ -649,6 +651,11 @@ class OrderDataTableListView(AjaxDatatableView):
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
         row['payment'] = '<hr>'.join([f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>" for x in obj.order_payment_items.select_related('payment').all()])  # "R" is order error from trade user
+        row['weight'] = f'{parse_number(obj.final_total_weight):,}'
+        row['item__purchase_group'] = obj.final_purchase_group
+
+        row['work_day'] = obj.trade_work_day
+
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -723,6 +730,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
+                {'name': 'weight', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'weight total', },
+                {'name': 'item__purchase_group', 'orderable': False, 'visible': True, 'title': 'purchase group', 'lookup_field': '__title__icontains' },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
                 {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
@@ -731,6 +740,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
+                {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
                 # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
             ]

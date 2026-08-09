@@ -261,7 +261,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price", ]
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price", "_weight"]
         },
         2: {
             "edit": [
@@ -274,7 +274,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         3: {
             "edit": [
@@ -287,7 +287,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         4: {
             "edit": [
@@ -300,7 +300,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         5: {
             "edit": [
@@ -313,7 +313,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         6: {
             "edit": [
@@ -326,7 +326,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
             },
         7: {
             "edit": [
@@ -339,7 +339,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         8: {
             "edit": [
@@ -352,7 +352,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title", "total_price",]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
     },
     "order.cp_order_mac": {
