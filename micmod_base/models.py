@@ -120,7 +120,7 @@ class Quotation(SLSDoc):
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
     shop_payment_id = models.CharField(max_length=128, null=True, blank=True, verbose_name="شماره پرداخت شاپ")
-    prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)
+    prepayment = models.FloatField(null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
