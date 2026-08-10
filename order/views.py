@@ -40,7 +40,7 @@ from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
     TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
-    OrderSafeForm
+    OrderSafeForm, OrderDelayReasonModelForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -293,6 +293,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
             context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
+
+        # context['delay_reason_form'] = OrderDelayReasonModelForm(initial={'order': self.object},
+        #                                                          order_instance=self.object,
+        #                                                          prefix='delay')
         return context
 
     def form_valid(self, form):
@@ -547,7 +551,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_method', 'orderable': False, 'visible': True, 'searchable': False},
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},
-        {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
+        {'name': 'estimated_arrive_date', 'orderable': False, 'searchable': False, 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
