@@ -120,9 +120,6 @@
     <div class="col-12 my-3">
         <div style="height: 1px; background-color: #ccc"></div>
     </div>
-    {% if request.user.base_group == 'trade' or request.user.is_superuser %}
-
-    {% endif %}
         <div class="{% if request.user.base_group == 'trade' or request.user.is_superuser %} col-10 {% else %} col-12 {% endif %}">
             <div class="row row-cols-5">
                 {% for bf in form.iter_editable %}
@@ -221,6 +218,10 @@
         {% else %}
             {% get_comment_user_list form request.user %}
         {% endif %}
+    </div>
+{#    <div>#}
+{#        {% include 'order/partial/delay_reason.html' with order=form.instance delay_form=delay_reason_form %}#}
+{#    </div>#}
 
         <div class="mt-1"></div>
 {#                {% get_payment_list form request.user %}#}
@@ -848,7 +849,6 @@ $(document).ready(function () {
                             document.querySelector('#last_buy_price').innerHTML = `<div class="d-flex justify-content-between"><span>قیمت: ${data.fee_in_base_currency.toLocaleString() ?? "-"} <small>${data.currency}</small></span> <span>#${data.number}</span> </div>   <div class="d-flex justify-content-between"> <span> تعداد: ${data.quantity.toLocaleString() ?? "-"} </span> <span> تاریخ: ${data.created_date ?? "-"} </span> </div>`
                         } catch (e) {
                             document.querySelector('#last_buy_price').innerHTML = "خطا: مطمعن شوید فیلد کالای بازرگانی پر شده باشد."
-                            document.querySelector('#last_buy_price').innerHTML = e
                         }
 
                     },
