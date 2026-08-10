@@ -10,7 +10,7 @@ import datetime
 
 from accounts.models import User
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel
+from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel, FiscalYearRef
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
@@ -992,6 +992,8 @@ class OrderPayment(BaseModeWF):
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
     vendor_party = models.ForeignKey(Supplier, on_delete=models.DO_NOTHING, related_name='vendor_party_payment')
     sepidar_response = models.JSONField(null=True, blank=True)
+    sepidar_debit_credit_note_number = models.PositiveIntegerField(null=True, blank=True)
+    fiscalyearref = models.ForeignKey(FiscalYearRef, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     @property
     def total_payment(self):

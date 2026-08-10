@@ -33,6 +33,7 @@ from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
 from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
+from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
@@ -1885,6 +1886,11 @@ class OrderAndSepidar(View):
 
         groups = OrderedDict()
         for item in payment.payment_item.all():
+            item.rate = Dl.account_currency_rate(item.order.final_supplier.dlref,
+                                                 settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
+                                                 settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                                                 payment.currency.sepidar_id
+                                                 )
             groups.setdefault(item.order.currency, []).append(item)
 
         context['groups'] = list()

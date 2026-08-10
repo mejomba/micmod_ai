@@ -471,7 +471,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         #                                            widget=AdminJalaliDateWidget(
         #                                                attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
         #                                            required=False)
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 2
 
         if request and not request.user.is_superuser:
             if form_constraint_hide:

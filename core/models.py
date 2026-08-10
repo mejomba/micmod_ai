@@ -972,3 +972,9 @@ class Work(AbsBaseModel):
     body = models.TextField(_('متن توضیحات'))
     remind_at = models.DateTimeField(_('یاد آوری'), null=True, blank=True)
     seen = models.BooleanField(_('دیده شده'), default=False)
+
+
+class FiscalYearRef(models.Model):
+    title = models.CharField(max_length=10)
+    title_en = models.CharField(max_length=10)
+    sepidar_id = models.PositiveIntegerField()

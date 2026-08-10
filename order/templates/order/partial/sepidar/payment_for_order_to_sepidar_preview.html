@@ -19,7 +19,7 @@
                         <span>در ازای این سند. در سپیدار اسناد زیر ثبت خواهند شد.</span>
                     </span>
 
-                    <div class="bg-light-warnin">
+                    <div class="">
                         <span class="bold">انتقال بین حساب:</span>
                         <span>انتقال از حساب</span>
                         <span>{{ payment.vendor_party }}</span>
@@ -29,7 +29,7 @@
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                     </div>
 
-                    <div class="bg-light-warnin">
+                    <div class="">
                         <span class="bold">انتقال به حساب تامین کننده: </span>
                         <span>انتقال از حساب</span>
                         <span>{{ payment.vendor_party }}</span>
@@ -49,6 +49,8 @@
                     </div>
 
                 </div>
+                <span>نرخ تبدیل</span>
+                <span>{{ g.rate|floatformat:'-2g' }}</span>
                 {% else %}
                 <div class="d-flex flex-column gap-2 mb-5">
                     <span>
@@ -82,6 +84,8 @@
                     </div>
 
                 </div>
+                <span>نرخ تبدیل</span>
+                <span>{{ g.rate|floatformat:'-2g' }}</span>
             {% endif %}
             </div>
         {% endfor %}

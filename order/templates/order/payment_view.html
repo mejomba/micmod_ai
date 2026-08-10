@@ -72,7 +72,7 @@
 
                     <div id="payment-for-order-to-sepidar-wrapper" class="d-none">
                         <div id="payment-for-order-to-sepidar-body" >
-                            {% if save_not_allowed %}
+                            {% if save_not_allowed or form.instance.sepidar_debit_credit_note_number %}
                                 {% include 'order/partial/sepidar/payment_for_order_to_sepidar_response.html' with payment=form.instance %}
                             {% else %}
                                 <span id="payment-for-order-to-sepidar-preview" onclick="payment_for_order_to_sepidar_preview(event)" data-url="{% url 'order:order_and_sepidar' %}?view_name=payment_for_order_to_sepidar_preview&payment_id={{ form.instance.pk }}" class="btn btn-sm btn-primary">پیش نمایش ارسال به سپیدار</span>
@@ -82,6 +82,13 @@
 
                 </div>
             </div>
+
+        {% if request.user.base_group == 'accounting' or request.user.is_superuser %}
+        <div class="row row-cols-4">
+            {% render_field_by_order form form.sepidar_debit_credit_note_number form.fiscalyearref label='on-border' %}
+        </div>
+        {% endif %}
+
 {#            <div class="row" id="order-messages"></div>#}
         </div>
 

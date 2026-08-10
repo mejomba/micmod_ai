@@ -79,3 +79,9 @@
     <a href="{% url 'order:order.payment.update' payment.pk %}">بارگزاری مجدد</a>
 </div>
 {% endif %}
+
+<div class="d-flex gap-4">
+    <span>اعلامیه بدهکار بستانکار </span>
+    <span>{{ payment.sepidar_debit_credit_note_number }}</span>
+    <span>دستی ثبت شده است</span>
+</div>
