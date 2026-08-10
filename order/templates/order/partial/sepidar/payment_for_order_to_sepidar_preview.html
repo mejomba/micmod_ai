@@ -35,8 +35,17 @@
                         <span>{{ payment.vendor_party }}</span>
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                         <span>به حساب</span>
-                        <span>{{ g.order.final_supplier }}</span>
-                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% if g.order.final_supplier.dlref %}
+                            <span>{{ g.order.final_supplier }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">no-name</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                            <div class="text-danger">
+                                <span class="">تامین کننده سفارش:</span>
+                                <span class="">{{ g.order.final_supplier }}</span>
+                                <span class="">در سپیدار معادل ندارد</span>
+                            </div>
+                        {% endif %}
                     </div>
 
                 </div>
@@ -57,8 +66,19 @@
                         <span>{{ payment.vendor_party }}</span>
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                         <span>به حساب</span>
-                        <span>{{ g.order.final_supplier }}</span>
-                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% if g.order.final_supplier.dlref %}
+                            <span>{{ g.order.final_supplier }}</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">no-name</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                            <div class="text-danger">
+                                <span class="">تامین کننده سفارش:</span>
+                                <span class="">{{ g.order.final_supplier }}</span>
+                                <span class="">در سپیدار معادل ندارد</span>
+                            </div>
+                        {% endif %}
+
                     </div>
 
                 </div>

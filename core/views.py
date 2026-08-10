@@ -799,7 +799,7 @@ class BaseView(UserPassesTestMixin,
                     print('error: ', e.__traceback__.tb_lineno, e)
 
                 """save formset"""
-                if self.has_formset and not (self.request.user.base_group == 'wh' and self.state_index > 1):
+                if self.has_formset and not (self.request.user.base_group == 'wh' and self.state_index > 1 and self.object.__class__.__name__ == 'Factor'):
 
                     old_details_ = getattr(new_obj, self.related_name_fk, None)
                     old_details = []

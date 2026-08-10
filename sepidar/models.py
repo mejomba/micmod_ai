@@ -41,8 +41,8 @@ class Dl(models.Model):
             , SUM(vi.[CurrencyCredit]) CurrencyCredit
             , SUM(vi.[Debit]) Debit
             , SUM(vi.[Credit]) Credit
-            from [Micromodern1].[ACC].[VoucherItem] vi
-            left join [Micromodern1].[ACC].[Voucher] v
+            from [ACC].[VoucherItem] vi
+            left join [ACC].[Voucher] v
             on vi.VoucherRef = v.VoucherId
             where vi.DLRef={dl_id} and AccountSLRef={slref} and v.FiscalYearRef={fiscalyearref} and vi.Description NOT LIKE '%%تسعیر ارز%%' and vi.CurrencyRate <> 1 group by dlref
         """

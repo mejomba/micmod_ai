@@ -2381,10 +2381,21 @@ def get_last_receipt_from_sepidar(request, *args, **kwargs):
         res = SepidarApiCall.get_receipt_item(item_ref=item.sepidar_id_0)
         receipt = SepidarApiCall.get_receipt(pk=res.get('inventoryreceiptref'))
         receipt_date = receipt.get('date')
+        receipt_number = receipt.get('number')
+        currencyrate = res.get('currencyrate') or 1
 
+        try:
+            fee = res.get('price') / res.get('quantity')
+            fee_in_base_currency = (res.get('price') / currencyrate) / res.get('quantity')
+            currency = Currency.objects.filter(sepidar_id=res.get('currencyref')).first() or 'ریال'
+        except Exception as e:
+            fee = 0
+            fee_in_base_currency = 0
+            currency = '-'
         if receipt_date:
             d = datetime.datetime.fromisoformat(receipt_date)
-            res.update({'created_date': f'{d.day} - {d.month} - {d.year}'})
+            res.update({'created_date': f'{d.day} - {d.month} - {d.year}', 'number': receipt_number,
+                        'fee': fee, 'fee_in_base_currency': fee_in_base_currency, 'currency': str(currency)})
     else:
         res = dict()
     return JsonResponse(res)
