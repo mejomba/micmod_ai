@@ -664,3 +664,13 @@ class OrderDelayReasonModelForm(CustomBaseModelForm):
         model = OrderDelayReason
         fields = ['id', 'creator_user', 'editor_user', "order", "quantity",
                   "reason", "start", "start_date", "end", "end_date", "actor", "description", ]
+
+    def __init__(self, *args, **kwargs):
+        order_instance = kwargs.pop('order_instance', None)
+        super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1
+
+        if order_instance:
+            self.fields['order'].queryset = Order.objects.filter(pk=order_instance.pk)
+            # self.fields['order'].disabled = True
+            # self.fields['order'].initial = order_instance
