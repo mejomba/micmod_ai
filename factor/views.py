@@ -662,7 +662,7 @@ class FactorListDatatable(AjaxDatatableView):
             )
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__currency_ref'] = obj.q.currency_ref.title if obj.q else ''
-        row['creator_user'] = obj.creator_user.username if obj.q else ''
+        row['creator_user'] = obj.creator_user.username if obj.creator_user else ''
         row['q__payment_method'] = obj.q.get_payment_method_display() if obj.q else ''
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
