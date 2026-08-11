@@ -277,8 +277,8 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             context['allow_next'] = False
             context['allow_back'] = False
         else:
-            context['allow_next'] = True
-            context['allow_back'] = True
+            context['allow_next'] = context.get('allow_next')
+            context['allow_back'] = context.get('allow_back')
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(
