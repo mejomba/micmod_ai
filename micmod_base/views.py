@@ -90,6 +90,7 @@ def generate_direct_factor(request, quotation: Quotation):
             'self_discount': quotation.self_discount,
             "creator_user": request.user,
             "editor_user": request.user,
+            "currency_ref": quotation.currency_ref
         }
         factor_form = FactorModelForm(data=factor_data)
         if factor_form.is_valid():
