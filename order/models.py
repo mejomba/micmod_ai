@@ -380,9 +380,15 @@ class Order(BaseModeWF):
         import jdatetime
         if self.pk is None:
             year = str(jdatetime.date.today().year - 1400).zfill(2)
-            last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
-            self.order_number = f'A{year}-{last_number + 1}'
-            self.number = last_number + 1
+            try:
+                last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
+                self.order_number = f'A{year}-{last_number + 1}'
+                self.number = last_number + 1
+            except Exception as e:
+                last_number = 0
+                self.order_number = f'A{year}-{last_number + 1}'
+                self.number = last_number + 1
+                print(e)
 
         # self.static_price_inquiry_result = getattr(self.price_inquiry_result, 'price', None)
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
