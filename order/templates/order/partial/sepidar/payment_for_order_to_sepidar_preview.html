@@ -19,7 +19,7 @@
                         <span>در ازای این سند. در سپیدار اسناد زیر ثبت خواهند شد.</span>
                     </span>
 
-                    <div class="bg-light-warnin">
+                    <div class="">
                         <span class="bold">انتقال بین حساب:</span>
                         <span>انتقال از حساب</span>
                         <span>{{ payment.vendor_party }}</span>
@@ -29,17 +29,28 @@
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                     </div>
 
-                    <div class="bg-light-warnin">
+                    <div class="">
                         <span class="bold">انتقال به حساب تامین کننده: </span>
                         <span>انتقال از حساب</span>
                         <span>{{ payment.vendor_party }}</span>
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                         <span>به حساب</span>
-                        <span>{{ g.order.final_supplier }}</span>
-                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% if g.order.final_supplier.dlref %}
+                            <span>{{ g.order.final_supplier }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">no-name</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                            <div class="text-danger">
+                                <span class="">تامین کننده سفارش:</span>
+                                <span class="">{{ g.order.final_supplier }}</span>
+                                <span class="">در سپیدار معادل ندارد</span>
+                            </div>
+                        {% endif %}
                     </div>
 
                 </div>
+                <span>نرخ تبدیل</span>
+                <span>{{ g.rate|floatformat:'-2g' }}</span>
                 {% else %}
                 <div class="d-flex flex-column gap-2 mb-5">
                     <span>
@@ -57,11 +68,24 @@
                         <span>{{ payment.vendor_party }}</span>
                         <span class="badge badge-light-success">{{ g.order.currency }}</span>
                         <span>به حساب</span>
-                        <span>{{ g.order.final_supplier }}</span>
-                        <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% if g.order.final_supplier.dlref %}
+                            <span>{{ g.order.final_supplier }}</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">no-name</span>
+                            <span class="badge badge-light-success">{{ g.order.currency }}</span>
+                            <div class="text-danger">
+                                <span class="">تامین کننده سفارش:</span>
+                                <span class="">{{ g.order.final_supplier }}</span>
+                                <span class="">در سپیدار معادل ندارد</span>
+                            </div>
+                        {% endif %}
+
                     </div>
 
                 </div>
+                <span>نرخ تبدیل</span>
+                <span>{{ g.rate|floatformat:'-2g' }}</span>
             {% endif %}
             </div>
         {% endfor %}

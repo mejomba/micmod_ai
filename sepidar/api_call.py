@@ -317,7 +317,7 @@ class SepidarApiCall:
     def get_receipt_item(cls, item_ref):
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('receipt_item')
-        endpoint += f'?itemref={item_ref}'
+        endpoint += f'?itemref={item_ref}&inventoryreceiptref__type=1'
         res = requests.get(endpoint, headers=cls.headers)
         out = dict()
         if res.ok:

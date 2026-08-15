@@ -908,6 +908,7 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         super().__init__(*args, **kwargs)
 
         self.only_show = list(only_show or [])
+        self.allowed_fields = list(allowed_fields or [])
         self._add_file_fields()
 
         self._apply_select2()
@@ -926,11 +927,11 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         self.fields['q'].widget.attrs['data-detail-url'] = reverse_lazy('factor:prefactor-json', args=[0])
 
         # ========= remove field
-        if self.instance.pk and 'q' in allowed_fields:
-            allowed_fields.remove('q')
+        if self.instance.pk and 'q' in self.allowed_fields:
+            self.allowed_fields.remove('q')
             self.only_show.append('q')
-        if allowed_fields is not None or allowed_hidden is not None:
-            keep = set(allowed_fields or []) | set(allowed_hidden or [])
+        if self.allowed_fields is not None or allowed_hidden is not None:
+            keep = set(self.allowed_fields or []) | set(allowed_hidden or [])
             for name in list(self.fields):
                 if name not in keep:
                     self.fields.pop(name)

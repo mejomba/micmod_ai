@@ -120,7 +120,7 @@ class Quotation(SLSDoc):
     PAYMENT_STATUS_CHOICE = (("pending", _("pending")), ("payed", _("payed")), ("fail", _("fail")))
     payment_status = models.CharField(choices=PAYMENT_STATUS_CHOICE, null=True, blank=True)
     shop_payment_id = models.CharField(max_length=128, null=True, blank=True, verbose_name="شماره پرداخت شاپ")
-    prepayment = models.DecimalField(max_digits=19, decimal_places=4, null=True, blank=True)
+    prepayment = models.FloatField(null=True, blank=True)
     customer_request = models.ForeignKey(CustomerRequest, on_delete=models.DO_NOTHING, related_name='customer_quotations', null=True, blank=True)
     sales_admin_confirm = models.BooleanField(_('sales_admin_confirm'), default=False)
     description_sales = models.TextField(null=True, blank=True, verbose_name=_('description_sales'))
@@ -162,10 +162,6 @@ class Quotation(SLSDoc):
         null=True,
         blank=True
     )
-
-    shop_zero_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_zero_quantity'), help_text='تعداد فروش به شاپ نباید موجودی کالا را کمتر از این عدد کند. در صورت نداشتن مقدار فروش در شاپ مجاز نیست')
-    shop_min_order_quantity = models.FloatField(null=True, blank=True, verbose_name=_('shop_order_min_quantity'), help_text='حداقل تعداد فروش به شاپ. اگر مقدار نداشته باشد حداقل فروش 1 است.')
-    shop_limit_quantity = models.FloatField(null=True, blank=True, help_text='بیشتر از این تعداد در شاپ نمیرود. اگر تعین نشود تعداد این کالا در شاپ نمایش داده نمیشود.')
 
     custom_objects = QuotationManager()
     absolute_url_update = 'micmod_base:quotations.view'
@@ -222,7 +218,7 @@ class Quotation(SLSDoc):
         previews_state_name = groups.get(previews_state_index).get('state_name')
 
         # 3 next
-        if 'next' in request.POST:
+        if 'next' in request.POST or 'next' in request.data:
             current_group_last_wf_obj = self.workflows.filter(belong_to_group=next_group_name)
             if current_group_last_wf_obj:
                 to_user = current_group_last_wf_obj.latest("pk").from_user
@@ -241,7 +237,7 @@ class Quotation(SLSDoc):
             return wf
 
         # 5 first draft
-        elif 'draft' in request.POST and (is_new or not last_flow):
+        elif ('draft' in request.POST or 'draft' in request.data) and (is_new or not last_flow):
             wf = WorkFlow.objects.create(action='draft', flow_name='quotation', wf_status=5,
                                          creator_user=request.user,
                                          editor_user=request.user,
@@ -254,7 +250,7 @@ class Quotation(SLSDoc):
             return wf
 
         # 2 back
-        elif 'back' in request.POST:
+        elif 'back' in request.POST or 'back' in request.data:
             current_group_last_wf_obj = self.workflows.filter(belong_to_group=previews_group_name).latest("pk")
             if current_group_last_wf_obj:
                 to_user = current_group_last_wf_obj.from_user
@@ -273,7 +269,7 @@ class Quotation(SLSDoc):
             return wf
 
         # 4 change user
-        elif 'change_user' in request.POST:
+        elif 'change_user' in request.POST or 'change_user' in request.data:
             to_user = request.POST.get('to_current_group_user')
             wf = WorkFlow.objects.create(action='change user', flow_name='quotation', creator_user=request.user,
                                          editor_user=request.user, wf_status=4,

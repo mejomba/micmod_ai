@@ -31,6 +31,8 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
     select2_url_name = "order:order.select2-search"  # نام URL ویوی سرچ AJAX
     select2_fields = {
         "currency": {},  # لوکال
+        "pay_operator": {},  # لوکال
+        "buy_operator": {},  # لوکال
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
         # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
@@ -56,7 +58,8 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self._apply_select2()
 
         # ========= customize fields before permission apply
-        self.make_required(['price_trade', 'item', 'quantity', 'currency'])
+        self.make_required(['price_trade', 'item', 'quantity',
+                            'supplier_trade', 'currency', 'trade_user'])
         self.fields['description_sale'].widget.attrs['rows'] = 1
         self.fields['description_trade'].widget.attrs['rows'] = 1
         self.fields['description_mac'].widget.attrs['rows'] = 1
@@ -468,7 +471,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         #                                            widget=AdminJalaliDateWidget(
         #                                                attrs={'class': 'jalali_date-date form-control', 'size': '10'}),
         #                                            required=False)
-        self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 2
 
         if request and not request.user.is_superuser:
             if form_constraint_hide:
@@ -661,3 +664,13 @@ class OrderDelayReasonModelForm(CustomBaseModelForm):
         model = OrderDelayReason
         fields = ['id', 'creator_user', 'editor_user', "order", "quantity",
                   "reason", "start", "start_date", "end", "end_date", "actor", "description", ]
+
+    def __init__(self, *args, **kwargs):
+        order_instance = kwargs.pop('order_instance', None)
+        super().__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs['rows'] = 1
+
+        if order_instance:
+            self.fields['order'].queryset = Order.objects.filter(pk=order_instance.pk)
+            # self.fields['order'].disabled = True
+            # self.fields['order'].initial = order_instance

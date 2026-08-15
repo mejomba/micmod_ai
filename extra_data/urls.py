@@ -1,11 +1,16 @@
-from django.urls import path
+from django.urls import path, include
 
 from . import views
 from .views import (AccountingUserView, AccountingUserDatatableView,
-                    CustomerGroupUserView, CustomerGroupUserDatatableView)
+                    CustomerGroupUserView, CustomerGroupUserDatatableView, ItemViewSet)
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'items', ItemViewSet, basename='item')
 
 app_name = 'extra_data'
 urlpatterns = [
+    path('', include(router.urls)),
     path('item/create/', views.SkuCreateView.as_view(), name='sku.create'),
     path('item/list/', views.SkuListView.as_view(), name='sku.list'),
     path('item/update/<int:pk>/', views.SkuUpdateView.as_view(), name='sku.update'),

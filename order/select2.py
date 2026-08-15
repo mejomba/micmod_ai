@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 
 SELECT2_SOURCES = {
     "customer_party_id": {"qs": Customer.objects.all(),
-                          "search": ["sepidar_dl_id__icontains",
+                          "search": ["sepidar_dl_id__icontains", "sepidar_dl_code__icontains",
                                      "title__icontains", "name__icontains", "last_name__icontains"],
                           "default_order": ["-id"],
                           'value_field': 'sepidar_party_id'},

@@ -146,18 +146,23 @@
     }
 
     function get_trade_transportation_method_json(){
-        $.ajax({
-            url: '/inquiry/trade_transportation_method/json/',
-            dataType: "json",
-            type: "GET",
-            async: false,
-            data: {supplier: supplier?.value, sku: sku?.value},
-            cache: false,
-            success: function (data) {
-                debugger
-                document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
-            }
-        }); // end ajax
+        try {
+            $.ajax({
+                url: '/inquiry/trade_transportation_method/json/',
+                dataType: "json",
+                type: "GET",
+                async: false,
+                data: {supplier: supplier?.value, sku: sku?.value},
+                cache: false,
+                success: function (data) {
+                    debugger
+                    document.querySelector('#id_trade_transportation_method_json').value = JSON.stringify(data['res'])
+                }
+            }); // end ajax
+        } catch (e) {
+            console.log(e)
+        }
+
     }
     setTimeout(get_trade_transportation_method_json, 1000)
 

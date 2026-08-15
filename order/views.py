@@ -33,13 +33,14 @@ from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
 from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
+from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
 from workflow.models import WorkFlow
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
     TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
-    OrderSafeForm
+    OrderSafeForm, OrderDelayReasonModelForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -265,13 +266,19 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
-        context['trade_price_list'] = self.object.item.items.filter(active=True) if self.object else []
+        if self.object:
+            context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
+            context['trade_parent_price_list'] = self.object.item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.item.parent else self.object.item.items.none()
+
         context['section_id'] = 'order'
 
         if self.state_index > 1 and self.request.user.base_group == 'sales':
             """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
             context['allow_next'] = False
             context['allow_back'] = False
+        else:
+            context['allow_next'] = context.get('allow_next')
+            context['allow_back'] = context.get('allow_back')
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(
@@ -286,6 +293,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
             context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
+
+        # context['delay_reason_form'] = OrderDelayReasonModelForm(initial={'order': self.object},
+        #                                                          order_instance=self.object,
+        #                                                          prefix='delay')
         return context
 
     def form_valid(self, form):
@@ -540,7 +551,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_method', 'orderable': False, 'visible': True, 'searchable': False},
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
          'lookup_field': '__current_state_name__icontains'},
-        {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True},
+        {'name': 'estimated_arrive_date', 'orderable': False, 'searchable': False, 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
@@ -556,7 +567,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
         # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
         {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-        {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+        {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -639,10 +650,18 @@ class OrderDataTableListView(AjaxDatatableView):
             obj.order_number if obj.order_number else 'بدون عنوان'
         )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
+        row['total_price'] = f'<span>{parse_number(obj.total_price):,}</span>'
+        row['is_kasri'] = f'<span class="badge badge-success">بله</span>' if obj.is_kasri else f'<span class="badge badge-danger">خیر</span>'
+        row['is_force_order'] = f'<span class="badge badge-success">بله</span>' if obj.is_force_order else f'<span class="badge badge-danger">خیر</span>'
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
         row['payment'] = '<hr>'.join([f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>" for x in obj.order_payment_items.select_related('payment').all()])  # "R" is order error from trade user
+        row['weight'] = f'{parse_number(obj.final_total_weight):,}'
+        row['item__purchase_group'] = obj.final_purchase_group
+
+        row['work_day'] = obj.trade_work_day
+
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
         #     <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -692,7 +711,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
             ]
@@ -717,12 +736,18 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
+                {'name': 'weight', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'weight total', },
+                {'name': 'item__purchase_group', 'orderable': False, 'visible': True, 'title': 'purchase group', 'lookup_field': '__title__icontains' },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-                {'name': 'co_conf', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
+                {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
+                {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
+                {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
                 # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
             ]
@@ -1865,6 +1890,11 @@ class OrderAndSepidar(View):
 
         groups = OrderedDict()
         for item in payment.payment_item.all():
+            item.rate = Dl.account_currency_rate(item.order.final_supplier.dlref,
+                                                 settings.SEPIDAR_CONST_DATA.get('fiscalyearref'),
+                                                 settings.SEPIDAR_CONST_DATA.get('hesab_pardakhtani'),
+                                                 payment.currency.sepidar_id
+                                                 )
             groups.setdefault(item.order.currency, []).append(item)
 
         context['groups'] = list()

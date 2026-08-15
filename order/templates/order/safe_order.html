@@ -120,9 +120,6 @@
     <div class="col-12 my-3">
         <div style="height: 1px; background-color: #ccc"></div>
     </div>
-    {% if request.user.base_group == 'trade' or request.user.is_superuser %}
-
-    {% endif %}
         <div class="{% if request.user.base_group == 'trade' or request.user.is_superuser %} col-10 {% else %} col-12 {% endif %}">
             <div class="row row-cols-5">
                 {% for bf in form.iter_editable %}
@@ -157,30 +154,58 @@
             <div class="">
                 <span>اطلاعات استعلام قیمت</span>
                 <div class="mt-3">
-                <div class="list-group">
-                    {% for trade_price in trade_price_list %}
-                          <div class="list-group-item  list-group-item-action inquiry-item" aria-current="true">
-                            <div class="d-flex w-100 justify-content-between">
-                                <small>{{ trade_price.last_update_date|date:"Y-d-m" }}</small>
-                                <span class="mb-1"> {{ trade_price.supplier }}</span>
-                            </div>
-                            <div class="d-flex flex-row-reverse gap-1">
-                                <div class="badge bg-light-info rounded-pill">
-                                    <span class="me-1">{{ trade_price.currency_type.title_en }}</span>
-                                    <span class="">{{ trade_price.price }}</span>
+                    <div class="list-group">
+                        {% for trade_price in trade_price_list %}
+                              <div class="list-group-item  list-group-item-action inquiry-item" aria-current="true">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <span>
+                                        <small>{{ trade_price.last_update_date|date:"Y-d-m" }}</small>
+                                        <small>{{ trade_price.editor_user }}</small>
+                                    </span>
+                                    <span class="mb-1"> {{ trade_price.supplier }}</span>
                                 </div>
-                                <small>{{ trade_price.inquiry_type.title }}</small>
-                            </div>
-                          <small class="float-end mt-1">{{ trade_price.variants_json|default_if_falsy:'' }}</small>
-                          </div>
-                    {% endfor %}
+                                <div class="d-flex flex-row-reverse gap-1">
+                                    <div class="badge bg-light-info rounded-pill">
+                                        <span class="me-1">{{ trade_price.currency_type.title_en }}</span>
+                                        <span class="">{{ trade_price.price }}</span>
+                                    </div>
+                                    <small>{{ trade_price.inquiry_type.title }}</small>
+                                </div>
+                              <small class="float-end mt-1">{{ trade_price.variants_json|default_if_falsy:'' }}</small>
+                              </div>
+                        {% endfor %}
 
-                </div>
+                        {% for trade_parent_price in trade_parent_price_list %}
+                              <div class="list-group-item  list-group-item-action inquiry-item" aria-current="true">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <span>
+                                        <small>{{ trade_parent_price.last_update_date|date:"Y-d-m" }}</small>
+                                        <small>{{ trade_parent_price.editor_user }}</small>
+                                    </span>
+                                    <span class="mb-1"> {{ trade_parent_price.supplier|default_if_falsy:"-" }}</span>
+                                </div>
+                                <div class="d-flex flex-row-reverse gap-1">
+                                    <div class="badge bg-light-info rounded-pill">
+                                        <span class="me-1">{{ trade_parent_price.currency_type.title_en }}</span>
+                                        <span class="">{{ trade_parent_price.price }}</span>
+                                    </div>
+                                    <small>{{ trade_parent_price.inquiry_type.title }}</small>
+                                    <small class="badge badge-info">
+                                        {{ trade_parent_price.sku }}
+                                    </small>
+                                </div>
+                              <small class="float-end mt-1">{{ trade_parent_price.variants_json|default_if_falsy:'' }}</small>
+                              </div>
+                        {% endfor %}
 
+                    <div class="list-group-item  list-group-item-action inquiry-item bg-light-primary" aria-current="true" id="last_buy_price">
+                        برای مشاهده آخرین خرید کلیک کنید
+                    </div>
+
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <div class="overflow-scroll">
         <div class="position-absolute d-none" id="comment-form-group__{{ form.instance.pk }}"></div>
@@ -193,6 +218,10 @@
         {% else %}
             {% get_comment_user_list form request.user %}
         {% endif %}
+    </div>
+{#    <div>#}
+{#        {% include 'order/partial/delay_reason.html' with order=form.instance delay_form=delay_reason_form %}#}
+{#    </div>#}
 
         <div class="mt-1"></div>
 {#                {% get_payment_list form request.user %}#}
@@ -202,7 +231,7 @@
 
 
     {% if flow_state_index == 7 %}
-        {% if request.user.base_group == 'trade' or request.user.is_superuser %}
+        {% if request.user.base_group == 'trade' or request.user.base_group == 'mac' or request.user.is_superuser %}
     <div class="card card-custom mb-20">
         <div class="card-header">
             <div class="card-toolbar">
@@ -793,6 +822,44 @@ function percentageToDegrees(percentage) {
             }
         })
     })
+
+$(document).ready(function () {
+
+            const last_buy_price = $('#last_buy_price')
+
+            last_buy_price && last_buy_price.on("click", function (e){
+                let sku;
+            let item = document.querySelector('#id_item_trade')
+            if (item){
+                sku = item.value
+            }
+                $.ajax({
+                    type: 'GET',
+                    url: `${window.location.origin}/inquiry/ajax/sepidar_api/last_receipt/?sku=${sku}`,
+                    dataType: 'json',
+                    cache: false,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: function (){
+                        document.querySelector('#last_buy_price').innerHTML = 'دریافت اطلاعات ...'
+                    },
+                    success: function (data) {
+                        try {
+                            debugger
+                            document.querySelector('#last_buy_price').innerHTML = `<div class="d-flex justify-content-between"><span>قیمت: ${data.fee_in_base_currency.toLocaleString() ?? "-"} <small>${data.currency}</small></span> <span>#${data.number}</span> </div>   <div class="d-flex justify-content-between"> <span> تعداد: ${data.quantity.toLocaleString() ?? "-"} </span> <span> تاریخ: ${data.created_date ?? "-"} </span> </div>`
+                        } catch (e) {
+                            document.querySelector('#last_buy_price').innerHTML = "خطا: مطمعن شوید فیلد کالای بازرگانی پر شده باشد."
+                        }
+
+                    },
+                    error: function (er) {
+                    }
+                }); // end ajax
+            })
+
+
+
+        });
 
     </script>
     <script src="{% static 'js/comment.js' %}"></script>

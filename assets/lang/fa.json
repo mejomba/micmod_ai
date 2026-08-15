@@ -792,5 +792,18 @@
     "price_inquiry_result": "استعلام مربوطه",
     "لیست": "لیست",
     "ایجاد": "ایجاد",
-    "gio_date": "تاریخ gio"
+    "gio_date": "تاریخ gio",
+    "is_sample": "سفارش نمونه",
+    "is_force_order": "سفارش فوری",
+    "show_alt": "مشابه",
+    "shop_zero_quantity": "موجودی صفر شاپ",
+    "shop_min_order_quantity": "حداقل سفارش شاپ",
+    "shop_limit_quantity": "محدودیت موجودی شاپ",
+    "_weight": "وزن",
+    "me": "خودم",
+    "mac": "مک",
+    "luise": "لویس",
+    "buy_operator": "مسئول خرید",
+    "pay_operator": "مسئول پرداخت",
+    "sepidar_debit_credit_note_number": "شماره اعلامیه بدهکار بستانکار سپیدار"
 }

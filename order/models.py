@@ -3,12 +3,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Sum, ExpressionWrapper, F, FloatField, Count
+from django.utils import timezone
 from django.utils.formats import number_format
 from django.utils.safestring import mark_safe
+import datetime
 
 from accounts.models import User
 from micmod_base.base import Currency
-from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel
+from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel, FiscalYearRef
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
@@ -148,6 +150,8 @@ class SepidarOrderDocument(models.Model):
 
 
 class Order(BaseModeWF):
+    number = models.PositiveIntegerField(null=True, blank=True)
+    year = models.PositiveIntegerField(null=True, blank=True)
     # SALES #######################################
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
@@ -156,6 +160,12 @@ class Order(BaseModeWF):
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
     TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
+    BUY_OPERATOR_CHOICE = (("me", _("me")), ("mac", _("mac")), ("luise", _("luise")))
+    PAY_OPERATOR_CHOICE = (("mac", _("mac")), ("luise", _("luise")), ("iranpaid", _("iranpaid")))
+
+    buy_operator = models.CharField(verbose_name=_('buy_operator'), null=True, blank=True, choices=BUY_OPERATOR_CHOICE)
+    pay_operator = models.CharField(verbose_name=_('buy_operator'), null=True, blank=True, choices=PAY_OPERATOR_CHOICE)
+
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
     is_wh = models.BooleanField(_('is_wh'), default=False)
     ORDER_TYPE_CHOICE = [("china", _("china")), ("hong-kong", _("hong-kong")), ]
@@ -211,8 +221,53 @@ class Order(BaseModeWF):
     sepidar_wh_code = models.IntegerField(null=True, blank=True)
     receipt_in_wh = models.BooleanField(default=False)
     price_inquiry_result = models.ForeignKey(PriceInquiryResult, on_delete=models.DO_NOTHING, related_name='orders', verbose_name='inquiry', null=True, blank=True)
+    static_price_inquiry_result = models.FloatField(verbose_name='static_inquiry', null=True, blank=True)
     is_kasri = models.BooleanField(default=False, verbose_name=_('is_kasri'))
+    is_sample = models.BooleanField(default=False, verbose_name=_('is_sample'))
+    is_force_order = models.BooleanField(default=False, verbose_name=_('is_force_order'))
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
+
+    @property
+    def trade_work_day(self):
+        today_tehran = timezone.localtime(timezone.now()).date()
+
+        # زمان هدف: ساعت 16:00:00 امروز در تهران
+        target_time_naive = datetime.datetime.combine(today_tehran, datetime.time(16, 0, 0))
+        target_time_aware = timezone.make_aware(target_time_naive, timezone.get_current_timezone())
+
+        last_work_flow = self.last_work_flow
+        if last_work_flow and last_work_flow.current_state_name == 'تایید بازرگانی' and last_work_flow.created_date >= target_time_aware:
+            return 'فردا'
+        else:
+            return '-'
+    @property
+    def final_purchase_group(self):
+        try:
+            return self.final_item.purchase_group.title
+        except Exception as e:
+            return
+
+    @property
+    def final_weight(self):
+        try:
+            return self.final_item.weight
+        except Exception as e:
+            return 0
+
+    @property
+    def final_total_weight(self):
+        try:
+            return round(self.final_weight * self.final_quantity, 4)
+        except Exception as e:
+            return 0
+
+    @property
+    def _weight(self):
+        try:
+            weight = self.final_weight
+            return mark_safe(f'{weight} - <u>{weight * self.final_quantity}</u>')
+        except Exception as e:
+            return 'error'
 
     @property
     def _item(self):
@@ -323,10 +378,19 @@ class Order(BaseModeWF):
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
         import jdatetime
-        year = str(jdatetime.date.today().year - 1400).zfill(2)
-        last_pk = self.__class__.objects.latest('id').pk if self.__class__.objects.exists() else 0
         if self.pk is None:
-            self.order_number = f'A{year}-{last_pk + 1}'
+            year = str(jdatetime.date.today().year - 1400).zfill(2)
+            try:
+                last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
+                self.order_number = f'A{year}-{last_number + 1}'
+                self.number = last_number + 1
+            except Exception as e:
+                last_number = 0
+                self.order_number = f'A{year}-{last_number + 1}'
+                self.number = last_number + 1
+                print(e)
+
+        # self.static_price_inquiry_result = getattr(self.price_inquiry_result, 'price', None)
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 
     @classmethod
@@ -398,7 +462,7 @@ class Order(BaseModeWF):
         total_price = self.total_price
         pay_in_percent = total_pay = is_complete = None
         total_pay, pay_in_percent = self.order_payment_items.aggregate(total_pay=Sum("total_amount"), pay_in_percent=Sum("total_amount")/total_price*100).values()
-        return int(pay_in_percent or 0), total_pay, total_price, is_complete
+        return int(pay_in_percent or 0), total_pay, total_price, (is_complete or False)
 
     @property
     def gio_info(self):
@@ -934,6 +998,8 @@ class OrderPayment(BaseModeWF):
     bank = models.ForeignKey('ACNT', on_delete=models.DO_NOTHING, verbose_name=_('info_Bank'), null=True, blank=True)
     vendor_party = models.ForeignKey(Supplier, on_delete=models.DO_NOTHING, related_name='vendor_party_payment')
     sepidar_response = models.JSONField(null=True, blank=True)
+    sepidar_debit_credit_note_number = models.PositiveIntegerField(null=True, blank=True)
+    fiscalyearref = models.ForeignKey(FiscalYearRef, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     @property
     def total_payment(self):

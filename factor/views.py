@@ -662,7 +662,7 @@ class FactorListDatatable(AjaxDatatableView):
             )
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__currency_ref'] = obj.q.currency_ref.title if obj.q else ''
-        row['q__last_work_flow'] = obj.q.last_work_flow.to_user.username if obj.q else ''
+        row['creator_user'] = obj.creator_user.username if obj.creator_user else ''
         row['q__payment_method'] = obj.q.get_payment_method_display() if obj.q else ''
         row['last_work_flow__to_user'] = obj.last_work_flow.to_user.username if obj.last_work_flow else ''
         row['wh_user'] = " ".join([x.username for x in obj.wh_user.all()])
@@ -681,8 +681,8 @@ class FactorListDatatable(AjaxDatatableView):
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
-            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
-             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'creator_user', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__username__icontains', 'className': 'border'},
             {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
              'lookup_field': '__current_state_name__icontains', 'className': 'border'},
             {'name': 'cancel', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
@@ -709,8 +709,8 @@ class FactorListDatatable(AjaxDatatableView):
              'searchable': True, 'className': 'border'},
             {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True,
              'className': 'border'},
-            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
-             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'creator_user', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__username__icontains', 'className': 'border'},
             {'name': 'last_work_flow', 'visible': True, 'searchable': True, 'title': "مرحله", 'orderable': True,
              'lookup_field': '__current_state_name__icontains', 'className': 'border'},
             {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
@@ -730,8 +730,8 @@ class FactorListDatatable(AjaxDatatableView):
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
-            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
-             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'creator_user', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__username__icontains', 'className': 'border'},
             {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
             {'name': 'comments', 'orderable': True, 'title': '<div>شرح عدم تایید مالی</div>', 'visible': True,
              'lookup_field': '__comment_content__icontains', 'className': 'border'},
@@ -776,8 +776,8 @@ class FactorListDatatable(AjaxDatatableView):
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
-            {'name': 'q__last_work_flow', 'visible': True, 'title': _('کارشناس مربوطه'),
-             'lookup_field': '__to_user__username__icontains', 'className': 'border'},
+            {'name': 'creator_user', 'visible': True, 'title': _('کارشناس مربوطه'),
+             'lookup_field': '__username__icontains', 'className': 'border'},
             {'name': 'accounting_confirm', 'visible': True, 'orderable': True, 'searchable': True, 'className': 'border'},
             {'name': 'comments', 'orderable': True, 'title': '<div>شرح عدم تایید مالی</div>', 'visible': True,
              'lookup_field': '__comment_content__icontains', 'className': 'border'},
@@ -897,7 +897,7 @@ class CustomerRequestFactorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasShopPermission]
     queryset = Factor.objects.all().order_by('-created_date')
     serializer_class = FactorSerializer
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
 
     @action(detail=False, methods=['get'], url_path='by-request/(?P<customer_request_id>[^/.]+)')
     def list_by_request(self, request, customer_request_id=None):
@@ -911,6 +911,60 @@ class CustomerRequestFactorViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return JsonResponse({'detail': 'url with "pk" required'})
+
+    @action(detail=False, methods=['post'], url_path='create')
+    def create_factor(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                serializer = self.serializer_class(data=request.data, context={'request': request})
+                if serializer.is_valid(raise_exception=True):
+                    obj = serializer.save()
+                    wf = obj.submit_flow(self.request, is_new=True)
+                    obj.last_work_flow = wf
+                    obj.extra_data.request = self.request
+                    obj.save()
+                    return Response(serializer.data)
+        except Exception as e:
+            return Response(show_error(e, __file__, output=True))
+
+    @action(detail=False, methods=['post'], url_path='payment-approve/(?P<factor_id>[^/.]+)')
+    def payment_approve(self, request, factor_id, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                approve = request.data.get('approve')
+                f = Factor.objects.get(pk=factor_id)
+                if approve:
+                    f.shop_payment_approved = True
+                    f.extra_data.request = request
+                    f.save()
+                    serializer = self.serializer_class(instance=f)
+                    return Response(serializer.data)
+                else:
+                    for fi in f.factoritem_set.all():
+                        fi.quantity = 0
+                        fi.extra_data.request = request
+                        fi.save()
+                    f.is_deleted = True
+                    f.extra_data.request = request
+                    f.save()
+                    return Response(status=204)
+        except Exception as e:
+            return Response(show_error(e, __file__, output=True))
+
+    # @action(detail=False, methods=['post'], url_path='update')
+    # def update_factor(self, request, *args, **kwargs):
+    #     try:
+    #         with transaction.atomic():
+    #             serializer = self.serializer_class(data=request.data, instance=',', context={'request': request})
+    #             if serializer.is_valid(raise_exception=True):
+    #                 obj = serializer.save()
+    #                 wf = obj.submit_flow(self.request, is_new=True)
+    #                 obj.last_work_flow = wf
+    #                 obj.extra_data.request = self.request
+    #                 obj.save()
+    #                 return Response(serializer.data)
+    #     except Exception as e:
+    #         return Response(show_error(e, __file__, output=True))
 
 
 class DeliveryList(LoginRequiredMixin, BaseView):

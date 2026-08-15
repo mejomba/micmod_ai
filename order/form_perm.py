@@ -4,7 +4,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order",
             ],
             "hidden": [
 
@@ -21,7 +21,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -35,7 +35,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -49,7 +49,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -63,7 +63,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -77,7 +77,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -91,7 +91,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -105,7 +105,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -119,7 +119,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -130,7 +130,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order",
             ],
             "hidden": [
 
@@ -142,7 +142,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel",
+                "sales_admin_cancel", "is_sample", "is_force_order",
             ],
             "hidden": [
 
@@ -159,7 +159,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -173,7 +173,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -187,7 +187,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -201,7 +201,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -215,7 +215,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -229,7 +229,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -243,7 +243,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel",
+                     "sales_admin_cancel", "is_sample", "is_force_order",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -260,99 +260,106 @@ ORDER_FIELDS_BY_PERMISSION = {
             "show": ["item_trade", "quantity_trade", "price", "currency", "supplier_trade", "supplier_mac", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
-                     "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency",]
+                     "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order",
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price", "_weight"]
         },
         2: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         3: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         4: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         5: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         6: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
             },
         7: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         8: {
             "edit": [
                 "item_trade", "po_number_trade", "quantity_trade", "price_trade", "currency", "supplier_trade",
                 "price_inquiry_result", "production_lead_time", "trade_commitment_date", "order_type",
                 "mohandes_confirmation", "apply_mac", "description_trade", "trade_user", "trade_lock_order",
+                "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
                      "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
-                     "commitment_date_to_customer", "title"]
+                     "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
     },
     "order.cp_order_mac": {
@@ -366,8 +373,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "show": ["item_trade", "quantity_trade", "price_trade", "currency", "supplier_trade", "supplier_mac", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
-                     "request_date", "quantity_trade", "quantity_mac", "order_number",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency",]
+                     "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order",
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price",]
         },
         2: {
             "edit": [
@@ -378,8 +385,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
         3: {
             "edit": [
@@ -390,8 +397,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
         4: {
             "edit": [
@@ -402,8 +409,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
         5: {
             "edit": [
@@ -414,8 +421,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
         6: {
             "edit": [
@@ -426,8 +433,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
             },
         7: {
             "edit": [
@@ -438,8 +445,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
         8: {
             "edit": [
@@ -450,8 +457,8 @@ ORDER_FIELDS_BY_PERMISSION = {
 
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
-                     "order_number", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title"]
+                     "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
         },
     },
     "order.cp_order_total_admin": {
@@ -459,13 +466,13 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["created_date", "order_number", "production_lead_time",
-                     "trade_commitment_date", "trade_user"]
+                     "trade_commitment_date", "trade_user", "total_price",]
         },
         1: {
             "edit": [
@@ -473,13 +480,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "description_sale", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number",]
+                     "order_number", "total_price",]
         },
         2: {
             "edit": [
@@ -487,13 +494,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         3: {
             "edit": [
@@ -501,13 +508,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         4: {
             "edit": [
@@ -515,13 +522,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         5: {
             "edit": [
@@ -529,13 +536,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         6: {
             "edit": [
@@ -543,13 +550,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         7: {
             "edit": [
@@ -557,13 +564,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
         8: {
             "edit": [
@@ -571,13 +578,13 @@ ORDER_FIELDS_BY_PERMISSION = {
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
                 "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
-                     "order_number", "description_sale",]
+                     "order_number", "description_sale", "total_price",]
         },
     },
 }

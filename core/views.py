@@ -799,7 +799,7 @@ class BaseView(UserPassesTestMixin,
                     print('error: ', e.__traceback__.tb_lineno, e)
 
                 """save formset"""
-                if self.has_formset:
+                if self.has_formset and not (self.request.user.base_group == 'wh' and self.state_index > 1 and self.object.__class__.__name__ == 'Factor'):
 
                     old_details_ = getattr(new_obj, self.related_name_fk, None)
                     old_details = []
@@ -831,29 +831,7 @@ class BaseView(UserPassesTestMixin,
 
                     if fo:
                         for idx, fs_obj in enumerate(fo):
-                            # fs_obj.extra_data.request = self.request
-                            # fs_obj.save()
-                            # fs_obj.save_user(self.request)
                             setattr(fs_obj, self.formset_fk_field, new_obj)
-                            # if self.formset.form.image_model and self.formset.form.image_groups:
-                            #     """save formset image and file"""
-                            #     fs_obj.save_image(
-                            #         request=self.request,
-                            #         image_groups=self.formset.form.image_groups,
-                            #         image_model=self.formset.form.image_model,
-                            #         obj=fs_obj,
-                            #         fk=self.related_name_fk,
-                            #         form_idx=idx,
-                            #     )
-                            # if self.formset.form.file_model and self.formset.form.file_groups:
-                            #     fs_obj.save_file(
-                            #         request=self.request,
-                            #         file_groups=self.formset.form.file_groups,
-                            #         file_model=self.formset.form.file_model,
-                            #         obj=fs_obj,
-                            #         fk=self.related_name_fk,
-                            #         form_idx=idx,
-                            #     )
 
                     """save formset log"""
                     new_details = getattr(new_obj, self.related_name_fk, None)
@@ -882,31 +860,7 @@ class BaseView(UserPassesTestMixin,
                                 form_idx=idx,
                             )
                         create_or_update_payment(self.request, d)
-                        # d.save_payment(self.request)
                         # ToDo make dynamic
-                        # app_label = d._meta.app_label
-                        # model_name = d._meta.model_name
-                        # ctt_id = ContentType.objects.get_for_model(d._meta.model).pk
-                        # object_id = d.pk
-                        # prefix = f'{app_label}__{model_name}__{ctt_id}__{object_id}'
-                        # comment_form = CommentsForm(self.request.POST, prefix=prefix)
-                        # if comment_form.is_valid():
-                        #     comment_form.instance.extra_data.request = self.request
-                        #     cmnt = comment_form.save()
-                        #     cmnt.save_image(
-                        #         request=self.request,
-                        #         image_groups=comment_form.image_groups,
-                        #         image_model=comment_form.image_model,
-                        #         obj=cmnt,
-                        #         input_prefix=f'{prefix}-image',
-                        #     )
-                        #     cmnt.save_file(
-                        #         request=self.request,
-                        #         file_groups=comment_form.file_groups,
-                        #         file_model=comment_form.file_model,
-                        #         obj=cmnt,
-                        #         input_prefix=f'{prefix}-file',
-                        #     )
 
                 """save main form log"""
                 new_obj.attach_image_file(new_obj, form)
