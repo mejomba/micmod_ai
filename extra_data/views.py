@@ -1202,3 +1202,11 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(out_after_clean)
         except Exception as e:
             return Response(show_error(e, __file__, output=True))
+
+
+def qty_str(reqeust, sepidar_id_0, *args, **kwargs):
+    i = Item.objects.get(sepidar_id_0=sepidar_id_0)
+    qty_dict = dict()
+    qty_dict["data"] = i.qty_str()
+    html = render_to_string("extra_data/partials/qty_str.html", context=qty_dict)
+    return JsonResponse({'res': html})

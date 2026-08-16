@@ -14,7 +14,9 @@ ORDER_FIELDS_BY_PERMISSION = {
         },
         1: {
             "edit": [
-
+                "item", "quantity", "customer_party_id", "transportation_method", "order_type",
+                "commitment_date_to_customer", "title", "description_sale", "is_kasri",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order",
             ],
             "hidden": [
 

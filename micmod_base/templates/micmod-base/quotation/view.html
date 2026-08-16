@@ -717,6 +717,29 @@ function validateNotifyNumber(event){
         alert('شماره اطلاع رسانی معتبر نیست')
     }
 }
+
+function getPortalReserveQuantity(event, sku_=null){
+        debugger
+        console.log("getPortalReserveQuantity")
+        const md = document.querySelector('#id-empty-modal-body')
+        let sku = event.currentTarget.dataset.sku
+        if (!sku){sku = sku_}
+        const new_url = `/order/portal_reserve/${sku}/`
+        $.ajax({
+        type: 'GET',
+        url: new_url,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            md.innerHTML = data['res'];
+        },
+        error: function (err) {
+            md.innerHTML = err
+        },
+    });
+    }
 </script>
 
 

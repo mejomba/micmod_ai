@@ -69,6 +69,16 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
     wf_last_step_is_open = True
     formset_model = FactorItem
 
+    def check_version(self, *args, **kwargs):
+        last_version = self.request.POST.get('last_version')
+        current_version = getattr(self.object, 'version', None)
+        if int(last_version) != int(current_version):
+            link = f"""<a class="btn btn-warning" href='{reverse_lazy("order:order.view.safe", kwargs={"pk": self.object.pk})}'>این دکمه</a>"""
+            msg = mark_safe(f"""<span class="text-danger">سفارش ذخیره نشد</span> این سفارش توسط فرد دیگری تغییر یافته است. از طریق {link} صفحه را مجدد لود کنید.""")
+            messages.warning(self.request, msg)
+            return self.get(self.request, *args, **kwargs)
+
+
     def dispatch(self, request, *args, **kwargs):
         view_name = self.request.GET.get('view_name', None)
         if view_name in self.__class__.safe_methods and hasattr(self, view_name):
@@ -136,6 +146,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                 is_new = True
             else:
                 is_new = False
+                self.check_version()
 
             self.get_form_kwargs()
 
@@ -172,13 +183,13 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         groups = {
                     0: {"group": "sales_user", "state_name": "پیش نویس"},
                     1: {"group": "sales_admin", "state_name": "تایید مدیر فروش"},
-                    2: {"group": "wh_admin", "state_name": "تایید بازرگانی"},
-                    3: {"group": "factor_collector", "state_name": "تایید مهندس"},
-                    4: {"group": "factor_final_check", "state_name": "ارسال به تامین کننده"},
-                    5: {"group": "factor_send_or_delivery", "state_name": "تایید تامین کننده"},
-                    6: {"group": "factor_delivery_approve", "state_name": "تایید نهایی بازرگانی"},
-                    7: {"group": "factor_delivery_approve", "state_name": "پرداخت / PACKING / GIO"},
-                    8: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
+                    2: {"group": "trade_order", "state_name": "تایید بازرگانی"},
+                    3: {"group": "trade_order", "state_name": "تایید مهندس"},
+                    4: {"group": "trade_order", "state_name": "ارسال به تامین کننده"},
+                    5: {"group": "trade_order", "state_name": "تایید تامین کننده"},
+                    6: {"group": "trade_order", "state_name": "تایید نهایی بازرگانی"},
+                    7: {"group": "trade_order", "state_name": "پرداخت / PACKING / GIO"},
+                    8: {"group": "trade_order", "state_name": "مرحله نهایی"},
                 }
 
         last_flow = self.object.last_work_flow
@@ -265,6 +276,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if self.request.user.base_group == 'mac':
+            if self.object.buy_operator != "mac" and self.object.pay_operator != "mac":
+                raise PermissionError()
+
         context['app_name'] = self.request.resolver_match.app_name
         if self.object:
             context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
@@ -277,8 +292,11 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             context['allow_next'] = False
             context['allow_back'] = False
         else:
-            context['allow_next'] = context.get('allow_next')
-            context['allow_back'] = context.get('allow_back')
+            context['allow_next'] = True #context.get('allow_next')
+            context['allow_back'] = True #context.get('allow_back')
+
+        if self.object and self.object.sales_admin_cancel:
+            context['allow_next'] = False
 
         if self.request.method == "POST":
             context["form"] = self._build_order_form(
@@ -297,6 +315,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         # context['delay_reason_form'] = OrderDelayReasonModelForm(initial={'order': self.object},
         #                                                          order_instance=self.object,
         #                                                          prefix='delay')
+        context['last_version'] = getattr(self.object, 'version', None) or 0
         return context
 
     def form_valid(self, form):
@@ -579,7 +598,8 @@ class OrderDataTableListView(AjaxDatatableView):
             return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
 
         if request.user.groups.filter(name='mac'):
-            return self.model.objects.filter(is_deleted=False, apply_mac=True).distinct()
+            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac')
+            return self.model.objects.filter(mac_filter, is_deleted=False, apply_mac=True).distinct()
 
         if request.user.groups.filter(name='trade_user'):
             return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(

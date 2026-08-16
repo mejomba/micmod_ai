@@ -77,4 +77,5 @@ urlpatterns = [
 
     path('item/image_and_datasheet/<str:skus>/', views.ItemFromProductView.as_view(), name='image_and_datasheet'),
     path('websoket/', views.websoket, name='websoket'),
+    path('item/qty_str/<int:sepidar_id_0>/', views.qty_str, name='qty.str'),
 ]

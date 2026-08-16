@@ -1,0 +1,17 @@
+{% load humanize %}
+<div class="d-flex gap-4">
+
+        <div>
+            <div class="bold">موجودی سپیدار</div>
+            {{ data.0|safe }}
+        </div>
+
+    {% if data.2 %}
+        <div>
+            <div class="bold">موجودی آزاد</div>
+            {{ data.1|safe }}
+        </div>
+    {% endif %}
+
+</div>
+

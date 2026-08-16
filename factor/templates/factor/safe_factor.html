@@ -236,11 +236,11 @@
             <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ warning }}</div>
             {% endfor %}
 
-            {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.base_group == 'wh' %}
+            {% if flow_state_index == 5 and not form.instance.sepidar_id and request.user.base_group == 'wh' and is_all_supplied %}
                 <div>
                     <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="send_factor_to_sepidar" class="btn btn-sm btn-warning " data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
                 </div>
-            {% elif flow_state_index == 5 and request.user.is_superuser %}
+            {% elif flow_state_index == 5 and request.user.is_superuser and is_all_supplied %}
                 <div>
                     <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="send_factor_to_sepidar" class="btn btn-sm btn-warning " data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
                 </div>

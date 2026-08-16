@@ -261,6 +261,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     qi.need_foreign_price_inquiry_date = timezone.now()
                     qi.extra_data.request = self.request
                     qi.save()
+                if qi.foreign_price_inquiry_done_date and not qi.foreign_price_inquiry_done:
+                    qi.foreign_price_inquiry_done_date = None
+                    qi.extra_data.request = self.request
+                    qi.save()
 
             device = Device.objects.all().first()
             if not self.object.guid:
