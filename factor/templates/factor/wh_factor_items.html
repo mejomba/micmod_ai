@@ -346,7 +346,7 @@
             <input type="hidden" value="{{ quotation.sale_type.pk }}" name="sale_type">
         </div>
         <span class="factor-header-toggle btn btn-sm btn-secondary my-1" onclick="factor_header_toggle(event)">مخفی کردن اطلاعات سربرگ</span>
-    {% if flow_state_index == 5 and not form.instance.sepidar_id %}
+    {% if flow_state_index == 5 and not form.instance.sepidar_id and is_all_supplied %}
         <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="send_factor_to_sepidar" class="btn btn-sm btn-warning my-1" data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
 {#    {% else %}#}
 {#        <span class="btn btn-sm btn-secondary my-1" data-bs-toggle="tooltip" data-bs-title="شماره فاکتور سپیدار {{ form.instance.sepidar_id }}">فاکتور به سپیدار ارسال شده</span>#}
@@ -478,6 +478,7 @@
                 // شماره ردیف (row)
                 let row = parseInt(tr.querySelector("td[id^='row-'] input").value.trim());
                 let row_id = parseInt(tr.querySelector("td[id^='row_id-'] input").value.trim());
+                let fac = parseInt(tr.querySelector("td[id^='fac-'] input").value.trim());
 
                 // کد کالا (sku)
                 let sku
@@ -508,6 +509,7 @@
 
                 result[packName].push({
                     sku: sku,
+                    fac: fac,
                     partnumber: partnumber,
                     row: row,
                     row_id: row_id,
@@ -547,17 +549,20 @@
             <td class="ps-1" id="row-${newRowNumber}">
                 <input type="text" value="${newRowNumber}" style="max-width: 45px" class="narrow-input">
             </td>
+            <td class="" id="fac-${newRowNumber}">
+                <input type="text" value="" style="max-width: 65px" class="narrow-input">
+            </td>
             <td id="sku-${newRowNumber}">
                 <input type="text" style="max-width: 100px" class="narrow-input" onkeyup="get_part_number(event)" ">
             </td>
             <td class="text-start" id="partnumber-${newRowNumber}">
-                <input type="text" value="" style="width: 650px" class="narrow-input">
+                <input type="text" value="" style="width: 600px" class="narrow-input">
             </td>
             <td id="quantity-${newRowNumber}" class="text-right">
                 <input type="text" value="" class="narrow-input" style="width: 100px">
             </td>
             <td id="pack_name-${newRowNumber}" class="text-right">
-                <input type="text" name="packing_name" class="narrow-input" style="width: 200px">
+                <input type="text" name="packing_name" class="narrow-input" style="width: 150px">
             </td>
 
             <td>

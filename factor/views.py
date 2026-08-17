@@ -148,7 +148,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
 
-                shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
+                shop_buy_factor_pk = None # ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
                 if shop_buy_factor_pk:
                     self.object.shop_buy_factor_id = shop_buy_factor_pk
                     self.object.extra_data.request = self.request
@@ -410,8 +410,10 @@ class FactorView(LoginRequiredMixin, BaseView):
             context['allow_next'] = False
             context['f_warning'].append('فاکتور به سپیدار ارسال نشده')
 
+        context['is_all_supplied'] = self.object.is_all_supplied
+
         if self.object:
-            if self.object and self.state_index >= 0 and not self.object.is_all_supplied:
+            if self.object and self.state_index >= 0 and not context['is_all_supplied']:
                 context['f_warning'].append('سفارش در راه دارد یا تمام کالاها در انبار موجود نیست')
                 if self.state_index == 2:
                     context['allow_next'] = False
@@ -1042,8 +1044,31 @@ class WhPacking(View):
 
     def get(self, request, *args, **kwargs):
         pk = self.request.GET.get('pk')
-        factor = Factor.objects.prefetch_related('factoritem_set').get(pk=pk)
-        factor_items = factor.factoritem_set.all()
+        factor = Factor.objects.select_related('q').get(pk=pk)
+
+        # استخراج customer_party_id با یک خط
+        factor_customer_party_id = getattr(factor, 'customer_party_id', None) or (
+            getattr(factor.q, 'customer_party_id', None) if hasattr(factor, 'q') else None
+        )
+
+        if not factor_customer_party_id:
+            return JsonResponse({'res': ''})
+
+        # استفاده از Subquery به جای IN برای عملکرد بهتر
+        factor_ids = Factor.objects.filter(
+            Q(customer_party_id=factor_customer_party_id) |
+            Q(q__customer_party_id=factor_customer_party_id),
+            sepidar_id__isnull=True,
+            sepidar_number__isnull=True
+        ).values('id')
+
+        # فقط فیلدهای مورد نیاز رو بگیر
+        factor_items = FactorItem.objects.filter(
+            factor_id__in=Subquery(factor_ids)
+        ).select_related('factor').only(
+            'id', 'factor_id', 'goods_code__part_number', 'quantity',  # فیلدهای مورد نیاز
+        ).order_by('factor_id').distinct()
+
         context = {'factor_items': factor_items}
         html = render_to_string(self.template_name, context, request)
         return JsonResponse({'res': html})

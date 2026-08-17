@@ -345,6 +345,7 @@ function set_item_classes(item, idx=null) {
                     alert('خطا در دریافت استعلام قیمت')
                 }
             });
+            get_sepidar_stock_info(event, qi_row=elem)
     })
         $(item).find('.goods_code_alt').on("select2:select", function (e) {
             var elem = findAncestor(e.target, "item")

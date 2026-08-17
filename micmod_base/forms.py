@@ -265,6 +265,9 @@ class QuotationItemForm2(CustomBaseModelForm, FormFieldAccessMixin):
                 self.make_disable(['foreign_price_inquiry_done', 'lead_time']) # 'trade_price_code',
             if 'bazar_user' not in user_groups:
                 self.make_disable(['local_price_inquiry_done', ]) #'bazar_price_code'
+            if request.user.base_group == 'sales':
+                self.fields.pop('foreign_price_inquiry_done_date', None)
+                self.fields.pop('local_price_inquiry_done_date', None)
             # if get_user_model().objects.filter(pk=request.user.pk, groups__name='sales_admin').exists():
                 # self.fields['goods_code_alt'].disabled = False
         try:

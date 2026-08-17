@@ -1,7 +1,11 @@
 {% if messages %}
 <ul class="messages">
     {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }} p-3 font-size-16"{% endif %} data-key="{{ message }}">{{ message|safe }}</li>
+
+        <li{% if message.tags %} class="{{ message.tags }} p-3 font-size-16"{% endif %}>
+            {{ message|safe }}
+        </li>
+
     {% endfor %}
 </ul>
 {% endif %}

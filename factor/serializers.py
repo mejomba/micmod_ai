@@ -69,8 +69,11 @@ class FactorSerializer(CustomFieldModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['last_work_flow'].required = False
-        self.fields['last_work_flow'].allow_null = True
+        try:
+            self.fields['last_work_flow'].required = False
+            self.fields['last_work_flow'].allow_null = True
+        except Exception as e:
+            pass
 
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)

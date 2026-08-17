@@ -316,6 +316,7 @@
     }
 
     function getPortalReserveQuantity(event){
+        debugger
         const md = document.querySelector('#id-empty-modal-body')
         const sku = event.currentTarget.dataset.sku
         const new_url = `/order/portal_reserve/${sku}/`

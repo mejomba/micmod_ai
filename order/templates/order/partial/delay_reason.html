@@ -1,0 +1,20 @@
+{% load more_tags %}
+
+<span id="add_delay_form_btn" class="btn btn-secondary" >+</span>
+<div class="d-flex gap-2 mt-3 d-none" id="delay-wrapper">
+
+{% render_field_by_order delay_form delay_form.order delay_form.quantity delay_form.reason delay_form.start_date delay_form.end_date label='on-border' margin_b=0 %}
+{% render_field_by_order delay_form delay_form.actor delay_form.description label='on-border' margin_b=0 %}
+</div>
+<script>
+
+const add_delay_form_btn = document.querySelector('#add_delay_form_btn')
+
+add_delay_form_btn && add_delay_form_btn.addEventListener('click', function show_delay_form(event){
+    const delay_wrapper = document.querySelector('#delay-wrapper')
+    if (delay_wrapper){
+        delay_wrapper.classList.remove('d-none')
+    }
+})
+
+</script>

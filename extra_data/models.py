@@ -391,6 +391,7 @@ class Item(BaseModel):
 
     def qty_str(self):
         all_stock_quantity = cache.get('all_stock_quantity')
+        has_portal_reserve = False
         if not all_stock_quantity:
             print('not in cache...')
             all_stock_quantity = SepidarApiCall.get_stock_quantity_list()
@@ -408,7 +409,7 @@ class Item(BaseModel):
                 batch_size=500
             )
 
-            cache.set('all_stock_quantity', all_stock_quantity, 30)
+            cache.set('all_stock_quantity', all_stock_quantity, 300)
             print('set in cache...')
 
         stocks = all_stock_quantity.get(str(self.sku))
@@ -429,6 +430,7 @@ class Item(BaseModel):
             free_qty_str += f'{name.replace("انبار", "")}: {parse_number(free):,} <br>'
 
             if portal_reserve:
+                has_portal_reserve = True
                 reserve_detail_btn = f'''<span class="cursor-pointer" data-sku={self.sku} onclick="getPortalReserveQuantity(event)" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal">
                                             <i class="ki-duotone ki-question-2 fs-1 text-primary">
                                              <span class="path1"></span>
@@ -440,7 +442,7 @@ class Item(BaseModel):
         free_qty_str += reserve_detail_btn
         # sepidar_qty_str += f'\n<hr> جمع: {parse_number(self.total_quantity):,}'
 
-        return sepidar_qty_str, free_qty_str
+        return sepidar_qty_str, free_qty_str, has_portal_reserve
     
     @staticmethod
     def get_list(text):
@@ -787,7 +789,7 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
                 batch_size=500
             )
 
-            cache.set('all_stock_quantity', all_stock_quantity, 30)
+            cache.set('all_stock_quantity', all_stock_quantity, 300)
             print('set in cache...')
 
         stocks = all_stock_quantity.get(str(self.sku))

@@ -153,7 +153,11 @@
     function wh_receipt_from_bazar(event, sepidar_buy_factor_id, order_ids=null){
         debugger
         const target = event.currentTarget
-        target.classList.add('d-none')
+        try {
+            target.classList.add('d-none')
+        } catch (e) {
+            console.log(e)
+        }
         const accordion_body = findAncestor(target, 'accordion-body')
         const quantities = accordion_body.querySelectorAll("input[name*='receipt_quantity__']")
         target.classList.add('d-none')

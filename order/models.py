@@ -150,6 +150,7 @@ class SepidarOrderDocument(models.Model):
 
 
 class Order(BaseModeWF):
+    version = models.PositiveIntegerField(default=0)
     number = models.PositiveIntegerField(null=True, blank=True)
     year = models.PositiveIntegerField(null=True, blank=True)
     # SALES #######################################
@@ -308,8 +309,8 @@ class Order(BaseModeWF):
         if not hasattr(self, 'oo'):
             return None
         """ WARN__: this function has massive execution time"""
-        year = jdatetime.date.today().year
         yaer = 1404
+        year = jdatetime.date.today().year
         res = []
         stock_qty_api = SepidarApiCall.get_stock_quantity([self.item.sepidar_id_0], year) if self.is_wh else {}
         api_res = stock_qty_api.get('res')
@@ -379,16 +380,23 @@ class Order(BaseModeWF):
     ):
         import jdatetime
         if self.pk is None:
+            self.version = 1
             year = str(jdatetime.date.today().year - 1400).zfill(2)
+            if not self.is_bazar and not self.is_wh:
+                try:
+                    last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
+                    self.order_number = f'A{year}-{last_number + 1}'
+                    self.number = last_number + 1
+                except Exception as e:
+                    last_number = 0
+                    self.order_number = f'A{year}-{last_number + 1}'
+                    self.number = last_number + 1
+                    print(e)
+        else:
             try:
-                last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
-                self.order_number = f'A{year}-{last_number + 1}'
-                self.number = last_number + 1
+                self.version += 1
             except Exception as e:
-                last_number = 0
-                self.order_number = f'A{year}-{last_number + 1}'
-                self.number = last_number + 1
-                print(e)
+                pass
 
         # self.static_price_inquiry_result = getattr(self.price_inquiry_result, 'price', None)
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)

@@ -78,6 +78,14 @@
     {{ form.errors }}
     {{ form.non_field_errors }}
 
+{% if form.instance.sales_admin_cancel %}
+    <div class="alert alert-danger">
+    <p>این سفارش کنسل شده است.</p>
+    </div>
+{% endif %}
+
+    <input type="hidden" name="last_version" value="{{ last_version }}">
+
     <div class="row">
         <div class="col-12 ">
             {% if form.only_show %}
@@ -825,15 +833,40 @@ function percentageToDegrees(percentage) {
 
 $(document).ready(function () {
 
-            const last_buy_price = $('#last_buy_price')
+    const last_buy_price = $('#last_buy_price')
 
-            last_buy_price && last_buy_price.on("click", function (e){
-                let sku;
-            let item = document.querySelector('#id_item_trade')
-            if (item){
-                sku = item.value
+    last_buy_price && last_buy_price.on("click", function (e){
+        let sku;
+    let item = document.querySelector('#id_item_trade')
+    if (item){
+        sku = item.value
+    }
+        $.ajax({
+            type: 'GET',
+            url: `${window.location.origin}/inquiry/ajax/sepidar_api/last_receipt/?sku=${sku}`,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: function (){
+                document.querySelector('#last_buy_price').innerHTML = 'دریافت اطلاعات ...'
+            },
+            success: function (data) {
+                try {
+                    debugger
+                    document.querySelector('#last_buy_price').innerHTML = `<div class="d-flex justify-content-between"><span>قیمت: ${data.fee_in_base_currency.toLocaleString() ?? "-"} <small>${data.currency}</small></span> <span>#${data.number}</span> </div>   <div class="d-flex justify-content-between"> <span> تعداد: ${data.quantity.toLocaleString() ?? "-"} </span> <span> تاریخ: ${data.created_date ?? "-"} </span> </div>`
+                } catch (e) {
+                    document.querySelector('#last_buy_price').innerHTML = "خطا: مطمعن شوید فیلد کالای بازرگانی پر شده باشد."
+                }
+
+            },
+            error: function (er) {
             }
-                $.ajax({
+        }); // end ajax
+    })
+    setInterval(
+        function(){
+            $.ajax({
                     type: 'GET',
                     url: `${window.location.origin}/inquiry/ajax/sepidar_api/last_receipt/?sku=${sku}`,
                     dataType: 'json',
@@ -855,11 +888,10 @@ $(document).ready(function () {
                     error: function (er) {
                     }
                 }); // end ajax
-            })
-
-
-
-        });
+        },
+        2000
+    )
+});
 
     </script>
     <script src="{% static 'js/comment.js' %}"></script>

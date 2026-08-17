@@ -43,7 +43,7 @@ class FactorModelForm(CustomBaseModelForm):
 
     class Meta:
         model = Factor
-        exclude = ['factor_self', 'guid', 'status', 'group', ]
+        exclude = ['factor_self', 'guid', 'status', 'group', 'shop_document_id', 'shop_buy_factor_id', 'shop_payment_approved']
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -136,8 +136,6 @@ class FactorModelForm(CustomBaseModelForm):
             self.make_hidden(['cancel'])
         if self.form_state == 7:
             self.make_hidden(['self_discount', 'qi'])
-
-        self.fields.pop('shop_buy_factor_id')
 
 
 class FactorItemModelForm(CustomBaseModelForm):

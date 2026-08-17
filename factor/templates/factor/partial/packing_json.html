@@ -21,6 +21,7 @@
     <tbody id="id_packing-table-body">
         <tr>
             <th class="pe-3 ps-1">ردیف</th>
+            <th class="pe-3">فاکتور</th>
             <th class="pe-3">کد کالا</th>
             <th class="pe-3">نام کالا</th>
             <th class="pe-3">تعداد</th>
@@ -30,16 +31,19 @@
         {% for factor_item in factor_items %}
         <tr class="tr-body">
             <td class="d-none bg-warning" id="row_id-{{ forloop.counter }}">
-                <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
+                <input type="text" value="{{ forloop.counter }}" style="max-width: 45px" class="narrow-input">
             </td>
             <td class="ps-1 text-start" id="row-{{ forloop.counter }}">
-                <input type="text" value="{{ factor_item.index|add:'1' }}" style="max-width: 45px" class="narrow-input">
+                <input type="text" value="{{ forloop.counter }}" style="max-width: 45px" class="narrow-input">
+            </td>
+            <td class="text-start" id="fac-{{ forloop.counter }}">
+                <input type="text" value="{{ factor_item.factor.pk }}" style="max-width: 65px" class="narrow-input">
             </td>
             <td class="text-start" id="sku-{{ forloop.counter }}">
                 <input type="text" value="{{ factor_item.goods_code }}" style="max-width: 100px" class="narrow-input">
             </td>
             <td class="text-start" id="partnumber-{{ forloop.counter }}">
-                <input type="text" value="{{ factor_item.goods_code.part_number }}" style="width: 650px" class="narrow-input">
+                <input type="text" value="{{ factor_item.goods_code.part_number }}" style="width: 600px" class="narrow-input">
             </td>
 
             <td id="quantity-{{ forloop.counter }}" class="text-right text-start">
@@ -47,7 +51,7 @@
             </td>
 
             <td id="pack_name-{{ forloop.counter }}" class="text-right text-start">
-                <input type="text" name="packing_name" style="width: 200px" class="narrow-input">
+                <input type="text" name="packing_name" style="width: 150px" class="narrow-input">
             </td>
 
             <td>
@@ -117,6 +121,7 @@ function loadPackingJSON() {
 
     try {
         let data = JSON.parse(packingInput.value);
+        console.log(data)
         let tbody = document.getElementById("id_packing-table-body");
 
         Object.keys(data).forEach(packingName => {
@@ -132,6 +137,7 @@ function loadPackingJSON() {
                     // اگر ردیف وجود داشت، مقداردهی کن
                     existingRow.querySelector(`[id^='row_id'] input`).value = item.row_id || "";
                     existingRow.querySelector(`[id^='row'] input`).value = item.row || "";
+                    existingRow.querySelector(`[id^='fac-'] input`).value = item.fac || "";
                     existingRow.querySelector(`[id^='sku'] input`).value = item.sku || "";
                     existingRow.querySelector(`[id^='partnumber'] input`).value = item.partnumber || "";
                     existingRow.querySelector(`[id^='pack_name-'] input`).value = packingName || "";
@@ -153,12 +159,15 @@ function loadPackingJSON() {
                     <td class="ps-1" id="row-${rowNumber}">
                         <input type="text" value="${item.row || ""}" style="max-width: 45px" class="narrow-input">
                     </td>
+                    <td class="" id="fac-${rowNumber}">
+                        <input type="text" value="${item.fac || ""}" style="max-width: 65px" class="narrow-input">
+                    </td>
                     <td id="sku-${rowNumber}">
                         <input type="text" value="${item.sku || ""}" style="max-width: 100px" class="narrow-input">
                     </td>
 
                     <td class="text-start" id="partnumber-${rowNumber}">
-                        <input type="text" value="${item.partnumber || ""}" style="width: 650px" class="narrow-input">
+                        <input type="text" value="${item.partnumber || ""}" style="width: 600px" class="narrow-input">
                     </td>
 
                     <td id="quantity-${rowNumber}" class="text-right">
@@ -166,7 +175,7 @@ function loadPackingJSON() {
                     </td>
 
                     <td id="pack_name-${rowNumber}" class="text-right">
-                        <input type="text" name="packing_name" value="${packingName}" class="narrow-input" style="width: 200px">
+                        <input type="text" name="packing_name" value="${packingName}" class="narrow-input" style="width: 150px">
                     </td>
 
                     <td>
@@ -217,6 +226,7 @@ document.getElementById('print-button').addEventListener('click', function() {
       <thead style="background:#eee;">
         <tr>
           <th>#</th>
+          <th>فاکتور</th>
           <th>کد کالا</th>
           <th>نام کالا</th>
           <th>تعداد</th>
@@ -233,6 +243,7 @@ document.getElementById('print-button').addEventListener('click', function() {
     tableHTML += `
       <tr>
         <td>${item.row}</td>
+        <td>${item.fac}</td>
         <td>${item.sku}</td>
         <td>${item.partnumber}</td>
         <td>${item.quantity}</td>
