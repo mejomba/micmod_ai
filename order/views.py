@@ -291,13 +291,17 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
             context['allow_next'] = False
             context['allow_back'] = False
+        elif self.state_index < 2 and not self.request.user.base_group == 'sales':
+            """فقط کاربران فروش میتوانند در مراحل اولیه سفارش را جلو عقب بفرستن"""
+            context['allow_next'] = False
+            context['allow_back'] = False
+        elif self.state_index == 1 and not self.request.user.groups.filter(name='sales_admin').exists():
+            """در مرحله تایید مدیر فروش کاربر فروش میتواند سفارش را به عقب برگزداند اما نمیتواند جلو ببرد"""
+            context['allow_next'] = False
+            context['allow_back'] = True
         else:
-            if self.state_index < 2 and not self.request.user.base_group == 'sales':
-                context['allow_next'] = False
-                context['allow_back'] = False
-            else:
-                context['allow_next'] = True  # context.get('allow_next')
-                context['allow_back'] = True  # context.get('allow_back')
+            context['allow_next'] = True  # context.get('allow_next')
+            context['allow_back'] = True  # context.get('allow_back')
 
         if self.object and self.object.sales_admin_cancel:
             context['allow_next'] = False
