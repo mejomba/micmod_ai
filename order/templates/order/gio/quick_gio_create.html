@@ -1,11 +1,12 @@
-{% extends 'partials/base.html' %}
-{% load static %}
-{% load quotation_tag %}
-{% load jalali_tags %}
-{% load accounts_tag %}
+{% extends 'partials/base_level2.html' %}
 {% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+{% load jalali_tags %}
 
-{% block title %}GIO{% endblock title %}
+{% block title %}GIO create{% endblock title %}
 {% block extra_css %} 
 <!-- Responsive Table css -->
 <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
@@ -27,13 +28,10 @@
 
 {% block content %}
 
+
     <div class="border rounded mb-5 p-3">
         <div class="d-flex justify-content-between">
-        <span>
-            <select id="filter-orders" class="form-select">
-                <option value="">استفاده از فیلتر</option>
-            </select>
-        </span>
+
         </div>
 
     </div>
@@ -44,43 +42,45 @@
                         <div class="col">
 {#                            <div class="container-fluid">#}
                                 <div class="table-responsive p-2">
-                                    <table id="bazar_order_list" width="100%" class="m-table table-striped table-bordered w-100">
+                                    <table id="quick-gio-list" width="100%" class="m-table table-striped table-bordered w-100">
 
                                     </table>
                                 </div>
 {#                            </div>#}
                         </div>
                         <div class="col">
-                            <div class="card px-2 py-5" id="buy-form-inputs">
+                            <div class="card px-2 py-5" id="gio-form-inputs">
 
+                            {% if not form.instance.pk %}
                                 <fieldset>
-                                    <legend>GIO</legend>
-                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">
-                                    <div class="row row-cols-3" id="buy-factor-header">
-                                        <span class="d-none">
-                                            {{ form.sepidar_buy_factor_response_json }}
-                                            {{ form.sepidar_inventory_receipt_response_json }}
-                                        </span>
-                                    {% render_field_by_order form form.quantity form.gio_date form.description label='on-border' %}
-                                        <input type="hidden" name="total_price">
-                                        </div>
-                                        <input type="submit" id="main-submit-btn"  class="btn btn-primary me-1 px-4" name="submit" value="ثبت">
-                                    </form>
+                                    <legend data-key="create_gio">create new GIO</legend>
+{#                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">#}
+                                    <div class="row row-cols-2 mt-16" id="buy-factor-header">
+                                        {% render_field_by_order form form.gio_date form.description label='on-border' %}
+                                    </div>
+{#                                    </form>#}
                                 </fieldset>
+                            {% endif %}
 
                                 <fieldset id="items-area" class="mt-10">
                                     <legend>GIO Items</legend>
-{#                                    {{ formset.management_form }}#}
+                                    {{ formset.management_form }}
                                     <div id="formset-container">
                                         {% for form_s in formset %}
                                             <div class="item-form row pt-5 mb-1 ms-0">
                                                 <div class="col-12">
                                                     <div class="row delete">
-                                                        {% render_field_by_order form_s form_s.quantity form_s.order form_s.description label='on-border' margin_b=0%}
+                                                        <div class="col-3">
+                                                            {% render_field_by_order form_s form_s.order form_s.quantity label='on-border' margin_b=0%}
+                                                        </div>
+                                                        <div class="col-8">
+                                                            {% render_field_by_order form_s form_s.order form_s.description label='on-border' margin_b=0%}
+                                                        </div>
+{#                                                        {% render_field_by_order form_s form_s.order form_s.quantity form_s.description label='on-border' margin_b=0%}#}
                                                     </div>
                                                 </div>
                                                 <div class="col-12">
-                                                    <div class="show_partnumber"></div>
+                                                    <div class="show_order_str"></div>
                                                 </div>
                                             </div>
                                         {% endfor %}
@@ -90,11 +90,18 @@
 
                                     <div class="d-flex justify-content-between align-items-end">
                                         <div>
-                                            <button type="button" id="submit-buy-factor" class="btn btn-primary mt-5 me-5">ثبت</button>
+                                            <button type="button" id="submit-gio" class="btn btn-primary mt-5 me-5">ثبت</button>
                                             <span id="ajax-response"></span>
                                         </div>
                                     </div>
                                 </fieldset>
+
+                            <div class="d-flex flex-column mt-8">
+                                    <div>
+                                        <span>total quantity:</span>
+                                        <span id="qio-total-quantity">12345678</span>
+                                    </div>
+                                </div>
 
                             </div>
                         </div>
@@ -114,7 +121,7 @@
         const url = new URL(window.location);
         const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
-            $('#bazar_order_list'),
+            $('#quick-gio-list'),
             "{% url 'order:quick_gio.datatable' %}",
             {
                 processing: true,
@@ -136,47 +143,56 @@
             },
         );
 
-        $('#bazar_order_list').on('draw.dt', function (){
+        $('#quick-gio-list').on('draw.dt', function (){
             sync_datatable()
         }) // end on draw.dt
 
     }); // end ready
 
     function sync_datatable(){
-        const table_skus = document.querySelectorAll('.item')
-        const form_skus = document.querySelectorAll('input[name$="-item"]')
-        table_skus.forEach(item => {
-            const sku = item.textContent.trim()
-            const match = Array.from(form_skus).find(i => i.value.trim() === sku)
+        const table_order = document.querySelectorAll('.order')
+        const form_order = document.querySelectorAll('input[name$="-order"]')
+        table_order.forEach(item => {
+            const order = item.textContent.trim()
+            const match = Array.from(form_order).find(i => i.value.trim() === order)
             const target = item.closest('tr').querySelector('.action')
 
-            if (match && sku && target){
+            if (match && order && target){
                 target.innerHTML = '&#x2713;'
                 target.classList.add('text-success', 'font-size-20')
+                target.dataset.is_selected = 'yes'
             } else if (target) {
                 target.innerHTML = '➕'
                 target.classList.remove('text-success')
+                target.dataset.is_selected = 'no'
             }
         }) // end forEach
     }
-    function bazar_buy_factor(event) {
+    function order_to_gio_item (event) {
+        debugger
         const target = event.currentTarget
+        if (target.dataset.is_selected === 'yes'){
+            alert("order already selected")
+            return
+        }
+
+        target.dataset.is_selected = 'yes'
         target.innerHTML = '&#x2713;'
         target.classList.add('text-success', 'font-size-20')
         const row = target.closest('tr')
         const formsetContainer = document.getElementById('formset-container');
         const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
-        const order_id = row.querySelector('.id').innerHTML
+        const order_id = row.querySelector('.order').innerHTML
         const quantity = row.querySelector('.quantity').innerHTML
         {#const itemref = row.querySelector('.itemref').innerHTML#}
         {#const item = row.querySelector('.item').innerHTML#}
-        {#const partnumber = row.querySelector('.partnumber').innerText#}
+        const show_order_str = row.querySelector('.show_order_str').innerHTML
 
         let totalForms = parseInt(totalFormsInput.value);
         const firstForm = formsetContainer.querySelector('.item-form');
         const newForm = firstForm.cloneNode(true); // کل فرم را کپی می‌کنیم
         newForm.classList.remove('d-none')
-        {#newForm.querySelector('.show_partnumber').innerHTML = partnumber#}
+        newForm.querySelector('.show_order_str').innerHTML = show_order_str
 
         // پاک ‌کردن مقدار فیلدها و تغییر نام و id
         const inputs = newForm.querySelectorAll('input');
@@ -186,13 +202,13 @@
             {#if (input.name.endsWith('price')) {value = 'قیمت وارد کنید'}#}
             {#if (input.name.endsWith('itemref')) {value = itemref}#}
             {#if (input.name.endsWith('item')) {value = item}#}
-            if (input.name.endsWith('id')) {value = order_id}
+            if (input.name.endsWith('order')) {value = order_id}
 
             const name = input.name.replace(/\d+/, totalForms);
             const id = 'id_' + name;
             input.name = name;
             input.id = id;
-            input.value = value;
+            input.value = value || '';
 
             // اضافه کردن event listener برای تغییر مقدار
             {#input.addEventListener('keyup', calculate_price);#}
@@ -240,7 +256,7 @@
             const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
             totalFormsInput.value = parseInt(totalForms) + 1;
             sync_datatable()
-            calculate_price()
+            {#calculate_price()#}
         });
 
         newForm.querySelector('.delete').appendChild(removeBtn);
@@ -255,25 +271,62 @@
         forms.forEach(form => form.classList.add('d-none'));
     });
 
-    const submitBuyFactor = document.querySelector("#submit-buy-factor")
-    submitBuyFactor && submitBuyFactor.addEventListener('click', function (){
-        const container = document.getElementById('buy-form-inputs');
+    const submitGIO = document.querySelector("#submit-gio")
+    submitGIO && submitGIO.addEventListener('click', function (){
+        debugger
+        const container = document.getElementById('gio-form-inputs');
         const inputs = container.querySelectorAll('input');
-        const currency = container.querySelector('#id_quantity').value
-        const supplier = document.querySelector('#id_order').value
-        const itemform = document.querySelector('.item-form')
+        const gio_date = container.querySelector('#id_gio_date').value
+        const description = document.querySelector('#id_description').value
+        const rows_description = container.querySelectorAll('textarea');
         const data = {};
         inputs.forEach(input => {
             let value = input.value.trim();
             if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {
                 value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار
             }
-            data[input.name] = value;
+            data[input.name] = value || '';
         });
-        data['currency'] = currency
-        data['supplier'] = supplier
-        custom_ajax_post_data(JSON.stringify(data), '/order/ajax/order_and_sepidar/', $('#ajax-response'))
-        submitBuyFactor.classList.add('d-none')
+
+        data['gio_date'] = gio_date
+        data['description'] = description
+        const element = $('#ajax-response')
+        $.ajax({
+            type: 'POST',
+            url: '/order/quick_gio/',
+            dataType: 'json',
+            data: JSON.stringify(data),
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            {#beforeSend: block_main_container,#}
+            success: function (data, xhr) {
+                debugger
+                html = data['res'];
+                try {
+                    element.html(html);
+                } catch (e) {
+                    element.innerHTML = html
+                }
+                setTimeout(function (){
+                    var loc = window.location;
+                    window.location = loc.protocol + '//' + loc.host + data['res']['url']
+                }, 300)
+                {#run_scripts(html);#}
+            },
+            error: function (data) {
+                {#initJsonAccordion(data.responseJSON['res'])#}
+                document.querySelector('#submit-gio').classList.remove('d-none')
+                element.text(JSON.stringify(data.responseJSON['res']))
+                element.addClass('text-danger')
+            },
+            {#complete: release_main_container#}
+        }); // end ajax
+        {#custom_ajax_post_data(JSON.stringify(data), '/order/quick_gio/', $('#ajax-response'))#}
+        submitGIO.classList.add('d-none')
     })
 
  {#const submitGIO = document.querySelector("#main-submit-btn")#}
@@ -404,9 +457,9 @@
 </script>
 
 
-
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
-{#    <script src="/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js"></script>#}
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
 
     <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
     <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
@@ -415,5 +468,175 @@
     <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
     <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
     {{ form.media }}
+
+    <script>
+    function check_gio_item_quantity_less_than_order(event){
+        const target = event.currentTarget
+        const quantity = target.value
+        const max_valid_quantity = document.querySelector('#max-valid-quantity')?.value
+        const quantity_warning = document.querySelector('#quantity-warning')
+        const submit_gio_item = document.querySelector('#submit-gio-item')
+        if (parseFloat(quantity) > parseFloat(max_valid_quantity)){
+            submit_gio_item.classList.add('disabled')
+            quantity_warning.classList.remove('d-none')
+        } else {
+            submit_gio_item.classList.remove('disabled')
+            quantity_warning.classList.add('d-none')
+        }
+
+    }
+
+    function check_gio_item_quantity_eq_to_qio(){
+        console.log('aaa')
+        const gio_quantity_input = document.querySelector('#id_quantity')
+        if (gio_quantity_input){
+            const gio_quantity = gio_quantity_input.value
+            if (gio_quantity) {
+                let total_quantity_in_gio_item = 0
+                document.querySelectorAll('#gio_item_quantity').forEach(function (item){
+                    total_quantity_in_gio_item += parseFloat(item.innerHTML.replace(',', ''))
+                })
+
+                console.log(parseFloat(total_quantity_in_gio_item))
+                const sibling = [...gio_quantity_input.parentNode.children].find(el => el !== gio_quantity_input && el.classList.contains("text-danger"));
+                const main_submit_btn = document.querySelector('#main-submit-btn')
+
+                if (parseFloat(gio_quantity) != parseFloat(total_quantity_in_gio_item)){
+                    let str = 'جمع تعداد ردیف های GIO باید برابر این فیلد باشد.'
+                    str += ` (${total_quantity_in_gio_item} != ${gio_quantity})`
+                    sibling.innerHTML = str
+
+                    main_submit_btn.classList.add('disabled')
+                    main_submit_btn.value = 'خطا های فرم را اصلاح کنید'
+                } else {
+                    sibling.innerHTML = ''
+                    main_submit_btn.classList.remove('disabled')
+                    main_submit_btn.value = 'ثبت'
+                }
+            }
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', check_gio_item_quantity_eq_to_qio)
+
+    const gio_item_container = document.querySelector('#gio_item_container')
+    const gio_item = document.querySelector('#gio_item')
+    gio_item && gio_item.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditGioItem = document.querySelectorAll('.edit-gio-item')
+    const DeleteGioItem = document.querySelectorAll('.delete-gio-item')
+    EditGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: element.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+    window.addEventListener('DOMContentLoaded', function (e){
+        const to_sepidar_wrapper = document.querySelector('#to-sepidar-wrapper')
+        const to_sepidar = document.querySelector('#to-sepidar')
+        const to_sepidar_err = document.querySelector('#to-sepidar-err')
+        const invalid_row = document.querySelectorAll('.invalid')
+
+        if (invalid_row.length > 0) {
+            to_sepidar && to_sepidar.classList.add('d-none')
+            to_sepidar_err && to_sepidar_err.classList.remove('d-none')
+        } else {
+            to_sepidar && to_sepidar.classList.remove('d-none')
+            to_sepidar_err && to_sepidar_err.classList.add('d-none')
+        }
+    })
+
+    function trade_buy_factor_to_sepidar_preview(event){
+        const preview_element = $('#sepidar-preview')
+        custom_ajax_get(null, event.currentTarget.dataset.url, preview_element)
+    }
+
+    function send_gio_to_sepidar(event){
+        const gio_id = document.querySelector('#gio_id')?.value
+        let gio_data = {
+            gio_id: gio_id
+        }
+        const url = event.currentTarget.dataset.url
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            dataType: 'json',
+            data: JSON.stringify(gio_data),
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                const res = data['res'];
+                window.location.reload()
+            },
+            error: function (e) {
+                alert(JSON.stringify(e.responseJSON))
+            },
+            complete: release_main_container
+        }); // end ajax
+    }
+
+    const createSku = document.getElementById('id_create_sku')
+    createSku && createSku.addEventListener('click', function (){
+        debugger
+        const part_number = document.getElementById('id_part_number').value || document.getElementById('id_part_number').textContent
+        const targeturl = `/extra_data/item/create/?part_number=${part_number}`
+        window.open(targeturl, '_blank');
+
+    })
+
+    </script>
 
 {% endblock extra_js %}

@@ -338,7 +338,8 @@ class FactorView(LoginRequiredMixin, BaseView):
 
         last_update_datetime = self.object.last_update_date.isoformat() if self.object else ''
         context['last_update_datetime'] = last_update_datetime
-        fis = {fi.pk: fi.last_update_date.isoformat() for fi in self.object.factoritem_set.all()} if self.object else {}
+        fi_list = list(self.object.factoritem_set.all())
+        fis = {fi.pk: fi.last_update_date.isoformat() for fi in fi_list} if self.object else {}
         context['fis_last_update_datetime'] = json.dumps(fis)
         context['section_id'] = 'factor'
         context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
@@ -426,6 +427,11 @@ class FactorView(LoginRequiredMixin, BaseView):
                 context['allow_back'] = False
                 context['f_warning'].append('فاکتوری که به سپیدار ارسال شده امکان عودت ندارد')
 
+            for fi in fi_list:
+                if fi.price == 0:
+                    context['f_warning'].append('قیمت برخی از ردیف های فاکتور مشخص نشده')
+                    if self.state_index == 4:
+                        context['allow_next'] = False
         return context
 
 
@@ -620,8 +626,8 @@ class FactorListDatatable(AjaxDatatableView):
             return qs
         elif q == 'all_wh':
             qs = (self.model.objects
-                  .filter(factoritem__isnull=False)
-                  .exclude(factoritem__supply_locations__receipt_in_wh=False)
+                  .filter(factoritem__isnull=False, last_work_flow__current_state_name__in=['مرحله نهایی', 'تایید تحویل'])
+                  .exclude(factoritem__supply_locations__sepidar_wh_code__isnull=True)
                   .distinct())
             return qs
         elif q == 'today':

@@ -1,0 +1,732 @@
+{% extends 'partials/base_level2.html' %}
+{% load more_tags %}
+{% load humanize %}
+{% load accounts_tag %}
+{% load core_tags %}
+{% load order_tags %}
+{% load jalali_tags %}
+
+{% block title %}GIO update{% endblock title %}
+{% block extra_css %} 
+<!-- Responsive Table css -->
+<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+    .select2-container{
+        min-width: 15em !important;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+
+    {% with form.instance.sepidar_buy_factor_response_json|default_if_falsy:form.instance.sepidar_inventory_receipt_response_json as is_send_to_sepidar %}
+
+    <div class="rounded shadow my-10 bg-white py-10 px-3" id="block_container">
+        <div class="row">
+            <input type="hidden" id="gio_id" value="{{ form.instance.pk }}">
+        {% render_field_by_order form form.gio_date form.quantity form.description form.sepidar_buy_factor_response_json  label='on-border' %}
+        <div class="col-12">
+            <div id="to-sepidar-wrapper">
+                {% if form.instance.pk and not form.instance.sepidar_buy_factor_response_json and not request.user|has_group:'mac' %}
+                <span id="to-sepidar-preview" class="btn btn-sm btn-primary" data-url="{% url 'order:order_and_sepidar' %}?view_name=trade_buy_factor_preview&gio_id={{ form.instance.pk }}" onclick="trade_buy_factor_to_sepidar_preview(event)" data-bs-toggle="tooltip" data-bs-original-title="فاکتور خرید و رسید انبار قبل انبار مرکزی">پیش نمایش ارسال به سپیدار</span>
+                {% endif %}
+                <br>
+                <span>ارسال به سپیدار منجر به ایجاد فاکتور خرید به ازای سفارش های موجود در این GIO میشود</span>
+                <span>ردیف های GIO با توجه به تامین کننده گان انتخاب شده در سفارش، در سند خرید های جداگانه ثبت خواهند شد.</span>
+                <span>در صورتی که تامین کننده مورد نظر در سپیدار حساب تفصیلی نداشته باشد. فاکتور خرید به نام no_name_supplier ثبت میشود.</span>
+
+                <span id="to-sepidar-err" class="d-none bg-light-danger text-danger p-2 rounded">
+                    وضعیت تامین کننده برای یک یا چند ردیف قابل تایید نیست.
+                </span>
+            </div>
+
+            <div id="sepidar-preview" class="mt-3"></div>
+        </div>
+{#        {% table_responsive form.instance.packing_item_rel.all 'carton_number,brand,created_date,price,item_weight,packing.tp_method,packing.bl_number' title='ردیف های پکینگ' %}#}
+            <div class="" id="gio_item_container">
+            <span></span>
+                <div class="bg-white row rounded border border-2 my-10 pt-10 mt-20 mx-2 position-relative">
+                    <div class="col-12">
+                        <h4 class="position-absolute" style="top: -10px" data-key="gio_items">GIO Items</h4>
+                        {% if form.instance.pk %}
+                            {% with form.instance.gioitems.all as gios %}
+                                {% if gios %}
+                                    <div class="row align-items-center pb-2 mb-3 bold">
+{#                                        <div class="col-1 "><span class="ms-6">تعداد کارتن </span></div>#}
+                                        <div class="col-1 "><span class="ms-6" data-key="quantity">quantity </span></div>
+                                        <div class="col-2 " data-key="order">order</div>
+                                        <div class="col-3 " data-key="part_number">part_number</div>
+                                        <div class="col-4" data-key="description">description</div>
+                                        <div class="col-2" data-key="action">action</div>
+{#                                        <div class="col-2">وضعیت</div>#}
+                                    </div>
+                                {% endif %}
+
+                            {% for gio in gios %}
+                                <div class="row align-items-center {% if not forloop.counter|divisibleby:'2' %} bg-light-active {% endif %}">
+                                    <div class="col-1 py-2">
+                                        {% if not gio.order and gio.part_number %}
+{#                                            <span class="text-danger">*</span>#}
+                                            <span class="me-3 text-danger"><b>{{ forloop.counter }})  </b></span>
+                                            {% else %}
+                                            <span class="me-3"><b>{{ forloop.counter }})  </b></span>
+                                        {% endif %}
+{#                                        <span class="me-3"><b>{{ forloop.counter }})  </b></span>#}
+                                        <span id="gio_item_quantity">{{ gio.quantity|intcomma|default_if_none:"-" }}</span>
+                                    </div>
+                                    <div class="col-2 py-2 s-05">
+                                        <span>{{ gio.order|default_if_none:"-" }}</span>
+{#                                        <span class="d-non" id="order_pk-{{ forloop.counter }}">{{ gio.order.pk }}</span>#}
+                                    </div>
+                                    <div class="col-3 py-2 s-05">
+                                        <span id="id_part_number">{{ gio.part_number|default_if_none:"-" }}</span>
+                                    </div>
+                                    <div class="col-4 py-2 ">
+                                        <span>{{ gio.description|default_if_none:"-" }}</span>
+                                    </div>
+                                    <div class="col-2 py-1 ">
+                                        {% if is_send_to_sepidar %}
+                                            <span data-key="gioactiondescription">امکان تغییر در سندی که به سپیدار ارسال شده وجود ندارد</span>
+                                        {% else %}
+                                        <span>
+                                        <a href="#" target="_blank" class="me-3 edit-gio-item tooltip_" data-url="{% url 'order:gioitem.update' gio.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
+                                            <span class="tooltiptext">ویرایش</span>
+                                            <i class="ki-duotone ki-pencil fs-2 text-info">
+                                                <span class="path1"></span>
+                                                <span class="path2"></span>
+                                            </i>
+                                        </a>
+                                        <a href="#" target="_blank" class="me-3 delete-gio-item text-danger tooltip_" data-url="{% url 'core:delete.confirm' %}?model={{ gio|model_name }}&object_id={{ gio.pk }}&app_label={{ gio|app_label }}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_sm">
+                                            <span class="tooltiptext">حذف</span>
+                                            <i class="ki-duotone ki-trash fs-2 text-danger">
+                                                <span class="path1"></span>
+                                                <span class="path2"></span>
+                                                <span class="path3"></span>
+                                                <span class="path4"></span>
+                                                <span class="path5"></span>
+                                            </i>
+                                        </a>
+                                        <a class="mx-4 tooltip_ cursor-pointer"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#id_kt_empty_modal_lg"
+                                            data-model_name="{{ gio|model_name }}"
+                                            data-object_id="{{ gio.pk }}"
+                                            data-app_name="{{ gio|app_label }}"
+                                            name="name_change_log">
+                                            <span class="tooltiptext">تاریخچه تغییرات</span>
+                                            <i class="ki-duotone ki-book-open fs-2 text-primary">
+                                             <span class="path1"></span>
+                                             <span class="path2"></span>
+                                             <span class="path3"></span>
+                                             <span class="path4"></span>
+                                            </i>
+                                        </a>
+                                    </span>
+                                        {% endif %}
+                                    {% if not gio.order and gio.part_number and request.user|has_group:'technical_admin' and request.user.is_superuser %}
+                                        <span class="badge badge-success cursor-pointer" id="id_create_sku">ایجاد کد کالا</span>
+                                    {% endif %}
+                                    </div>
+                                    <div class="col-2">
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            {% endwith %}
+                        {% endif %}
+                            <div class="mt-5">
+                                {% if not is_send_to_sepidar %}
+                                    {% include 'core/partial/components/plus_new.html' with id_='gio_item' obj=form.instance url_='order:gioitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های GIO وجود دارد' %}
+                                {% endif %}
+                            </div>
+                    </div>
+                </div>
+            {% include 'order/partial/sepidar/trade_buy_factor_sepidar_response.html' with buy_factor=form.instance %}
+            </div>
+        </div>
+    </div>
+
+
+    {% include 'core/partial/empty_modal.html' %}
+    {% include 'core/partial/empty_modal_lg.html' %}
+    {% include 'core/partial/empty_modal_sm.html' %}
+
+{% endwith %}
+
+
+    <div class="border rounded mb-5 p-3">
+        <div class="d-flex justify-content-between">
+
+        </div>
+
+    </div>
+        <div class="main-content " id="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <div class="row row-cols-2">
+                        <div class="col">
+{#                            <div class="container-fluid">#}
+                                <div class="table-responsive p-2">
+                                    <table id="quick-gio-list" width="100%" class="m-table table-striped table-bordered w-100">
+
+                                    </table>
+                                </div>
+{#                            </div>#}
+                        </div>
+                        <div class="col">
+                            <div class="card px-2 py-5" id="gio-form-inputs">
+
+                            {% if not form.instance.pk %}
+                                <fieldset>
+                                    <legend>GIO</legend>
+{#                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">#}
+                                    <div class="row row-cols-3" id="buy-factor-header">
+                                        {% render_field_by_order form form.gio_date form.description label='on-border' %}
+                                    </div>
+{#                                    </form>#}
+                                </fieldset>
+                            {% endif %}
+
+                                <fieldset id="items-area" class="mt-10">
+                                    <legend>GIO Items</legend>
+                                    {{ formset.management_form }}
+                                    <div id="formset-container">
+                                        {% for form_s in formset %}
+                                            <div class="item-form row pt-5 mb-1 ms-0">
+                                                <div class="col-12">
+                                                    <div class="row delete">
+                                                        {% render_field_by_order form_s form_s.order form_s.quantity form_s.description label='on-border' margin_b=0%}
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="show_order_str"></div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <span>&nbsp;</span>
+
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <button type="button" id="submit-gio" class="btn btn-primary mt-5 me-5">ثبت</button>
+                                            <span id="ajax-response"></span>
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                            <div class="d-flex flex-column mt-8">
+                                    <div>
+                                        <span>total quantity:</span>
+                                        <span id="qio-total-quantity">12345678</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+        {% include 'core/partial/empty_modal_lg.html' %}
+        </div>
+        <!-- end main content-->
+{% endblock content %}
+
+{% block extra_js %}
+
+<script language="javascript">
+    $(document).ready(function() {
+        const url = new URL(window.location);
+        const q = url.searchParams.get("q")
+        AjaxDatatableViewUtils.initialize_table(
+            $('#quick-gio-list'),
+            "{% url 'order:quick_gio.datatable' %}",
+            {
+                processing: true,
+                autoWidth: false,
+                full_row_select: false,
+                scrollX: false,
+                bFilter: true,
+                dom: 'Blfrtip',
+                buttons: [
+                    'copyHtml5',
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5'
+                ]
+            }, {
+                // extra_data
+                // ...
+                q:q
+            },
+        );
+
+        $('#quick-gio-list').on('draw.dt', function (){
+            sync_datatable()
+        }) // end on draw.dt
+
+    }); // end ready
+
+    function sync_datatable(){
+        const table_order = document.querySelectorAll('.order')
+        const form_order = document.querySelectorAll('input[name$="-order"]')
+        table_order.forEach(item => {
+            const order = item.textContent.trim()
+            const match = Array.from(form_order).find(i => i.value.trim() === order)
+            const target = item.closest('tr').querySelector('.action')
+
+            if (match && order && target){
+                target.innerHTML = '&#x2713;'
+                target.classList.add('text-success', 'font-size-20')
+                target.dataset.is_selected = 'yes'
+            } else if (target) {
+                target.innerHTML = '➕'
+                target.classList.remove('text-success')
+                target.dataset.is_selected = 'no'
+            }
+        }) // end forEach
+    }
+    function order_to_gio_item (event) {
+        debugger
+        const target = event.currentTarget
+        if (target.dataset.is_selected === 'yes'){
+            alert("order already selected")
+            return
+        }
+
+        target.dataset.is_selected = 'yes'
+        target.innerHTML = '&#x2713;'
+        target.classList.add('text-success', 'font-size-20')
+        const row = target.closest('tr')
+        const formsetContainer = document.getElementById('formset-container');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        const order_id = row.querySelector('.order').innerHTML
+        const quantity = row.querySelector('.quantity').innerHTML
+        {#const itemref = row.querySelector('.itemref').innerHTML#}
+        {#const item = row.querySelector('.item').innerHTML#}
+        const show_order_str = row.querySelector('.show_order_str').innerHTML
+
+        let totalForms = parseInt(totalFormsInput.value);
+        const firstForm = formsetContainer.querySelector('.item-form');
+        const newForm = firstForm.cloneNode(true); // کل فرم را کپی می‌کنیم
+        newForm.classList.remove('d-none')
+        newForm.querySelector('.show_order_str').innerHTML = show_order_str
+
+        // پاک ‌کردن مقدار فیلدها و تغییر نام و id
+        const inputs = newForm.querySelectorAll('input');
+        inputs.forEach(function (input, idx) {
+            let value;
+            if (input.name.endsWith('quantity')) {value = parseFloat(quantity)}
+            {#if (input.name.endsWith('price')) {value = 'قیمت وارد کنید'}#}
+            {#if (input.name.endsWith('itemref')) {value = itemref}#}
+            {#if (input.name.endsWith('item')) {value = item}#}
+            if (input.name.endsWith('order')) {value = order_id}
+
+            const name = input.name.replace(/\d+/, totalForms);
+            const id = 'id_' + name;
+            input.name = name;
+            input.id = id;
+            input.value = value;
+
+            // اضافه کردن event listener برای تغییر مقدار
+            {#input.addEventListener('keyup', calculate_price);#}
+        });
+
+        formsetContainer.appendChild(newForm);
+        totalFormsInput.value = totalForms + 1;
+
+        // ساخت دکمه حذف
+        const removeBtn = document.createElement('span');
+        removeBtn.classList.add('remove-row', 'col-1'); // کلاس‌های دلخواه بوت‌استرپ یا سفارشی
+
+        // قرار دادن آیکون داخل دکمه
+        removeBtn.innerHTML = `
+            <i class="ki-duotone ki-trash text-danger fs-2x cursor-pointer">
+                <span class="path1"></span>
+                <span class="path2"></span>
+                <span class="path3"></span>
+                <span class="path4"></span>
+                <span class="path5"></span>
+            </i>
+        `;
+
+        // افزودن event حذف
+        removeBtn.addEventListener('click', function() {
+            newForm.remove(); // حذف ردیف فرم از DOM
+
+            const formset = document.querySelector('#formset-container');
+            const rows = formset.querySelectorAll('.item-form')
+            totalForms = -1
+
+            rows.forEach(function (row, idx) {
+                totalForms += 1
+                {#const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');#}
+                row.querySelectorAll('input').forEach(function (input){
+                    let value;
+                    const name = input.name.replace(/\d+/, totalForms);
+                    const id = 'id_' + name;
+                    input.name = name;
+                    input.id = id;
+                })
+            });
+
+            // در صورت نیاز تعداد فرم‌ها را هم کاهش بده:
+            const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+            totalFormsInput.value = parseInt(totalForms) + 1;
+            sync_datatable()
+            {#calculate_price()#}
+        });
+
+        newForm.querySelector('.delete').appendChild(removeBtn);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const formsetContainer = document.getElementById('formset-container');
+        const forms = formsetContainer.querySelectorAll('.item-form');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+
+        // مخفی کردن تمام فرم‌های اولیه
+        forms.forEach(form => form.classList.add('d-none'));
+    });
+
+    const submitGIO = document.querySelector("#submit-gio")
+    submitGIO && submitGIO.addEventListener('click', function (){
+        const container = document.getElementById('gio-form-inputs');
+        const inputs = container.querySelectorAll('input');
+        const gio_date = container.querySelector('#id_gio_date').value
+        const description = document.querySelector('#id_description').value
+        const data = {};
+        inputs.forEach(input => {
+            let value = input.value.trim();
+            if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {
+                value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار
+            }
+            data[input.name] = value;
+        });
+        data['gio_date'] = gio_date
+        data['description'] = description
+        custom_ajax_post_data(JSON.stringify(data), '/order/quick_gio/', $('#ajax-response'))
+        submitGIO.classList.add('d-none')
+    })
+
+ {#const submitGIO = document.querySelector("#main-submit-btn")#}
+ {#   function submitGIO (){#}
+ {#       const container = document.getElementById('buy-form-inputs');#}
+ {#       const inputs = container.querySelectorAll('input');#}
+ {#       const quantity = container.querySelector('#id_quantity').value#}
+ {#       const date = document.querySelector('#id_gio_date').value#}
+ {#       const description = document.querySelector('#id_description').value#}
+ {#       const itemform = document.querySelector('.item-form')#}
+ {#       const data = {};#}
+ {#       inputs.forEach(input => {#}
+ {#           let value = input.value.trim();#}
+ {#           if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {#}
+ {#               value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار#}
+ {#           }#}
+ {#           data[input.name] = value;#}
+ {#       });#}
+ {##}
+ {#       $.ajax({#}
+ {#               url: '/order/gio/view/',#}
+ {#               method: 'POST',#}
+ {#               headers: {'X-CSRFToken': csrftoken},#}
+ {#               dataType: "json",#}
+ {#               type: "POST",#}
+ {#               async: false,#}
+ {#               data: {pk: pk},#}
+ {#               cache: true,#}
+ {#               success: function (data) {#}
+ {#                   data['quantity'] = quantity#}
+ {#                   data['date'] = date#}
+ {#                   data['description'] = description#}
+ {#                   result = data;#}
+ {#                   },#}
+ {#               error: function (res){#}
+ {#                   alert("خطا")#}
+ {#               }#}
+ {#               }); // end ajax#}
+        {#custom_ajax_post_data(JSON.stringify(data), '/order/gio/view/', $('#ajax-response'))#}
+ {#       submitBuyFactor.classList.add('d-none')#}
+ {#   }#}
+
+    $('#gio_submit_form').on('submit', function (e){
+        e.preventDefault()
+        ajax_submit(this, true, true)
+    })
+
+    {#function calculate_price(){#}
+    {#    debugger#}
+    {#    console.log('calculate price')#}
+    {#    const submitBuyFactor = document.querySelector("#submit-buy-factor")#}
+    {#    const total_calculated_element = document.querySelector('#total-calculated')#}
+    {#    const discount_calculated_element = document.querySelector('#discount-calculated')#}
+    {#    const addition_calculated_element = document.querySelector('#addition-calculated')#}
+    {#    const tax_calculated_element = document.querySelector('#tax-calculated')#}
+    {#    const netprice_calculated_element = document.querySelector('#netprice-calculated')#}
+    {##}
+    {#    const formset_container = document.querySelector('#formset-container')#}
+    {#    const buy_factor_header = document.querySelector('#buy-factor-header')#}
+    {#    let item_form = [];#}
+    {#    if (formset_container){item_form = formset_container.querySelectorAll('.item-form')}#}
+    {#    let all_tax, all_discount = 0#}
+    {#    if (buy_factor_header){#}
+    {#        all_tax = buy_factor_header.querySelector('#id_tax').value#}
+    {#        all_discount = buy_factor_header.querySelector('#id_discount').value#}
+    {#    }#}
+    {#    let total_row_price = 0;#}
+    {#    let total_row_discount = 0;#}
+    {#    let total_row_addition = 0;#}
+    {#    let price_object = {#}
+    {#        "factor_header": {#}
+    {#            "all_tax": all_tax,#}
+    {#            "all_discount": all_discount#}
+    {#        }#}
+    {#    }#}
+    {##}
+    {#    let hasError = false; // برای تشخیص اینکه break اتفاق افتاده یا نه#}
+    {##}
+    {#    for (const row of item_form) {#}
+    {#        const row_quantity = parseFloat(row.querySelector('input[id$="-quantity"]')?.value) || 0;#}
+    {#        const row_unit_price = parseFloat(row.querySelector('input[id$="-price"]')?.value) || 0;#}
+    {#        const row_discount = parseFloat(row.querySelector('input[id$="-discount"]')?.value) || 0;#}
+    {#        const row_addition = parseFloat(row.querySelector('input[id$="-addition"]')?.value) || 0;#}
+    {#        const row_itemref = parseFloat(row.querySelector('input[id$="-itemref"]')?.value) || 0;#}
+    {##}
+    {#        const row_price = (row_quantity * row_unit_price);#}
+    {#        const row_price_after_discount = row_price - row_discount;#}
+    {##}
+    {#        // جمع کردن مقادیر کل فقط تا قبل از خطا#}
+    {#        total_row_price += row_price;#}
+    {#        total_row_discount += row_discount;#}
+    {#        total_row_addition += row_addition;#}
+    {##}
+    {#        if ((!row_quantity || !row_price) && row_itemref) {#}
+    {#            row.style.backgroundColor = '#ffbbbb'; // قرمز ملایم برای هشدار#}
+    {#            submitBuyFactor.classList.add('d-none');#}
+    {#            document.querySelector('#ajax-response').innerHTML = 'ردیف‌های مشخص‌شده را اصلاح کنید.';#}
+    {#            hasError = true;#}
+    {#            break; // خروج از حلقه#}
+    {#        } else {#}
+    {#            row.style.backgroundColor = ''; // اگر کامل بود، رنگ پیش‌فرض برگرده#}
+    {#        }#}
+    {#    }#}
+    {##}
+    {#    // فقط اگر break اتفاق نیفتاد (یعنی خطایی وجود نداشت)#}
+    {#    if (!hasError) {#}
+    {#        submitBuyFactor.classList.remove('d-none');#}
+    {#        document.querySelector('#ajax-response').innerHTML = '';#}
+    {#    }#}
+    {##}
+    {#    const _toNumber = v => parseFloat(v) || 0;#}
+    {##}
+    {#    all_tax = _toNumber(price_object.factor_header.all_tax);#}
+    {#    all_discount = _toNumber(price_object.factor_header.all_discount);#}
+    {#    const net_price = _toNumber(total_row_price) - _toNumber(total_row_discount) - _toNumber(all_discount) + _toNumber(all_tax) + _toNumber(total_row_addition);#}
+    {#    total_calculated_element.innerHTML = formatNumber(total_row_price) || '0'#}
+    {#    discount_calculated_element.innerHTML = formatNumber(total_row_discount + all_discount) || '0'#}
+    {#    addition_calculated_element.innerHTML = formatNumber(total_row_addition) || '0'#}
+    {#    tax_calculated_element.innerHTML = formatNumber(all_tax) || '0'#}
+    {#    netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'#}
+    {##}
+    {#    document.querySelector('input[name="total_price"]').value = total_row_price#}
+    //}
+
+    function formatNumber(num) {
+        return num.toLocaleString('us-EN'); // یا 'fa-IR' برای فارسی
+    }
+</script>
+
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
+    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
+
+    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
+    <script src="{% static 'js/local/jszip.min.js' %}"></script>
+    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
+    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
+    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
+    {{ form.media }}
+
+    <script>
+    function check_gio_item_quantity_less_than_order(event){
+        const target = event.currentTarget
+        const quantity = target.value
+        const max_valid_quantity = document.querySelector('#max-valid-quantity')?.value
+        const quantity_warning = document.querySelector('#quantity-warning')
+        const submit_gio_item = document.querySelector('#submit-gio-item')
+        if (parseFloat(quantity) > parseFloat(max_valid_quantity)){
+            submit_gio_item.classList.add('disabled')
+            quantity_warning.classList.remove('d-none')
+        } else {
+            submit_gio_item.classList.remove('disabled')
+            quantity_warning.classList.add('d-none')
+        }
+
+    }
+
+    function check_gio_item_quantity_eq_to_qio(){
+        console.log('aaa')
+        const gio_quantity_input = document.querySelector('#id_quantity')
+        if (gio_quantity_input){
+            const gio_quantity = gio_quantity_input.value
+            if (gio_quantity) {
+                let total_quantity_in_gio_item = 0
+                document.querySelectorAll('#gio_item_quantity').forEach(function (item){
+                    total_quantity_in_gio_item += parseFloat(item.innerHTML.replace(',', ''))
+                })
+
+                console.log(parseFloat(total_quantity_in_gio_item))
+                const sibling = [...gio_quantity_input.parentNode.children].find(el => el !== gio_quantity_input && el.classList.contains("text-danger"));
+                const main_submit_btn = document.querySelector('#main-submit-btn')
+
+                if (parseFloat(gio_quantity) != parseFloat(total_quantity_in_gio_item)){
+                    let str = 'جمع تعداد ردیف های GIO باید برابر این فیلد باشد.'
+                    str += ` (${total_quantity_in_gio_item} != ${gio_quantity})`
+                    sibling.innerHTML = str
+
+                    main_submit_btn.classList.add('disabled')
+                    main_submit_btn.value = 'خطا های فرم را اصلاح کنید'
+                } else {
+                    sibling.innerHTML = ''
+                    main_submit_btn.classList.remove('disabled')
+                    main_submit_btn.value = 'ثبت'
+                }
+            }
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', check_gio_item_quantity_eq_to_qio)
+
+    const gio_item_container = document.querySelector('#gio_item_container')
+    const gio_item = document.querySelector('#gio_item')
+    gio_item && gio_item.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+        $.ajax({
+            type: 'GET',
+            url: this.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        });
+    })
+
+    const EditGioItem = document.querySelectorAll('.edit-gio-item')
+    const DeleteGioItem = document.querySelectorAll('.delete-gio-item')
+    EditGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+        e.preventDefault()
+        const modal_lg_body = $('#id-empty-modal-body-lg')
+            $.ajax({
+            type: 'GET',
+            url: element.dataset.url,
+            dataType: 'json',
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                html = data['res'];
+                modal_lg_body.html(html);
+                initializeDatepickers();
+            },
+            error: function () {
+
+            },
+            complete: release_main_container
+        }); //end ajax
+    })
+    })
+    DeleteGioItem.forEach((element) => {
+        element.addEventListener('click', function (e){
+            e.preventDefault()
+            const modal_sm_body = $('#id-empty-modal-body-sm')
+            custom_ajax_get('', this.dataset.url, modal_sm_body)
+        })
+    })
+
+    window.addEventListener('DOMContentLoaded', function (e){
+        const to_sepidar_wrapper = document.querySelector('#to-sepidar-wrapper')
+        const to_sepidar = document.querySelector('#to-sepidar')
+        const to_sepidar_err = document.querySelector('#to-sepidar-err')
+        const invalid_row = document.querySelectorAll('.invalid')
+
+        if (invalid_row.length > 0) {
+            to_sepidar && to_sepidar.classList.add('d-none')
+            to_sepidar_err && to_sepidar_err.classList.remove('d-none')
+        } else {
+            to_sepidar && to_sepidar.classList.remove('d-none')
+            to_sepidar_err && to_sepidar_err.classList.add('d-none')
+        }
+    })
+
+    function trade_buy_factor_to_sepidar_preview(event){
+        const preview_element = $('#sepidar-preview')
+        custom_ajax_get(null, event.currentTarget.dataset.url, preview_element)
+    }
+
+    function send_gio_to_sepidar(event){
+        const gio_id = document.querySelector('#gio_id')?.value
+        let gio_data = {
+            gio_id: gio_id
+        }
+        const url = event.currentTarget.dataset.url
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            dataType: 'json',
+            data: JSON.stringify(gio_data),
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            cache: false,
+            processData: false,
+            contentType: false,
+            beforeSend: block_main_container,
+            success: function (data) {
+                const res = data['res'];
+                window.location.reload()
+            },
+            error: function (e) {
+                alert(JSON.stringify(e.responseJSON))
+            },
+            complete: release_main_container
+        }); // end ajax
+    }
+
+    const createSku = document.getElementById('id_create_sku')
+    createSku && createSku.addEventListener('click', function (){
+        debugger
+        const part_number = document.getElementById('id_part_number').value || document.getElementById('id_part_number').textContent
+        const targeturl = `/extra_data/item/create/?part_number=${part_number}`
+        window.open(targeturl, '_blank');
+
+    })
+
+    </script>
+
+{% endblock extra_js %}

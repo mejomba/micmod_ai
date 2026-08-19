@@ -240,5 +240,6 @@
     "account-settings": "account settings",
     "pending_list": "pending list",
     "sepidar": "sepidar",
-    "t-payment": "payment"
+    "t-payment": "payment",
+    "create_gio": "create new GIO"
 }

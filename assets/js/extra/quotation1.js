@@ -359,6 +359,7 @@ function set_item_classes(item, idx=null) {
                 url: '/inquiry/items_list/',
                 dataType: "json",
                 type: "GET",
+                delay: 200,
                 data: function (data) {
                     let p_id = document.getElementById('customer_pid').textContent || -1;
                     if (!p_id){

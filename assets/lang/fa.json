@@ -821,5 +821,12 @@
     "po_number_mac": "po_number mac",
     "quantity_mac": "quantity mac",
     "price_mac": "price mac",
-    "supplier_mac": "supplier mac"
+    "supplier_mac": "supplier mac",
+    "گزارش سفارشات": "گزارش سفارشات",
+    "سفارشات آفلاین": "سفارشات آفلاین",
+    "hs": "hs",
+    "purchasegroup": "گروه خرید",
+    "فاکتور خرید": "فاکتور خرید",
+    "رسید انبار قبل از مرکزی": "انبار کالای بین راهی ایران",
+    "سند حسابداری": "سند حسابداری"
 }

@@ -198,10 +198,11 @@
                                         <span class="">{{ trade_parent_price.price }}</span>
                                     </div>
                                     <small>{{ trade_parent_price.inquiry_type.title }}</small>
-                                    <small class="badge badge-info">
-                                        {{ trade_parent_price.sku }}
-                                    </small>
                                 </div>
+                                  <small>{{ trade_parent_price.sku.part_number }}</small>
+                                  <small class="badge badge-info">
+                                      {{ trade_parent_price.sku }}
+                                  </small>
                               <small class="float-end mt-1">{{ trade_parent_price.variants_json|default_if_falsy:'' }}</small>
                               </div>
                         {% endfor %}
