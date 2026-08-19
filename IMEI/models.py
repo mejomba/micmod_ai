@@ -81,7 +81,7 @@ class IMEIListRegDetail(models.Model):
                     cls.objects.bulk_create(batch, batch_size,
                                             update_conflicts=True,
                                             unique_fields=['IMEI'],
-                                            update_fields=['row', 'main_box', 'internal_box', 'version'])
+                                            update_fields=['row', 'main_box', 'internal_box', 'version', 'imei_list_reg'])
                 if action == '2':
                     cls.objects.bulk_create(batch, batch_size, ignore_conflicts=True)
 
@@ -221,7 +221,7 @@ class IMEINTSWRegDetail(models.Model):
                     cls.objects.bulk_create(valid_batch, batch_size,
                                             update_conflicts=True,
                                             unique_fields=['IMEI'],
-                                            update_fields=['row', 'activation_code'])
+                                            update_fields=['row', 'activation_code','imei_ntsw_reg'])
                 if action == '2':
                     cls.objects.bulk_create(valid_batch, batch_size, ignore_conflicts=True)
 
@@ -290,7 +290,7 @@ class IMEISaleRegDetail(models.Model):
                     cls.objects.bulk_create(batch, batch_size,
                                             update_conflicts=True,
                                             unique_fields=['IMEI'],
-                                            update_fields=['row'])
+                                            update_fields=['row', 'imei_sale_reg'])
                 if action == '2':
                     cls.objects.bulk_create(batch, batch_size, ignore_conflicts=True)
 
