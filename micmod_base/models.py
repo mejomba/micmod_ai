@@ -145,7 +145,8 @@ class Quotation(SLSDoc):
 
     workflows = GenericRelation('workflow.Workflow', related_query_name="model")
     quotation_self = models.ForeignKey('self', on_delete=models.DO_NOTHING, related_name='quotation_rel', null=True, blank=True)
-    self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, validators=[MaxValueValidator(100)])
+    # self_discount = models.PositiveSmallIntegerField(verbose_name=_('self_discount'), default=0, validators=[MaxValueValidator(100)])
+    self_discount = models.FloatField(verbose_name=_('self_discount'), default=0, null=True, blank=True)
     is_official = models.BooleanField(default=False, verbose_name=_('is_official'))
     official_value = models.FloatField(default=0, verbose_name=_('official_value'), null=True, blank=True)
     cancel = models.BooleanField(default=False, verbose_name=_('cancel'))
