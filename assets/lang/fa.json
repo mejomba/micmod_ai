@@ -821,5 +821,21 @@
     "po_number_mac": "po_number mac",
     "quantity_mac": "quantity mac",
     "price_mac": "price mac",
-    "supplier_mac": "supplier mac"
+    "supplier_mac": "supplier mac",
+    "گزارش سفارشات": "گزارش سفارشات",
+    "سفارشات آفلاین": "سفارشات آفلاین",
+    "hs": "hs",
+    "purchasegroup": "گروه خرید",
+    "فاکتور خرید": "فاکتور خرید",
+    "رسید انبار قبل از مرکزی": "انبار کالای بین راهی ایران",
+    "سند حسابداری": "سند حسابداری",
+    "pre_payment": "پیش پرداخت",
+    "payment": "پرداخت",
+    "credit_payment": "اعتباری",
+    "payment_item_type": "نوع پرداخت",
+    "is_pay": "پرداخت شد",
+    "goods_information": "اطلاعات کالا",
+    "price_and_sales_information": "اطلاعات قیمت و فروش",
+    "stock_information": "اطلاعات موجودی کالا",
+    "admin_price_information": "اطلاعات قیمت (مدیریتی)"
 }

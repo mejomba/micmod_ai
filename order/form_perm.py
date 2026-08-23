@@ -21,9 +21,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
-                     "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+            "show": ["_item", "_final_item", "_final_quantity",
+                     "description_sale",
+                     "sales_admin_cancel",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -587,6 +587,34 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "created_date",
                      "order_number", "description_sale", "total_price",]
+        },
+    },
+}
+
+GIO_FIELDS_BY_PERMISSION = {
+    "gio.cp_gio_mac": {
+        0: {
+            "edit": [
+                "quantity", "gio_date", "description"
+            ],
+            "hidden": [
+
+            ],
+            "show": ["sepidar_buy_factor_response_json", "sepidar_inventory_receipt_response_json"]
+        },
+    },
+}
+
+GIO_ITEM_FIELDS_BY_PERMISSION = {
+    "gio_item.cp_gio_item_mac": {
+        0: {
+            "edit": [
+                "quantity", "order", "description", "pat_number"
+            ],
+            "hidden": [
+                "gio"
+            ],
+            "show": []
         },
     },
 }

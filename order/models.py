@@ -483,6 +483,16 @@ class Order(BaseModeWF):
 
         return int(total_arrived_in_percent or 0), int(total_arrived or 0), final_quantity, is_complete
 
+    def validate_for_gio(self, quantity):
+        total_arrived_in_percent, total_arrived, final_quantity, is_complete = self.gio_info
+        if is_complete:
+            return False, f'order {self.order_number} complete in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
+        if (quantity + total_arrived) > self.final_quantity:
+            return False, f'{total_arrived} of order {self.order_number} receipt in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
+
+        return True, ''
+
+
     @property
     def packing_info(self):
         final_quantity = self.final_quantity
@@ -889,6 +899,8 @@ class Packing(BaseModeWF):
     cl_100_date = models.DateField(_('cl_100_date'), null=True, blank=True)
     arrive_to_wh_date = models.DateField(_('arrive_to_wh_date'), null=True, blank=True)
     estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
+    estimated_arrive_to_wh_date = models.DateField(_('estimated_arrive_to_wh_date'), null=True, blank=True)
+    reserve_bar_date = models.DateField(_('reserve_bar_date'), null=True, blank=True)
     sum_qty = models.FloatField(_('sum_qty'))
     sum_arrived_qty = models.FloatField(_('sum_arrived_qty'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
@@ -968,7 +980,7 @@ class PackingItem(BaseModeWF):
 
 
 class GIO(BaseModeWF):
-    quantity = models.FloatField(_('quantity'), default=0)
+    quantity = models.FloatField(_('quantity'), default=0, null=True, blank=True)
     gio_date = models.DateField(_('gio_date'))
     description = models.TextField(_('description'), null=True, blank=True)
     sepidar_buy_factor_response_json = models.JSONField(null=True, blank=True)

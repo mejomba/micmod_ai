@@ -60,6 +60,7 @@
                 url: '/inquiry/items_list/',
                 dataType: "json",
                 type: "GET",
+                delay: 200,
                 data: function (data) {
                     return {q: data.term, page: data.page}
                 },

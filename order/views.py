@@ -298,8 +298,8 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
         context['app_name'] = self.request.resolver_match.app_name
         if self.object:
-            context['trade_price_list'] = self.object.item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
-            context['trade_parent_price_list'] = self.object.item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.item.parent else self.object.item.items.none()
+            context['trade_price_list'] = self.object.final_item.items.filter(active=True, is_deleted=False) if self.object else self.object.item.items.none()
+            context['trade_parent_price_list'] = self.object.final_item.parent.items.filter(~Q(creator_user__groups__name__in=['bazar_user']), active=True, is_deleted=False) if self.object.final_item.parent else self.object.item.items.none()
 
         context['section_id'] = 'order'
 
@@ -307,9 +307,17 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
             context['allow_next'] = False
             context['allow_back'] = False
+        elif self.state_index < 2 and not self.request.user.base_group == 'sales':
+            """فقط کاربران فروش میتوانند در مراحل اولیه سفارش را جلو عقب بفرستن"""
+            context['allow_next'] = False
+            context['allow_back'] = False
+        elif self.state_index == 1 and not self.request.user.groups.filter(name='sales_admin').exists():
+            """در مرحله تایید مدیر فروش کاربر فروش میتواند سفارش را به عقب برگزداند اما نمیتواند جلو ببرد"""
+            context['allow_next'] = False
+            context['allow_back'] = True
         else:
-            context['allow_next'] = True #context.get('allow_next')
-            context['allow_back'] = True #context.get('allow_back')
+            context['allow_next'] = True  # context.get('allow_next')
+            context['allow_back'] = True  # context.get('allow_back')
 
         if self.object and self.object.sales_admin_cancel:
             context['allow_next'] = False
@@ -952,7 +960,7 @@ class OrderDataTableListView(AjaxDatatableView):
         elif self.request.user.base_group == 'trade':
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
-                {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
+                {'name': 'id', 'title': "id", 'orderable': True, 'visible': False, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
@@ -1442,7 +1450,9 @@ class GIOView(LoginRequiredMixin, BaseView):
     form_struct = {
         'form': GIOForm,
         'childes': [
-            {},
+            {
+                'form': GIOItemForm
+            },
         ]
     }
     # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'GIOView')
@@ -3093,8 +3103,9 @@ def portal_reserve_(request, sku, *args, **kwargs):
     else:
         return JsonResponse({'res': ' خطا در دریافت کد کالا'})
 
+
 class QuickGIOView(LoginRequiredMixin, View):
-    template_name = 'order/quick_gio.html'
+    template_name = 'order/gio/quick_gio_create.html' # for update use 'order/gio/quick_gio_create.html'
     form_class = GIOForm
     model = GIO
     # wf_last_step_is_open = True
@@ -3106,31 +3117,84 @@ class QuickGIOView(LoginRequiredMixin, View):
         ]
     }
     # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+    
+    def setup(self, request, *args, **kwargs):
+        if kwargs.get('pk'):
+            self.template_name = 'order/gio/quick_gio_update.html'
+            self.object = self.get_object(kwargs.get('pk'))
+        return super().setup(request, *args, **kwargs)
 
-    def get_success_url(self):
-        return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
+    # def get_success_url(self):
+    #     return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
 
-    def post(self, request, *args, **kwargs):
-        gio_form = GIOForm(request.POST)
-        gio_item_formset = GIOItemFormSet(request.POST)
+    def post(self, request, pk=None, *args, **kwargs):
+        data = json.loads(request.body) or {}
+        data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
+        total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
 
-        if gio_form.is_valid() and gio_item_formset.is_valid():
-            invoice_data = gio_form.cleaned_data
-            items_data = [f.cleaned_data for f in gio_item_formset if f.cleaned_data]
-            print(invoice_data, items_data)
-            # اینجا می‌تونی پردازش دلخواه رو انجام بدی
-            return self.get_success_url()
-        return super().post(request, *args, **kwargs)
+        gio_data = {
+            "gio_date": data.pop('gio_date', None),
+            'description': data.pop('description', None),
+            'creator_user': self.request.user,
+            'editor_user': self.request.user
+        }
 
-    def get(self, request, *args, **kwargs):
-        gio_form = GIOForm()
+        try:
+            with transaction.atomic():
+                gio_obj = GIO(**gio_data)
+                gio_obj.extra_data.request = self.request
+                gio_obj.save()
+
+                gio_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
+                for row in range(1, total_forms):
+                    quantity = gio_items_data.get(f'form-{row}-quantity')
+                    order_id = gio_items_data.get(f'form-{row}-order')
+                    o = Order.objects.get(pk=order_id)
+
+                    is_valid_for_gio = o.validate_for_gio(quantity)
+                    if not is_valid_for_gio[0]:
+                        return JsonResponse({'res': {'ERROR: ': is_valid_for_gio[1]}}, status=400)
+
+                    gio_item_data = {
+                        'quantity': quantity,
+                        'description': gio_items_data.get(f'form-{row}-description'),
+                        'order_id': order_id,
+                        'gio': gio_obj
+                    }
+                    # sid = transaction.savepoint()
+
+                    try:
+                        gio_item_obj = GIOItem(**gio_item_data)
+                        gio_item_obj.extra_data.request = self.request
+                        gio_item_obj.save()
+                        # sid = transaction.savepoint_commit(sid)
+                    except Exception as e:
+                        # transaction.savepoint_rollback(sid)
+                        raise e
+        except Exception as e:
+            res = {'res': {'ERROR: ': str(e)}}
+            return JsonResponse(res, status=400)
+
+        return JsonResponse({'res': {'url': reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk})}}, status=200) # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
+
+    def get(self, request, pk=None, *args, **kwargs):
+        gio_object = self.get_object(pk)
+
+        gio_form = GIOForm(instance=gio_object)
         gio_item_formset = GIOItemFormSet()
 
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
         }
+        
         return render(request, self.template_name, context)
+
+    def get_object(self, pk):
+        if pk:
+            return GIO.objects.get(pk=pk)
+        else:
+            return None
 
     def form_valid(self, form):
         res = super().form_valid(form)
@@ -3152,20 +3216,18 @@ class QuickGIODataTableListView(AjaxDatatableView):
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'id'},
+        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'order d-none'},
+        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': True, 'visible': True, "className": 'py-1 show_order_str d-none'},
+        {'name': 'order_number', 'title': "order_number", 'orderable': True, 'visible': True, "className": 'py-1'},
         {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
-        # {'name': 'buy_factor_quantity_in_sepidar', 'orderable': True, 'visible': True, 'title': '<div class="px-0">تعداد در<br>فاکتور خرید</div>', 'className': 'buy_factor_quantity_in_sepidar'},
-        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'item'},
+        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
         {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
-        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True,
-         'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True,
-         'lookup_field': '__icontains'},
-        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True,
-         'lookup_field': '__username__icontains'},
+        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات'},
-        {'name': 'order', 'orderable': False, 'visible': True, 'title': '<div class="px-0"> سفارش</div>', },
+        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات فروش'},
+        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'توضیحات بازرگانی'},
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': '<div class="px-0">Add</div>', },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -3176,10 +3238,12 @@ class QuickGIODataTableListView(AjaxDatatableView):
     def customize_row(self, row, obj):
         from tools.utils import to_jalali_date
         row['created_date'] = to_jalali_date(obj.created_date)
+        row['quantity'] = obj.final_quantity
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
         row['order_method'] = f'<span>{obj.order_method}</span>'
         row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
         row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
-        row['order'] = '<span class="fw-bold p-3 cursor-pointer font-size-20 action" onclick="bazar_buy_factor(event)" >➕</span>'
+        row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
+        row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'

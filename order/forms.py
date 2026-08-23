@@ -278,12 +278,14 @@ class PackingForm(CustomBaseModelForm):
         self.fields['departure_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['arrival_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
-        self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['delivery_to_salehi_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_10_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
 
         if request and not request.user.is_superuser:
             if form_constraint_hide:
@@ -349,33 +351,9 @@ class GIOForm(CustomBaseModelForm):
         exclude = ['group']
 
     def __init__(self, *args, **kwargs):
-        # request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
-        # if self.form_state is None:
-        #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
-        #         self.form_state = c.get('form_state')
-        #     elif kwargs.get('constraint'):
-        #         self.form_state = kwargs.get('constraint').get('form_state')
-        #
-        # if self.form_state is not None:
-        #     if kwargs.get('initial') and (c := kwargs.get('initial').get('constraint')):
-        #         form_constraint = c.pop('form_constraint')  # remove unnecessary kwargs
-        #         formset_constraint = c.pop('formset_constraint')  # remove unnecessary kwargs
-        #         request = c.pop('request')  # remove unnecessary kwargs
-        #         access = c.get('wf_access')
-        #     elif kwargs.get('constraint'):
-        #         form_constraint = kwargs.get('constraint').get('form_constraint')
-        #         formset_constraint = kwargs.get('constraint').get('formset_constraint')
-        #         request = kwargs.get('constraint').get('request')
-        #         access = kwargs.get('constraint').get('wf_access')
-        #         kwargs.pop('constraint')  # remove unnecessary kwargs
-        #     if form_constraint:
-        #         form_constraint_read = form_constraint[self.form_state].get('read')
-        #         form_constraint_hide = form_constraint[self.form_state].get('hide')
-        #     if formset_constraint:
-        #         formset_constraint_read = formset_constraint[self.form_state][0].get('read')
-        #         formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
+
         super(GIOForm, self).__init__(*args, **kwargs)
-        self.make_hidden(['sepidar_buy_factor_response_json'])
+        self.make_hidden(['sepidar_buy_factor_response_json', 'quantity'])
         if self.instance.pk:
             self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_eq_to_qio()'
         # self.fields['gio_date'] = JalaliDateField(label=_('gio_date'),
@@ -412,7 +390,7 @@ class GIOItemForm(CustomBaseModelForm):
         super(GIOItemForm, self).__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_less_than_order(event)'
         self.make_hidden(['order'])
-        self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['description'].widget = forms.TextInput(attrs={'class': 'form-control',})
         # if self.instance.pk and (packing := self.initial.get('packing')):
         gio = self.initial.get('gio')
         if gio:
@@ -420,6 +398,7 @@ class GIOItemForm(CustomBaseModelForm):
             self.make_hidden(['gio'])
 
 GIOItemFormSet = formset_factory(GIOItemForm, extra=1)
+
 
 class OrderPaymentForm(CustomBaseModelForm):
     file_model = File
