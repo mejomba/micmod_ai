@@ -36,6 +36,14 @@ class CommentsForm(CustomBaseModelForm):
             self.fields['comment_title'].choices = (
                 ('O', 'کامنت ساده'),
                 ('R', 'خطای سفارش'),
+                ('T', 'تایید کنسلی سفارش'),
+                ('V', 'رد کنسلی سفارش')
+            )
+        if self.submit_type == 'sales_cancel_order':
+            self.initial['comment_title'] = 'U'
+            self.fields['comment_title'].choices = (
+                ('O', 'کامنت ساده'),
+                ('U', 'کنسلی سفارش'),
             )
         if self.submit_type == 'factor_accounting':
             self.initial['comment_title'] = 'O'
