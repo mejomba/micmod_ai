@@ -8,8 +8,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, Value, Case, When, IntegerField, Subquery, \
+    OuterRef
+from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
@@ -166,8 +167,23 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                                       obj=self.object,
                                       input_prefix='file'
                                       )
-
             self.object.save_comment(self.request, CommentsForm)
+            canceled_order = Order.objects.filter(pk=self.object.pk, comments__comment_title='T').order_by('-id').first()
+            if canceled_order:
+                # wf = WorkFlow.objects.create(action='back', flow_name='order', creator_user=self.request.user,
+                #                              editor_user=self.request.user, wf_status=2,
+                #                              from_user=self.object.last_work_flow.to_user,
+                #                              to_user=self.object.last_work_flow.to_user,
+                #                              content_type=self.model.content_type(), object_id=self.object.pk,
+                #                              belong_to_group='sales', current_state_name='تایید مدیر فروش',
+                #                              wf_description=self.request.POST.get('wf_description'),
+                #                              state=self.object.last_work_flow.current_state_name)
+                # self.object.last_work_flow = wf
+                self.object.sales_admin_cancel = True
+                self.object.extra_data.request = self.request
+                self.object.save()
+
+
             wf_obj = self.submit_flow(is_new=is_new)
             self.object.last_work_flow = wf_obj
             self.object.extra_data.request = self.request
@@ -589,68 +605,257 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
     ]
 
+    def get_gio_annotated_qs(self, qs):
+        return qs.annotate(
+            final_quantity_db=Coalesce(
+                NullIf(F('quantity_mac'), Value(0.0)),
+                NullIf(F('quantity_trade'), Value(0.0)),
+                F('quantity'),
+                Value(0.0),
+                output_field=FloatField()
+            ),
+            total_arrived_db=Coalesce(
+                Sum('gio_items__quantity', filter=Q(gio_items__is_deleted=False)),
+                Value(0.0),
+                output_field=FloatField()
+            ),
+        )
+
+    def _get_expressions(self):
+        final_qty = Coalesce(
+            NullIf(F('quantity_mac'), Value(0.0)),
+            NullIf(F('quantity_trade'), Value(0.0)),
+            NullIf(F('quantity'), Value(0.0)),
+            Value(0.0),
+            output_field=FloatField()
+        )
+        final_price = Coalesce(
+            NullIf(F('price'), Value(0.0)),
+            NullIf(F('price_mac'), Value(0.0)),
+            NullIf(F('price_trade'), Value(0.0)),
+            Value(0.0),
+            output_field=FloatField()
+        )
+        payment_subquery = Subquery(
+            OrderPaymentItem.objects.filter(
+                order=OuterRef('pk'),
+                is_deleted=False
+            ).values('order').annotate(
+                total=Sum('total_amount')
+            ).values('total')[:1],
+            output_field=FloatField()
+        )
+        packing_subquery = Subquery(
+            PackingItem.objects.filter(
+                order=OuterRef('pk'),
+                is_deleted=False
+            ).values('order').annotate(
+                total=Sum('wh_receipt_quantity')
+            ).values('total')[:1],
+            output_field=FloatField()
+        )
+        return final_qty, final_price, payment_subquery, packing_subquery
+
+    def get_packing_payment_annotated_qs(self, qs):
+        final_qty, final_price, payment_subquery, packing_subquery = self._get_expressions()
+        return qs.annotate(
+            final_quantity_db=final_qty,
+            total_price_db=ExpressionWrapper(final_price * final_qty, output_field=FloatField()),
+            total_payment_db=Coalesce(payment_subquery, Value(0.0), output_field=FloatField()),
+            total_packing_db=Coalesce(packing_subquery, Value(0.0), output_field=FloatField()),
+        )
+
     def get_initial_queryset(self, request=None):
 
         q = request.POST.get('q')
         user_group = request.user.base_group
 
-        if user_group == 'sales':
-            return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
-
-        if request.user.groups.filter(name='mac'):
-            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac')
-            return self.model.objects.filter(mac_filter, is_deleted=False, apply_mac=True).distinct()
-
-        if request.user.groups.filter(name='trade_user'):
-            return self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
-                ~Q(order_title__icontains='خودکار')).filter(~Q(last_work_flow__current_state_name="پیش نویس"))
-
-        return self.model.objects.all()
+        user_groups = None
 
         if user_group == 'trade':
             user_groups = request.user.groups.filter(name='trade_user')
+
         elif user_group == 'bazar':
             user_groups = request.user.groups.filter(name='bazar_user')
-            qs = self.model.objects.filter(is_bazar=True)
-            return qs.distinct()
-        else:
-            user_groups = None
-        # elif user_groups == 'sales':
-        #     user_groups = request.user.groups.filter(name='sales_user')
+
         if user_groups:
-            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups)
+            qs = self.model.get_qs(
+                self.request,
+                lst=False,
+                groups_list=user_groups
+            )
         else:
-            qs = self.model.get_qs(self.request, lst=False)
+            qs = self.model.get_qs(
+                self.request,
+                lst=False
+            )
 
         if q == 'all':
-            qs = qs
+            pass
+
         elif q == 'dependent':
-            qs = qs.filter(cancel=True, last_work_flow__current_state_name='تایید مدیر فروش')
+            qs = qs.filter(
+                cancel=True,
+                last_work_flow__current_state_name='تایید مدیر فروش'
+            )
+
         elif q == 'sales_admin':
-            qs = qs.filter(cancel=False, last_work_flow__current_state_name='تایید مدیر فروش')
-        elif user_groups and (q == 'bazar_user' or 'bazar_user' in user_groups):
-            qs = qs.filter(is_bazar=True)
-        elif q == 'not_complete':
-            not_complete_order = Q()
-            qs = self.model.get_qs(self.request, lst=False).filter(cancel=True)
-            for order in qs:
-                not_complete = 0
-                for item in order.order_base_items.all():
-                    not_complete += item.quantity
-                res = not_complete - order.quantity
-                if res < 0:
-                    not_complete_order |= Q(id=order.id)
-            return Order.objects.filter(not_complete_order).distinct() if not_complete_order else Order.objects.none()
+            qs = qs.filter(
+                cancel=False,
+                last_work_flow__current_state_name='تایید مدیر فروش'
+            )
+
         elif q == 'bazar_user':
             qs = qs.filter(is_bazar=True)
+
+        elif q == 'not_complete':
+
+            not_complete_order = Q()
+
+            orders = qs.filter(cancel=True)
+
+            for order in orders:
+                not_complete = 0
+
+                for item in order.order_base_items.all():
+                    not_complete += item.quantity
+
+                res = not_complete - order.quantity
+
+                if res < 0:
+                    not_complete_order |= Q(id=order.id)
+
+            if not_complete_order:
+                qs = qs.filter(not_complete_order)
+            else:
+                qs = qs.none()
+
         elif q == 'is_wh':
             qs = qs.filter(is_wh=True)
+
         elif q == 'is_trade':
-            qs = self.model.get_qs(self.request, lst=False, groups_list=user_groups).filter(is_wh=False, is_bazar=False)
-            # return qs.filter(is_wh=False, is_bazar=False, cancel=False).filter(~Q(last_work_flow__current_state_name='تایید مدیر فروش') & ~Q(last_work_flow__current_state_name='پیش نویس'))
+            qs = qs.filter(
+                is_wh=False,
+                is_bazar=False
+            )
+
+        elif q == 'quantity_difference':
+            has_mac_diff = Q(quantity_mac__isnull=False) & ~Q(quantity_mac=F('quantity')) & ~Q(quantity_mac=0.0)
+            has_trade_diff = Q(quantity_trade__isnull=False) & ~Q(quantity_trade=F('quantity')) & ~Q(quantity_trade=0.0)
+            qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False).distinct()
+
+        elif q == 'need_sale_admin_confirmation':
+            qs = qs.filter(sales_admin_confirmation=True, is_deleted=False)
+
+        elif q == 'has_delay':
+            qs = qs.filter(delay_reason__isnull=False, is_deleted=False)
+
+        elif q == 'has_error':
+            if request.user.groups.filter(name='sales_user'):
+                qs = qs.filter(
+                    comments__comment_title='R', last_work_flow__current_state_name__in=['پیش نویس', 'تایید مدیر فروش']
+                    , is_deleted=False
+                ).distinct()
+
+        elif q == 'pcb_item':
+            qs = qs.filter(item__purchase_group__title='PCB', is_deleted=False).distinct()
+
+        elif q == 'back':
+            qs = qs.filter(
+                last_work_flow__wf_status=2, is_deleted=False
+            )
+
+        elif q == 'is_sample':
+            qs = qs.filter(
+                is_sample=True, is_deleted=False
+            )
+        elif q == 'is_force_order':
+            qs = qs.filter(
+                is_force_order=True, is_deleted=False
+            )
+        elif q == 'cancel_request':
+            qs = qs.filter(
+                comments__comment_title='U', last_work_flow__current_state_name__in=['تایید بازرگانی', 'تایید مهندس', 'ارسال به تامین کننده']
+                , sales_admin_cancel=False, is_deleted=False
+            ).distinct()
+        elif q == 'cancel_denied':
+            qs = qs.filter(
+                comments__comment_title='V'
+                , sales_admin_cancel=False, is_deleted=False
+            ).distinct()
+        elif q == 'gio_complete':
+            qs = self.get_gio_annotated_qs(qs)
+            qs = qs.filter(
+                total_arrived_db__gte=F('final_quantity_db'),
+                final_quantity_db__gt=0, last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                is_deleted=False
+            ).distinct()
+        elif q == 'gio_incomplete':
+            qs = self.get_gio_annotated_qs(qs)
+            qs = qs.filter(
+                final_quantity_db__gt=0,
+                total_arrived_db__lt=F('final_quantity_db'),
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], is_deleted=False
+            ).distinct()
+        elif q == 'payment_complete':
+            qs = self.get_packing_payment_annotated_qs(qs).filter(
+                total_price_db__gt=0,
+                total_payment_db__gte=F('total_price_db'),
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+            ).distinct()
+
+        elif q == 'payment_incomplete':
+            qs = self.get_packing_payment_annotated_qs(qs).filter(
+                total_price_db__gt=0,
+                total_payment_db__lt=F('total_price_db'),
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+            ).distinct()
+
+        elif q == 'packing_complete':
+            qs = self.get_packing_payment_annotated_qs(qs).filter(
+                final_quantity_db__gt=0,
+                total_packing_db__gte=F('final_quantity_db'),
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+            ).distinct()
+
+        elif q == 'packing_incomplete':
+            qs = self.get_packing_payment_annotated_qs(qs).filter(
+                final_quantity_db__gt=0,
+                total_packing_db__lt=F('final_quantity_db'),
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+            ).distinct()
 
         if user_group == 'trade':
             qs = qs.filter(is_bazar=False)
+
+        elif user_group == 'sales':
+            qs = qs.filter(
+                is_deleted=False,
+                cancel=False,
+                is_bazar=False
+            ).filter(
+                ~Q(order_title__icontains='خودکار')
+            )
+
+        if request.user.groups.filter(name='mac').exists():
+
+            qs = qs.filter(
+                is_deleted=False,
+                apply_mac=True
+            )
+
+        elif request.user.groups.filter(name='trade_user').exists():
+
+            qs = qs.filter(
+                is_deleted=False,
+                cancel=False,
+                is_bazar=False
+            ).filter(
+                ~Q(order_title__icontains='خودکار')
+            ).filter(
+                ~Q(last_work_flow__current_state_name='پیش نویس')
+            )
+
         return qs.distinct()
 
     def customize_row(self, row, obj):
@@ -676,7 +881,14 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
-        row['payment'] = '<hr>'.join([f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>" for x in obj.order_payment_items.select_related('payment').all()])  # "R" is order error from trade user
+        row['payment'] = '<hr>'.join([
+                            (
+                                f"<a target='_blank' href='{reverse_lazy('order:order.payment.update', kwargs={'pk': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
+                                if x.payment
+                                else "<span class='text-muted'>بدون پرداخت</span>"
+                            )
+                            for x in obj.order_payment_items.select_related('payment').all()
+                        ])
         row['weight'] = f'{parse_number(obj.final_total_weight):,}'
         row['item__purchase_group'] = obj.final_purchase_group
 
@@ -715,6 +927,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'title', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 # {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
@@ -727,6 +940,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
+                {'name': 'commitment_date_to_customer', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
