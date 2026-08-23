@@ -26,6 +26,11 @@ class Comments(BaseContentType):
         ('Q', 'فقط بازرگانی'),
         # order error
         ('R', 'خطای سفارش'),
+        # sales cancel order
+        ('U', 'کنسلی سفارش'),
+        # trade cancel order approval
+        ('T', 'تایید کنسلی سفارش'),
+        ('V', 'رد کنسلی سفارش'),
         # factor accounting
         ('S', 'عدم تایید مالی فاکتور'),
         # other

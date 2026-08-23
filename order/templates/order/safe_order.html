@@ -231,7 +231,11 @@
         {% if request.user.base_group == 'trade' %}
             {% get_comment_user_list form request.user comment_type='order_error' %}
         {% elif request.user.base_group == 'sales' %}
-            {% get_comment_user_list form request.user %}
+            {% if form.instance.last_work_flow.current_state_name == 'پیش نویس' or  form.instance.last_work_flow.current_state_name == 'تایید مدیر فروش' or form.instance.last_work_flow.current_state_name == 'ارسال به تامین کننده' or form.instance.last_work_flow.current_state_name == 'تایید مهندس' or form.instance.last_work_flow.current_state_name == 'تایید بازرگانی' %}
+            	{% get_comment_user_list form request.user comment_type='sales_cancel_order'  %}
+            {% else %}
+                {% get_comment_user_list form request.user  %}
+            {% endif %}
         {% else %}
             {% get_comment_user_list form request.user %}
         {% endif %}
@@ -975,7 +979,7 @@ $(document).ready(function () {
                     debugger
                     document.querySelector('#last_buy_price').innerHTML = `<div class="d-flex justify-content-between"><span>قیمت: ${data.fee_in_base_currency.toLocaleString() ?? "-"} <small>${data.currency}</small></span> <span>#${data.number}</span> </div>   <div class="d-flex justify-content-between"> <span> تعداد: ${data.quantity.toLocaleString() ?? "-"} </span> <span> تاریخ: ${data.created_date ?? "-"} </span> </div>`
                 } catch (e) {
-                    document.querySelector('#last_buy_price').innerHTML = "خطا: مطمعن شوید فیلد کالای بازرگانی پر شده باشد."
+                    document.querySelector('#last_buy_price').innerHTML = "خطا: مطمئن شوید فیلد کالای بازرگانی پر شده باشد."
                 }
 
             },

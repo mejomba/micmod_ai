@@ -123,7 +123,7 @@
                 {% if request.user.base_group == 'trade' %}
                     {% get_comment_user_list form request.user comment_type='order_error' %}
                 {% elif request.user.base_group == 'sales' %}
-                    {% get_comment_user_list form request.user %}
+                    {% get_comment_user_list form request.user comment_type='sales_cancel_order' %}
                 {% else %}
                     {% get_comment_user_list form request.user %}
                 {% endif %}
