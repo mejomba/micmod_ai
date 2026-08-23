@@ -148,7 +148,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
 
-                shop_buy_factor_pk = None # ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
+                shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
                 if shop_buy_factor_pk:
                     self.object.shop_buy_factor_id = shop_buy_factor_pk
                     self.object.extra_data.request = self.request
