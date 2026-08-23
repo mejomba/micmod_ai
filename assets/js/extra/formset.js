@@ -186,7 +186,6 @@ window.addEventListener('load', (event) => {
     }
 
     function updateTotalFormCount(event) {
-        debugger
         // note we could simply do initialForms + extraFormIndices.length
         // to get the total form count, but that does not work if we have
         // validation errors on forms that were added dynamically

@@ -548,6 +548,10 @@ class NoUserBaseModel(models.Model, BaseModelAuto, BaseFunctions):
     def formatted_last_update_date(self):
         return self.last_update_date.__format__('D:%Y %b %d')
 
+    @property
+    def jalali_created_date(self):
+        return to_jalali_date(self.created_date)
+
     @staticmethod
     def save_file(request, file_groups, file_model, obj, form_idx=0, *args, **kwargs):
         """

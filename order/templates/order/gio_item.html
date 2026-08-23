@@ -35,25 +35,26 @@
     var $container = $(`
         <div class='d-flex gap-5'>
         <span class="bg-light-success rounded px-1 me-3 text-primary">
-            <span>کد:</span>
+            <span data-key="code">کد:</span>
             ${repo.id}
         </span>
-        <span><span>عنوان:</span>
+        <span><span data-key="title">title:</span>
             ${repo.text}</span>
         <span>
-            <span>تعداد: </span>
+            <span data-key="quantity">quantity: </span>
             ${repo.quantity}
         </span>
         <span>
-            <span>قیمت کل: </span>
+            <span data-key="total_price">total price: </span>
             ${repo.total_price} ${repo.currency_ref_title}
         </span>
         <span>
-            <span>پرداخت شده: </span>
+            <span>total paid: </span>
             ${repo.total_paid}
         </span>
         </div>
     `);
+
     return ($container)
     }
 

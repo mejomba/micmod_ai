@@ -1,0 +1,135 @@
+{% load static %}
+{% load more_tags %}
+
+    <link href="{% static 'libs/select2/dist/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'admin/jquery.ui.datepicker.jalali/themes/base/jquery-ui.min.css' %}">
+    <link href="{% static 'css/modal.css' %}" rel="stylesheet" type="text/css" />
+<style>
+    .select2-dropdown--below{
+        transition: width 0.7s ease;
+    }
+</style>
+{% for form in formset.forms %}
+    <div class="position-relative rounded shadow-sm my-2 pb-3 pt-6 px-3 border {% if forloop.counter0|divisibleby:'2' %} bg-gray-10 {% else %} bg-white {% endif %}">
+        <div class="row item">
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+            <div class="d-non" name="order_placeholder-{{ forloop.counter0 }}">{{ form.instance.order.select2_placeholder|default_if_none:'' }}</div>
+                <div class="row row-cols-3">
+                    <div class="col-6">
+                        <div class="row row-cols-2">
+                            <div class="col-9 on-border mb-3">
+                                <div id="id_order_select2-{{ forloop.counter0 }}" class="list-selector" style="width: 100%"></div>
+                                <label for="id_order_select2-{{ forloop.counter0 }}">سفارش</label>
+                            </div>
+                            <div class="col-3">
+                            {% render_field_by_order form form.total_amount label='on-border' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                {% render_field_by_order form form.description label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.file_1 label='on-border' %}
+                                {% for file in form.instance.files.all %}
+                                    <a href="{{ file.path.url }}" target="_blank" class="me-1">
+                                        <i class="fas fs-2 fa-file-upload icon-lg"></i>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <div class="col-3 mb-3">
+                                <div class="form-check form-check-custom form-check-danger">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ forloop.counter0 }}-DELETE" id="id_payment_item-{{ forloop.counter0 }}-DELETE">
+                                    <label class="ms-1" for="id_payment_item-{{ forloop.counter0 }}-DELETE">
+                                        حذف
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-custom form-check-warning">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ forloop.counter0 }}-delete_from_this_payment" id="id_payment_item-{{ forloop.counter0 }}-delete_from_this_payment">
+                                    <label class="ms-1" for="id_payment_item-{{ forloop.counter0 }}-delete_from_this_payment">
+                                        حذف از این پرداخت
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-custom form-check-success">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ forloop.counter0 }}-is_pay" id="id_payment_item-{{ forloop.counter0 }}-is_pay" {% if form.instance.is_pay %} checked {% endif %}>
+                                    <label class="ms-1" for="id_payment_item-{{ forloop.counter0 }}-is_pay">
+                                        پرداخت شد
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.payment_item_type label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.pay_date label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.payer label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.pay_receiver label='on-border' %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div id="id_detail">
+                            <div class="row row-cols-4">
+                                <div class="d-flex gap-2 mb-2">
+                                    <span>عنوان</span>
+                                    <span id="order-title">{{ form.instance.order.title|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>مبلغ سفارش</span>
+                                    <span id="order-remained-payment">
+                                        {{ form.instance.order.total_price|default_if_falsy:'-' }}
+                                        {{ form.instance.order.currency.title }}
+                                    </span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>کل پرداخت شده</span>
+                                    <span id="order-quantity">{{ form.instance.order.total_paid|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>مانده برای پرداخت</span>
+                                    <span id="order-quantity">{{ form.instance.order.remaining_amount|default_if_falsy:'-' }}</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span>تعداد کل</span>
+                                    <span id="order-quantity">{{ form.instance.order.final_quantity|default_if_falsy:'-' }}</span>
+                                </div>
+{#                                <div class="d-flex gap-2">#}
+{#                                    <span>تعداد مانده</span>#}
+{#                                    <span id="order-quantity">{{ form.instance.order.remaining_quantity|default_if_falsy:'-' }}</span>#}
+{#                                </div>#}
+                            </div>
+                            <div class="d-flex gap-6 mt-4 text-info">
+                                {% for other_payment_item in form.instance.order.where_is_other_payment %}
+                                    <span class="d-flex gap-2 bg-light-info px-2 rounded">
+                                        <span>در پرداخت شماره</span>
+                                        <span>{{ other_payment_item.payment }}</span>
+                                        <span>مبلغ</span>
+                                        <span>{{ other_payment_item.total_amount }}</span>
+                                        <span>{{ other_payment_item.currency }}</span>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="position-absolute badge badge-info" style="top: 5px; left: 5px">{{ form.instance.pk }}</span>
+                    </div>
+
+                </div>
+
+            <div class="row-counter badge d-none" style="position: relative">
+                <span class="counter">{{ forloop.counter0|add:"1" }}</span>
+            </div>
+
+        </div>
+    </div>
+{% endfor %}
+
+<script>
+
+</script>

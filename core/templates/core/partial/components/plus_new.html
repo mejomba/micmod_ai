@@ -1,12 +1,19 @@
-<div class="d-flex">
-    <a href="#" class="">
+<div class="d-flex" onclick="t(event)">
+    <a href="#" class="mt-3">
         {% if obj.pk %}
-            <h1 class="border px-3 py-1 rounded" id={{ id_ }} data-url="{% url url_ %}?pk={{ obj.pk }}" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
+            <h1 class="border px-3 py-1 rounded" id={{ id_ }} data-url="{% url url_ %}?pk={{ obj.pk }}&rel_pk={{ rel_pk }}" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
                 +
-            <span class="font-size-14">افزودن ردیف جدید</span>
+            <span class="font-size-14" data-key="افزودن ردیف جدید">افزودن ردیف جدید</span>
             </h1>
             {% else %}
             <p data-key="{{ help_text }}">{{ help_text }}</p>
         {% endif %}
     </a>
 </div>
+
+<script>
+    function t(event){
+
+        setTimeout(get_translate, 1000)
+    }
+</script>

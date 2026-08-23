@@ -241,5 +241,16 @@
     "pending_list": "pending list",
     "sepidar": "sepidar",
     "t-payment": "payment",
-    "create_gio": "create new GIO"
+    "create_gio": "create new GIO",
+    "pre_payment": "pre payment",
+    "payment": "payment",
+    "credit_payment": "credit payment",
+    "payment_item_type": "type",
+    "is_pay": "is pay",
+    "ارسال به مرحله بعد": "next",
+    "افزودن ردیف جدید": "add new row",
+    "buy_history": "buy history",
+    "sales_history": "sales history",
+    "submit": "submit",
+    "sales_10_darsad": "10 %"
 }

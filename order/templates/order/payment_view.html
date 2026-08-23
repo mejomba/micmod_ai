@@ -90,6 +90,7 @@
         {% endif %}
 
 {#            <div class="row" id="order-messages"></div>#}
+        <span class="btn btn-secondary" id="load-payment-item-history" onclick="load_payment_item_history(event)">تاریخچه</span>
         </div>
 
         <div class="d-flex gap-2 align-items-end">
@@ -132,6 +133,7 @@
             {% for form_s in formset.forms %}
                 {% include 'order/payment_item_view2.html' with form=form_s counter=forloop.counter0 %}
             {% endfor %}
+            <div id="payment-items-from-load"></div>
             </div>
     </div>
 
@@ -246,6 +248,19 @@
     <script src="{% static 'js/extra/formset.js' %}"></script>
 
     <script>
+
+    function load_payment_item_history(event){
+        try {
+            const vendor = document.querySelector('input[name="inquiry.models.Supplier__auto__vendor_party"]').value
+            if (vendor){
+                const url = `/order/paymentitem/from-load/${vendor}/`
+                const jqueryElement = $('#payment-items-from-load')
+                custom_ajax_get(null, url, jqueryElement)
+            }
+        } catch (e) {
+            console.log(e)
+        }
+    }
 
     window.addEventListener('DOMContentLoaded', function (){
         const current_state = document.querySelector('#id_state').value

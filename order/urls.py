@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
     PaymentItemDataTableListView, OrderAndSepidar, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
-    ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView
+    ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView, payment_item_from_load
 
 from .views import CustomerRequestOrderViewSet
 from .select2 import order_select2_search
@@ -68,6 +68,7 @@ urlpatterns = [
     #  order paymentitem
     path('paymentitem/view/', PaymentItemView.as_view(), name='order.paymentitem.view'),
     path('paymentitem/update/<int:pk>/', PaymentItemView.as_view(), name='order.paymentitem.update'),
+    path('paymentitem/from-load/<str:vendor>/', payment_item_from_load, name='order.paymentitem.from.load'),
 
     #  ACNT
     path('acnt/view/', ACNTView.as_view(), name='acnt.view'),

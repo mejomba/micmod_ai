@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
@@ -58,8 +59,8 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self._apply_select2()
 
         # ========= customize fields before permission apply
-        self.make_required(['price_trade', 'item', 'quantity',
-                            'supplier_trade', 'currency', 'trade_user'])
+        self.make_required(['price_trade', 'item', 'quantity', "production_lead_time", "trade_commitment_date",
+                            'quantity_trade', 'supplier_trade', 'currency', 'trade_user'])
         self.fields['description_sale'].widget.attrs['rows'] = 1
         self.fields['description_trade'].widget.attrs['rows'] = 1
         self.fields['description_mac'].widget.attrs['rows'] = 1
@@ -283,6 +284,7 @@ class PackingForm(CustomBaseModelForm):
         self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['description'].widget.attrs['rows'] = 3
+        self.fields['sales_10_darsad'].widget.attrs['rows'] = 3
         self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
@@ -470,6 +472,7 @@ class OrderPaymentForm(CustomBaseModelForm):
 class OrderPaymentItemForm(CustomBaseModelForm):
     file_model = File
     file_groups = 1
+    delete_from_this_payment = forms.BooleanField(initial=False)
 
     class Meta:
         model = OrderPaymentItem
@@ -478,6 +481,13 @@ class OrderPaymentItemForm(CustomBaseModelForm):
         # widgets = {
         #     'payment': PaymentItemFormPaymentWidget,
         # }
+
+    def clean(self):
+        pay_receiver = self.cleaned_data.get('pay_receiver')
+        order = self.cleaned_data.get('order')
+
+        if pay_receiver and order:
+            raise ValidationError('شما نمی‌توانید همزمان پرداخت گیرنده و سفارش را انتخاب کنید')
 
     def __init__(self, *args, **kwargs):
         request = access = form_constraint = formset_constraint = form_constraint_read = form_constraint_hide = formset_constraint_read = formset_constraint_hide = None
@@ -519,6 +529,7 @@ class OrderPaymentItemForm(CustomBaseModelForm):
                     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order', 'payment'])
+        self.make_optional(['delete_from_this_payment'])
         self.fields['description'].widget.attrs['rows'] = 1
         self.fields['from_date'] = JalaliDateField(label=_('from_date'),
                                                    widget=AdminJalaliDateWidget(
@@ -535,7 +546,7 @@ class OrderPaymentItemForm(CustomBaseModelForm):
 
 
 
-order_payment_item_fields = ['order', 'payment', 'description', 'total_amount']
+order_payment_item_fields = ['id', 'order', 'payment', 'description', 'total_amount', 'payment_item_type', 'is_pay', 'pay_date', 'payer', 'pay_receiver']
 
 OrderPaymentItemFormSet = inlineformset_factory(
     parent_model=OrderPayment,

@@ -837,5 +837,10 @@
     "goods_information": "اطلاعات کالا",
     "price_and_sales_information": "اطلاعات قیمت و فروش",
     "stock_information": "اطلاعات موجودی کالا",
-    "admin_price_information": "اطلاعات قیمت (مدیریتی)"
+    "admin_price_information": "اطلاعات قیمت (مدیریتی)",
+    "file_1": "فایل(ها) پیوست 1",
+    "payer": "پرداخت کننده",
+    "pay_receiver": "پرداخت گیرنده",
+    "pay_date": "تاریخ پرداخت",
+    "sales_10_darsad": "شماره کارتن های 10 درصد"
 }

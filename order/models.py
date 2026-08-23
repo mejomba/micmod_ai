@@ -9,6 +9,7 @@ from django.utils.safestring import mark_safe
 import datetime
 
 from accounts.models import User
+from django.conf import settings
 from micmod_base.base import Currency
 from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseModel, FiscalYearRef
 from extra_data.models import Brand, Item, Customer, WH
@@ -373,7 +374,7 @@ class Order(BaseModeWF):
 
     @property
     def where_is_other_payment(self):
-        return [{'payment': x.payment.pk, 'total_amount': x.total_amount, 'currency': x.payment.currency.title_en if x.payment.currency else None} for x in self.order_payment_items.all()]
+        return [{'payment': x.payment.pk, 'total_amount': x.total_amount, 'currency': x.payment.currency.title_en if x.payment.currency else None} for x in self.order_payment_items.all() if x.payment]
 
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
@@ -901,11 +902,14 @@ class Packing(BaseModeWF):
     estimated_delivery_date = models.DateField(_('estimated_arrive_date'), null=True, blank=True)
     estimated_arrive_to_wh_date = models.DateField(_('estimated_arrive_to_wh_date'), null=True, blank=True)
     reserve_bar_date = models.DateField(_('reserve_bar_date'), null=True, blank=True)
-    sum_qty = models.FloatField(_('sum_qty'))
+    sum_qty = models.FloatField(_('sum_qty'), null=True, blank=True)
     sum_arrived_qty = models.FloatField(_('sum_arrived_qty'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
     wh_destination = models.CharField('wh_destination', choices=WH_DESTINATION_CHOICE, null=True, blank=True)
     sepidar_wh_to_wh = models.JSONField(null=True, blank=True)
+    sales_10_darsad = models.TextField('sales_10_darsad', null=True, blank=True, help_text='شماره کارتن هایی که به عنوان 10 درصد هستند. با علامت / جدا کنید')
+    currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
+                                 related_name='packings')
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'
@@ -1021,6 +1025,103 @@ class OrderPayment(BaseModeWF):
     sepidar_debit_credit_note_number = models.PositiveIntegerField(null=True, blank=True)
     fiscalyearref = models.ForeignKey(FiscalYearRef, on_delete=models.DO_NOTHING, null=True, blank=True)
 
+    def submit_flow(self, request, is_new):
+        self.flow_config = self.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'PaymentView')
+        groups = {
+            0: {"group": "trade_user", "state_name": "پیش نویس"},
+            1: {"group": "order_payment_user", "state_name": "پرداخت"},
+            2: {"group": "order_payment_user", "state_name": "مرحله نهایی"},
+        }
+
+        last_flow = self.last_work_flow
+        current_state_index = self.get_flow_index()
+
+        if 0 < current_state_index < 2:
+            next_state_index = current_state_index + 1
+            previews_state_index = current_state_index - 1
+
+        if current_state_index == 0:
+            next_state_index = 1
+            previews_state_index = 0
+
+        if current_state_index == 2:
+            next_state_index = 2
+            previews_state_index = 1
+
+        current_group_name = groups.get(current_state_index).get('group')
+        next_group_name = groups.get(next_state_index).get('group')
+        previews_group_name = groups.get(previews_state_index).get('group')
+
+        current_state_name = groups.get(current_state_index).get('state_name')
+        next_state_name = groups.get(next_state_index).get('state_name')
+        previews_state_name = groups.get(previews_state_index).get('state_name')
+
+        # 3 next
+        if 'next' in request.POST or 'next' in getattr(request, 'data', []):
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=next_group_name)
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.latest("pk").from_user
+            else:
+                next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+                to_user = next_state_user.last()
+
+            wf = WorkFlow.objects.create(action='next', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=3,
+                                         from_user=getattr(last_flow, "to_user", None) or request.user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=next_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 5 first draft
+        elif ('draft' in request.POST or 'draft' in getattr(request, 'data', [])) and (is_new or not last_flow):
+            wf = WorkFlow.objects.create(action='draft', flow_name='quotation', wf_status=5,
+                                         creator_user=request.user,
+                                         editor_user=request.user,
+                                         from_user=request.user,
+                                         to_user=request.user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 2 back
+        elif 'back' in request.POST or 'back' in getattr(request, 'data', []):
+            current_group_last_wf_obj = self.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+            if current_group_last_wf_obj:
+                to_user = current_group_last_wf_obj.from_user
+            else:
+                previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+                to_user = previews_state_user.first()
+
+            wf = WorkFlow.objects.create(action='back', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=2,
+                                         from_user=last_flow.to_user,
+                                         to_user=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=previews_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        # 4 change user
+        elif 'change_user' in request.POST or 'change_user' in getattr(request, 'data', []):
+            to_user = request.POST.get('to_current_group_user')
+            wf = WorkFlow.objects.create(action='change user', flow_name='quotation', creator_user=request.user,
+                                         editor_user=request.user, wf_status=4,
+                                         from_user=last_flow.to_user,
+                                         to_user_id=to_user,
+                                         content_type=self.__class__.content_type(), object_id=self.pk,
+                                         belong_to_group=current_group_name, current_state_name=current_state_name,
+                                         wf_description=request.POST.get('wf_description'),
+                                         state=current_state_name)
+            return wf
+
+        return last_flow
+
     @property
     def total_payment(self):
         if self.pk:
@@ -1047,8 +1148,14 @@ class OrderPaymentItemManager(BaseManager):
 
 
 class OrderPaymentItem(BaseModeWF):
+    PAYMENT_TYPE_CHOICE = (("pre_payment", _("pre_payment")), ("payment", _("payment")), ("credit_payment", _("credit_payment")), )
+    payment_item_type = models.CharField(verbose_name=_('payment_item_type'), choices=PAYMENT_TYPE_CHOICE, null=True, blank=True)
+    is_pay = models.BooleanField(default=False)
+    payer = models.ForeignKey(Supplier, verbose_name=_("payer"), on_delete=models.DO_NOTHING, related_name='payer_payment_item', null=True, blank=True)
+    pay_receiver = models.ForeignKey(Supplier, verbose_name=_("pay_receiver"), on_delete=models.DO_NOTHING, related_name='pay_receiver_payment_item', null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING, related_name='order_payment_items', verbose_name=_('order'), null=True, blank=True)
     payment = models.ForeignKey(OrderPayment, on_delete=models.DO_NOTHING, related_name='payment_item', null=True, blank=True)
+    pay_date = models.DateField(verbose_name=_('pay_date'), null=True, blank=True)
     from_date = models.DateField(verbose_name=_('form_date'), null=True, blank=True)
     to_date = models.DateField(verbose_name=_('to_date'), null=True, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)

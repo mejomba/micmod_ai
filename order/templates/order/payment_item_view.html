@@ -21,10 +21,13 @@
 {#                    {% render_field_by_order form form.payment form.order form.total_amount form.exchange_rate label='on-border' %}#}
 {#                    {% render_field_by_order form form.destination_currency  label='on-border' %}#}
 {#                </div>#}
-                <div class="row row-cols-3">
-                    {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}
-                    {% render_field_by_order form form.payment form.order form.total_amount label='on-border' %}
-                    {% render_field_by_order form form.description label='on-border' %}
+                <div class="row row-cols-5">
+{#                    {% include 'core/partial/select2_field.html' with id="id_order_select2" lable="سفارش" %}#}
+                    {% render_field_by_order form form.payment form.order form.total_amount form.payment_item_type form.pay_date form.file_1 form.is_pay form.payer form.pay_receiver label='on-border' %}
+                    <div class="col-12">
+                        {% render_field_by_order form form.description label='on-border' %}
+                    </div>
+
                 </div>
 {#                <div class="row row-cols-1">#}
 {#                    {% render_field_by_order form form.description label='on-border' %}#}
@@ -40,6 +43,7 @@
 {#                </div>#}
 {#            </div>#}
         </div>
+        <input type="submit" class="btn btn-primary mt-5" value="ثبت">
     </div>
 </form>
 

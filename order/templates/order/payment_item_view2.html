@@ -38,13 +38,37 @@
                                     </a>
                                 {% endfor %}
                             </div>
-                            <div class="col-2">
+                            <div class="col-3 mb-3">
                                 <div class="form-check form-check-custom form-check-danger">
                                     <input class="form-check-input" type="checkbox" name="payment_item-{{ counter }}-DELETE" id="id_payment_item-{{ counter }}-DELETE">
                                     <label class="ms-1" for="id_payment_item-{{ counter }}-DELETE">
                                         حذف
                                     </label>
                                 </div>
+                                <div class="form-check form-check-custom form-check-warning">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ counter }}-delete_from_this_payment" id="id_payment_item-{{ counter }}-delete_from_this_payment">
+                                    <label class="ms-1" for="id_payment_item-{{ counter }}-delete_from_this_payment">
+                                        حذف از این پرداخت
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-custom form-check-success">
+                                    <input class="form-check-input" type="checkbox" name="payment_item-{{ counter }}-is_pay" id="id_payment_item-{{ counter }}-is_pay" {% if form.instance.is_pay %} checked {% endif %}>
+                                    <label class="ms-1" for="id_payment_item-{{ counter }}-is_pay">
+                                        پرداخت شد
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.payment_item_type label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.pay_date label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.payer label='on-border' %}
+                            </div>
+                            <div class="col-3">
+                                {% render_field_by_order form form.pay_receiver label='on-border' %}
                             </div>
                         </div>
                     </div>

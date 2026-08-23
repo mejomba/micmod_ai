@@ -26,10 +26,10 @@
         <div class="swal2-validation-message" id="swal2-validation-message" style="display: none;"></div>
         <div class="swal2-actions" style="display: flex;">
             <div class="swal2-loader"></div>
-            <button type="button" id="delete-confirm" data-bs-dismiss="modal" class="swal2-confirm btn btn-primary" data-url="/core/delete/" data-app_label="{{ app_label }}" data-model="{{ model }}" data-object_id="{{ object_id }}" aria-label="" style="display: inline-block;">
+            <button type="button" id="delete-confirm" data-bs-dismiss="modal" data-key="yes" class="swal2-confirm btn btn-primary" data-url="/core/delete/" data-app_label="{{ app_label }}" data-model="{{ model }}" data-object_id="{{ object_id }}" aria-label="" style="display: inline-block;">
                 بله
             </button>
-            <button type="button" id="delete-deny" data-bs-dismiss="modal" class="swal2-deny btn btn-light-danger" aria-label="" style="display: inline-block;">
+            <button type="button" id="delete-deny" data-bs-dismiss="modal" data-key="no" class="swal2-deny btn btn-light-danger" aria-label="" style="display: inline-block;">
                 خیر
             </button>
             <button type="button" class="swal2-cancel" aria-label="" style="display: none;">Cancel</button>

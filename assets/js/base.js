@@ -457,22 +457,31 @@ function copyToClipboard(elem) {
         const emptyModal = document.getElementById('id_kt_empty_modal')
         if (emptyModal){
             emptyModal.addEventListener('hidden.bs.modal', function (e) {
-            document.querySelector('#id-empty-modal-body').innerHTML = ''
+                document.querySelector('#id-empty-modal-body').innerHTML = ''
+            })
+            emptyModal.addEventListener('shown.bs.modal', function (e) {
+                setTimeout(get_translate, 1500)
             })
         }
 
         const emptyModalLG = document.getElementById('id_kt_empty_modal_lg')
         if (emptyModalLG){
             emptyModalLG.addEventListener('hidden.bs.modal', function (e) {
-            document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
-        })
+                document.querySelector('#id-empty-modal-body-lg').innerHTML = ''
+            })
+            emptyModalLG.addEventListener('shown.bs.modal', function (e) {
+                setTimeout(get_translate, 1500)
+            })
         }
 
         const emptyModalSM = document.getElementById('id_kt_empty_modal_sm')
         if (emptyModalSM) {
             emptyModalSM.addEventListener('hidden.bs.modal', function (e) {
-            document.querySelector('#id-empty-modal-body-sm').innerHTML = ''
-        })
+                document.querySelector('#id-empty-modal-body-sm').innerHTML = ''
+            })
+            emptyModalSM.addEventListener('shown.bs.modal', function (e) {
+                setTimeout(get_translate, 1500)
+            })
         }
 
         const modalLG = document.querySelector('#id_kt_empty_modal_lg');

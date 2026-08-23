@@ -8,8 +8,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, BooleanField, Value, Func, IntegerField
+from django.db.models.expressions import RawSQL
+from django.db.models.functions import Coalesce, Now
+from django.forms import modelformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
 from django.template.loader import render_to_string
@@ -287,7 +289,10 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
         context['section_id'] = 'order'
 
-        if self.state_index > 1 and self.request.user.base_group == 'sales':
+        if self.request.user.is_superuser:
+            context['allow_next'] = True  # context.get('allow_next')
+            context['allow_back'] = True  # context.get('allow_back')
+        elif self.state_index > 1 and self.request.user.base_group == 'sales':
             """اگر در مراحل بازرگانی بودم کاربر فروش نمیتواند سند را به مرحله بعد و قبل ببرد"""
             context['allow_next'] = False
             context['allow_back'] = False
@@ -313,12 +318,22 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             )
         else:
             if self.object:
-                ...
+                context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).annotate(
+                    for_plan=RawSQL(
+                        'pay_date > NOW()',
+                        [],
+                        output_field=BooleanField()
+                    ),
+                    diff_plan=RawSQL(
+                        'EXTRACT(DAY FROM (pay_date - NOW()))',
+                        [],
+                        output_field=IntegerField()
+                    )
+                ).order_by('-id')
 
         if self.state_index == 7:
             context['packing_items'] = PackingItem.objects.filter(order=self.object).order_by('-id')
             context['gio_items'] = GIOItem.objects.filter(order=self.object).order_by('-id')
-            context['payment_items'] = OrderPaymentItem.objects.filter(order=self.object).order_by('-id')
 
         # context['delay_reason_form'] = OrderDelayReasonModelForm(initial={'order': self.object},
         #                                                          order_instance=self.object,
@@ -684,11 +699,15 @@ class OrderDataTableListView(AjaxDatatableView):
         row['qi__quotation'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['estimated_arrive_date'] = obj.estimate_arrive_at
         row['comments'] = '<hr>'.join([f"{x.comment_content} <br> ({x.elapsed_time})" for x in obj.comments.filter(comment_title='R')])  # "R" is order error from trade user
-        row['payment'] = '<hr>'.join([f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>" for x in obj.order_payment_items.select_related('payment').all()])  # "R" is order error from trade user
         row['weight'] = f'{parse_number(obj.final_total_weight):,}'
         row['item__purchase_group'] = obj.final_purchase_group
-
         row['work_day'] = obj.trade_work_day
+
+        base_group = self.request.user.base_group
+        if base_group == 'trade':
+            self.customize_row_trade(row, obj)
+        # elif base_group == 'sales':
+        #     self.customize_row_sales(row, obj)
 
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
@@ -698,7 +717,20 @@ class OrderDataTableListView(AjaxDatatableView):
         #     </i>
         # </a>
         # """)
-        
+
+    def customize_row_trade(self, row, obj):
+        try:
+            row['payment'] = '<hr>'.join([
+                                             f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
+                                             for x in obj.order_payment_items.select_related('payment').all()])
+        except Exception as e:
+            pass
+
+    # def customize_row_sales(self, row, obj):
+    #     total_gio = obj.gio_items.annotate(sum_gio=Sum('quantity')).sum_gio or 0
+    #     row['gio'] = f'{(total_gio/obj.quantity)}'
+    #     row['packing'] = '-'
+
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
             self.column_defs = [
@@ -721,26 +753,30 @@ class OrderDataTableListView(AjaxDatatableView):
             self.column_defs = [
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
-                {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'order_number', 'orderable': True, 'title': 'شماره سفارش', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
                 # {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
-                {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-                {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False, },
-                {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-                {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
-                {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
-                {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
-                {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'created_date', 'orderable': True, 'visible': True, },
-                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
-                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
-                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
-                {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
+                {'name': 'last_work_flow', 'title': '<div class="px-4">وضعیت</div>', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
+                {'name': 'trade_commitment_date', 'title': 'تارخ تعهد بازرگانی', 'visible': True, 'searchable': False, 'orderable': False, },
+                {'name': 'estimated_arrive_date', 'title': 'تخمین زمان رسیدن', 'visible': True, 'searchable': False, 'orderable': False, },
+                {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
+                {'name': 'item', 'orderable': True, 'title': 'کالا (فروش)', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item__part_number', 'orderable': True, 'title': 'پارت نامبر (فروش)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'item_trade', 'orderable': True, 'title': 'کالا (بازرگانی)', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item_trade__part_number', 'orderable': True, 'title': 'پارت نامبر (بازرگانی)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'created_date', 'orderable': True, 'visible': False, },
+                {'name': 'jalali_created_date', 'title': '<div class="px-2">تاریخ ایجاد</div>', 'orderable': False, 'visible': True, 'searchable': False},
+                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'روش حمل'},
+                {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد (فروش)', },
+                {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات (فروش)'},
+                {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'تعداد (بازرگانی)', },
                 {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
-                {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
+                {'name': 'gio', 'searchable': False, 'orderable': False, 'visible': True, 'title': '<div class"px-4">GIO</div>', },
+                {'name': 'packing', 'searchable': False, 'orderable': False, 'visible': True, 'title': '<div class="px4">پکینگ</div>', },
+                {'name': 'trade_user', 'title': 'کارشناس بازرگانی', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
             ]
         elif self.request.user.base_group == 'trade':
@@ -1118,11 +1154,19 @@ class PackingView(LoginRequiredMixin, BaseView):
         res = super().form_valid(form)
         return res
 
+    def get_queryset(self):
+        x = super().get_queryset().annotate(
+                total_quantity=Sum('packing_item_rel__quantity'),
+                total_arrive_to_wh=Sum('packing_item_rel__wh_receipt_quantity'),
+                total_ruined_quantity=Sum('packing_item_rel__ruined_quantity')
+            )
+        return x
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['app_name'] = self.request.resolver_match.app_name
         context['wf_access'] = self.wf_access
-        context['packing_items'] = self.object.packing_item_rel.all if self.object else None
+        context['packing_items'] = self.object.packing_item_rel.all().order_by('id') if self.object else None
         context['state_index'] = self.state_index
         return context
 
@@ -1167,7 +1211,7 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         return JsonResponse({'res': 'only ajax request'})
 
     def get_context_data(self, **kwargs):
-        context = {}
+        context = {'request': self.request}
         # context = super().get_context_data(**kwargs)
         packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
         form = PackingItemForm(initial={'packing': packing or self.object.packing, 'request': self.request}, instance=self.object)
@@ -1423,7 +1467,117 @@ class PaymentView(LoginRequiredMixin, BaseView):
     def get_success_url(self):
         return reverse_lazy('order:order.payment.update', kwargs={'pk': self.object.pk})
 
+    def get_formset_queryset(self):
+        try:
+            total_forms = int(self.request.POST.get('payment_item-TOTAL_FORMS'))
+            pks = list()
+            for i in range(total_forms):
+                pks.append(self.request.POST.get(f'payment_item-{i}-id') or 0)
+            return OrderPaymentItem.objects.filter(pk__in=pks)
+        except Exception as e:
+            pass
+
     def post(self, request, *args, **kwargs):
+        is_new = False if self.object else True
+        last_work_flow = self.object.last_work_flow
+        from tools.form_tools import get_function
+        self.request.POST._mutable = True
+        for key, value in list(self.request.POST.items()):
+            if key.__contains__("__auto__"):
+                model_str, key = key.split("__auto__")
+                model = get_function(model_str)  # self.form_class.base_fields[key].queryset.model
+                value = value.strip()
+                if value:
+                    obj = model.objects.filter(**{f'{model.auto_complete}__iexact': value}).first()
+                    if not obj and model.insert_new:
+                        if model.__name__.lower() == 'creditcard':
+                            obj = model.objects.create(**{model.auto_complete: value,
+                                                          'credit_card_number': self.request.POST.get('to_account'),
+                                                          'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
+                        else:
+                            obj = model.objects.create(**{model.auto_complete: value, 'creator_user': self.request.user,
+                                                          'editor_user': self.request.user})
+                        obj.extra_data.request = self.request
+                        obj.save()
+                        obj.auto_complete_func()
+
+                    value = getattr(obj, 'pk', -1)
+                self.request.POST[key] = value
+        self.request.POST._mutable = False
+        self.form = self.form_class(self.request.POST, self.request.FILES, instance=self.object, initial={
+            "constraint": {
+                "wf_access": True,
+                'form_state': self.state_index,
+                'request': self.request,
+                'form_constraint': self.flow_config.get('flow_form_constraint'),
+                'formset_constraint': self.flow_config.get('flow_formset_constraint')
+            }
+        })
+
+        OrderPaymentItemFormSet = modelformset_factory(
+            OrderPaymentItem,
+            form=OrderPaymentItemForm,
+            extra=0,
+            can_delete=True
+        )
+
+        payer = self.get_formset_queryset()
+        formset = OrderPaymentItemFormSet(
+            request.POST,
+            request.FILES,
+            queryset=payer,
+            prefix='payment_item'
+        )
+
+        # بررسی و تنظیم دستی instance
+        for i, form in enumerate(formset.forms):
+            if i < len(payer):
+                # اگر instance.pk None است، از queryset استفاده کن
+                if not form.instance.pk:
+                    form.instance = payer[i]  # تنظیم دستی instance
+                    print(f"Form {i}: Set instance to payer[{i}] with pk={payer[i].pk}")
+                else:
+                    print(f"Form {i}: Instance already has pk={form.instance.pk}")
+
+        if self.form.is_valid() and formset.is_valid():
+            self.form.instance.extra_data.request = self.request
+            self.object = self.form.save()
+            if last_work_flow:
+                self.object.last_work_flow = last_work_flow
+            wf = self.object.submit_flow(self.request, is_new)
+            self.object.last_work_flow = wf
+            self.object.extra_data.reqeust = self.request
+            self.object.save()
+
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.payment = self.object  # تنظیم رابطه
+                instance.save()  # ذخیره با order_id جدید
+
+            # حذف آیتم‌های علامت‌گذاری شده
+            for form in formset.deleted_forms:
+                if form.instance.pk:
+                    form.instance.is_deleted = True
+                    form.instance.extra_data.request = self.request
+                    form.instance.save()
+
+            for idx, form in enumerate(formset.forms):
+                if self.request.POST.get(f'payment_item-{idx}-delete_from_this_payment'):
+                    form.instance.payment = None
+                    form.instance.extra_data.request = self.request
+                    form.instance.save()
+
+            return redirect(reverse_lazy('order:order.payment.update', kwargs={'pk': self.object.pk}))
+        else:
+            formset_errors = ""
+            for idx, fe in enumerate(formset.errors):
+                formset_errors += f"<div class='d-flex'><span>{idx+1}</span>: <span>{fe}</span></div>"
+            msg = mark_safe(f'<div>{self.form.errors}</div> <br><hr><br> <div>{formset_errors}</div>')
+            messages.error(request, msg)
+            return self.render_to_response(self.get_context_data())
+            return self.get_context_data(form=self.form, formset=formset)
+
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -1451,7 +1605,10 @@ class PaymentItemView(LoginRequiredMixin, BaseView):
     }
 
     def get_success_url(self):
-        return reverse_lazy('order:order.paymentitem.update', kwargs={'pk': self.object.payment.pk})
+        if self.object.payment:
+            return reverse_lazy('order:order.paymentitem.update', kwargs={'pk': self.object.payment.pk})
+        else:
+            return reverse_lazy('order:order.view', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         x = super().post(request, *args, **kwargs)
@@ -1474,7 +1631,9 @@ class PaymentItemView(LoginRequiredMixin, BaseView):
     def get_context_data(self, **kwargs):
         context = {}
         payment = OrderPayment.objects.filter(pk=self.request.GET.get('pk')).first()
-        form = self.form_class(initial={'payment': payment or self.object.payment}, instance=self.object)
+        order = Order.objects.filter(pk=self.request.GET.get('rel_pk')).first() or None
+        initial = {'payment': payment or getattr(self.object, 'payment', None), 'order': order}
+        form = self.form_class(initial=initial, instance=self.object)
         context['app_name'] = self.request.resolver_match.app_name
         context['form'] = form
         return context
@@ -1524,7 +1683,10 @@ class PaymentDataTableListView(AjaxDatatableView):
             obj.id if obj.id else 'بدون عنوان'
         )
 
-        row['orders'] = ', '.join([str(x.order.pk) for x in obj.payment_item.all()])
+        try:
+            row['orders'] = ', '.join([str(x.order.pk) for x in obj.payment_item.all()])
+        except Exception as e:
+            row['orders'] = '-'
 
 
 class PaymentItemListView(LoginRequiredMixin, View):
@@ -1667,6 +1829,25 @@ class PaymentItemDataTableListView(AjaxDatatableView):
             </span>
         """
 
+
+def payment_item_from_load(request, vendor, *args, **kwargs):
+    try:
+        s = Supplier.objects.get(title=vendor)
+        payer = s.payer_payment_item.filter(payment__isnull=True)
+        l = []
+        html = ''
+        OrderPaymentItemFormSet = modelformset_factory(
+            OrderPaymentItem,
+            form=OrderPaymentItemForm,
+            extra=0,  # بدون فرم خالی اضافی
+            can_delete=True
+        )
+        l = OrderPaymentItemFormSet(queryset=payer, prefix='payment_item')
+        html = render_to_string('order/payment/payment_from_load_history.html', context={'formset': l})
+    except Exception as e:
+        html = 'اطلاعات تامین کننده یا پرداخت یافت نشد.'
+
+    return JsonResponse({'res': html})
 
 class CustomerRequestOrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasShopPermission]

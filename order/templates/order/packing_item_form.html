@@ -22,7 +22,10 @@
                 <div class="row row-cols-3">
                     <span class="d-none">{{ form.packing }}</span>
                     {% render_field_by_order form form.quantity form.price label='on-border' %}
-                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand form.wh_receipt_quantity form.ruined_quantity label='on-border' %}
+                    {% render_field_by_order form form.carton_number form.net_weight_kg form.gross_weight_kg form.size form.brand label='on-border' %}
+                    {% if request.user.is_superuser or request.user.base_group == 'wh' %}
+                        {% render_field_by_order form  form.wh_receipt_quantity form.ruined_quantity label='on-border' %}
+                    {% endif %}
                 </div>
             </div>
             <div class="col-3">

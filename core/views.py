@@ -1,6 +1,6 @@
 import datetime
 import json
-
+import jdatetime
 from django.conf import settings
 from django.db.models import Avg, Value
 from ajax_datatable import AjaxDatatableView
@@ -1540,8 +1540,14 @@ class Select2BaseSearch(View):
         from django.apps import apps
         model = apps.get_model(app_name, model_name)
         title = title.split('__')
+        year = str(jdatetime.date.today().year - 1400).zfill(2)
+        if q.isdigit():
+            q = int(q)
+            f = Q(pk=q) | Q(order_number=f'{year}-{q}')
+        else:
+            f = Q(order_number=q.upper())
         if q:
-            qs = model.objects.filter(pk=q)
+            qs = model.objects.filter(f)
             obj['items'] = []
             for x in qs:
                 item = {}
