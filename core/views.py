@@ -1065,6 +1065,9 @@ class CommentsFormView(View):
         elif comment_type == 'order_error':
             kwargs['submit_type'] = 'order_error'
             comments = obj.comments.all().order_by('-created_date')
+        elif comment_type == 'sales_cancel_order':
+            kwargs['submit_type'] = 'sales_cancel_order'
+            comments = obj.comments.all().order_by('-created_date')
         elif comment_type == 'factor_accounting':
             kwargs['submit_type'] = 'factor_accounting'
             comments = obj.comments.all().order_by('-created_date')
