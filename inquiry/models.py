@@ -51,6 +51,7 @@ class Supplier(BaseModel):
     dlref = models.IntegerField(null=True, blank=True, unique=True)
     partyid = models.IntegerField(null=True, blank=True, unique=True)
     maximumcredit = models.BigIntegerField(null=True, blank=True)
+    sepidar_name = models.CharField(max_length=200, null=True, blank=True)
     auto_complete = 'title'
 
     def auto_complete_func(self):

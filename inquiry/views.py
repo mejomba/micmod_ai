@@ -1788,13 +1788,13 @@ class SupplierView(BaseView):
     }
 
     template_name = 'inquiry/supplier_list_or_create.html'
-    supplier_key = ['partyid', 'name', 'dlref', 'maximumcredit', 'type']
+    supplier_key = ['partyid', 'name', 'dlref', 'maximumcredit', 'type', 'sepidar_name']
 
     def override_all_supplier_from_sepidar(self, request, *args, **kwargs):
         """ override (create new or update if exist) any GNR.party.isvendor=1 in portal """
         res = SepidarApiCall.get_all_supplier(request)
         for s in res:
-            partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+            partyid, name, dlref, maximumcredit, type, sepidar_name = (s.get(k) for k in self.supplier_key)
             name = name.strip()
             base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
             data = {'title': name,
@@ -1803,7 +1803,8 @@ class SupplierView(BaseView):
                     'maximumcredit': maximumcredit,
                     'base_group': base_group,
                     'last_update_date': timezone.now(),
-                    'type': type}
+                    'type': type,
+                    'sepidar_name': sepidar_name}
             try:
                 if Supplier.objects.filter(Q(partyid=partyid) | Q(title__iexact=name)).exists():
                     """update exist record"""
@@ -1826,7 +1827,7 @@ class SupplierView(BaseView):
         try:
             res = SepidarApiCall.get_all_supplier(request)
             for s in res:
-                partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+                partyid, name, dlref, maximumcredit, type, sepidar_name = (s.get(k) for k in self.supplier_key)
                 name = name.strip()
                 base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
 
@@ -1836,7 +1837,7 @@ class SupplierView(BaseView):
                     else:
                         """create new record"""
                         obj = Supplier.objects.create(title=name, partyid=partyid, dlref=dlref, maximumcredit=maximumcredit,
-                                                      base_group=base_group)
+                                                      base_group=base_group, sepidar_name=sepidar_name)
                         obj.extra_data.request = request
                         obj.save()
         except Exception as e:
@@ -1849,7 +1850,7 @@ class SupplierView(BaseView):
         try:
             res = SepidarApiCall.get_supplier_by_partyid(request=request, partyid=self.object.partyid)
             for s in res:
-                partyid, name, dlref, maximumcredit, type = (s.get(k) for k in self.supplier_key)
+                partyid, name, dlref, maximumcredit, type, sepidar_name = (s.get(k) for k in self.supplier_key)
                 name = name.strip()
                 base_group = 'bazar' if len(re.findall(r'[\u0600-\u06FF]', name)) >= 1 else 'trade'
                 data = {'title': name,
@@ -1858,7 +1859,8 @@ class SupplierView(BaseView):
                         'maximumcredit': maximumcredit,
                         'base_group': base_group,
                         'last_update_date': timezone.now(),
-                        'type': type}
+                        'type': type,
+                        'sepidar_name': sepidar_name}
 
                 if base_group == self.request.user.base_group or self.request.user.is_superuser:
                     """ update current supplier object """
@@ -1986,7 +1988,7 @@ class SupplierDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title', 'country', 'city', 'partyid', 'dlref', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
+            'title', 'sepidar_name', 'country', 'city', 'partyid', 'dlref', 'trade_transportation_method_json', 'creator_user', 'editor_user', 'created_date', 'last_update_date'
         ])
         # cols['created_date']['searchable'] = False
         return cols

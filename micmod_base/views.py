@@ -1997,12 +1997,13 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         {'name': 'pk', 'visible': True, 'title': _('شماره درخواست'), 'className': 'py-1 border'},
         {'name': 'id', 'visible': False, 'title': 'شناسه'},
         {'name': 'request_date', 'visible': True, 'orderable': True, 'searchable': False},
-        {'name': 'expire_date', 'visible': True, 'title': _('تاریخ انقضا'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
-        {'name': 'customer_code', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': False,
+        {'name': 'expire_date', 'visible': True, 'title': _('تاریخ انقضا'), 'className': 'py-1 border', 'searchable': False, 'orderable': False, 'lookup_field': '__customer_party_id__title__icontains'},
+        {'name': 'customer_code', 'visible': True, 'title': _('کد مشتری'), 'className': 'py-1 border', 'orderable': True,
          'lookup_field': '__sepidar_dl_code__icontains'},
         {'name': 'customer_title', 'visible': True, 'title': _('عنوان مشتری'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': '__icontains'},
         {'name': 'customer_quotationss', 'visible': True, 'title': _('پیش فاکتور'), 'className': 'py-1 border', 'orderable': False, 'lookup_field': 'customer_quotations__id__icontains'},
         {'name': 'customer_shop', 'visible': True, 'title': _('مشتری فروشگاه'), 'className': 'py-1 border', 'orderable': False},
+        {'name': 'customer_shop_title', 'visible': True, 'title': _('عنوان مشتری فروشگاه'), 'className': 'py-1 border', 'searchable': False, 'orderable': False},
         {'name': 'customer_phone', 'visible': True, 'title': 'تلفن مشتری', 'orderable': True,},
         {'name': 'cart_id', 'visible': True, 'title': 'شناسه کارت', 'orderable': True},
         {'name': 'assigned_user', 'visible': True, 'title': 'کارشناس', 'orderable': True},
@@ -2020,7 +2021,7 @@ class CustomerRequestDatatableView(AjaxDatatableView):
         row['customer_title'] = obj.customer.title if obj.customer else ''
         row['customer_code'] = obj.customer.sepidar_dl_code if obj.customer else ''
         row['customer_quotationss'] = getattr(obj.customer_quotations.first(), 'pk', '-')
-        # row['customer_shop_title'] = obj.shop if obj.customer_shop else ''
+        row['customer_shop_title'] = obj.request_extra_data.get('customer_name') if obj.request_extra_data else ''
         # row['pk'] = '<a class="fw-bold" target="_blank" href="%s">%s</a>' % (reverse('micmod_base:customer_request.view', args=(obj.id,)), obj.pk)
         # row['goods_code_fk'] = obj.goods_code_fk.sku if obj.goods_code_fk else ''
         # row['goods_code_fk__part_number'] = obj.goods_code_fk.part_number if obj.goods_code_fk else ''

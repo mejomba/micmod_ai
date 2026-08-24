@@ -296,6 +296,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['o_warning'] = []
         if self.request.user.base_group == 'mac':
             if self.object.buy_operator != "mac" and self.object.pay_operator != "mac":
                 raise PermissionError()
@@ -357,6 +358,9 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         #                                                          order_instance=self.object,
         #                                                          prefix='delay')
         context['last_version'] = getattr(self.object, 'version', None) or 0
+        if not self.model.objects.get_access_object(self.request.user, lst=False).filter(pk=self.object.pk).exists():
+            context['o_warning'].append(f'شما دسترسی ویرایش این سفارش را ندارید')
+            context['allow_draft'] = False
         return context
 
     def form_valid(self, form):
@@ -695,25 +699,23 @@ class OrderDataTableListView(AjaxDatatableView):
         q = request.POST.get('q')
         user_group = request.user.base_group
 
-        user_groups = None
+        if self.request.user.is_superuser:
+            qs = self.model.objects.all()
+        if user_group == 'sales':
+            qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
 
-        if user_group == 'trade':
-            user_groups = request.user.groups.filter(name='trade_user')
+        elif user_group == 'mac':
+            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac')
+            qs = self.model.objects.filter(mac_filter, is_deleted=False, apply_mac=True).distinct()
+
+        elif user_group == 'trade':
+            qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
+                ~Q(order_title__icontains='خودکار')).filter(~Q(last_work_flow__current_state_name="پیش نویس"))
 
         elif user_group == 'bazar':
-            user_groups = request.user.groups.filter(name='bazar_user')
-
-        if user_groups:
-            qs = self.model.get_qs(
-                self.request,
-                lst=False,
-                groups_list=user_groups
-            ).filter(cancel=False, sales_admin_cancel=False)
+            qs = self.model.objects.filter(is_bazar=True)
         else:
-            qs = self.model.get_qs(
-                self.request,
-                lst=False
-            ).filter(cancel=False, sales_admin_cancel=False)
+            qs = self.model.objects.all()
 
         if q == 'all':
             pass
@@ -938,6 +940,13 @@ class OrderDataTableListView(AjaxDatatableView):
             row['payment'] = '<hr>'.join([
                                              f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
                                              for x in obj.order_payment_items.select_related('payment').all()])
+            row['gio'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:order.gio.update''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity}</a>"
+                for x in obj.gio_items.select_related('gio').all()])
+
+            row['packing'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:order.packing.update''', kwargs={'''pk''': x.packing.pk})}'>{x.quantity}</a>"
+                for x in obj.order_packing_items.select_related('packing').all()])
         except Exception as e:
             pass
 
@@ -945,11 +954,8 @@ class OrderDataTableListView(AjaxDatatableView):
         quantity = obj.quantity
         total_gio = sum([x.sum_gio for x in obj.gio_items.annotate(sum_gio=Sum('quantity'))])
         total_packing = sum([x.sum_packing for x in obj.packing_item_order.annotate(sum_packing=Sum('quantity'))])
-        row['gio'] = f'{(total_gio / quantity) * 100}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
-        row['packing'] = f'{(total_packing / quantity) * 100}%' if quantity else '-'
-
-        if total_gio or total_packing:
-            pass
+        row['gio'] = f'{round((total_gio / quantity) * 100, 1)}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
+        row['packing'] = f'{round((total_packing / quantity) * 100, 1)}%' if quantity else '-'
 
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
@@ -1029,7 +1035,9 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
-                {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'gio', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'GIO', },
+                {'name': 'packing', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پکینگ', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
                 {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
