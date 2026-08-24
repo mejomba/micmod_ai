@@ -701,7 +701,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
         if self.request.user.is_superuser:
             qs = self.model.objects.all()
-        if user_group == 'sales':
+        elif user_group == 'sales':
             qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
 
         elif user_group == 'mac':
@@ -772,7 +772,7 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False, sales_admin_cancel=False).distinct()
 
         elif q == 'need_sale_admin_confirmation':
-            qs = qs.filter(sales_admin_confirmation=True, is_deleted=False, sales_admin_cancel=False)
+            qs = qs.filter(sales_admin_confirmation=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_delay':
             qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
