@@ -852,36 +852,36 @@ class OrderDataTableListView(AjaxDatatableView):
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
-        if user_group == 'trade':
-            qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
-
-        elif user_group == 'sales':
-            qs = qs.filter(
-                is_deleted=False,
-                cancel=False,
-                is_bazar=False, sales_admin_cancel=False
-            ).filter(
-                ~Q(order_title__icontains='خودکار')
-            )
-
-        if request.user.groups.filter(name='mac').exists():
-
-            qs = qs.filter(
-                is_deleted=False,
-                apply_mac=True, sales_admin_cancel=False
-            )
-
-        elif request.user.groups.filter(name='trade_user').exists():
-
-            qs = qs.filter(
-                is_deleted=False,
-                cancel=False,
-                is_bazar=False, sales_admin_cancel=False
-            ).filter(
-                ~Q(order_title__icontains='خودکار')
-            ).filter(
-                ~Q(last_work_flow__current_state_name='پیش نویس')
-            )
+        # if user_group == 'trade':
+        #     qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
+        #
+        # elif user_group == 'sales':
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         cancel=False,
+        #         is_bazar=False, sales_admin_cancel=False
+        #     ).filter(
+        #         ~Q(order_title__icontains='خودکار')
+        #     )
+        #
+        # if request.user.groups.filter(name='mac').exists():
+        #
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         apply_mac=True, sales_admin_cancel=False
+        #     )
+        #
+        # elif request.user.groups.filter(name='trade_user').exists():
+        #
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         cancel=False,
+        #         is_bazar=False, sales_admin_cancel=False
+        #     ).filter(
+        #         ~Q(order_title__icontains='خودکار')
+        #     ).filter(
+        #         ~Q(last_work_flow__current_state_name='پیش نویس')
+        #     )
 
         return qs.distinct()
 
