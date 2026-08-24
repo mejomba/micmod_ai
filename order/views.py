@@ -726,7 +726,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
             )
 
-        elif q == 'sales_admin':
+        elif q == 'need_sale_admin_confirmation':
             qs = qs.filter(
                 cancel=False,
                 last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
@@ -771,8 +771,8 @@ class OrderDataTableListView(AjaxDatatableView):
             has_trade_diff = Q(quantity_trade__isnull=False) & ~Q(quantity_trade=F('quantity')) & ~Q(quantity_trade=0.0)
             qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False, sales_admin_cancel=False).distinct()
 
-        elif q == 'need_sale_admin_confirmation':
-            qs = qs.filter(sales_admin_confirmation=False, is_deleted=False, sales_admin_cancel=False)
+        # elif q == 'need_sale_admin_confirmation':
+        #     qs = qs.filter(sales_admin_confirmation=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_delay':
             qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
