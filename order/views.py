@@ -708,12 +708,12 @@ class OrderDataTableListView(AjaxDatatableView):
                 self.request,
                 lst=False,
                 groups_list=user_groups
-            )
+            ).filter(cancel=False, sales_admin_cancel=False)
         else:
             qs = self.model.get_qs(
                 self.request,
                 lst=False
-            )
+            ).filter(cancel=False, sales_admin_cancel=False)
 
         if q == 'all':
             pass
@@ -721,13 +721,13 @@ class OrderDataTableListView(AjaxDatatableView):
         elif q == 'dependent':
             qs = qs.filter(
                 cancel=True,
-                last_work_flow__current_state_name='تایید مدیر فروش'
+                last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
             )
 
         elif q == 'sales_admin':
             qs = qs.filter(
                 cancel=False,
-                last_work_flow__current_state_name='تایید مدیر فروش'
+                last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
             )
 
         elif q == 'bazar_user':
@@ -737,7 +737,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
             not_complete_order = Q()
 
-            orders = qs.filter(cancel=True)
+            orders = qs.filter(cancel=True, sales_admin_cancel=False)
 
             for order in orders:
                 not_complete = 0
@@ -756,47 +756,47 @@ class OrderDataTableListView(AjaxDatatableView):
                 qs = qs.none()
 
         elif q == 'is_wh':
-            qs = qs.filter(is_wh=True)
+            qs = qs.filter(is_wh=True, sales_admin_cancel=False)
 
         elif q == 'is_trade':
             qs = qs.filter(
                 is_wh=False,
-                is_bazar=False
+                is_bazar=False, sales_admin_cancel=False
             )
 
         elif q == 'quantity_difference':
             has_mac_diff = Q(quantity_mac__isnull=False) & ~Q(quantity_mac=F('quantity')) & ~Q(quantity_mac=0.0)
             has_trade_diff = Q(quantity_trade__isnull=False) & ~Q(quantity_trade=F('quantity')) & ~Q(quantity_trade=0.0)
-            qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False).distinct()
+            qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False, sales_admin_cancel=False).distinct()
 
         elif q == 'need_sale_admin_confirmation':
-            qs = qs.filter(sales_admin_confirmation=True, is_deleted=False)
+            qs = qs.filter(sales_admin_confirmation=True, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_delay':
-            qs = qs.filter(delay_reason__isnull=False, is_deleted=False)
+            qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_error':
             if request.user.groups.filter(name='sales_user'):
                 qs = qs.filter(
                     comments__comment_title='R', last_work_flow__current_state_name__in=['پیش نویس', 'تایید مدیر فروش']
-                    , is_deleted=False
+                    , is_deleted=False, sales_admin_cancel=False
                 ).distinct()
 
         elif q == 'pcb_item':
-            qs = qs.filter(item__purchase_group__title='PCB', is_deleted=False).distinct()
+            qs = qs.filter(item__purchase_group__title='PCB', is_deleted=False, sales_admin_cancel=False).distinct()
 
         elif q == 'back':
             qs = qs.filter(
-                last_work_flow__wf_status=2, is_deleted=False
+                last_work_flow__wf_status=2, is_deleted=False, sales_admin_cancel=False
             )
 
         elif q == 'is_sample':
             qs = qs.filter(
-                is_sample=True, is_deleted=False
+                is_sample=True, is_deleted=False, sales_admin_cancel=False
             )
         elif q == 'is_force_order':
             qs = qs.filter(
-                is_force_order=True, is_deleted=False
+                is_force_order=True, is_deleted=False, sales_admin_cancel=False
             )
         elif q == 'cancel_request':
             qs = qs.filter(
@@ -813,51 +813,51 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = qs.filter(
                 total_arrived_db__gte=F('final_quantity_db'),
                 final_quantity_db__gt=0, last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
-                is_deleted=False
+                is_deleted=False, sales_admin_cancel=False
             ).distinct()
         elif q == 'gio_incomplete':
             qs = self.get_gio_annotated_qs(qs)
             qs = qs.filter(
                 final_quantity_db__gt=0,
                 total_arrived_db__lt=F('final_quantity_db'),
-                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], is_deleted=False
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], is_deleted=False, sales_admin_cancel=False
             ).distinct()
         elif q == 'payment_complete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
                 total_price_db__gt=0,
                 total_payment_db__gte=F('total_price_db'),
-                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
         elif q == 'payment_incomplete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
                 total_price_db__gt=0,
                 total_payment_db__lt=F('total_price_db'),
-                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
         elif q == 'packing_complete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
                 final_quantity_db__gt=0,
                 total_packing_db__gte=F('final_quantity_db'),
-                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
         elif q == 'packing_incomplete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
                 final_quantity_db__gt=0,
                 total_packing_db__lt=F('final_quantity_db'),
-                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
         if user_group == 'trade':
-            qs = qs.filter(is_bazar=False)
+            qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
 
         elif user_group == 'sales':
             qs = qs.filter(
                 is_deleted=False,
                 cancel=False,
-                is_bazar=False
+                is_bazar=False, sales_admin_cancel=False
             ).filter(
                 ~Q(order_title__icontains='خودکار')
             )
@@ -866,7 +866,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
             qs = qs.filter(
                 is_deleted=False,
-                apply_mac=True
+                apply_mac=True, sales_admin_cancel=False
             )
 
         elif request.user.groups.filter(name='trade_user').exists():
@@ -874,7 +874,7 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = qs.filter(
                 is_deleted=False,
                 cancel=False,
-                is_bazar=False
+                is_bazar=False, sales_admin_cancel=False
             ).filter(
                 ~Q(order_title__icontains='خودکار')
             ).filter(
@@ -921,8 +921,8 @@ class OrderDataTableListView(AjaxDatatableView):
         base_group = self.request.user.base_group
         if base_group == 'trade':
             self.customize_row_trade(row, obj)
-        # elif base_group == 'sales':
-        #     self.customize_row_sales(row, obj)
+        elif base_group == 'sales':
+            self.customize_row_sales(row, obj)
 
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
@@ -941,10 +941,15 @@ class OrderDataTableListView(AjaxDatatableView):
         except Exception as e:
             pass
 
-    # def customize_row_sales(self, row, obj):
-    #     total_gio = obj.gio_items.annotate(sum_gio=Sum('quantity')).sum_gio or 0
-    #     row['gio'] = f'{(total_gio/obj.quantity)}'
-    #     row['packing'] = '-'
+    def customize_row_sales(self, row, obj):
+        quantity = obj.quantity
+        total_gio = sum([x.sum_gio for x in obj.gio_items.annotate(sum_gio=Sum('quantity'))])
+        total_packing = sum([x.sum_packing for x in obj.packing_item_order.annotate(sum_packing=Sum('quantity'))])
+        row['gio'] = f'{(total_gio / quantity) * 100}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
+        row['packing'] = f'{(total_packing / quantity) * 100}%' if quantity else '-'
+
+        if total_gio or total_packing:
+            pass
 
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
