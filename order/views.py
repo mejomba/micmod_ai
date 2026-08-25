@@ -358,9 +358,9 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         #                                                          order_instance=self.object,
         #                                                          prefix='delay')
         context['last_version'] = getattr(self.object, 'version', None) or 0
-        if not self.model.objects.get_access_object(self.request.user, lst=False).filter(pk=self.object.pk).exists():
-            context['o_warning'].append(f'شما دسترسی ویرایش این سفارش را ندارید')
-            context['allow_draft'] = False
+        # if not self.model.objects.get_access_object(self.request.user, lst=False).filter(pk=self.object.pk).exists() and not self.request.user.base_group in ['trade', 'mac']:
+        #     context['o_warning'].append(f'شما دسترسی ویرایش این سفارش را ندارید')
+        #     context['allow_draft'] = False
         return context
 
     def form_valid(self, form):
@@ -621,7 +621,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
-        {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+        {'name': 'customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
@@ -889,9 +889,9 @@ class OrderDataTableListView(AjaxDatatableView):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
         row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
         try:
-            row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
+            row['customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
         except Exception as e:
-            row['qi__quotation__customer_party_id'] = ''
+            row['customer_party_id'] = ''
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['item_trade__part_number'] = f'<span>{obj.item_trade.part_number}</span>' if obj.item_trade else ""
         o = obj.workflows.filter(current_state_name='تایید مهندس').first()
@@ -967,7 +967,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'last_work_flow', 'title': 'وضعیت', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'پارت نامبر', 'visible': True, 'lookup_field': '__icontains'},
-                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True, 'lookup_field': '__title__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', },
@@ -990,7 +989,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'کالا (فروش)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'پارت نامبر (فروش)', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
+                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'کالا (بازرگانی)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'پارت نامبر (بازرگانی)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
@@ -1021,7 +1021,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
-                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
@@ -1054,8 +1053,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'part number', 'visible': True, 'lookup_field': '__icontains'},
-                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'مشتری', 'visible': True, 'lookup_field': '__title__icontains'},
-                # {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'quantity', },
                 {'name': 'created_date', 'title': 'created date', 'orderable': True, 'visible': True, },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'sales description'},
