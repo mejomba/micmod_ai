@@ -399,6 +399,9 @@ class Order(BaseModeWF):
             except Exception as e:
                 pass
 
+        if self.item_trade is None:
+            self.item_trade = self.item
+
         # self.static_price_inquiry_result = getattr(self.price_inquiry_result, 'price', None)
         return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 

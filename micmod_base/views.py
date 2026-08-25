@@ -1576,10 +1576,12 @@ def get_customer_accounting_info(request, *args, **kwargs):
     # return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
     party_id = request.GET.get('party_id')
     if party_id:
-        customer = DimCustomer.get_customer(party_id)
-        html = render_to_string('micmod-base/quotation/partial/customer_accounting_info_in_quotation.html', {"customer": customer[0]})
-        return JsonResponse({'res': html})
-
+        try:
+            customer = DimCustomer.get_customer(party_id)
+            html = render_to_string('micmod-base/quotation/partial/customer_accounting_info_in_quotation.html', {"customer": customer[0]})
+            return JsonResponse({'res': html})
+        except Exception as e:
+            return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
     return JsonResponse({'res': 'اطلاعات مالی یافت نشد'})
 
 
