@@ -639,6 +639,8 @@ class InquiryResultDataTableView(AjaxDatatableView):
             {'name': 'editor_user', 'lookup_field': '__username__icontains', 'className': 'w-10px'},
             {'name': 'part_number', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains',
              'className': 'w-20'},
+            {'name': 'sku_brand_title', 'title':'برند', 'searchable': True, 'orderable': True, 'lookup_field': '__icontains',
+             'className': 'w-20'},
             {'name': 'lead_time', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'purchase_group', 'searchable': True, 'orderable': True, 'className': 'w-20px'},
             {'name': 'active', 'className': 'w-7px'},
@@ -721,6 +723,7 @@ class InquiryResultDataTableView(AjaxDatatableView):
             html += '</div>'
         row['variants_json'] = html
         row['supplier'] = f'{obj.supplier} {obj.default_if_falsy(obj.supplier.country if obj.supplier else None, "")} {obj.default_if_falsy(obj.supplier.city if obj.supplier else None, "")}'
+        row['sku_brand_title'] = obj.sku.brand.title if obj.sku and obj.sku.brand else ''
 
 
 class InquiryResultSaleView(JsonTemplateResponseMixin, BaseView):
