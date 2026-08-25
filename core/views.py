@@ -438,6 +438,7 @@ class BaseView(UserPassesTestMixin,
         context['allow_next'] = self.wf_access
         context['wf_access2'] = self.wf_access2
         context['allow_back'] = True  # برگشت همیشه مجاز است مگر در ویو نهایی بازنویسی شود
+        context['allow_draft'] = True  # پیش نویس همیشه مجاز است مگر در ویو نهایی بازنویسی شود
         return context
 
     def get_form_kwargs(self):

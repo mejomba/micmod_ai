@@ -9,7 +9,7 @@
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish and not submit_duplicate %}
             <input type="submit" class="btn btn-primary me-1" name="submit" value="ثبت"/>
         {% elif not finish and has_flow and not submit_duplicate%}
-            <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس" id="submit_draft"/>
+            <input type="submit" class="btn btn-outline-success btn-bordered me-1" name="draft" value="ذخیره پیشنویس" id="submit_draft" {% if not allow_draft %} disabled {% endif %}/>
             {% if not allow_next %}
                 <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="برخی از رکوردها قابل تایید نیستند!">
                     <input type="submit" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
@@ -65,7 +65,7 @@
         {% if flow_state_index|add:1 == flow_state_list|length  and not finish %}
             <input type="button" class="btn btn-primary me-1" disabled name="submit" value="ثبت نهایی"/>
         {% elif not finish and has_flow %}
-            <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس" id="submit_draft"/>
+            <input type="button" class="btn btn-outline-success btn-bordered me-1" disabled name="draft" value="ذخیره پیشنویس" id="submit_draft" {% if not allow_draft %} disabled {% endif %}/>
             <input type="button" class="btn btn-primary me-1" disabled name="next" value="ارسال به مرحله بعد" id="submit_next"/>
             {% if form.instance.submit_copy or submit_copy %}
                 <input type="submit" class="btn btn-bordered btn-outline-warning me-1 px-4" name="submit/copy" value="{{ submit_copy_text}}" id="submit_copy"/>

@@ -62,7 +62,7 @@ class SepidarResponseManager(metaclass=SingletonMeta):
     @staticmethod
     def supplier_default_response(res):
         res = [{'partyid': x.get('partyid'), 'name': x.get('name').replace('ي', 'ی').replace('ك', 'ک'), 'dlref': x.get('dlref'),
-                'maximumcredit': x.get('maximumcredit'), 'type': x.get('type')}
+                'maximumcredit': x.get('maximumcredit'), 'type': x.get('type'), 'sepidar_name': x.get('name')}
                for x in res.json().get('results')]
         return res
 

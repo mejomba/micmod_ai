@@ -68,6 +68,11 @@
 {% block form_content %}
 {% csrf_token %}
 
+    <div class="d-flex gap-2">
+        {% for warning in o_warning %}
+        <div class="p-2 mb-5 rounded font-size-15 text-danger border border-danger">{{ warning }}</div>
+        {% endfor %}
+    </div>
         <div class="mb-2">
             {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
         </div>

@@ -296,6 +296,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['o_warning'] = []
         if self.request.user.base_group == 'mac':
             if self.object.buy_operator != "mac" and self.object.pay_operator != "mac":
                 raise PermissionError()
@@ -357,6 +358,9 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         #                                                          order_instance=self.object,
         #                                                          prefix='delay')
         context['last_version'] = getattr(self.object, 'version', None) or 0
+        # if not self.model.objects.get_access_object(self.request.user, lst=False).filter(pk=self.object.pk).exists() and not self.request.user.base_group in ['trade', 'mac']:
+        #     context['o_warning'].append(f'شما دسترسی ویرایش این سفارش را ندارید')
+        #     context['allow_draft'] = False
         return context
 
     def form_valid(self, form):
@@ -617,7 +621,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
-        {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
+        {'name': 'customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
@@ -695,25 +699,24 @@ class OrderDataTableListView(AjaxDatatableView):
         q = request.POST.get('q')
         user_group = request.user.base_group
 
-        user_groups = None
+        if self.request.user.is_superuser:
+            qs = self.model.objects.all()
+        elif user_group == 'sales':
+            qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
 
-        if user_group == 'trade':
-            user_groups = request.user.groups.filter(name='trade_user')
+        elif user_group == 'mac':
+            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac')
+            qs = self.model.objects.filter(mac_filter, is_deleted=False, apply_mac=True).distinct()
+
+        elif user_group == 'trade':
+            qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
+                ~Q(order_title__icontains='خودکار')).filter(~Q(last_work_flow__current_state_name="پیش نویس"))
 
         elif user_group == 'bazar':
-            user_groups = request.user.groups.filter(name='bazar_user')
+            qs = self.model.objects.filter(is_bazar=True)
 
-        if user_groups:
-            qs = self.model.get_qs(
-                self.request,
-                lst=False,
-                groups_list=user_groups
-            )
         else:
-            qs = self.model.get_qs(
-                self.request,
-                lst=False
-            )
+            qs = self.model.objects.all()
 
         if q == 'all':
             pass
@@ -725,7 +728,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
             )
 
-        elif q == 'sales_admin':
+        elif q == 'need_sale_admin_confirmation':
             qs = qs.filter(
                 cancel=False,
                 last_work_flow__current_state_name='تایید مدیر فروش', sales_admin_cancel=False
@@ -770,8 +773,8 @@ class OrderDataTableListView(AjaxDatatableView):
             has_trade_diff = Q(quantity_trade__isnull=False) & ~Q(quantity_trade=F('quantity')) & ~Q(quantity_trade=0.0)
             qs = qs.filter(has_mac_diff | has_trade_diff, is_deleted=False, sales_admin_cancel=False).distinct()
 
-        elif q == 'need_sale_admin_confirmation':
-            qs = qs.filter(sales_admin_confirmation=True, is_deleted=False, sales_admin_cancel=False)
+        # elif q == 'need_sale_admin_confirmation':
+        #     qs = qs.filter(sales_admin_confirmation=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'has_delay':
             qs = qs.filter(delay_reason__isnull=False, is_deleted=False, sales_admin_cancel=False)
@@ -851,36 +854,36 @@ class OrderDataTableListView(AjaxDatatableView):
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
-        if user_group == 'trade':
-            qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
-
-        elif user_group == 'sales':
-            qs = qs.filter(
-                is_deleted=False,
-                cancel=False,
-                is_bazar=False, sales_admin_cancel=False
-            ).filter(
-                ~Q(order_title__icontains='خودکار')
-            )
-
-        if request.user.groups.filter(name='mac').exists():
-
-            qs = qs.filter(
-                is_deleted=False,
-                apply_mac=True, sales_admin_cancel=False
-            )
-
-        elif request.user.groups.filter(name='trade_user').exists():
-
-            qs = qs.filter(
-                is_deleted=False,
-                cancel=False,
-                is_bazar=False, sales_admin_cancel=False
-            ).filter(
-                ~Q(order_title__icontains='خودکار')
-            ).filter(
-                ~Q(last_work_flow__current_state_name='پیش نویس')
-            )
+        # if user_group == 'trade':
+        #     qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
+        #
+        # elif user_group == 'sales':
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         cancel=False,
+        #         is_bazar=False, sales_admin_cancel=False
+        #     ).filter(
+        #         ~Q(order_title__icontains='خودکار')
+        #     )
+        #
+        # if request.user.groups.filter(name='mac').exists():
+        #
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         apply_mac=True, sales_admin_cancel=False
+        #     )
+        #
+        # elif request.user.groups.filter(name='trade_user').exists():
+        #
+        #     qs = qs.filter(
+        #         is_deleted=False,
+        #         cancel=False,
+        #         is_bazar=False, sales_admin_cancel=False
+        #     ).filter(
+        #         ~Q(order_title__icontains='خودکار')
+        #     ).filter(
+        #         ~Q(last_work_flow__current_state_name='پیش نویس')
+        #     )
 
         return qs.distinct()
 
@@ -888,9 +891,9 @@ class OrderDataTableListView(AjaxDatatableView):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
         row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
         try:
-            row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
+            row['customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else obj.customer_party_id.title
         except Exception as e:
-            row['qi__quotation__customer_party_id'] = ''
+            row['customer_party_id'] = ''
         row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
         row['item_trade__part_number'] = f'<span>{obj.item_trade.part_number}</span>' if obj.item_trade else ""
         o = obj.workflows.filter(current_state_name='تایید مهندس').first()
@@ -962,6 +965,13 @@ class OrderDataTableListView(AjaxDatatableView):
             row['payment'] = '<hr>'.join([
                                              f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
                                              for x in obj.order_payment_items.select_related('payment').all()])
+            row['gio'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:order.gio.update''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity}</a>"
+                for x in obj.gio_items.select_related('gio').all()])
+
+            row['packing'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:order.packing.update''', kwargs={'''pk''': x.packing.pk})}'>{x.quantity}</a>"
+                for x in obj.order_packing_items.select_related('packing').all()])
         except Exception as e:
             pass
 
@@ -969,11 +979,8 @@ class OrderDataTableListView(AjaxDatatableView):
         quantity = obj.quantity
         total_gio = sum([x.sum_gio for x in obj.gio_items.annotate(sum_gio=Sum('quantity'))])
         total_packing = sum([x.sum_packing for x in obj.packing_item_order.annotate(sum_packing=Sum('quantity'))])
-        row['gio'] = f'{(total_gio / quantity) * 100}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
-        row['packing'] = f'{(total_packing / quantity) * 100}%' if quantity else '-'
-
-        if total_gio or total_packing:
-            pass
+        row['gio'] = f'{round((total_gio / quantity) * 100, 1)}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
+        row['packing'] = f'{round((total_packing / quantity) * 100, 1)}%' if quantity else '-'
 
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
@@ -1006,7 +1013,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'کالا (فروش)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'پارت نامبر (فروش)', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
+                # {'name': 'qi__quotation__customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
+                {'name': 'customer_party_id', 'orderable': True, 'title': '<div class="px-5">مشتری</div>', 'visible': True, 'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'کالا (بازرگانی)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'پارت نامبر (بازرگانی)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
@@ -1056,7 +1064,9 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
-                {'name': 'payment', 'orderable': True, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
+                {'name': 'gio', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'GIO', },
+                {'name': 'packing', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پکینگ', },
                 {'name': 'total_price', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'مبلغ کل', },
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
                 {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
