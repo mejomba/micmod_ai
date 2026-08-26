@@ -897,10 +897,16 @@ class OrderDataTableListView(AjaxDatatableView):
         o = obj.workflows.filter(current_state_name='تایید مهندس').first()
         row['co_conf'] = f'<span>{o.created_date.strftime("%Y-%b-%d %H:%m")}</span>' if o else ""
 
-        row['order_number'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:order.view.safe', args=(obj.id,)),
-            obj.order_number if obj.order_number else 'بدون عنوان'
-        )
+        if obj.cancel or obj.sales_admin_cancel:
+            row['order_number'] = '<a class="fw-bold text-danger" target=_blank href="%s">%s</a>' % (
+                reverse('order:order.view.safe', args=(obj.id,)),
+                obj.order_number if obj.order_number else 'بدون عنوان'
+            )
+        else:
+            row['order_number'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
+                reverse('order:order.view.safe', args=(obj.id,)),
+                obj.order_number if obj.order_number else 'بدون عنوان'
+            )
         row['qi'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
         row['total_price'] = f'<span>{parse_number(obj.total_price):,}</span>'
         row['is_kasri'] = f'<span class="badge badge-success">بله</span>' if obj.is_kasri else f'<span class="badge badge-danger">خیر</span>'
@@ -1025,7 +1031,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
-                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transportation Method'},
+                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transport'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
                 {'name': 'weight', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'weight total', },
                 {'name': 'item__purchase_group', 'orderable': False, 'visible': True, 'title': 'purchase group', 'lookup_field': '__title__icontains' },
@@ -1706,7 +1712,7 @@ class PaymentView(LoginRequiredMixin, BaseView):
 
     def post(self, request, *args, **kwargs):
         is_new = False if self.object else True
-        last_work_flow = self.object.last_work_flow
+        last_work_flow = self.object.last_work_flow if self.object else None
         from tools.form_tools import get_function
         self.request.POST._mutable = True
         for key, value in list(self.request.POST.items()):
@@ -3404,24 +3410,24 @@ class QuickGIODataTableListView(AjaxDatatableView):
     model = Order
     title = 'order_list'
     initial_order = [["id", "des"], ]
-    length_menu = [[10, 25, 50, -1], [10, 25, 50, 'همه (ممکن است کمی طول بکشد)']]
+    length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'order d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': True, 'visible': True, "className": 'py-1 show_order_str d-none'},
+        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True, "className": 'py-1 show_order_str d-none'},
         {'name': 'order_number', 'title': "order_number", 'orderable': True, 'visible': True, "className": 'py-1'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد', 'className': 'quantity'},
-        {'name': 'item', 'orderable': True, 'title': 'کد کالا', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'final quantity', 'className': 'quantity'},
+        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
         {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
-        {'name': 'item__part_number', 'orderable': True, 'title': 'نام کالا', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'visible': True, 'searchable': False},
-        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات فروش'},
-        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'توضیحات بازرگانی'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'title': '<div class="px-0">Add</div>', },
+        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, 'searchable': False},
+        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
+        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0">Add</div>', },
     ]
 
     def get_initial_queryset(self, request=None):
@@ -3430,14 +3436,8 @@ class QuickGIODataTableListView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        from tools.utils import to_jalali_date
-        row['created_date'] = to_jalali_date(obj.created_date)
         row['quantity'] = obj.final_quantity
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
-        row['order_method'] = f'<span>{obj.order_method}</span>'
-        row['item__part_number'] = f'<span>{obj.item.part_number}</span>' if obj.item else ""
-        row['qi__quotation__customer_party_id'] = f'<span>{obj.qi.quotation.customer_party_id.title}</span>' if obj.qi else ""
-        row['qi__quotation__id'] = f'<span>{obj.qi.quotation.id}</span>' if obj.qi else ""
-        row['estimated_arrive_date'] = obj.estimate_arrive_at
+        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
         row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
         row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
