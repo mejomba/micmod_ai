@@ -611,6 +611,7 @@ class OrderDataTableListView(AjaxDatatableView):
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
         {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, },
+        {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'order_title', 'orderable': True, 'visible': True, },
         {'name': 'order_method', 'orderable': False, 'visible': True, 'searchable': False},
         {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
@@ -618,7 +619,6 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'estimated_arrive_date', 'orderable': False, 'searchable': False, 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
         {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
@@ -714,11 +714,13 @@ class OrderDataTableListView(AjaxDatatableView):
 
         elif user_group == 'bazar':
             qs = self.model.objects.filter(is_bazar=True)
+
         else:
             qs = self.model.objects.all()
 
         if q == 'all':
             pass
+            # qs = qs.filter(sales_admin_cancel=False)
 
         elif q == 'dependent':
             qs = qs.filter(
@@ -789,7 +791,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
         elif q == 'back':
             qs = qs.filter(
-                last_work_flow__wf_status=2, is_deleted=False, sales_admin_cancel=False
+                last_work_flow__wf_status=2, is_deleted=False, sales_admin_cancel=False, last_work_flow__current_state_name__in=['تایید مدیر فروش']
             )
 
         elif q == 'is_sample':
@@ -926,6 +928,29 @@ class OrderDataTableListView(AjaxDatatableView):
         row['item__purchase_group'] = obj.final_purchase_group
         row['work_day'] = obj.trade_work_day
 
+        row['item_brand'] = obj.item.brand.title if obj.item.brand else ''
+        row['trade_item_brand'] = obj.item_trade.brand.title if obj.item_trade and obj.item_trade.brand else ''
+
+        status_rules = [
+            (obj.sales_admin_cancel, '❌'),
+            (obj.last_work_flow.current_state_name == 'مرحله نهایی', '✅'),
+            (obj.comments.filter(comment_title='R').exists(), '🚨'),
+            (obj.is_all_arrival is True, '🟥'),
+            # (obj.has_partial_arrival, '🟧'),
+            (obj.packing_item_order.exists(), '🚢'),
+            (obj.gio_items.exists(), '🀄'),
+            # (obj.has_customer_prepaid, '💴'),
+            (obj.last_work_flow.current_state_name == 'تایید نهایی بازرگانی', '🟩'),
+            (obj.last_work_flow.current_state_name == 'تایید تامین کننده', '🟦'),
+            (obj.last_work_flow.current_state_name == 'ارسال به تامین کننده', '🤵'),
+            (obj.last_work_flow.current_state_name == 'پیش‌نویس', '😁'),
+        ]
+
+        row['order_status_icon'] = next(
+            (icon for condition, icon in status_rules if condition),
+            ''
+        )
+
         base_group = self.request.user.base_group
         if base_group == 'trade':
             self.customize_row_trade(row, obj)
@@ -988,7 +1013,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'title', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
-                # {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'last_work_flow', 'title': '<div class="px-4">وضعیت</div>', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'trade_commitment_date', 'title': 'تارخ تعهد بازرگانی', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'estimated_arrive_date', 'title': 'تخمین زمان رسیدن', 'visible': True, 'searchable': False, 'orderable': False, },
@@ -1012,6 +1036,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'packing', 'searchable': False, 'orderable': False, 'visible': True, 'title': '<div class="px4">پکینگ</div>', },
                 {'name': 'trade_user', 'title': 'کارشناس بازرگانی', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
+                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False, 'searchable': False},
             ]
         elif self.request.user.base_group == 'trade':
             self.column_defs = [
@@ -1019,14 +1044,19 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'id', 'title': "id", 'orderable': True, 'visible': False, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
+                {'name': 'po_number_trade', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
-                # {'name': 'order_method', 'title': 'Order Type', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
                 {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'item_brand', 'title': 'sale_item_brand', 'visible': True, 'orderable': False, 'searchable': False,
+                 'lookup_field': '__title__icontains'},
+                {'name': 'trade_item_brand', 'title': 'trade_item_brand', 'visible': True, 'orderable': False,
+                 'searchable': False,
+                 'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
@@ -1047,8 +1077,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
                 {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
                 {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
-                # {'name': 'gio', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
-                # {'name': 'packing', 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
+                 'searchable': False},
             ]
         elif self.request.user.base_group == 'mac':
             self.column_defs = [
@@ -1059,6 +1089,10 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item__part_number', 'orderable': True, 'title': 'part number', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'item_brand', 'title': 'brand', 'visible': True, 'orderable': False, 'searchable': False,
+                 'lookup_field': '__title__icontains'},
+                {'name': 'trade_item_brand', 'title': 'brand', 'visible': True, 'orderable': False, 'searchable': False,
+                 'lookup_field': '__title__icontains'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'quantity', },
                 {'name': 'created_date', 'title': 'created date', 'orderable': True, 'visible': True, },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'sales description'},
