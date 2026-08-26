@@ -179,6 +179,26 @@ div[disabled=disabled] {
     font-size: 1.5rem !important;
     vertical-align: middle !important;
 }
+.font-size-21 {
+    font-size: 1.6rem !important;
+    vertical-align: middle !important;
+}
+.font-size-22 {
+    font-size: 1.7rem !important;
+    vertical-align: middle !important;
+}
+.font-size-23 {
+    font-size: 1.8rem !important;
+    vertical-align: middle !important;
+}
+.font-size-24 {
+    font-size: 1.9rem !important;
+    vertical-align: middle !important;
+}
+.font-size-25 {
+    font-size: 2rem !important;
+    vertical-align: middle !important;
+}
 .p0{
     padding: 5px !important;
 }

@@ -947,7 +947,7 @@ class OrderDataTableListView(AjaxDatatableView):
         ]
 
         row['order_status_icon'] = next(
-            (icon for condition, icon in status_rules if condition),
+            (f"<div class='font-size-20'>{icon}</div>" for condition, icon in status_rules if condition),
             ''
         )
 
@@ -1013,6 +1013,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'title', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
+                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
+                 'searchable': False},
                 {'name': 'last_work_flow', 'title': '<div class="px-4">وضعیت</div>', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
                 {'name': 'trade_commitment_date', 'title': 'تارخ تعهد بازرگانی', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'estimated_arrive_date', 'title': 'تخمین زمان رسیدن', 'visible': True, 'searchable': False, 'orderable': False, },
@@ -1036,7 +1038,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'packing', 'searchable': False, 'orderable': False, 'visible': True, 'title': '<div class="px4">پکینگ</div>', },
                 {'name': 'trade_user', 'title': 'کارشناس بازرگانی', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
-                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False, 'searchable': False},
             ]
         elif self.request.user.base_group == 'trade':
             self.column_defs = [
@@ -1046,6 +1047,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_title', 'orderable': False, 'visible': True, },
                 {'name': 'po_number_trade', 'orderable': False, 'visible': True, },
                 {'name': 'comments', 'orderable': True, 'title': '<div>خطای بازرگانی</div>', 'visible': True, 'lookup_field': '__comment_content__icontains'},
+                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
+                 'searchable': False},
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True,
                  'lookup_field': '__current_state_name__icontains'},
                 {'name': 'estimated_arrive_date', 'title': 'Estimated Arrive Date', 'visible': True, 'searchable': False, 'orderable': False,},
@@ -1077,8 +1080,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
                 {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
                 {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
-                {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
-                 'searchable': False},
             ]
         elif self.request.user.base_group == 'mac':
             self.column_defs = [

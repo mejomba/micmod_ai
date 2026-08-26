@@ -175,6 +175,7 @@ class Order(BaseModeWF):
     order_number = models.CharField(max_length=255, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
+    has_customer_prepaid = models.BooleanField(_('has_customer_prepaid'), default=False)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
                                              default='sea', null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
