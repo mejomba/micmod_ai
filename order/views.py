@@ -164,6 +164,12 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
             if not self.object:
                 self.object = self.get_object()
 
+            """ set pay_operator_date and buy_operator_date """
+            if self.object.pay_operator and not self.object.pay_operator_date:
+                self.object.pay_operator_date = timezone.now()
+            if self.object.buy_operator and not self.object.buy_operator_date:
+                self.object.buy_operator_date = timezone.now()
+
             if self.form.file_model and self.form.file_groups_2:
                 self.object.save_file(request=self.request,
                                       file_groups=self.form.file_groups_2,
@@ -186,7 +192,6 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
                 self.object.sales_admin_cancel = True
                 self.object.extra_data.request = self.request
                 self.object.save()
-
 
             wf_obj = self.submit_flow(is_new=is_new)
             self.object.last_work_flow = wf_obj
@@ -299,7 +304,7 @@ class SafeOrderView(LoginRequiredMixin, BaseView):
         context['o_warning'] = []
         if self.request.user.base_group == 'mac':
             if self.object.buy_operator != "mac" and self.object.pay_operator != "mac":
-                raise PermissionError()
+                raise PermissionDenied()
 
         context['app_name'] = self.request.resolver_match.app_name
         if self.object:
@@ -695,6 +700,7 @@ class OrderDataTableListView(AjaxDatatableView):
         )
 
     def get_initial_queryset(self, request=None):
+        OrderDataTableListView.initial_order = [["created_date", "des"], ]
 
         q = request.POST.get('q')
         user_group = request.user.base_group
@@ -705,8 +711,9 @@ class OrderDataTableListView(AjaxDatatableView):
             qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(~Q(order_title__icontains='خودکار'))
 
         elif user_group == 'mac':
-            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac')
-            qs = self.model.objects.filter(mac_filter, is_deleted=False, apply_mac=True).distinct()
+            mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac') | Q(apply_mac=True)
+            qs = self.model.objects.filter(mac_filter, is_deleted=False).distinct()
+            OrderDataTableListView.initial_order = [["pay_operator_date", "dsc"], ["buy_operator_date", "dsc"], ]
 
         elif user_group == 'trade':
             qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
@@ -885,7 +892,7 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
-        return qs.distinct()
+        return qs
 
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
@@ -956,6 +963,8 @@ class OrderDataTableListView(AjaxDatatableView):
             self.customize_row_trade(row, obj)
         elif base_group == 'sales':
             self.customize_row_sales(row, obj)
+        elif base_group == 'mac':
+            self.customize_row_mac(row, obj)
 
         # row['edit'] = mark_safe(f"""
         # <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="/order/packingitem/update/1/" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
@@ -972,12 +981,12 @@ class OrderDataTableListView(AjaxDatatableView):
                                              f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
                                              for x in obj.order_payment_items.select_related('payment').all()])
             row['gio'] = '<hr>'.join([
-                f"<a target=_blank href='{reverse_lazy('''order:order.gio.update''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity}</a>"
+                f"<a target=_blank href='{reverse_lazy('''order:quick_gio''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity} in {x.gio.pk}</a>"
                 for x in obj.gio_items.select_related('gio').all()])
 
             row['packing'] = '<hr>'.join([
-                f"<a target=_blank href='{reverse_lazy('''order:order.packing.update''', kwargs={'''pk''': x.packing.pk})}'>{x.quantity}</a>"
-                for x in obj.order_packing_items.select_related('packing').all()])
+                f"<a target=_blank href='{reverse_lazy('''order:order.packing.update''', kwargs={'''pk''': x.packing.pk})}'>{x.quantity} in {x.packing.pk}</a>"
+                for x in obj.packing_item_order.select_related('packing').all()])
         except Exception as e:
             pass
 
@@ -987,6 +996,30 @@ class OrderDataTableListView(AjaxDatatableView):
         total_packing = sum([x.sum_packing for x in obj.packing_item_order.annotate(sum_packing=Sum('quantity'))])
         row['gio'] = f'{round((total_gio / quantity) * 100, 1)}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
         row['packing'] = f'{round((total_packing / quantity) * 100, 1)}%' if quantity else '-'
+
+    def customize_row_mac(self, row, obj):
+        order_wf_map = {
+            'پیش نویس': 'draft',
+            'تایید مدیر فروش': 'sale admin confirm',
+            'تایید بازرگانی': 'trade confirm',
+            'تایید مهندس': 'CEO conf',
+            'ارسال به تامین کننده': 'send to supplier',
+            'تایید تامین کننده': 'supplier confirm',
+            'تایید نهایی بازرگانی': 'trade final confirm',
+            'پرداخت / PACKING / GIO': 'pay/gio/pac',
+            'مرحله نهایی': 'finish',
+        }
+        try:
+            row['last_work_flow'] = order_wf_map.get(obj.last_work_flow.current_state_name)
+            row['gio'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:quick_gio''', kwargs={'''pk''': x.gio.pk})}'>{x.quantity} in {x.gio.pk}</a>"
+                for x in obj.gio_items.select_related('gio').all()])
+
+            row['packing'] = '<hr>'.join([
+                f"<a target=_blank href='{reverse_lazy('''order:order.packing.update''', kwargs={'''pk''': x.packing.pk})}'>{x.quantity} in {x.packing.pk}</a>"
+                for x in obj.packing_item_order.select_related('packing').all()])
+        except Exception as e:
+            print(e)
 
     def get_column_defs(self, request):
         if self.request.user.base_group == 'bazar':
@@ -1062,7 +1095,6 @@ class OrderDataTableListView(AjaxDatatableView):
                  'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'qi__quotation__id', 'orderable': True, 'title': 'Pre Invoice No', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transport'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
@@ -1070,7 +1102,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'item__purchase_group', 'orderable': False, 'visible': True, 'title': 'purchase group', 'lookup_field': '__title__icontains' },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'Sales Description'},
                 {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
-                {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
                 {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True,
                  'lookup_field': '__username__icontains'},
                 {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'پرداخت', },
@@ -1086,17 +1117,25 @@ class OrderDataTableListView(AjaxDatatableView):
                 AjaxDatatableView.render_row_tools_column_def(),
                 {'name': 'id', 'title': _("id"), 'orderable': True, 'visible': True, },
                 {'name': 'order_number', 'orderable': True, 'title': 'Order No', 'visible': True},
+                {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transport'},
                 {'name': 'order_title', 'orderable': True, 'visible': True, 'title': "title"},
                 {'name': 'last_work_flow', 'title': 'status', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-                {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains'},
-                {'name': 'item__part_number', 'orderable': True, 'title': 'part number', 'visible': True, 'lookup_field': '__icontains'},
-                {'name': 'item_brand', 'title': 'brand', 'visible': True, 'orderable': False, 'searchable': False,
-                 'lookup_field': '__title__icontains'},
-                {'name': 'trade_item_brand', 'title': 'brand', 'visible': True, 'orderable': False, 'searchable': False,
-                 'lookup_field': '__title__icontains'},
+                {'name': 'order_status_icon', 'title': 'status icon', 'visible': True, 'orderable': False, 'searchable': False},
+                {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'item_brand', 'title': 'sale_item_brand', 'visible': True, 'orderable': False, 'searchable': False, 'lookup_field': '__title__icontains'},
+                {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
+                {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'quantity', },
+                {'name': 'trade_item_brand', 'title': 'trade_item_brand', 'visible': True, 'orderable': False, 'searchable': False, 'lookup_field': '__title__icontains'},
+                {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'quantity', },
+                # {'name': 'payment', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'payment', },
+                {'name': 'gio', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'GIO', },
+                {'name': 'packing', 'orderable': False, 'searchable': False, 'visible': True, 'title': 'packing', },
                 {'name': 'created_date', 'title': 'created date', 'orderable': True, 'visible': True, },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'sales description'},
+                {'name': 'pay_operator_date', 'orderable': True, 'visible': False, 'title': 'pay_operator_date'},
+                {'name': 'buy_operator_date', 'orderable': True, 'visible': False, 'title': 'buy_operator_date'},
             ]
 
         return super().get_column_defs(request)
@@ -1698,12 +1737,12 @@ class GIODataTableListView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['pk'] = '<a class="fw-bold" target=_blank href="%s">%s</a>' % (
-            reverse('order:gio.update', args=(obj.id,)),
+            reverse('order:quick_gio', args=(obj.id,)),
             obj.id if obj.id else 'بدون عنوان'
         )
         order_ids = list(set(obj.gioitems.filter(order__isnull=False).values_list('order_id', flat=True)))
         order_links = [
-            f'<a class="fw-bold" target=_blank href="{reverse("order:order.view", args=(order_id,))}">{order_id}</a>'
+            f'<a class="fw-bold" target=_blank href="{reverse("order:order.view.safe", args=(order_id,))}">{order_id}</a>'
             for order_id in order_ids
         ]
         row['gioitems__order'] = ", ".join(order_links)
@@ -3363,9 +3402,15 @@ class QuickGIOView(LoginRequiredMixin, View):
     #     return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
 
     def post(self, request, pk=None, *args, **kwargs):
+        """
+        1: create gio with gio-items for first time
+        2: update gio and create new gio-items in update
+        3: update single gio-item handel in GIOItemView
+        """
         data = json.loads(request.body) or {}
         data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
         total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
+        gio_for_update = GIO.objects.filter(pk=data.pop('gio_id', 0))
 
         gio_data = {
             "gio_date": data.pop('gio_date', None),
@@ -3376,9 +3421,13 @@ class QuickGIOView(LoginRequiredMixin, View):
 
         try:
             with transaction.atomic():
-                gio_obj = GIO(**gio_data)
-                gio_obj.extra_data.request = self.request
-                gio_obj.save()
+                if gio_for_update:
+                    gio_for_update.update(**gio_data)
+                    gio_obj = gio_for_update.first()
+                else:
+                    gio_obj = GIO(**gio_data)
+                    gio_obj.extra_data.request = self.request
+                    gio_obj.save()
 
                 gio_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
                 for row in range(1, total_forms):
@@ -3386,7 +3435,7 @@ class QuickGIOView(LoginRequiredMixin, View):
                     order_id = gio_items_data.get(f'form-{row}-order')
                     o = Order.objects.get(pk=order_id)
 
-                    is_valid_for_gio = o.validate_for_gio(quantity)
+                    is_valid_for_gio = o.validate_for_gio(quantity, gio_obj)
                     if not is_valid_for_gio[0]:
                         return JsonResponse({'res': {'ERROR: ': is_valid_for_gio[1]}}, status=400)
 
@@ -3396,20 +3445,18 @@ class QuickGIOView(LoginRequiredMixin, View):
                         'order_id': order_id,
                         'gio': gio_obj
                     }
-                    # sid = transaction.savepoint()
 
                     try:
                         gio_item_obj = GIOItem(**gio_item_data)
                         gio_item_obj.extra_data.request = self.request
                         gio_item_obj.save()
-                        # sid = transaction.savepoint_commit(sid)
                     except Exception as e:
-                        # transaction.savepoint_rollback(sid)
                         raise e
         except Exception as e:
             res = {'res': {'ERROR: ': str(e)}}
             return JsonResponse(res, status=400)
 
+        messages.success(request, f'success')
         return JsonResponse({'res': {'url': reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk})}}, status=200) # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
 
     def get(self, request, pk=None, *args, **kwargs):
@@ -3421,6 +3468,7 @@ class QuickGIOView(LoginRequiredMixin, View):
         context = {
             'form': gio_form,
             'formset': gio_item_formset,
+            'gios': GIOItem.objects.filter(gio=gio_object).order_by('id')
         }
         
         return render(request, self.template_name, context)
@@ -3451,27 +3499,42 @@ class QuickGIODataTableListView(AjaxDatatableView):
     show_column_filters = True
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-        {'name': 'id', 'title': "id", 'orderable': True, 'visible': True, "className": 'order d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True, "className": 'py-1 show_order_str d-none'},
-        {'name': 'order_number', 'title': "order_number", 'orderable': True, 'visible': True, "className": 'py-1'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'final quantity', 'className': 'quantity'},
+
+        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>', 'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
         {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
-        {'name': 'item__sepidar_id_0', 'visible': True, 'className': 'itemref d-none'},
         {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False, 'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': 'quantity'},
+        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True, 'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': ''},
         {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, 'searchable': False},
-        {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
+        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
+        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
         {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0">Add</div>', },
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False, 'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
+
+        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True, "className": 'order w-0 d-none'},
+        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True, "className": 'py-1 show_order_str d-none'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
     ]
 
     def get_initial_queryset(self, request=None):
-        qs = self.model.objects.filter(is_deleted=False, is_wh=False, last_work_flow__current_state_name='پرداخت / PACKING / GIO')
+        effective_quantity = Case(
+            When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
+            When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
+            When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
+            default=Value(0),
+            output_field=IntegerField()
+        )
+        qs = self.model.objects.annotate(quantity_in_gio=Sum('gio_items__quantity'), effective_quantity=effective_quantity).filter(is_deleted=False,
+                                                                                            is_wh=False,
+                                                                                            last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+                                                                                            effective_quantity__gt=F('quantity_in_gio'))
         # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
         return qs
 
     def customize_row(self, row, obj):
         row['quantity'] = obj.final_quantity
+        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
+        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
         row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
         row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')

@@ -151,6 +151,7 @@ class SepidarOrderDocument(models.Model):
 
 
 class Order(BaseModeWF):
+    final_quantity_db = models.FloatField(null=True, blank=True)
     version = models.PositiveIntegerField(default=0)
     number = models.PositiveIntegerField(null=True, blank=True)
     year = models.PositiveIntegerField(null=True, blank=True)
@@ -161,12 +162,14 @@ class Order(BaseModeWF):
     ORDER_STATUS = [('1', _("draft")), ('2', _("started")), ('3', _("co-conf")), ('4', _("supp-sent")), ('5', _("sup-conf")),
                     ('6', _("pre-paid")), ('7', _("gio")), ('8', _("has-packing")), ('9', _("partial-arrived")),
                     ('10', _("total-arrived")), ('11', _("has-error")), ('12', _("completed")), ('13', _("canceled")), ]
-    TRANSPORTATION_CHOICE = [("express", _("express")), ("air", _("air")), ("sea", _("sea")), ]
+    TRANSPORTATION_CHOICE = [("express", "express"), ("air", "air"), ("sea", "sea"), ]
     BUY_OPERATOR_CHOICE = (("me", _("me")), ("mac", _("mac")), ("luise", _("luise")))
     PAY_OPERATOR_CHOICE = (("mac", _("mac")), ("luise", _("luise")), ("iranpaid", _("iranpaid")))
 
     buy_operator = models.CharField(verbose_name=_('buy_operator'), null=True, blank=True, choices=BUY_OPERATOR_CHOICE)
+    buy_operator_date = models.DateTimeField(null=True, blank=True)
     pay_operator = models.CharField(verbose_name=_('buy_operator'), null=True, blank=True, choices=PAY_OPERATOR_CHOICE)
+    pay_operator_date = models.DateTimeField(null=True, blank=True)
 
     is_bazar = models.BooleanField(_('is_bazar'), default=False)
     is_wh = models.BooleanField(_('is_wh'), default=False)
@@ -380,6 +383,7 @@ class Order(BaseModeWF):
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
+        self.final_quantity_db = self.final_quantity
         import jdatetime
         if self.pk is None:
             self.version = 1
@@ -488,7 +492,10 @@ class Order(BaseModeWF):
 
         return int(total_arrived_in_percent or 0), int(total_arrived or 0), final_quantity, is_complete
 
-    def validate_for_gio(self, quantity):
+    def validate_for_gio(self, quantity, gio_obj):
+        if self.gio_items.filter(gio=gio_obj, is_deleted=False).exists():
+            return False, f'duplicate order {self.order_number} in gio {gio_obj.pk}'
+
         total_arrived_in_percent, total_arrived, final_quantity, is_complete = self.gio_info
         if is_complete:
             return False, f'order {self.order_number} complete in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'

@@ -109,13 +109,18 @@ class ShopApiCall:
                 return
 
             l = list()
+            skus = ','.join(map(str, factor.factoritem_set.values_list('goods_code__id', flat=True)))
+            product_access_token = cache.get("product_access_token")
+            if not product_access_token:
+                product_access_token = ProductApiCall.get_token()
+                cache.set('product_access_token', product_access_token, 20)
+            products = ProductApiCall.get_product_by_skus(skus, response_function='products_map')
+
+            product_id = products.get('id') if products else None
+
             for fi in factor.factoritem_set.all():
-                product_access_token = cache.get("product_access_token")
-                if not product_access_token:
-                    product_access_token = ProductApiCall.get_token()
-                    cache.set('product_access_token', product_access_token, 20)
-                products = ProductApiCall.get_product_by_skus(fi.goods_code.pk, None)
-                product_id = products.get('id') if products else None
+
+                product_id = products.get(str(fi.goods_code.pk)) if products else None
 
                 l.append({
                     # "user": None,
@@ -140,6 +145,7 @@ class ShopApiCall:
             if res.ok:
                 return res.json().get('pk')
             else:
+                messages.error(request, f'خطا در ایجاد فاکتور خرید شاپ: {res.json()}')
                 return None
         except Exception as e:
             messages.error(request, f'خطا در ایجاد فاکتور خرید شاپ: {str(e)}')

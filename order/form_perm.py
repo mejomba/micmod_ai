@@ -376,7 +376,7 @@ ORDER_FIELDS_BY_PERMISSION = {
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
                      "apply_mac", "description_trade", "trade_user", "po_number_trade",
                      "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order",
-                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price",]
+                     "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price", "transportation_method"]
         },
         2: {
             "edit": [
@@ -388,7 +388,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
         3: {
             "edit": [
@@ -400,7 +400,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
         4: {
             "edit": [
@@ -412,7 +412,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
         5: {
             "edit": [
@@ -424,7 +424,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
         6: {
             "edit": [
@@ -436,7 +436,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
             },
         7: {
             "edit": [
@@ -448,7 +448,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
         8: {
             "edit": [
@@ -460,7 +460,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["request_date", "_item", "_final_item", "quantity", "quantity_trade", "_final_quantity",
                      "order_number", "is_sample", "is_force_order", "price_trade", "supplier_trade", "sales_admin_cancel", "_description_sale",
-                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price",]
+                     "description_trade", "is_kasri", "commitment_date_to_customer", "title", "total_price", "transportation_method"]
         },
     },
     "order.cp_order_total_admin": {

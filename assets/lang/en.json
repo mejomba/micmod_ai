@@ -252,5 +252,9 @@
     "buy_history": "buy history",
     "sales_history": "sales history",
     "submit": "submit",
-    "sales_10_darsad": "10 %"
+    "sales_10_darsad": "10 %",
+    "express": "express",
+    "air": "air",
+    "sea": "sea",
+    "آیا از حذف این آیتم اطمینان دارید؟": "?you want to delete this item"
 }

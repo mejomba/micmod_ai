@@ -32,6 +32,15 @@ class ProductResponseManager(metaclass=SingletonMeta):
         return res.json().get('products')[0]
 
     @staticmethod
+    def products_map(res, data=None):
+        out = dict()
+        for p in res.json().get('products'):
+            out[p['sepidar_sku'][0]] = p['id']
+
+        return out
+
+
+    @staticmethod
     def product_image_and_datasheet(res):
         """ implement change on api response """
         images = []

@@ -206,6 +206,12 @@ div[disabled=disabled] {
     padding: 5px !important;
 }
 
+#section-1{
+    transition: width 0.5s ease;
+}
+#section-2{
+    transition: width 0.5s ease;
+}
 footer.footer{
     position: fixed;
     bottom: 0;
