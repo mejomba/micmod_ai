@@ -892,7 +892,7 @@ class OrderDataTableListView(AjaxDatatableView):
         #         ~Q(last_work_flow__current_state_name='پیش نویس')
         #     )
 
-        return qs
+        return qs.distinct()
 
     def customize_row(self, row, obj):
         # row['order_method'] = f'<span>{obj.order_method}</span>'
