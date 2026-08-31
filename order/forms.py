@@ -64,6 +64,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self.fields['description_sale'].widget.attrs['rows'] = 1
         self.fields['description_trade'].widget.attrs['rows'] = 1
         self.fields['description_mac'].widget.attrs['rows'] = 1
+        self.fields['price_trade'].widget.attrs['onchange'] = "check_last_price_diff(event)"
 
         # ========= remove field
         if self.instance.pk and 'q' in self.allowed_fields:
