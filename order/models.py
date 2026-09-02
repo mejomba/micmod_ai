@@ -243,6 +243,14 @@ class Order(BaseModeWF):
             return 'فردا'
         else:
             return '-'
+
+    @property
+    def commitment_date_difference(self):
+        time_difference = None
+        if self.trade_commitment_date and self.commitment_date_to_customer:
+            time_difference = self.trade_commitment_date - self.commitment_date_to_customer
+        return time_difference
+
     @property
     def final_purchase_group(self):
         try:
@@ -529,6 +537,11 @@ class Order(BaseModeWF):
         if in_wh == final_quantity:
             return True
         return False
+
+    @property
+    def is_partial_arrival(self):
+        _, in_wh, final_quantity = self.packing_info
+        return 0 < in_wh < final_quantity
 
     @property
     def final_po_number(self):
