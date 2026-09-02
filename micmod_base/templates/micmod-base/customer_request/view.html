@@ -39,6 +39,10 @@
                                 <div class="bg-secondary p-2 rounded text-black mb-1">{{ obj.assigned_user }}</div>
                             {% endif %}
                         </div>
+                    <div class="col">
+                            <label class="form-label fw-bold ">فاکتور رسمی:</label>
+                            <div class="bg-secondary p-2 rounded text-black mb-3">{{ obj.request_extra_data|get_item:'is_official_invoice'|default_if_none:'-' }}</div>
+                        </div>
                     </div>
                     <div class="col mt-5">
                         <label class="form-label fw-bold">شماره تلفن مشتری:</label>
