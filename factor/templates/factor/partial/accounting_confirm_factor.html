@@ -1,0 +1,282 @@
+<style>
+.ac-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  max-width: 560px;
+  font-family: inherit;
+}
+.ac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ac-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ac-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+.ac-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.ac-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 1px;
+}
+.ac-refresh-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b7280;
+  font-family: inherit;
+  transition: background 150ms;
+}
+.ac-refresh-btn:hover { background: #f9fafb; }
+.ac-divider {
+  border: none;
+  border-top: 1px solid #f3f4f6;
+  margin: 0 0 0px;
+}
+.ac-body {
+  min-height: 52px;
+  max-height: 66px;
+  overflow-y: auto;
+  overflow-x: hidden;  /* ← جلوگیری از بیرون رفتن */
+}
+.ac-links {
+  display: flex;
+  flex-wrap: wrap;     /* ← این باید باشه */
+  gap: 6px;
+  margin-bottom: 14px;
+  width: 100%;         /* ← اضافه کن */
+}
+.ac-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  padding: 3px 11px;
+  font-size: 12px;
+  color: #1d4ed8;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.ac-chip:hover { opacity: 0.75; }
+.ac-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ac-count-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.ac-count-label { font-size: 12px; color: #6b7280; }
+.ac-count-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+.ac-timer {
+  font-size: 11px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ac-progress {
+  height: 3px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.ac-progress-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 2px;
+  width: 100%;
+}
+.ac-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ac-skel-chip {
+  height: 26px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  animation: acPulse 1.4s ease-in-out infinite;
+}
+.ac-empty, .ac-error {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ac-empty { color: #6b7280; }
+.ac-error  { color: #dc2626; }
+@keyframes acPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+@keyframes acSpin {
+  to { transform: rotate(360deg); }
+}
+.ac-spin {
+  display: inline-block;
+  animation: acSpin 0.8s linear infinite;
+}
+</style>
+
+<!-- ─── HTML ─── -->
+<div class="ac-card mb-5">
+  <div class="ac-header">
+    <div class="ac-title-row">
+      <div class="ac-icon">&#128196;</div>
+      <div>
+        <div class="ac-title">فاکتورهای تایید مالی شده</div>
+        <div class="ac-subtitle">بروزرسانی خودکار هر ۲ دقیقه</div>
+      </div>
+    </div>
+    <button class="ac-refresh-btn" onclick="acManualRefresh()" title="بروزرسانی">
+      <span id="acRefreshIcon">&#8635;</span>
+      <span>بروزرسانی</span>
+    </button>
+  </div>
+
+  <hr class="ac-divider">
+
+  <div class="ac-body" id="acBody">
+    <div class="ac-skeleton">
+      <div class="ac-skel-chip" style="width:52px"></div>
+      <div class="ac-skel-chip" style="width:66px"></div>
+      <div class="ac-skel-chip" style="width:44px"></div>
+    </div>
+  </div>
+
+  <div class="ac-footer">
+    <div class="ac-count-wrap">
+      <span class="ac-count-label">تعداد فاکتور</span>
+      <span class="ac-count-val" id="acCountVal">—</span>
+    </div>
+    <div class="ac-timer">
+      &#9201;
+      <span id="acTimerLabel">در حال بارگذاری...</span>
+    </div>
+  </div>
+
+  <div class="ac-progress">
+    <div class="ac-progress-bar" id="acProgressBar"></div>
+  </div>
+</div>
+
+<!-- ─── JavaScript ─── -->
+<script>
+(function () {
+  var API_URL     = "/factor/ajax/show_accounting_confirm_factor/"; /* ← URL خودت */
+  var INTERVAL_MS = 120000;
+  var timerLoop   = null;
+  var lastLoadTime = null;
+  var isLoading   = false;
+
+  function loadData() {
+    if (isLoading) return;
+    isLoading = true;
+
+    var icon     = document.getElementById("acRefreshIcon");
+    var body     = document.getElementById("acBody");
+    var countVal = document.getElementById("acCountVal");
+
+    icon.className   = "ac-spin";
+    icon.textContent = "↻";
+
+    $.ajax({
+      url: API_URL,
+      method: "GET",
+      success: function (data) {
+        isLoading    = false;
+        lastLoadTime = Date.now();
+        icon.className   = "";
+        icon.textContent = "⟳";
+
+        if (!data.res || data.res.length === 0) {
+          body.innerHTML   = '<div class="ac-empty">⚠ فاکتوری موجود نیست</div>';
+          countVal.textContent = "0";
+          return;
+        }
+
+        var chips = data.res.map(function (id) {
+          return '<a href="/factor/view/' + id + '" class="ac-chip" target="_blank">↗ ' + id + '</a>';
+        }).join("");
+
+        body.innerHTML       = '<div class="ac-links">' + chips + '</div>';
+        countVal.textContent = data.count !== undefined ? data.count : data.res.length;
+      },
+      error: function () {
+        isLoading    = false;
+        lastLoadTime = Date.now();
+        icon.className   = "";
+        icon.textContent = "⟳";
+        body.innerHTML   = '<div class="ac-error">✕ خطا در دریافت اطلاعات</div>';
+      }
+    });
+  }
+
+  function tick() {
+    if (!lastLoadTime) return;
+    var remaining = Math.max(0, INTERVAL_MS - (Date.now() - lastLoadTime));
+    var seconds   = Math.ceil(remaining / 1000);
+    var m   = Math.floor(seconds / 60);
+    var sec = seconds % 60;
+    document.getElementById("acTimerLabel").textContent =
+      m + ":" + (sec < 10 ? "0" + sec : sec) + " تا بروزرسانی";
+    document.getElementById("acProgressBar").style.width =
+      ((remaining / INTERVAL_MS) * 100) + "%";
+    if (remaining === 0) loadData();
+  }
+
+  window.acManualRefresh = function () { loadData(); };
+
+  function acInit() {
+    document.getElementById("acProgressBar").style.transition = "none";
+    loadData();
+    timerLoop = setInterval(tick, 500);
+  }
+
+  if (typeof $ === "undefined") {
+    window.addEventListener("load", acInit);
+  } else {
+    $(document).ready(acInit);
+  }
+})();
+</script>
