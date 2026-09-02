@@ -1100,6 +1100,15 @@ def show_force_factor(request, *args, **kwargs):
     return JsonResponse({'res': ''}, safe=False)
 
 
+def show_accounting_confirm_factor(request, *args, **kwargs):
+    user = request.user
+    if user.is_authenticated and user.base_group == 'wh' or user.is_superuser:
+        accounting_confirm_factor = Factor.objects.filter(sepidar_number__isnull=True, accounting_confirm=True)
+        accounting_confirm_factors_id = [f.pk for f in accounting_confirm_factor]
+        return JsonResponse({'res': accounting_confirm_factors_id, 'count': accounting_confirm_factor.count()})
+    return JsonResponse({'res': ''}, safe=False)
+
+
 def show_all_supplied_factor(request, *args, **kwargs):
     user = request.user
     if user.is_authenticated and user.base_group == 'wh' or user.is_superuser:
