@@ -315,6 +315,14 @@ class FactorView(LoginRequiredMixin, BaseView):
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
 
+        if 'create_shop_buy_factor' in self.request.POST:
+            shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
+            if shop_buy_factor_pk:
+                self.object.shop_buy_factor_id = shop_buy_factor_pk
+                self.object.extra_data.request = self.request
+                self.object.save()
+                messages.success(self.request, f'فاکتور خرید برای شاپ ایجاد شد کد: {shop_buy_factor_pk}')
+
         shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
         self.object.shop_document_id = shop_document_id
         self.object.extra_data.request = self.request

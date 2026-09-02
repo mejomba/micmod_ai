@@ -219,6 +219,9 @@ class Factor(SLSDoc):
         return f"{cls.ENTITY_CODE}{password}{object_id}"
 
     def save(self, *args, **kwargs):
+        if not self.customer_party_id:
+            self.customer_party_id = getattr(self.q, 'customer_party_id', None)
+
         if not self.pk:
             super().save(*args, **kwargs)
 

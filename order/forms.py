@@ -64,6 +64,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         self.fields['description_sale'].widget.attrs['rows'] = 1
         self.fields['description_trade'].widget.attrs['rows'] = 1
         self.fields['description_mac'].widget.attrs['rows'] = 1
+        self.fields['price_trade'].widget.attrs['onchange'] = "check_last_price_diff(event)"
 
         # ========= remove field
         if self.instance.pk and 'q' in self.allowed_fields:
@@ -98,38 +99,6 @@ class OrderForm(CustomBaseModelForm):
     class Meta:
         model = Order
         exclude = ['group', 'last_work_flow']
-
-    def order_zero_state_access(self):
-        user = self.request.user
-        if user.has_perm('order.zero_state'):
-            self.access = True
-        else:
-            self.access = False
-
-    def order_first_state_access(self):
-        if self.request.user.has_perm('x'):
-            pass
-
-    def order_second_state_access(self):
-        pass
-
-    def order_third_state_access(self):
-        pass
-
-    def order_forth_state_access(self):
-        pass
-
-    def order_fiveth_state_access(self):
-        pass
-
-    def order_sixth_state_access(self):
-        pass
-
-    def order_seventh_state_access(self):
-        pass
-
-    def order_eighth_state_access(self):
-        pass
 
     def __init__(self, *args, **kwargs):
         self.request = self.access = self.form_constraint = self.formset_constraint = self.form_constraint_read = self.form_constraint_hide = self.formset_constraint_read = self.formset_constraint_hide = None
@@ -393,6 +362,7 @@ class GIOItemForm(CustomBaseModelForm):
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_gio_item_quantity_less_than_order(event)'
         self.make_hidden(['order'])
         self.fields['description'].widget = forms.TextInput(attrs={'class': 'form-control',})
+        self.fields['quantity'].widget.attrs['onkeyup'] = 'gio_total_quantity_show()'
         # if self.instance.pk and (packing := self.initial.get('packing')):
         gio = self.initial.get('gio')
         if gio:
@@ -443,7 +413,7 @@ class OrderPaymentForm(CustomBaseModelForm):
         qs = Supplier.objects.filter(base_group='trade', partyid__isnull=False, dlref__isnull=False)
         self.fields['vendor_party'] = forms.ModelChoiceField(
             queryset=qs,
-            widget=forms.Select(attrs={'class': 'form-control'}),
+            widget=forms.Select(attrs={'class': 'form-control', 'required': 'required'}),
             # initial=self.instance.vendor_party# or qs.first().pk if qs.first() else 0
         )
         # self.fields['from_date'] = JalaliDateField(label=_('from_date'),
@@ -528,6 +498,9 @@ class OrderPaymentItemForm(CustomBaseModelForm):
                     formset_constraint_read = formset_constraint[self.form_state][0].get('read')
                     formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(OrderPaymentItemForm, self).__init__(*args, **kwargs)
+        self.fields['total_amount'] = forms.FloatField(
+            widget=forms.NumberInput(attrs={'class': 'form-control', 'required': 'required'}),
+        )
         self.make_hidden(['order', 'payment'])
         self.make_optional(['delete_from_this_payment'])
         self.fields['description'].widget.attrs['rows'] = 1

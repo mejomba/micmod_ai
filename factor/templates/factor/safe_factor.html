@@ -245,6 +245,10 @@
                     <input type="submit" value="ارسال فاکتور به سپیدار" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="send_factor_to_sepidar" class="btn btn-sm btn-warning " data-bs-toggle="tooltip" data-bs-title="پس از ارسال فاکتور به سپیدار حواله خروج از انبار در سپیدار صادر میشود که به معنای ارسال کالا برای مشتری است و امکان تغییر در اطلاعات فاکتور وجود نخواهد داشت. از این رو هرگونه تغییر در اطلاعات فاکتور شامل فرایند بازگشت کالا از فروش خواهد شد." >
                 </div>
             {% endif %}
+
+        {% if flow_state_index == 5 and form.instance.sepidar_id and form.instance.customer_party_id.pk == 2691 and not form.instance.shop_buy_factor_id %}
+            <input type="submit" value="ایجاد فاکتور خرید شاپ" onclick="hideBtn(event)" id="send_factor_to_sepidar" name="create_shop_buy_factor" class="btn btn-sm btn-info my-1" data-bs-toggle="tooltip" data-bs-title="مشاهده این دکمه به معنای آن است که فاکتور به سپیدار ارسال شده اما فرایند ایجاد فاکتور خرید شاپ با خطا مواجه شده است. با کلیک روی این دکمه فاکتور خرید شاپ مجدد ایجاد میشود." >
+        {% endif %}
         </div>
 
 

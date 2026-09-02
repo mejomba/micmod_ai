@@ -31,15 +31,29 @@
         <div class="main-content " id="main-content">
             <div class="page-content">
                 <div class="container-fluid">
-                    <div class="row row-cols-2">
-                        <div class="col-7">
+                        <div class="d-flex">
+                            <div class="" style="width: 55%" id="section-1">
+                            <div style="width: fit-content; position: relative; right: calc(100% - 30px); width: fit-content" class="d-flex">
+                                <div class="p-2 bg-white shadow-sm cursor-pointer" onclick="expandRight()">
+                                    <span class="ki-duotone ki-double-right fs-2">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                    </span>
+                                </div>
+                                <div class="p-2 bg-white shadow-sm cursor-pointer hover-link" onclick="expandLeft()">
+                                    <span class="ki-duotone ki-double-left fs-2">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                    </span>
+                                </div>
+                            </div>
                             <div class="table-responsive p-2">
                                 <table id="quick-gio-list" width="100%" class="m-table table-striped table-bordered w-100">
 
                                 </table>
                             </div>
                         </div>
-                        <div class="col-5">
+                        <div class="mt-10" style="width: 45%" id="section-2">
                             <div class="card px-2 py-5" id="gio-form-inputs">
 
                             {% if not form.instance.pk %}
@@ -159,7 +173,7 @@
             }
         }) // end forEach
     }
-    function order_to_gio_item (event) {
+    function order_to_gio_item(event) {
         debugger
         const target = event.currentTarget
         if (target.dataset.is_selected === 'yes'){
@@ -175,8 +189,6 @@
         const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
         const order_id = row.querySelector('.order').innerHTML
         const quantity = row.querySelector('.quantity').innerHTML
-        {#const itemref = row.querySelector('.itemref').innerHTML#}
-        {#const item = row.querySelector('.item').innerHTML#}
         const show_order_str = row.querySelector('.show_order_str').innerHTML
 
         let totalForms = parseInt(totalFormsInput.value);
@@ -247,8 +259,10 @@
             const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
             totalFormsInput.value = parseInt(totalForms) + 1;
             sync_datatable()
-            {#calculate_price()#}
+            gio_total_quantity_show()
         });
+
+        gio_total_quantity_show()
 
         newForm.querySelector('.delete').appendChild(removeBtn);
     }
@@ -264,7 +278,6 @@
 
     const submitGIO = document.querySelector("#submit-gio")
     submitGIO && submitGIO.addEventListener('click', function (){
-        debugger
         const container = document.getElementById('gio-form-inputs');
         const inputs = container.querySelectorAll('input');
         const gio_date = container.querySelector('#id_gio_date').value
@@ -627,6 +640,48 @@
         window.open(targeturl, '_blank');
 
     })
+
+    function expandRight(){
+        const right_section = document.querySelector('#section-1')
+        const left_section = document.querySelector('#section-2')
+        debugger
+        if (right_section && left_section){
+            const current_right_size = parseInt(right_section.style.width)
+            const current_left_size = parseInt(left_section.style.width)
+            if (current_right_size > 15){
+                left_section.style.width = `${current_left_size + 5}%`
+                right_section.style.width = `${current_right_size - 5}%`
+            }
+        }
+    }
+    function expandLeft(){
+        const right_section = document.querySelector('#section-1')
+        const left_section = document.querySelector('#section-2')
+        debugger
+        if (right_section && left_section){
+            const current_right_size = parseInt(right_section.style.width)
+            const current_left_size = parseInt(left_section.style.width)
+            if (current_left_size > 15){
+                left_section.style.width = `${current_left_size - 5}%`
+                right_section.style.width = `${current_right_size + 5}%`
+            }
+        }
+    }
+
+    function gio_total_quantity_show(){
+        let total_quantity = 0
+        const exist_gio_item_quantity = document.querySelectorAll('#gio_item_quantity')
+        const new_gio_item_quantity = document.querySelectorAll('input[name$="quantity"]')
+        const gio_total_quantity_show_element = document.querySelector('#qio-total-quantity')
+        exist_gio_item_quantity.forEach(function (item){
+            total_quantity += parseFloat(item.dataset.quantity)
+        })
+
+        new_gio_item_quantity.forEach(function (item){
+            total_quantity += parseFloat(item.value)
+        })
+        gio_total_quantity_show_element.innerHTML = formatNumber(total_quantity)
+    }
 
     </script>
 

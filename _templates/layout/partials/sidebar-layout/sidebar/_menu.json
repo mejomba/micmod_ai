@@ -253,8 +253,8 @@
             {
               "icon": "message-add",
               "title": "create",
-              "path_key": "order/gio/view",
-              "link": "order:gio.view"
+              "path_key": "order/quick_gio",
+              "link": "order:quick_gio"
             },
             {
               "icon": "burger-menu",
