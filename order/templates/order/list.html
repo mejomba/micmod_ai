@@ -33,6 +33,7 @@
 {#            <a href="{% url 'order:order.list' %}?q=bazar_user" class="btn btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'bazar_user' %} bg-primary {% endif %}">بازار</a>#}
         {% if request.user.is_superuser %}
             <a href="{% url 'order:order.list' %}?q=all" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
+            <a href="{% url 'order:order.list' %}?q=active" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
             <a href="{% url 'order:order.list' %}?q=cancel_request" class="btn btn-sm btn-bordered btn-outline-primary mx-1  mt-1 {% if request.GET.q == 'cancel_request' %} bg-primary {% endif %}">درخواست کنسلی</a>
             <a href="{% url 'order:order.list' %}?q=gio_complete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'gio_complete' %} bg-primary {% endif %}">gio کامل</a>
             <a href="{% url 'order:order.list' %}?q=gio_incomplete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'gio_incomplete' %} bg-primary {% endif %}">gio ناقص</a>
@@ -48,9 +49,13 @@
             <a href="{% url 'order:order.list' %}?q=is_sample" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'is_sample' %} bg-primary {% endif %}">نمونه‌ها</a>
             <a href="{% url 'order:order.list' %}?q=is_force_order" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'is_force_order' %} bg-primary {% endif %}">سفارش فوری</a>
             <a href="{% url 'order:order.list' %}?q=cancel_denied" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'cancel_denied' %} bg-primary {% endif %}">رد کنسلی</a>
+            <a href="{% url 'order:order.list' %}?q=cancel" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'cancel' %} bg-primary {% endif %}">کنسل</a>
+            <a href="{% url 'order:order.list' %}?q=has_customer_prepaid" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'has_customer_prepaid' %} bg-primary {% endif %}">پیش‌پرداخت</a>
+            <a href="{% url 'order:order.list' %}?q=commitment_date_difference" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'commitment_date_difference' %} bg-primary {% endif %}">اختلاف تاریخ تعهد</a>
         {% endif %}
         {% if request.user.base_group == 'trade' %}
             <a href="{% url 'order:order.list' %}?q=all" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
+            <a href="{% url 'order:order.list' %}?q=active" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'active' %} bg-primary {% endif %}">در جریان</a>
             <a href="{% url 'order:order.list' %}?q=is_force_order" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'is_force_order' %} bg-primary {% endif %}">سفارش فوری</a>
             <a href="{% url 'order:order.list' %}?q=cancel_request" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'cancel_request' %} bg-primary {% endif %}">درخواست کنسلی</a>
             <a href="{% url 'order:order.list' %}?q=gio_complete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'gio_complete' %} bg-primary {% endif %}">gio کامل</a>
@@ -59,6 +64,7 @@
             <a href="{% url 'order:order.list' %}?q=packing_incomplete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'packing_incomplete' %} bg-primary {% endif %}">packing ناقص</a>
             <a href="{% url 'order:order.list' %}?q=payment_complete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'payment_complete' %} bg-primary {% endif %}">payment کامل</a>
             <a href="{% url 'order:order.list' %}?q=payment_incomplete" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'payment_incomplete' %} bg-primary {% endif %}">payment ناقص</a>
+            <a href="{% url 'order:order.list' %}?q=has_customer_prepaid" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'has_customer_prepaid' %} bg-primary {% endif %}">پیش‌پرداخت</a>
         {% endif %}
         {% if request.user.base_group == 'sales' %}
             <a href="{% url 'order:order.list' %}?q=all" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'all' %} bg-primary {% endif %}">همه</a>
@@ -71,6 +77,10 @@
             <a href="{% url 'order:order.list' %}?q=is_sample" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'is_sample' %} bg-primary {% endif %}">نمونه‌ها</a>
             <a href="{% url 'order:order.list' %}?q=is_force_order" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'is_force_order' %} bg-primary {% endif %}">سفارش فوری</a>
             <a href="{% url 'order:order.list' %}?q=cancel_denied" class="btn btn-sm btn-bordered btn-outline-primary mx-1 {% if request.GET.q == 'cancel_denied' %} bg-primary {% endif %}">رد کنسلی</a>
+            <a href="{% url 'order:order.list' %}?q=cancel" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'cancel' %} bg-primary {% endif %}">کنسل</a>
+            <a href="{% url 'order:order.list' %}?q=has_customer_prepaid" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'has_customer_prepaid' %} bg-primary {% endif %}">پیش‌پرداخت</a>
+            <a href="{% url 'order:order.list' %}?q=duplicated_codes" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'duplicated_codes' %} bg-primary {% endif %}">کد مشابه</a>
+
         {% endif %}
 
 
