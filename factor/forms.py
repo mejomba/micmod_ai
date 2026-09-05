@@ -140,12 +140,12 @@ class FactorModelForm(CustomBaseModelForm):
 
 
 class FactorItemModelForm(CustomBaseModelForm):
-    product_id = forms.ChoiceField(
-        choices=[],
-        label='کالای شاپ',
-        widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
-        required=True,
-    )
+    # product_id = forms.ChoiceField(
+    #     choices=[],
+    #     label='کالای شاپ',
+    #     widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
+    #     required=False,
+    # )
     class Meta:
         model = FactorItem
         exclude = ['group']
@@ -196,15 +196,15 @@ class FactorItemModelForm(CustomBaseModelForm):
 
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
 
-        cache_key = f'{request.user.username}__factor__{self.instance.factor.pk}'
-        choices = cache.get(cache_key)
-        if choices is None:
-            # اگر در کش نبود، از API دریافت کن
-            choices = self.get_choices_from_api()
-            # به مدت ۱ ساعت در کش نگه دار
-            cache.set(cache_key, choices, 6)
+        # cache_key = f'{request.user.username}__factor__{self.instance.factor.pk}'
+        # choices = cache.get(cache_key)
+        # if choices is None:
+        #     # اگر در کش نبود، از API دریافت کن
+        #     choices = self.get_choices_from_api()
+        #     # به مدت ۱ ساعت در کش نگه دار
+        #     cache.set(cache_key, choices, 6)
 
-        self.fields['category'].choices = choices
+        # self.fields['category'].choices = choices
 
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
