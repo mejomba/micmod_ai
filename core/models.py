@@ -982,3 +982,22 @@ class FiscalYearRef(models.Model):
     title = models.CharField(max_length=10)
     title_en = models.CharField(max_length=10)
     sepidar_id = models.PositiveIntegerField()
+
+
+class PageVisit(models.Model):
+    visit_date = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    session_id = models.CharField(max_length=255, null=True, blank=True)  # فیلد جدید
+    is_unique = models.BooleanField(default=True)  # فیلد جدید
+
+    def __str__(self):
+        return f"Visit at {self.visit_date} from {self.session_id or self.ip_address}"
+
+
+class VisitCounter(models.Model):
+    total_visits = models.PositiveIntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Total Visits: {self.total_visits}"
