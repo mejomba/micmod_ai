@@ -41,6 +41,7 @@ urlpatterns = [
     path('wh/packing/', views.WhPacking.as_view(), name='wh.packing'),
     path('ajax/get_supply_locations/<int:sku>/<int:factor_item_pk>/', views.get_supply_locations, name='get_supply_locations'),
     path('ajax/show_force_factor/', views.show_force_factor, name='show_force_factor'),
+    path('ajax/show_accounting_confirm_factor/', views.show_accounting_confirm_factor, name='show_accounting_confirm_factor'),
     path("select2/<str:key>/", select2_search, name="select2-search"),
     # path("select2/create_factor_from_quotation/<str:key>/", select2_create_factor_from_quotation, name="select2_create_factor_from_quotation"),
 

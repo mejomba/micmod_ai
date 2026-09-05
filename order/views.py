@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
+import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -8,7 +9,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, BooleanField, Value, Func, IntegerField
+from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, BooleanField, Value, Func, IntegerField, Count, \
+    DurationField
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Now
 from django.forms import modelformset_factory
@@ -637,6 +639,7 @@ class OrderDataTableListView(AjaxDatatableView):
         # {'name': 'xxx', 'orderable': True, 'visible': True, 'title': 'دلیل تاخیر'},
         {'name': 'quantity_trade', 'orderable': True, 'visible': True, 'title': 'Order Qty (T)', },
         {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
+        {'name': 'commitment_date_difference', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'اختلاف تاریخ تعهد', },
     ]
 
     def get_initial_order(self, request):
@@ -710,6 +713,14 @@ class OrderDataTableListView(AjaxDatatableView):
     def get_initial_queryset(self, request=None):
         OrderDataTableListView.initial_order = [["created_date", "des"], ]
 
+        duplicate_codes = Order.objects.values(
+            'item'
+        ).annotate(
+            cnt=Count('id')
+        ).filter(
+            cnt__gt=1
+        ).values_list('item', flat=True)
+
         q = request.POST.get('q')
         user_group = request.user.base_group
 
@@ -735,6 +746,8 @@ class OrderDataTableListView(AjaxDatatableView):
         if q == 'all':
             pass
             # qs = qs.filter(sales_admin_cancel=False)
+        elif q == 'active':
+            qs = qs.filter(cancel=False, is_deleted=False, sales_admin_cancel=False)
 
         elif q == 'dependent':
             qs = qs.filter(
@@ -821,6 +834,8 @@ class OrderDataTableListView(AjaxDatatableView):
                 comments__comment_title='U', last_work_flow__current_state_name__in=['تایید بازرگانی', 'تایید مهندس', 'ارسال به تامین کننده']
                 , sales_admin_cancel=False, is_deleted=False
             ).distinct()
+        elif q == 'cancel':
+            qs = qs.filter(sales_admin_cancel=True)
         elif q == 'cancel_denied':
             qs = qs.filter(
                 comments__comment_title='V'
@@ -867,6 +882,17 @@ class OrderDataTableListView(AjaxDatatableView):
                 total_packing_db__lt=F('final_quantity_db'),
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
+        elif q == 'has_customer_prepaid':
+            qs = qs.filter(has_customer_prepaid=True)
+        elif q == 'duplicated_codes':
+            qs = qs.filter(last_work_flow__current_state_name__in=['پیش نویس', 'تایید مدیر فروش'],
+                           item__in=duplicate_codes).order_by('item_id')
+
+        elif q == 'commitment_date_difference':
+            qs = qs.annotate(commitment_date_differences=ExpressionWrapper(
+                F('trade_commitment_date') - F('commitment_date_to_customer'),
+                output_field=DurationField()))
+
 
         # if user_group == 'trade':
         #     qs = qs.filter(is_bazar=False, sales_admin_cancel=False)
@@ -944,16 +970,17 @@ class OrderDataTableListView(AjaxDatatableView):
 
         row['item_brand'] = obj.item.brand.title if obj.item.brand else ''
         row['trade_item_brand'] = obj.item_trade.brand.title if obj.item_trade and obj.item_trade.brand else ''
+        row['commitment_date_difference'] = obj.commitment_date_difference if obj.commitment_date_difference else '-'
 
         status_rules = [
             (obj.sales_admin_cancel, '❌'),
             (obj.last_work_flow.current_state_name == 'مرحله نهایی', '✅'),
             (obj.comments.filter(comment_title='R').exists(), '🚨'),
             (obj.is_all_arrival is True, '🟥'),
-            # (obj.has_partial_arrival, '🟧'),
+            (obj.is_partial_arrival, '🟧'),
             (obj.packing_item_order.exists(), '🚢'),
             (obj.gio_items.exists(), '🀄'),
-            # (obj.has_customer_prepaid, '💴'),
+            (obj.has_customer_prepaid, '💴'),
             (obj.last_work_flow.current_state_name == 'تایید نهایی بازرگانی', '🟩'),
             (obj.last_work_flow.current_state_name == 'تایید تامین کننده', '🟦'),
             (obj.last_work_flow.current_state_name == 'ارسال به تامین کننده', '🤵'),
@@ -983,6 +1010,8 @@ class OrderDataTableListView(AjaxDatatableView):
         # """)
 
     def customize_row_trade(self, row, obj):
+
+        row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:
             row['payment'] = '<hr>'.join([
                                              f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
@@ -1003,6 +1032,18 @@ class OrderDataTableListView(AjaxDatatableView):
         total_packing = sum([x.sum_packing for x in obj.packing_item_order.annotate(sum_packing=Sum('quantity'))])
         row['gio'] = f'{round((total_gio / quantity) * 100, 1)}%' if quantity else '-' #f'{(total_gio/obj.quantity)}'
         row['packing'] = f'{round((total_packing / quantity) * 100, 1)}%' if quantity else '-'
+        if obj.trade_commitment_date:
+            row['trade_commitment_date'] = jdatetime.date.fromgregorian(
+                date=obj.trade_commitment_date
+            ).strftime('%Y/%m/%d')
+        else:
+            row['trade_commitment_date'] = '-'
+        if obj.commitment_date_to_customer:
+            row['commitment_date_to_customer'] = jdatetime.date.fromgregorian(
+                date=obj.commitment_date_to_customer
+            ).strftime('%Y/%m/%d')
+        else:
+            row['commitment_date_to_customer'] = '-'
 
     def customize_row_mac(self, row, obj):
         order_wf_map = {
@@ -1056,7 +1097,13 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'order_status_icon', 'title': 'ایکون سفارش', 'visible': True, 'orderable': False,
                  'searchable': False},
                 {'name': 'last_work_flow', 'title': '<div class="px-4">وضعیت</div>', 'visible': True, 'orderable': True, 'lookup_field': '__current_state_name__icontains'},
-                {'name': 'trade_commitment_date', 'title': 'تارخ تعهد بازرگانی', 'visible': True, 'searchable': False, 'orderable': False, },
+                {'name': 'trade_commitment_date', 'title': 'تاریخ تعهد بازرگانی', 'visible': True, 'searchable': False, 'orderable': True, },
+                {'name': 'jalali_created_date', 'title': '<div class="px-2">تاریخ ایجاد</div>', 'orderable': False,
+                 'visible': True, 'searchable': False},
+                {'name': 'commitment_date_to_customer', 'title': 'تاریخ تعهد به مشتری', 'orderable': True,
+                 'visible': True, 'searchable': False,},
+                {'name': 'commitment_date_difference', 'searchable': False, 'orderable': False, 'visible': True,
+                 'title': 'اختلاف تاریخ تعهد', },
                 {'name': 'estimated_arrive_date', 'title': 'تخمین زمان رسیدن', 'visible': True, 'searchable': False, 'orderable': False, },
                 {'name': 'creator_user', 'title': 'ایجاد کننده', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
                 {'name': 'item', 'orderable': True, 'title': 'کالا (فروش)', 'visible': True, 'lookup_field': '__sku__icontains'},
@@ -1067,8 +1114,6 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'پارت نامبر (بازرگانی)', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'qi__quotation__id', 'orderable': True, 'title': 'پیش فاکتور', 'visible': True, 'lookup_field': '__icontains'},
                 {'name': 'created_date', 'orderable': True, 'visible': False, },
-                {'name': 'jalali_created_date', 'title': '<div class="px-2">تاریخ ایجاد</div>', 'orderable': False, 'visible': True, 'searchable': False},
-                {'name': 'commitment_date_to_customer', 'title': 'تاریخ تعهد به مشتری', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'روش حمل'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'تعداد (فروش)', },
                 {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'توضیحات (فروش)'},
@@ -1118,6 +1163,7 @@ class OrderDataTableListView(AjaxDatatableView):
                 {'name': 'is_kasri', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'کسری انبار', },
                 {'name': 'is_force_order', 'orderable': True, 'searchable': True, 'visible': True, 'title': 'force', },
                 {'name': 'work_day', 'visible': True, 'title': 'روز کاری', },
+                {'name': 'delay_reason__description', 'visible': True, 'title': 'دلیل تاخیر', 'lookup_field': '__icontains' },
             ]
         elif self.request.user.base_group == 'mac':
             self.column_defs = [

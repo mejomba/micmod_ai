@@ -75,15 +75,18 @@
 
 .sf-body {
   min-height: 52px;
+  max-height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;  /* ← جلوگیری از بیرون رفتن */
 }
 
 .sf-links {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap;     /* ← این باید باشه */
   gap: 6px;
   margin-bottom: 14px;
+  width: 100%;         /* ← اضافه کن */
 }
-
 .sf-chip {
   display: inline-flex;
   align-items: center;

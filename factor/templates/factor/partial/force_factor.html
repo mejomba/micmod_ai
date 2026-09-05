@@ -102,6 +102,9 @@
 
 .ff-body {
   min-height: 52px;
+  max-height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;  /* ← جلوگیری از بیرون رفتن */
 }
 
 .ff-links {
@@ -109,6 +112,7 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 14px;
+  width: 100%;
 }
 
 .ff-chip {
