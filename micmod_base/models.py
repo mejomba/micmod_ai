@@ -4,6 +4,7 @@ import uuid
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.utils.safestring import mark_safe
 # from datetime import datetime, timedelta
 from django.utils.timezone import timedelta
 from collections import Counter
@@ -801,6 +802,17 @@ class QuotationItem(BaseModel):
     is_approved = models.BooleanField(default=False)
 
     objects = QuotationItemManager()
+
+    # def __str__(self):
+    #     return f'پیش {self.quotation.pk} کالای {self.goods_code_fk}'
+
+    @property
+    def select2_html_respo_text(self):
+        return mark_safe(f'<span>{self.quotation.pk}</span> - کالای <span class="bg-light-success px-1 rounded">{self.goods_code_fk.pk}</span>')
+
+    @property
+    def select2_html_after_selection(self):
+        return mark_safe(f'<span>پیش {self.quotation.pk}</span> - کالای <span class="bg-light-success px-1 rounded">{self.goods_code_fk.pk}</span>')
 
     @property
     def enter_to_inquiry_state(self):

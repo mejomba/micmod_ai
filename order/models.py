@@ -15,7 +15,7 @@ from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseM
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
-from micmod_base.models import QuotationItem, CustomerRequestItem
+from micmod_base.models import QuotationItem, CustomerRequestItem, Quotation
 from sepidar.api_call import SepidarApiCall
 from translator import get_text as _
 from workflow.models import WorkFlow
@@ -180,7 +180,7 @@ class Order(BaseModeWF):
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
     has_customer_prepaid = models.BooleanField(_('has_customer_prepaid'), default=False)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
-                                             default='sea', null=True, blank=True)
+                                             default='air', null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
     quantity = models.FloatField(_('quantity'), default=0)
     description_sale = models.TextField(_('description_sale'), null=True, blank=True)
@@ -500,7 +500,7 @@ class Order(BaseModeWF):
         if is_complete:
             return False, f'order {self.order_number} complete in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
         if (quantity + total_arrived) > self.final_quantity:
-            return False, f'{total_arrived} of order {self.order_number} receipt in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
+            return False, f'{total_arrived} of order {self.order_number} receipt in GIO {list(self.gio_items.values_list("gio_id", flat=True))} {final_quantity - total_arrived} available for GIO'
 
         return True, ''
 

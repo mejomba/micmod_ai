@@ -30,7 +30,8 @@ SELECT2_SOURCES = {
                           "default_order": ["-id"]},
 
     "qi":                {"qs": QuotationItem.objects.all(),
-                          "search": ["id", "goods_code_fk_id", "goods_code_fk__part_number"],
+                          # "search": ["id", "goods_code_fk_id", "goods_code_fk__part_number", "quotation__id"],
+                          "search": ["quotation__id"],
                           "default_order": ["-id"],
                           "filters": {"user_id": "customer_party_id__customer_group__current_user_id",},  # نام پارامتر GET -> lookup در ORM
                           "require_filters": [],  # اگر کالا نبود، خالی برگردان

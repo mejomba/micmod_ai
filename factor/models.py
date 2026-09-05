@@ -353,6 +353,7 @@ class Factor(SLSDoc):
 
 
 class FactorItem(BaseModel):
+    product_id = models.CharField(max_length=32, null=True, blank=True)
     sepidar_id = models.BigIntegerField(null=True, blank=True)
     history = HistoricalRecords()
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))

@@ -29,13 +29,17 @@ class ProductResponseManager(metaclass=SingletonMeta):
 
     @staticmethod
     def products(res):
-        return res.json().get('products')[0]
+        return res.json().get('results')[0]
 
     @staticmethod
     def products_map(res, data=None):
         out = dict()
-        for p in res.json().get('products'):
-            out[p['sepidar_sku'][0]] = p['id']
+        for p in res.json().get('results'):
+            try:
+                out[p['sepidar_sku']].append(p['id'])
+            except Exception as e:
+                out[p['sepidar_sku']] = []
+                out[p['sepidar_sku']].append(p['id'])
 
         return out
 
@@ -47,7 +51,7 @@ class ProductResponseManager(metaclass=SingletonMeta):
         datasheets = []
         out = dict()
         if res.ok:
-            products = res.json().get('products')
+            products = res.json().get('results')
             for p in products:
                 images = [i.get('url') for i in p.get('images')]
                 datasheets = [d.get('url') for d in p.get('data_sheet')]
@@ -69,6 +73,7 @@ class ProductApiCall:
         "v1": {
             'login': f'{protocol}://{host}:{port}/api2/token/',
             'products': f'{protocol}://{host}:{port}/products/',
+            'products': f'{protocol}://{host}:{port}/api2/product/',
         },
     }
 
@@ -122,7 +127,7 @@ class ProductApiCall:
         """
         cls.setup()
         endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('products')
-        endpoint += f'?sepidar_skus={skus}'
+        endpoint += f'?sepidar_skus=[{skus}]'
         res = requests.get(endpoint, headers=cls.headers)
         res = getattr(cls.response_manager, (response_function or 'products'))(res)
         return res

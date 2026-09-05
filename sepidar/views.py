@@ -13,6 +13,7 @@ import sepidar.models
 from accounts.models import User
 from core.views import BaseView
 from micmod_base.base import is_valid
+from .api_call import SepidarApiCall
 from .froms import DeviceForm
 from .models import Dl, Item, Device, APILogs, InventoryPurchaseInvoice
 from jalali_date.templatetags.jalali_tags import to_jalali
@@ -485,6 +486,10 @@ class BaseList(AjaxDatatableView):
                     )
 
 
-
+def get(request, model_name, object_id=None, *args, **kwargs):
+    if not object_id:
+        object_id = None
+    res = SepidarApiCall.get(model_name, object_id)
+    return JsonResponse({'res': res})
 
 

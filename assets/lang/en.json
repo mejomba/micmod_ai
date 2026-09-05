@@ -256,5 +256,8 @@
     "express": "express",
     "air": "air",
     "sea": "sea",
-    "آیا از حذف این آیتم اطمینان دارید؟": "?you want to delete this item"
+    "آیا از حذف این آیتم اطمینان دارید؟": "?you want to delete this item",
+    "has_customer_prepaid": "has customer prepaid",
+    "qi": "quotation",
+    "qi_": "quotation"
 }

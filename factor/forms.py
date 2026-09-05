@@ -1,6 +1,7 @@
 import time
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.db.models import Q, Max
 from django.forms import inlineformset_factory
 
@@ -139,6 +140,12 @@ class FactorModelForm(CustomBaseModelForm):
 
 
 class FactorItemModelForm(CustomBaseModelForm):
+    product_id = forms.ChoiceField(
+        choices=[],
+        label='کالای شاپ',
+        widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
+        required=True,
+    )
     class Meta:
         model = FactorItem
         exclude = ['group']
@@ -189,6 +196,16 @@ class FactorItemModelForm(CustomBaseModelForm):
 
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
 
+        cache_key = f'{request.user.username}__factor__{self.instance.factor.pk}'
+        choices = cache.get(cache_key)
+        if choices is None:
+            # اگر در کش نبود، از API دریافت کن
+            choices = self.get_choices_from_api()
+            # به مدت ۱ ساعت در کش نگه دار
+            cache.set(cache_key, choices, 6)
+
+        self.fields['category'].choices = choices
+
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['price'].widget.attrs['class'] += ' comma-seperator'
@@ -208,10 +225,23 @@ class FactorItemModelForm(CustomBaseModelForm):
         self.make_enable(['supply_location'])
         # self.fields.pop('quantity')
 
+    def get_choices_from_api(self, api_data):
+        """دریافت انتخاب‌ها از API خارجی"""
+        try:
+            # تبدیل داده‌های API به فرمت [(value, label), ...]
+            choices = [(item['id'], item['name']) for item in api_data]
+
+            # گاهی نیاز به یک گزینه پیش‌فرض مانند انتخاب خالی دارید
+            return [('', '-----')] + choices
+
+        except Exception as e:
+            # در صورت خطا، یک لیست خالی یا پیش‌فرض برگردانید
+            return [('', '--- خطا در دریافت داده ---')]
+
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code', 'price',
                       'part_number_show', 'supply_location', 'supply_locations', 'is_bazar', 'reserve_count',
-                      'discount_per_item',
+                      'discount_per_item', 'product_id',
                       ]
 
 FactorItemFormset = inlineformset_factory(

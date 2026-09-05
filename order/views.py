@@ -45,7 +45,7 @@ from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
     TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
-    OrderSafeForm, OrderDelayReasonModelForm
+    OrderSafeForm, OrderDelayReasonModelForm, PackingItemFormSet
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -639,6 +639,14 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'co_conf', 'searchable': False, 'orderable': False, 'visible': True, 'title': 'زمان تایید مهندس', },
     ]
 
+    def get_initial_order(self, request):
+        if request.user.base_group == 'mac':
+            initial_order = [["pay_operator_date", "dsc"], ["buy_operator_date", "dsc"], ]
+        else:
+            initial_order = [["created_date", "des"], ]
+
+        return initial_order
+
     def get_gio_annotated_qs(self, qs):
         return qs.annotate(
             final_quantity_db=Coalesce(
@@ -713,7 +721,6 @@ class OrderDataTableListView(AjaxDatatableView):
         elif user_group == 'mac':
             mac_filter = Q(buy_operator='mac') | Q(pay_operator='mac') | Q(apply_mac=True)
             qs = self.model.objects.filter(mac_filter, is_deleted=False).distinct()
-            OrderDataTableListView.initial_order = [["pay_operator_date", "dsc"], ["buy_operator_date", "dsc"], ]
 
         elif user_group == 'trade':
             qs = self.model.objects.filter(is_deleted=False, cancel=False, is_bazar=False).filter(
@@ -2259,7 +2266,7 @@ class OrderAndSepidar(View):
 
             gio_items = gio_object.gioitems.all()
             if not gio_items:
-                return
+                return JsonResponse({'error': f'gio {gio_id} has no any items'}, status=500)
 
             gio_items_group_by_supplier_and_currency = dict()
 
@@ -3503,8 +3510,8 @@ class QuickGIODataTableListView(AjaxDatatableView):
         {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>', 'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
         {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains', 'className': 'py-1'},
         {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>', 'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False, 'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': 'quantity'},
-        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True, 'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': ''},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False, 'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': ''},
+        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True, 'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
         {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
         # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
@@ -3522,9 +3529,9 @@ class QuickGIODataTableListView(AjaxDatatableView):
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
             When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
             default=Value(0),
-            output_field=IntegerField()
+            output_field=FloatField()
         )
-        qs = self.model.objects.annotate(quantity_in_gio=Sum('gio_items__quantity'), effective_quantity=effective_quantity).filter(is_deleted=False,
+        qs = self.model.objects.annotate(quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())), effective_quantity=effective_quantity).filter(is_deleted=False,
                                                                                             is_wh=False,
                                                                                             last_work_flow__current_state_name='پرداخت / PACKING / GIO',
                                                                                             effective_quantity__gt=F('quantity_in_gio'))
@@ -3539,3 +3546,181 @@ class QuickGIODataTableListView(AjaxDatatableView):
         row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
         row['show_order_str'] = mark_safe(f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
         row['buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+
+
+class QuickPackingView(LoginRequiredMixin, View):
+    template_name = 'order/gio/quick_gio_create.html'  # for update use 'order/gio/quick_gio_create.html'
+    form_class = PackingForm
+    model = Packing
+    # wf_last_step_is_open = True
+    has_flow = False
+    form_struct = {
+        'form': PackingForm,
+        'childes': [
+            {},
+        ]
+    }
+
+    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
+
+    def setup(self, request, *args, **kwargs):
+        if kwargs.get('pk'):
+            self.template_name = 'order/packing/quick_packing_update.html'
+            self.object = self.get_object(kwargs.get('pk'))
+        return super().setup(request, *args, **kwargs)
+
+    # def get_success_url(self):
+    #     return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
+
+    def post(self, request, pk=None, *args, **kwargs):
+        """
+        1: create gio with gio-items for first time
+        2: update gio and create new gio-items in update
+        3: update single gio-item handel in GIOItemView
+        """
+        data = json.loads(request.body) or {}
+        data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
+        total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
+        gio_for_update = GIO.objects.filter(pk=data.pop('gio_id', 0))
+
+        gio_data = {
+            "gio_date": data.pop('gio_date', None),
+            'description': data.pop('description', None),
+            'creator_user': self.request.user,
+            'editor_user': self.request.user
+        }
+
+        try:
+            with transaction.atomic():
+                if gio_for_update:
+                    gio_for_update.update(**gio_data)
+                    gio_obj = gio_for_update.first()
+                else:
+                    gio_obj = GIO(**gio_data)
+                    gio_obj.extra_data.request = self.request
+                    gio_obj.save()
+
+                gio_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
+                for row in range(1, total_forms):
+                    quantity = gio_items_data.get(f'form-{row}-quantity')
+                    order_id = gio_items_data.get(f'form-{row}-order')
+                    o = Order.objects.get(pk=order_id)
+
+                    is_valid_for_gio = o.validate_for_gio(quantity, gio_obj)
+                    if not is_valid_for_gio[0]:
+                        return JsonResponse({'res': {'ERROR: ': is_valid_for_gio[1]}}, status=400)
+
+                    gio_item_data = {
+                        'quantity': quantity,
+                        'description': gio_items_data.get(f'form-{row}-description'),
+                        'order_id': order_id,
+                        'gio': gio_obj
+                    }
+
+                    try:
+                        gio_item_obj = GIOItem(**gio_item_data)
+                        gio_item_obj.extra_data.request = self.request
+                        gio_item_obj.save()
+                    except Exception as e:
+                        raise e
+        except Exception as e:
+            res = {'res': {'ERROR: ': str(e)}}
+            return JsonResponse(res, status=400)
+
+        messages.success(request, f'success')
+        return JsonResponse({'res': {'url': reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk})}},
+                            status=200)  # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
+
+    def get(self, request, pk=None, *args, **kwargs):
+        packing_object = self.get_object(pk)
+
+        packing_form = PackingForm(instance=packing_object)
+        packing_item_formset = PackingItemFormSet()
+
+        context = {
+            'form': packing_form,
+            'formset': packing_item_formset,
+            'gios': GIOItem.objects.filter(packing=packing_object).order_by('id')
+        }
+
+        return render(request, self.template_name, context)
+
+    def get_object(self, pk):
+        if pk:
+            return Packing.objects.get(pk=pk)
+        else:
+            return None
+
+    def form_valid(self, form):
+        res = super().form_valid(form)
+        return res
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = self.request.resolver_match.app_name
+        return context
+
+
+class QuickPackingDataTableListView(AjaxDatatableView):
+    model = Order
+    title = 'order_list'
+    initial_order = [["id", "des"], ]
+    length_menu = [[10, 25, 50], [10, 25, 50]]
+    search_values_separator = '+'
+    render_row_details_template_name = 'sku_list_detail.html'
+    show_column_filters = True
+    column_defs = [
+        AjaxDatatableView.render_row_tools_column_def(),
+
+        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>',
+         'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
+        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains',
+         'className': 'py-1'},
+        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>',
+         'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
+        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False,
+         'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': ''},
+        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True,
+         'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
+        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True,
+         'lookup_field': '__username__icontains'},
+        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
+        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
+        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
+        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False,
+         'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
+
+        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True,
+         "className": 'order w-0 d-none'},
+        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True,
+         "className": 'py-1 show_order_str d-none'},
+        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        effective_quantity = Case(
+            When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
+            When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
+            When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
+            default=Value(0),
+            output_field=FloatField()
+        )
+        qs = self.model.objects.annotate(
+            quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())),
+            effective_quantity=effective_quantity).filter(is_deleted=False,
+                                                          is_wh=False,
+                                                          last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+                                                          effective_quantity__gt=F('quantity_in_gio'))
+        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
+        return qs
+
+    def customize_row(self, row, obj):
+        row['quantity'] = obj.final_quantity
+        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
+        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
+        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
+        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
+        row['show_order_str'] = mark_safe(
+            f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
+        row[
+            'buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'

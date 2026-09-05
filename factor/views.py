@@ -42,6 +42,7 @@ from micmod_base.serializers import CustomerRequestSerializer
 from notifications.models import Notification
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
+from services.product.api_call import ProductApiCall
 from services.shop.api_call import ShopApiCall
 from tools.const import WH_FACTOR_STATES
 from translator import get_text as _
@@ -358,6 +359,12 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['notify_number'] = self.object.notify_number
         qis = self.object.q.quotation.select_related('goods_code_fk') if self.object else None
         FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
+        fis_qs = FactorItem.objects.filter(factor=self.object)
+        if customer_party_id.pk == 2691:  # 2691 is MICMOD SHOP pk in portal extra_data.customer
+            skus = ','.join(map(str, fis_qs.values_list('goods_code__id', flat=True)))
+            product_map = ProductApiCall.get_product_by_skus(skus, response_function='products_map')
+            cache_key = f'{self.request.user.username}__factor__{self.object.pk}'
+            cache.set(cache_key, product_map, 6)
         context['form_s'] = FactorItemFormset(instance=self.object, form_kwargs={
                                                   "constraint": {
                                                       "wf_access": self.wf_access,
@@ -368,7 +375,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               },
-                                              queryset=FactorItem.objects.filter(factor=self.object))
+                                              queryset=fis_qs)
 
         exclude_qi = set()
         context['factoritem_qi_pair'] = []

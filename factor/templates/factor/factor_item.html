@@ -419,8 +419,8 @@
     <div class="sortable-item">
         <input type="hidden" value="{{ qi.pk }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-qi">
         <input type="hidden" value="{{ forloop.counter0 }}" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-index" id="id_{{ form_s.prefix }}-{{ forloop.counter0 }}-index">
-        <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref">
-        <input type="hidden" value="{{ qi.quotation.addition|default_if_falsy:0 }}" id="id_addition">
+        <input type="hidden" value="{{ qi.quotation.currency_ref.pk }}" id="id_currency_ref" name="currency_ref">
+        <input type="hidden" value="{{ qi.quotation.addition|default_if_falsy:0 }}" id="id_addition" name="addition">
         <input type="hidden" value="{{ qi.quotation.tax|default_if_falsy:0 }}" id="id_tax">
         <!-- update factor item -->
         {% if factor_item.instance.pk %}

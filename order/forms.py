@@ -34,6 +34,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "currency": {},  # لوکال
         "pay_operator": {},  # لوکال
         "buy_operator": {},  # لوکال
+        "qi": {"ajax": "qi", "min_input": 2, "placeholder": "انتخاب یک ردیف از پیش فاکتور"},
         "item": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا"},
         "item_trade": {"ajax": "item", "min_input": 2, "placeholder": "انتخاب کالا بازرگانی"},
         # "supplier_trade": {"ajax": "supplier", "min_input": 2, "placeholder": "انتخاب تامین کننده بازرگانی"},
@@ -314,6 +315,7 @@ class PackingItemForm(CustomBaseModelForm):
         if request and request.user.base_group == 'trade':
             self.make_hidden(['wh_receipt_quantity'])
 
+PackingItemFormSet = formset_factory(PackingItemForm, extra=1)
 
 
 class GIOForm(CustomBaseModelForm):

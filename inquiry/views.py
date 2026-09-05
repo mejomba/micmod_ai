@@ -41,7 +41,7 @@ from extra_data.models import Item, PriceSettings, ItemWeight, ItemStockSummary,
 from core.views import BaseView, JsonTemplateResponseMixin, Base, CustomAjaxDataTable
 from translator import get_text as _
 
-from tools.utils import show_error, get_tuple_value_list, to_jalali_date
+from tools.utils import show_error, get_tuple_value_list, to_jalali_date, timer
 from tools.form_tools import get_choice_field
 from .tasks import update_price_list, update_components, db_backup, cleanup_filesystem
 
@@ -188,7 +188,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
     show_date_filters = True
     show_column_filters = True
     title = 'sku_list'
-    length_menu = [[25, 50, 100, 500], [25, 50, 100, 500]]
+    length_menu = [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]]
     search_values_separator = '+'
     not_search_values_separator = '|'
     render_row_details_template_name = 'inquiry_detail_on_item_list.html'
