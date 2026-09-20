@@ -5,6 +5,8 @@ from . import views
 
 app_name = 'core'
 urlpatterns = [
+    path('soon/', views.landing_page, name='landing'),
+    path('api/visit-stats/', views.get_visit_stats, name='visit_stats'),
     path('excel/download/', views.download_excel, name='export_excel'),
     path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/', views.CommentsFormView.as_view(), name='comment.form'),
     path('<str:app_label>/<str:model_name>/<int:content_type>/<int:object_id>/<str:app_label_rel>/<str:model_name_rel>/<int:content_type_rel>/<int:object_id_rel>/', views.CommentsFormView.as_view(), name='comment.form.rel'),

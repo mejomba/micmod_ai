@@ -3,8 +3,9 @@ ORDER_FIELDS_BY_PERMISSION = {
         0: {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
-                "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "cancel_check"
+                "commitment_date_to_customer", "title", "description_sale", "qi", "is_kasri",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "has_customer_prepaid", "cancel_check",
+
             ],
             "hidden": [
 
@@ -15,8 +16,8 @@ ORDER_FIELDS_BY_PERMISSION = {
         1: {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
-                "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "cancel_check"
+                "commitment_date_to_customer", "title", "description_sale", "qi", "is_kasri",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "has_customer_prepaid", "cancel_check",
             ],
             "hidden": [
 
@@ -37,7 +38,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -51,7 +52,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -65,7 +66,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -79,7 +80,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -93,7 +94,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -107,7 +108,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -121,7 +122,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method",
                      "order_type", "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -131,8 +132,8 @@ ORDER_FIELDS_BY_PERMISSION = {
         0: {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
-                "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order",
+                "commitment_date_to_customer", "title", "description_sale", "qi", "is_kasri",
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "has_customer_prepaid",
             ],
             "hidden": [
 
@@ -143,8 +144,8 @@ ORDER_FIELDS_BY_PERMISSION = {
         1: {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
-                "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_sample", "is_force_order",
+                "commitment_date_to_customer", "title", "description_sale", "qi", "is_kasri",
+                "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid",
             ],
             "hidden": [
 
@@ -161,7 +162,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -175,7 +176,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -189,7 +190,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -203,7 +204,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -217,7 +218,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -231,7 +232,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -245,7 +246,7 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["_item", "_final_item", "quantity", "_final_quantity", "customer_party_id", "transportation_method", "order_type",
                      "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                     "sales_admin_cancel", "is_sample", "is_force_order",
+                     "sales_admin_cancel", "is_sample", "is_force_order", "has_customer_prepaid", "qi_",
                      # show in 1 step
                      "created_date", "order_number", "production_lead_time",
                      "trade_commitment_date", "trade_user"]
@@ -261,8 +262,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             ],
             "show": ["item_trade", "quantity_trade", "price", "currency", "supplier_trade", "supplier_mac", "_price_inquiry_result",
                      "production_lead_time", "trade_commitment_date", "order_type", "mohandes_confirmation",
-                     "apply_mac", "description_trade", "trade_user", "po_number_trade",
-                     "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order",
+                     "apply_mac", "description_trade", "trade_user", "po_number_trade", "qi_",
+                     "request_date", "quantity_trade", "quantity_mac", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
                      "q", "production_lead_time", "order_type", "ptice_mac", "currency", "total_price", "_weight"]
         },
         2: {
@@ -275,8 +276,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         3: {
@@ -289,8 +290,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         4: {
@@ -303,8 +304,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order", "has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         5: {
@@ -317,8 +318,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         6: {
@@ -331,8 +332,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
             },
         7: {
@@ -345,8 +346,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
         8: {
@@ -359,8 +360,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "hidden": [
 
             ],
-            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order",
-                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri",
+            "show": ["request_date", "_item", "_final_item", "quantity", "_final_quantity", "order_number", "is_sample", "is_force_order","has_customer_prepaid",
+                     "quantity_mac", "price_mac", "supplier_mac", "sales_admin_cancel", "_description_sale", "is_kasri", "qi_",
                      "commitment_date_to_customer", "title", "total_price", "_weight"]
         },
     },
@@ -468,7 +469,8 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "item", "quantity", "customer_party_id", "transportation_method", "order_type",
                 "commitment_date_to_customer", "title", "description_sale", "is_kasri",
-                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "buy_operator", "pay_operator", "cancel_check"
+                "sales_admin_cancel", "is_bazar", "is_sample", "is_force_order", "buy_operator", "pay_operator", "cancel_check", "has_customer_prepaid",
+
             ],
             "hidden": [
 
@@ -480,9 +482,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "description_sale", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator", "cancel_check"
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "has_customer_prepaid","buy_operator", "pay_operator", "cancel_check",
             ],
             "hidden": [
 
@@ -494,9 +496,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "has_customer_prepaid","buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -508,9 +510,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order","has_customer_prepaid", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -522,9 +524,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order","has_customer_prepaid", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -536,9 +538,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "has_customer_prepaid","buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -550,9 +552,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order","has_customer_prepaid", "buy_operator", "pay_operator",
             ],
             "hidden": [
 
@@ -564,9 +566,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "has_customer_prepaid","buy_operator", "pay_operator", "qi"
             ],
             "hidden": [
 
@@ -578,9 +580,9 @@ ORDER_FIELDS_BY_PERMISSION = {
             "edit": [
                 "customer_party_id", "item", "transportation_method", "commitment_date_to_customer", "quantity",
                 "order_type", "item_trade", "quantity_trade", "po_number_trade", "supplier_trade",
-                "price_trade", "description_trade", "apply_mac", "trade_commitment_date",
+                "price_trade", "description_trade", "apply_mac", "trade_commitment_date", "qi",
                 "production_lead_time", "trade_lock_order", "supplier_mac", "price_mac", "part_number_mac",
-                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "buy_operator", "pay_operator",
+                "price_inquiry_result", "is_kasri", "is_sample", "is_force_order", "has_customer_prepaid","buy_operator", "pay_operator",
             ],
             "hidden": [
 

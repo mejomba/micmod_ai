@@ -20,6 +20,107 @@ class SepidarDataFactory(metaclass=SingletonMeta):
         pass
 
     @classmethod
+    def get_quotation_data(cls, obj):
+        currency = obj.currency_ref.sepidar_id or 1
+        rate = obj.currency_ref.current_rate() or 1
+        quotation_payment = obj.payment
+        price_ = quotation_payment[0] or 1
+        tax_ = quotation_payment[3] or 0
+        duty_ = obj.duty_amount or 0
+        addition_ = quotation_payment[1]  # sepidar dont save addition for quotation(main form)
+        discount_ = quotation_payment[2] or 0
+
+        qis = []
+        for idx, qi in enumerate(obj.quotation.all(), 1):
+            fee = qi.sepidar_fee or 1
+            net_price = qi.net_price or 1
+            discount = qi.discount_value or 0
+            tax = qi.tax or 0
+            duty = qi.duty or 0
+            addition = obj.addition if (idx == 1 and obj.addition) else 0
+
+            d = {
+                "rowid": idx,
+                "itemref": qi.goods_code_fk.sepidar_id_0,
+                "tracingref": None,
+                "stockref": 2,  # optional
+                "quantity": qi.quantity,
+                "secondaryquantity": None,
+                "fee": round(fee, 4),
+                "price": round(net_price, 4),
+                "priceinbasecurrency": round(net_price * rate, 4),
+                "discount": discount,
+                "discountinbasecurrency": round(discount * rate, 4),
+                "priceinfodiscountrate": 0,
+                "customerdiscountrate": 0.0,
+                "addition": round(addition, 4),
+                "additioninbasecurrency": round(addition * rate, 4),
+                "tax": round(tax, 4),
+                "taxinbasecurrency": round(tax * rate, 4),
+                "duty": round(duty, 4),
+                "dutyinbasecurrency": round(duty * rate, 4),
+                "netpriceinbasecurrency": round(net_price * rate, 4),
+                "rate": 1,
+                "usedquantity": 0,
+                "description": (qi.description or '') + '(پرتال)',
+                "description_en": "",
+                "discountquotationitemref": None,
+                "priceinfopricediscount": 0,
+                "priceinfopercentdiscount": 0,
+                "customerdiscount": 0.0,
+                "productpackref": None,
+                "productpackquantity": None,
+                "aggregateamountdiscountrate": 0,
+                "aggregateamountpricediscount": 0,
+                "aggregateamountpercentdiscount": 0,
+                "additionfactor_vateffective": 0,
+                "additionfactorinbasecurrency_vateffective": 0,
+                "additionfactor_vatineffective": 0,
+                "additionfactorinbasecurrency_vatineffective": 0
+            }
+            qis.append(d)
+
+        q = {
+            "fiscalyearref": settings.SEPIDAR_CONST_DATA['fiscalyearref'],
+            "customerpartyref": obj.customer_party_id.sepidar_party_id,
+            "saletyperef": obj.sale_type.sepidar_id or obj.sale_type.pk,
+            "expirationdate": obj.expiration_date.isoformat(),
+            "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
+            "creationdate": obj.created_date.isoformat(),
+            "lastmodificationdate": obj.last_update_date.isoformat(),
+            "currencyref": currency,
+            "price": round(price_, 4),
+            "discount": round(discount_, 4),
+            "addition": round(addition_, 4),
+            "tax": round(tax_, 4),
+            "discountinbasecurrency": round(discount_ * rate, 4),
+            "additioninbasecurrency": round(addition_ * rate, 4),
+            "taxinbasecurrency": round(tax_ * rate, 4),
+            "dutyinbasecurrency": round(duty_ * rate, 4),
+            "netpriceinbasecurrency": round(price_ * rate, 4),
+            "duty": round(duty_, 4),
+            "priceinbasecurrency": round(price_ * rate, 4),
+            "rate": round(rate, 4),
+            "deliverylocationref": 1,
+            "creator": obj.creator_user.sepidar_code,
+            "lastmodifier": obj.editor_user.sepidar_code,
+            "closed": 0,
+            "receiptref": None,
+            "paymentref": None,
+            "customerrealname": obj.customer_party_id.title,
+            "customerrealnameen": obj.customer_party_id.title,
+            "guid": None,
+            "additionfactor_vateffective": 0,
+            "additionfactor_vatineffective": 0,
+            "additionfactorinbasecurrency_vateffective": 0,
+            "additionfactorinbasecurrency_vatineffective": 0,
+            "version": 1,
+            "quotation_items": qis
+        }
+
+        return q
+
+    @classmethod
     def get_inventory_purchase_invoice_data(cls, obj, request=None):
         prefix = 'form'
         counter = 0
@@ -100,7 +201,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             if idx == '0' or idx == 0:
                 continue  # first row is empty in bazar order trade order start idx from 1 => (enumerate(order, start=1)
             discount_weight = (row_data.get('price', 0) * row_data.get('quantity', 0) / total_price)
-            tax_weight = (row_data.get('price', 0) / all_tax) if all_tax else 1
+            tax_weight = ((row_data.get('price', 0) * row_data.get('quantity', 0)) / total_price) if all_tax else 1
             tax = row_data.get('tax', 0) + all_tax * tax_weight
             itemref = row_data.get('itemref')
             fee = row_data.get('price') or 0
@@ -178,7 +279,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             invoice_item_data = cls._get_invoice_item_data(obj, rate=rate)
 
         price = obj.get_price
-        addition = obj.addition or 0
+        addition = obj.addition or obj.q.addition or 0
         duty = obj.duty or 0
         sum_tax = obj.sum_tax or 0
         sum_discount = obj.sum_discount
@@ -188,7 +289,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             # "partyaddressref": None,  # calculate in base
             "price": round(price, 4),  # محاسبه از تمام ردیف ها fi.quantity * fi.fee
             "priceinbasecurrency": round(price * rate, 4) if rate != 1 else 0,
-            "date": timezone.now().isoformat(),  # obj.created_date.isoformat(),
+            "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),  # obj.created_date.isoformat(),
             "shouldcontrolcustomercredit": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "state": 1,  # بر اساس داده های سپیدار همه 1 بودن
             "additionfactor_vateffective": 0,  # بر اساس داده های سپیدار همه 0 بودن
@@ -468,7 +569,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "baseinventorydeliveryref": None,
             "baseimportpurchaseinvoiceref": None,
             "totalothercost": 0,
-            "date": timezone.now().isoformat(),
+            "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
             "purchasetype": 1,
             "accountingvoucherref": None,
             "totalnetprice": 1,
@@ -525,7 +626,7 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             , "stockref": settings.SEPIDAR_CONST_DATA.get('before_central_wh_id')  # کد انبار قبل مرکزی
             , "receiverdlref":  None  # اگر خروج بین انباری بود این فیلد نال میخوره
             # , "number": "" # automation
-            , "date": timezone.now().isoformat()
+            , "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
             , "totalprice": None  # بعدا بر اساس فی انبار بدست میاد
             , "accountingvoucherref": None  # شماره سند حسابداری که بعد از ایجاد میاد آپدیت میکنه
             , "fiscalyearref": settings.SEPIDAR_CONST_DATA.get('fiscalyearref')

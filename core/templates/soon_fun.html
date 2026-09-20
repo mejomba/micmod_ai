@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>به زودی... یا نه؟!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            min-height: 100vh;
+            min-height: 100dvh; /* برای موبایل‌های جدید */
+            font-family: 'Vazirmatn', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #FFE5D9 0%, #FFD3E0 50%, #E8D5F5 100%);
+            color: #5D4E6D;
+            padding: 15px;
+            position: relative;
+            overflow-y: auto; /* اجازه اسکرول */
+            overflow-x: hidden;
+        }
+
+        /* اشکال تزیینی بامزه */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.3;
+            animation: floatShape 15s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; font-size: 50px; }
+        .shape:nth-child(2) { top: 20%; right: 10%; animation-delay: 2s; font-size: 35px; }
+        .shape:nth-child(3) { bottom: 20%; left: 8%; animation-delay: 4s; font-size: 45px; }
+        .shape:nth-child(4) { bottom: 30%; right: 5%; animation-delay: 1s; font-size: 30px; }
+        .shape:nth-child(5) { top: 50%; left: 50%; animation-delay: 3s; font-size: 55px; opacity: 0.15; }
+
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -30px) rotate(10deg); }
+            50% { transform: translate(-10px, -50px) rotate(-5deg); }
+            75% { transform: translate(30px, -20px) rotate(8deg); }
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 35px 25px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(255, 255, 255, 0.5);
+            position: relative;
+            z-index: 1;
+            border: 4px dashed #D4A5FF;
+            animation: wobble 4s ease-in-out infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-1deg) scale(1); }
+            50% { transform: rotate(1deg) scale(1.01); }
+        }
+
+        /* کاراکتر طنز */
+        .character-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .emoji {
+            font-size: 80px;
+            display: inline-block;
+            animation: dance 1.5s ease-in-out infinite;
+            filter: drop-shadow(0 10px 30px rgba(212, 165, 255, 0.3));
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .emoji:hover {
+            animation-play-state: paused;
+            transform: scale(1.2) rotate(-10deg);
+        }
+
+        @keyframes dance {
+            0%, 100% { transform: rotate(-5deg) translateY(0); }
+            25% { transform: rotate(5deg) translateY(-10px); }
+            50% { transform: rotate(-8deg) translateY(-5px); }
+            75% { transform: rotate(8deg) translateY(-10px); }
+        }
+
+        /* گفتگوی بامزه */
+        .speech-bubble {
+            position: absolute;
+            top: -25px;
+            right: -60px;
+            background: #FFD93D;
+            padding: 8px 16px;
+            border-radius: 20px 20px 20px 5px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #5D4E6D;
+            box-shadow: 0 5px 20px rgba(255, 217, 61, 0.3);
+            animation: bounceBubble 2s ease-in-out infinite;
+            white-space: nowrap;
+            border: 2px solid #F5C842;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: 20px;
+            border: 8px solid transparent;
+            border-top: 8px solid #FFD93D;
+            border-right: 8px solid #FFD93D;
+        }
+
+        @keyframes bounceBubble {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .speech-bubble span {
+            display: inline-block;
+            animation: blinkText 1s step-end infinite;
+        }
+
+        @keyframes blinkText {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #D4A5FF, #F06292);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            display: inline-block;
+            line-height: 1.3;
+        }
+
+        .strikethrough {
+            position: relative;
+            display: inline-block;
+        }
+
+        .strikethrough::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 4px;
+            background: #F06292;
+            transform: rotate(-5deg);
+            opacity: 0.5;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 20px;
+            line-height: 2;
+            color: #7A6A8A;
+            background: rgba(212, 165, 255, 0.1);
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 2px dotted #D4A5FF;
+        }
+
+        .subtitle .highlight {
+            background: #FFD93D;
+            color: #5D4E6D;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        /* کانتر بامزه */
+        .counter-box {
+            background: linear-gradient(135deg, rgba(212, 165, 255, 0.15), rgba(255, 211, 224, 0.15));
+            border-radius: 25px;
+            padding: 20px 25px;
+            margin-top: 20px;
+            border: 3px solid rgba(212, 165, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .counter-box::before {
+            content: '🤪';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            font-size: 30px;
+            opacity: 0.2;
+            transform: rotate(-20deg);
+        }
+
+        .counter-box::after {
+            content: '😎';
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            font-size: 30px;
+            opacity: 0.2;
+            transform: rotate(20deg);
+        }
+
+        .counter-label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            color: #7A6A8A;
+            font-weight: 700;
+        }
+
+        .counter-label .emoji-small {
+            font-size: 18px;
+        }
+
+        .counter-number {
+            font-size: 55px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #D4A5FF, #F06292);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            position: relative;
+        }
+
+        .counter-joke {
+            font-size: 13px;
+            color: #7A6A8A;
+            margin-top: 5px;
+            background: rgba(255, 217, 61, 0.2);
+            padding: 4px 15px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        /* دکمه‌های بامزه */
+        .funny-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-funny {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #FFD93D, #F5C842);
+            color: #5D4E6D;
+            cursor: pointer;
+            font-family: 'Vazirmatn', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(255, 217, 61, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            flex: 1 1 auto;
+            min-width: 90px;
+        }
+
+        .btn-funny:hover {
+            transform: translateY(-3px) scale(1.05) rotate(-2deg);
+            box-shadow: 0 8px 30px rgba(255, 217, 61, 0.4);
+        }
+
+        .btn-funny:active {
+            transform: scale(0.95);
+        }
+
+        .btn-funny.pink {
+            background: linear-gradient(135deg, #F8BBD0, #F06292);
+            box-shadow: 0 5px 20px rgba(240, 98, 146, 0.3);
+            color: white;
+        }
+
+        .btn-funny.purple {
+            background: linear-gradient(135deg, #D4A5FF, #CE93D8);
+            box-shadow: 0 5px 20px rgba(212, 165, 255, 0.3);
+            color: white;
+        }
+
+        /* پروگرس بار طنز */
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            opacity: 0.6;
+            color: #7A6A8A;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .progress-header span:first-child {
+            animation: progressText 2s ease-in-out infinite;
+        }
+
+        @keyframes progressText {
+            0%, 100% { content: 'در حال آماده‌سازی...'; }
+            33% { content: 'داریم فکر می‌کنیم... 🤔'; }
+            66% { content: 'چای می‌خوریم... ☕'; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(212, 165, 255, 0.2);
+            border-radius: 50px;
+            overflow: hidden;
+            border: 2px solid rgba(212, 165, 255, 0.15);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4A5FF, #F06292, #FFD93D);
+            border-radius: 50px;
+            animation: loadingFunny 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '🏃';
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            animation: runner 3s ease-in-out infinite;
+        }
+
+        @keyframes runner {
+            0%, 100% { right: -5px; }
+            50% { right: calc(100% - 10px); }
+        }
+
+        @keyframes loadingFunny {
+            0% { width: 5%; }
+            25% { width: 45%; }
+            50% { width: 75%; }
+            75% { width: 55%; }
+            100% { width: 5%; }
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            opacity: 1;
+            color: #7A6A8A;
+            border-top: 2px dashed rgba(212, 165, 255, 0.3);
+            padding-top: 15px;
+        }
+
+        .footer .joke {
+            display: block;
+            margin-top: 5px;
+            font-size: 13px;
+            opacity: 1;
+            color: #D4A5FF;
+            font-weight: 700;
+        }
+
+        /* پاسخ به کلیک روی کاراکتر */
+        .toast-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            font-family: 'Vazirmatn', sans-serif;
+            color: #5D4E6D;
+            font-weight: 700;
+            border: 3px solid #D4A5FF;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            opacity: 0;
+            max-width: 90%;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .toast-message.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ========== موبایل ========== */
+        @media (max-width: 600px) {
+            html, body {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 15px;
+                padding-bottom: 30px;
+            }
+
+            .container {
+                padding: 25px 16px;
+                margin: 5px auto;
+                border-radius: 30px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .counter-number {
+                font-size: 45px;
+            }
+
+            .emoji {
+                font-size: 60px;
+            }
+
+            .speech-bubble {
+                font-size: 11px;
+                right: -35px;
+                top: -20px;
+                padding: 4px 10px;
+                white-space: nowrap;
+            }
+
+            .speech-bubble::after {
+                bottom: -12px;
+                right: 15px;
+                border-width: 6px;
+                border-top: 6px solid #FFD93D;
+                border-right: 6px solid #FFD93D;
+            }
+
+            .subtitle {
+                font-size: 14px;
+                padding: 10px 14px;
+                line-height: 1.8;
+            }
+
+            .btn-funny {
+                font-size: 12px;
+                padding: 8px 14px;
+                min-width: 70px;
+            }
+
+            .counter-box {
+                padding: 15px 18px;
+            }
+
+            .shape {
+                display: none;
+            }
+
+            .footer .joke {
+                font-size: 12px;
+            }
+
+            .toast-message {
+                font-size: 13px;
+                padding: 10px 18px;
+                bottom: 15px;
+            }
+
+            .progress-fill::after {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 20px 12px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .emoji {
+                font-size: 50px;
+            }
+
+            .counter-number {
+                font-size: 38px;
+            }
+
+            .speech-bubble {
+                font-size: 10px;
+                right: -25px;
+                top: -18px;
+                padding: 3px 8px;
+            }
+
+            .btn-funny {
+                font-size: 11px;
+                padding: 6px 12px;
+                min-width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- اشکال تزیینی -->
+    <div class="floating-shapes">
+        <div class="shape">🎈</div>
+        <div class="shape">🌈</div>
+        <div class="shape">🦄</div>
+        <div class="shape">⭐</div>
+        <div class="shape">🎉</div>
+    </div>
+
+    <!-- پیام toast -->
+    <div class="toast-message" id="toastMessage">
+        😂 آره دیگه! کی میدونه کی میاد!
+    </div>
+
+    <div class="container">
+        <!-- کاراکتر با گفتگو -->
+        <div class="character-container">
+            <div class="emoji" id="character" onclick="showToast()">😼</div>
+            <div class="speech-bubble">
+                سلام! <span>👋</span>
+            </div>
+        </div>
+
+        <!-- عنوان طنز -->
+        <h1>
+            <span class="" style="text-decoration: line-through">به زودی</span>
+            <br>هر وقت شد! 😅
+        </h1>
+
+        <p class="subtitle">
+            قراره یه اتفاق <span class="highlight">"جالب"</span> بیفته <br>
+        </p>
+
+        <!-- کانتر بامزه -->
+        <div class="counter-box">
+            <div class="counter-label">
+                <span class="emoji-small">👀</span> تا حالا چند نفر اومدن منتظر بشن؟
+            </div>
+            <div class="counter-number" id="visitCounter">{{ total_visits }}</div>
+            <div class="counter-joke">
+                🤷‍♂️ همه منتظرن... ولی خبری نیست!
+            </div>
+        </div>
+
+        <!-- دکمه‌های بامزه -->
+        <div class="funny-buttons">
+            <button class="btn-funny" onclick="randomJoke()">
+                😂 یه جوک بگو
+            </button>
+            <button class="btn-funny pink" onclick="showLoading()">
+                ⏳ ببین چقدر مونده؟
+            </button>
+            <button class="btn-funny purple" onclick="surpriseMe()">
+                🎁 سورپرایز کن
+            </button>
+        </div>
+
+        <!-- پروگرس بار طنز -->
+        <div class="progress-container">
+            <div class="progress-header">
+                <span id="progressText">در حال آماده‌سازی...</span>
+                <span>🤷‍♂️ کی میدونه!</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            ⏰ تاریخ انتشار: هر وقت خدا بخواد! 😂
+            <span class="joke" id="footerJoke">
+                💡 نکته: صبر کردن هنر نیست، تفریحه!
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // لیست جوک‌ها
+        const jokes = [
+            'متاسفانه وقتی یکی رو دوست دارم خیلی ارزون میشم. تقریبا اشانتیون',
+            '😂 گفتن «فقط یه تغییر کوچیکه»... و این جمله معمولاً شروع یک ماجراجویی چندساعته است!',
+            '🤣 برنامه با موفقیت اجرا شد؛ حالا فقط باید بفهمیم چرا!',
+            '😅 وقتی می‌گی «روی سیستم من کار می‌کنه»، یعنی رسماً وارد مرحله‌ی بعدی پروژه شدیم!',
+            '🤣 Deploy با موفقیت انجام شد! حالا همه با آرامش منتظرند ببینند چه اتفاقی می‌افتد...',
+            '😅 وقتی کد بالاخره بدون خطا اجرا می‌شود، اولین واکنش: «صبر کن... چرا؟!»',
+            '🤣 امروز فقط قرار بود یک خط کد عوض شود. کد: «خب پس بیا کل فایل رو با هم مرور کنیم!»',
+            '😂 جادو میکنه Ctrl + F5!',
+            '😆 تست‌ها سبزند، سرور بالاست، همه‌چیز عالیه... حالا کاربر وارد می‌شود!',
+            '🤪 وقتی می‌پرسن «کی تموم میشه؟» و تو هنوز داری می‌فهمی این پروژه دقیقاً قراره چی باشه!',
+            "این صفحه قراره خیلی باحال بشه… ما هم مثل شما منتظریم ببینیم کی 😅 Loading fun content… سرعت اینترنت ما: لاک‌پشت در حال تفکر 🐢💭",
+            "به زودی محتوای خفن اینجا میاد… فقط هنوز داریم تعریف می‌کنیم “به زودی” دقیقاً یعنی کی 🙂",
+            "به زودی محتوای خفن اینجا میاد… فقط هنوز داریم تعریف می‌کنیم “به زودی” دقیقاً یعنی کی 🙂",
+            "Loading fun content… سرعت اینترنت ما: لاک‌پشت در حال تفکر 🐢💭",
+            "یه عالمه محتوای فان تو راهه… راهش یه کم دور افتاده ظاهراً 🚶‍♂️",
+            "قراره اینجا خیلی بخندی… فعلاً با صبر تمرین کن 😂",
+            "ما گفتیم “به زودی”… ولی نگفتیم زودیِ کدوم سال 🤝",
+            "محتوای خفن در حال ساخته شدنه… سازنده‌ها: ما، سرعت کار: قابل بحث 😌",
+            "این صفحه هنوز کامل نیست… ولی حس خوبش کامله 😎 (امیدواریم)",
+            "یه چیزی قراره اینجا اتفاق بیفته… خیلی چیز خاصی… خیلیییییی… (ادامه دارد…)",
+            "ما داریم کار می‌کنیم… کائنات هم داره کار می‌کنه… ولی هنوز خروجی نگرفتیم 😂",
+            "اگر الان چیزی نمی‌بینی، نگران نباش… ما هم نمی‌بینیم 😐",
+            "به زودی اینجا پر از محتوا میشه… فقط اول باید خودمون بفهمیم چی بذاریم 🤷‍♂️"
+        ];
+
+        // نمایش جوک
+        function randomJoke() {
+            const joke = jokes[Math.floor(Math.random() * jokes.length)];
+            document.getElementById('footerJoke').textContent = joke;
+            showToast('😂 ' + joke);
+        }
+
+        // نمایش پیام
+        function showToast(message) {
+            const toast = document.getElementById('toastMessage');
+            toast.classList.remove('show');
+            if (message) {
+                toast.textContent = message;
+            }
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // تغییر متن پروگرس
+        function showLoading() {
+            const texts = [
+                '🤔 داریم حساب می‌کنیم...',
+                '☕ بیا یه چای بخوریم تا تموم شه!',
+                '🎮 یه بازی کنیم تا وقت بگذره!',
+                '📺 یه فیلم ببینیم شاید تموم شد!',
+                '💤 شاید فردا...',
+            ];
+            const random = texts[Math.floor(Math.random() * texts.length)];
+            document.getElementById('progressText').textContent = random;
+            showToast('⏳ ' + random);
+        }
+
+        // سورپرایز
+        function surpriseMe() {
+            const surprises = [
+                '🎉 سورپرایز! هیچی نیست! 😂',
+                '🎁 یه قول میدم: به زودی میاد! (قول!)',
+                '🎊 چقدر خوشحالم که اومدی! ولی هنوز آماده نیست!',
+                '🎈 راستش رو بخوای، خودم هم نمی‌دونم کی میاد!',
+            ];
+            const surprise = surprises[Math.floor(Math.random() * surprises.length)];
+            showToast(surprise);
+        }
+
+        // کلیک روی کاراکتر
+        document.getElementById('character').addEventListener('click', function() {
+            const reactions = ['🤡', '😂', '😅', '🤪', '😜', '🥴', '🫠'];
+            const randomEmoji = reactions[Math.floor(Math.random() * reactions.length)];
+            this.textContent = randomEmoji;
+            showToast('🔄 وای! شکلش عوض شد!');
+        });
+
+        // تغییر خودکار گفتگو
+        let bubbleMessages = [
+            'سلام! 👋',
+            'خوش اومدی! 😊',
+            'چطوری؟ 🤔',
+            'منتظری؟ 😅',
+            'صبر کن... ⏳',
+            'هنوز تموم نشده! 😂',
+            'دوباره بیا! 🔄',
+        ];
+
+        setInterval(() => {
+            const bubble = document.querySelector('.speech-bubble');
+            const random = bubbleMessages[Math.floor(Math.random() * bubbleMessages.length)];
+            bubble.innerHTML = random + ' <span>✨</span>';
+        }, 5000);
+
+        // آپدیت واقعی شمارنده
+        function updateCounter() {
+            fetch('/api/visit-stats/')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('visitCounter').textContent = data.total_visits;
+                })
+                .catch(error => console.log('Error:', error));
+        }
+
+        // تغییرات در پروگرس
+        setInterval(() => {
+            const texts = [
+                'در حال آماده‌سازی...',
+                'داریم فکر می‌کنیم... 🤔',
+                'چای می‌خوریم... ☕',
+                'یوتیوب می‌بینیم... 📺',
+                'خوابیدیم... 💤',
+                'بیدار شدیم! ☕',
+                'دوباره خوابیدیم... 😴',
+            ];
+            const random = texts[Math.floor(Math.random() * texts.length)];
+            document.getElementById('progressText').textContent = random;
+        }, 4000);
+
+        // وقتی صفحه لود شد
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                showToast('😅 خوش اومدی! منتظر چی هستی؟');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

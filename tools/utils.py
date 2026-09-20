@@ -583,7 +583,7 @@ class DaxCall:
 
     @classmethod
     def customer_dax(cls):
-        url = "http://192.168.1.80:8070/etls/get-dax/2/"
+        url = "http://192.168.1.37:8070/etls/get-dax/2/"
         headers = {"Authorization": f"Token {settings.TOKEN_8070}"}
         import requests
         res = requests.get(url, headers=headers)
@@ -591,7 +591,7 @@ class DaxCall:
 
     @classmethod
     def order_notify_dax(cls):
-        url = "http://192.168.1.80:8070/etls/get-dax/4/"
+        url = "http://192.168.1.37:8070/etls/get-dax/4/"
         headers = {"Authorization": f"Token {settings.TOKEN_8070}"}
         import requests
         res = requests.get(url, headers=headers)

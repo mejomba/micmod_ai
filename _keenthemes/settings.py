@@ -158,7 +158,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8000', 'http://192.168.1.80:8000'
+    'http://localhost:8000', 'http://192.168.1.37:8000'
 ]
 
 ACCOUNT_ADAPTER = "allauth_2fa.adapter.OTPAdapter"

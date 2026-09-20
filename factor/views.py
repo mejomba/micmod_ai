@@ -42,6 +42,7 @@ from micmod_base.serializers import CustomerRequestSerializer
 from notifications.models import Notification
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
+from services.product.api_call import ProductApiCall
 from services.shop.api_call import ShopApiCall
 from tools.const import WH_FACTOR_STATES
 from translator import get_text as _
@@ -148,7 +149,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                 FactorItem.objects.bulk_update(fis, ["sepidar_id"])
                 messages.success(self.request, f'فاکتور به سپیدار ارسال شد، کد: {self.object.sepidar_number}')
 
-                shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
+                shop_buy_factor_pk = False # ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
                 if shop_buy_factor_pk:
                     self.object.shop_buy_factor_id = shop_buy_factor_pk
                     self.object.extra_data.request = self.request
@@ -315,7 +316,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         if 'send_factor_to_sepidar' in self.request.POST:
             self.send_factor_to_sepidar()
 
-        if 'create_shop_buy_factor' in self.request.POST:
+        if 'create_shop_buy_factor' in self.request.POST and False:
             shop_buy_factor_pk = ShopApiCall.create_shop_buy_factor(self.object, request=self.request)
             if shop_buy_factor_pk:
                 self.object.shop_buy_factor_id = shop_buy_factor_pk
@@ -358,6 +359,12 @@ class FactorView(LoginRequiredMixin, BaseView):
         context['notify_number'] = self.object.notify_number
         qis = self.object.q.quotation.select_related('goods_code_fk') if self.object else None
         FactorItemFormset.extra = context['quotation'].quotation.count() - self.object.factoritem_set.count() if self.object else 0
+        fis_qs = FactorItem.objects.filter(factor=self.object)
+        # if customer_party_id.pk == 2691:  # 2691 is MICMOD SHOP pk in portal extra_data.customer
+        #     skus = ','.join(map(str, fis_qs.values_list('goods_code__id', flat=True)))
+        #     product_map = ProductApiCall.get_product_by_skus(skus, response_function='products_map')
+        #     cache_key = f'{self.request.user.username}__factor__{self.object.pk}'
+        #     cache.set(cache_key, product_map, 6)
         context['form_s'] = FactorItemFormset(instance=self.object, form_kwargs={
                                                   "constraint": {
                                                       "wf_access": self.wf_access,
@@ -368,7 +375,7 @@ class FactorView(LoginRequiredMixin, BaseView):
                                                       'formset_constraint': self.flow_config.get('flow_formset_constraint')
                                                       }
                                               },
-                                              queryset=FactorItem.objects.filter(factor=self.object))
+                                              queryset=fis_qs)
 
         exclude_qi = set()
         context['factoritem_qi_pair'] = []
@@ -666,16 +673,17 @@ class FactorListDatatable(AjaxDatatableView):
             )
         else:
             row['q'] = '-'
-        if obj.created_date < parse_datetime("2027-07-08 00:00:00.390205+00"):
-            row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
-                reverse('factor:factor.view', args=(obj.id,)),
-                obj.pk if obj.pk else '-'
-            )
-        else:
+        if obj.is_safe:
             row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
                 reverse('factor:safe.factor.view', args=(obj.id,)),
                 obj.pk if obj.pk else '-'
             )
+        else:
+            row['id'] = '<a class="fw-bold" href="%s" target="_blank">%s</a>' % (
+                reverse('factor:factor.view', args=(obj.id,)),
+                obj.pk if obj.pk else '-'
+            )
+
         row['q__customer_party_id'] = obj.q.customer_party_id.title if obj.q else ''
         row['q__currency_ref'] = obj.q.currency_ref.title if obj.q else ''
         row['creator_user'] = obj.creator_user.username if obj.creator_user else ''
@@ -2088,3 +2096,22 @@ def factor_today_total_price(request, *args, **kwargs):
             total=Coalesce(Sum('calculated_price'), Decimal('0'))
         )['total']
         return JsonResponse({'total_price': total})
+
+
+def product_select(request, sku, factor_id, *args, **kwargs):
+    factor_items_sku = FactorItem.objects.filter(factor_id=factor_id).values_list('goods_code__sku', flat=True)
+    cache_key = f'factor__{factor_id}'
+    data = cache.get(cache_key) or dict()
+
+    # data = {
+    #     'sku': [("product_id", "product_part_number")]
+    # }
+
+    res = data.get(sku) or []
+    if not res:
+        skus = ','.join(factor_items_sku)
+        data = ProductApiCall.get_product_by_skus(skus, response_function='products_map')
+        cache.set(cache_key, data, 120)
+        res = data.get(sku) or []
+
+    return JsonResponse({'res': res})

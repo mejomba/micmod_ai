@@ -6,7 +6,7 @@
   <div class="sp-group sp-g-warehouse">انبار <span class="text-danger">فقط انتخاب یک انبار مجاز است</span></div>
   {% for w in supply.warehouses %}
     <div class="sp-src" data-group="warehouse" data-id="{{ w.id }}"
-         data-name="{{ w.name }}" data-is-new="false">
+         data-name="{{ w.name }}" data-is-new="false" data-final_arrive_date="">
       <label class="sp-src-main">
         <input type="checkbox" class="sp-check sp-check-main"
                {% if w.preselected_qty_free %}checked{% endif %}>
@@ -50,7 +50,7 @@
 <div class="sp-group sp-g-market">سفارش بازار</div>
 {% for m in supply.market_orders %}
   <div class="sp-src" data-group="market" data-id="{{ m.id }}"
-       data-name="{{ m.name }}" data-is-new="false">
+       data-name="{{ m.name }}" data-is-new="false" data-final_arrive_date="">
     <label class="sp-src-main">
       <input type="checkbox" class="sp-check sp-check-main"
              {% if m.preselected_qty_free %}checked{% endif %}>
@@ -105,7 +105,7 @@
 <div class="sp-group sp-g-foreign">سفارش خارجی</div>
 {% for f in supply.foreign_orders %}
   <div class="sp-src" data-group="foreign" data-id="{{ f.id }}"
-       data-name="{{ f.name }}" data-is-new="false">
+       data-name="{{ f.name }}" data-is-new="false" data-final_arrive_date={{ f.final_arrive_date }}>
     <label class="sp-src-main">
       <input type="checkbox" class="sp-check sp-check-main"
              {% if f.preselected_qty_free %}checked{% endif %}>

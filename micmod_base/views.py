@@ -32,6 +32,7 @@ from factor.models import FactorItem, Factor
 from factor.serializers import FactorSerializer
 from order.models import Order
 from order.serializers import OrderSerializer
+from sepidar.api_call import SepidarApiCall
 from sepidar.models import APILogs
 from sepidar.models import Dl, Device
 from sepidar.scripts.sepidar_classes import Urls
@@ -269,9 +270,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             device = Device.objects.all().first()
             if not self.object.guid:
                 self.object.guid = uuid.uuid4()
-            elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
-                APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
-                                 method=Urls.del_quotation.method, save=True)
+            # elif (sepidar_pk := self.object.sepidar_quotation_id) and self.state_index == 2 and 'next' in self.request.POST:
+            #     APILogs.new_call(device=device, url=Urls.del_quotation.url.format(sepidar_pk),
+            #                      method=Urls.del_quotation.method, save=True)
 
             if (self.state_index == 1 or self.state_index == 1) and 'submit/copy_q' in self.request.POST:
                 flow_copy = False
@@ -332,66 +333,81 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
             if self.state_index == 2 and ('submit/copy' in self.request.POST or 'next' in self.request.POST or 'submit/copy_q' in self.request.POST):
                 """ثبت در سپیدار"""
-                quotation_items = []
-                for idx, qi in enumerate(self.object.quotation.all(), 1):
-                    qi_dict = {
-                        'RowID': idx,
-                        'ItemRef': qi.goods_code_fk.sepidar_id_0,  # itemid,  # optional
-                        'StockRef': 2,  # optional
-                        'Quantity': qi.quantity,
-                        'SecondaryQuantity': 0,
-                        # 'Fee': qi.fee or 1,
-                        'Fee': qi.sepidar_fee or 1,
-                        'Price': qi.net_price or 1,
-                        'Description': qi.description or '',
-                        'PriceInfoPercentDiscount': 0,
-                        'PriceInfoDiscountRate': 0,
-                        'AggregateAmountPercentDiscount': 0,
-                        'AggregateAmountPriceDiscount': 0,
-                        'AggregateAmountDiscountRate': 0,
-                        'CustomerDiscount': 0,
-                        'CustomerDiscountRate': 0,
-                        'Discount': qi.discount_value or 0, #qi.sepidar_discount * qi.quantity or 0,
-                       # 'DiscountParentRef': 1,  # optional
-                        'Tax': qi.tax or 0,
-                        'Duty': qi.duty or 0,
-                        'Addition': self.object.addition if (idx == 1 and self.object.addition) else  0,
-                    }
-                    quotation_items.append(qi_dict)
-                #
-                q = Quotation()
-                quotation_data = {
-                    'GUID': str(self.object.guid),
-                    'CurrencyRef': self.object.sale_type.currency.sepidar_id or 1,
-                    'Rate': self.object.sale_type.currency.current_rate() or 1,
-                    'ExpirationDate': str(self.object.expiration_date),
-                    'CustomerRef': self.object.customer_party_id.sepidar_party_id,  # 11
-                    'SaleTypeRef': self.object.sale_type.sepidar_id or self.object.sale_type.pk,
-                  #  'AddressRef': '1',  # optional
-                    'DiscountOnCustomer': 0,
-                    'Price': self.object.price or 1,
-                    'Discount': self.object.total_discount or 0, #self_discount or 0,
-                    'Tax': self.object.tax_amount or 0,
-                    'Duty': self.object.duty_amount or 0,
-                    'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
-                    'items': quotation_items,
-                }
-                d = json.dumps(quotation_data)
-                #
-                api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
-                                           method=Urls.pos_quotations.method, data=d)
-                api_log_obj = api_res[2]
-                api_log_obj.extra_data.request = self.request if api_log_obj else ''
-                api_log_obj.save()
+                # quotation_items = []
+                # for idx, qi in enumerate(self.object.quotation.all(), 1):
+                #     qi_dict = {
+                #         'RowID': idx,
+                #         'ItemRef': qi.goods_code_fk.sepidar_id_0,  # itemid,  # optional
+                #         'StockRef': 2,  # optional
+                #         'Quantity': qi.quantity,
+                #         'SecondaryQuantity': 0,
+                #         # 'Fee': qi.fee or 1,
+                #         'Fee': qi.sepidar_fee or 1,
+                #         'Price': qi.net_price or 1,
+                #         'Description': qi.description or '',
+                #         'PriceInfoPercentDiscount': 0,
+                #         'PriceInfoDiscountRate': 0,
+                #         'AggregateAmountPercentDiscount': 0,
+                #         'AggregateAmountPriceDiscount': 0,
+                #         'AggregateAmountDiscountRate': 0,
+                #         'CustomerDiscount': 0,
+                #         'CustomerDiscountRate': 0,
+                #         'Discount': qi.discount_value or 0,
+                #         'Tax': qi.tax or 0,
+                #         'Duty': qi.duty or 0,
+                #         'Addition': self.object.addition if (idx == 1 and self.object.addition) else  0,
+                #     }
+                #     quotation_items.append(qi_dict)
+                # #
+                # q = Quotation()
+                # quotation_data = {
+                #     'GUID': str(self.object.guid),
+                #     'CurrencyRef': self.object.sale_type.currency.sepidar_id or 1,
+                #     'Rate': self.object.sale_type.currency.current_rate() or 1,
+                #     'ExpirationDate': str(self.object.expiration_date),
+                #     'CustomerRef': self.object.customer_party_id.sepidar_party_id,  # 11
+                #     'SaleTypeRef': self.object.sale_type.sepidar_id or self.object.sale_type.pk,
+                #   #  'AddressRef': '1',  # optional
+                #     'DiscountOnCustomer': 0,
+                #     'Price': self.object.price or 1,
+                #     'Discount': self.object.total_discount or 0, #self_discount or 0,
+                #     'Tax': self.object.tax_amount or 0,
+                #     'Duty': self.object.duty_amount or 0,
+                #     'Addition': 0, # self.object.addition or 0, TODO sepidar dont save addition for quotation(main form)
+                #     'items': quotation_items,
+                # }
+                # d = json.dumps(quotation_data)
+                # #
+                # api_res = APILogs.new_call(device=device, url=Urls.pos_quotations.url,
+                #                            method=Urls.pos_quotations.method, data=d)
+                # api_log_obj = api_res[2]
+                # api_log_obj.extra_data.request = self.request if api_log_obj else ''
+                # api_log_obj.save()
 
-                self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
-                self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
+                # self.object.sepidar_quotation_id = api_res[1].get('ID') if api_res[0] == 201 else None
+                # self.object.sepidar_number = api_res[1].get('Number') if api_res[0] == 201 else None
 
-                sepidar_qis = api_res[1].get('Items')
+                api_res = SepidarApiCall.quotation_to_sepidar(self.object)
+                if 'errors' in api_res:
+                    from django.contrib import messages
+                    messages.error(self.request, api_res['errors'])
+                    print('rol back ....')
+                    content_type = ContentType.objects.filter(model=self.object._meta.model_name,
+                                                              app_label=self.object._meta.app_label).first()
+                    flow_object = self.flow_model.objects.filter(object_id=self.object.id,
+                                                                 content_type=content_type).first()
+                    if flow_object:
+                        flow_object.is_deleted = True
+                        flow_object.save()
+                else:
+                    self.object.sepidar_quotation_id = api_res['quotationid']
+                    self.object.sepidar_number = api_res['number']
+
+                sepidar_qis = api_res.get('quotation_items')
 
                 if sepidar_qis:
                     """ save sepidar QuotationItemID for qi """
-                    lookup = {(d["Quantity"], d["ItemRef"]): d["QuotationItemID"] for d in sepidar_qis}
+                    lookup = {(d["quantity"], d["itemref"]): d["quotationitemid"] for d in sepidar_qis}
                     items = list(self.object.quotation.all())
 
                     for item in items:
@@ -401,21 +417,6 @@ class QuotationsView(LoginRequiredMixin, BaseView):
 
                     QuotationItem.objects.bulk_update(items, ["sepidar_id"])
 
-                if api_res[0] >= 400:
-                    from django.contrib import messages
-
-                    messages.add_message(self.request, messages.ERROR, api_res[1].get('Message'))
-                    print('rol back .... for status 400')
-                    content_type = ContentType.objects.filter(model=self.object._meta.model_name,
-                                                              app_label=self.object._meta.app_label).first()
-                    flow_object = self.flow_model.objects.filter(object_id=self.object.id,
-                                                                 content_type=content_type).first()
-                    if flow_object:
-                        flow_object.is_deleted = True
-                        flow_object.save()
-            if ((self.state_index == 0 and 'next' in self.request.POST) or (self.state_index == 2 and 'back' in self.request.POST)):
-                ...
-
             shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
             self.object.shop_document_id = shop_document_id
             self.object.extra_data.request = self.request
@@ -423,6 +424,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         except Exception as e:
             pass
             print('rol back ....')
+            print(e)
             content_type = ContentType.objects.filter(model=self.object._meta.model_name, app_label=self.object._meta.app_label).first()
             flow_object = self.flow_model.objects.filter(object_id=self.object.id, content_type=content_type).first()
             if flow_object:

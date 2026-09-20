@@ -4,7 +4,7 @@ from DevicesService import DevicesService
 from ItemsService import ItemsService
 from UsersService import UsersService
 
-BASE_URL = 'http://192.168.1.93:7373/'
+BASE_URL = 'http://192.168.1.120:7373/'
 GENERATION_VERSION = '1000'
 REGISTRATION__CODE = '10003b77'
 USERNAME = 'DjangoUser'

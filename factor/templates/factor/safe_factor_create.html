@@ -1080,7 +1080,7 @@ document.addEventListener("click", e => {
     if (!row) return;
     const cell = row.querySelector('.sp-cell');
     if (!cell) return;
-    const newQty = parseFloat(e.target.value) || 0;
+    const newQty = parseFloat(parseNum(e.target.value)) || 0;
     cell.dataset.required = newQty;
     // به‌روزرسانی «مورد نیاز» در footer
     const needEl = cell.querySelector('.sp-foot-line:first-child b');
@@ -1171,7 +1171,7 @@ document.addEventListener("click", e => {
       // reset
       const dataInput = cell.querySelector('.sp-data');
       if (dataInput) dataInput.value = '[]';
-      cell.dataset.required = parseFloat(quantityInput?.value) || 0;
+      cell.dataset.required = parseFloat(parseNum(quantityInput?.value)) || 0;
 
       // پنل را بسته نگه دار
       cell.classList.remove('sp-open');

@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import PaymentView, PaymentListView, PaymentDataTableListView, PaymentItemView, \
     PaymentItemDataTableListView, OrderAndSepidar, OrderOfFactor, other_available_orders, get_order_order, ACNTView, \
-    ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView, payment_item_from_load
+    ACNTListView, ACNTDataTableListView, QuickGIODataTableListView, QuickGIOView, payment_item_from_load, \
+    QuickPackingView, QuickPackingDataTableListView
 
 from .views import CustomerRequestOrderViewSet
 from .select2 import order_select2_search
@@ -43,6 +44,11 @@ urlpatterns = [
     path('packing/view/<int:pk>/', views.PackingView.as_view(), name='packing.update'),
     path('packing/list/', views.PackingListView.as_view(), name='packing.list'),
     path('packing/list/datatable/', views.PackingDataTableListView.as_view(), name='packing.list.datatable'),
+
+     # quick packing
+    path('quick_packing/', QuickPackingView.as_view(), name='quick_packing'),
+    path('quick_packing/<int:pk>/', QuickPackingView.as_view(), name='quick_packing'),
+    path('quick_packing_datatable/', QuickPackingDataTableListView.as_view(), name='quick_packing.datatable'),
 
     #  packingitem
     path('packingitem/view/', views.packing_list_form.as_view(), name='packingitem.view'),

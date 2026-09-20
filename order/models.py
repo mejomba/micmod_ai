@@ -15,7 +15,7 @@ from core.models import BaseModel, BaseModeWF, BaseManager, BaseModel2, AbsBaseM
 from extra_data.models import Brand, Item, Customer, WH
 from inquiry.models import Supplier, PriceInquiryResult
 # from factor.models import FactorItem
-from micmod_base.models import QuotationItem, CustomerRequestItem
+from micmod_base.models import QuotationItem, CustomerRequestItem, Quotation
 from sepidar.api_call import SepidarApiCall
 from translator import get_text as _
 from workflow.models import WorkFlow
@@ -180,7 +180,7 @@ class Order(BaseModeWF):
     sales_admin_cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
     has_customer_prepaid = models.BooleanField(_('has_customer_prepaid'), default=False)
     transportation_method = models.CharField(_('transportation_method'), max_length=64, choices=TRANSPORTATION_CHOICE,
-                                             default='sea', null=True, blank=True)
+                                             default='air', null=True, blank=True)
     commitment_date_to_customer = models.DateField(_('commitment_date_to_customer'), null=True, blank=True)
     quantity = models.FloatField(_('quantity'), default=0)
     description_sale = models.TextField(_('description_sale'), null=True, blank=True)
@@ -250,10 +250,19 @@ class Order(BaseModeWF):
 
     @property
     def commitment_date_difference(self):
-        time_difference = None
         if self.trade_commitment_date and self.commitment_date_to_customer:
             time_difference = self.trade_commitment_date - self.commitment_date_to_customer
-        return time_difference
+        else:
+            return None
+
+        diff_in_days = time_difference.days
+
+        if diff_in_days < 0:
+            return mark_safe(f'<span class="text-success">{abs(diff_in_days)} روز زودتر </span>')
+        elif diff_in_days > 0:
+            return f'<span class="text-danger">{diff_in_days} روز دیرتر </span>'
+
+        return diff_in_days
 
     @property
     def final_purchase_group(self):
@@ -509,7 +518,7 @@ class Order(BaseModeWF):
         if is_complete:
             return False, f'order {self.order_number} complete in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
         if (quantity + total_arrived) > self.final_quantity:
-            return False, f'{total_arrived} of order {self.order_number} receipt in GIO {list(self.gio_items.values_list("id", flat=True))} {final_quantity - total_arrived} available for GIO'
+            return False, f'{total_arrived} of order {self.order_number} receipt in GIO {list(self.gio_items.values_list("gio_id", flat=True))} {final_quantity - total_arrived} available for GIO'
 
         return True, ''
 
@@ -766,7 +775,8 @@ class Order(BaseModeWF):
         89: "انبار محصول ايروان",
         90: "انبار کالای بین راهی لوئیز",
         91: "انبار کالای بین راهی ایران",
-        92: "انبار آقای هادی رفیع اصفهان"
+        92: "انبار آقای هادی رفیع اصفهان",
+        93: "انبار توليد E -100 شرکت ارميا"
     }
 
     @property
@@ -795,6 +805,7 @@ class OrderDelayReason(AbsBaseModel):
 
 class OrderBazar(BaseModeWF):
     order_title = models.CharField(max_length=255, blank=True, null=True)
+    number = models.IntegerField(blank=True, null=True)
     order_number = models.CharField(max_length=16, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
@@ -807,6 +818,30 @@ class OrderBazar(BaseModeWF):
     buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
     buy_factor_quantity_in_sepidar = models.FloatField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        import jdatetime
+        if self.pk is None:
+            self.version = 1
+            year = str(jdatetime.date.today().year - 1400).zfill(2)
+            try:
+                last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
+                self.order_number = f'B{year}-{last_number + 1}'
+                self.number = last_number + 1
+            except Exception as e:
+                last_number = 0
+                self.order_number = f'B{year}-{last_number + 1}'
+                self.number = last_number + 1
+                print(e)
+        else:
+            try:
+                self.version += 1
+            except Exception as e:
+                pass
+
+        return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 
     @property
     def display_name(self):
@@ -883,7 +918,8 @@ class OrderOrder(BaseModel):
         89: "انبار محصول ايروان",
         90: "انبار کالای بین راهی لوئیز",
         91: "انبار کالای بین راهی ایران",
-        92: "انبار آقای هادی رفیع اصفهان"
+        92: "انبار آقای هادی رفیع اصفهان",
+        93: "انبار توليد E -100 شرکت ارميا"
     }
 
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),

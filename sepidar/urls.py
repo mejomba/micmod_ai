@@ -29,4 +29,5 @@ urlpatterns = [
     path(r"sales_history/", view=SalesHistory.as_view(), name="sales_history"),
     path(r"buy_history/", view=BuyHistory.as_view(), name="buy_history"),
     path(r"api_call/", view=test_get, name="test_get"),
+    path("get/<str:model_name>/<int:object_id>/", get, name='get'),
     ]

@@ -1,5 +1,7 @@
 import datetime
 import json
+import time
+
 import jdatetime
 from django.conf import settings
 from django.db.models import Avg, Value
@@ -1800,3 +1802,60 @@ class WorkNotify(View):
             return JsonResponse({'res': 'ok'}, status=200)
         else:
             return JsonResponse({'res': 'لاگین منقضی شده است دوباره وارد شوید'}, status=401)
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import PageVisit, VisitCounter
+from django.utils import timezone
+
+
+def landing_page(request):
+    import random
+    time.sleep(1)
+
+    # دریافت یا ایجاد شمارنده
+    counter, created = VisitCounter.objects.get_or_create(id=1)
+
+    # بررسی سشن برای جلوگیری از شمارش تکراری
+    if request.method == 'GET':
+        # کلید سشن برای تشخیص بازدید
+        session_key = 'has_visited_landing'
+
+        # اگر کاربر قبلاً بازدید نکرده باشد
+        if not request.session.get(session_key, False):
+            # افزایش شمارنده
+            counter.total_visits += 1
+            counter.save()
+
+            # ذخیره جزئیات بازدید
+            PageVisit.objects.create(
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                session_id=request.session.session_key  # نیاز به اضافه کردن فیلد در مدل
+            )
+
+            # ثبت در سشن که بازدید انجام شده
+            request.session[session_key] = True
+            # تنظیم انقضای سشن (مثلاً 24 ساعت)
+            request.session.set_expiry(86400)  # 24 ساعت به ثانیه
+
+    # تعداد بازدیدهای منحصر‌به‌فرد (بر اساس سشن)
+    unique_visits = PageVisit.objects.values('session_id').distinct().count()
+
+    context = {
+        'total_visits': counter.total_visits,
+        'unique_visits': unique_visits,
+    }
+    tem = ['soon_fun.html']
+    template = random.choice(tem)
+    return render(request, template, context)
+
+
+# API برای دریافت آمار به‌روز
+def get_visit_stats(request):
+    counter = VisitCounter.objects.get(id=1)
+    return JsonResponse({
+        'total_visits': counter.total_visits,
+        'last_updated': counter.last_updated.strftime('%Y-%m-%d %H:%M:%S')
+    })

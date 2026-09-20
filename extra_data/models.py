@@ -409,7 +409,7 @@ class Item(BaseModel):
                 batch_size=500
             )
 
-            cache.set('all_stock_quantity', all_stock_quantity, 300)
+            cache.set('all_stock_quantity', all_stock_quantity, 120)
             print('set in cache...')
 
         stocks = all_stock_quantity.get(str(self.sku))
@@ -789,7 +789,7 @@ where I.Code = {self.sku} and inv.Date >= DATEADD(DAY,-60,GETDATE())) as inv_ite
                 batch_size=500
             )
 
-            cache.set('all_stock_quantity', all_stock_quantity, 300)
+            cache.set('all_stock_quantity', all_stock_quantity, 120)
             print('set in cache...')
 
         stocks = all_stock_quantity.get(str(self.sku))

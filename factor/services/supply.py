@@ -14,6 +14,7 @@ from notifications.models import SupplyNotification
 from extra_data.models import ItemStockSummary
 from tools import const
 from tools.utils import timer
+from workflow.models import WorkFlow
 
 
 class SupplyLocationService:
@@ -344,8 +345,20 @@ class SupplyLocationService:
 
         if group == 'foreign':
             order = Order.objects.create(
-                item=factor_item.goods_code, quantity=qty, creator_user=user, editor_user=user, **extras
+                item=factor_item.goods_code, quantity=qty, creator_user=user, editor_user=user,
+                customer_party_id=factor_item.factor.customer_party_id, qi=factor_item.qi,
+                **extras
             )
+            order.last_work_flow = WorkFlow.objects.create(action='draft', flow_name='order', wf_status=5,
+                                                           creator_user=order.creator_user,
+                                                           editor_user=order.editor_user,
+                                                           from_user=order.creator_user,
+                                                           to_user=order.creator_user,
+                                                           content_type=order.__class__.content_type(), object_id=order.pk,
+                                                           belong_to_group='sales_user', current_state_name='پیش نویس',
+                                                           wf_description='ایجاد شده از صفحه فاکتور',
+                                                           state='پیش نویس')
+            order.save(update_fields=['last_work_flow'])
             sl_kwargs = {'order': order}
         elif group == 'market':
             order = OrderBazar.objects.create(
@@ -884,6 +897,7 @@ def _order_entry(obj, others_by_id, own_qty_by_key, qty_field):
         'free_qty': total_qty - others_total,
         'other_reserves_total': others_total,
         'preselected_qty_free': own_qty_by_key.get((obj.id, None), 0),
+        'final_arrive_date': getattr(obj, 'estimate_arrive_at', None) or '-',
         'other_reserves': [
             {
                 'id': loc.id,
