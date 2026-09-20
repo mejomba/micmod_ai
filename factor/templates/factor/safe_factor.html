@@ -192,6 +192,7 @@
         {% for hidden in form.hidden_fields %}
             {{ hidden }}
         {% endfor %}
+        <span name="-factor_id">{{ form.instance.pk }}</span>
         <span name="-self_discount">{{ form.instance.self_discount }}</span>
         <span name="-currency_ref">{{ form.instance.currency_ref.pk }}</span>
         <span name="-is_official" data-is_official="{{ form.instance.is_official }}"></span>
@@ -222,8 +223,14 @@
             <span class="me-5">فاکتور های مرتبط:</span>
             {% for other_factor in factor.q.q.all %}
                 {% if factor.pk != other_factor.pk %}
-                    <a target="_blank" class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
-                       href="{% url 'factor:safe.factor.view' other_factor.pk %}">فاکتور {{ other_factor.pk }}</a>
+                    {% if other_factor.is_safe %}
+                        <a target="_blank" class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
+                           href="{% url 'factor:safe.factor.view' other_factor.pk %}">فاکتور {{ other_factor.pk }}</a>
+                    {% else %}
+                        <a target="_blank" class="mx-1 text-primary badge pb-1 badge-light-primary border border-primary font-size-12"
+                           href="{% url 'factor:factor.view' other_factor.pk %}">فاکتور {{ other_factor.pk }}</a>
+                    {% endif %}
+
                 {% endif %}
             {% empty %}
                 <span>---</span>
@@ -857,6 +864,7 @@ function collectSelections(cell){
     const isNew = card.dataset.isNew === "true";
     const name  = card.dataset.name;
     const sid   = card.dataset.id || null;
+    const final_arrive_date   = card.dataset.final_arrive_date || '';
 
     const mainCb = card.querySelector(".sp-check-main");
     const mainQ  = card.querySelector(".sp-qty-free");
@@ -875,8 +883,9 @@ function collectSelections(cell){
     const others_total = from_reserves.reduce((s,r)=>s+r.qty,0);
     const total = qty_free + others_total;
     if (total > 0) out.push({ group, source_id:sid, is_new:isNew, qty_free, from_reserves,
-                              _name:name, _total:total, _others:others_total });
+                              _name:name, _total:total, _others:others_total, _final_arrive_date:final_arrive_date });
   });
+    console.log('out', out)
   return out;
 }
 
@@ -912,10 +921,11 @@ function updateCell(cell){
   } else {
     sum.className = "sp-summary";
     const chips = sel.map(s => {
+        console.log(s)
       const others = s._others > 0
         ? `<span class="sp-cothers" title="از رزرو دیگران: ${nf(s._others)}">↑${nf(s._others)}</span>` : "";
       return `<span class="sp-chip sp-c-${s.group}${s.is_new?' sp-chip-new':''}" title="${s._name}">
-        <span class="sp-cdot"></span><span class="sp-cname">${s._name}</span><b class="sp-cqty">${nf(s._total)}</b>${others}</span>`;
+        <span class="sp-cdot"></span><span class="sp-cname">${s._name}</span><b class="sp-cqty">${nf(s._total)}</b>${others} <span>${s._final_arrive_date}</span></span>`;
     }).join("");
     sum.innerHTML = `<div class="sp-chips">${chips}</div>
       <div class="sp-status sp-${st.s}"><span class="sp-sdot"></span>${nf(supplied)} از ${nf(required)}${st.t?' · '+st.t:''}</div>`;
@@ -1022,6 +1032,7 @@ document.addEventListener("change", e => {
   const card = e.target.closest(".sp-src"); if (!card) return;
   const cell = card.closest(".sp-cell");
   if (e.target.classList.contains("sp-check-main")){
+      console.log("sp-check-main")
     const qty = card.querySelector(".sp-qty-free");
     if (e.target.checked){
       qty.disabled = false;
@@ -1031,6 +1042,7 @@ document.addEventListener("change", e => {
     } else { qty.value = ""; qty.disabled = true; }
     applyConstraints(cell); updateCell(cell);
   } else if (e.target.classList.contains("sp-check-reserve")){
+      console.log("sp-check-reserve")
     const r = e.target.closest(".sp-reserve");
     const qty = r.querySelector(".sp-qty-reserve");
     if (e.target.checked){
@@ -1088,6 +1100,7 @@ function closeAllPanels(){
 document.addEventListener("click", e => {
   const toggle = e.target.closest(".sp-others-toggle");
   if (toggle){
+      console.log('toggle')
     const card = toggle.closest(".sp-src");
     const list = card.querySelector(".sp-others-list");
     const open = card.classList.toggle("sp-others-open");
@@ -1095,6 +1108,7 @@ document.addEventListener("click", e => {
   }
   const sum = e.target.closest(".sp-summary");
   if (sum){
+      console.log('sum')
     const cell = sum.closest(".sp-cell");
     const open = cell.classList.contains("sp-open");
     closeAllPanels();
@@ -1224,7 +1238,7 @@ document.addEventListener("click", e => {
       // reset
       const dataInput = cell.querySelector('.sp-data');
       if (dataInput) dataInput.value = '[]';
-      cell.dataset.required = parseNum(parseFloat(quantityInput?.value) || 0);
+      cell.dataset.required = parseFloat(parseNum(quantityInput?.value)) || 0;
 
       // پنل را بسته نگه دار
       cell.classList.remove('sp-open');
@@ -1557,6 +1571,37 @@ function renumberRows() {
                 }
             }
         }
+
+
+        function get_product_selection(event){
+        const target = event.currentTarget
+        const datalist = target.parentElement.querySelector('datalist[id$="-product_id"]')
+        const sku = findAncestor(target, 'factor_item_self').querySelector('input[name$="-goods_code"]').value
+        const product_name = findAncestor(target, 'factor_item_self').querySelector('input[name$="-product_name"]')
+        const factor_id = document.querySelector('span[name="-factor_id"]').innerText || 0
+        if (sku){
+            $.ajax({
+                type: 'GET',
+                url: `/factor/ajax/product_select/${sku}/${factor_id}`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                {#beforeSend: block_main_container,#}
+                success: function (data) {
+                    let html = ""
+                    data['res'].forEach(function(item){
+                        html += `<option value="${item[0]}">(${item[0]}) ${item[1]}</option>`
+                    })
+                    datalist.innerHTML = html
+                },
+                error: function () {
+
+                },
+                {#complete: release_main_container#}
+            });
+        }
+    }
 
     </script>
 {% endblock extra_js %}

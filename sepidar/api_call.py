@@ -3,6 +3,7 @@ from typing import Optional, TypedDict, List
 import jdatetime
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from .data import SepidarDataFactory
 from .models import Dl
@@ -57,6 +58,7 @@ class SepidarApiCall:
             # 'wh_to_wh': f'{protocol}://{host}:{port}/api2/sepidar_api-inventorydelivery/',  #  خروج از انبار (انتقال بین انبار)
             'debit_credit_note': f'{protocol}://{host}:{port}/api2/sepidar_api-debitcreditnote/',  # اعلامیه بدهکار بستانکار
             'inventory_receipt': f'{protocol}://{host}:{port}/api2/sepidar_api-inventoryreceipt/',  # رسید انبار
+            'quotation': f'{protocol}://{host}:{port}/api2/sepidar_api-quotation/',  # پیش فاکتور
         },
     }
 
@@ -73,7 +75,7 @@ class SepidarApiCall:
     @classmethod
     def set_token(cls):
         from django.core.cache import cache
-        cls.token = cache.get_or_set('sepidar_jwt_access_token', cls.get_token(), timeout=9000)
+        cls.token = cache.get_or_set('sepidarx_jwt_access_token', cls.get_token(), timeout=9000)
 
     @classmethod
     def get_header(cls):
@@ -571,7 +573,7 @@ class SepidarApiCall:
                     "version": 1,
                     "fiscalyearref": cls.const.get('fiscalyearref'),
 
-                    "date": timezone.now().isoformat(),
+                    "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
                     "creationdate": timezone.now().isoformat(),
                     "lastmodificationdate": timezone.now().isoformat(),
                     "creator": request.user.sepidar_code,
@@ -626,7 +628,7 @@ class SepidarApiCall:
                     "version": 1,
                     "fiscalyearref": cls.const.get('fiscalyearref'),
 
-                    "date": timezone.now().isoformat(),
+                    "date": timezone.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat(),
                     "creationdate": timezone.now().isoformat(),
                     "lastmodificationdate": timezone.now().isoformat(),
                     "creator": request.user.sepidar_code,
@@ -931,6 +933,35 @@ class SepidarApiCall:
 
         d = {'data': obj}
         res = requests.post(endpoint, json=d, headers=cls.headers)
+        if res.ok:
+            clean_res = cls.response_manager.clean_dict(res.json())
+            return clean_res
+        else:
+            return {'errors': res}
+
+    @classmethod
+    def quotation_to_sepidar(cls, obj, request=None, update=False):
+        from django.db import connections
+        cls.setup()
+        endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('quotation')
+        quotation_data = cls.data.get_quotation_data(obj)
+
+        sepidar_quotation_id = obj.sepidar_quotation_id
+
+        with transaction.atomic(using="sepidar"):
+            with connections['sepidar'].cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM [Micromodern1].[SLS].[QuotationItem] WHERE QuotationRef = %s",
+                    [sepidar_quotation_id]
+                )
+
+                cursor.execute(
+                    "DELETE FROM [Micromodern1].[SLS].[Quotation] WHERE QuotationId = %s",
+                    [sepidar_quotation_id]
+                )
+
+        res = requests.post(endpoint, json=quotation_data, headers=cls.headers)
+
         if res.ok:
             clean_res = cls.response_manager.clean_dict(res.json())
             return clean_res

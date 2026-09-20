@@ -123,18 +123,19 @@ class ShopApiCall:
                 product_id = products.get(str(fi.goods_code.pk)) if products else None
 
                 l.append({
-                    # "user": None,
+                    "user": 6832,  # ادمین سیستم شاپ
                     "quantity": getattr(getattr(fi.qi, 'customer_request_item', None), 'quantity', None) or fi.quantity, # تعداد در درخواست مشتری، اگر نداشت به تعدادی که در فاکتور است میزنم
                     # تعداد در درخواست مشتری
                     "received_quantity": fi.quantity,  # تعداد در ردیف فاکتور
-                    "unit_price": fi.fee_(),  # فی ردیف
-                    "discounted_unit_price": fi.fee_after_discount,  # فی بعد از تخفیف
-                    "discount_per_unit": fi.total_discount_per_item,  # discount per item
+                    "unit_price": fi.fee_() / 10,  # فی ردیف
+                    "discounted_unit_price": fi.fee_after_discount / 10,  # فی بعد از تخفیف
+                    "discount_per_unit": fi.total_discount_per_item / 10,  # discount per item
                     "product": product_id,  # شناسه محصول در پروداکت
                     "source_warehouse_name": "انبارمرکزی",
                 })
 
             d = {
+                "user": 6832,  # ادمین سیستم شاپ
                 "source_invoice_no": f"{factor.pk}",
                 "purchase_items": l,
                 "description": getattr(factor, "description", ""),

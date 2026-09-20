@@ -51,5 +51,6 @@ urlpatterns = [
     path('ajax/factor_today_total_price/', views.factor_today_total_price, name='factor_today_total_price'),
     # path('ajax/factor_and_sepidar/', FactorAndSepidar.as_view(), name='factor_and_sepidar'),
     path('ajax/factor_today_total_price/', views.factor_today_total_price, name='factor_today_total_price'),
+    path('ajax/product_select/<str:sku>/<int:factor_id>/', views.product_select, name='product.select'),
 
 ]

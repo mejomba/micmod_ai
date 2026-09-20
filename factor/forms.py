@@ -140,12 +140,12 @@ class FactorModelForm(CustomBaseModelForm):
 
 
 class FactorItemModelForm(CustomBaseModelForm):
-    # product_id = forms.ChoiceField(
-    #     choices=[],
-    #     label='کالای شاپ',
-    #     widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
-    #     required=False,
-    # )
+    product_id = forms.CharField(
+        # choices=[],
+        label='کالای شاپ',
+        widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
+        required=False,
+    )
     class Meta:
         model = FactorItem
         exclude = ['group']
@@ -196,16 +196,7 @@ class FactorItemModelForm(CustomBaseModelForm):
 
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
 
-        # cache_key = f'{request.user.username}__factor__{self.instance.factor.pk}'
-        # choices = cache.get(cache_key)
-        # if choices is None:
-        #     # اگر در کش نبود، از API دریافت کن
-        #     choices = self.get_choices_from_api()
-        #     # به مدت ۱ ساعت در کش نگه دار
-        #     cache.set(cache_key, choices, 6)
-
-        # self.fields['category'].choices = choices
-
+        self.fields['product_id'].initial = [("x", "y")]
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['price'].widget.attrs['class'] += ' comma-seperator'
@@ -223,25 +214,13 @@ class FactorItemModelForm(CustomBaseModelForm):
             self.make_disable(self.fields)
 
         self.make_enable(['supply_location'])
+        self.make_hidden(['product_name',])
         # self.fields.pop('quantity')
-
-    def get_choices_from_api(self, api_data):
-        """دریافت انتخاب‌ها از API خارجی"""
-        try:
-            # تبدیل داده‌های API به فرمت [(value, label), ...]
-            choices = [(item['id'], item['name']) for item in api_data]
-
-            # گاهی نیاز به یک گزینه پیش‌فرض مانند انتخاب خالی دارید
-            return [('', '-----')] + choices
-
-        except Exception as e:
-            # در صورت خطا، یک لیست خالی یا پیش‌فرض برگردانید
-            return [('', '--- خطا در دریافت داده ---')]
 
 
 factor_item_fields = ['factor', 'qi', 'index', 'quantity', 'delivery_time', 'custom_price', 'goods_code', 'price',
                       'part_number_show', 'supply_location', 'supply_locations', 'is_bazar', 'reserve_count',
-                      'discount_per_item', 'product_id',
+                      'discount_per_item', 'product_id', 'product_name'
                       ]
 
 FactorItemFormset = inlineformset_factory(
@@ -268,13 +247,13 @@ FACTOR_FIELDS_BY_PERMISSION = {
     "factor.cp_factor_sales": {
         0: {
             "edit": [
-                "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
+                "q", "customer_party_id", "payment_method", "sale_type", "address", "delivery_time", "description",
                 "deliver_type", "deliver_method", "self_discount", "is_official", "official_value", "currency_ref",
                 "to_be_collected", "request_cancel", "require_official_factor_with_delivery", "need_factor_document", "file_2",
-                "currency_amount", "q", "force_factor", "is_reserve",
+                "currency_amount", "force_factor", "is_reserve",
             ],
             "hidden": [
-                 "addition", "tax", "duty", "total_price",
+                 "addition", "tax", "duty", "total_price", "is_safe"
             ],
             "show": ["delivery_time", "created_date", "need_financial_approval", "wh_user", "checker",
                      "accounting_confirm", "file_1", "file_2", "file_3", "file_4",]
@@ -386,7 +365,7 @@ FACTOR_FIELDS_BY_PERMISSION = {
                 "currency_amount", "q", "force_factor", "is_reserve",
             ],
             "hidden": [
-                 "addition", "tax", "duty", "total_price",
+                 "addition", "tax", "duty", "total_price", "is_safe"
             ],
             "show": ["delivery_time", "created_date", "need_financial_approval", "wh_user", "checker",
                      "accounting_confirm", "file_1", "file_2", "file_3", "file_4",]
@@ -645,7 +624,8 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
     "factor.cp_factor_item_sales": {
         0: {
             "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item"
+                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
+                'product_id', 'product_name'
             ],
             "hidden": [
                 "qi", "factor"
@@ -657,6 +637,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         1: {
             "edit": [
                 "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
+                'product_id', 'product_name'
             ],
             "hidden": [
                 "qi", "factor"
@@ -737,6 +718,7 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
         0: {
             "edit": [
                 "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
+                'product_id', 'product_name'
             ],
             "hidden": [
                 "qi", "factor"
@@ -943,6 +925,7 @@ class FactorEditForm(FormMX, CustomBaseModelForm):
         self.make_optional(['checker', 'q'])
         self.make_required(['customer_party_id'])
 
+        self.fields['is_safe'].initial = True
         self.fields['collecting_start_time'] = SplitJalaliDateTimeField(label=_('collecting_start_time'),
                                                                         widget=x(
                                                                             attrs={

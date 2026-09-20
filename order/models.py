@@ -249,10 +249,19 @@ class Order(BaseModeWF):
 
     @property
     def commitment_date_difference(self):
-        time_difference = None
         if self.trade_commitment_date and self.commitment_date_to_customer:
             time_difference = self.trade_commitment_date - self.commitment_date_to_customer
-        return time_difference
+        else:
+            return None
+
+        diff_in_days = time_difference.days
+
+        if diff_in_days < 0:
+            return mark_safe(f'<span class="text-success">{abs(diff_in_days)} روز زودتر </span>')
+        elif diff_in_days > 0:
+            return f'<span class="text-danger">{diff_in_days} روز دیرتر </span>'
+
+        return diff_in_days
 
     @property
     def final_purchase_group(self):
@@ -765,7 +774,8 @@ class Order(BaseModeWF):
         89: "انبار محصول ايروان",
         90: "انبار کالای بین راهی لوئیز",
         91: "انبار کالای بین راهی ایران",
-        92: "انبار آقای هادی رفیع اصفهان"
+        92: "انبار آقای هادی رفیع اصفهان",
+        93: "انبار توليد E -100 شرکت ارميا"
     }
 
     @property
@@ -794,6 +804,7 @@ class OrderDelayReason(AbsBaseModel):
 
 class OrderBazar(BaseModeWF):
     order_title = models.CharField(max_length=255, blank=True, null=True)
+    number = models.IntegerField(blank=True, null=True)
     order_number = models.CharField(max_length=16, blank=True, null=True)
     item = models.ForeignKey(Item, on_delete=models.DO_NOTHING, null=True)
     cancel = models.BooleanField(_('sales_admin_cancel'), default=False)
@@ -806,6 +817,30 @@ class OrderBazar(BaseModeWF):
     buy_factors = models.JSONField(verbose_name=_("buy_factor"), default=list, null=True, blank=True)
     buy_factor_quantity_in_sepidar = models.FloatField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        import jdatetime
+        if self.pk is None:
+            self.version = 1
+            year = str(jdatetime.date.today().year - 1400).zfill(2)
+            try:
+                last_number = self.__class__.objects.exclude(number__isnull=True).latest('number').number or 0
+                self.order_number = f'B{year}-{last_number + 1}'
+                self.number = last_number + 1
+            except Exception as e:
+                last_number = 0
+                self.order_number = f'B{year}-{last_number + 1}'
+                self.number = last_number + 1
+                print(e)
+        else:
+            try:
+                self.version += 1
+            except Exception as e:
+                pass
+
+        return super().save(force_insert=False, force_update=False, using=None, update_fields=None)
 
     @property
     def display_name(self):
@@ -882,7 +917,8 @@ class OrderOrder(BaseModel):
         89: "انبار محصول ايروان",
         90: "انبار کالای بین راهی لوئیز",
         91: "انبار کالای بین راهی ایران",
-        92: "انبار آقای هادی رفیع اصفهان"
+        92: "انبار آقای هادی رفیع اصفهان",
+        93: "انبار توليد E -100 شرکت ارميا"
     }
 
     STATUS_CHOICES = [("-1", _("wh__central__1")), ("-2", _("wh__resalat__1")),

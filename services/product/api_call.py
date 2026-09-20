@@ -34,12 +34,15 @@ class ProductResponseManager(metaclass=SingletonMeta):
     @staticmethod
     def products_map(res, data=None):
         out = dict()
+        # out = {
+        #     'sku': [("product_id", "product_part_number")]
+        # }
         for p in res.json().get('results'):
             try:
-                out[p['sepidar_sku']].append(p['id'])
+                out[p['sepidar_sku']].append((p['id'], p['part_number']))
             except Exception as e:
                 out[p['sepidar_sku']] = []
-                out[p['sepidar_sku']].append(p['id'])
+                out[p['sepidar_sku']].append((p['id'], p['part_number_en']))
 
         return out
 
@@ -64,16 +67,15 @@ class ProductResponseManager(metaclass=SingletonMeta):
 class ProductApiCall:
     data = SepidarDataFactory()
     response_manager = ProductResponseManager()
-    protocol = settings.PRODUCT_API_PROTOCOL  # http
-    host = settings.PRODUCT_API_HOST  # '192.168.1.73'
+    protocol = settings.PRODUCT_API_PROTOCOL  # https
+    host = settings.PRODUCT_API_HOST  # 'products.micromodernonline.ir'
     port = settings.PRODUCT_API_PORT  # '1010'
     token = ''
     headers = {}
     endpoints = {
         "v1": {
-            'login': f'{protocol}://{host}:{port}/api2/token/',
-            'products': f'{protocol}://{host}:{port}/products/',
-            'products': f'{protocol}://{host}:{port}/api2/product/',
+            'login': f'{protocol}://{host}/api2/token/',
+            'products': f'{protocol}://{host}/api2/product/',
         },
     }
 
@@ -127,7 +129,7 @@ class ProductApiCall:
         """
         cls.setup()
         endpoint = cls.endpoints.get(settings.PRODUCT_API_VERSION).get('products')
-        endpoint += f'?sepidar_skus=[{skus}]'
+        endpoint += f'?sepidar_sku__in=[{skus}]'
         res = requests.get(endpoint, headers=cls.headers)
         res = getattr(cls.response_manager, (response_function or 'products'))(res)
         return res

@@ -48,7 +48,7 @@
                                 </div>
                             </div>
                             <div class="table-responsive p-2">
-                                <table id="quick-gio-list" width="100%" class="m-table table-striped table-bordered w-100">
+                                <table id="quick-packing-list" width="100%" class="m-table table-striped table-bordered w-100">
 
                                 </table>
                             </div>
@@ -58,17 +58,18 @@
 
                             {% if not form.instance.pk %}
                                 <fieldset>
-                                    <legend data-key="create_gio">create new GIO</legend>
+                                    <legend data-key="create_gio">create new packing</legend>
 {#                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">#}
-                                    <div class="row row-cols-2 mt-16" id="buy-factor-header">
-                                        {% render_field_by_order form form.gio_date form.description label='on-border' %}
+                                    <div class="row row-cols-2 mt-16" id="packing-header">
+                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimate_delivery_date form.description label='on-border' %}
+                                        {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
                                     </div>
 {#                                    </form>#}
                                 </fieldset>
                             {% endif %}
 
                                 <fieldset id="items-area" class="mt-10">
-                                    <legend>GIO Items</legend>
+                                    <legend>packing Items</legend>
                                     {{ formset.management_form }}
                                     <div id="formset-container">
                                         {% for form_s in formset %}
@@ -76,7 +77,7 @@
                                                 <div class="col-12">
                                                     <div class="row delete">
                                                         <div class="col-3">
-                                                            {% render_field_by_order form_s form_s.order form_s.quantity label='on-border' margin_b=0%}
+                                                            {% render_field_by_order form_s form_s.order form_s.quantity  label='on-border' margin_b=0%}
                                                         </div>
                                                         <div class="col-8">
                                                             {% render_field_by_order form_s form_s.order form_s.description label='on-border' margin_b=0%}
@@ -126,8 +127,8 @@
         const url = new URL(window.location);
         const q = url.searchParams.get("q")
         AjaxDatatableViewUtils.initialize_table(
-            $('#quick-gio-list'),
-            "{% url 'order:quick_gio.datatable' %}",
+            $('#quick-packing-list'),
+            "{% url 'order:quick_packing.datatable' %}",
             {
                 processing: true,
                 autoWidth: false,
@@ -148,7 +149,7 @@
             },
         );
 
-        $('#quick-gio-list').on('draw.dt', function (){
+        $('#quick-packing-list').on('draw.dt', function (){
             sync_datatable()
         }) // end on draw.dt
 

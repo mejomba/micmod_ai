@@ -540,6 +540,7 @@ class BazarBuyFactorView(LoginRequiredMixin, View):
         context = {
             'form': invoice_form,
             'formset': item_formset,
+            'new_count': 20
         }
         return render(request, self.template_name, context)
 
@@ -652,7 +653,7 @@ class OrderDataTableListView(AjaxDatatableView):
 
     def get_gio_annotated_qs(self, qs):
         return qs.annotate(
-            final_quantity_db=Coalesce(
+            final_quantity_db_annotate=Coalesce(
                 NullIf(F('quantity_mac'), Value(0.0)),
                 NullIf(F('quantity_trade'), Value(0.0)),
                 F('quantity'),
@@ -704,7 +705,7 @@ class OrderDataTableListView(AjaxDatatableView):
     def get_packing_payment_annotated_qs(self, qs):
         final_qty, final_price, payment_subquery, packing_subquery = self._get_expressions()
         return qs.annotate(
-            final_quantity_db=final_qty,
+            final_quantity_db_annotate=final_qty,
             total_price_db=ExpressionWrapper(final_price * final_qty, output_field=FloatField()),
             total_payment_db=Coalesce(payment_subquery, Value(0.0), output_field=FloatField()),
             total_packing_db=Coalesce(packing_subquery, Value(0.0), output_field=FloatField()),
@@ -844,15 +845,15 @@ class OrderDataTableListView(AjaxDatatableView):
         elif q == 'gio_complete':
             qs = self.get_gio_annotated_qs(qs)
             qs = qs.filter(
-                total_arrived_db__gte=F('final_quantity_db'),
-                final_quantity_db__gt=0, last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
+                total_arrived_db__gte=F('final_quantity_db_annotate'),
+                final_quantity_db_annotate__gt=0, last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'],
                 is_deleted=False, sales_admin_cancel=False
             ).distinct()
         elif q == 'gio_incomplete':
             qs = self.get_gio_annotated_qs(qs)
             qs = qs.filter(
-                final_quantity_db__gt=0,
-                total_arrived_db__lt=F('final_quantity_db'),
+                final_quantity_db_annotate__gt=0,
+                total_arrived_db__lt=F('final_quantity_db_annotate'),
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], is_deleted=False, sales_admin_cancel=False
             ).distinct()
         elif q == 'payment_complete':
@@ -871,15 +872,15 @@ class OrderDataTableListView(AjaxDatatableView):
 
         elif q == 'packing_complete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
-                final_quantity_db__gt=0,
-                total_packing_db__gte=F('final_quantity_db'),
+                final_quantity_db_annotate__gt=0,
+                total_packing_db__gte=F('final_quantity_db_annotate'),
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
 
         elif q == 'packing_incomplete':
             qs = self.get_packing_payment_annotated_qs(qs).filter(
-                final_quantity_db__gt=0,
-                total_packing_db__lt=F('final_quantity_db'),
+                final_quantity_db_annotate__gt=0,
+                total_packing_db__lt=F('final_quantity_db_annotate'),
                 last_work_flow__current_state_name__in=['پرداخت / PACKING / GIO'], sales_admin_cancel=False
             ).distinct()
         elif q == 'has_customer_prepaid':
@@ -972,20 +973,23 @@ class OrderDataTableListView(AjaxDatatableView):
         row['trade_item_brand'] = obj.item_trade.brand.title if obj.item_trade and obj.item_trade.brand else ''
         row['commitment_date_difference'] = obj.commitment_date_difference if obj.commitment_date_difference else '-'
 
-        status_rules = [
-            (obj.sales_admin_cancel, '❌'),
-            (obj.last_work_flow.current_state_name == 'مرحله نهایی', '✅'),
-            (obj.comments.filter(comment_title='R').exists(), '🚨'),
-            (obj.is_all_arrival is True, '🟥'),
-            (obj.is_partial_arrival, '🟧'),
-            (obj.packing_item_order.exists(), '🚢'),
-            (obj.gio_items.exists(), '🀄'),
-            (obj.has_customer_prepaid, '💴'),
-            (obj.last_work_flow.current_state_name == 'تایید نهایی بازرگانی', '🟩'),
-            (obj.last_work_flow.current_state_name == 'تایید تامین کننده', '🟦'),
-            (obj.last_work_flow.current_state_name == 'ارسال به تامین کننده', '🤵'),
-            (obj.last_work_flow.current_state_name == 'پیش‌نویس', '😁'),
-        ]
+        try:
+            status_rules = [
+                (obj.sales_admin_cancel, '❌'),
+                (obj.last_work_flow.current_state_name == 'مرحله نهایی', '✅'),
+                (obj.comments.filter(comment_title='R').exists(), '🚨'),
+                (obj.is_all_arrival is True, '🟥'),
+                (obj.is_partial_arrival, '🟧'),
+                (obj.packing_item_order.exists(), '🚢'),
+                (obj.gio_items.exists(), '🀄'),
+                (obj.has_customer_prepaid, '💴'),
+                (obj.last_work_flow.current_state_name == 'تایید نهایی بازرگانی', '🟩'),
+                (obj.last_work_flow.current_state_name == 'تایید تامین کننده', '🟦'),
+                (obj.last_work_flow.current_state_name == 'ارسال به تامین کننده', '🤵'),
+                (obj.last_work_flow.current_state_name == 'پیش‌نویس', '😁'),
+            ]
+        except Exception as e:
+            status_rules = []
 
         row['order_status_icon'] = next(
             (f"<div class='font-size-20'>{icon}</div>" for condition, icon in status_rules if condition),
@@ -1318,6 +1322,7 @@ class NewBazarBuyFactorView(LoginRequiredMixin, View):
         context = {
             'form': invoice_form,
             'formset': item_formset,
+            'old_count': 10
         }
         return render(request, self.template_name, context)
 
@@ -3595,7 +3600,7 @@ class QuickGIODataTableListView(AjaxDatatableView):
 
 
 class QuickPackingView(LoginRequiredMixin, View):
-    template_name = 'order/gio/quick_gio_create.html'  # for update use 'order/gio/quick_gio_create.html'
+    template_name = 'order/packing/quick_packing_create.html'  # for update use 'order/gio/quick_gio_create.html'
     form_class = PackingForm
     model = Packing
     # wf_last_step_is_open = True
@@ -3615,22 +3620,19 @@ class QuickPackingView(LoginRequiredMixin, View):
             self.object = self.get_object(kwargs.get('pk'))
         return super().setup(request, *args, **kwargs)
 
-    # def get_success_url(self):
-    #     return reverse_lazy('order:quick_gio', kwargs={'pk': self.object.pk})
-
     def post(self, request, pk=None, *args, **kwargs):
         """
-        1: create gio with gio-items for first time
-        2: update gio and create new gio-items in update
-        3: update single gio-item handel in GIOItemView
+        1: create packing with packing-items for first time
+        2: update packing and create new packing-items in update
+        3: update single packing-item handel in PackingItemView
         """
         data = json.loads(request.body) or {}
         data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
         total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
-        gio_for_update = GIO.objects.filter(pk=data.pop('gio_id', 0))
+        packing_for_update = Packing.objects.filter(pk=data.pop('packing_id', 0))
 
-        gio_data = {
-            "gio_date": data.pop('gio_date', None),
+        packing_data = {
+            "gio_date": data.pop('packing_date', None),
             'description': data.pop('description', None),
             'creator_user': self.request.user,
             'editor_user': self.request.user
@@ -3638,35 +3640,35 @@ class QuickPackingView(LoginRequiredMixin, View):
 
         try:
             with transaction.atomic():
-                if gio_for_update:
-                    gio_for_update.update(**gio_data)
-                    gio_obj = gio_for_update.first()
+                if packing_for_update:
+                    packing_for_update.update(**packing_data)
+                    gio_obj = packing_for_update.first()
                 else:
-                    gio_obj = GIO(**gio_data)
-                    gio_obj.extra_data.request = self.request
-                    gio_obj.save()
+                    packing_obj = Packing(**packing_data)
+                    packing_obj.extra_data.request = self.request
+                    packing_obj.save()
 
-                gio_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
+                packing_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
                 for row in range(1, total_forms):
-                    quantity = gio_items_data.get(f'form-{row}-quantity')
-                    order_id = gio_items_data.get(f'form-{row}-order')
+                    quantity = packing_items_data.get(f'form-{row}-quantity')
+                    order_id = packing_items_data.get(f'form-{row}-order')
                     o = Order.objects.get(pk=order_id)
 
-                    is_valid_for_gio = o.validate_for_gio(quantity, gio_obj)
-                    if not is_valid_for_gio[0]:
-                        return JsonResponse({'res': {'ERROR: ': is_valid_for_gio[1]}}, status=400)
+                    is_valid_for_packing = o.validate_for_packing(quantity, packing_obj)
+                    if not is_valid_for_packing[0]:
+                        return JsonResponse({'res': {'ERROR: ': is_valid_for_packing[1]}}, status=400)
 
-                    gio_item_data = {
+                    packing_item_data = {
                         'quantity': quantity,
-                        'description': gio_items_data.get(f'form-{row}-description'),
+                        'description': packing_items_data.get(f'form-{row}-description'),
                         'order_id': order_id,
-                        'gio': gio_obj
+                        'packing': packing_obj
                     }
 
                     try:
-                        gio_item_obj = GIOItem(**gio_item_data)
-                        gio_item_obj.extra_data.request = self.request
-                        gio_item_obj.save()
+                        packing_item_obj = PackingItem(**packing_item_data)
+                        packing_item_obj.extra_data.request = self.request
+                        packing_item_obj.save()
                     except Exception as e:
                         raise e
         except Exception as e:
@@ -3674,7 +3676,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             return JsonResponse(res, status=400)
 
         messages.success(request, f'success')
-        return JsonResponse({'res': {'url': reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk})}},
+        return JsonResponse({'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
                             status=200)  # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
 
     def get(self, request, pk=None, *args, **kwargs):
@@ -3686,7 +3688,7 @@ class QuickPackingView(LoginRequiredMixin, View):
         context = {
             'form': packing_form,
             'formset': packing_item_formset,
-            'gios': GIOItem.objects.filter(packing=packing_object).order_by('id')
+            'packings': PackingItem.objects.filter(packing=packing_object).order_by('id')
         }
 
         return render(request, self.template_name, context)
@@ -3724,8 +3726,8 @@ class QuickPackingDataTableListView(AjaxDatatableView):
          'className': 'py-1'},
         {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>',
          'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity', 'orderable': True, 'visible': True, 'searchable': False,
-         'title': '<div style="max-width: 55px; text-wrap: auto;">final quantity</div>', 'className': ''},
+        {'name': 'quantity_in_gio', 'orderable': False, 'visible': True, 'searchable': False,
+         'title': '<div style="max-width: 55px; text-wrap: auto;">quantity in gio</div>', 'className': ''},
         {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True,
          'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
         {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True,
@@ -3770,3 +3772,548 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
         row[
             'buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+
+
+# class SafeFactorView(LoginRequiredMixin, BaseView):
+#     safe_methods = {'get_quotation_items_for_factor_safe'}
+#     template_name = 'order/packing/quick_packing_create.html'
+#     form_class = FactorEditForm
+#     model = Factor
+#     form_struct = {
+#         'form': FactorEditForm,
+#         'childes': [
+#             {
+#                 'form': FactorItemFormset,
+#                 'childes': [{}]
+#             },
+#         ]
+#     }
+#     flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
+#     has_flow = True
+#     has_formset = True
+#     wf_last_step_is_open = True
+#     formset_form = FactorItemFormset
+#     formset_model = FactorItem
+#     formset_fk_field = 'factoritem_set'
+#     related_name_fk = 'factoritem_set'
+#     wf_last_step_is_open = True
+#
+#     allow_perms = [f'{model._meta.app_label}.view_{model._meta.model_name}',
+#                 f'{model._meta.app_label}.add_{model._meta.model_name}',
+#                 f'{model._meta.app_label}.change_{model._meta.model_name}',
+#                 f'{model._meta.app_label}.delete_{model._meta.model_name}',
+#                 f'{model._meta.app_label}.factor_send_or_delivery_{model._meta.model_name}'
+#                 ]
+#
+#     def get_success_url(self):
+#         return reverse_lazy('factor:safe.factor.view', kwargs={'pk': self.object.pk})
+#
+#     def post(self, request, *args, **kwargs):
+#         if self.object is None:
+#             is_new = True
+#         else:
+#             is_new = False
+#
+#         self.get_form_kwargs()
+#
+#         self.object = self.get_object()
+#         form = self.get_form()
+#         if not form.is_valid():
+#             return self.render_to_response(self.get_context_data(form=form))
+#         form.instance.extra_data.request = self.request
+#         self.object = form.save()
+#
+#         if form.file_model and form.file_groups_2:
+#             self.object.save_file(request=self.request,
+#                                   file_groups=form.file_groups_2,
+#                                   file_model=form.file_model,
+#                                   obj=self.object,
+#                                   input_prefix='file'
+#                                   )
+#
+#         form_set = self._build_item_formset(data=request.POST, instance=self.object)
+#         if not form_set.is_valid():
+#             return self.render_to_response(self.get_context_data(form_s=form_set))
+#
+#         service = SupplyLocationService()
+#         try:
+#             with transaction.atomic():
+#                 for f_s in form_set.forms:
+#                     f_s.instance.extra_data.request = self.request
+#                 instances = form_set.save(commit=False)  # حذف‌ها را خودمان مدیریت می‌کنیم
+#
+#                 # ۱) ردیف‌های حذف‌شده: آزادسازی SL + اعتبارسنجی قفل + حذف ردیف
+#                 for obj in form_set.deleted_objects:
+#                     service.delete_factor_item(obj, request.user)
+#
+#                 # ۲) ذخیره‌ی ردیف‌های باقی‌مانده
+#                 for instance in instances:
+#                     instance.extra_data.request = self.request
+#                     instance.save()
+#                 for fi in self.object.factoritem_set.all():
+#                     fi.save_comment(self.request, CommentsForm)
+#
+#                 # ۳) save_m2m امن — فقط فرم‌هایی که این متد را دارند
+#                 for form in form_set.saved_forms:
+#                     if hasattr(form, 'save_m2m'):
+#                         form.save_m2m()
+#
+#                 # ۳) sync محل تامین فقط برای ردیف‌های غیرحذفی
+#                 if self.state_index < 2:
+#                     for idx, form in enumerate(form_set.forms):
+#                         if form.instance.pk and not form.cleaned_data.get('DELETE'):
+#                             raw = request.POST.get(f'factoritem_set-{idx}-supply_locations')
+#                             selections = json.loads(raw or '[]')
+#                             service.sync_factor_item(form.instance, selections, request.user)
+#
+#                 wf_obj = self.submit_flow(is_new=is_new)
+#                 self.object.last_work_flow = wf_obj
+#                 self.object.save_comment(self.request, CommentsForm)
+#                 customer_party_id = getattr(self.object, 'customer_party_id', None)
+#                 if customer_party_id and not self.object.notify_number and customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').exists():
+#                     self.object.notify_number = customer_party_id.customerexpert_set.filter(send_notification=True, phone__icontains='09').last().phone
+#
+#                 self.object.save()
+#                 self.tired_q()
+#
+#                 if 'send_factor_to_sepidar' in self.request.POST:
+#                     self.send_factor_to_sepidar()
+#
+#                 if 'new_address' in self.request.POST:
+#                     self.save_new_address()
+#
+#         except ValidationError as e:
+#             form_set._non_form_errors = form_set.error_class([str(e)])
+#             form_set.non_form_errors = form_set.error_class([str(e)])
+#             return self.render_to_response(self.get_context_data(form_s=form_set))
+#
+#         return redirect(self.get_success_url())
+#
+#
+#         return super().post(request, *args, **kwargs)
+#
+#     def submit_flow(self, is_new):
+#         groups = {
+#                     0: {"group": "sales_user", "state_name": "پیش‌نویس"},
+#                     1: {"group": "sales_admin", "state_name": "تایید مدیر فروش"},
+#                     2: {"group": "wh_admin", "state_name": "تخصیص کارشناس انبار"},
+#                     3: {"group": "factor_collector", "state_name": "جمع‌‌آوری"},
+#                     4: {"group": "factor_final_check", "state_name": "چک نهایی"},
+#                     5: {"group": "factor_send_or_delivery", "state_name": "ارسال یا تحویل"},
+#                     6: {"group": "factor_delivery_approve", "state_name": "تایید تحویل"},
+#                     7: {"group": "factor_delivery_approve", "state_name": "مرحله نهایی"},
+#                 }
+#
+#         last_flow = self.object.last_work_flow
+#         current_state_index = self.state_index
+#         if 0 < current_state_index < 7:
+#             next_state_index = getattr(self, 'state_index') + 1
+#             previews_state_index = getattr(self, 'state_index') - 1
+#
+#         if current_state_index == 0:
+#             next_state_index = getattr(self, 'state_index') + 1
+#             previews_state_index = 0
+#
+#         if current_state_index == 7:
+#             next_state_index = 7
+#             previews_state_index = getattr(self, 'state_index') - 1
+#
+#         current_group_name = groups.get(current_state_index).get('group')
+#         next_group_name = groups.get(next_state_index).get('group')
+#         previews_group_name = groups.get(previews_state_index).get('group')
+#
+#         current_state_name = groups.get(current_state_index).get('state_name')
+#         next_state_name = groups.get(next_state_index).get('state_name')
+#         previews_state_name = groups.get(previews_state_index).get('state_name')
+#
+#         if 'next' in self.request.POST:  # 3 next
+#             current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=next_group_name)
+#             if current_group_last_wf_obj:
+#                 to_user = current_group_last_wf_obj.latest("pk").from_user
+#             else:
+#                 next_state_user = get_user_model().objects.filter(groups__name=next_group_name)
+#                 to_user = next_state_user.last()
+#
+#             wf = WorkFlow.objects.create(action='next', flow_name='factor',creator_user=self.request.user,
+#                                          editor_user=self.request.user, wf_status=3, from_user=last_flow.to_user,
+#                                          to_user=to_user,
+#                                          content_type=self.model.content_type(), object_id=self.object.pk,
+#                                          belong_to_group=current_group_name, current_state_name=next_state_name,
+#                                          wf_description=self.request.POST.get('wf_description'),
+#                                          state=current_state_name)
+#             return wf
+#         elif 'draft' in self.request.POST and (is_new or not last_flow):  # 5 first draft
+#             wf = WorkFlow.objects.create(action='draft', flow_name='factor', wf_status=5,
+#                                          creator_user=self.request.user,
+#                                          editor_user=self.request.user,
+#                                          from_user=self.request.user,
+#                                          to_user=self.request.user,
+#                                          content_type=self.model.content_type(), object_id=self.object.pk,
+#                                          belong_to_group=current_group_name, current_state_name=current_state_name,
+#                                          wf_description=self.request.POST.get('wf_description'),
+#                                          state=current_state_name)
+#             return wf
+#
+#         elif 'back' in self.request.POST:  # 2 back
+#             current_group_last_wf_obj = self.object.workflows.filter(belong_to_group=previews_group_name).latest("pk")
+#             if current_group_last_wf_obj:
+#                 to_user = current_group_last_wf_obj.from_user
+#             else:
+#                 previews_state_user = get_user_model().objects.filter(groups__name=previews_group_name)
+#                 to_user = previews_state_user.first()
+#
+#             wf = WorkFlow.objects.create(action='back', flow_name='factor',creator_user=self.request.user,
+#                                          editor_user=self.request.user, wf_status=2,
+#                                          from_user=last_flow.to_user,
+#                                          to_user=to_user,
+#                                          content_type=self.model.content_type(), object_id=self.object.pk,
+#                                          belong_to_group=current_group_name, current_state_name=previews_state_name,
+#                                          wf_description=self.request.POST.get('wf_description'),
+#                                          state=current_state_name)
+#             return wf
+#
+#         elif 'change_user' in self.request.POST:  # 4 change user
+#             to_user = self.request.POST.get('to_current_group_user')
+#             wf = WorkFlow.objects.create(action='change user', flow_name='factor', creator_user=self.request.user,
+#                                          editor_user=self.request.user, wf_status=4,
+#                                          from_user=last_flow.to_user,
+#                                          to_user_id=to_user,
+#                                          content_type=self.model.content_type(), object_id=self.object.pk,
+#                                          belong_to_group=current_group_name, current_state_name=current_state_name,
+#                                          wf_description=self.request.POST.get('wf_description'),
+#                                          state=current_state_name)
+#             return wf
+#
+#         return last_flow
+#
+#     def tired_q(self):
+#         if not self.object.q:
+#             return
+#
+#         try:
+#             pass
+#         except Exception as e:
+#             pass
+#
+#     def form_valid(self, form):
+#         try:
+#             condition = self.object and self.object.last_work_flow.current_state_name == 'جمع‌‌آوری' and 'next' in self.request.POST
+#         except Exception as e:
+#             condition = False
+#         if condition:
+#             self.form.instance.collecting_end_time = timezone.now()
+#         obj_before_save = self.object
+#         res = super().form_valid(form)
+#         self.factor_service()
+#
+#         if 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.object.is_all_supplied and self.state_index == 0:
+#             # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله پیش نویس هستیم" and 'next':
+#             next = "مرحله تایید مدیر فروش"
+#             wf_data = {
+#                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
+#                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
+#                 'from_user': self.request.user,
+#                 'to_user': get_user_model().objects.filter(groups__name='wh_admin').last(),
+#                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
+#                 'object_id': self.object.pk,
+#             }
+#             self.save_flow(self.request, **wf_data)
+#
+#         elif 'next' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and not self.object.is_all_supplied and self.state_index == 0:
+#             # "بدون نیاز به تایید مدیر فروش" and "در مرحله پیش نویس هستیم" and "next": و کالا تامیین نشده
+#             next = "تاید مدیر فروش"
+#             wf_data = {
+#                 'state': self.flow_config.get('flow_state_list')[self.state_index + 1],
+#                 'wf_description': 'بدون نیاز به تایید مدیر فروش',
+#                 'from_user': self.request.user,
+#                 'to_user': self.object.creator_user, # get_user_model().objects.filter(groups__name='wh_admin').first(),
+#                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index + 2],
+#                 'object_id': self.object.pk,
+#             }
+#             self.save_flow(self.request, **wf_data)
+#
+#         if 'back' in self.request.POST and not self.object.is_need_sales_admin_confirmation() and self.state_index == 2:
+#             # "بدون نیاز به تایید مدیر فروش" and "بدون نیاز به تامین کالا" and "در مرحله تخصیص کارشناس انبار هستیم" and 'back':
+#             back = "مرحله تایید مدیر فروش"
+#             wf_data = {
+#                 'wf_status': 2,  # back
+#                 'state': self.flow_config.get('flow_state_list')[self.state_index - 1],
+#                 'wf_description': 'کالا موجود در انبار',
+#                 'from_user': self.request.user,
+#                 'to_user': self.object.creator_user, # get_user_model().objects.filter(groups__name='wh_admin').first(),
+#                 'current_state_name': self.flow_config.get('flow_state_list')[self.state_index - 2],
+#                 'object_id': self.object.pk,
+#             }
+#             self.save_flow(self.request, **wf_data)
+#
+#         if 'send_factor_to_sepidar' in self.request.POST:
+#             self.send_factor_to_sepidar()
+#
+#         self.object.need_financial_approval = True
+#         if obj_before_save and obj_before_save.accounting_confirm:
+#             self.object.accounting_confirm = True
+#         self.object.save()
+#         return res
+#
+#     @timer
+#     def get_context_data(self, **kwargs):
+#         print('get context data')
+#         context = super().get_context_data(**kwargs)
+#         context['f_warning'] = []
+#
+#         if self.request.method == "POST":
+#             for f in context['form_s'].forms:
+#                 f.initial['supply_locations'] = self.request.POST.get(f'{f.prefix}-supply_locations')
+#             # [self.request.POST.get(f'{x.prefix}-supply_locations') for x in context['form_s'].forms]
+#             context["form_s"] = context['form_s']
+#             context["form"] = self._build_factor_form(
+#                 data=self.request.POST,
+#                 instance=self.object,
+#             )
+#         else:
+#             initial = dict()
+#             if self.object:
+#                 Notification.notify_customer_for_factor(self.object, self.request)
+#                 if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
+#                     context['allow_cancel'] = self.object.last_work_flow.to_user
+#                 if self.request.user.is_superuser:
+#                     context['allow_cancel'] = self.object.last_work_flow.to_user
+#
+#                 if not self.object.is_all_supplied2:
+#                     context['f_warning'].append('همه ردیف ها تامین نشده یا سفارش در راه دارد')
+#                     if self.state_index >= 4:
+#                         context['allow_next'] = False
+#
+#                 if self.object.is_reserve:
+#                     context['allow_next'] = False
+#                     context['f_warning'].append('فاکتور های رزرو امکان خروج از پیش نویس را ندارند.')
+#
+#                 if self.object and self.state_index == 4 and (self.object.need_financial_approval and not self.object.accounting_confirm):
+#                     context['f_warning'].append('نیاز به تایید مالی دارد.')
+#                     context['allow_next'] = False
+#
+#                 if self.object and self.state_index == 5 and not self.object.sepidar_id:
+#                     context['allow_next'] = False
+#                     context['f_warning'].append('فاکتور به سپیدار ارسال نشده')
+#
+#                 if self.object.sepidar_id:
+#                     context['allow_back'] = False
+#                     context['f_warning'].append('فاکتوری که به سپیدار ارسال شده امکان عودت ندارد')
+#
+#                 exclude_qi_id = self.object.factoritem_set.values_list('qi')
+#                 other_qi = QuotationItem.objects.filter(quotation=self.object.q).exclude(pk__in=exclude_qi_id)
+#                 initial = [
+#                     {
+#                         'goods_code': row.goods_code_fk.pk,  # FK → فقط pk بده
+#                         'part_number_show': row.goods_code_fk.part_number or "",
+#                         'quantity': row.quantity or 0,
+#                         'price': row.final_price or 0,
+#                         'discount_per_item': row.discount_per_item or 0,
+#                         'qi': row.pk,
+#                         'DELETE': True,
+#                         # ... سایر فیلدهای FactorItem
+#                     }
+#                     for row in other_qi
+#                 ]
+#             else:
+#                 context['allow_next'] = False
+#             context["form_s"] = self._build_item_formset(
+#                 instance=self.object, initial=initial
+#             )
+#             if not self.object:
+#                 self.template_name = 'factor/safe_factor_create.html'
+#
+#         context["factor"] = self.object
+#         context["object"] = self.object
+#         context["app_name"] = 'factor'
+#
+#
+#         return context
+#
+#     @timer
+#     def dispatch(self, request, *args, **kwargs):
+#         view_name = self.request.GET.get('view_name', None)
+#         if view_name in self.__class__.safe_methods and hasattr(self, view_name):
+#             method = getattr(self, view_name)
+#             return method(request, *args, **kwargs)
+#
+#         return super().dispatch(request, *args, **kwargs)
+#
+#     def _get_factor_allowed_fields(self):
+#         permissions = self.request.user.get_all_permissions()
+#         user_exist_perm = []
+#         allowed_hidden = []
+#         allowed_edit = []
+#         allowed_show = []
+#         for p in permissions:
+#             exist_perm = FACTOR_FIELDS_BY_PERMISSION.get(p, None)
+#             if exist_perm:
+#                 user_exist_perm.append(exist_perm)
+#
+#         for perm in user_exist_perm:
+#             if perm:
+#                 data = perm.get(self.state_index or 0)
+#                 if data:
+#                     allowed_hidden += data['hidden']
+#                     allowed_edit += data['edit']
+#                     allowed_show += data['show']
+#
+#         if not allowed_edit and not allowed_show:
+#             raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+#         hidden = []
+#         edit = []
+#         show = []
+#         for h in allowed_hidden:
+#             if h not in hidden:
+#                 hidden.append(h)
+#
+#         for e in allowed_edit:
+#             if e not in edit:
+#                 edit.append(e)
+#
+#         for s in allowed_show:
+#             if s not in show:
+#                 show.append(s)
+#         # allowed_hidden = list(set(allowed_hidden))
+#         # allowed_edit = list(set(allowed_edit))
+#         # allowed_show = list(set(allowed_show))
+#         return edit, hidden, show
+#         return allowed_edit, allowed_hidden, allowed_show
+#
+#     def _get_factor_item_allowed_fields(self):
+#         # permissions = _get_permission_list(self.request.user)
+#         permissions = self.request.user.get_all_permissions()
+#         user_exist_perm = []
+#         allowed_hidden = []
+#         allowed_edit = []
+#         allowed_show = []
+#         for p in permissions:
+#             exist_perm = FACTOR_ITEM_FIELDS_BY_PERMISSION.get(p, None)
+#             if exist_perm:
+#                 user_exist_perm.append(exist_perm)
+#
+#         for perm in user_exist_perm:
+#             if perm:
+#                 data = perm.get(self.state_index or 0)
+#                 if data:
+#                     allowed_hidden += data['hidden']
+#                     allowed_edit += data['edit']
+#                     allowed_show += data['show']
+#
+#         if not allowed_edit and not allowed_show:
+#             raise PermissionDenied("شما دسترسی لازم برای ویرایش این فاکتور را ندارید.")
+#         return allowed_edit, allowed_hidden, allowed_show
+#
+#     @timer
+#     def _get_factor_item_formset(self, user, data=None, instance=None, initial=None, *args, **kwargs):
+#         """
+#         یک inline formset برای FactorItem با فیلدهای محدودشده بر اساس گروه کاربر برمی‌گرداند.
+#         """
+#         if initial and data is None:
+#             extra = len(initial)
+#         else:
+#             extra = 0
+#         edit, hidden, show = self._get_factor_item_allowed_fields()
+#
+#         # یک فرم پویا با فیلدهای مجاز می‌سازیم
+#         class _FactorItemForm(FactorItemForm):
+#             def __init__(self, *args, **kwargs):
+#                 super().__init__(*args, allowed_fields=edit, allowed_hidden=hidden, **kwargs)
+#
+#         FactorItemInlineFormset = inlineformset_factory(
+#             Factor,
+#             FactorItem,
+#             form=_FactorItemForm,
+#             formset=FactorItemInlineFormSetBase,
+#             extra=extra,  # ردیف خالی اضافه نمی‌شود؛ در template با JS مدیریت کنید
+#             can_delete=True,
+#         )
+#
+#         kwargs = {
+#             'data': data,
+#             'instance': instance,
+#             'prefix': 'factoritem_set',
+#             'form_kwargs': kwargs,  # هرچه الان پاس می‌دهی
+#             # 'form_kwargs': {'user': self.request.user},  # هرچه الان پاس می‌دهی
+#         }
+#         if initial and data is None:
+#             kwargs['initial'] = initial
+#         return FactorItemInlineFormset(*args, **kwargs)
+#
+#     @timer
+#     def _build_factor_form(self, data=None, instance=None, initial=None, **kwargs):
+#         allowed, hidden, show = self._get_factor_allowed_fields()
+#         return FactorEditForm(allowed_fields=allowed, allowed_hidden=hidden, only_show=show, data=data, instance=instance, initial=initial, **kwargs)
+#
+#     def _build_item_formset(self, data=None, instance=None, initial=None, **kwargs):
+#         return self._get_factor_item_formset(self.request.user, data=data, instance=instance, initial=initial, **kwargs)
+#
+#     def get_initial(self):
+#         initial = super().get_initial()
+#         source_pk = self.request.GET.get('pk')  # /factor/create/?from=123
+#
+#         # فقط در GETِ حالت create
+#         if source_pk and self.request.method == 'GET':
+#             quotation = Quotation.objects.filter(pk=source_pk).first()
+#             initial.update({
+#                 'customer': quotation.customer_party_id.sepidar_party_id,  # FK → فقط pk
+#                 'currency': quotation.currency_ref.pk,
+#                 'description': quotation.description,
+#                 'sale_type': quotation.sale_type,
+#                 'self_discount': quotation.self_discount,
+#                 'is_official': quotation.is_official,
+#                 'official_value': quotation.official_value,
+#             })
+#         return initial
+#     # ── django UpdateView hooks ───────────────────────────────────────────────
+#
+#     def get_form(self, form_class=None):
+#         return self._build_factor_form(**self.get_form_kwargs())
+#
+#     def get_quotation_items_for_factor_safe(self, request, *args, **kwargs):
+#         pk = self.request.GET.get('pk')
+#         from workflow.forms import WorkFlowModelForm
+#         flow_config = Base.get_flow_config(settings.BASE_DIR / '_keenthemes/view_config.json', 'Factor')
+#         quotation = Quotation.objects.filter(pk=pk).first()
+#         qis = QuotationItem.objects.filter(quotation_id=pk).select_related('goods_code_fk', 'quotation')
+#         context = self.get_context_data()
+#
+#         qis_data = [
+#                         {
+#                             'goods_code': row.goods_code_fk.pk,  # FK → فقط pk بده
+#                             'quantity': row.quantity,
+#                             'price': row.final_price,
+#                             'discount_per_item': row.discount_per_item,
+#                             'part_number_show': row.goods_code_fk.part_number,
+#                         }
+#                         for row in qis
+#                     ]
+#
+#         def num(v):
+#             return v if v is not None else 0
+#
+#         return JsonResponse({
+#             "id": quotation.pk,
+#             # ── فیلدهای ساده‌ی فاکتور ──
+#             "description": quotation.description or "",
+#             "date": quotation.date.isoformat() if getattr(quotation, "date", None) else "",
+#             # ── فیلدهای Select2 فاکتور (id + برچسب) ──
+#             "customer_id": quotation.customer_party_id.sepidar_party_id,
+#             "customer_name": str(quotation.customer_party_id) if quotation.customer_party_id else "",
+#             "currency_id": quotation.currency_ref.pk,
+#             "currency_name": str(quotation.currency_ref) if quotation.currency_ref else "",
+#             # ── ردیف‌ها ──
+#             "rows": [
+#                 {
+#                     "goods_code_id": r.goods_code_fk.pk,
+#                     "part_number_show": str(r.goods_code_fk.part_number) if r.goods_code_fk else "",
+#                     "quantity": num(r.quantity),
+#                     "price": num(r.final_price),
+#                     "discount_per_item": num(getattr(r, "discount_per_item", 0)),
+#                 }
+#                 for r in quotation.q.all()
+#             ],
+#         })
+#
+#         html = render_to_string('factor/safe_factor_create.html', context, request=self.request)
+#         return JsonResponse({'res': html})

@@ -21,8 +21,22 @@
                             {% else %}
                             <span class="w-80">{{ form_s_item.instance.goods_code }}</span>
                         {% endif %}
-
                     </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class=""></span>
+                    {% if form_s_item.goods_code %}
+                        {% if form_s_item.instance.factor.customer_party_id.pk == 2691 %}
+                            <input list="{{ form_s_item.prefix }}-product_id" placeholder="کالای شاپ" type="text" name="{{ form_s_item.prefix }}-product_id" class="LTR-RTL w-80 rounded text-center font-size-11" onmouseenter="get_product_selection(event)" required value="{{ form_s_item.instance.product_id|default_if_falsy:'' }}" >
+                            <datalist id="{{ form_s_item.prefix }}-product_id">
+
+                            </datalist>
+                        {% endif %}
+                        {% else %}
+                        <span class="w-80">{{ form_s_item.instance.product_id }}</span>
+                        {% endif %}
+                    </div>
+
                     <small style="opacity: 0.25; position: absolute; bottom: 0; right: 2px">ID:{{ form_s_item.instance.pk }}</small>
                 </div>
 

@@ -478,7 +478,15 @@
                                 <div class="blocker" style="position: absolute; inset: 0; z-index: 10; cursor: not-allowed"></div>
                             {% endif %}
                             <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-goods_code" class="LTR-RTL w-100 rounded text-center font-size-11 goods_code" value="{{ factor_item.instance.goods_code.sku }}" >
-{#                            {% render_field_by_order factor_item factor_item.goods_code %}#}
+{#                            <input type="text" name="{{ form_s.prefix }}-{{ forloop.counter0 }}-product_name" class="LTR-RTL w-100 rounded text-center font-size-11" value="{{ factor_item.instance.product_name }}" >#}
+{##}
+{#                            {% if form.instance.get_customer_party_id.pk == 2691 %}#}
+{#                                <select name="{{ form_s.prefix }}-{{ forloop.counter0 }}-product_id" id="" class="LTR-RTL rounded text-left font-size-11" style="position: absolute;top: 28px;right: 120%;width: calc(100% + 200px) !important;z-index: 100" onclick="get_product_selection(event)">#}
+{#                                <option value="">یک محصول را انتخاب کنید</option>#}
+{#                                <option value="{{ factor_item.instance.product_id }}" selected>{{ factor_item.instance.product_id }} کد کالای شاپ </option>#}
+{#                                </select>#}
+{#                            {% endif %}#}
+
                         </span>
                         <div class="mt-1">
                             {% get_comment_user_list factor_item request.user size=25 obj_rel=qi %}
@@ -495,7 +503,8 @@
                         <input class="LTR-RTL w-100 rounded font-size-11 text-center"
                                    name="{{ form_s.prefix }}-{{ forloop.counter0 }}-part_number_show" list="lst_part_number_show"
                                    value="{{ factor_item.instance.part_number_show }}" autocomplete="off" {% if flow_state_index > 1 %} readonly {% endif %}>
-{#                        {% render_field_by_order factor_item factor_item.part_number_show %}#}
+                        <span class="product_part_number"></span>
+
                         {{ form_s.part_number_show.errors }}
                             <datalist id="lst_part_number_show">
                                 {% for items_list in factoritem_qi_pair.3.list %}
@@ -1230,6 +1239,49 @@ flatpickr("#id_collecting_start_time_1", {
         }, 300);
     }
 
+    function get_product_selection(event){
+        const target = event.currentTarget
+        const sku = findAncestor(target, 'factor_item_self').querySelector('input[name$="-goods_code"]').value
+        const product_name = findAncestor(target, 'factor_item_self').querySelector('input[name$="-product_name"]')
+        const factor_id = document.querySelector('input[name="factor_id"]').value || 0
+        if (sku){
+            $.ajax({
+                type: 'GET',
+                url: `/factor/ajax/product_select/${sku}/${factor_id}`,
+                dataType: 'json',
+                cache: false,
+                processData: false,
+                contentType: false,
+                {#beforeSend: block_main_container,#}
+                success: function (data) {
+                    debugger
+                    let html = `<option value="">یک مورد را انتخاب کنید</option>`
+                    data['res'].forEach(function(item){
+                        html += `<option value="${item[0]}">(${item[0]}) ${item[1]}</option>`
+                    })
+                    target.innerHTML = html
+                    target.addEventListener("change", function () {
+                        const selectedOption = this.options[this.selectedIndex];
 
+                        const text = selectedOption.text;
 
+                        fill_product_name(target, text);
+                    });
+                },
+                error: function () {
+
+                },
+                {#complete: release_main_container#}
+            });
+        }
+    }
+
+    function fill_product_name(target, text){
+        console.log("fill_product_name")
+        debugger
+        const product_name = findAncestor(target, 'factor_item_self').querySelector('input[name$="-product_name"]')
+        if (product_name){
+            product_name.value = text
+        }
+    }
 </script>

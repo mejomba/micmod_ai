@@ -43,6 +43,7 @@ class FactorItemManager(BaseManager):
 class Factor(SLSDoc):
     ENTITY_CODE = 1
 
+    is_safe = models.BooleanField(null=True, default=False)
     shop_buy_factor_id = models.IntegerField(null=True, blank=True)
     shop_document_id = models.IntegerField(null=True, blank=True)
     shop_payment_approved = models.BooleanField(default=False, verbose_name=_('shop_payment_approved'))
@@ -110,6 +111,10 @@ class Factor(SLSDoc):
         null=True,
         blank=True
     )
+
+    @property
+    def get_customer_party_id(self):
+        return getattr(self, 'customer_party_id', None) or getattr(self.q, 'customer_party_id', None)
 
     def submit_flow(self, request, is_new):
         self.flow_config = self.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'Factor')
@@ -354,6 +359,7 @@ class Factor(SLSDoc):
 
 class FactorItem(BaseModel):
     product_id = models.CharField(max_length=32, null=True, blank=True)
+    product_name = models.CharField(max_length=255, null=True, blank=True)
     sepidar_id = models.BigIntegerField(null=True, blank=True)
     history = HistoricalRecords()
     supply_locations_choice = ((1, 'انبار'), (2, 'سفارش داخل'), (3, 'س'), (4, ''), (5, ''))
@@ -613,7 +619,7 @@ class FactorItem(BaseModel):
         return unselect, select_order, select_wh, select_bazar, deselect_bazar
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if False: # and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
+        if self.factor.is_safe: # and not self.pk or (self.created_date and self.created_date > parse_datetime("2026-06-16 09:13:00.390205+00")):
             super().save(force_insert, force_update, using, update_fields)
         else:
             with transaction.atomic():

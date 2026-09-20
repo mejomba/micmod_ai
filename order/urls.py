@@ -45,10 +45,10 @@ urlpatterns = [
     path('packing/list/', views.PackingListView.as_view(), name='packing.list'),
     path('packing/list/datatable/', views.PackingDataTableListView.as_view(), name='packing.list.datatable'),
 
-    #  quick packing
-    # path('quick_packing/', QuickPackingView.as_view(), name='quick_packing'),
-    # path('quick_packing/<int:pk>/', QuickPackingView.as_view(), name='quick_packing'),
-    # path('quick_packing_datatable/', QuickPackingDataTableListView.as_view(), name='quick_packing.datatable'),
+     # quick packing
+    path('quick_packing/', QuickPackingView.as_view(), name='quick_packing'),
+    path('quick_packing/<int:pk>/', QuickPackingView.as_view(), name='quick_packing'),
+    path('quick_packing_datatable/', QuickPackingDataTableListView.as_view(), name='quick_packing.datatable'),
 
     #  packingitem
     path('packingitem/view/', views.packing_list_form.as_view(), name='packingitem.view'),

@@ -366,7 +366,7 @@ class SkuListDataTableView(CustomAjaxDataTable):
                 batch_size=500
             )
 
-            cache.set('all_stock_quantity', all_stock_quantity, 300)
+            cache.set('all_stock_quantity', all_stock_quantity, 120)
             print('set in cache...')
 
         stocks = all_stock_quantity.get(str(obj.sku))

@@ -202,13 +202,13 @@ class PriceInquiryResult(BaseModel):
                 if (self.custom_properties['customer_grade_'] or '').lower() in ['a+', 'special']:
                     discount = 0.05
             elif payment_method == '1 month':
-                discount = 0.10
-            elif payment_method == '2 month':
-                discount = 0.12
-            elif payment_method == '3 month':
                 discount = 0.15
+            elif payment_method == '2 month':
+                discount = 0.25
+            elif payment_method == '3 month':
+                discount = 0.35
             elif payment_method == '4 month':
-                discount = 0.18
+                discount = 0.48
             return self.price * (1+discount)
         else:
             return ''

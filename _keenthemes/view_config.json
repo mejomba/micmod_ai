@@ -133,12 +133,12 @@
               {
               "group": "wh_admin",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","is_official","accounting_confirm", "official_value", "official_factor_for_this_factor","deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","is_official","accounting_confirm", "official_value", "official_factor_for_this_factor","deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
               {
               "group": "factor_assign_user",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","is_official","official_factor_for_this_factor","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","is_official","official_factor_for_this_factor","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
@@ -180,7 +180,7 @@
             "form_constraints": [{
               "group": "factor_collector",
               "hide": ["force_factor", "deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time", "self_discount"],
-              "read": ["description","accounting_confirm","is_official","official_value", "official_factor_for_this_factor","need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+              "read": ["currency_amount","description","accounting_confirm","is_official","official_value", "official_factor_for_this_factor","need_factor_document", "deliver_type", "need_financial_approval", "final_check", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
             },
               {
               "group": "sales_user",
@@ -190,7 +190,7 @@
             {
               "group": "wh_admin",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","is_official","official_factor_for_this_factor","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","is_official","official_factor_for_this_factor","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
@@ -234,12 +234,12 @@
               {
               "group": "factor_final_check",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor","collecting_end_time" ,"self_discount", "force_factor"],
-              "read": ["description","is_official","accounting_confirm","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
+              "read": ["currency_amount","description","is_official","accounting_confirm","official_value", "need_factor_document", "deliver_type", "need_financial_approval", "need_factor_document", "collecting_start_time", "to_be_collected", "require_official_factor_with_delivery"]
             },
             {
               "group": "wh_admin",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","accounting_confirm", "official_value","official_factor_for_this_factor", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","accounting_confirm", "official_value","official_factor_for_this_factor", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
@@ -272,12 +272,12 @@
             "form_constraints": [{
               "group": "factor_send_or_delivery",
               "hide": ["collecting_end_time", "self_discount", "force_factor"],
-              "read": ["description","is_official","official_value","official_factor_for_this_factor","accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "to_be_collected", "collecting_start_time"]
+              "read": ["currency_amount","description","is_official","official_value","official_factor_for_this_factor","accounting_confirm", "need_factor_document", "deliver_type", "need_financial_approval", "to_be_collected", "collecting_start_time"]
             },
             {
               "group": "wh_admin",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","is_official","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","is_official","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",
@@ -305,12 +305,12 @@
             "form_constraints": [{
               "group": "factor_delivery_approve",
               "hide": ["packing_json", "collecting_end_time", "self_discount", "force_factor"],
-              "read": ["description","accounting_confirm","is_official","official_value", "need_factor_document", "deliver_type"]
+              "read": ["currency_amount","description","accounting_confirm","is_official","official_value", "need_factor_document", "deliver_type"]
             },
             {
               "group": "wh_admin",
               "hide": ["deliver_to_customer","official_factor_send_with_this_factor", "official_factor_for_this_factor","self_discount","force_factor"],
-              "read": ["description","official_value","is_official","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
+              "read": ["currency_amount","description","official_value","is_official","accounting_confirm", "official_value", "deliver_type", "need_financial_approval", "to_be_collected", "final_check", "need_factor_document", "require_official_factor_with_delivery", "deliver_to_customer"]
             },
             {
               "group": "accounting_user",

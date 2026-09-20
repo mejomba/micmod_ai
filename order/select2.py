@@ -32,6 +32,7 @@ SELECT2_SOURCES = {
     "qi":                {"qs": QuotationItem.objects.all(),
                           # "search": ["id", "goods_code_fk_id", "goods_code_fk__part_number", "quotation__id"],
                           "search": ["quotation__id"],
+                          "second_search": ["goods_code_fk__id"],
                           "default_order": ["-id"],
                           "filters": {"user_id": "customer_party_id__customer_group__current_user_id",},  # نام پارامتر GET -> lookup در ORM
                           "require_filters": [],  # اگر کالا نبود، خالی برگردان
@@ -52,12 +53,21 @@ def order_select2_search(request, key):
         elif param in src.get("require_filters", []):
             return JsonResponse({"results": [], "pagination": {"more": False}})
 
-    q = request.GET.get("q", "").strip()
+    q_temp = request.GET.get("q", "").strip().split("+")
+    q = q_temp[0] if len(q_temp) >= 1 else ""
+    q2 = q_temp[1] if len(q_temp) > 1 else ""
+
+    cond = Q()
     if q:
-        cond = Q()
         for f in src["search"]:
             cond |= Q(**{f: q})
         qs = qs.filter(cond)
+
+    if q2:
+        for f2 in src["second_search"]:
+            cond &= Q(**{f2: q2})
+        qs = qs.filter(cond)
+
     elif src.get("default_order"):
         qs = qs.order_by(*src["default_order"])
 
