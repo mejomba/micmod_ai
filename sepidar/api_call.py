@@ -943,7 +943,7 @@ class SepidarApiCall:
     def quotation_to_sepidar(cls, obj, request=None, update=False):
         from django.core.exceptions import ValidationError
         if obj.expiration_date < timezone.now().date():
-            raise ValidationError('مقدار تاریخ اعتبار باید بزرگتر از امروز باشد')
+            return {'errors': 'مقدار تاریخ اعتبار باید بزرگتر از امروز باشد'}
         from django.db import connections
         cls.setup()
         endpoint = cls.endpoints.get(settings.SEPIDAR_CUSTOM_API_VERSION).get('quotation')
