@@ -951,12 +951,12 @@ class SepidarApiCall:
         with transaction.atomic(using="sepidar"):
             with connections['sepidar'].cursor() as cursor:
                 cursor.execute(
-                    "DELETE FROM [Micromodern1].[SLS].[QuotationItem] WHERE QuotationRef = %s",
+                    "DELETE FROM [SLS].[QuotationItem] WHERE QuotationRef = %s",
                     [sepidar_quotation_id]
                 )
 
                 cursor.execute(
-                    "DELETE FROM [Micromodern1].[SLS].[Quotation] WHERE QuotationId = %s",
+                    "DELETE FROM [SLS].[Quotation] WHERE QuotationId = %s",
                     [sepidar_quotation_id]
                 )
 
