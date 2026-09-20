@@ -232,6 +232,7 @@ class Order(BaseModeWF):
     is_sample = models.BooleanField(default=False, verbose_name=_('is_sample'))
     is_force_order = models.BooleanField(default=False, verbose_name=_('is_force_order'))
     trade_user = models.ForeignKey(User, on_delete=models.DO_NOTHING, limit_choices_to={'groups__name': 'trade_user'}, related_name='order_trade_user', null=True, blank=True)
+    cancel_check = models.BooleanField(default=False, verbose_name=_('cancel_check'))
 
     @property
     def trade_work_day(self):
