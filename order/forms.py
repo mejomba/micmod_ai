@@ -27,7 +27,7 @@ class OrderSafeForm(FormMX, CustomBaseModelForm):
         "supplier_mac", "price_mac", "part_number_mac", "po_number_mac", "quantity_mac", "description_mac",
         "sales_admin_confirmation", "cancel", "qi", "currency", "order_m2m", "customer_request_item",
         "buy_factors", "buy_factor_quantity_in_sepidar", "order_report_data", "sepidar_wh_code", "receipt_in_wh",
-        "price_inquiry_result", "trade_user", "is_bazar", "is_wh", "is_over", "is_kasri", "sales_admin_cancel",
+        "price_inquiry_result", "trade_user", "is_bazar", "is_wh", "is_over", "is_kasri", "sales_admin_cancel", "cancel_check"
     ]
     select2_url_name = "order:order.select2-search"  # نام URL ویوی سرچ AJAX
     select2_fields = {
