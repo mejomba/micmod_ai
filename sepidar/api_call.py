@@ -948,17 +948,18 @@ class SepidarApiCall:
 
         sepidar_quotation_id = obj.sepidar_quotation_id
 
-        with transaction.atomic(using="sepidar"):
-            with connections['sepidar'].cursor() as cursor:
-                cursor.execute(
-                    "DELETE FROM [SLS].[QuotationItem] WHERE QuotationRef = %s",
-                    [sepidar_quotation_id]
-                )
+        if sepidar_quotation_id:
+            with transaction.atomic(using="sepidar"):
+                with connections['sepidar'].cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM [SLS].[QuotationItem] WHERE QuotationRef = %s",
+                        [sepidar_quotation_id]
+                    )
 
-                cursor.execute(
-                    "DELETE FROM [SLS].[Quotation] WHERE QuotationId = %s",
-                    [sepidar_quotation_id]
-                )
+                    cursor.execute(
+                        "DELETE FROM [SLS].[Quotation] WHERE QuotationId = %s",
+                        [sepidar_quotation_id]
+                    )
 
         res = requests.post(endpoint, json=quotation_data, headers=cls.headers)
 
