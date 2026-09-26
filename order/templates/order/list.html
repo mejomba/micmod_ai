@@ -80,6 +80,7 @@
             <a href="{% url 'order:order.list' %}?q=cancel" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'cancel' %} bg-primary {% endif %}">کنسل</a>
             <a href="{% url 'order:order.list' %}?q=has_customer_prepaid" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'has_customer_prepaid' %} bg-primary {% endif %}">پیش‌پرداخت</a>
             <a href="{% url 'order:order.list' %}?q=duplicated_codes" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'duplicated_codes' %} bg-primary {% endif %}">کد مشابه</a>
+            <a href="{% url 'order:order.list' %}?q=my_orders" class="btn btn-sm btn-bordered btn-outline-primary mx-1 mt-1 {% if request.GET.q == 'my_orders' %} bg-primary {% endif %}">سفارشات من</a>
 
         {% endif %}
 

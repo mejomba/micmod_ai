@@ -296,9 +296,9 @@ class Quotation(SLSDoc):
         is_sales_admin = current_user.groups.filter(name='sales_admin').exists()
         is_see_all_user_report = current_user.has_perm('micmod_base.see_all_user_report')
         if is_sales_admin:
-            sales_user = current_user.team.all().order_by('z_index') or current_user.head.team.all().order_by('z_index')
+            sales_user = current_user.team.filter(is_active=True).order_by('z_index') or current_user.head.team.filter(is_active=True).order_by('z_index')
         elif is_see_all_user_report:
-            sales_user = current_user.head.team.all().order_by('z_index')
+            sales_user = current_user.head.team.filter(is_active=True).order_by('z_index')
         else:
             sales_user = [current_user]
 
@@ -349,13 +349,16 @@ class Quotation(SLSDoc):
 
             local_price_inquiry = cls.objects.filter(filter_by_time & local_price_condition).distinct().count()
             local_price_inquiry_not_responded = cls.objects.filter(filter_by_time & local_price_condition, quotation__local_price_inquiry_done=False).distinct()#.count()
+            local_total_items = local_price_inquiry_not_responded.aggregate(total=Count('quotation', distinct=True))['total']
             foreign_price_inquiry = cls.objects.filter(filter_by_time & foreign_price_condition).distinct().count()
             foreign_price_inquiry_not_responded = cls.objects.filter(filter_by_time & foreign_price_condition, quotation__foreign_price_inquiry_done=False).distinct()#.count()
+            foreign_total_items = foreign_price_inquiry_not_responded.aggregate(total=Count('quotation', distinct=True))['total']
             all_user_quotation = cls.objects.filter(last_work_flow__to_user=sale_user).count()
             res[sale_user].append(all_user_quotation)
             res[sale_user].append((foreign_price_inquiry, local_price_inquiry,
                                    local_price_inquiry_not_responded, foreign_price_inquiry_not_responded,
-                                   how_long_in_local_inquiry, how_long_in_foreign_inquiry))
+                                   how_long_in_local_inquiry, how_long_in_foreign_inquiry,
+                                   local_total_items, foreign_total_items))
 
         return res
 
