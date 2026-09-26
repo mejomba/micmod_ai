@@ -18,7 +18,6 @@ async function get_translation_data(file_path){
 }
 
 function translate_handler(lang){
-    debugger
     const elements_for_translate = document.querySelectorAll('[data-key]')
     get_translation_data(lang).then(data => {
         elements_for_translate && elements_for_translate.forEach(function (item){
