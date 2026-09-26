@@ -213,6 +213,19 @@ class BazarOrderForm(CustomBaseModelForm):
 
 
 class PackingForm(CustomBaseModelForm):
+    file_groups = 9
+    file_label = {
+        "file_1": "اینویس",  # share
+        "file_2": "پکینگ",  # share
+        "file_3": "گواهی بازرسی",
+        "file_4": "گواهی مبدا",
+        "file_5": "ریز پکینگ",
+        "file_6": "پکینگ گمرکی",
+        "file_7": "چاپ ثبت سفارش",  # share
+        "file_8": "پروفرما",  # share
+        "file_9": "بیمه نامه",  # share
+    }
+
     class Meta:
         model = Packing
         exclude = ['group']
@@ -253,11 +266,15 @@ class PackingForm(CustomBaseModelForm):
         self.fields['cl_10_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_90_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['cl_100_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
-        self.fields['description'].widget.attrs['rows'] = 3
-        self.fields['sales_10_darsad'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 1
+        self.fields['sales_10_darsad'].widget.attrs['rows'] = 2
         self.fields['estimated_delivery_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['estimated_arrive_to_wh_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
         self.fields['reserve_bar_date'].widget = forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+
+        for f in self.fields:
+            if type(self.fields[f]) == forms.FileField:
+                self.fields[f].label = PackingForm.file_label.get(f)
 
         if request and not request.user.is_superuser:
             if form_constraint_hide:
@@ -283,7 +300,7 @@ class PackingItemForm(CustomBaseModelForm):
         request = kwargs['initial'].pop('request', None) if kwargs.get('initial') else None
         super(PackingItemForm, self).__init__(*args, **kwargs)
         self.make_hidden(['order'])
-        self.fields['description'].widget.attrs['rows'] = 8
+        self.fields['description'].widget.attrs['rows'] = 1
         # if self.instance.pk and (packing := self.initial.get('packing')):
         packing = self.initial.get('packing')
         if packing:
