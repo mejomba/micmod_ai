@@ -28,15 +28,23 @@
     <div class="row m-0 mt-5 align-items-center bg-white shadow-sm rounded mb-16">
         <div class="col-12">
             <div class="py-1 d-flex mb-3">
-                <div class="badge badge-light-info d-flex gap-1 px-3">
-                    <span>ایجادروش حمل </span>
-                    <span class="text-danger">جدید</span>
-                </div>
+                {% if form.instance.pk %}
+                    <div class="badge badge-light-info d-flex gap-1 px-3 py-2">
+                        <span>ویرایش روش حمل</span>
+                        <span class="text-danger ms-5">{{ form.instance.pk }}: {{ form.instance.title }}</span>
+                    </div>
+                    <a href="{% url 'transportation:transportation_calender.view' %}" class="ms-8 btn btn-sm btn-secondary">ایجاد روش حمل جدید</a>
+                {% else %}
+                    <div class="badge badge-light-info d-flex gap-1 px-3 py-2">
+                        <span>ایجادروش حمل جدید </span>
+                    </div>
+                {% endif %}
             </div>
             <div class="row row-cols-md-5 row-cols-1 align-items-end px-1 bg-white rounded py-3 ">
-                {% render_field_by_order form form.title form.start_time form.arrive_time form.capacity_kg form.shipment_type label='on-border' %}
+                {% render_field_by_order form form.title form.deliver_to_shipping_company_date form.estimate_start_shipping_date form.estimate_arrive_date form.start_date form.arrive_date label='on-border' %}
+                {% render_field_by_order form form.capacity_kg form.shipment_type label='on-border' %}
 
-                        <div class="col-3 w-50">
+                        <div class=" w-40">
                             {% render_field_by_order form form.description label='on-border' %}
                         </div>
                 {% get_comment_user_list form request.user %}

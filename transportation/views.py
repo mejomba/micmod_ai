@@ -1,5 +1,4 @@
 from ajax_datatable import AjaxDatatableView
-from django.shortcuts import render
 from django.urls import reverse_lazy, reverse
 
 from core.views import BaseView
@@ -28,17 +27,6 @@ class TradeTransportationMethodView(BaseView):
         context = super().get_context_data(**kwargs)
 
         return context
-
-
-# class TradeTransportationMethodListView(BaseView):
-#     model = TradeTransportationMethod
-#     form_class = TradeTransportationMethodModelForm
-#     template_name = 'trade_transportation_method.html'
-#     success_url = '.'
-#
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         return context
 
 
 class TradeTransportationMethodDataTableView(AjaxDatatableView):
@@ -140,10 +128,13 @@ class TransportationCalenderViewDataTableView(AjaxDatatableView):
 
     def get_column_defs(self, request):
         cols = self.get_columns([
-            'title',
-            'start_time',
-            "arrive_time",
-            'capacity_kg',
+            "title",
+            'deliver_to_shipping_company_date',
+            'estimate_start_shipping_date',
+            'estimate_arrive_date',
+            'start_date',
+            "arrive_date",
+            "capacity_kg",
             'shipment_type',
             'description',
             'created_date',
