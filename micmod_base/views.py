@@ -234,6 +234,10 @@ class QuotationsView(LoginRequiredMixin, BaseView):
         # if self.object is None:
         #     import_customers_from_sepidar(extra_data={"creator_user_id": 1, "editor_user_id": 1})
 
+        last_work_flow = None
+        if self.object:
+            last_work_flow = self.object.last_work_flow
+
         res = super().form_valid(form)
         if 'direct' in self.request.GET:
             shop_document_id = ShopApiCall.create_or_update_shop_document(self.object)
@@ -399,6 +403,7 @@ class QuotationsView(LoginRequiredMixin, BaseView):
                     if flow_object:
                         flow_object.is_deleted = True
                         flow_object.save()
+                        self.object.last_work_flow = last_work_flow
                 else:
                     self.object.sepidar_quotation_id = api_res['quotationid']
                     self.object.sepidar_number = api_res['number']
@@ -430,6 +435,9 @@ class QuotationsView(LoginRequiredMixin, BaseView):
             if flow_object:
                 flow_object.is_deleted = True
                 flow_object.save()
+                self.object.last_work_flow = last_work_flow
+                self.object.extra_data.request = self.request
+                self.object.save()
         return res
 
     def get_context_data(self, **kwargs):
