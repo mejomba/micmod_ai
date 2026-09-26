@@ -964,6 +964,16 @@ class SepidarApiCall:
                         [sepidar_quotation_id]
                     )
 
+                    cursor.execute(
+                        "update [INV].[InventoryReceiptItem] set CurrencyRate=null where CurrencyRate=%s and CurrencyRef is null",
+                        [1]
+                    )
+
+                    cursor.execute(
+                        "update [INV].[InventoryReceipt] set Date=CAST(CAST(Date AS DATE) AS DATETIME) where FiscalYearRef=%s and Date <> CAST(Date as date)",
+                        [settings.SEPIDAR_CONST_DATA.get('fiscalyearref')]
+                    )
+
         res = requests.post(endpoint, json=quotation_data, headers=cls.headers)
 
         if res.ok:
