@@ -7,19 +7,20 @@
 
     <!-- ردیف تیتر -->
     <div class="row fw-bold text-center" style="margin-bottom: 1px;">
-        <div class="col-2 border-end">سفارش</div>
-        <div class="col-5 border-end">تعداد کل</div>
-        <div class="col-5">تعداد آزاد</div>
+        <div class="col-4 border-end">سفارش</div>
+        <div class="col-4 border-end">تعداد کل</div>
+        <div class="col-4">تعداد آزاد</div>
     </div>
 
     <!-- ردیف مقادیر -->
     <div class="row text-center">
 
         <!-- ستون 1: سفارش -->
-        <div class="col-2 border-end">
+        <div class="col-4 border-end">
             {% for q in order %}
                 <div class="bg-light-info rounded" style="margin-bottom: 1px;">
-                    {{ q|floatformat:-2|intcomma }}
+                    {{ q.order_number }}
+                    {{ q.last_work_flow }}
                 </div>
             {% empty %}
                 <span class="text-muted">-</span>
@@ -27,7 +28,7 @@
         </div>
 
         <!-- ستون 2: سفارش در راه -->
-        <div class="col-5 border-end">
+        <div class="col-4 border-end">
             {% for qty in quantity %}
                 <div class="bg-light-info rounded" style="margin-bottom: 1px;">
                     {{ qty|floatformat:-2|intcomma }}
@@ -39,7 +40,7 @@
         </div>
 
         <!-- ستون 3: سفارش در راه آزاد -->
-        <div class="col-5">
+        <div class="col-4">
             {% for f_qty in free_qty %}
                 <div class="bg-light-info rounded" style="margin-bottom: 1px;" >
                     {{ f_qty|floatformat:-2|intcomma }}
@@ -58,12 +59,12 @@
 <div class="row text-center font-size-11">
 
         <!-- ستون 1: سفارش -->
-        <div class="col-2 border-end">
+        <div class="col-4 border-end">
 
         </div>
 
         <!-- ستون 2: سفارش در راه -->
-        <div class="col-5 border-end">
+        <div class="col-4 border-end">
 
             <div class="fw-bold">
                 جمع: {{ total_qty|floatformat:-2|intcomma }}
@@ -71,7 +72,7 @@
         </div>
 
         <!-- ستون 3: سفارش در راه آزاد -->
-        <div class="col-5">
+        <div class="col-4">
 
             <div class="fw-bold ">
                 جمع آزاد: {{ total_free_qty|floatformat:-2|intcomma }}
