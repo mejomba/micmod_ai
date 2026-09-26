@@ -158,7 +158,6 @@ function addCommaSeperator(on_load=null, step=3, sep=',') {
     const textInput = document.querySelectorAll('.comma-seperator')
     textInput.forEach(function (item) {
         item.addEventListener('keyup', function (e) {
-            debugger
             inputNumberValue = e.currentTarget.value.replaceAll(sep, '') //.reverse_string();
             numberWithComma = inputNumberValue;
             numberWithComma = commaSeperator(inputNumberValue, step, sep)
@@ -199,7 +198,7 @@ function removeCommaSeperator(str=null) {
     debugger
     if (str !== null){
         try {
-            return str.replaceAll(',', '')
+            return String(str).replaceAll(',', '')
         } catch (e) {
             return ''
         }
