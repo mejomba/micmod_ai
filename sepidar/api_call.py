@@ -75,7 +75,11 @@ class SepidarApiCall:
     @classmethod
     def set_token(cls):
         from django.core.cache import cache
-        cls.token = cache.get_or_set('sepidarx_jwt_access_token', cls.get_token(), timeout=9000)
+        cls.token = cache.get('sepidarx_jwt_access_token')
+        if not cls.token:
+            cls.token = cls.get_token()
+            cache.set('sepidarx_jwt_access_token',cls.token, 9000)
+        return cls.token
 
     @classmethod
     def get_header(cls):
