@@ -15,6 +15,10 @@ class Expert(BaseModel):
 
 
 class Contract(BaseModeWF):
+    DIP = 'DIP'
+    SMD = 'SMD'
+    ASSEMBLY_TYPE_CHOICES = ((DIP, 'DIP'), (SMD, 'SMD'))
+
     # contract_title = models.CharField(max_length=100, unique=True)
     goods_code_fk = models.ForeignKey(Item, on_delete=models.DO_NOTHING)
     project_name_en = models.CharField(max_length=250, null=True, blank=True)
@@ -35,6 +39,8 @@ class Contract(BaseModeWF):
     ic_pad_cost = models.PositiveIntegerField(default=0, null=True, blank=True)
     total_cost = models.PositiveBigIntegerField(default=0, null=True, blank=True)
     finish = models.BooleanField(default=False)
+    contract_end_date = models.DateField(null=True, blank=True)
+    assembly_type = models.CharField(max_length=10, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True, verbose_name='نوع مونتاژ')
     def __str__(self):
         return self.contract_title
 
@@ -122,8 +128,14 @@ class ProductionDayActivities(BaseModeWF):
     FIRST_SHIFT = '1'
     SECOND_SHIFT = '2'
     OVER_TIME = '3'
+    A = 'A'
+    B = 'B'
+    C = 'C'
+    D = 'D'
+    E = 'E'
 
     ASSEMBLY_CHOICES = [(TIN_DOUGH, _('خمیر قلع')), (GLUE, _('چسب'))]
+    MACHINE_TAG_CHOICES = [(A, _('A')), (B, _('B')), (C, _('C')), (D, _('D')), (E, _('E'))]
     WORK_TIME_CHOICES = [(FIRST_SHIFT, _('شیفت 1')), (SECOND_SHIFT, _('شیفت 2')), (OVER_TIME, _('اضافه کاری'))]
     ACTIVITY_CHOICES = [(COUNTING_AND_ITEM_LIST, _('شمارش و لیست قطعات')),
                         (DEVICE_FIRST_SETUP, _('ستاپ اولیه دستگاه')), (DEVICE_SECOND_SETUP, _('ستاپ ثانویه دستگاه')),
@@ -138,6 +150,7 @@ class ProductionDayActivities(BaseModeWF):
     customer_party_id = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name='production_customer', verbose_name='مشتری')
     production_date = models.DateField(null=True, blank=True, verbose_name='تاریخ')
     activity = models.CharField(max_length=3, choices=ACTIVITY_CHOICES, null=True, blank=True, verbose_name='فعالیت')
+    machine_tag = models.CharField(max_length=10, choices=MACHINE_TAG_CHOICES, null=True, blank=True, verbose_name='تگ دستگاه')
     work_time = models.CharField(max_length=3, choices=WORK_TIME_CHOICES, null=True, blank=True, verbose_name='شیفت کاری')
     total_assembly_board_count = models.PositiveIntegerField(null=True, blank=True, default=0, verbose_name='تعداد کل برد مونتاژ شده')
     assembly_type = models.CharField(max_length=3, choices=ASSEMBLY_CHOICES, null=True, blank=True, verbose_name='نوع مونتاژ')

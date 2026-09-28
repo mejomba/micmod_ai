@@ -26,5 +26,7 @@ urlpatterns = [
     path('parent/select2/', get_parents, name='parent.select2.view'),
     path('ajax/today_contract_cost/', today_contract_cost, name='today_contract_cost'),
     path('ajax/this_year_contract_cost/', this_year_contract_cost, name='this_year_contract_cost'),
+    path('ajax/today_pad_count/', today_pad_count, name='today_pad_count'),
+    path('ajax/this_year_pad_count/', this_year_pad_count, name='this_year_pad_count'),
 ]
 

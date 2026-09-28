@@ -458,3 +458,24 @@ def this_year_contract_cost(request):
         sum_con = sum([con.contract_cost for con in contracts])
         return JsonResponse({'this_year_contract_cost': sum_con}, safe=False)
     return JsonResponse({'error': 'Invalid'}, safe=False)
+
+def today_pad_count(request):
+    q = request.GET.get('q')
+    if q == 'today_pad_count':
+        today = timezone.now().date()
+        contracts = Contract.objects.filter(created_date__date=today)
+        sum_con = sum([con.pad_count for con in contracts])
+        return JsonResponse({'today_pad_count': sum_con},safe=False)
+    return JsonResponse({'error': 'Invalid'}, safe=False)
+
+
+def this_year_pad_count(request):
+    q = request.GET.get('q')
+    if q == 'this_year_pad_count':
+        this_year = timezone.now().year
+        contracts = Contract.objects.filter(created_date__year=this_year)
+        sum_con = sum([con.pad_count for con in contracts])
+        return JsonResponse({'this_year_pad_count': sum_con}, safe=False)
+    return JsonResponse({'error': 'Invalid'}, safe=False)
+
+

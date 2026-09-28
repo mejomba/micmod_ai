@@ -46,7 +46,7 @@ class ContractForm(CustomBaseModelForm):
         fields = ['customer_party_id', 'goods_code_fk', 'project_name_en', 'customer_board_count',
                   'customer_sheet_count', 'customer_total_board_count', 'first_setup_time', 'second_setup_time',
                   'pad_count', 'ic_pad_count', 'first_setup_cost', 'second_setup_cost', 'pad_cost', 'ic_pad_cost',
-                  'total_cost', 'not_assembly_pad_count', 'finish'
+                  'total_cost', 'not_assembly_pad_count', 'finish', 'contract_end_date', 'assembly_type'
                   ]
 
     def __init__(self, *args, **kwargs):
@@ -77,6 +77,8 @@ class ContractForm(CustomBaseModelForm):
                 formset_constraint_hide = formset_constraint[self.form_state][0].get('hide')
         super(ContractForm, self).__init__(*args, **kwargs)
         self.make_hidden(['customer_party_id', 'goods_code_fk',])
+        self.fields['contract_end_date'] = JalaliDateField(label=_('contract_end_date'), widget=AdminJalaliDateWidget(
+            attrs={'class': 'jalali_date-date form-control', 'size': '10'}), required=False)
 
         # request = kwargs.get('initial').get('constraint').get('request')
         request = kwargs.get('initial').get('constraint').get('request') if not request else request
