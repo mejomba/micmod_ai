@@ -75,7 +75,11 @@ class SepidarApiCall:
     @classmethod
     def set_token(cls):
         from django.core.cache import cache
-        cls.token = cache.get_or_set('sepidarx_jwt_access_token', cls.get_token(), timeout=9000)
+        cls.token = cache.get('sepidarx_jwt_access_token')
+        if not cls.token:
+            cls.token = cls.get_token()
+            cache.set('sepidarx_jwt_access_token',cls.token, 9000)
+        return cls.token
 
     @classmethod
     def get_header(cls):
@@ -951,9 +955,9 @@ class SepidarApiCall:
 
         sepidar_quotation_id = obj.sepidar_quotation_id
 
-        if sepidar_quotation_id:
-            with transaction.atomic(using="sepidar"):
-                with connections['sepidar'].cursor() as cursor:
+        with transaction.atomic(using="sepidar"):
+            with connections['sepidar'].cursor() as cursor:
+                if sepidar_quotation_id:
                     cursor.execute(
                         "DELETE FROM [SLS].[QuotationItem] WHERE QuotationRef = %s",
                         [sepidar_quotation_id]
@@ -962,6 +966,16 @@ class SepidarApiCall:
                     cursor.execute(
                         "DELETE FROM [SLS].[Quotation] WHERE QuotationId = %s",
                         [sepidar_quotation_id]
+                    )
+                else:
+                    cursor.execute(
+                        "update [INV].[InventoryReceiptItem] set CurrencyRate=null where CurrencyRate=%s and CurrencyRef is null",
+                        [1]
+                    )
+
+                    cursor.execute(
+                        "update [INV].[InventoryReceipt] set Date=CAST(CAST(Date AS DATE) AS DATETIME) where FiscalYearRef=%s and Date <> CAST(Date as date)",
+                        [settings.SEPIDAR_CONST_DATA.get('fiscalyearref')]
                     )
 
         res = requests.post(endpoint, json=quotation_data, headers=cls.headers)

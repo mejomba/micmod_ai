@@ -5,6 +5,8 @@ from core.exceptions import StockRefNotFoundError
 from sepidar.models import Dl
 from tools import utils
 
+delta = timezone.timedelta(hours=3, minutes=30)
+
 
 class SingletonMeta(type):
     _instances = {}
@@ -151,6 +153,8 @@ class SepidarDataFactory(metaclass=SingletonMeta):
 
         fisicalyearref = settings.SEPIDAR_CONST_DATA.get('fiscalyearref')
 
+        delta = timezone.timedelta(hours=3, minutes=30)
+
         data = {
             "version": 1,
             "vendordlref": supplier,
@@ -169,9 +173,9 @@ class SepidarDataFactory(metaclass=SingletonMeta):
             "totalinsuranceamount": None,  # همیشه null بجز یک رکورد Todo
             "fiscalyearref": fisicalyearref,
             "creator": creator,  # Todo
-            "creationdate": timezone.now().isoformat(),
+            "creationdate": (timezone.now()+delta).isoformat(),
             "lastmodifier": creator,  # Todo
-            "lastmodificationdate": timezone.now().isoformat(),
+            "lastmodificationdate": (timezone.now()+delta).isoformat(),
             "paymentheaderref": None,  # همیشه null بجز چهار رکورد Todo
             "type": 1,  # همیشه 1 یجز همون یک رکورد Todo
             "accountingvoucherref": None,  # همیشه null بجز همون یک رکورد Todo

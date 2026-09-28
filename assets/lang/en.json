@@ -186,6 +186,8 @@
     "ایجاد/لیست": "list/create",
     "gio_items": "gio items",
     "descriptions": "descriptions",
+    "توضیحات": "description",
+    "تعداد": "quantity",
     "quantity": "quantity",
     "t-guides": "guides",
     "document_management": "doc management",

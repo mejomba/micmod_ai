@@ -522,6 +522,13 @@ class Order(BaseModeWF):
 
         return True, ''
 
+    def validate_for_packing(self, quantity, packing_obj):
+        if self.packing_item_order.filter(packing=packing_obj, is_deleted=False).exists():
+            return False, f'duplicate order {self.order_number} in packing {packing_obj.pk}'
+
+        total_arrived_wh_in_percent, total_arrived_wh, final_quantity = self.packing_info
+        return True, ''
+
 
     @property
     def packing_info(self):

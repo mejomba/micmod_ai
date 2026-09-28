@@ -14,7 +14,6 @@ function get_translation_data(file_path){
 }
 
 function translate_handler(){
-    debugger
     const translation_data = get_translation_data()
     const elements_for_translate = document.querySelectorAll('[data-key]')
     elements_for_translate && elements_for_translate.forEach(function (item){

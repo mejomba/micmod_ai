@@ -1088,14 +1088,15 @@ function set_price2(target, data=null) {
     const final_price = elem.querySelector('input[name$="-final_price"]')
 
 
-
+    debugger
     if (selected_method === 'sales_admin') {
         final_price.disabled = false
         final_price.readOnly = false;
         final_price.style.backgroundColor = "#fff";   // ظاهر غیرقابل ویرایش
         final_price.style.cursor = "auto";
         elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', 'sales_admin')
-        final_price.value = round_rial(numberWithCommas(final_price.value).replaceAll(',', ''))
+        // final_price.value = round_rial(numberWithCommas(final_price.value).replaceAll(',', ''))
+        final_price.value = round_rial(removeCommaSeperator(final_price.value))
     } else {
         price_json && price_json.forEach(function (item){
             if (item.unique_title === selected_method){
@@ -1104,9 +1105,11 @@ function set_price2(target, data=null) {
                 final_price.style.backgroundColor = "#fafafa";   // ظاهر غیرقابل ویرایش
                 final_price.style.cursor = "not-allowed";
                 if (Number.isFinite(item.value)){
-                    final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                    // final_price.value = round_rial(numberWithCommas(item.value).replaceAll(',', ''))
+                    final_price.value = round_rial(removeCommaSeperator(item.value))
                 }else{
-                    final_price.value = round_rial(numberWithCommas(item.value?.price).replaceAll(',', ''))
+                    // final_price.value = round_rial(numberWithCommas(item.value?.price).replaceAll(',', ''))
+                    final_price.value = round_rial(removeCommaSeperator(item.value?.price))
                 }
 
                 elem.querySelector('[data-previous_price_method]').setAttribute('data-previous_price_method', item.unique_title)

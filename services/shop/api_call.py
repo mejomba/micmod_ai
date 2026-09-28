@@ -167,6 +167,7 @@ class ShopApiCall:
         endpoint += f"{getattr(obj, 'shop_document_id', None) or 0}/?struct_name=doc_detail&ignore_readonly_fields"
 
         d = {
+            "user_id": getattr(getattr(obj, 'customer_request', None), 'customer_shop', None) or getattr(getattr(getattr(obj, 'q', None), 'customer_request', None), 'customer_shop', None),
             "id": getattr(obj, 'shop_document_id', None) or 0, # باید روی اسناد پرتال این شناسه ذخیره شود و با همین شناسه آپدیت ها ارسال شود یا صفر برای ایجاد سند
             "doc_type": str(obj.__class__.__name__),  # عنوان سند quotation/factor
             "doc_number": obj.pk,  # شناسه سند در پرتال این فیلد با داک تایپ در سمت شاپ یونیک شده

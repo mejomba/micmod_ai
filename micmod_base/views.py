@@ -2153,17 +2153,17 @@ class QuotationFromCustomerRequestView(View):
 
 
 def item_order_quantity(request):
+    return JsonResponse({'res': ''}, safe=False)
     goods_code = request.GET.get('sku')
     goods_code_fk = Item.objects.get(sepidar_id_0=goods_code)
     quantity = []
     free_quantity = []
     order_list = []
 
-    for order in goods_code_fk.order_set.all():
-        if order.is_wh is False and order.is_bazar is False:
-            free_quantity.append(order.remaining_quantity)
-            quantity.append(order.quantity)
-            order_list.append(order.pk)
+    for order in goods_code_fk.order_set.filter(is_wh=False, cancel=False, sales_admin_cancel=False, is_bazar=False, is_deleted=False):
+        free_quantity.append(order.remaining_quantity)
+        quantity.append(order.quantity)
+        order_list.append(order)
 
     total_qty = sum(quantity)
     total_free_qty = sum(free_quantity)

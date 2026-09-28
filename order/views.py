@@ -1,5 +1,7 @@
 from datetime import timedelta, datetime
 
+from files.models import File
+from tools.utils import to_jalali_date
 import jdatetime
 from ajax_datatable import AjaxDatatableView
 from django.conf import settings
@@ -1018,9 +1020,13 @@ class OrderDataTableListView(AjaxDatatableView):
         # """)
 
     def customize_row_trade(self, row, obj):
+        from django.utils import timezone
+        tehran = timezone.tzinfo
 
         row['delay_reason__description'] = [d.description for d in obj.delay_reason.all()]
         try:
+            t = getattr(obj.workflows.filter(state='تایید مدیر فروش', wf_status=3).order_by('id').first(), 'created_date', None)
+            row['trade_state_time'] = timezone.localtime(t).strftime('%m/%d/%Y \n%H:%M') if t else '-'
             row['payment'] = '<hr>'.join([
                                              f"<a target=_blank href='{reverse_lazy('''order:order.payment.update''', kwargs={'''pk''': x.payment.pk})}'>{x.total_amount} {x.payment.currency}</a>"
                                              for x in obj.order_payment_items.select_related('payment').all()])
@@ -1164,6 +1170,7 @@ class OrderDataTableListView(AjaxDatatableView):
                  'lookup_field': '__title__icontains'},
                 {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
                 {'name': 'item_trade__part_number', 'orderable': True, 'title': 'part number(T)', 'visible': True, 'lookup_field': '__icontains'},
+                {'name': 'trade_state_time', 'title': 'مرحله بازرگانی', 'orderable': True, 'searchable': False, 'visible': True, },
                 {'name': 'created_date', 'orderable': True, 'visible': True, },
                 {'name': 'transportation_method', 'orderable': True, 'visible': True, 'title': 'Transport'},
                 {'name': 'quantity', 'orderable': True, 'visible': True, 'title': 'Request Qty', },
@@ -1244,7 +1251,6 @@ class BazarOrderForBuyFactorDataTableListView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        from tools.utils import to_jalali_date
         row['created_date'] = to_jalali_date(obj.created_date)
         row['item__sepidar_id_0'] = obj.item.sepidar_id_0
         row['order_method'] = f'<span>{obj.order_method}</span>'
@@ -3639,19 +3645,24 @@ class QuickPackingView(LoginRequiredMixin, View):
         2: update packing and create new packing-items in update
         3: update single packing-item handel in PackingItemView
         """
-        data = json.loads(request.body) or {}
-        data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
-        total_forms = data.get('form-TOTAL_FORMS', 1)  # first form is empty
-        packing_for_update = Packing.objects.filter(pk=data.pop('packing_id', 0))
-
-        packing_data = {
-            "gio_date": data.pop('packing_date', None),
-            'description': data.pop('description', None),
-            'creator_user': self.request.user,
-            'editor_user': self.request.user
-        }
 
         try:
+            data = self.request.POST
+            data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
+            total_forms = int(data.get('form-TOTAL_FORMS', 1))  # first form is empty
+            packing_for_update = Packing.objects.filter(pk=data.pop('packing_id', 0))
+
+            packing_data = {
+                "packing_number": data.pop('packing_number', None),
+                "currency_id": data.pop('currency', None),
+                "shipment_type": data.pop('shipment_type', None),
+                "bl_number": data.pop('bl_number', None),
+                "estimated_delivery_date": data.pop('estimated_delivery_date', None),
+                'description': data.pop('description', None),
+                'creator_user': self.request.user,
+                'editor_user': self.request.user
+            }
+
             with transaction.atomic():
                 if packing_for_update:
                     packing_for_update.update(**packing_data)
@@ -3660,6 +3671,17 @@ class QuickPackingView(LoginRequiredMixin, View):
                     packing_obj = Packing(**packing_data)
                     packing_obj.extra_data.request = self.request
                     packing_obj.save()
+
+                    """ save packing form files"""
+                    for name, f in self.request.FILES.items():
+                        prefix, group = name.split('_')
+                        packing_obj.save_file(
+                                    request=self.request,
+                                    file_groups=int(group),
+                                    file_model=File,
+                                    obj=packing_obj,
+                                    input_prefix=prefix,
+                                )
 
                 packing_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
                 for row in range(1, total_forms):
@@ -3672,10 +3694,13 @@ class QuickPackingView(LoginRequiredMixin, View):
                         return JsonResponse({'res': {'ERROR: ': is_valid_for_packing[1]}}, status=400)
 
                     packing_item_data = {
-                        'quantity': quantity,
-                        'description': packing_items_data.get(f'form-{row}-description'),
                         'order_id': order_id,
-                        'packing': packing_obj
+                        'quantity': quantity,
+                        'packing': packing_obj,
+                        'carton_number': packing_items_data.get(f'form-{row}-carton_number'),
+                        'gross_weight_kg': packing_items_data.get(f'form-{row}-gross_weight_kg') or 0,
+                        'size': packing_items_data.get(f'form-{row}-size'),
+                        'description': packing_items_data.get(f'form-{row}-description'),
                     }
 
                     try:

@@ -20,6 +20,7 @@ TransportationMethod = (
     ("express", _("express")),
     ("air", _("air")),
     ("sea", _("sea")),
+    ("train", _("train")),
 )
 
 
@@ -73,8 +74,11 @@ class TradeTransportationMethod(BaseModel):
 
 
 class TransportationCalender(BaseModel):
-    start_time = models.DateField(null=True, blank=True)
-    arrive_time = models.DateField(null=True, blank=True)
+    deliver_to_shipping_company_date = models.DateField(null=True, blank=True)
+    estimate_start_shipping_date = models.DateField(null=True, blank=True)
+    estimate_arrive_date = models.DateField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    arrive_date = models.DateField(null=True, blank=True)
     capacity_kg = models.DecimalField(max_digits=12, decimal_places=2)
     shipment_type = models.CharField(choices=TransportationMethod)
     description = models.TextField(null=True, blank=True)
