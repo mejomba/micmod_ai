@@ -351,7 +351,7 @@ class FactorView(LoginRequiredMixin, BaseView):
         fis = {fi.pk: fi.last_update_date.isoformat() for fi in fi_list} if self.object else {}
         context['fis_last_update_datetime'] = json.dumps(fis)
         context['section_id'] = 'factor'
-        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2
+        context['is_need_sales_admin_confirmation'] = self.object.is_need_sales_admin_confirmation() and self.state_index < 2 and not self.object.is_reserve
         context['form'].enable = True if self.wf_access else False
         context['update'] = True if self.object else False
         context['obj'] = self.object
@@ -447,6 +447,10 @@ class FactorView(LoginRequiredMixin, BaseView):
                     context['f_warning'].append('قیمت برخی از ردیف های فاکتور مشخص نشده')
                     if self.state_index == 4:
                         context['allow_next'] = False
+
+            if self.object.is_reserve:
+                context['allow_next'] = False
+                context['f_warning'].append('فاکتور از نوع رزرو امکان خروج از پیشنویس را ندارد')
         return context
 
 
@@ -750,6 +754,7 @@ class FactorListDatatable(AjaxDatatableView):
 
     def sales_column_defs(self, request):
         for col in [
+            {'name': 'is_reserve', 'visible': True, 'title': _('is_reserve'), 'searchable': True, 'className': 'border'},
             {'name': 'wh_user', 'visible': True, 'title': _('wh_user'), 'lookup_field': '__username__icontains',
              'searchable': True, 'className': 'border'},
             {'name': 'checker', 'visible': True, 'title': _('accounting_user'), 'lookup_field': '__username__icontains',
