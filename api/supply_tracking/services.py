@@ -145,16 +145,16 @@ class TrackingStatusResolver:
         code = "FACTOR" if factor.sepidar_id else "SUPPLY_ORDER"
         return status(code, raw={"source": "factor", "state": state_name})
 
-    def packing(self, packing) -> dict:
+    def packing(self, packing):
         wf = getattr(packing, "last_work_flow", None)
         state_name = getattr(wf, "current_state_name", None)
         if state_name == "انبار":
             return status("AVAILABLE", raw={"source": "packing_workflow", "state": state_name})
         if state_name in PACKING_CUSTOMS_STATES:
             return status("CUSTOMS", raw={"source": "packing_workflow", "state": state_name})
-        if state_name in PACKING_SHIPPED_STATES:
+        if state_name in PACKING_SHIPPED_STATES or packing.departure_date:
             return status("SHIPPED", raw={"source": "packing_workflow", "state": state_name})
-        return status("SHIPPED", raw={"source": "packing_workflow", "state": state_name})
+        return None
 
     def order(self, order, packing_nodes=None, has_gio=False) -> dict:
         if order.cancel or order.sales_admin_cancel:
@@ -163,7 +163,11 @@ class TrackingStatusResolver:
             return status("AVAILABLE", raw={"source": "order", "state": "receipt_in_wh"})
 
         packing_nodes = packing_nodes or []
-        packing_codes = {x["status"]["code"] for x in packing_nodes}
+        packing_codes = {
+            x["status"]["code"]
+            for x in packing_nodes
+            if x.get("status")
+        }
         if "AVAILABLE" in packing_codes:
             return status("AVAILABLE")
         if "CUSTOMS" in packing_codes:
@@ -404,7 +408,7 @@ class SupplyTrackingService:
             Order.objects
             .filter(qi=qi)
             .exclude(pk__in=supplied_order_ids)
-            .select_related("item", "customer_party_id")
+            .select_related("item", "item_trade", "customer_party_id")
         )
         for order in direct_orders:
             node["children"].append(self._order_node(order, include_events=include_events))
@@ -548,6 +552,7 @@ class SupplyTrackingService:
                 "quantity": 0,
                 "shipment_type": p.shipment_type,
                 "status": self.status.packing(p),
+                "raw_state": getattr(getattr(p, "last_work_flow", None), "current_state_name", None),
                 "departure_date": iso(p.departure_date),
                 "arrival_date": iso(p.arrival_date),
                 "delivery": self.delivery.estimate(order.commitment_date_to_customer),
@@ -603,15 +608,18 @@ class SupplyTrackingService:
 
         packed_by_status = defaultdict(float)
         packed_total = 0.0
+        remaining_for_packings = total
         for packing in packings:
-            qty = float(packing.get("quantity") or 0)
+            if not packing.get("status"):
+                continue
+            qty = min(float(packing.get("quantity") or 0), remaining_for_packings)
             if qty <= 0:
                 continue
             code = packing["status"]["code"]
             packed_by_status[code] += qty
             packed_total += qty
+            remaining_for_packings -= qty
 
-        packed_total = min(packed_total, total)
         remaining_after_packing = max(total - packed_total, 0.0)
 
         gio_total = min(
@@ -730,6 +738,8 @@ class SupplyTrackingService:
                         "node_id": node["id"],
                     })
                 for packing in node.get("packings") or []:
+                    if not packing.get("status"):
+                        continue
                     events.append({
                         "type": packing["status"]["code"],
                         "title": packing["status"]["title"],
