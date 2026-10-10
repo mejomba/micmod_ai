@@ -94,8 +94,9 @@ class TrackingCandidate:
 class DeliveryEstimator:
     """Stable API boundary for the future delivery prediction formula."""
 
-    def estimate(self, commitment_date=None) -> dict:
+    def estimate(self, commitment_date=None, delivery_time=None) -> dict:
         return {
+            "delivery_time": delivery_time,
             "commitment_date": iso(commitment_date),
             "estimated_delivery_date": None,
             "confirmed_delivery_date": None,
@@ -134,7 +135,11 @@ class TrackingStatusResolver:
             return status(code, raw={"source": "factor_workflow", "state": state_name})
         if state_name in FACTOR_PACKING_STATES:
             return status("PACKING", raw={"source": "factor_workflow", "state": state_name})
-        if factor.need_financial_approval and not factor.accounting_confirm:
+        if (
+            state_name == "چک نهایی"
+            and factor.need_financial_approval
+            and not factor.accounting_confirm
+        ):
             return status("WAITING_FINANCIAL_APPROVAL", raw={"source": "factor", "state": state_name})
 
         code = "FACTOR" if factor.sepidar_id else "SUPPLY_ORDER"
@@ -237,7 +242,7 @@ class TrackingDiscoveryService:
         for obj in order_qs:
             out.append(TrackingCandidate(f"order:{obj.pk}", "order", obj.pk, obj.created_date))
 
-        return sorted(out, key=lambda x: x.created_at or datetime.min, reverse=True)
+        return sorted(out, key=lambda x: iso(x.created_at) or "", reverse=True)
 
 
 class SupplyTrackingService:
@@ -279,7 +284,9 @@ class SupplyTrackingService:
                 "factor__customer_party_id", "factor__q__customer_party_id", "goods_code", "qi"
             ).get(pk=candidate.source_id)
             return self._factor_node(obj, include_events)
-        obj = Order.objects.select_related("customer_party_id", "item", "qi").get(pk=candidate.source_id)
+        obj = Order.objects.select_related(
+            "customer_party_id", "item", "item_trade", "qi"
+        ).get(pk=candidate.source_id)
         return self._order_node(obj, include_events=include_events)
 
     def _request_node(self, cri, include_events):
@@ -366,7 +373,10 @@ class SupplyTrackingService:
                     "amount": qi.pre_paid_amount if qi.pre_paid_amount is not None else q.prepayment,
                 },
             },
-            "delivery": self.delivery.estimate(qi.supply_date),
+            "delivery": self.delivery.estimate(
+                qi.supply_date,
+                qi.delivery_time or q.delivery_time,
+            ),
             "children": [],
         }
         if include_events:
@@ -428,7 +438,10 @@ class SupplyTrackingService:
                     "amount": getattr(fi.qi, "pre_paid_amount", None) if fi.qi_id else None,
                 },
             },
-            "delivery": self.delivery.estimate(getattr(fi.qi, "supply_date", None) if fi.qi_id else None),
+            "delivery": self.delivery.estimate(
+                getattr(fi.qi, "supply_date", None) if fi.qi_id else None,
+                fi.delivery_time or factor.delivery_time,
+            ),
             "children": [],
         }
         if include_events:
@@ -436,7 +449,15 @@ class SupplyTrackingService:
 
         locations = (
             fi.factoritemsupplylocation_set
-            .select_related("order", "order_bazar", "wh_reserve", "wh_reserve__item")
+            .select_related(
+                "order",
+                "order__item",
+                "order__item_trade",
+                "order_bazar",
+                "order_bazar__item",
+                "wh_reserve",
+                "wh_reserve__item",
+            )
             .all()
         )
         if locations:
@@ -638,6 +659,13 @@ class SupplyTrackingService:
             if n.get("transportation", {}).get("method")
         })
 
+        supply_rows = defaultdict(float)
+        for n in nodes:
+            if n.get("type") == "WAREHOUSE":
+                supply_rows["WAREHOUSE"] += float(n.get("quantity") or 0)
+            elif n.get("type") == "ORDER" and n.get("supply_type"):
+                supply_rows[n["supply_type"]] += float(n.get("quantity") or 0)
+
         documents = {"request": None, "quotation": None, "factor": None}
         request_node = next((n for n in nodes if n.get("type") == "REQUEST"), None)
         if request_node:
@@ -658,7 +686,16 @@ class SupplyTrackingService:
             "item": tree.get("item"),
             "quantity": tree.get("quantity"),
             "pricing": pricing_node.get("pricing", self._empty_pricing()),
-            "delivery": tree.get("delivery", self.delivery.estimate()),
+            "delivery": (factor_node or quotation_node or tree).get(
+                "delivery",
+                self.delivery.estimate(),
+            ),
+            "supply": {
+                "types": [
+                    {"type": key, "quantity": value}
+                    for key, value in sorted(supply_rows.items())
+                ]
+            },
             "transportation": {"methods": transportation_methods},
             "documents": documents,
             "statuses": list(grouped.values()),
