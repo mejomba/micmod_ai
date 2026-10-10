@@ -99,3 +99,44 @@ class OrderBreakdownTests(SimpleTestCase):
         )
         rows = self.service._order_status_breakdown(order, 80, [], [])
         self.assertEqual(rows, [{"code": "AVAILABLE", "title": "موجود", "quantity": 80.0}])
+
+
+class PackingStatusTests(SimpleTestCase):
+    def setUp(self):
+        self.resolver = TrackingStatusResolver()
+
+    def test_draft_packing_does_not_mean_shipped(self):
+        packing = SimpleNamespace(
+            departure_date=None,
+            last_work_flow=SimpleNamespace(current_state_name="پیش نویس"),
+        )
+        self.assertIsNone(self.resolver.packing(packing))
+
+    def test_departed_packing_is_shipped(self):
+        packing = SimpleNamespace(
+            departure_date=object(),
+            last_work_flow=SimpleNamespace(current_state_name="پیش نویس"),
+        )
+        self.assertEqual(self.resolver.packing(packing)["code"], "SHIPPED")
+
+
+class FactorFinancialStatusTests(SimpleTestCase):
+    def setUp(self):
+        self.resolver = TrackingStatusResolver()
+
+    def test_financial_wait_only_applies_at_final_check(self):
+        factor = SimpleNamespace(
+            cancel=False,
+            sepidar_id=None,
+            deliver_to_customer=False,
+            need_financial_approval=True,
+            accounting_confirm=False,
+            last_work_flow=SimpleNamespace(current_state_name="پیش‌نویس"),
+        )
+        self.assertEqual(self.resolver.factor(factor)["code"], "SUPPLY_ORDER")
+
+        factor.last_work_flow = SimpleNamespace(current_state_name="چک نهایی")
+        self.assertEqual(
+            self.resolver.factor(factor)["code"],
+            "WAITING_FINANCIAL_APPROVAL",
+        )
