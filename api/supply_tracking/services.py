@@ -7,6 +7,7 @@ from typing import Iterable, Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
+from django.urls import reverse
 
 from extra_data.models import CustomerExpert
 from factor.models import FactorItem, FactorItemSupplyLocation
@@ -361,6 +362,7 @@ class SupplyTrackingService:
             "document": {
                 "id": q.pk,
                 "number": q.sepidar_number or q.pk,
+                "portal_url": reverse("micmod_base:quotations.view", kwargs={"pk": q.pk}),
             },
             "customer": self._customer(customer),
             "item": self._item(qi.goods_code_fk, fallback_sku=qi.goods_code, fallback_part=qi.customer_goods_code),
@@ -426,6 +428,7 @@ class SupplyTrackingService:
                 "id": factor.pk,
                 "number": factor.sepidar_number or factor.pk,
                 "document_type": self.status.factor_document(factor),
+                "portal_url": reverse("factor:factor.view", kwargs={"pk": factor.pk}),
             },
             "customer": self._customer(customer),
             "item": self._item(fi.goods_code, fallback_part=fi.part_number_show),
