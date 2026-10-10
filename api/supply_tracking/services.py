@@ -535,6 +535,13 @@ class SupplyTrackingService:
         packings = list(packing_map.values())
 
         supply_type = "WAREHOUSE" if order.is_wh else ("DOMESTIC" if order.is_bazar else "FOREIGN")
+        effective_quantity = quantity if quantity is not None else order.final_quantity
+        status_breakdown = self._order_status_breakdown(
+            order,
+            effective_quantity,
+            gios,
+            packings,
+        )
         node = {
             "id": f"order:{order.pk}",
             "type": "ORDER",
@@ -542,9 +549,10 @@ class SupplyTrackingService:
             "number": order.order_number or order.pk,
             "supply_type": supply_type,
             "legacy_supply_link": bool(legacy),
-            "quantity": quantity if quantity is not None else order.quantity,
-            "item": self._item(order.item),
+            "quantity": effective_quantity,
+            "item": self._item(order.final_item),
             "status": self.status.order(order, packings, bool(gios)),
+            "status_breakdown": status_breakdown,
             "created_at": iso(order.created_date),
             "transportation": {"method": order.transportation_method},
             "prepayment": {"has_pre_payment": bool(order.has_customer_prepaid)},
@@ -556,6 +564,58 @@ class SupplyTrackingService:
         if include_events:
             node["events"] = self._workflow_events(order, node["id"])
         return node
+
+    def _order_status_breakdown(self, order, quantity, gios, packings):
+        total = float(quantity or 0)
+        if total <= 0:
+            return []
+
+        if order.cancel or order.sales_admin_cancel:
+            return [{**status("CANCELED"), "quantity": total}]
+        if order.receipt_in_wh:
+            return [{**status("AVAILABLE"), "quantity": total}]
+        if order.is_wh:
+            return [{**status("WAREHOUSE_STOCK"), "quantity": total}]
+        if order.is_bazar:
+            code = "AVAILABLE" if order.receipt_in_wh else "DOMESTIC_SUPPLY"
+            return [{**status(code), "quantity": total}]
+
+        packed_by_status = defaultdict(float)
+        packed_total = 0.0
+        for packing in packings:
+            qty = float(packing.get("quantity") or 0)
+            if qty <= 0:
+                continue
+            code = packing["status"]["code"]
+            packed_by_status[code] += qty
+            packed_total += qty
+
+        packed_total = min(packed_total, total)
+        remaining_after_packing = max(total - packed_total, 0.0)
+
+        gio_total = min(
+            sum(float(gio.get("quantity") or 0) for gio in gios),
+            remaining_after_packing,
+        )
+        remaining = max(total - packed_total - gio_total, 0.0)
+
+        rows = []
+        for code, qty in packed_by_status.items():
+            if qty:
+                rows.append({**status(code), "quantity": qty})
+
+        if gio_total:
+            rows.append({**status("CHINA_WAREHOUSE"), "quantity": gio_total})
+
+        if remaining:
+            base = self.status.order(order, packing_nodes=[], has_gio=False)
+            rows.append({
+                "code": base["code"],
+                "title": base["title"],
+                "quantity": remaining,
+            })
+
+        return rows or [{**self.status.order(order, packings, bool(gios)), "quantity": total}]
 
     def _summary(self, tree):
         statuses = self._leaf_statuses(tree)
@@ -608,6 +668,8 @@ class SupplyTrackingService:
     def _leaf_statuses(self, node):
         children = node.get("children") or []
         if not children:
+            if node.get("type") == "ORDER" and node.get("status_breakdown"):
+                return node["status_breakdown"]
             return [{
                 "code": node["status"]["code"],
                 "title": node["status"]["title"],
