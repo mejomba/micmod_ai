@@ -58,3 +58,44 @@ class StatusResolverTests(SimpleTestCase):
             last_work_flow=None,
         )
         self.assertEqual(self.resolver.order(order)["code"], "AVAILABLE")
+
+
+class OrderBreakdownTests(SimpleTestCase):
+    def setUp(self):
+        self.service = object.__new__(__import__(
+            "api.supply_tracking.services",
+            fromlist=["SupplyTrackingService"],
+        ).SupplyTrackingService)
+        self.service.status = TrackingStatusResolver()
+
+    def test_partial_packing_gio_and_purchase_are_separate(self):
+        order = SimpleNamespace(
+            cancel=False,
+            sales_admin_cancel=False,
+            receipt_in_wh=False,
+            is_wh=False,
+            is_bazar=False,
+            last_work_flow=SimpleNamespace(current_state_name="تایید تامین کننده"),
+        )
+        rows = self.service._order_status_breakdown(
+            order,
+            100,
+            [{"quantity": 20}],
+            [{"quantity": 30, "status": {"code": "SHIPPED"}}],
+        )
+        result = {row["code"]: row["quantity"] for row in rows}
+        self.assertEqual(result["SHIPPED"], 30)
+        self.assertEqual(result["CHINA_WAREHOUSE"], 20)
+        self.assertEqual(result["FOREIGN_PURCHASE_CONFIRMED"], 50)
+
+    def test_received_order_is_fully_available(self):
+        order = SimpleNamespace(
+            cancel=False,
+            sales_admin_cancel=False,
+            receipt_in_wh=True,
+            is_wh=False,
+            is_bazar=False,
+            last_work_flow=None,
+        )
+        rows = self.service._order_status_breakdown(order, 80, [], [])
+        self.assertEqual(rows, [{"code": "AVAILABLE", "title": "موجود", "quantity": 80.0}])
