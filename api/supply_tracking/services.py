@@ -200,40 +200,29 @@ class TrackingDiscoveryService:
 
         out = []
 
-        cri_qs = (
-            CustomerRequestItem.objects
-            .filter(cr__customer__pk__in=self.customer_ids)
-            .select_related("cr")
-        )
-        for obj in cri_qs:
-            out.append(TrackingCandidate(f"cri:{obj.pk}", "cri", obj.pk, obj.created_date))
+        cri_rows = CustomerRequestItem.objects.filter(
+            cr__customer__pk__in=self.customer_ids
+        ).values_list("pk", "created_date")
+        for pk, created_at in cri_rows:
+            out.append(TrackingCandidate(f"cri:{pk}", "cri", pk, created_at))
 
-        qi_qs = (
-            QuotationItem.objects
-            .filter(
-                quotation__customer_party_id__pk__in=self.customer_ids,
-                customer_request_item__isnull=True,
-            )
-            .select_related("quotation")
-        )
-        for obj in qi_qs:
-            out.append(TrackingCandidate(f"qi:{obj.pk}", "qi", obj.pk, obj.created_date))
+        qi_rows = QuotationItem.objects.filter(
+            quotation__customer_party_id__pk__in=self.customer_ids,
+            customer_request_item__isnull=True,
+        ).values_list("pk", "created_date")
+        for pk, created_at in qi_rows:
+            out.append(TrackingCandidate(f"qi:{pk}", "qi", pk, created_at))
 
-        fi_qs = (
-            FactorItem.objects
-            .filter(
-                Q(factor__customer_party_id__pk__in=self.customer_ids)
-                | Q(factor__q__customer_party_id__pk__in=self.customer_ids),
-                qi__isnull=True,
-                customer_request_item__isnull=True,
-            )
-            .select_related("factor")
-            .distinct()
-        )
-        for obj in fi_qs:
-            out.append(TrackingCandidate(f"fi:{obj.pk}", "fi", obj.pk, obj.created_date))
+        fi_rows = FactorItem.objects.filter(
+            Q(factor__customer_party_id__pk__in=self.customer_ids)
+            | Q(factor__q__customer_party_id__pk__in=self.customer_ids),
+            qi__isnull=True,
+            customer_request_item__isnull=True,
+        ).values_list("pk", "created_date").distinct()
+        for pk, created_at in fi_rows:
+            out.append(TrackingCandidate(f"fi:{pk}", "fi", pk, created_at))
 
-        order_qs = (
+        order_rows = (
             Order.objects
             .filter(
                 Q(customer_party_id__pk__in=self.customer_ids)
@@ -242,10 +231,11 @@ class TrackingDiscoveryService:
             )
             .filter(qi__isnull=True, customer_request_item__isnull=True)
             .exclude(Q(order_fis__isnull=False) | Q(factor_items__isnull=False))
+            .values_list("pk", "created_date")
             .distinct()
         )
-        for obj in order_qs:
-            out.append(TrackingCandidate(f"order:{obj.pk}", "order", obj.pk, obj.created_date))
+        for pk, created_at in order_rows:
+            out.append(TrackingCandidate(f"order:{pk}", "order", pk, created_at))
 
         return sorted(out, key=lambda x: iso(x.created_at) or "", reverse=True)
 
