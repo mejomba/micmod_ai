@@ -52,7 +52,7 @@ class SupplyTrackingListView(MobileInputMixin, APIView):
             params["page"] = target_page
             params["page_size"] = page_size
             return request.build_absolute_uri(
-                f"{request.path}?{urlencode(params, doseq=True)}"
+                f"{request.path}?{params.urlencode()}"
             )
 
         count = payload["count"]
