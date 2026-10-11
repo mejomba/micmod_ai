@@ -413,12 +413,13 @@ class TrackingSummaryQueryService:
             if order.transportation_method:
                 methods.add(order.transportation_method)
 
+        factor = factor_item.factor if factor_item else None
         if not has_supply_children:
-            statuses = [{**root_status, "quantity": float(quantity or 0)}]
+            effective_status = self.status.factor(factor) if factor else root_status
+            statuses = [{**effective_status, "quantity": float(quantity or 0)}]
 
         grouped_statuses = self._group_statuses(statuses)
 
-        factor = factor_item.factor if factor_item else None
         pricing = (
             self._factor_pricing(factor_item)
             if factor_item
