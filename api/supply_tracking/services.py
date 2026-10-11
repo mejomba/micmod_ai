@@ -261,25 +261,25 @@ class SupplyTrackingService:
 
     def list_summaries(self, offset=0, limit=50):
         """
-        Build summaries only for the requested slice.
+        Return summary rows without constructing detail graphs.
 
-        The previous implementation hydrated the full tracking graph for every
-        candidate before DRF pagination. For customers with hundreds of items
-        that meant hundreds of nested Factor/Order/GIO/Packing queries even
-        when the client only requested the first page.
+        Candidate discovery is still global so tracking roots are deduplicated,
+        but only the requested page is hydrated. Downstream relations for that
+        page are loaded in bulk by TrackingSummaryQueryService.
         """
-        candidates = self.discovery.candidates()
-        if limit is None:
-            selected = candidates[offset:]
-        else:
-            selected = candidates[offset:offset + limit]
-        return [
-            self._summary(self._build_candidate(candidate, include_events=False))
-            for candidate in selected
-        ]
+        from .summary import TrackingSummaryQueryService
 
-    def summary_count(self):
-        return len(self.discovery.candidates())
+        candidates = self.discovery.candidates()
+        total = len(candidates)
+        selected = candidates[offset:] if limit is None else candidates[offset:offset + limit]
+        rows = TrackingSummaryQueryService(
+            status_resolver=self.status,
+            delivery_estimator=self.delivery,
+        ).build(selected)
+        return {
+            "count": total,
+            "results": [row for row in rows if row is not None],
+        }
 
     def get_detail(self, tracking_id: str):
         candidate = next((x for x in self.discovery.candidates() if x.tracking_id == tracking_id), None)
