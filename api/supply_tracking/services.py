@@ -259,9 +259,27 @@ class SupplyTrackingService:
         self.status = TrackingStatusResolver()
         self.delivery = DeliveryEstimator()
 
-    def list_summaries(self):
-        return [self._summary(self._build_candidate(candidate, include_events=False))
-                for candidate in self.discovery.candidates()]
+    def list_summaries(self, offset=0, limit=50):
+        """
+        Build summaries only for the requested slice.
+
+        The previous implementation hydrated the full tracking graph for every
+        candidate before DRF pagination. For customers with hundreds of items
+        that meant hundreds of nested Factor/Order/GIO/Packing queries even
+        when the client only requested the first page.
+        """
+        candidates = self.discovery.candidates()
+        if limit is None:
+            selected = candidates[offset:]
+        else:
+            selected = candidates[offset:offset + limit]
+        return [
+            self._summary(self._build_candidate(candidate, include_events=False))
+            for candidate in selected
+        ]
+
+    def summary_count(self):
+        return len(self.discovery.candidates())
 
     def get_detail(self, tracking_id: str):
         candidate = next((x for x in self.discovery.candidates() if x.tracking_id == tracking_id), None)
