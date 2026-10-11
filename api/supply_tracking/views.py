@@ -1,15 +1,13 @@
 from rest_framework import permissions, status
-from rest_framework.pagination import PageNumberPagination
+from urllib.parse import urlencode
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .services import SupplyTrackingService, normalize_phone
 
 
-class SupplyTrackingPagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = "page_size"
-    max_page_size = 200
+DEFAULT_PAGE_SIZE = 50
+MAX_PAGE_SIZE = 200
 
 
 class MobileInputMixin:
@@ -31,10 +29,41 @@ class SupplyTrackingListView(MobileInputMixin, APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        data = SupplyTrackingService(mobile).list_summaries()
-        paginator = SupplyTrackingPagination()
-        page = paginator.paginate_queryset(data, request, view=self)
-        return paginator.get_paginated_response(page)
+        try:
+            page = max(int(request.query_params.get("page", 1)), 1)
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            page_size = int(request.query_params.get("page_size", DEFAULT_PAGE_SIZE))
+        except (TypeError, ValueError):
+            page_size = DEFAULT_PAGE_SIZE
+        page_size = min(max(page_size, 1), MAX_PAGE_SIZE)
+
+        offset = (page - 1) * page_size
+        payload = SupplyTrackingService(mobile).list_summaries(
+            offset=offset,
+            limit=page_size,
+        )
+
+        def page_url(target_page):
+            if target_page < 1:
+                return None
+            params = request.query_params.copy()
+            params["page"] = target_page
+            params["page_size"] = page_size
+            return request.build_absolute_uri(
+                f"{request.path}?{urlencode(params, doseq=True)}"
+            )
+
+        count = payload["count"]
+        has_next = offset + page_size < count
+        response_data = {
+            "count": count,
+            "next": page_url(page + 1) if has_next else None,
+            "previous": page_url(page - 1) if page > 1 else None,
+            "results": payload["results"],
+        }
+        return Response(response_data)
 
 
 class SupplyTrackingDetailView(MobileInputMixin, APIView):
