@@ -230,7 +230,12 @@ class TrackingDiscoveryService:
                 | Q(customer_request_item__cr__customer__pk__in=self.customer_ids)
             )
             .filter(qi__isnull=True, customer_request_item__isnull=True)
-            .exclude(Q(order_fis__isnull=False) | Q(factor_items__isnull=False))
+            .exclude(
+                Q(order_fis__isnull=False)
+                | Q(factor_items__isnull=False)
+                | Q(order_rel_items__fi__isnull=False)
+                | Q(order_base_items__fi__isnull=False)
+            )
             .values_list("pk", "created_date")
             .distinct()
         )
