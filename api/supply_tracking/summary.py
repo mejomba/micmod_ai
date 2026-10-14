@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from factor.models import FactorItem, FactorItemSupplyLocation
 from micmod_base.models import CustomerRequestItem, QuotationItem
-from order.models import GIOItem, Order, PackingItem
+from order.models import GIOItem, Order, OrderOrder, PackingItem
 
 from .constants import STATUS_TITLES
 from .services import DeliveryEstimator, TrackingStatusResolver, iso, status
@@ -148,6 +148,25 @@ class TrackingSummaryQueryService:
             all_orders[order.pk] = order
 
         order_ids = set(all_orders)
+
+        # Legacy supply allocation uses a technical canceled Order as order_base
+        # and connects it to the actual supply Order through OrderOrder.order_rel.
+        order_links = list(
+            OrderOrder.objects.filter(order_base_id__in=order_ids)
+            .select_related(
+                "order_rel",
+                "order_rel__last_work_flow",
+                "order_rel__item",
+                "order_rel__item_trade",
+            )
+        )
+        order_links_by_base = defaultdict(list)
+        for link in order_links:
+            order_links_by_base[link.order_base_id].append(link)
+            if link.order_rel_id:
+                all_orders[link.order_rel_id] = link.order_rel
+
+        order_ids = set(all_orders)
         gio_qty = {
             row["order_id"]: row["total"]
             for row in (
@@ -184,6 +203,7 @@ class TrackingSummaryQueryService:
             "direct_orders_by_cri": direct_orders_by_cri,
             "gio_qty": gio_qty,
             "packing_by_order": packing_by_order,
+            "order_links_by_base": order_links_by_base,
         }
 
         return [self._build_candidate(candidate, context) for candidate in candidates]
@@ -396,63 +416,104 @@ class TrackingSummaryQueryService:
         factor_branches = []
 
         for fi in self._unique(fis):
-            branch_statuses = []
+            factor_status = self.status.factor(fi.factor)
+            supply_statuses = []
             branch_supply = defaultdict(float)
+
             if fi.factor.cancel:
-                has_supply_children = True
-                canceled_row = {
+                latest_statuses = [{
                     **status("CANCELED"),
                     "quantity": float(fi.quantity or 0),
-                }
-                statuses.append(canceled_row)
-                branch_statuses.append(canceled_row)
-                factor_branches.append(
-                    self._factor_branch(fi, branch_statuses, branch_supply)
-                )
-                continue
+                }]
+            else:
+                locations = ctx["locations_by_fi"].get(fi.pk, [])
+                if locations:
+                    has_supply_children = True
+                    for location in locations:
+                        if location.wh_reserve_id:
+                            qty = float(location.quantity or 0)
+                            supply_statuses.append({
+                                **status("WAREHOUSE_STOCK"),
+                                "quantity": qty,
+                            })
+                            supply["WAREHOUSE"] += qty
+                            branch_supply["WAREHOUSE"] += qty
+                        elif location.order_bazar_id:
+                            qty = float(location.quantity or 0)
+                            code = (
+                                "AVAILABLE"
+                                if location.order_bazar.receipt_in_wh
+                                else "DOMESTIC_SUPPLY"
+                            )
+                            supply_statuses.append({
+                                **status(code),
+                                "quantity": qty,
+                            })
+                            supply["DOMESTIC"] += qty
+                            branch_supply["DOMESTIC"] += qty
+                        elif location.order_id:
+                            for actual_order, qty in self._resolve_order_allocations(
+                                location.order,
+                                float(location.quantity or 0),
+                                ctx,
+                            ):
+                                order_rows = self._order_breakdown(
+                                    actual_order,
+                                    qty,
+                                    ctx,
+                                )
+                                supply_statuses.extend(order_rows)
+                                supply_type = self._supply_type(actual_order)
+                                supply[supply_type] += qty
+                                branch_supply[supply_type] += qty
+                                if actual_order.transportation_method:
+                                    methods.add(actual_order.transportation_method)
+                elif fi.supply_locations_id:
+                    has_supply_children = True
+                    for actual_order, qty in self._resolve_order_allocations(
+                        fi.supply_locations,
+                        float(fi.quantity or 0),
+                        ctx,
+                    ):
+                        order_rows = self._order_breakdown(actual_order, qty, ctx)
+                        supply_statuses.extend(order_rows)
+                        supply_type = self._supply_type(actual_order)
+                        supply[supply_type] += qty
+                        branch_supply[supply_type] += qty
+                        if actual_order.transportation_method:
+                            methods.add(actual_order.transportation_method)
 
-            locations = ctx["locations_by_fi"].get(fi.pk, [])
-            if locations:
-                has_supply_children = True
-                for location in locations:
-                    if location.wh_reserve_id:
-                        qty = float(location.quantity or 0)
-                        row = {**status("WAREHOUSE_STOCK"), "quantity": qty}
-                        statuses.append(row)
-                        branch_statuses.append(row)
-                        supply["WAREHOUSE"] += qty
-                        branch_supply["WAREHOUSE"] += qty
-                    elif location.order_bazar_id:
-                        qty = float(location.quantity or 0)
-                        code = "AVAILABLE" if location.order_bazar.receipt_in_wh else "DOMESTIC_SUPPLY"
-                        row = {**status(code), "quantity": qty}
-                        statuses.append(row)
-                        branch_statuses.append(row)
-                        supply["DOMESTIC"] += qty
-                        branch_supply["DOMESTIC"] += qty
-                    elif location.order_id:
-                        qty = float(location.quantity or 0)
-                        order_rows = self._order_breakdown(location.order, qty, ctx)
-                        statuses.extend(order_rows)
-                        branch_statuses.extend(order_rows)
-                        supply[self._supply_type(location.order)] += qty
-                        branch_supply[self._supply_type(location.order)] += qty
-                        if location.order.transportation_method:
-                            methods.add(location.order.transportation_method)
-            elif fi.supply_locations_id:
-                has_supply_children = True
-                order = fi.supply_locations
-                qty = float(fi.quantity or 0)
-                order_rows = self._order_breakdown(order, qty, ctx)
-                statuses.extend(order_rows)
-                branch_statuses.extend(order_rows)
-                supply[self._supply_type(order)] += qty
-                branch_supply[self._supply_type(order)] += qty
-                if order.transportation_method:
-                    methods.add(order.transportation_method)
+                # "statuses" means the latest customer-facing status for this
+                # quantity. Once the Factor lifecycle has progressed beyond
+                # supply, Factor status wins; supply_statuses remain available
+                # separately for auditability.
+                if factor_status["code"] in {
+                    "WAITING_FINANCIAL_APPROVAL",
+                    "PACKING",
+                    "SENT",
+                    "DELIVERED",
+                    "DELIVERY_CONFIRMED",
+                }:
+                    latest_statuses = [{
+                        **factor_status,
+                        "quantity": float(fi.quantity or 0),
+                    }]
+                elif supply_statuses:
+                    latest_statuses = self._group_statuses(supply_statuses)
+                else:
+                    latest_statuses = [{
+                        **factor_status,
+                        "quantity": float(fi.quantity or 0),
+                    }]
 
+            statuses.extend(latest_statuses)
             factor_branches.append(
-                self._factor_branch(fi, branch_statuses, branch_supply)
+                self._factor_branch(
+                    fi,
+                    latest_statuses,
+                    supply_statuses,
+                    branch_supply,
+                )
             )
 
         for order in self._unique(direct_orders):
@@ -535,14 +596,23 @@ class TrackingSummaryQueryService:
             "is_partial": len(grouped_statuses) > 1,
         }
 
-    def _factor_branch(self, fi, branch_statuses, branch_supply):
+    def _factor_branch(
+        self,
+        fi,
+        latest_statuses,
+        supply_statuses,
+        branch_supply,
+    ):
         factor = fi.factor
+        factor_status = self.status.factor(factor)
         return {
             "factor": self._factor_document(factor),
             "row_id": fi.pk,
             "quantity": float(fi.quantity or 0),
-            "status": self.status.factor(factor),
-            "statuses": self._group_statuses(branch_statuses),
+            "status": factor_status,
+            "factor_status": factor_status,
+            "statuses": self._group_statuses(latest_statuses),
+            "supply_statuses": self._group_statuses(supply_statuses),
             "supply": {
                 "types": [
                     {"type": key, "quantity": value}
@@ -550,6 +620,31 @@ class TrackingSummaryQueryService:
                 ]
             },
         }
+
+    def _resolve_order_allocations(self, order, quantity, ctx):
+        """
+        Resolve a technical legacy wrapper Order to its actual supply Orders.
+
+        Order.create_with_rel(o2=...) intentionally creates order_base with
+        cancel=True and stores the real source in OrderOrder.order_rel. That
+        cancel flag is structural and must never be exposed as business
+        CANCELED.
+        """
+        links = ctx["order_links_by_base"].get(order.pk, [])
+        if order.cancel and links:
+            remaining = float(quantity or 0)
+            resolved = []
+            for link in links:
+                if not link.order_rel_id or remaining <= 0:
+                    continue
+                link_qty = min(float(link.quantity or 0), remaining)
+                if link_qty <= 0:
+                    continue
+                resolved.append((link.order_rel, link_qty))
+                remaining -= link_qty
+            if resolved:
+                return resolved
+        return [(order, float(quantity or 0))]
 
     def _order_breakdown(self, order, quantity, ctx):
         total = float(quantity or 0)
