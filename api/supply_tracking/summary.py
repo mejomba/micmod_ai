@@ -393,14 +393,22 @@ class TrackingSummaryQueryService:
         supply = defaultdict(float)
         methods = set()
         has_supply_children = False
+        factor_branches = []
 
         for fi in self._unique(fis):
+            branch_statuses = []
+            branch_supply = defaultdict(float)
             if fi.factor.cancel:
                 has_supply_children = True
-                statuses.append({
+                canceled_row = {
                     **status("CANCELED"),
                     "quantity": float(fi.quantity or 0),
-                })
+                }
+                statuses.append(canceled_row)
+                branch_statuses.append(canceled_row)
+                factor_branches.append(
+                    self._factor_branch(fi, branch_statuses, branch_supply)
+                )
                 continue
 
             locations = ctx["locations_by_fi"].get(fi.pk, [])
@@ -409,27 +417,43 @@ class TrackingSummaryQueryService:
                 for location in locations:
                     if location.wh_reserve_id:
                         qty = float(location.quantity or 0)
-                        statuses.append({**status("WAREHOUSE_STOCK"), "quantity": qty})
+                        row = {**status("WAREHOUSE_STOCK"), "quantity": qty}
+                        statuses.append(row)
+                        branch_statuses.append(row)
                         supply["WAREHOUSE"] += qty
+                        branch_supply["WAREHOUSE"] += qty
                     elif location.order_bazar_id:
                         qty = float(location.quantity or 0)
                         code = "AVAILABLE" if location.order_bazar.receipt_in_wh else "DOMESTIC_SUPPLY"
-                        statuses.append({**status(code), "quantity": qty})
+                        row = {**status(code), "quantity": qty}
+                        statuses.append(row)
+                        branch_statuses.append(row)
                         supply["DOMESTIC"] += qty
+                        branch_supply["DOMESTIC"] += qty
                     elif location.order_id:
                         qty = float(location.quantity or 0)
-                        statuses.extend(self._order_breakdown(location.order, qty, ctx))
+                        order_rows = self._order_breakdown(location.order, qty, ctx)
+                        statuses.extend(order_rows)
+                        branch_statuses.extend(order_rows)
                         supply[self._supply_type(location.order)] += qty
+                        branch_supply[self._supply_type(location.order)] += qty
                         if location.order.transportation_method:
                             methods.add(location.order.transportation_method)
             elif fi.supply_locations_id:
                 has_supply_children = True
                 order = fi.supply_locations
                 qty = float(fi.quantity or 0)
-                statuses.extend(self._order_breakdown(order, qty, ctx))
+                order_rows = self._order_breakdown(order, qty, ctx)
+                statuses.extend(order_rows)
+                branch_statuses.extend(order_rows)
                 supply[self._supply_type(order)] += qty
+                branch_supply[self._supply_type(order)] += qty
                 if order.transportation_method:
                     methods.add(order.transportation_method)
+
+            factor_branches.append(
+                self._factor_branch(fi, branch_statuses, branch_supply)
+            )
 
         for order in self._unique(direct_orders):
             has_supply_children = True
@@ -494,8 +518,37 @@ class TrackingSummaryQueryService:
                 "quotation": self._quotation_document(quotation),
                 "factors": [self._factor_document(f) for f in factors],
             },
+            "branches": {
+                "factors": factor_branches,
+                "direct_orders": [
+                    {
+                        "id": o.pk,
+                        "number": o.order_number or o.pk,
+                        "quantity": float(o.final_quantity or 0),
+                        "supply_type": self._supply_type(o),
+                    }
+                    for o in self._unique(direct_orders)
+                ],
+            },
+            "remaining_at_origin": remaining_at_root,
             "statuses": grouped_statuses,
             "is_partial": len(grouped_statuses) > 1,
+        }
+
+    def _factor_branch(self, fi, branch_statuses, branch_supply):
+        factor = fi.factor
+        return {
+            "factor": self._factor_document(factor),
+            "row_id": fi.pk,
+            "quantity": float(fi.quantity or 0),
+            "status": self.status.factor(factor),
+            "statuses": self._group_statuses(branch_statuses),
+            "supply": {
+                "types": [
+                    {"type": key, "quantity": value}
+                    for key, value in sorted(branch_supply.items())
+                ]
+            },
         }
 
     def _order_breakdown(self, order, quantity, ctx):
