@@ -534,9 +534,9 @@ class TrackingSummaryQueryService:
         )
         remaining_at_root = max(float(quantity or 0) - covered_quantity, 0.0)
 
-        if not has_supply_children:
-            effective_status = self.status.factor(factor) if factor else root_status
-            statuses = [{**effective_status, "quantity": float(quantity or 0)}]
+        has_downstream_children = bool(fis or direct_orders)
+        if not has_downstream_children:
+            statuses = [{**root_status, "quantity": float(quantity or 0)}]
         elif remaining_at_root:
             statuses.append({**root_status, "quantity": remaining_at_root})
 
