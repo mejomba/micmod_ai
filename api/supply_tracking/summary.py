@@ -469,22 +469,19 @@ class TrackingSummaryQueryService:
                             supply["DOMESTIC"] += qty
                             branch_supply["DOMESTIC"] += qty
                         elif location.order_id:
-                            for actual_order, qty in self._resolve_order_allocations(
-                                location.order,
-                                float(location.quantity or 0),
+                            actual_order = location.order
+                            qty = float(location.quantity or 0)
+                            order_rows = self._order_breakdown(
+                                actual_order,
+                                qty,
                                 ctx,
-                            ):
-                                order_rows = self._order_breakdown(
-                                    actual_order,
-                                    qty,
-                                    ctx,
-                                )
-                                supply_statuses.extend(order_rows)
-                                supply_type = self._supply_type(actual_order)
-                                supply[supply_type] += qty
-                                branch_supply[supply_type] += qty
-                                if actual_order.transportation_method:
-                                    methods.add(actual_order.transportation_method)
+                            )
+                            supply_statuses.extend(order_rows)
+                            supply_type = self._supply_type(actual_order)
+                            supply[supply_type] += qty
+                            branch_supply[supply_type] += qty
+                            if actual_order.transportation_method:
+                                methods.add(actual_order.transportation_method)
                 elif (not bool(fi.factor.is_safe)) and fi.supply_locations_id:
                     has_supply_children = True
                     for actual_order, qty in self._resolve_legacy_allocations(
