@@ -83,9 +83,15 @@ class TrackingSummaryQueryService:
                 fis_by_cri[fi.customer_request_item_id].append(fi)
 
         fi_ids = set(fis)
+        safe_fi_ids = {
+            fi.pk for fi in fis.values()
+            if bool(fi.factor.is_safe)
+        }
+        legacy_fi_ids = fi_ids - safe_fi_ids
+
         locations = list(
             FactorItemSupplyLocation.objects
-            .filter(fi_id__in=fi_ids)
+            .filter(fi_id__in=safe_fi_ids)
             .select_related(
                 "order",
                 "order__last_work_flow",
@@ -107,7 +113,7 @@ class TrackingSummaryQueryService:
         legacy_order_ids = {
             fi.supply_locations_id
             for fi in fis.values()
-            if fi.supply_locations_id
+            if fi.pk in legacy_fi_ids and fi.supply_locations_id
         }
         linked_order_ids.update(legacy_order_ids)
 
@@ -152,7 +158,10 @@ class TrackingSummaryQueryService:
         # Legacy supply allocation uses a technical canceled Order as order_base
         # and connects it to the actual supply Order through OrderOrder.order_rel.
         order_links = list(
-            OrderOrder.objects.filter(order_base_id__in=order_ids)
+            OrderOrder.objects.filter(
+                Q(fi_id__in=legacy_fi_ids)
+                | Q(order_base_id__in=legacy_order_ids)
+            )
             .select_related(
                 "order_rel",
                 "order_rel__last_work_flow",
@@ -161,8 +170,11 @@ class TrackingSummaryQueryService:
             )
         )
         order_links_by_base = defaultdict(list)
+        order_links_by_fi = defaultdict(list)
         for link in order_links:
             order_links_by_base[link.order_base_id].append(link)
+            if link.fi_id:
+                order_links_by_fi[link.fi_id].append(link)
             if link.order_rel_id:
                 all_orders[link.order_rel_id] = link.order_rel
 
@@ -204,6 +216,7 @@ class TrackingSummaryQueryService:
             "gio_qty": gio_qty,
             "packing_by_order": packing_by_order,
             "order_links_by_base": order_links_by_base,
+            "order_links_by_fi": order_links_by_fi,
         }
 
         return [self._build_candidate(candidate, context) for candidate in candidates]
@@ -426,8 +439,12 @@ class TrackingSummaryQueryService:
                     "quantity": float(fi.quantity or 0),
                 }]
             else:
-                locations = ctx["locations_by_fi"].get(fi.pk, [])
-                if locations:
+                locations = (
+                    ctx["locations_by_fi"].get(fi.pk, [])
+                    if bool(fi.factor.is_safe)
+                    else []
+                )
+                if bool(fi.factor.is_safe) and locations:
                     has_supply_children = True
                     for location in locations:
                         if location.wh_reserve_id:
@@ -468,11 +485,10 @@ class TrackingSummaryQueryService:
                                 branch_supply[supply_type] += qty
                                 if actual_order.transportation_method:
                                     methods.add(actual_order.transportation_method)
-                elif fi.supply_locations_id:
+                elif (not bool(fi.factor.is_safe)) and fi.supply_locations_id:
                     has_supply_children = True
-                    for actual_order, qty in self._resolve_order_allocations(
-                        fi.supply_locations,
-                        float(fi.quantity or 0),
+                    for actual_order, qty in self._resolve_legacy_allocations(
+                        fi,
                         ctx,
                     ):
                         order_rows = self._order_breakdown(actual_order, qty, ctx)
@@ -621,18 +637,27 @@ class TrackingSummaryQueryService:
             },
         }
 
-    def _resolve_order_allocations(self, order, quantity, ctx):
+    def _resolve_legacy_allocations(self, fi, ctx):
         """
-        Resolve a technical legacy wrapper Order to its actual supply Orders.
+        Legacy Factor allocation source of truth.
 
-        Order.create_with_rel(o2=...) intentionally creates order_base with
-        cancel=True and stores the real source in OrderOrder.order_rel. That
-        cancel flag is structural and must never be exposed as business
-        CANCELED.
+        - FactorItem.supply_locations points at an Order.
+        - Warehouse/existing-order reservations are quantified by OrderOrder.
+        - The canceled order_base is a technical wrapper, not a business
+          cancellation.
+        - Direct domestic allocations do not use OrderOrder.
         """
-        links = ctx["order_links_by_base"].get(order.pk, [])
-        if order.cancel and links:
-            remaining = float(quantity or 0)
+        order = fi.supply_locations
+        quantity = float(fi.quantity or 0)
+        if not order:
+            return []
+
+        links = ctx["order_links_by_fi"].get(fi.pk, [])
+        if not links:
+            links = ctx["order_links_by_base"].get(order.pk, [])
+
+        if links:
+            remaining = quantity
             resolved = []
             for link in links:
                 if not link.order_rel_id or remaining <= 0:
@@ -644,7 +669,9 @@ class TrackingSummaryQueryService:
                 remaining -= link_qty
             if resolved:
                 return resolved
-        return [(order, float(quantity or 0))]
+
+        # Legacy domestic allocations are linked directly to FactorItem.
+        return [(order, quantity)]
 
     def _order_breakdown(self, order, quantity, ctx):
         total = float(quantity or 0)
