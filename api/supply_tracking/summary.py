@@ -111,12 +111,21 @@ class TrackingSummaryQueryService:
         }
         linked_order_ids.update(legacy_order_ids)
 
+        factor_qi_ids = {fi.qi_id for fi in fis.values() if fi.qi_id}
+        factor_cri_ids = {
+            fi.customer_request_item_id
+            for fi in fis.values()
+            if fi.customer_request_item_id and not fi.qi_id
+        }
+
         direct_order_rows = list(
             self._order_queryset().filter(
-                Q(qi_id__in=qi_ids)
-                | Q(
-                    customer_request_item_id__in=cri_ids,
-                    qi__isnull=True,
+                (
+                    Q(qi_id__in=(qi_ids - factor_qi_ids))
+                    | Q(
+                        customer_request_item_id__in=(cri_ids - factor_cri_ids),
+                        qi__isnull=True,
+                    )
                 )
             ).exclude(pk__in=linked_order_ids).distinct()
         )
@@ -249,7 +258,9 @@ class TrackingSummaryQueryService:
         return self._assemble_summary(
             tracking_id=f"cri:{cri.pk}",
             origin_type="REQUEST",
-            origin_id=cri.pk,
+            origin_id=cri.cr_id,
+            origin_row_id=cri.pk,
+            origin_number=cri.cr_id,
             customer=cri.cr.customer,
             item={
                 "id": None,
@@ -273,13 +284,15 @@ class TrackingSummaryQueryService:
         return self._assemble_summary(
             tracking_id=f"qi:{qi.pk}",
             origin_type="QUOTATION",
-            origin_id=qi.pk,
+            origin_id=qi.quotation_id,
+            origin_row_id=qi.pk,
+            origin_number=qi.quotation.sepidar_number or qi.quotation_id,
             customer=qi.quotation.customer_party_id,
             item=self._item(qi.goods_code_fk, qi.goods_code, qi.customer_goods_code),
             quantity=qi.quantity,
             request_id=qi.customer_request_item_id,
             quotation=qi,
-            factor_item=fis[0] if fis else None,
+            factor_item=None,
             root_status=self.status.quotation(qi.quotation),
             root_delivery=self.delivery.estimate(
                 qi.supply_date,
@@ -298,7 +311,9 @@ class TrackingSummaryQueryService:
         return self._assemble_summary(
             tracking_id=f"fi:{fi.pk}",
             origin_type="FACTOR",
-            origin_id=fi.pk,
+            origin_id=factor.pk,
+            origin_row_id=fi.pk,
+            origin_number=factor.sepidar_number or factor.pk,
             customer=customer,
             item=self._item(fi.goods_code, None, fi.part_number_show),
             quantity=fi.quantity,
@@ -323,6 +338,7 @@ class TrackingSummaryQueryService:
             "origin": {
                 "type": "ORDER",
                 "id": order.pk,
+                "row_id": order.pk,
                 "number": order.order_number or order.pk,
             },
             "item": self._item(order.final_item),
@@ -347,7 +363,7 @@ class TrackingSummaryQueryService:
                     self._quotation_document(order.qi)
                     if order.qi_id else None
                 ),
-                "factor": None,
+                "factors": [],
             },
             "statuses": breakdown,
             "is_partial": len(breakdown) > 1,
@@ -359,6 +375,8 @@ class TrackingSummaryQueryService:
         tracking_id,
         origin_type,
         origin_id,
+        origin_row_id,
+        origin_number,
         customer,
         item,
         quantity,
@@ -377,6 +395,14 @@ class TrackingSummaryQueryService:
         has_supply_children = False
 
         for fi in self._unique(fis):
+            if fi.factor.cancel:
+                has_supply_children = True
+                statuses.append({
+                    **status("CANCELED"),
+                    "quantity": float(fi.quantity or 0),
+                })
+                continue
+
             locations = ctx["locations_by_fi"].get(fi.pk, [])
             if locations:
                 has_supply_children = True
@@ -414,12 +440,24 @@ class TrackingSummaryQueryService:
                 methods.add(order.transportation_method)
 
         factor = factor_item.factor if factor_item else None
+
+        # Preserve the state of quantities that have not moved to the next level.
+        covered_quantity = min(
+            sum(float(fi.quantity or 0) for fi in self._unique(fis))
+            + sum(float(order.final_quantity or 0) for order in self._unique(direct_orders)),
+            float(quantity or 0),
+        )
+        remaining_at_root = max(float(quantity or 0) - covered_quantity, 0.0)
+
         if not has_supply_children:
             effective_status = self.status.factor(factor) if factor else root_status
             statuses = [{**effective_status, "quantity": float(quantity or 0)}]
+        elif remaining_at_root:
+            statuses.append({**root_status, "quantity": remaining_at_root})
 
         grouped_statuses = self._group_statuses(statuses)
 
+        # Header fields belong to the current level, not to an arbitrary child.
         pricing = (
             self._factor_pricing(factor_item)
             if factor_item
@@ -427,15 +465,9 @@ class TrackingSummaryQueryService:
             if quotation
             else self._empty_pricing()
         )
-        delivery = (
-            self.delivery.estimate(
-                getattr(factor_item.qi, "supply_date", None)
-                if factor_item and factor_item.qi_id else None,
-                factor_item.delivery_time or factor.delivery_time,
-            )
-            if factor_item
-            else root_delivery
-        )
+        delivery = root_delivery
+
+        factors = self._unique([fi.factor for fi in fis if fi.factor_id])
 
         return {
             "tracking_id": tracking_id,
@@ -443,13 +475,8 @@ class TrackingSummaryQueryService:
             "origin": {
                 "type": origin_type,
                 "id": origin_id,
-                "number": (
-                    factor.sepidar_number or factor.pk
-                    if factor
-                    else quotation.quotation.sepidar_number or quotation.quotation.pk
-                    if quotation
-                    else origin_id
-                ),
+                "row_id": origin_row_id,
+                "number": origin_number,
             },
             "item": item,
             "quantity": quantity,
@@ -465,7 +492,7 @@ class TrackingSummaryQueryService:
             "documents": {
                 "request": {"id": request_id} if request_id else None,
                 "quotation": self._quotation_document(quotation),
-                "factor": self._factor_document(factor),
+                "factors": [self._factor_document(f) for f in factors],
             },
             "statuses": grouped_statuses,
             "is_partial": len(grouped_statuses) > 1,
