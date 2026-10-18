@@ -1001,8 +1001,8 @@
     }
 
     window.order_to_packing_item = function (event) {
-        const tr = event.currentTarget.closest('tr');
-        const data = rowDataFromTr(tr);
+        const tableRow = event.currentTarget.closest('tr');
+        const data = rowDataFromTr(tableRow);
 
         if (!data.orderId || data.available <= 0) return;
         if (selectedOrderIds().includes(String(data.orderId))) return;
