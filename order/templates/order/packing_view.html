@@ -25,6 +25,55 @@
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
 
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {{ form.errors }}
+    {{ form.non_field_errors }}
+
+    {% if form.only_show %}
+        <div class="rounded border bg-white p-3 mb-5">
+            <div class="d-flex flex-wrap gap-4">
+                {% for item in form.iter_only_show %}
+                    <div style="min-width: 160px; max-width: 280px">
+                        <label class="d-block mb-1">
+                            {% if item.label %}
+                                <span class="bold font-size-13">{{ item.label }}</span>
+                            {% else %}
+                                <span data-key="{{ item.name }}" class="bold font-size-13">{{ item.name }}</span>
+                            {% endif %}
+                            <i class="ti ti-lock" aria-hidden="true"></i>
+                        </label>
+
+                        <div class="text-muted">
+                            {% if item.kind == "bool" %}
+                                {% if item.value %}
+                                    <span class="badge badge-light-success" data-key="yes">yes</span>
+                                {% else %}
+                                    <span class="badge badge-light-danger" data-key="no">no</span>
+                                {% endif %}
+                            {% elif item.kind == "date" %}
+                                {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d" }}{% else %}—{% endif %}
+                            {% elif item.kind == "datetime" %}
+                                {% if item.value %}{{ item.value|to_jalali:"%Y-%m-%d %H:%M" }}{% else %}—{% endif %}
+                            {% elif item.kind == "files" %}
+                                {% if item.value %}
+                                    {% for file_item in item.value %}
+                                        <a href="/media/{{ file_item.url }}" target="_blank" rel="noopener">
+                                            <i class="fas fs-2 fa-file icon-lg me-1" aria-hidden="true"></i>
+                                        </a>
+                                    {% endfor %}
+                                {% else %}—{% endif %}
+                            {% else %}
+                                {{ item.value|default:"—" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
     <div class="rounded shadow-sm my-10 bg-white py-10 px-3">
         <div class="row row-cols-5">
             <input type="hidden" id="packing_id" value="{{ form.instance.pk }}">
@@ -133,7 +182,7 @@
                                     </div>
                                     <div class="col-2 py-1 ">
                                         <span>
-                                            {% if not form.instance.sepidar_wh_to_wh %}
+                                            {% if not form.instance.sepidar_wh_to_wh and wf_access %}
                                         <a href="#" target="_blank" class="me-3 edit-packing-item tooltip_" data-url="{% url 'order:packingitem.update' packing_item.pk %}" data-bs-toggle="modal" data-bs-target="#id_kt_empty_modal_lg">
                                             <span class="tooltiptext">ویرایش</span>
                                             <i class="ki-duotone ki-pencil fs-2 text-info">
@@ -174,7 +223,7 @@
 
                         {% endif %}
                             <div class="mt-5">
-                                {% if state_index < 1 %}
+                                {% if state_index < 1 and wf_access %}
                                     {% include 'core/partial/components/plus_new.html' with id_='packing_item' obj=form.instance url_='order:packingitem.view' modal_id='id_kt_empty_modal_lg' help_text='پس از ثبت اطلاعات پایه امکان ثبت ردیف های پکینگ وجود دارد' %}
                                 {% endif %}
                             </div>
