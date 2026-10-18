@@ -59,10 +59,79 @@
     }
 
     .packing-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1.62fr) minmax(390px, .88fr);
-        gap: 18px;
-        align-items: start;
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        width: 100%;
+    }
+
+    .packing-source-panel {
+        flex: 0 0 62%;
+        min-width: 420px;
+    }
+
+    .packing-side {
+        flex: 1 1 auto;
+        min-width: 360px;
+    }
+
+    .pk-resizer {
+        flex: 0 0 18px;
+        align-self: stretch;
+        cursor: col-resize;
+        position: relative;
+        min-height: 520px;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .pk-resizer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 8px;
+        width: 2px;
+        border-radius: 2px;
+        background: #dfe4ec;
+        transition: width .15s ease, left .15s ease, background .15s ease;
+    }
+
+    .pk-resizer::after {
+        content: '⋮';
+        position: sticky;
+        top: 45vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 46px;
+        margin-top: 180px;
+        border: 1px solid #dde3ec;
+        border-radius: 9px;
+        background: #fff;
+        color: #9aa3b2;
+        font-size: 20px;
+        line-height: 1;
+        box-shadow: 0 3px 10px rgba(24, 28, 50, .06);
+    }
+
+    .pk-resizer:hover::before,
+    .pk-resizer.is-dragging::before {
+        left: 7px;
+        width: 4px;
+        background: #3699ff;
+    }
+
+    .pk-resizer:hover::after,
+    .pk-resizer.is-dragging::after {
+        color: #3699ff;
+        border-color: #b9d9ff;
+    }
+
+    body.pk-resizing {
+        cursor: col-resize !important;
+        user-select: none !important;
     }
 
     .pk-card {
@@ -190,11 +259,6 @@
         justify-content: center;
     }
 
-    .packing-side {
-        position: sticky;
-        top: 18px;
-    }
-
     .packing-meta-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -260,10 +324,9 @@
     }
 
     #formset-container {
-        max-height: calc(100vh - 470px);
         min-height: 100px;
-        overflow-y: auto;
-        padding-right: 2px;
+        overflow: visible;
+        padding-right: 0;
     }
 
     .pk-empty-state {
@@ -302,7 +365,7 @@
     }
 
     .pk-row-main {
-        padding: 13px 14px 11px;
+        padding: 10px 12px 9px;
     }
 
     .pk-row-top {
@@ -362,7 +425,7 @@
         grid-template-columns: minmax(135px, .8fr) 1fr 1fr;
         gap: 10px;
         align-items: end;
-        margin-top: 12px;
+        margin-top: 9px;
     }
 
     .pk-quantity-box label,
@@ -384,8 +447,8 @@
         border-radius: 9px;
         background: var(--pk-soft);
         border: 1px solid #eef0f4;
-        padding: 8px 10px;
-        min-height: 58px;
+        padding: 6px 9px;
+        min-height: 50px;
     }
 
     .pk-stat strong {
@@ -404,7 +467,7 @@
     .pk-row-details summary {
         list-style: none;
         cursor: pointer;
-        padding: 9px 14px;
+        padding: 7px 12px;
         color: #5e6278;
         font-size: .78rem;
         user-select: none;
@@ -415,7 +478,7 @@
     }
 
     .pk-row-details-body {
-        padding: 0 14px 13px;
+        padding: 0 12px 10px;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 9px;
@@ -477,15 +540,22 @@
 
     @media (max-width: 1250px) {
         .packing-layout {
-            grid-template-columns: 1fr;
+            display: block;
+        }
+
+        .packing-source-panel,
+        .packing-side {
+            min-width: 0;
+            width: 100% !important;
+            flex-basis: auto !important;
         }
 
         .packing-side {
-            position: static;
+            margin-top: 18px;
         }
 
-        #formset-container {
-            max-height: none;
+        .pk-resizer {
+            display: none;
         }
     }
 
@@ -534,7 +604,7 @@
             </div>
 
             <div class="packing-layout">
-                <section class="pk-card">
+                <section class="pk-card packing-source-panel" id="packing-source-panel">
                     <div class="pk-card-header">
                         <div>
                             <h2 class="pk-card-title">
@@ -554,7 +624,16 @@
                     </div>
                 </section>
 
-                <aside class="packing-side">
+                <div
+                    class="pk-resizer"
+                    id="packing-layout-resizer"
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="تغییر اندازه ستون‌های جدول و فرم"
+                    title="برای تغییر اندازه ستون‌ها بکشید؛ دوبار کلیک برای حالت پیش‌فرض"
+                ></div>
+
+                <aside class="packing-side" id="packing-form-panel">
                     <div class="pk-card">
                         <div class="pk-card-header">
                             <div>
@@ -656,6 +735,94 @@
     const submitButton = document.getElementById('submit-packing');
     const emptyState = document.getElementById('packing-empty-state');
     const selectedCount = document.getElementById('packing-selected-count');
+    const packingLayout = document.querySelector('.packing-layout');
+    const sourcePanel = document.getElementById('packing-source-panel');
+    const formPanel = document.getElementById('packing-form-panel');
+    const layoutResizer = document.getElementById('packing-layout-resizer');
+    const splitStorageKey = 'quickPackingSplitPercent';
+    const defaultSplitPercent = 62;
+
+    function clampSplitPercent(value) {
+        return Math.min(76, Math.max(38, value));
+    }
+
+    function applySplitPercent(percent, persist = false) {
+        if (window.innerWidth <= 1250) return;
+
+        const safePercent = clampSplitPercent(percent);
+        sourcePanel.style.flexBasis = safePercent + '%';
+        formPanel.style.flexBasis = '0';
+        formPanel.style.flexGrow = '1';
+
+        if (persist) {
+            localStorage.setItem(splitStorageKey, String(safePercent));
+        }
+    }
+
+    function initResizableLayout() {
+        if (!layoutResizer || !packingLayout) return;
+
+        const saved = parseFloat(localStorage.getItem(splitStorageKey));
+        applySplitPercent(Number.isFinite(saved) ? saved : defaultSplitPercent);
+
+        let dragging = false;
+
+        const resizeFromPointer = (clientX) => {
+            const rect = packingLayout.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const percent = (x / rect.width) * 100;
+            applySplitPercent(percent);
+        };
+
+        layoutResizer.addEventListener('pointerdown', function (event) {
+            if (window.innerWidth <= 1250) return;
+            dragging = true;
+            document.body.classList.add('pk-resizing');
+            layoutResizer.classList.add('is-dragging');
+            layoutResizer.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+        });
+
+        layoutResizer.addEventListener('pointermove', function (event) {
+            if (!dragging) return;
+            resizeFromPointer(event.clientX);
+        });
+
+        const stopDragging = function () {
+            if (!dragging) return;
+            dragging = false;
+            document.body.classList.remove('pk-resizing');
+            layoutResizer.classList.remove('is-dragging');
+
+            const layoutRect = packingLayout.getBoundingClientRect();
+            const sourceRect = sourcePanel.getBoundingClientRect();
+            const percent = (sourceRect.width / layoutRect.width) * 100;
+            applySplitPercent(percent, true);
+
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#quick-packing-list')) {
+                $('#quick-packing-list').DataTable().columns.adjust();
+            }
+        };
+
+        layoutResizer.addEventListener('pointerup', stopDragging);
+        layoutResizer.addEventListener('pointercancel', stopDragging);
+
+        layoutResizer.addEventListener('dblclick', function () {
+            localStorage.removeItem(splitStorageKey);
+            applySplitPercent(defaultSplitPercent, true);
+
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#quick-packing-list')) {
+                $('#quick-packing-list').DataTable().columns.adjust();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 1250) {
+                const stored = parseFloat(localStorage.getItem(splitStorageKey));
+                applySplitPercent(Number.isFinite(stored) ? stored : defaultSplitPercent);
+            }
+        });
+    }
 
     function toNumber(value) {
         const number = parseFloat(String(value ?? '').replace(/,/g, ''));
@@ -907,6 +1074,7 @@
         );
 
         $('#quick-packing-list').on('draw.dt', syncDatatable);
+        initResizableLayout();
         syncEmptyState();
     });
 
