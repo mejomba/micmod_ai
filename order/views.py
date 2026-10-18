@@ -3931,7 +3931,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
 
         qs = (
             self.model.objects
-            .select_related('item', 'item_trade', 'last_work_flow')
+            .select_related('item', 'item_trade')
             .annotate(
                 effective_quantity=effective_quantity,
                 quantity_in_gio=Coalesce(
