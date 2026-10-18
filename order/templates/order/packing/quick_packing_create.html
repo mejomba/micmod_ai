@@ -6,7 +6,7 @@
 {% load order_tags %}
 {% load jalali_tags %}
 
-{% block title %}ساخت Packing{% endblock title %}
+{% block title %}Packing{% endblock title %}
 
 {% block extra_css %}
 <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
@@ -593,13 +593,13 @@
 
             <div class="packing-page-header">
                 <div>
-                    <h1 class="packing-page-title">ساخت Packing</h1>
+                    <h1 class="packing-page-title" data-key="packing_create_title">Create Packing</h1>
                     <div class="packing-page-subtitle">
-                        سفارش‌هایی که GIO شده‌اند را انتخاب کنید. حداکثر تعداد قابل Packing بر اساس GIO ثبت‌شده و Packingهای قبلی محاسبه می‌شود.
+                        <span data-key="packing_create_subtitle">Select GIO orders. Packing quantity is limited by GIO quantity and previous packings.</span>
                     </div>
                 </div>
                 <a href="{% url 'order:packing.list' %}" class="btn btn-sm btn-light">
-                    مشاهده Packingها
+                    <span data-key="packing_view_list">View Packings</span>
                 </a>
             </div>
 
@@ -609,10 +609,10 @@
                         <div>
                             <h2 class="pk-card-title">
                                 <span class="pk-card-title-icon">01</span>
-                                سفارش‌های قابل Packing
+                                <span data-key="packing_available_orders">Orders Available for Packing</span>
                             </h2>
                             <div class="pk-card-help mt-1">
-                                فقط سفارش‌هایی نمایش داده می‌شوند که موجودی GIO قابل استفاده دارند.
+                                <span data-key="packing_available_orders_help">Only orders with usable GIO quantity are shown.</span>
                             </div>
                         </div>
                     </div>
@@ -629,8 +629,7 @@
                     id="packing-layout-resizer"
                     role="separator"
                     aria-orientation="vertical"
-                    aria-label="تغییر اندازه ستون‌های جدول و فرم"
-                    title="برای تغییر اندازه ستون‌ها بکشید؛ دوبار کلیک برای حالت پیش‌فرض"
+                    aria-label="Resize packing columns"
                 ></div>
 
                 <aside class="packing-side" id="packing-form-panel">
@@ -639,10 +638,10 @@
                             <div>
                                 <h2 class="pk-card-title">
                                     <span class="pk-card-title-icon">02</span>
-                                    اطلاعات Packing
+                                    <span data-key="packing_info">Packing Information</span>
                                 </h2>
                                 <div class="pk-card-help mt-1">
-                                    مشخصات کلی محموله و اقلام انتخاب‌شده
+                                    <span data-key="packing_info_help">Shipment details and selected items</span>
                                 </div>
                             </div>
                         </div>
@@ -660,7 +659,7 @@
                                     data-bs-target="#packing-attachments"
                                     aria-expanded="false"
                                 >
-                                    <span>اسناد و فایل‌های Packing</span>
+                                    <span data-key="packing_attachments">Packing Documents</span>
                                     <span>+</span>
                                 </button>
 
@@ -676,18 +675,18 @@
                             <div class="pk-selected-wrap">
                                 <div class="pk-selected-header">
                                     <div class="d-flex align-items-center gap-2">
-                                        <strong>اقلام انتخاب‌شده</strong>
+                                        <strong data-key="packing_selected_items">Selected Items</strong>
                                         <span class="pk-selected-count" id="packing-selected-count">0</span>
                                     </div>
-                                    <small class="text-muted">برای حذف، از آیکن هر ردیف استفاده کنید</small>
+                                    <small class="text-muted" data-key="packing_remove_hint">Use the remove button on each row to delete it.</small>
                                 </div>
 
                                 {{ formset.management_form }}
 
                                 <div id="packing-empty-state" class="pk-empty-state">
                                     <div class="empty-icon">＋</div>
-                                    <div class="fw-bold text-dark mb-1">هنوز سفارشی انتخاب نشده</div>
-                                    <div>از جدول سمت چپ روی دکمه افزودن کلیک کنید.</div>
+                                    <div class="fw-bold text-dark mb-1" data-key="packing_empty_title">No order selected yet</div>
+                                    <div data-key="packing_empty_help">Use the add button in the orders table.</div>
                                 </div>
 
                                 <div id="formset-container"></div>
@@ -696,21 +695,21 @@
                             <div class="pk-summary">
                                 <div class="pk-summary-grid">
                                     <div class="pk-summary-item">
-                                        <span>جمع تعداد</span>
+                                        <span data-key="packing_total_quantity">Total Quantity</span>
                                         <strong id="packing-total-quantity">0</strong>
                                     </div>
                                     <div class="pk-summary-item">
-                                        <span>جمع وزن</span>
+                                        <span data-key="packing_total_weight">Total Weight</span>
                                         <strong id="packing-total-weight">0</strong>
                                     </div>
                                     <div class="pk-summary-item">
-                                        <span>جمع ارزش</span>
+                                        <span data-key="packing_total_value">Total Value</span>
                                         <strong id="packing-total-value">0</strong>
                                     </div>
                                 </div>
 
                                 <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
-                                    ثبت Packing
+                                    <span data-key="packing_submit">Save Packing</span>
                                 </button>
                                 <div id="ajax-response"></div>
                             </div>
@@ -725,6 +724,40 @@
 
 {% block extra_js %}
 <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
+
+<div id="packing-i18n-bank" class="d-none" aria-hidden="true">
+    <span data-key="packing_available">Available for Packing</span>
+    <span data-key="packing_order_remaining">Remaining in Order</span>
+    <span data-key="packing_remove_row">Remove row</span>
+    <span data-key="packing_quantity_this">Packing Quantity</span>
+    <span data-key="packing_max">Max</span>
+    <span data-key="packing_row_total_weight">Row Total Weight</span>
+    <span data-key="packing_unit_weight">Unit Weight</span>
+    <span data-key="packing_row_total_value">Row Total Value</span>
+    <span data-key="packing_unit_price">Unit Price</span>
+    <span data-key="packing_row_more_info">Additional Row Information</span>
+    <span data-key="packing_previous">Previous Packing</span>
+    <span data-key="carton_number">Carton Number</span>
+    <span data-key="gross_weight">Gross Weight</span>
+    <span data-key="size">Size</span>
+    <span data-key="description">Description</span>
+    <span data-key="packing_search_orders">Search orders...</span>
+    <span data-key="packing_length_menu">Show _MENU_ rows</span>
+    <span data-key="packing_info_records">Showing _START_ to _END_ of _TOTAL_ orders</span>
+    <span data-key="packing_info_empty">No orders are available for packing</span>
+    <span data-key="packing_zero_records">No packable order found</span>
+    <span data-key="previous">Previous</span>
+    <span data-key="next">Next</span>
+    <span data-key="packing_select_one_error">Select at least one order for packing.</span>
+    <span data-key="packing_quantity_invalid_error">One row quantity is outside the available packing capacity.</span>
+    <span data-key="packing_submitting">Saving...</span>
+    <span data-key="packing_success">Packing saved successfully.</span>
+    <span data-key="packing_save_error">Error saving packing.</span>
+    <span data-key="packing_submit">Save Packing</span>
+    <span data-key="packing_resize_columns">Drag to resize columns; double-click to reset.</span>
+    <span data-key="packing_gio_quantity">GIO Qty</span>
+    <span data-key="sku">SKU</span>
+</div>
 
 <script>
 (function () {
@@ -741,6 +774,49 @@
     const layoutResizer = document.getElementById('packing-layout-resizer');
     const splitStorageKey = 'quickPackingSplitPercent';
     const defaultSplitPercent = 62;
+    let packingTranslations = {};
+
+    function currentLanguage() {
+        return localStorage.getItem('Dason-language') || 'en';
+    }
+
+    function tr(key, fallback = '') {
+        return packingTranslations[key] || fallback || key;
+    }
+
+    function applyDynamicTranslations(root = document) {
+        root.querySelectorAll('[data-key]').forEach(function (element) {
+            const key = element.dataset.key;
+            if (packingTranslations[key] !== undefined) {
+                element.textContent = packingTranslations[key];
+            }
+        });
+
+        if (layoutResizer) {
+            layoutResizer.setAttribute(
+                'aria-label',
+                tr('packing_resize_columns', 'Drag to resize columns; double-click to reset.')
+            );
+            layoutResizer.setAttribute(
+                'title',
+                tr('packing_resize_columns', 'Drag to resize columns; double-click to reset.')
+            );
+        }
+    }
+
+    async function loadPackingTranslations() {
+        try {
+            const response = await fetch('/static/lang/' + currentLanguage() + '.json', {
+                cache: 'force-cache'
+            });
+            if (response.ok) {
+                packingTranslations = await response.json();
+            }
+        } catch (error) {
+            packingTranslations = {};
+        }
+        applyDynamicTranslations(document);
+    }
 
     function clampSplitPercent(value) {
         return Math.min(76, Math.max(38, value));
@@ -953,18 +1029,18 @@
                         </div>
 
                         <div class="pk-row-tags">
-                            <span class="pk-tag pk-tag-gio">GIO: ${fmt(data.quantityInGio)}</span>
-                            <span class="pk-tag pk-tag-available">قابل Packing: ${fmt(data.available)}</span>
-                            <span class="pk-tag pk-tag-remaining">باقی سفارش: ${fmt(data.remainingInOrder)}</span>
+                            <span class="pk-tag pk-tag-gio">${tr('packing_gio_quantity', 'GIO Qty')}: ${fmt(data.quantityInGio)}</span>
+                            <span class="pk-tag pk-tag-available">${tr('packing_available', 'Available for Packing')}: ${fmt(data.available)}</span>
+                            <span class="pk-tag pk-tag-remaining">${tr('packing_order_remaining', 'Remaining in Order')}: ${fmt(data.remainingInOrder)}</span>
                         </div>
                     </div>
 
-                    <button type="button" class="pk-remove remove-packing-row" title="حذف ردیف">×</button>
+                    <button type="button" class="pk-remove remove-packing-row" title="${tr('packing_remove_row', 'Remove row')}">×</button>
                 </div>
 
                 <div class="pk-row-quantity">
                     <div class="pk-quantity-box">
-                        <label>تعداد این Packing</label>
+                        <label>${tr('packing_quantity_this', 'Packing Quantity')}</label>
                         <input
                             type="number"
                             step="any"
@@ -975,47 +1051,47 @@
                             value="${data.available}"
                             required
                         >
-                        <small class="text-muted d-block mt-1">حداکثر ${fmt(data.available)}</small>
+                        <small class="text-muted d-block mt-1">${tr('packing_max', 'Max')} ${fmt(data.available)}</small>
                     </div>
 
                     <div class="pk-stat">
-                        <span class="pk-mini-label">وزن کل ردیف</span>
+                        <span class="pk-mini-label">${tr('packing_row_total_weight', 'Row Total Weight')}</span>
                         <strong><span class="row-total-weight">0</span></strong>
-                        <small class="text-muted">وزن واحد: ${fmt(data.unitWeight)}</small>
+                        <small class="text-muted">${tr('packing_unit_weight', 'Unit Weight')}: ${fmt(data.unitWeight)}</small>
                     </div>
 
                     <div class="pk-stat">
-                        <span class="pk-mini-label">ارزش کل ردیف</span>
+                        <span class="pk-mini-label">${tr('packing_row_total_value', 'Row Total Value')}</span>
                         <strong><span class="row-total-value">0</span></strong>
-                        <small class="text-muted">قیمت واحد: ${fmtMoney(data.finalPrice)}</small>
+                        <small class="text-muted">${tr('packing_unit_price', 'Unit Price')}: ${fmtMoney(data.finalPrice)}</small>
                     </div>
                 </div>
             </div>
 
             <details class="pk-row-details">
                 <summary>
-                    اطلاعات تکمیلی ردیف
-                    <span class="text-muted ms-2">Packing قبلی: ${fmt(packedBefore)}</span>
+                    ${tr('packing_row_more_info', 'Additional Row Information')}
+                    <span class="text-muted ms-2">${tr('packing_previous', 'Previous Packing')}: ${fmt(packedBefore)}</span>
                 </summary>
 
                 <div class="pk-row-details-body">
                     <div>
-                        <label class="pk-mini-label">Carton Number</label>
+                        <label class="pk-mini-label">${tr('carton_number', 'Carton Number')}</label>
                         <input class="form-control" name="form-${index}-carton_number">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">Gross Weight</label>
+                        <label class="pk-mini-label">${tr('gross_weight', 'Gross Weight')}</label>
                         <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">Size</label>
+                        <label class="pk-mini-label">${tr('size', 'Size')}</label>
                         <input class="form-control" name="form-${index}-size">
                     </div>
 
                     <div class="pk-desc">
-                        <label class="pk-mini-label">توضیحات</label>
+                        <label class="pk-mini-label">${tr('description', 'Description')}</label>
                         <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
                     </div>
                 </div>
@@ -1045,7 +1121,9 @@
         row.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     };
 
-    $(document).ready(function () {
+    $(document).ready(async function () {
+        await loadPackingTranslations();
+
         AjaxDatatableViewUtils.initialize_table(
             $('#quick-packing-list'),
             listUrl,
@@ -1059,21 +1137,24 @@
                 dom: 'lfrtip',
                 language: {
                     search: '',
-                    searchPlaceholder: 'جستجو در سفارش‌ها...',
-                    lengthMenu: 'نمایش _MENU_ ردیف',
-                    info: 'نمایش _START_ تا _END_ از _TOTAL_ سفارش',
-                    infoEmpty: 'سفارشی برای Packing وجود ندارد',
-                    zeroRecords: 'سفارش قابل Packing پیدا نشد',
+                    searchPlaceholder: tr('packing_search_orders', 'Search orders...'),
+                    lengthMenu: tr('packing_length_menu', 'Show _MENU_ rows'),
+                    info: tr('packing_info_records', 'Showing _START_ to _END_ of _TOTAL_ orders'),
+                    infoEmpty: tr('packing_info_empty', 'No orders are available for packing'),
+                    zeroRecords: tr('packing_zero_records', 'No packable order found'),
                     paginate: {
-                        previous: 'قبلی',
-                        next: 'بعدی'
+                        previous: tr('previous', 'Previous'),
+                        next: tr('next', 'Next')
                     }
                 }
             },
             {}
         );
 
-        $('#quick-packing-list').on('draw.dt', syncDatatable);
+        $('#quick-packing-list').on('draw.dt', function () {
+            syncDatatable();
+            applyDynamicTranslations(document.getElementById('quick-packing-list'));
+        });
         initResizableLayout();
         syncEmptyState();
     });
@@ -1085,7 +1166,7 @@
             $('#ajax-response')
                 .removeClass('text-success')
                 .addClass('text-danger')
-                .text('حداقل یک سفارش برای Packing انتخاب کنید.');
+                .text(tr('packing_select_one_error', 'Select at least one order for packing.'));
             return;
         }
 
@@ -1108,7 +1189,7 @@
             $('#ajax-response')
                 .removeClass('text-success')
                 .addClass('text-danger')
-                .text('تعداد یکی از ردیف‌ها از ظرفیت قابل Packing خارج است.');
+                .text(tr('packing_quantity_invalid_error', 'One row quantity is outside the available packing capacity.'));
             return;
         }
 
@@ -1129,7 +1210,7 @@
         formData.append('form-TOTAL_FORMS', totalFormsInput.value);
 
         submitButton.disabled = true;
-        submitButton.innerHTML = 'در حال ثبت...';
+        submitButton.textContent = tr('packing_submitting', 'Saving...');
 
         $('#ajax-response')
             .removeClass('text-danger text-success')
@@ -1147,16 +1228,16 @@
                 $('#ajax-response')
                     .removeClass('text-danger')
                     .addClass('text-success')
-                    .text('Packing با موفقیت ثبت شد.');
+                    .text(tr('packing_success', 'Packing saved successfully.'));
 
                 window.location.href = response.res.url;
             },
 
             error: function (response) {
                 submitButton.disabled = false;
-                submitButton.innerHTML = 'ثبت Packing';
+                submitButton.textContent = tr('packing_submit', 'Save Packing');
 
-                const message = response.responseJSON?.res?.ERROR || 'خطا در ذخیره Packing';
+                const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
 
                 $('#ajax-response')
                     .removeClass('text-success')
