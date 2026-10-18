@@ -17,7 +17,7 @@ from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Now
 from django.forms import modelformset_factory
 from django.db.models import Sum, F, ExpressionWrapper, FloatField, Q, Value, Case, When, IntegerField, Subquery, \
-    OuterRef
+    OuterRef, CharField
 from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed, HttpResponseForbidden
@@ -37,6 +37,7 @@ from comments.forms import CommentsForm
 from core.permissions import HasShopPermission
 from core.views import BaseView, Base
 from factor.models import Factor, FactorItem, FactorItemSupplyLocation
+from extra_data.models import ItemWeight
 from factor.services.supply import SupplyLocationService
 from inquiry.models import Supplier
 from micmod_base.models import QuotationItem, SupplyStatus
@@ -3594,6 +3595,25 @@ class QuickGIODataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
+        item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
+        trade_item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_trade_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
+
         effective_quantity = Case(
             When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
@@ -3931,9 +3951,42 @@ class QuickPackingDataTableListView(AjaxDatatableView):
 
         qs = (
             self.model.objects
-            .select_related('item', 'item_trade')
             .annotate(
                 effective_quantity=effective_quantity,
+                effective_sku=Case(
+                    When(item_trade__isnull=False, then=F('item_trade__sku')),
+                    default=F('item__sku'),
+                    output_field=CharField(),
+                ),
+                effective_part_number=Case(
+                    When(item_trade__isnull=False, then=F('item_trade__part_number')),
+                    default=F('item__part_number'),
+                    output_field=CharField(),
+                ),
+                effective_unit_weight=Coalesce(
+                    Case(
+                        When(
+                            item_trade__isnull=False,
+                            then=Subquery(
+                                trade_item_weight_subquery,
+                                output_field=FloatField(),
+                            ),
+                        ),
+                        default=Subquery(
+                            item_weight_subquery,
+                            output_field=FloatField(),
+                        ),
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+                effective_unit_price=Coalesce(
+                    NullIf(F('price'), Value(0.0)),
+                    NullIf(F('price_mac'), Value(0.0)),
+                    NullIf(F('price_trade'), Value(0.0)),
+                    Value(0.0),
+                    output_field=FloatField(),
+                ),
                 quantity_in_gio=Coalesce(
                     Subquery(
                         gio_quantity_subquery,
@@ -3989,19 +4042,18 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         return qs
 
     def customize_row(self, row, obj):
-        item = obj.final_item
-        row['sku'] = getattr(item, 'sku', '') or ''
-        row['part_number'] = getattr(item, 'part_number', '') or ''
+        row['sku'] = obj.effective_sku or ''
+        row['part_number'] = obj.effective_part_number or ''
         row['quantity_in_gio'] = obj.quantity_in_gio or 0
         row['available_for_packing'] = obj.available_for_packing or 0
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
-        row['unit_weight'] = obj.final_weight or 0
-        row['final_price'] = obj.final_price or 0
+        row['unit_weight'] = obj.effective_unit_weight or 0
+        row['final_price'] = obj.effective_unit_price or 0
         row['show_order_str'] = mark_safe(
             '<div class="d-flex gap-3">'
             f'<span>{obj.order_number or obj.pk}</span>'
-            f'<span>SKU: {getattr(item, "sku", "-")}</span>'
-            f'<span>{getattr(item, "part_number", "-")}</span>'
+            f'<span>SKU: {obj.effective_sku or "-"}</span>'
+            f'<span>{obj.effective_part_number or "-"}</span>'
             '</div>'
         )
         row['add_to_packing'] = (
