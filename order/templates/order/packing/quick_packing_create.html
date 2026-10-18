@@ -845,8 +845,13 @@
 
         const resizeFromPointer = (clientX) => {
             const rect = packingLayout.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const percent = (x / rect.width) * 100;
+            const isRtl = getComputedStyle(packingLayout).direction === 'rtl';
+
+            const distanceFromSourceEdge = isRtl
+                ? rect.right - clientX
+                : clientX - rect.left;
+
+            const percent = (distanceFromSourceEdge / rect.width) * 100;
             applySplitPercent(percent);
         };
 
