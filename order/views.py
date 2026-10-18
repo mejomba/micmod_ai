@@ -3682,6 +3682,10 @@ class QuickPackingView(LoginRequiredMixin, View):
         if isinstance(group, list):
             group = group[0] if group else 'packing_user'
 
+        first_deadline = self.flow_config.get('flow_deadline', [0])[0] or 0
+        if isinstance(first_deadline, list):
+            first_deadline = first_deadline[0] if first_deadline else 0
+
         wf = WorkFlow.objects.create(
             wf_status=5,
             action=self.flow_config.get('flow_action') or 'create',
@@ -3689,7 +3693,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             from_user=self.request.user,
             to_user=self.request.user,
             state=state,
-            deadline=timezone.now(),
+            deadline=timezone.now() + timedelta(days=first_deadline),
             belong_to_group=group,
             content_type=ContentType.objects.get_for_model(Packing),
             object_id=packing_obj.pk,
