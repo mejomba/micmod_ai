@@ -6,59 +6,638 @@
 {% load order_tags %}
 {% load jalali_tags %}
 
-{% block title %}Create Packing{% endblock title %}
+{% block title %}ساخت Packing{% endblock title %}
 
 {% block extra_css %}
 <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
 <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+
 <style>
-    .packing-selected-row { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
-    .packing-selected-row .metric { min-width: 130px; }
-    .packing-selected-row .metric strong { display: block; }
-    .packing-selected-row input[type=number] { min-width: 110px; }
+    :root {
+        --pk-border: #e7eaf0;
+        --pk-muted: #7e8299;
+        --pk-bg: #f6f8fb;
+        --pk-soft: #f9fafc;
+        --pk-primary-soft: #eef6ff;
+        --pk-success-soft: #eefaf3;
+        --pk-warning-soft: #fff8e7;
+        --pk-danger-soft: #fff2f2;
+    }
+
+    .packing-page {
+        background: var(--pk-bg);
+        min-height: calc(100vh - 80px);
+        padding: 22px 0 40px;
+    }
+
+    .packing-shell {
+        max-width: 1900px;
+        margin: 0 auto;
+        padding: 0 18px;
+    }
+
+    .packing-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .packing-page-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: #181c32;
+    }
+
+    .packing-page-subtitle {
+        margin-top: 6px;
+        color: var(--pk-muted);
+        font-size: .92rem;
+        max-width: 780px;
+    }
+
+    .packing-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.62fr) minmax(390px, .88fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .pk-card {
+        border: 1px solid var(--pk-border);
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(31, 38, 135, .04);
+        overflow: hidden;
+    }
+
+    .pk-card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--pk-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fff;
+    }
+
+    .pk-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #181c32;
+        margin: 0;
+    }
+
+    .pk-card-title-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: var(--pk-primary-soft);
+        color: #3699ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+    }
+
+    .pk-card-help {
+        color: var(--pk-muted);
+        font-size: .82rem;
+    }
+
+    .pk-card-body {
+        padding: 16px 18px;
+    }
+
+    .pk-source-table .dataTables_wrapper {
+        width: 100%;
+    }
+
+    .pk-source-table .dataTables_filter {
+        float: none !important;
+        text-align: right !important;
+        margin-bottom: 12px;
+    }
+
+    .pk-source-table .dataTables_filter input {
+        border: 1px solid var(--pk-border) !important;
+        border-radius: 9px !important;
+        min-width: 240px;
+        padding: 7px 10px !important;
+        background: var(--pk-soft);
+    }
+
+    .pk-source-table .dataTables_length {
+        margin-bottom: 12px;
+    }
+
+    #quick-packing-list {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        width: 100% !important;
+    }
+
+    #quick-packing-list thead th {
+        background: #f7f9fc;
+        color: #5e6278;
+        font-size: .78rem;
+        font-weight: 700;
+        border-top: 1px solid var(--pk-border) !important;
+        border-bottom: 1px solid var(--pk-border) !important;
+        white-space: nowrap;
+        padding: 11px 9px !important;
+    }
+
+    #quick-packing-list tbody td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f1f5 !important;
+        color: #3f4254;
+        font-size: .84rem;
+        padding: 11px 9px !important;
+    }
+
+    #quick-packing-list tbody tr:hover {
+        background: #f8fbff !important;
+    }
+
+    #quick-packing-list .available-for-packing {
+        color: #0f9d58;
+        font-weight: 700;
+    }
+
+    #quick-packing-list .quantity-in-gio {
+        color: #3699ff;
+        font-weight: 600;
+    }
+
+    #quick-packing-list .remaining-quantity-in-order {
+        color: #b26a00;
+        font-weight: 600;
+    }
+
+    #quick-packing-list .action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .packing-side {
+        position: sticky;
+        top: 18px;
+    }
+
+    .packing-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+    }
+
+    .packing-meta-grid > div {
+        min-width: 0;
+    }
+
+    .packing-meta-grid .form-control,
+    .packing-meta-grid .form-select,
+    .packing-meta-grid select {
+        border-radius: 9px;
+        border-color: var(--pk-border);
+    }
+
+    .pk-attachments-toggle {
+        width: 100%;
+        border: 1px dashed #cfd6e4;
+        background: #fbfcfe;
+        border-radius: 10px;
+        color: #5e6278;
+        padding: 9px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .pk-attachments {
+        margin-top: 10px;
+        padding: 12px;
+        background: #fafbfc;
+        border: 1px solid var(--pk-border);
+        border-radius: 10px;
+    }
+
+    .pk-selected-wrap {
+        margin-top: 16px;
+    }
+
+    .pk-selected-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .pk-selected-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 26px;
+        padding: 0 8px;
+        border-radius: 20px;
+        background: #eef2f7;
+        color: #5e6278;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    #formset-container {
+        max-height: calc(100vh - 470px);
+        min-height: 100px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+
+    .pk-empty-state {
+        border: 1px dashed #d9dee8;
+        background: #fafbfc;
+        border-radius: 12px;
+        padding: 26px 18px;
+        text-align: center;
+        color: var(--pk-muted);
+    }
+
+    .pk-empty-state .empty-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        margin: 0 auto 10px;
+        background: #f0f3f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .packing-selected-row {
+        border: 1px solid var(--pk-border);
+        border-radius: 12px;
+        background: #fff;
+        margin-bottom: 10px;
+        overflow: hidden;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .packing-selected-row:hover {
+        border-color: #c8d7ef;
+        box-shadow: 0 4px 12px rgba(24, 28, 50, .05);
+    }
+
+    .pk-row-main {
+        padding: 13px 14px 11px;
+    }
+
+    .pk-row-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .pk-row-title {
+        font-weight: 700;
+        color: #181c32;
+        font-size: .95rem;
+    }
+
+    .pk-row-part {
+        margin-top: 3px;
+        color: #5e6278;
+        font-size: .8rem;
+        word-break: break-word;
+    }
+
+    .pk-row-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .pk-tag {
+        border-radius: 20px;
+        padding: 4px 8px;
+        font-size: .72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .pk-tag-gio { background: var(--pk-primary-soft); color: #3699ff; }
+    .pk-tag-available { background: var(--pk-success-soft); color: #0f9d58; }
+    .pk-tag-remaining { background: var(--pk-warning-soft); color: #a86600; }
+
+    .pk-remove {
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 8px;
+        color: #f1416c;
+        background: var(--pk-danger-soft);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+    }
+
+    .pk-row-quantity {
+        display: grid;
+        grid-template-columns: minmax(135px, .8fr) 1fr 1fr;
+        gap: 10px;
+        align-items: end;
+        margin-top: 12px;
+    }
+
+    .pk-quantity-box label,
+    .pk-mini-label {
+        color: var(--pk-muted);
+        font-size: .72rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .pk-quantity-box input {
+        border-radius: 9px;
+        border: 1px solid #cfd6e4;
+        font-weight: 700;
+        color: #181c32;
+    }
+
+    .pk-stat {
+        border-radius: 9px;
+        background: var(--pk-soft);
+        border: 1px solid #eef0f4;
+        padding: 8px 10px;
+        min-height: 58px;
+    }
+
+    .pk-stat strong {
+        font-size: .87rem;
+        color: #181c32;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pk-row-details {
+        border-top: 1px solid #f0f1f5;
+        background: #fbfcfe;
+    }
+
+    .pk-row-details summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 9px 14px;
+        color: #5e6278;
+        font-size: .78rem;
+        user-select: none;
+    }
+
+    .pk-row-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .pk-row-details-body {
+        padding: 0 14px 13px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .pk-row-details-body .form-control {
+        border-radius: 8px;
+        border-color: var(--pk-border);
+        font-size: .82rem;
+    }
+
+    .pk-row-details-body .pk-desc {
+        grid-column: 1 / -1;
+    }
+
+    .pk-summary {
+        border-top: 1px solid var(--pk-border);
+        margin-top: 14px;
+        padding-top: 14px;
+    }
+
+    .pk-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .pk-summary-item {
+        border: 1px solid var(--pk-border);
+        border-radius: 10px;
+        background: var(--pk-soft);
+        padding: 9px 10px;
+    }
+
+    .pk-summary-item span {
+        display: block;
+        color: var(--pk-muted);
+        font-size: .7rem;
+        margin-bottom: 2px;
+    }
+
+    .pk-summary-item strong {
+        font-size: .92rem;
+        color: #181c32;
+    }
+
+    .pk-submit {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    #ajax-response {
+        font-size: .78rem;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 1250px) {
+        .packing-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .packing-side {
+            position: static;
+        }
+
+        #formset-container {
+            max-height: none;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .packing-page-header {
+            flex-direction: column;
+        }
+
+        .packing-shell {
+            padding: 0 10px;
+        }
+
+        .packing-meta-grid,
+        .pk-row-quantity,
+        .pk-row-details-body,
+        .pk-summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pk-source-table {
+            overflow-x: auto;
+        }
+
+        .pk-card-body {
+            padding: 12px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="main-content" id="main-content">
-    <div class="page-content">
-        <div class="container-fluid">
-            <div class="d-flex gap-4">
-                <div style="width: 58%" id="section-1">
-                    <div class="table-responsive p-2">
-                        <table id="quick-packing-list" width="100%" class="m-table table-striped table-bordered w-100"></table>
+    <div class="packing-page">
+        <div class="packing-shell">
+
+            <div class="packing-page-header">
+                <div>
+                    <h1 class="packing-page-title">ساخت Packing</h1>
+                    <div class="packing-page-subtitle">
+                        سفارش‌هایی که GIO شده‌اند را انتخاب کنید. حداکثر تعداد قابل Packing بر اساس GIO ثبت‌شده و Packingهای قبلی محاسبه می‌شود.
                     </div>
                 </div>
+                <a href="{% url 'order:packing.list' %}" class="btn btn-sm btn-light">
+                    مشاهده Packingها
+                </a>
+            </div>
 
-                <div style="width: 42%" id="section-2">
-                    <div class="card px-3 py-5">
-                        <fieldset>
-                            <legend>اطلاعات Packing</legend>
-                            <div class="row row-cols-2 mt-4" id="packing-header">
-                                {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimated_delivery_date form.description label='on-border' %}
-                                {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
+            <div class="packing-layout">
+                <section class="pk-card">
+                    <div class="pk-card-header">
+                        <div>
+                            <h2 class="pk-card-title">
+                                <span class="pk-card-title-icon">01</span>
+                                سفارش‌های قابل Packing
+                            </h2>
+                            <div class="pk-card-help mt-1">
+                                فقط سفارش‌هایی نمایش داده می‌شوند که موجودی GIO قابل استفاده دارند.
                             </div>
-                        </fieldset>
-
-                        <fieldset class="mt-6">
-                            <legend>ردیف‌های Packing</legend>
-                            {{ formset.management_form }}
-                            <div id="formset-container"></div>
-
-                            <div class="d-flex justify-content-between border-top pt-4 mt-4">
-                                <div>
-                                    <div>جمع تعداد: <strong id="packing-total-quantity">0</strong></div>
-                                    <div>جمع وزن: <strong id="packing-total-weight">0</strong></div>
-                                    <div>جمع ارزش: <strong id="packing-total-value">0</strong></div>
-                                </div>
-                                <div>
-                                    <button type="button" id="submit-packing" class="btn btn-primary">ثبت Packing</button>
-                                    <div id="ajax-response" class="mt-2"></div>
-                                </div>
-                            </div>
-                        </fieldset>
+                        </div>
                     </div>
-                </div>
+
+                    <div class="pk-card-body pk-source-table">
+                        <div class="table-responsive">
+                            <table id="quick-packing-list" class="table w-100"></table>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="packing-side">
+                    <div class="pk-card">
+                        <div class="pk-card-header">
+                            <div>
+                                <h2 class="pk-card-title">
+                                    <span class="pk-card-title-icon">02</span>
+                                    اطلاعات Packing
+                                </h2>
+                                <div class="pk-card-help mt-1">
+                                    مشخصات کلی محموله و اقلام انتخاب‌شده
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pk-card-body">
+                            <div id="packing-header">
+                                <div class="packing-meta-grid">
+                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimated_delivery_date form.description label='on-border' %}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="pk-attachments-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#packing-attachments"
+                                    aria-expanded="false"
+                                >
+                                    <span>اسناد و فایل‌های Packing</span>
+                                    <span>+</span>
+                                </button>
+
+                                <div class="collapse" id="packing-attachments">
+                                    <div class="pk-attachments">
+                                        <div class="row row-cols-1">
+                                            {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pk-selected-wrap">
+                                <div class="pk-selected-header">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <strong>اقلام انتخاب‌شده</strong>
+                                        <span class="pk-selected-count" id="packing-selected-count">0</span>
+                                    </div>
+                                    <small class="text-muted">برای حذف، از آیکن هر ردیف استفاده کنید</small>
+                                </div>
+
+                                {{ formset.management_form }}
+
+                                <div id="packing-empty-state" class="pk-empty-state">
+                                    <div class="empty-icon">＋</div>
+                                    <div class="fw-bold text-dark mb-1">هنوز سفارشی انتخاب نشده</div>
+                                    <div>از جدول سمت چپ روی دکمه افزودن کلیک کنید.</div>
+                                </div>
+
+                                <div id="formset-container"></div>
+                            </div>
+
+                            <div class="pk-summary">
+                                <div class="pk-summary-grid">
+                                    <div class="pk-summary-item">
+                                        <span>جمع تعداد</span>
+                                        <strong id="packing-total-quantity">0</strong>
+                                    </div>
+                                    <div class="pk-summary-item">
+                                        <span>جمع وزن</span>
+                                        <strong id="packing-total-weight">0</strong>
+                                    </div>
+                                    <div class="pk-summary-item">
+                                        <span>جمع ارزش</span>
+                                        <strong id="packing-total-value">0</strong>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
+                                    ثبت Packing
+                                </button>
+                                <div id="ajax-response"></div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
@@ -75,6 +654,8 @@
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
+    const emptyState = document.getElementById('packing-empty-state');
+    const selectedCount = document.getElementById('packing-selected-count');
 
     function toNumber(value) {
         const number = parseFloat(String(value ?? '').replace(/,/g, ''));
@@ -83,6 +664,10 @@
 
     function fmt(value) {
         return toNumber(value).toLocaleString('en-US', {maximumFractionDigits: 4});
+    }
+
+    function fmtMoney(value) {
+        return toNumber(value).toLocaleString('en-US', {maximumFractionDigits: 2});
     }
 
     function rowDataFromTr(tr) {
@@ -100,24 +685,34 @@
     }
 
     function selectedOrderIds() {
-        return Array.from(container.querySelectorAll('[data-order-id]'))
+        return Array.from(container.querySelectorAll('.packing-selected-row'))
             .map(el => String(el.dataset.orderId));
+    }
+
+    function syncEmptyState() {
+        const count = container.querySelectorAll('.packing-selected-row').length;
+        selectedCount.textContent = count;
+        emptyState.classList.toggle('d-none', count > 0);
     }
 
     function syncDatatable() {
         const selected = selectedOrderIds();
+
         document.querySelectorAll('#quick-packing-list tbody tr').forEach(tr => {
             const orderId = String(toNumber(tr.querySelector('.order')?.textContent));
             const btn = tr.querySelector('.action');
             if (!btn) return;
+
             if (selected.includes(orderId)) {
-                btn.textContent = '✓';
+                btn.innerHTML = '✓';
                 btn.dataset.isSelected = 'yes';
-                btn.classList.add('text-success');
+                btn.classList.remove('btn-light-primary');
+                btn.classList.add('btn-light-success', 'text-success');
             } else {
-                btn.textContent = '➕';
+                btn.innerHTML = '＋';
                 btn.dataset.isSelected = 'no';
-                btn.classList.remove('text-success');
+                btn.classList.remove('btn-light-success', 'text-success');
+                btn.classList.add('btn-light-primary');
             }
         });
     }
@@ -140,21 +735,25 @@
             value += totalValue;
 
             row.querySelector('.row-total-weight').textContent = fmt(totalWeight);
-            row.querySelector('.row-total-value').textContent = fmt(totalValue);
+            row.querySelector('.row-total-value').textContent = fmtMoney(totalValue);
         });
 
         document.getElementById('packing-total-quantity').textContent = fmt(quantity);
         document.getElementById('packing-total-weight').textContent = fmt(weight);
-        document.getElementById('packing-total-value').textContent = fmt(value);
+        document.getElementById('packing-total-value').textContent = fmtMoney(value);
+
+        syncEmptyState();
     }
 
     function reindexRows() {
         const rows = Array.from(container.querySelectorAll('.packing-selected-row'));
+
         rows.forEach((row, index) => {
             row.querySelectorAll('[name]').forEach(input => {
                 input.name = input.name.replace(/form-\d+-/, `form-${index + 1}-`);
             });
         });
+
         totalFormsInput.value = rows.length + 1;
     }
 
@@ -166,6 +765,7 @@
         if (selectedOrderIds().includes(String(data.orderId))) return;
 
         const index = container.querySelectorAll('.packing-selected-row').length + 1;
+        const packedBefore = Math.max(data.quantityInGio - data.available, 0);
 
         const row = document.createElement('div');
         row.className = 'packing-selected-row';
@@ -175,75 +775,92 @@
 
         row.innerHTML = `
             <input type="hidden" name="form-${index}-order" value="${data.orderId}">
-            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                <div>
-                    <strong>${data.orderNumber}</strong>
-                    <div>SKU: ${data.sku}</div>
-                    <div>${data.partNumber}</div>
+
+            <div class="pk-row-main">
+                <div class="pk-row-top">
+                    <div class="min-w-0">
+                        <div class="pk-row-title">${data.orderNumber || ('Order #' + data.orderId)}</div>
+                        <div class="pk-row-part">
+                            <span class="me-2">SKU: <b>${data.sku || '-'}</b></span>
+                            <span>${data.partNumber || '-'}</span>
+                        </div>
+
+                        <div class="pk-row-tags">
+                            <span class="pk-tag pk-tag-gio">GIO: ${fmt(data.quantityInGio)}</span>
+                            <span class="pk-tag pk-tag-available">قابل Packing: ${fmt(data.available)}</span>
+                            <span class="pk-tag pk-tag-remaining">باقی سفارش: ${fmt(data.remainingInOrder)}</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="pk-remove remove-packing-row" title="حذف ردیف">×</button>
                 </div>
 
-                <div class="metric">
-                    <span>GIO</span>
-                    <strong>${fmt(data.quantityInGio)}</strong>
-                </div>
+                <div class="pk-row-quantity">
+                    <div class="pk-quantity-box">
+                        <label>تعداد این Packing</label>
+                        <input
+                            type="number"
+                            step="any"
+                            min="0.000001"
+                            max="${data.available}"
+                            class="form-control packing-quantity"
+                            name="form-${index}-quantity"
+                            value="${data.available}"
+                            required
+                        >
+                        <small class="text-muted d-block mt-1">حداکثر ${fmt(data.available)}</small>
+                    </div>
 
-                <div class="metric">
-                    <span>قابل Packing</span>
-                    <strong>${fmt(data.available)}</strong>
-                </div>
+                    <div class="pk-stat">
+                        <span class="pk-mini-label">وزن کل ردیف</span>
+                        <strong><span class="row-total-weight">0</span></strong>
+                        <small class="text-muted">وزن واحد: ${fmt(data.unitWeight)}</small>
+                    </div>
 
-                <div class="metric">
-                    <span>باقی سفارش</span>
-                    <strong>${fmt(data.remainingInOrder)}</strong>
-                </div>
-
-                <div>
-                    <label>تعداد Packing</label>
-                    <input type="number"
-                           step="any"
-                           min="0.000001"
-                           max="${data.available}"
-                           class="form-control packing-quantity"
-                           name="form-${index}-quantity"
-                           value="${data.available}"
-                           required>
-                </div>
-
-                <button type="button" class="btn btn-sm btn-light-danger remove-packing-row">حذف</button>
-            </div>
-
-            <div class="row row-cols-3 mt-3">
-                <div>
-                    <label>Carton Number</label>
-                    <input class="form-control" name="form-${index}-carton_number">
-                </div>
-                <div>
-                    <label>Gross Weight</label>
-                    <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
-                </div>
-                <div>
-                    <label>Size</label>
-                    <input class="form-control" name="form-${index}-size">
+                    <div class="pk-stat">
+                        <span class="pk-mini-label">ارزش کل ردیف</span>
+                        <strong><span class="row-total-value">0</span></strong>
+                        <small class="text-muted">قیمت واحد: ${fmtMoney(data.finalPrice)}</small>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-3">
-                <label>توضیحات</label>
-                <textarea class="form-control" rows="1" name="form-${index}-description"></textarea>
-            </div>
+            <details class="pk-row-details">
+                <summary>
+                    اطلاعات تکمیلی ردیف
+                    <span class="text-muted ms-2">Packing قبلی: ${fmt(packedBefore)}</span>
+                </summary>
 
-            <div class="d-flex gap-5 mt-3">
-                <div>وزن واحد: <strong>${fmt(data.unitWeight)}</strong></div>
-                <div>وزن کل: <strong class="row-total-weight">0</strong></div>
-                <div>قیمت نهایی: <strong>${fmt(data.finalPrice)}</strong></div>
-                <div>ارزش کل: <strong class="row-total-value">0</strong></div>
-            </div>
+                <div class="pk-row-details-body">
+                    <div>
+                        <label class="pk-mini-label">Carton Number</label>
+                        <input class="form-control" name="form-${index}-carton_number">
+                    </div>
+
+                    <div>
+                        <label class="pk-mini-label">Gross Weight</label>
+                        <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
+                    </div>
+
+                    <div>
+                        <label class="pk-mini-label">Size</label>
+                        <input class="form-control" name="form-${index}-size">
+                    </div>
+
+                    <div class="pk-desc">
+                        <label class="pk-mini-label">توضیحات</label>
+                        <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
+                    </div>
+                </div>
+            </details>
         `;
 
         container.appendChild(row);
 
         row.querySelector('.packing-quantity').addEventListener('input', function () {
-            if (toNumber(this.value) > data.available) this.value = data.available;
+            const current = toNumber(this.value);
+            if (current > data.available) this.value = data.available;
+            if (current < 0) this.value = 0;
             updateTotals();
         });
 
@@ -257,6 +874,8 @@
         reindexRows();
         updateTotals();
         syncDatatable();
+
+        row.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     };
 
     $(document).ready(function () {
@@ -267,36 +886,66 @@
                 processing: true,
                 autoWidth: false,
                 full_row_select: false,
-                scrollX: false,
+                scrollX: true,
                 bFilter: true,
-                dom: 'lfrtip'
+                pageLength: 25,
+                dom: 'lfrtip',
+                language: {
+                    search: '',
+                    searchPlaceholder: 'جستجو در سفارش‌ها...',
+                    lengthMenu: 'نمایش _MENU_ ردیف',
+                    info: 'نمایش _START_ تا _END_ از _TOTAL_ سفارش',
+                    infoEmpty: 'سفارشی برای Packing وجود ندارد',
+                    zeroRecords: 'سفارش قابل Packing پیدا نشد',
+                    paginate: {
+                        previous: 'قبلی',
+                        next: 'بعدی'
+                    }
+                }
             },
             {}
         );
 
         $('#quick-packing-list').on('draw.dt', syncDatatable);
+        syncEmptyState();
     });
 
     submitButton.addEventListener('click', function () {
         const rows = container.querySelectorAll('.packing-selected-row');
+
         if (!rows.length) {
-            $('#ajax-response').addClass('text-danger').text('حداقل یک سفارش انتخاب کنید.');
+            $('#ajax-response')
+                .removeClass('text-success')
+                .addClass('text-danger')
+                .text('حداقل یک سفارش برای Packing انتخاب کنید.');
             return;
         }
 
         let valid = true;
+
         rows.forEach(row => {
-            const q = toNumber(row.querySelector('input[name$="-quantity"]').value);
-            const maxQ = toNumber(row.querySelector('input[name$="-quantity"]').max);
-            if (q <= 0 || q > maxQ) valid = false;
+            const quantityInput = row.querySelector('input[name$="-quantity"]');
+            const q = toNumber(quantityInput.value);
+            const maxQ = toNumber(quantityInput.max);
+
+            if (q <= 0 || q > maxQ) {
+                valid = false;
+                quantityInput.classList.add('border-danger', 'text-danger');
+            } else {
+                quantityInput.classList.remove('border-danger', 'text-danger');
+            }
         });
 
         if (!valid) {
-            $('#ajax-response').addClass('text-danger').text('مقدار یکی از ردیف‌ها از ظرفیت Packing خارج است.');
+            $('#ajax-response')
+                .removeClass('text-success')
+                .addClass('text-danger')
+                .text('تعداد یکی از ردیف‌ها از ظرفیت قابل Packing خارج است.');
             return;
         }
 
         const formData = new FormData();
+
         document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
             if (input.type === 'file') {
                 Array.from(input.files || []).forEach(file => formData.append(input.name, file));
@@ -312,7 +961,11 @@
         formData.append('form-TOTAL_FORMS', totalFormsInput.value);
 
         submitButton.disabled = true;
-        $('#ajax-response').removeClass('text-danger text-success').text('');
+        submitButton.innerHTML = 'در حال ثبت...';
+
+        $('#ajax-response')
+            .removeClass('text-danger text-success')
+            .text('');
 
         $.ajax({
             url: submitUrl,
@@ -321,14 +974,26 @@
             headers: {"X-CSRFToken": getCookie("csrftoken")},
             processData: false,
             contentType: false,
+
             success: function (response) {
-                $('#ajax-response').addClass('text-success').text('با موفقیت ذخیره شد.');
+                $('#ajax-response')
+                    .removeClass('text-danger')
+                    .addClass('text-success')
+                    .text('Packing با موفقیت ثبت شد.');
+
                 window.location.href = response.res.url;
             },
+
             error: function (response) {
                 submitButton.disabled = false;
+                submitButton.innerHTML = 'ثبت Packing';
+
                 const message = response.responseJSON?.res?.ERROR || 'خطا در ذخیره Packing';
-                $('#ajax-response').addClass('text-danger').text(message);
+
+                $('#ajax-response')
+                    .removeClass('text-success')
+                    .addClass('text-danger')
+                    .text(message);
             }
         });
     });
