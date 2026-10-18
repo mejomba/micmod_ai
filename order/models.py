@@ -1010,6 +1010,80 @@ class Packing(BaseModeWF):
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='packings')
 
+    def workflow_state_index(self):
+        """Return the effective workflow state index using the same status rules as FlowBaseView."""
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        states = list(flow_config.get('flow_state_list') or [])
+        if not states:
+            return 0
+
+        from workflow.models import WorkFlow
+        from django.contrib.contenttypes.models import ContentType
+
+        flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if not flow:
+            return 0
+
+        try:
+            base_index = states.index(flow.state)
+        except (ValueError, TypeError):
+            return 0
+
+        if flow.wf_status == 2:
+            return max(base_index - 1, 0)
+        if flow.wf_status == 3:
+            return min(base_index + 1, len(states) - 1)
+        if flow.wf_status == 4:
+            return base_index
+        if flow.wf_status == 5:
+            return 0
+        return base_index
+
+    def user_has_workflow_access(self, user):
+        """Server-side edit access for Packing and all Packing child actions."""
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        state_index = self.workflow_state_index()
+        current_group = groups[min(state_index, len(groups) - 1)]
+        if isinstance(current_group, list):
+            current_group = current_group[0] if current_group else None
+        if not current_group:
+            return False
+
+        if FlowAdminGroup.is_admin_of_group(user, current_group, model=self.__class__):
+            return True
+
+        last_flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if last_flow:
+            return last_flow.to_user_id == user.id
+
+        return state_index == 0 and user.groups.filter(name=current_group).exists()
+
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'
 
