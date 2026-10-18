@@ -522,11 +522,42 @@ class Order(BaseModeWF):
 
         return True, ''
 
-    def validate_for_packing(self, quantity, packing_obj):
-        if self.packing_item_order.filter(packing=packing_obj, is_deleted=False).exists():
-            return False, f'duplicate order {self.order_number} in packing {packing_obj.pk}'
+    def validate_for_packing(self, quantity, packing_obj=None):
+        """
+        Packing can only consume quantities that have already been GIO'd and
+        have not been consumed by previous active PackingItems.
+        """
+        try:
+            requested_quantity = float(quantity or 0)
+        except (TypeError, ValueError):
+            return False, 'تعداد وارد شده برای پکینگ معتبر نیست.'
 
-        total_arrived_wh_in_percent, total_arrived_wh, final_quantity = self.packing_info
+        if requested_quantity <= 0:
+            return False, 'تعداد پکینگ باید بیشتر از صفر باشد.'
+
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_quantity = self.packing_item_order.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        final_quantity = float(self.final_quantity or 0)
+        packable_gio = min(final_quantity, float(gio_quantity or 0))
+        available_for_packing = max(
+            packable_gio - float(packed_quantity or 0),
+            0,
+        )
+
+        if requested_quantity > available_for_packing + 0.000001:
+            return False, (
+                f'حداکثر تعداد قابل استفاده از سفارش {self.order_number or self.pk} '
+                f'در پکینگ {available_for_packing:0.20g} است. '
+                f'(GIO: {float(gio_quantity or 0):0.20g} / '
+                f'Packing قبلی: {float(packed_quantity or 0):0.20g})'
+            )
+
         return True, ''
 
 
