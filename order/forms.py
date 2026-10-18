@@ -259,6 +259,12 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         if isinstance(initial, dict):
             constraint = initial.get("constraint") or {}
 
+        # FormMX._add_file_fields() reads these attributes, so initialize them
+        # before adding the dynamic file fields.
+        self.only_show = list(only_show or [])
+        self.allowed_fields = list(allowed_fields or [])
+        self.allowed_hidden = list(allowed_hidden or [])
+
         super().__init__(*args, **kwargs)
 
         self._add_file_fields()
