@@ -280,8 +280,17 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
             self.fields["sales_10_darsad"].widget.attrs["rows"] = 2
 
         if allowed_fields is None and allowed_hidden is None and only_show is None:
+            request = constraint.get("request")
             form_state = constraint.get("form_state")
             wf_access = bool(constraint.get("wf_access"))
+
+            if request:
+                if self.instance and self.instance.pk:
+                    form_state = self.instance.workflow_state_index()
+                    wf_access = self.instance.user_has_workflow_access(request.user)
+                else:
+                    wf_access = Packing.user_can_create_workflow(request.user)
+
             form_constraint = constraint.get("form_constraint") or []
 
             state_constraint = {}
