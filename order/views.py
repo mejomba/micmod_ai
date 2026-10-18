@@ -1619,7 +1619,21 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         if not user_has_packing_workflow_access(self.request, packing):
             raise PermissionDenied('Packing workflow access denied.')
 
-        form = PackingItemForm(initial={'packing': packing, 'request': self.request}, instance=self.object)
+        flow_config = Base.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        form = PackingItemForm(
+            initial={
+                'packing': packing,
+                'request': self.request,
+                'workflow_constraint': {
+                    'form_state': packing.workflow_state_index(),
+                    'formset_constraint': flow_config.get('flow_formset_constraint'),
+                },
+            },
+            instance=self.object,
+        )
         context['app_name'] = self.request.resolver_match.app_name
         context['form'] = form
         return context
