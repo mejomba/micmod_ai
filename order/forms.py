@@ -222,6 +222,7 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
     are removed from the bound form and therefore cannot be changed by a
     crafted POST.
     """
+    file_groups = 9
     file_groups_2 = 9
     file_labels = {
         1: "invoice",
