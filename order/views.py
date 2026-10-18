@@ -45,12 +45,12 @@ from payment.models import PaymentOrder, Payment
 from sepidar.api_call import SepidarApiCall
 from sepidar.models import Dl
 from tools.utils import is_ajax, parse_number
-from workflow.models import WorkFlow
+from workflow.models import WorkFlow, FlowAdminGroup
 from .form_perm import ORDER_FIELDS_BY_PERMISSION
 from .forms import OrderForm, PackingForm, PackingItemForm, GIOForm, GIOItemForm, OrderPaymentForm, \
     OrderPaymentItemForm, OrderPaymentItemFormSet, BazarBuyFactorForm, \
     TradeBuyFactorForm, TradePurchaseItemFormSet, BazarPurchaseItemFormSet, ACNTForm, GIOItemFormSet, BazarOrderForm, \
-    OrderSafeForm, OrderDelayReasonModelForm, PackingItemFormSet
+    OrderSafeForm, OrderDelayReasonModelForm, PackingItemFormSet, PackingSafeForm
 from .models import Order, OrderOrder, Packing, PackingItem, GIO, GIOItem, OrderPayment, OrderPaymentItem, ACNT, \
     SepidarOrderDocument, OrderBazar, WhReserve
 from translator import get_text as _
@@ -1513,13 +1513,13 @@ def ajax_order_order_add(request):
 
 class PackingView(LoginRequiredMixin, BaseView):
     template_name = 'order/packing_view.html'
-    form_class = PackingForm
+    form_class = PackingSafeForm
     model = Packing
     wf_last_step_is_open = True
     has_flow = True
     success_message = 'با موفقیت ذخیره شد'
     form_struct = {
-        'form': PackingForm,
+        'form': PackingSafeForm,
         'childes': [
             {
                 'form': PackingItemForm,
@@ -1556,6 +1556,76 @@ class PackingView(LoginRequiredMixin, BaseView):
         return context
 
 
+def user_has_packing_workflow_access(request, packing):
+    """
+    Server-side access check for side endpoints that edit Packing children.
+
+    Mirrors BaseView workflow ownership rules closely enough for child actions:
+    the user must own the current workflow task, be allowed in the initial
+    workflow group before the first flow exists, or administer that workflow
+    group.
+    """
+    if not packing:
+        return False
+    if request.user.is_superuser:
+        return True
+
+    flow_config = Base.get_flow_config(
+        settings.BASE_DIR / '_keenthemes/view_config.json',
+        'PackingView',
+    )
+    states = list(flow_config.get('flow_state_list') or [])
+    groups = list(flow_config.get('flow_users_groups') or [])
+
+    flow_qs = WorkFlow.objects.filter(
+        object_id=packing.pk,
+        content_type=ContentType.objects.get_for_model(Packing),
+    ).order_by('id')
+    last_flow = flow_qs.last()
+
+    state_index = 0
+    if last_flow and states:
+        try:
+            base_index = states.index(last_flow.state)
+            if last_flow.wf_status == 2:
+                state_index = max(base_index - 1, 0)
+            elif last_flow.wf_status == 3:
+                state_index = min(base_index + 1, len(states) - 1)
+            elif last_flow.wf_status == 4:
+                state_index = base_index
+            elif last_flow.wf_status == 5:
+                state_index = 0
+            else:
+                state_index = base_index
+        except (ValueError, TypeError):
+            state_index = 0
+
+    if not groups:
+        return False
+
+    current_group = groups[min(state_index, len(groups) - 1)]
+    if isinstance(current_group, list):
+        current_group = current_group[0] if current_group else None
+
+    if not current_group:
+        return False
+
+    if FlowAdminGroup.is_admin_of_group(
+        request.user,
+        current_group,
+        model=Packing,
+    ):
+        return True
+
+    if last_flow:
+        return last_flow.to_user_id == request.user.id
+
+    return (
+        state_index == 0
+        and request.user.groups.filter(name=current_group).exists()
+    )
+
+
 class packing_list_form(LoginRequiredMixin, BaseView):
     template_name = 'order/packing_item_form.html'
     form_class = PackingItemForm
@@ -1574,6 +1644,17 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         return reverse_lazy('order:packingitem.update', kwargs={'pk': self.object.packing.pk})
 
     def post(self, request, *args, **kwargs):
+        packing = None
+        if self.object:
+            packing = self.object.packing
+        else:
+            packing_id = request.POST.get('packing') or request.GET.get('pk')
+            if packing_id:
+                packing = Packing.objects.filter(pk=packing_id).first()
+
+        if not user_has_packing_workflow_access(request, packing):
+            raise PermissionDenied('Packing workflow access denied.')
+
         x = super().post(request, *args, **kwargs)
         if is_ajax(request):
             return JsonResponse({'res': 'success'})
@@ -1599,7 +1680,12 @@ class packing_list_form(LoginRequiredMixin, BaseView):
         context = {'request': self.request}
         # context = super().get_context_data(**kwargs)
         packing = Packing.objects.filter(pk=self.request.GET.get('pk')).first()
-        form = PackingItemForm(initial={'packing': packing or self.object.packing, 'request': self.request}, instance=self.object)
+        packing = packing or (self.object.packing if self.object else None)
+
+        if not user_has_packing_workflow_access(self.request, packing):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        form = PackingItemForm(initial={'packing': packing, 'request': self.request}, instance=self.object)
         context['app_name'] = self.request.resolver_match.app_name
         context['form'] = form
         return context
@@ -3642,14 +3728,58 @@ class QuickPackingView(LoginRequiredMixin, View):
     template_name = 'order/packing/quick_packing_create.html'
     form_class = PackingForm
     model = Packing
-    has_flow = False
+    has_flow = True
+    flow_config = Base.get_flow_config(
+        settings.BASE_DIR / '_keenthemes/view_config.json',
+        'PackingView',
+    )
 
     def setup(self, request, *args, **kwargs):
-        self.object = None
-        if kwargs.get('pk'):
-            self.template_name = 'order/packing/quick_packing_update.html'
-            self.object = self.get_object(kwargs.get('pk'))
+        self.object = self.get_object(kwargs.get('pk')) if kwargs.get('pk') else None
         return super().setup(request, *args, **kwargs)
+
+    def _assert_create_access(self):
+        first_group = self.flow_config.get('flow_users_groups', ['packing_user'])[0]
+        if isinstance(first_group, list):
+            first_group = first_group[0] if first_group else 'packing_user'
+
+        allowed = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name=first_group).exists()
+            or FlowAdminGroup.is_admin_of_group(
+                self.request.user,
+                first_group,
+                model=Packing,
+            )
+        )
+        if not allowed:
+            raise PermissionDenied('Packing workflow access denied.')
+
+    def _create_initial_workflow(self, packing_obj):
+        state = self.flow_config.get('flow_state_list', ['پیش نویس'])[0]
+        group = self.flow_config.get('flow_users_groups', ['packing_user'])[0]
+        if isinstance(group, list):
+            group = group[0] if group else 'packing_user'
+
+        wf = WorkFlow.objects.create(
+            wf_status=5,
+            action=self.flow_config.get('flow_action') or 'create',
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=self.request.user,
+            to_user=self.request.user,
+            state=state,
+            deadline=timezone.now(),
+            belong_to_group=group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=state,
+            creator_user=self.request.user,
+            editor_user=self.request.user,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = self.request
+        packing_obj.save()
+        return wf
 
     @staticmethod
     def _to_float(value, default=0):
@@ -3659,6 +3789,13 @@ class QuickPackingView(LoginRequiredMixin, View):
             return default
 
     def post(self, request, pk=None, *args, **kwargs):
+        if pk:
+            return JsonResponse(
+                {'res': {'url': reverse_lazy('order:packing.update', kwargs={'pk': pk})}},
+                status=409,
+            )
+
+        self._assert_create_access()
         total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
         rows = []
         for row_index in range(1, total_forms):
@@ -3705,20 +3842,12 @@ class QuickPackingView(LoginRequiredMixin, View):
 
         try:
             with transaction.atomic():
-                packing_id = pk or request.POST.get('packing_id')
-                if packing_id:
-                    packing_obj = Packing.objects.select_for_update().get(pk=packing_id)
-                    for key, value in packing_data.items():
-                        setattr(packing_obj, key, value)
-                    packing_obj.extra_data.request = request
-                    packing_obj.save()
-                else:
-                    packing_obj = Packing(
-                        creator_user=request.user,
-                        **packing_data,
-                    )
-                    packing_obj.extra_data.request = request
-                    packing_obj.save()
+                packing_obj = Packing(
+                    creator_user=request.user,
+                    **packing_data,
+                )
+                packing_obj.extra_data.request = request
+                packing_obj.save()
 
                 for row in rows:
                     order = (
@@ -3772,6 +3901,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                         input_prefix='file',
                     )
 
+                self._create_initial_workflow(packing_obj)
+
         except Exception as exc:
             return JsonResponse(
                 {'res': {'ERROR': str(exc)}},
@@ -3783,7 +3914,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             {
                 'res': {
                     'url': reverse_lazy(
-                        'order:quick_packing',
+                        'order:packing.update',
                         kwargs={'pk': packing_obj.pk},
                     )
                 }
@@ -3792,17 +3923,14 @@ class QuickPackingView(LoginRequiredMixin, View):
         )
 
     def get(self, request, pk=None, *args, **kwargs):
-        packing_object = self.get_object(pk)
+        if pk:
+            return redirect('order:packing.update', pk=pk)
+
+        self._assert_create_access()
         context = {
-            'form': PackingForm(instance=packing_object),
+            'form': PackingForm(),
             'formset': PackingItemFormSet(),
-            'packings': (
-                PackingItem.objects
-                .filter(packing=packing_object, is_deleted=False)
-                .select_related('order')
-                .order_by('id')
-                if packing_object else []
-            ),
+            'packings': [],
         }
         return render(request, self.template_name, context)
 
