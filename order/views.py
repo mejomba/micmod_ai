@@ -1557,73 +1557,7 @@ class PackingView(LoginRequiredMixin, BaseView):
 
 
 def user_has_packing_workflow_access(request, packing):
-    """
-    Server-side access check for side endpoints that edit Packing children.
-
-    Mirrors BaseView workflow ownership rules closely enough for child actions:
-    the user must own the current workflow task, be allowed in the initial
-    workflow group before the first flow exists, or administer that workflow
-    group.
-    """
-    if not packing:
-        return False
-    if request.user.is_superuser:
-        return True
-
-    flow_config = Base.get_flow_config(
-        settings.BASE_DIR / '_keenthemes/view_config.json',
-        'PackingView',
-    )
-    states = list(flow_config.get('flow_state_list') or [])
-    groups = list(flow_config.get('flow_users_groups') or [])
-
-    flow_qs = WorkFlow.objects.filter(
-        object_id=packing.pk,
-        content_type=ContentType.objects.get_for_model(Packing),
-    ).order_by('id')
-    last_flow = flow_qs.last()
-
-    state_index = 0
-    if last_flow and states:
-        try:
-            base_index = states.index(last_flow.state)
-            if last_flow.wf_status == 2:
-                state_index = max(base_index - 1, 0)
-            elif last_flow.wf_status == 3:
-                state_index = min(base_index + 1, len(states) - 1)
-            elif last_flow.wf_status == 4:
-                state_index = base_index
-            elif last_flow.wf_status == 5:
-                state_index = 0
-            else:
-                state_index = base_index
-        except (ValueError, TypeError):
-            state_index = 0
-
-    if not groups:
-        return False
-
-    current_group = groups[min(state_index, len(groups) - 1)]
-    if isinstance(current_group, list):
-        current_group = current_group[0] if current_group else None
-
-    if not current_group:
-        return False
-
-    if FlowAdminGroup.is_admin_of_group(
-        request.user,
-        current_group,
-        model=Packing,
-    ):
-        return True
-
-    if last_flow:
-        return last_flow.to_user_id == request.user.id
-
-    return (
-        state_index == 0
-        and request.user.groups.filter(name=current_group).exists()
-    )
+    return bool(packing and packing.user_has_workflow_access(request.user))
 
 
 class packing_list_form(LoginRequiredMixin, BaseView):
