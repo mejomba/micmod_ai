@@ -737,17 +737,17 @@
     <span data-key="packing_unit_price">Unit Price</span>
     <span data-key="packing_row_more_info">Additional Row Information</span>
     <span data-key="packing_previous">Previous Packing</span>
-    <span data-key="carton_number">Carton Number</span>
-    <span data-key="gross_weight">Gross Weight</span>
-    <span data-key="size">Size</span>
-    <span data-key="description">Description</span>
+    <span data-key="packing_carton_number">Carton Number</span>
+    <span data-key="packing_gross_weight">Gross Weight</span>
+    <span data-key="packing_size">Size</span>
+    <span data-key="packing_description">Description</span>
     <span data-key="packing_search_orders">Search orders...</span>
     <span data-key="packing_length_menu">Show _MENU_ rows</span>
     <span data-key="packing_info_records">Showing _START_ to _END_ of _TOTAL_ orders</span>
     <span data-key="packing_info_empty">No orders are available for packing</span>
     <span data-key="packing_zero_records">No packable order found</span>
-    <span data-key="previous">Previous</span>
-    <span data-key="next">Next</span>
+    <span data-key="packing_previous_page">Previous</span>
+    <span data-key="packing_next_page">Next</span>
     <span data-key="packing_select_one_error">Select at least one order for packing.</span>
     <span data-key="packing_quantity_invalid_error">One row quantity is outside the available packing capacity.</span>
     <span data-key="packing_submitting">Saving...</span>
@@ -1081,22 +1081,22 @@
 
                 <div class="pk-row-details-body">
                     <div>
-                        <label class="pk-mini-label">${tr('carton_number', 'Carton Number')}</label>
+                        <label class="pk-mini-label">${tr('packing_carton_number', 'Carton Number')}</label>
                         <input class="form-control" name="form-${index}-carton_number">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">${tr('gross_weight', 'Gross Weight')}</label>
+                        <label class="pk-mini-label">${tr('packing_gross_weight', 'Gross Weight')}</label>
                         <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
                     </div>
 
                     <div>
-                        <label class="pk-mini-label">${tr('size', 'Size')}</label>
+                        <label class="pk-mini-label">${tr('packing_size', 'Size')}</label>
                         <input class="form-control" name="form-${index}-size">
                     </div>
 
                     <div class="pk-desc">
-                        <label class="pk-mini-label">${tr('description', 'Description')}</label>
+                        <label class="pk-mini-label">${tr('packing_description', 'Description')}</label>
                         <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
                     </div>
                 </div>
@@ -1148,8 +1148,8 @@
                     infoEmpty: tr('packing_info_empty', 'No orders are available for packing'),
                     zeroRecords: tr('packing_zero_records', 'No packable order found'),
                     paginate: {
-                        previous: tr('previous', 'Previous'),
-                        next: tr('next', 'Next')
+                        previous: tr('packing_previous_page', 'Previous'),
+                        next: tr('packing_next_page', 'Next')
                     }
                 }
             },
