@@ -3940,6 +3940,24 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             .annotate(total=Sum('quantity'))
             .values('total')[:1]
         )
+        item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
+        trade_item_weight_subquery = (
+            ItemWeight.objects
+            .filter(
+                sku_id=OuterRef('item_trade_id'),
+                creator_user__isnull=False,
+            )
+            .order_by('-editor_user__groups__name', '-created_date')
+            .values('weight')[:1]
+        )
 
         effective_quantity = Case(
             When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
