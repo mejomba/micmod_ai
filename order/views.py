@@ -3673,20 +3673,7 @@ class QuickPackingView(LoginRequiredMixin, View):
         return super().setup(request, *args, **kwargs)
 
     def _assert_create_access(self):
-        first_group = self.flow_config.get('flow_users_groups', ['packing_user'])[0]
-        if isinstance(first_group, list):
-            first_group = first_group[0] if first_group else 'packing_user'
-
-        allowed = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name=first_group).exists()
-            or FlowAdminGroup.is_admin_of_group(
-                self.request.user,
-                first_group,
-                model=Packing,
-            )
-        )
-        if not allowed:
+        if not Packing.user_can_create_workflow(self.request.user):
             raise PermissionDenied('Packing workflow access denied.')
 
     def _create_initial_workflow(self, packing_obj):
