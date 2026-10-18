@@ -630,7 +630,7 @@ class OrderDataTableListView(AjaxDatatableView):
         {'name': 'estimated_arrive_date', 'orderable': False, 'searchable': False, 'title': 'Estimated Arrive Date', 'visible': True},
         {'name': 'creator_user', 'title': 'creator_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
         {'name': 'trade_user', 'title': 'trade_user', 'visible': True, 'orderable': True, 'lookup_field': '__username__icontains'},
-        {'name': 'item', 'orderable': True, 'title': 'SKU', 'visible': True, 'lookup_field': '__sku__icontains'},
+        {'name': 'item', 'orderable': True, 'title': '<span data-key="sku">SKU</span>', 'visible': True, 'lookup_field': '__sku__icontains'},
         {'name': 'item__part_number', 'orderable': True, 'title': 'Part Number(S)', 'visible': True, 'lookup_field': '__icontains'},
         {'name': 'customer_party_id', 'orderable': True, 'title': 'Customer', 'visible': True, 'lookup_field': '__title__icontains'},
         {'name': 'item_trade', 'orderable': True, 'title': 'SKU (T)', 'visible': True, 'lookup_field': '__sku__icontains'},
@@ -3825,7 +3825,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         AjaxDatatableView.render_row_tools_column_def(),
         {
             'name': 'order_number',
-            'title': 'Order Number',
+            'title': '<span data-key="packing_order_number">Order Number</span>',
             'orderable': True,
             'visible': True,
             'searchable': True,
@@ -3841,7 +3841,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         },
         {
             'name': 'part_number',
-            'title': 'Part Number',
+            'title': '<span data-key="part_number">Part Number</span>',
             'orderable': False,
             'visible': True,
             'searchable': False,
@@ -3849,7 +3849,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         },
         {
             'name': 'quantity_in_gio',
-            'title': 'GIO Qty',
+            'title': '<span data-key="packing_gio_quantity">GIO Qty</span>',
             'orderable': True,
             'visible': True,
             'searchable': False,
@@ -3857,7 +3857,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         },
         {
             'name': 'available_for_packing',
-            'title': 'Available for Packing',
+            'title': '<span data-key="packing_available">Available for Packing</span>',
             'orderable': True,
             'visible': True,
             'searchable': False,
@@ -3865,7 +3865,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         },
         {
             'name': 'remaining_quantity_in_order',
-            'title': 'Remaining in Order',
+            'title': '<span data-key="packing_order_remaining">Remaining in Order</span>',
             'orderable': True,
             'visible': True,
             'searchable': False,
@@ -3873,19 +3873,19 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         },
         {
             'name': 'created_date',
-            'title': 'Created Date',
+            'title': '<span data-key="created_date">Created Date</span>',
             'orderable': True,
             'visible': True,
         },
         {
             'name': 'description_trade',
-            'title': 'Trade Description',
+            'title': '<span data-key="description_trade">Trade Description</span>',
             'orderable': True,
             'visible': True,
         },
         {
             'name': 'add_to_packing',
-            'title': 'Add',
+            'title': '<span data-key="add">Add</span>',
             'orderable': False,
             'visible': True,
             'searchable': False,
