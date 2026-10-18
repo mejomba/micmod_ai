@@ -1046,6 +1046,34 @@ class Packing(BaseModeWF):
             return 0
         return base_index
 
+    @classmethod
+    def user_can_create_workflow(cls, user):
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+
+        from workflow.models import FlowAdminGroup
+
+        flow_config = cls.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        first_group = groups[0]
+        if isinstance(first_group, list):
+            first_group = first_group[0] if first_group else None
+        if not first_group:
+            return False
+
+        return (
+            user.groups.filter(name=first_group).exists()
+            or FlowAdminGroup.is_admin_of_group(user, first_group, model=cls)
+        )
+
     def user_has_workflow_access(self, user):
         """Server-side edit access for Packing and all Packing child actions."""
         if not user or not getattr(user, 'is_authenticated', False):
