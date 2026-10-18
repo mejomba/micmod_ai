@@ -3619,197 +3619,401 @@ class QuickGIODataTableListView(AjaxDatatableView):
 
 
 class QuickPackingView(LoginRequiredMixin, View):
-    template_name = 'order/packing/quick_packing_create.html'  # for update use 'order/gio/quick_gio_create.html'
+    template_name = 'order/packing/quick_packing_create.html'
     form_class = PackingForm
     model = Packing
-    # wf_last_step_is_open = True
     has_flow = False
-    form_struct = {
-        'form': PackingForm,
-        'childes': [
-            {},
-        ]
-    }
-
-    # flow_config = Base.get_flow_config(settings.BASE_DIR/'_keenthemes/view_config.json', 'OrderView')
 
     def setup(self, request, *args, **kwargs):
+        self.object = None
         if kwargs.get('pk'):
             self.template_name = 'order/packing/quick_packing_update.html'
             self.object = self.get_object(kwargs.get('pk'))
         return super().setup(request, *args, **kwargs)
 
+    @staticmethod
+    def _to_float(value, default=0):
+        try:
+            return float(str(value).replace(',', '').strip())
+        except (TypeError, ValueError):
+            return default
+
     def post(self, request, pk=None, *args, **kwargs):
-        """
-        1: create packing with packing-items for first time
-        2: update packing and create new packing-items in update
-        3: update single packing-item handel in PackingItemView
-        """
+        total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
+        rows = []
+        for row_index in range(1, total_forms):
+            order_id = request.POST.get(f'form-{row_index}-order')
+            quantity = self._to_float(
+                request.POST.get(f'form-{row_index}-quantity'),
+                default=None,
+            )
+            if not order_id:
+                continue
+            if quantity is None:
+                return JsonResponse(
+                    {'res': {'ERROR': f'تعداد ردیف {row_index} معتبر نیست.'}},
+                    status=400,
+                )
+            rows.append({
+                'index': row_index,
+                'order_id': int(order_id),
+                'quantity': quantity,
+                'carton_number': request.POST.get(f'form-{row_index}-carton_number'),
+                'gross_weight_kg': self._to_float(
+                    request.POST.get(f'form-{row_index}-gross_weight_kg'),
+                    0,
+                ),
+                'size': request.POST.get(f'form-{row_index}-size'),
+                'description': request.POST.get(f'form-{row_index}-description'),
+            })
+
+        if not rows:
+            return JsonResponse(
+                {'res': {'ERROR': 'حداقل یک سفارش برای Packing انتخاب کنید.'}},
+                status=400,
+            )
+
+        packing_data = {
+            'packing_number': request.POST.get('packing_number') or None,
+            'currency_id': request.POST.get('currency') or None,
+            'shipment_type': request.POST.get('shipment_type') or None,
+            'bl_number': request.POST.get('bl_number') or None,
+            'estimated_delivery_date': request.POST.get('estimated_delivery_date') or None,
+            'description': request.POST.get('description') or None,
+            'editor_user': request.user,
+        }
 
         try:
-            data = self.request.POST
-            data = {k: v for k, v in data.items() if 'form-0-' not in k}  # remove form-0- from data
-            total_forms = int(data.get('form-TOTAL_FORMS', 1))  # first form is empty
-            packing_for_update = Packing.objects.filter(pk=data.pop('packing_id', 0))
-
-            packing_data = {
-                "packing_number": data.pop('packing_number', None),
-                "currency_id": data.pop('currency', None),
-                "shipment_type": data.pop('shipment_type', None),
-                "bl_number": data.pop('bl_number', None),
-                "estimated_delivery_date": data.pop('estimated_delivery_date', None),
-                'description': data.pop('description', None),
-                'creator_user': self.request.user,
-                'editor_user': self.request.user
-            }
-
             with transaction.atomic():
-                if packing_for_update:
-                    packing_for_update.update(**packing_data)
-                    gio_obj = packing_for_update.first()
+                packing_id = pk or request.POST.get('packing_id')
+                if packing_id:
+                    packing_obj = Packing.objects.select_for_update().get(pk=packing_id)
+                    for key, value in packing_data.items():
+                        setattr(packing_obj, key, value)
+                    packing_obj.extra_data.request = request
+                    packing_obj.save()
                 else:
-                    packing_obj = Packing(**packing_data)
-                    packing_obj.extra_data.request = self.request
+                    packing_obj = Packing(
+                        creator_user=request.user,
+                        **packing_data,
+                    )
+                    packing_obj.extra_data.request = request
                     packing_obj.save()
 
-                    """ save packing form files"""
-                    for name, f in self.request.FILES.items():
-                        prefix, group = name.split('_')
-                        packing_obj.save_file(
-                                    request=self.request,
-                                    file_groups=int(group),
-                                    file_model=File,
-                                    obj=packing_obj,
-                                    input_prefix=prefix,
-                                )
+                for row in rows:
+                    order = (
+                        Order.objects
+                        .select_for_update()
+                        .select_related('item', 'item_trade')
+                        .get(pk=row['order_id'])
+                    )
 
-                packing_items_data = {k: v for k, v in data.items() if 'form-' in k}  # remove form-0- from data
-                for row in range(1, total_forms):
-                    quantity = packing_items_data.get(f'form-{row}-quantity')
-                    order_id = packing_items_data.get(f'form-{row}-order')
-                    o = Order.objects.get(pk=order_id)
+                    is_valid, validation_error = order.validate_for_packing(
+                        row['quantity'],
+                        packing_obj,
+                    )
+                    if not is_valid:
+                        raise ValueError(validation_error)
 
-                    is_valid_for_packing = o.validate_for_packing(quantity, packing_obj)
-                    if not is_valid_for_packing[0]:
-                        return JsonResponse({'res': {'ERROR: ': is_valid_for_packing[1]}}, status=400)
+                    item = order.final_item
+                    unit_weight = float(order.final_weight or 0)
+                    unit_price = float(order.final_price or 0)
 
-                    packing_item_data = {
-                        'order_id': order_id,
-                        'quantity': quantity,
-                        'packing': packing_obj,
-                        'carton_number': packing_items_data.get(f'form-{row}-carton_number'),
-                        'gross_weight_kg': packing_items_data.get(f'form-{row}-gross_weight_kg') or 0,
-                        'size': packing_items_data.get(f'form-{row}-size'),
-                        'description': packing_items_data.get(f'form-{row}-description'),
-                    }
+                    packing_item_obj = PackingItem(
+                        order=order,
+                        packing=packing_obj,
+                        part_number=getattr(item, 'part_number', None),
+                        quantity=row['quantity'],
+                        price=unit_price,
+                        net_weight_kg=unit_weight * row['quantity'],
+                        gross_weight_kg=row['gross_weight_kg'],
+                        carton_number=row['carton_number'],
+                        size=row['size'],
+                        brand=str(item.brand) if item and item.brand else None,
+                        description=row['description'],
+                        creator_user=request.user,
+                        editor_user=request.user,
+                    )
+                    packing_item_obj.extra_data.request = request
+                    packing_item_obj.save()
 
+                for name, uploaded_file in request.FILES.items():
+                    if not name.startswith('file_'):
+                        continue
                     try:
-                        packing_item_obj = PackingItem(**packing_item_data)
-                        packing_item_obj.extra_data.request = self.request
-                        packing_item_obj.save()
-                    except Exception as e:
-                        raise e
-        except Exception as e:
-            res = {'res': {'ERROR: ': str(e)}}
-            return JsonResponse(res, status=400)
+                        group = int(name.split('_', 1)[1])
+                    except (IndexError, ValueError):
+                        continue
+                    packing_obj.save_file(
+                        request=request,
+                        file_groups=group,
+                        file_model=File,
+                        obj=packing_obj,
+                        input_prefix='file',
+                    )
 
-        messages.success(request, f'success')
-        return JsonResponse({'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
-                            status=200)  # redirect(reverse_lazy('order:quick_gio', kwargs={'pk': gio_obj.pk}))
+        except Exception as exc:
+            return JsonResponse(
+                {'res': {'ERROR': str(exc)}},
+                status=400,
+            )
+
+        messages.success(request, 'Packing با موفقیت ذخیره شد.')
+        return JsonResponse(
+            {
+                'res': {
+                    'url': reverse_lazy(
+                        'order:quick_packing',
+                        kwargs={'pk': packing_obj.pk},
+                    )
+                }
+            },
+            status=200,
+        )
 
     def get(self, request, pk=None, *args, **kwargs):
         packing_object = self.get_object(pk)
-
-        packing_form = PackingForm(instance=packing_object)
-        packing_item_formset = PackingItemFormSet()
-
         context = {
-            'form': packing_form,
-            'formset': packing_item_formset,
-            'packings': PackingItem.objects.filter(packing=packing_object).order_by('id')
+            'form': PackingForm(instance=packing_object),
+            'formset': PackingItemFormSet(),
+            'packings': (
+                PackingItem.objects
+                .filter(packing=packing_object, is_deleted=False)
+                .select_related('order')
+                .order_by('id')
+                if packing_object else []
+            ),
         }
-
         return render(request, self.template_name, context)
 
     def get_object(self, pk):
-        if pk:
-            return Packing.objects.get(pk=pk)
-        else:
+        if not pk:
             return None
-
-    def form_valid(self, form):
-        res = super().form_valid(form)
-        return res
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['app_name'] = self.request.resolver_match.app_name
-        return context
+        return get_object_or_404(Packing, pk=pk)
 
 
 class QuickPackingDataTableListView(AjaxDatatableView):
     model = Order
     title = 'order_list'
-    initial_order = [["id", "des"], ]
+    initial_order = [['created_date', 'des']]
     length_menu = [[10, 25, 50], [10, 25, 50]]
     search_values_separator = '+'
     render_row_details_template_name = 'sku_list_detail.html'
     show_column_filters = True
+
     column_defs = [
         AjaxDatatableView.render_row_tools_column_def(),
-
-        {'name': 'order_number', 'title': '<div style="max-width: 60px; text-wrap: auto;">order number</div>',
-         'orderable': True, 'visible': True, 'searchable': True, "className": 'py-1'},
-        {'name': 'item', 'orderable': True, 'title': 'sku', 'visible': True, 'lookup_field': '__sku__icontains',
-         'className': 'py-1'},
-        {'name': 'item__part_number', 'orderable': True, 'title': '<div class="px-2">part number</div>',
-         'visible': True, 'lookup_field': '__icontains', 'className': 'partnumber'},
-        {'name': 'quantity_in_gio', 'orderable': False, 'visible': True, 'searchable': False,
-         'title': '<div style="max-width: 55px; text-wrap: auto;">quantity in gio</div>', 'className': ''},
-        {'name': 'remaining_quantity', 'orderable': True, 'searchable': False, 'visible': True,
-         'title': '<div style="max-width: 55px; text-wrap: auto;">remaining quantity</div>', 'className': 'quantity'},
-        {'name': 'creator_user', 'title': 'creator', 'visible': True, 'orderable': True,
-         'lookup_field': '__username__icontains'},
-        {'name': 'created_date', 'orderable': True, 'title': 'created date', 'visible': True, },
-        # {'name': 'description_sale', 'orderable': True, 'visible': True, 'title': 'description sales'},
-        {'name': 'description_trade', 'orderable': True, 'visible': True, 'title': 'description trade'},
-        {'name': 'buy_factor', 'orderable': False, 'visible': True, 'searchable': False,
-         'title': '<div class="px-0" style="max-width:20px;">Add</div>', },
-
-        {'name': 'id', 'title': "id", 'orderable': True, 'searchable': False, 'visible': True,
-         "className": 'order w-0 d-none'},
-        {'name': 'show_order_str', 'title': "show_order_str", 'orderable': False, 'searchable': False, 'visible': True,
-         "className": 'py-1 show_order_str d-none'},
-        {'name': 'item__sepidar_id_0', 'visible': True, 'searchable': False, 'className': 'itemref d-none'},
+        {
+            'name': 'order_number',
+            'title': 'Order Number',
+            'orderable': True,
+            'visible': True,
+            'searchable': True,
+            'className': 'py-1 order-number',
+        },
+        {
+            'name': 'sku',
+            'title': 'SKU',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 sku',
+        },
+        {
+            'name': 'part_number',
+            'title': 'Part Number',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 partnumber',
+        },
+        {
+            'name': 'quantity_in_gio',
+            'title': 'GIO Qty',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 quantity-in-gio',
+        },
+        {
+            'name': 'available_for_packing',
+            'title': 'Available for Packing',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 available-for-packing',
+        },
+        {
+            'name': 'remaining_quantity_in_order',
+            'title': 'Remaining in Order',
+            'orderable': True,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1 remaining-quantity-in-order',
+        },
+        {
+            'name': 'created_date',
+            'title': 'Created Date',
+            'orderable': True,
+            'visible': True,
+        },
+        {
+            'name': 'description_trade',
+            'title': 'Trade Description',
+            'orderable': True,
+            'visible': True,
+        },
+        {
+            'name': 'add_to_packing',
+            'title': 'Add',
+            'orderable': False,
+            'visible': True,
+            'searchable': False,
+            'className': 'py-1',
+        },
+        {
+            'name': 'id',
+            'title': 'id',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'order d-none',
+        },
+        {
+            'name': 'unit_weight',
+            'title': 'unit_weight',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'unit-weight d-none',
+        },
+        {
+            'name': 'final_price',
+            'title': 'final_price',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'final-price d-none',
+        },
+        {
+            'name': 'show_order_str',
+            'title': 'show_order_str',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'show-order-str d-none',
+        },
     ]
 
     def get_initial_queryset(self, request=None):
+        gio_quantity_subquery = (
+            GIOItem.objects
+            .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .values('order_id')
+            .annotate(total=Sum('quantity'))
+            .values('total')[:1]
+        )
+        packing_quantity_subquery = (
+            PackingItem.objects
+            .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .values('order_id')
+            .annotate(total=Sum('quantity'))
+            .values('total')[:1]
+        )
+
         effective_quantity = Case(
             When(quantity_mac__isnull=False, quantity_mac__gt=0, then=F('quantity_mac')),
             When(quantity_trade__isnull=False, quantity_trade__gt=0, then=F('quantity_trade')),
             When(quantity__isnull=False, quantity__gt=0, then=F('quantity')),
-            default=Value(0),
-            output_field=FloatField()
+            default=Value(0.0),
+            output_field=FloatField(),
         )
-        qs = self.model.objects.annotate(
-            quantity_in_gio=Coalesce(Sum('gio_items__quantity'), Value(0, output_field=FloatField())),
-            effective_quantity=effective_quantity).filter(is_deleted=False,
-                                                          is_wh=False,
-                                                          last_work_flow__current_state_name='پرداخت / PACKING / GIO',
-                                                          effective_quantity__gt=F('quantity_in_gio'))
-        # .filter(Q(buy_factor_quantity_in_sepidar__lt=F('quantity')) | Q(buy_factor_quantity_in_sepidar__isnull=True)))
+
+        qs = (
+            self.model.objects
+            .select_related('item', 'item_trade', 'last_work_flow')
+            .annotate(
+                effective_quantity=effective_quantity,
+                quantity_in_gio=Coalesce(
+                    Subquery(
+                        gio_quantity_subquery,
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+                quantity_in_packing=Coalesce(
+                    Subquery(
+                        packing_quantity_subquery,
+                        output_field=FloatField(),
+                    ),
+                    Value(0.0),
+                ),
+            )
+            .annotate(
+                packable_gio=Case(
+                    When(
+                        quantity_in_gio__gt=F('effective_quantity'),
+                        then=F('effective_quantity'),
+                    ),
+                    default=F('quantity_in_gio'),
+                    output_field=FloatField(),
+                ),
+                remaining_quantity_in_order=Case(
+                    When(
+                        effective_quantity__gt=F('quantity_in_gio'),
+                        then=ExpressionWrapper(
+                            F('effective_quantity') - F('quantity_in_gio'),
+                            output_field=FloatField(),
+                        ),
+                    ),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                ),
+            )
+            .annotate(
+                available_for_packing=ExpressionWrapper(
+                    F('packable_gio') - F('quantity_in_packing'),
+                    output_field=FloatField(),
+                ),
+            )
+            .filter(
+                is_deleted=False,
+                is_wh=False,
+                cancel=False,
+                sales_admin_cancel=False,
+                last_work_flow__current_state_name='پرداخت / PACKING / GIO',
+                quantity_in_gio__gt=0,
+                available_for_packing__gt=0,
+            )
+        )
         return qs
 
     def customize_row(self, row, obj):
-        row['quantity'] = obj.final_quantity
-        # row['remaining_quantity'] = obj.final_quantity - sum([x.sum_quantity for x in obj.gio_items.annotate(sum_quantity=Sum('quantity'))])
-        row['remaining_quantity'] = obj.final_quantity - obj.quantity_in_gio
-        row['item__sepidar_id_0'] = obj.item.sepidar_id_0
-        row['item__part_number'] = f'<span>{obj.final_item.part_number}</span>' if obj.item else ""
+        item = obj.final_item
+        row['sku'] = getattr(item, 'sku', '') or ''
+        row['part_number'] = getattr(item, 'part_number', '') or ''
+        row['quantity_in_gio'] = obj.quantity_in_gio or 0
+        row['available_for_packing'] = obj.available_for_packing or 0
+        row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
+        row['unit_weight'] = obj.final_weight or 0
+        row['final_price'] = obj.final_price or 0
         row['show_order_str'] = mark_safe(
-            f'<div class="d-flex gap-6"> <span>{obj.order_number}</span> / <span>sku:{obj.final_item}</span> <span class="bg-light-info px-1">{obj.final_item.part_number}</span></div>')
-        row[
-            'buy_factor'] = '<span class="fw-bold p-3 cursor-pointer font-size-16 py-5 action" data-is_selected=no onclick="order_to_gio_item(event)" >➕</span>'
+            '<div class="d-flex gap-3">'
+            f'<span>{obj.order_number or obj.pk}</span>'
+            f'<span>SKU: {getattr(item, "sku", "-")}</span>'
+            f'<span>{getattr(item, "part_number", "-")}</span>'
+            '</div>'
+        )
+        row['add_to_packing'] = (
+            '<button type="button" '
+            'class="btn btn-sm btn-light-primary action" '
+            'data-is-selected="no" '
+            'onclick="order_to_packing_item(event)">'
+            '➕'
+            '</button>'
+        )
+
+
 
 
 # class SafeFactorView(LoginRequiredMixin, BaseView):
