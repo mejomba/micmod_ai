@@ -442,14 +442,46 @@ class PackingItemForm(CustomBaseModelForm):
         exclude = ['group']
 
     def __init__(self, *args, **kwargs):
-        request = kwargs['initial'].pop('request', None) if kwargs.get('initial') else None
+        initial = kwargs.get('initial') or {}
+        request = initial.pop('request', None)
+        workflow_constraint = initial.pop('workflow_constraint', None) or {}
+
         super(PackingItemForm, self).__init__(*args, **kwargs)
+
         self.make_hidden(['order'])
         self.fields['description'].widget.attrs['rows'] = 1
-        # if self.instance.pk and (packing := self.initial.get('packing')):
+
         packing = self.initial.get('packing')
+        packing_obj = None
         if packing:
-            self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=getattr(packing, 'pk', packing))
+            packing_obj = packing if isinstance(packing, Packing) else Packing.objects.filter(pk=packing).first()
+            self.fields['packing'].queryset = self.fields['packing'].queryset.filter(
+                id=getattr(packing, 'pk', packing)
+            )
+
+        # Parent workflow is the security boundary for PackingItem edits.
+        if request and packing_obj and not packing_obj.user_has_workflow_access(request.user):
+            self.make_disable(['__all__'])
+            self.enable = False
+
+        state_index = workflow_constraint.get('form_state')
+        formset_constraint = workflow_constraint.get('formset_constraint') or []
+        if state_index is None and packing_obj:
+            state_index = packing_obj.workflow_state_index()
+
+        state_constraint = {}
+        if state_index is not None and state_index < len(formset_constraint):
+            state_constraint = formset_constraint[state_index] or {}
+            if isinstance(state_constraint, list):
+                state_constraint = state_constraint[0] if state_constraint else {}
+
+        workflow_hidden = list(state_constraint.get('hide') or [])
+        workflow_read = list(state_constraint.get('read') or [])
+
+        if workflow_hidden:
+            self.make_hidden(workflow_hidden)
+        if workflow_read:
+            self.make_disable(workflow_read)
 
         if request and request.user.base_group == 'wh':
             # self.make_disable(['order'])
