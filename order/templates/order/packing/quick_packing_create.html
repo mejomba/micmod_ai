@@ -693,6 +693,92 @@
         margin-top: 8px;
     }
 
+    /* Full-width workflow stages: use the space that the Order table occupied. */
+    .packing-layout-form-only .packing-side {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .packing-layout-form-only .pk-card-body {
+        padding: 18px 20px;
+    }
+
+    .packing-layout-form-only .packing-meta-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px 14px;
+    }
+
+    .packing-layout-form-only .pk-file-groups {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .packing-layout-form-only #existing-packing-items {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .packing-layout-form-only .packing-selected-row {
+        margin-bottom: 0;
+        height: 100%;
+    }
+
+    .packing-layout-form-only .pk-row-main {
+        padding: 13px 14px;
+    }
+
+    .packing-layout-form-only .pk-row-top {
+        padding-bottom: 9px;
+        border-bottom: 1px solid #f0f1f5;
+    }
+
+    .pk-row-readonly-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .pk-row-readonly-grid .pk-stat {
+        min-height: 58px;
+        padding: 8px 10px;
+    }
+
+    .pk-row-readonly-description {
+        grid-column: 1 / -1;
+        min-height: 58px;
+        border: 1px solid #eef0f4;
+        border-radius: 9px;
+        background: #fbfcfe;
+        padding: 8px 10px;
+    }
+
+    .pk-row-readonly-description .pk-mini-label {
+        margin-bottom: 5px;
+    }
+
+    .pk-row-readonly-description .pk-readonly-text {
+        color: #3f4254;
+        font-size: .8rem;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .packing-layout-form-only .pk-summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @media (max-width: 1500px) {
+        .packing-layout-form-only .packing-meta-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .packing-layout-form-only #existing-packing-items {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 1250px) {
         .packing-layout {
             display: block;
@@ -712,6 +798,15 @@
         .pk-resizer {
             display: none;
         }
+
+        .packing-layout-form-only .packing-meta-grid,
+        .packing-layout-form-only .pk-file-groups {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .pk-row-readonly-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 700px) {
@@ -727,7 +822,8 @@
         .pk-row-quantity,
         .pk-row-details-body,
         .pk-summary-grid,
-        .pk-file-groups {
+        .pk-file-groups,
+        .pk-row-readonly-grid {
             grid-template-columns: 1fr;
         }
 
@@ -1024,15 +1120,22 @@
                                                         </div>
                                                     </details>
                                                 {% else %}
-                                                    <div class="pk-row-quantity">
+                                                    <div class="pk-row-readonly-grid">
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</span>
                                                             <strong>{{ packing_item.quantity|floatformat:"-4g" }}</strong>
                                                         </div>
+
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
                                                             <strong>{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
                                                         </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</span>
+                                                            <strong>{{ packing_item.gross_weight_kg|default_if_none:"-"|floatformat:"-4g" }}</strong>
+                                                        </div>
+
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
                                                             <strong>
@@ -1040,6 +1143,41 @@
                                                                 {{ packing_item.order.currency.title_en|default_if_none:'' }}
                                                             </strong>
                                                         </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
+                                                            <strong>
+                                                                {{ packing_item.computed_amount|floatformat:"-2g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
+                                                            </strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_carton_number">Carton Number</span>
+                                                            <strong>{{ packing_item.carton_number|default:"-" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_size">Size</span>
+                                                            <strong>{{ packing_item.size|default:"-" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_description">Description</span>
+                                                            <strong>{{ packing_item.description|default:"-"|truncatechars:48 }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="sku">SKU</span>
+                                                            <strong>{{ packing_item.order.final_item.sku|default:"-" }}</strong>
+                                                        </div>
+
+                                                        {% if packing_item.description %}
+                                                            <div class="pk-row-readonly-description">
+                                                                <span class="pk-mini-label" data-key="packing_description">Description</span>
+                                                                <div class="pk-readonly-text">{{ packing_item.description }}</div>
+                                                            </div>
+                                                        {% endif %}
                                                     </div>
                                                 {% endif %}
                                             </div>
