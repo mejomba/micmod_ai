@@ -3674,7 +3674,7 @@ class QuickGIODataTableListView(AjaxDatatableView):
 
 class QuickPackingView(LoginRequiredMixin, View):
     template_name = 'order/packing/quick_packing_create.html'
-    form_class = PackingForm
+    form_class = PackingSafeForm
     model = Packing
     has_flow = True
     flow_config = Base.get_flow_config(
@@ -3683,18 +3683,49 @@ class QuickPackingView(LoginRequiredMixin, View):
     )
 
     def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
         self.object = self.get_object(kwargs.get('pk')) if kwargs.get('pk') else None
-        return super().setup(request, *args, **kwargs)
 
     def _assert_create_access(self):
         if not Packing.user_can_create_workflow(self.request.user):
             raise PermissionDenied('Packing workflow access denied.')
 
+    def _flow_group(self, state_index):
+        groups = self.flow_config.get('flow_users_groups') or []
+        if not groups:
+            return None
+        state_index = max(0, min(state_index, len(groups) - 1))
+        group = groups[state_index]
+        if isinstance(group, list):
+            group = group[0] if group else None
+        return group
+
+    def _workflow_constraint(self, packing_obj=None):
+        state_index = packing_obj.workflow_state_index() if packing_obj else 0
+        wf_access = (
+            packing_obj.user_has_workflow_access(self.request.user)
+            if packing_obj
+            else Packing.user_can_create_workflow(self.request.user)
+        )
+        return {
+            'form_state': state_index,
+            'request': self.request,
+            'wf_access': wf_access,
+            'form_constraint': self.flow_config.get('flow_form_constraint'),
+            'formset_constraint': self.flow_config.get('flow_formset_constraint'),
+        }
+
+    def _build_form(self, packing_obj=None, data=None, files=None):
+        return self.form_class(
+            data=data,
+            files=files,
+            instance=packing_obj,
+            initial={'constraint': self._workflow_constraint(packing_obj)},
+        )
+
     def _create_initial_workflow(self, packing_obj):
         state = self.flow_config.get('flow_state_list', ['پیش نویس'])[0]
-        group = self.flow_config.get('flow_users_groups', ['packing_user'])[0]
-        if isinstance(group, list):
-            group = group[0] if group else 'packing_user'
+        group = self._flow_group(0) or 'packing_user'
 
         first_deadline = self.flow_config.get('flow_deadline', [0])[0] or 0
         if isinstance(first_deadline, list):
@@ -3720,6 +3751,79 @@ class QuickPackingView(LoginRequiredMixin, View):
         packing_obj.save()
         return wf
 
+    def _pick_flow_user(self, packing_obj, group):
+        if not group:
+            return self.request.user
+
+        users = get_user_model().objects.filter(
+            groups__name=group,
+        ).distinct().order_by('id')
+
+        last_flow = packing_obj.workflows.filter(
+            belong_to_group=group,
+        ).order_by('id').last()
+
+        if last_flow:
+            for user_id in (last_flow.to_user_id, last_flow.from_user_id):
+                if user_id and users.filter(pk=user_id).exists():
+                    return users.get(pk=user_id)
+
+        return users.first() or self.request.user
+
+    def _submit_workflow_action(self, packing_obj, action):
+        if not packing_obj.user_has_workflow_access(self.request.user):
+            raise PermissionDenied('Packing workflow access denied.')
+
+        states = self.flow_config.get('flow_state_list') or []
+        if not states:
+            raise ValueError('Packing workflow is not configured.')
+
+        state_index = packing_obj.workflow_state_index()
+        current_state = states[state_index]
+        current_group = self._flow_group(state_index)
+
+        if action == 'next':
+            if state_index >= len(states) - 1:
+                raise ValueError('Packing is already in the last workflow state.')
+            target_index = state_index + 1
+            wf_status = 3
+        elif action == 'back':
+            if state_index <= 0:
+                raise ValueError('Packing is already in the first workflow state.')
+            target_index = state_index - 1
+            wf_status = 2
+        else:
+            raise ValueError('Invalid workflow action.')
+
+        target_state = states[target_index]
+        target_group = self._flow_group(target_index)
+        to_user = self._pick_flow_user(packing_obj, target_group)
+
+        deadline_days = self.flow_config.get('flow_deadline', [0])[state_index] or 0
+        if isinstance(deadline_days, list):
+            deadline_days = deadline_days[0] if deadline_days else 0
+
+        wf = WorkFlow.objects.create(
+            wf_status=wf_status,
+            action=action,
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=self.request.user,
+            to_user=to_user,
+            state=current_state,
+            deadline=timezone.now() + timedelta(days=deadline_days),
+            belong_to_group=current_group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=target_state,
+            wf_description=self.request.POST.get('wf_description'),
+            creator_user=self.request.user,
+            editor_user=self.request.user,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = self.request
+        packing_obj.save()
+        return wf
+
     @staticmethod
     def _to_float(value, default=0):
         try:
@@ -3727,14 +3831,7 @@ class QuickPackingView(LoginRequiredMixin, View):
         except (TypeError, ValueError):
             return default
 
-    def post(self, request, pk=None, *args, **kwargs):
-        if pk:
-            return JsonResponse(
-                {'res': {'url': reverse_lazy('order:packing.update', kwargs={'pk': pk})}},
-                status=409,
-            )
-
-        self._assert_create_access()
+    def _parse_rows(self, request):
         total_forms = int(request.POST.get('form-TOTAL_FORMS', 1) or 1)
         rows = []
         for row_index in range(1, total_forms):
@@ -3746,10 +3843,8 @@ class QuickPackingView(LoginRequiredMixin, View):
             if not order_id:
                 continue
             if quantity is None:
-                return JsonResponse(
-                    {'res': {'ERROR': f'تعداد ردیف {row_index} معتبر نیست.'}},
-                    status=400,
-                )
+                raise ValueError(f'Invalid quantity in row {row_index}.')
+
             rows.append({
                 'index': row_index,
                 'order_id': int(order_id),
@@ -3762,86 +3857,130 @@ class QuickPackingView(LoginRequiredMixin, View):
                 'size': request.POST.get(f'form-{row_index}-size'),
                 'description': request.POST.get(f'form-{row_index}-description'),
             })
+        return rows
 
-        if not rows:
-            return JsonResponse(
-                {'res': {'ERROR': 'حداقل یک سفارش برای Packing انتخاب کنید.'}},
-                status=400,
+    def _save_uploaded_files(self, request, packing_obj):
+        for name in request.FILES:
+            if not name.startswith('file_'):
+                continue
+            try:
+                group = int(name.split('_', 1)[1])
+            except (IndexError, ValueError):
+                continue
+            packing_obj.save_file(
+                request=request,
+                file_groups=group,
+                file_model=File,
+                obj=packing_obj,
+                input_prefix='file',
             )
 
-        packing_data = {
-            'packing_number': request.POST.get('packing_number') or None,
-            'currency_id': request.POST.get('currency') or None,
-            'shipment_type': request.POST.get('shipment_type') or None,
-            'bl_number': request.POST.get('bl_number') or None,
-            'estimated_delivery_date': request.POST.get('estimated_delivery_date') or None,
-            'description': request.POST.get('description') or None,
-            'editor_user': request.user,
-        }
+    def post(self, request, pk=None, *args, **kwargs):
+        packing_obj = self.get_object(pk) if pk else None
 
         try:
-            with transaction.atomic():
-                packing_obj = Packing(
-                    creator_user=request.user,
-                    **packing_data,
+            if packing_obj:
+                if not packing_obj.user_has_workflow_access(request.user):
+                    raise PermissionDenied('Packing workflow access denied.')
+
+                workflow_action = request.POST.get('workflow_action')
+                if workflow_action:
+                    with transaction.atomic():
+                        packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+                        self._submit_workflow_action(packing_obj, workflow_action)
+                    return JsonResponse(
+                        {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
+                        status=200,
+                    )
+            else:
+                self._assert_create_access()
+
+            rows = self._parse_rows(request)
+            state_index = packing_obj.workflow_state_index() if packing_obj else 0
+
+            if packing_obj and state_index > 0 and rows:
+                raise PermissionDenied(
+                    'Packing items can only be added in the first workflow state.'
                 )
+
+            if not packing_obj and not rows:
+                return JsonResponse(
+                    {'res': {'ERROR': 'Select at least one order for Packing.'}},
+                    status=400,
+                )
+
+            form = self._build_form(
+                packing_obj=packing_obj,
+                data=request.POST,
+                files=request.FILES,
+            )
+            if not form.is_valid():
+                return JsonResponse(
+                    {'res': {'ERROR': form.errors.get_json_data()}},
+                    status=400,
+                )
+
+            with transaction.atomic():
+                if packing_obj:
+                    packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+                    form.instance = packing_obj
+
+                packing_obj = form.save()
                 packing_obj.extra_data.request = request
                 packing_obj.save()
 
-                for row in rows:
-                    order = (
-                        Order.objects
-                        .select_for_update()
-                        .select_related('item', 'item_trade')
-                        .get(pk=row['order_id'])
-                    )
+                if rows:
+                    if packing_obj.workflow_state_index() > 0:
+                        raise PermissionDenied(
+                            'Packing items can only be added in the first workflow state.'
+                        )
 
-                    is_valid, validation_error = order.validate_for_packing(
-                        row['quantity'],
-                        packing_obj,
-                    )
-                    if not is_valid:
-                        raise ValueError(validation_error)
+                    seen_order_ids = set()
+                    for row in rows:
+                        if row['order_id'] in seen_order_ids:
+                            raise ValueError('An order cannot be added twice in one request.')
+                        seen_order_ids.add(row['order_id'])
 
-                    item = order.final_item
-                    unit_weight = float(order.final_weight or 0)
-                    unit_price = float(order.final_price or 0)
+                        # Lock only Order itself. item/item_trade are nullable FKs and
+                        # select_for_update() across their OUTER JOIN is invalid in PostgreSQL.
+                        order = Order.objects.select_for_update().get(pk=row['order_id'])
 
-                    packing_item_obj = PackingItem(
-                        order=order,
-                        packing=packing_obj,
-                        part_number=getattr(item, 'part_number', None),
-                        quantity=row['quantity'],
-                        price=unit_price,
-                        net_weight_kg=unit_weight * row['quantity'],
-                        gross_weight_kg=row['gross_weight_kg'],
-                        carton_number=row['carton_number'],
-                        size=row['size'],
-                        brand=str(item.brand) if item and item.brand else None,
-                        description=row['description'],
-                        creator_user=request.user,
-                        editor_user=request.user,
-                    )
-                    packing_item_obj.extra_data.request = request
-                    packing_item_obj.save()
+                        is_valid, validation_error = order.validate_for_packing(
+                            row['quantity'],
+                            packing_obj,
+                        )
+                        if not is_valid:
+                            raise ValueError(validation_error)
 
-                for name, uploaded_file in request.FILES.items():
-                    if not name.startswith('file_'):
-                        continue
-                    try:
-                        group = int(name.split('_', 1)[1])
-                    except (IndexError, ValueError):
-                        continue
-                    packing_obj.save_file(
-                        request=request,
-                        file_groups=group,
-                        file_model=File,
-                        obj=packing_obj,
-                        input_prefix='file',
-                    )
+                        item = order.final_item
+                        unit_weight = float(order.final_weight or 0)
+                        unit_price = float(order.final_price or 0)
 
-                self._create_initial_workflow(packing_obj)
+                        packing_item_obj = PackingItem(
+                            order=order,
+                            packing=packing_obj,
+                            part_number=getattr(item, 'part_number', None),
+                            quantity=row['quantity'],
+                            price=unit_price,
+                            net_weight_kg=unit_weight * row['quantity'],
+                            gross_weight_kg=row['gross_weight_kg'],
+                            carton_number=row['carton_number'],
+                            size=row['size'],
+                            brand=str(item.brand) if item and item.brand else None,
+                            description=row['description'],
+                            creator_user=request.user,
+                            editor_user=request.user,
+                        )
+                        packing_item_obj.extra_data.request = request
+                        packing_item_obj.save()
 
+                self._save_uploaded_files(request, packing_obj)
+
+                if not pk:
+                    self._create_initial_workflow(packing_obj)
+
+        except PermissionDenied:
+            raise
         except Exception as exc:
             return JsonResponse(
                 {'res': {'ERROR': str(exc)}},
@@ -3853,7 +3992,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             {
                 'res': {
                     'url': reverse_lazy(
-                        'order:packing.update',
+                        'order:quick_packing',
                         kwargs={'pk': packing_obj.pk},
                     )
                 }
@@ -3862,14 +4001,45 @@ class QuickPackingView(LoginRequiredMixin, View):
         )
 
     def get(self, request, pk=None, *args, **kwargs):
-        if pk:
-            return redirect('order:packing.update', pk=pk)
+        packing_obj = self.get_object(pk) if pk else None
 
-        self._assert_create_access()
+        if packing_obj:
+            state_index = packing_obj.workflow_state_index()
+            wf_access = packing_obj.user_has_workflow_access(request.user)
+        else:
+            self._assert_create_access()
+            state_index = 0
+            wf_access = True
+
+        states = self.flow_config.get('flow_state_list') or []
+        can_add_items = bool(
+            state_index == 0
+            and wf_access
+        )
+
         context = {
-            'form': PackingForm(),
+            'form': self._build_form(packing_obj=packing_obj),
             'formset': PackingItemFormSet(),
-            'packings': [],
+            'packings': (
+                packing_obj.packing_item_rel
+                .filter(is_deleted=False)
+                .select_related('order')
+                .order_by('id')
+                if packing_obj else []
+            ),
+            'packing_object': packing_obj,
+            'state_index': state_index,
+            'flow_state_index': state_index,
+            'flow_state_list': states,
+            'current_state': states[state_index] if states else None,
+            'wf_access': wf_access,
+            'can_add_items': can_add_items,
+            'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
+            'can_back': bool(wf_access and packing_obj and state_index > 0),
+            'flow': (
+                packing_obj.workflows.order_by('-id')
+                if packing_obj else []
+            ),
         }
         return render(request, self.template_name, context)
 
