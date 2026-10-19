@@ -896,6 +896,7 @@
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
+                                            data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
                                             data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                         >
                                             <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
@@ -939,10 +940,14 @@
 
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
-                                                            <strong class="existing-row-total-value">0</strong>
+                                                            <strong>
+                                                                <span class="existing-row-total-value">0</span>
+                                                                <span class="text-muted ms-1">{{ packing_item.order.currency.title_en|default_if_none:'' }}</span>
+                                                            </strong>
                                                             <small class="text-muted">
                                                                 <span data-key="packing_unit_price">Unit Price</span>:
                                                                 {{ packing_item.price|floatformat:"-4g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
                                                             </small>
                                                         </div>
                                                     </div>
@@ -980,7 +985,10 @@
                                                         </div>
                                                         <div class="pk-stat">
                                                             <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
-                                                            <strong>{{ packing_item.price|floatformat:"-4g" }}</strong>
+                                                            <strong>
+                                                                {{ packing_item.price|floatformat:"-4g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
+                                                            </strong>
                                                         </div>
                                                     </div>
                                                 {% endif %}
@@ -1247,6 +1255,7 @@
             remainingInOrder: toNumber(tr.querySelector('.remaining-quantity-in-order')?.textContent),
             unitWeight: toNumber(tr.querySelector('.unit-weight')?.textContent),
             finalPrice: toNumber(tr.querySelector('.final-price')?.textContent),
+            currency: tr.querySelector('.currency-title')?.textContent?.trim() || '',
         };
     }
 
@@ -1356,6 +1365,7 @@
         row.dataset.orderId = data.orderId;
         row.dataset.unitWeight = data.unitWeight;
         row.dataset.finalPrice = data.finalPrice;
+        row.dataset.currency = data.currency;
 
         row.innerHTML = `
             <input type="hidden" name="form-${index}-order" value="${data.orderId}">
@@ -1403,8 +1413,11 @@
 
                     <div class="pk-stat">
                         <span class="pk-mini-label">${tr('packing_row_total_value', 'Row Total Value')}</span>
-                        <strong><span class="row-total-value">0</span></strong>
-                        <small class="text-muted">${tr('packing_unit_price', 'Unit Price')}: ${fmtMoney(data.finalPrice)}</small>
+                        <strong>
+                            <span class="row-total-value">0</span>
+                            <span class="text-muted ms-1">${data.currency}</span>
+                        </strong>
+                        <small class="text-muted">${tr('packing_unit_price', 'Unit Price')}: ${fmtMoney(data.finalPrice)} ${data.currency}</small>
                     </div>
                 </div>
             </div>
