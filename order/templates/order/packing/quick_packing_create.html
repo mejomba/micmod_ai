@@ -892,10 +892,14 @@
                                         <div
                                             class="packing-selected-row packing-existing-row"
                                             data-order-id="{{ packing_item.order_id }}"
+                                            data-item-id="{{ packing_item.pk }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
+                                            data-unit-weight="{% if packing_item.quantity %}{% widthratio packing_item.net_weight_kg|default_if_none:0 packing_item.quantity 1 %}{% else %}0{% endif %}"
                                         >
+                                            <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
+
                                             <div class="pk-row-main">
                                                 <div class="pk-row-top">
                                                     <div class="min-w-0">
@@ -908,20 +912,73 @@
                                                     <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
                                                 </div>
 
-                                                <div class="pk-row-quantity">
-                                                    <div class="pk-stat">
-                                                        <span class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</span>
-                                                        <strong>{{ packing_item.quantity|floatformat:"-4g" }}</strong>
+                                                {% if can_add_items %}
+                                                    <div class="pk-row-quantity">
+                                                        <div class="pk-quantity-box">
+                                                            <label data-key="packing_quantity_this">Packing Quantity</label>
+                                                            <input
+                                                                type="number"
+                                                                step="any"
+                                                                min="0.000001"
+                                                                class="form-control packing-existing-quantity"
+                                                                name="existing-{{ packing_item.pk }}-quantity"
+                                                                value="{{ packing_item.quantity|default_if_none:0 }}"
+                                                                required
+                                                            >
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
+                                                            <strong class="existing-row-total-weight">{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
+                                                            <strong class="existing-row-total-value">0</strong>
+                                                            <small class="text-muted">
+                                                                <span data-key="packing_unit_price">Unit Price</span>:
+                                                                {{ packing_item.price|floatformat:"-4g" }}
+                                                            </small>
+                                                        </div>
                                                     </div>
-                                                    <div class="pk-stat">
-                                                        <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
-                                                        <strong>{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+
+                                                    <details class="pk-row-details">
+                                                        <summary data-key="packing_row_more_info">Additional Row Information</summary>
+                                                        <div class="pk-row-details-body">
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_carton_number">Carton Number</label>
+                                                                <input class="form-control" name="existing-{{ packing_item.pk }}-carton_number" value="{{ packing_item.carton_number|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
+                                                                <input type="number" step="any" class="form-control" name="existing-{{ packing_item.pk }}-gross_weight_kg" value="{{ packing_item.gross_weight_kg|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_size">Size</label>
+                                                                <input class="form-control" name="existing-{{ packing_item.pk }}-size" value="{{ packing_item.size|default_if_none:'' }}">
+                                                            </div>
+                                                            <div class="pk-desc">
+                                                                <label class="pk-mini-label" data-key="packing_description">Description</label>
+                                                                <textarea class="form-control" rows="2" name="existing-{{ packing_item.pk }}-description">{{ packing_item.description|default_if_none:'' }}</textarea>
+                                                            </div>
+                                                        </div>
+                                                    </details>
+                                                {% else %}
+                                                    <div class="pk-row-quantity">
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</span>
+                                                            <strong>{{ packing_item.quantity|floatformat:"-4g" }}</strong>
+                                                        </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
+                                                            <strong>{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+                                                        </div>
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
+                                                            <strong>{{ packing_item.price|floatformat:"-4g" }}</strong>
+                                                        </div>
                                                     </div>
-                                                    <div class="pk-stat">
-                                                        <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
-                                                        <strong>{{ packing_item.price|floatformat:"-4g" }}</strong>
-                                                    </div>
-                                                </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     {% endfor %}
@@ -1227,9 +1284,21 @@
         let value = 0;
 
         document.querySelectorAll('.packing-existing-row').forEach(row => {
-            quantity += toNumber(row.dataset.quantity);
-            weight += toNumber(row.dataset.totalWeight);
-            value += toNumber(row.dataset.quantity) * toNumber(row.dataset.unitPrice);
+            const quantityInput = row.querySelector('.packing-existing-quantity');
+            const q = quantityInput ? toNumber(quantityInput.value) : toNumber(row.dataset.quantity);
+            const unitWeight = toNumber(row.dataset.unitWeight);
+            const unitPrice = toNumber(row.dataset.unitPrice);
+            const totalWeight = q * unitWeight;
+            const totalValue = q * unitPrice;
+
+            quantity += q;
+            weight += totalWeight;
+            value += totalValue;
+
+            const weightTarget = row.querySelector('.existing-row-total-weight');
+            const valueTarget = row.querySelector('.existing-row-total-value');
+            if (weightTarget) weightTarget.textContent = fmt(totalWeight);
+            if (valueTarget) valueTarget.textContent = fmtMoney(totalValue);
         });
 
         container.querySelectorAll('.packing-selected-row').forEach(row => {
@@ -1425,6 +1494,10 @@
         });
         initResizableLayout();
         }
+        document.querySelectorAll('.packing-existing-quantity').forEach(function (input) {
+            input.addEventListener('input', updateTotals);
+        });
+
         syncEmptyState();
         updateTotals();
     });
@@ -1437,6 +1510,10 @@
 
             document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
                 if (input.type === 'file') return;
+                if (input.name) formData.append(input.name, input.value);
+            });
+
+            document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
                 if (input.name) formData.append(input.name, input.value);
             });
 
@@ -1503,6 +1580,10 @@
             } else {
                 formData.append(input.name, input.value);
             }
+        });
+
+        document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
+            if (input.name) formData.append(input.name, input.value);
         });
 
         container.querySelectorAll('input, textarea, select').forEach(input => {
