@@ -693,6 +693,151 @@
         margin-top: 8px;
     }
 
+    .pk-workflow-panel {
+        margin-bottom: 16px;
+        border: 1px solid var(--pk-border);
+        border-radius: 12px;
+        background: #fbfcfe;
+        padding: 12px 14px;
+    }
+
+    .pk-workflow-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .pk-workflow-current {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .pk-workflow-current-label {
+        color: var(--pk-muted);
+        font-size: .74rem;
+        white-space: nowrap;
+    }
+
+    .pk-workflow-current-name {
+        color: #181c32;
+        font-weight: 700;
+        font-size: .88rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pk-workflow-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .pk-workflow-scroll {
+        overflow-x: auto;
+        padding: 2px 1px 5px;
+        scrollbar-width: thin;
+    }
+
+    .pk-workflow-steps {
+        display: grid;
+        grid-template-columns: repeat({{ flow_state_list|length|default:1 }}, minmax(120px, 1fr));
+        gap: 0;
+        min-width: max-content;
+    }
+
+    .pk-workflow-step {
+        position: relative;
+        min-width: 120px;
+        padding: 0 7px;
+        text-align: center;
+    }
+
+    .pk-workflow-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        inset-inline-start: calc(50% + 18px);
+        width: calc(100% - 36px);
+        height: 2px;
+        background: #dfe4ec;
+        z-index: 0;
+    }
+
+    .pk-workflow-step.is-completed:not(:last-child)::after {
+        background: #50cd89;
+    }
+
+    .pk-workflow-node {
+        position: relative;
+        z-index: 1;
+        width: 30px;
+        height: 30px;
+        margin: 0 auto 7px;
+        border: 2px solid #dfe4ec;
+        border-radius: 50%;
+        background: #fff;
+        color: #a1a5b7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-node {
+        border-color: #50cd89;
+        background: #e8fff3;
+        color: #0f9d58;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-node {
+        border-color: #3699ff;
+        background: #eaf4ff;
+        color: #1976d2;
+        box-shadow: 0 0 0 4px rgba(54, 153, 255, .10);
+    }
+
+    .pk-workflow-step-name {
+        display: block;
+        color: #a1a5b7;
+        font-size: .7rem;
+        line-height: 1.45;
+        font-weight: 600;
+        white-space: normal;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-step-name {
+        color: #5e6278;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-step-name {
+        color: #181c32;
+        font-weight: 800;
+    }
+
+    .pk-workflow-step-status {
+        display: block;
+        margin-top: 3px;
+        font-size: .62rem;
+        line-height: 1.3;
+        color: #b5b5c3;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-step-status {
+        color: #0f9d58;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-step-status {
+        color: #1976d2;
+        font-weight: 700;
+    }
+
     /* Full-width workflow stages: use the space that the Order table occupied. */
     .packing-layout-form-only .packing-side {
         width: 100%;
@@ -827,6 +972,23 @@
             grid-template-columns: 1fr;
         }
 
+        .pk-workflow-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pk-workflow-actions {
+            width: 100%;
+        }
+
+        .pk-workflow-actions .btn {
+            flex: 1 1 auto;
+        }
+
+        .pk-workflow-step {
+            min-width: 105px;
+        }
+
         .pk-source-table {
             overflow-x: auto;
         }
@@ -902,23 +1064,52 @@
 
                         <div class="pk-card-body">
                             {% if packing_object %}
-                                <div class="mb-4 p-3 rounded border bg-light">
-                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                                        <div>
-                                            <span class="text-muted" data-key="state">State</span>
-                                            <strong class="ms-2">{{ current_state }}</strong>
+                                <div class="pk-workflow-panel">
+                                    <div class="pk-workflow-head">
+                                        <div class="pk-workflow-current">
+                                            <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
+                                            <span class="pk-workflow-current-name">{{ current_state }}</span>
                                         </div>
-                                        <div class="d-flex gap-2">
+
+                                        <div class="pk-workflow-actions">
                                             {% if can_back %}
                                                 <button type="button" class="btn btn-sm btn-light-warning packing-workflow-action" data-action="back">
+                                                    <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>
                                                     <span data-key="back">Back</span>
                                                 </button>
                                             {% endif %}
                                             {% if can_next %}
                                                 <button type="button" class="btn btn-sm btn-light-primary packing-workflow-action" data-action="next">
                                                     <span data-key="next">Next</span>
+                                                    <i class="ti ti-arrow-forward-up ms-1" aria-hidden="true"></i>
                                                 </button>
                                             {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="pk-workflow-scroll">
+                                        <div class="pk-workflow-steps" aria-label="Packing workflow">
+                                            {% for workflow_state in flow_state_list %}
+                                                <div class="pk-workflow-step{% if forloop.counter0 < flow_state_index %} is-completed{% elif forloop.counter0 == flow_state_index %} is-current{% endif %}">
+                                                    <div class="pk-workflow-node">
+                                                        {% if forloop.counter0 < flow_state_index %}
+                                                            <i class="ti ti-check" aria-hidden="true"></i>
+                                                        {% else %}
+                                                            {{ forloop.counter }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="pk-workflow-step-name">{{ workflow_state }}</span>
+                                                    <span class="pk-workflow-step-status">
+                                                        {% if forloop.counter0 < flow_state_index %}
+                                                            <span data-key="packing_workflow_completed">Completed</span>
+                                                        {% elif forloop.counter0 == flow_state_index %}
+                                                            <span data-key="packing_workflow_current">Current</span>
+                                                        {% else %}
+                                                            <span data-key="packing_workflow_upcoming">Upcoming</span>
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
@@ -1270,6 +1461,10 @@
     <span data-key="packing_file_7">Order Registration</span>
     <span data-key="packing_file_8">Proforma</span>
     <span data-key="packing_file_9">Insurance Policy</span>
+    <span data-key="packing_workflow_current_state">Current stage</span>
+    <span data-key="packing_workflow_completed">Completed</span>
+    <span data-key="packing_workflow_current">Current</span>
+    <span data-key="packing_workflow_upcoming">Upcoming</span>
     <span data-key="packing_gio_quantity">GIO Qty</span>
     <span data-key="sku">SKU</span>
 </div>
