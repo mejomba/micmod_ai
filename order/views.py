@@ -4154,16 +4154,26 @@ class QuickPackingView(LoginRequiredMixin, View):
             and wf_access
         )
 
-        context = {
-            'form': self._build_form(packing_obj=packing_obj),
-            'formset': PackingItemFormSet(),
-            'packings': (
+        packing_items = []
+        if packing_obj:
+            packing_items = list(
                 packing_obj.packing_item_rel
                 .filter(is_deleted=False)
                 .select_related('order')
                 .order_by('id')
-                if packing_obj else []
-            ),
+            )
+            if can_add_items:
+                for packing_item in packing_items:
+                    packing_item.quick_available_quantity = (
+                        packing_item.order.packing_available_quantity(
+                            exclude_packing_item=packing_item,
+                        )
+                    )
+
+        context = {
+            'form': self._build_form(packing_obj=packing_obj),
+            'formset': PackingItemFormSet(),
+            'packings': packing_items,
             'packing_object': packing_obj,
             'state_index': state_index,
             'flow_state_index': state_index,
