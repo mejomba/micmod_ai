@@ -4159,7 +4159,7 @@ class QuickPackingView(LoginRequiredMixin, View):
             packing_items = list(
                 packing_obj.packing_item_rel
                 .filter(is_deleted=False)
-                .select_related('order')
+                .select_related('order', 'order__currency')
                 .order_by('id')
             )
             if can_add_items:
@@ -4300,6 +4300,14 @@ class QuickPackingDataTableListView(AjaxDatatableView):
             'className': 'final-price d-none',
         },
         {
+            'name': 'currency_title',
+            'title': 'currency_title',
+            'orderable': False,
+            'searchable': False,
+            'visible': True,
+            'className': 'currency-title d-none',
+        },
+        {
             'name': 'show_order_str',
             'title': 'show_order_str',
             'orderable': False,
@@ -4389,6 +4397,11 @@ class QuickPackingDataTableListView(AjaxDatatableView):
                     Value(0.0),
                     output_field=FloatField(),
                 ),
+                effective_currency_title=Coalesce(
+                    F('currency__title_en'),
+                    Value(''),
+                    output_field=CharField(),
+                ),
                 quantity_in_gio=Coalesce(
                     Subquery(
                         gio_quantity_subquery,
@@ -4451,6 +4464,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         row['remaining_quantity_in_order'] = obj.remaining_quantity_in_order or 0
         row['unit_weight'] = obj.effective_unit_weight or 0
         row['final_price'] = obj.effective_unit_price or 0
+        row['currency_title'] = obj.effective_currency_title or ''
         row['show_order_str'] = mark_safe(
             '<div class="d-flex gap-3">'
             f'<span>{obj.order_number or obj.pk}</span>'
