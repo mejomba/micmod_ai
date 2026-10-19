@@ -910,5 +910,16 @@
     "packing_save_error": "خطا در ذخیره Packing",
     "packing_resize_columns": "برای تغییر اندازه ستون‌ها بکشید؛ دوبار کلیک برای حالت پیش‌فرض.",
     "packing_gio_quantity": "تعداد GIO",
-    "packing_order_number": "شماره سفارش"
+    "packing_order_number": "شماره سفارش",
+    "packing_open_file": "باز کردن",
+    "packing_no_file": "فایلی بارگذاری نشده است",
+    "packing_file_1": "اینویس",
+    "packing_file_2": "پکینگ",
+    "packing_file_3": "گواهی بازرسی",
+    "packing_file_4": "گواهی مبدا",
+    "packing_file_5": "ریز پکینگ",
+    "packing_file_6": "پکینگ گمرکی",
+    "packing_file_7": "چاپ ثبت سفارش",
+    "packing_file_8": "پروفرما",
+    "packing_file_9": "بیمه نامه"
 }
