@@ -489,6 +489,36 @@
         box-shadow: 0 4px 12px rgba(24, 28, 50, .05);
     }
 
+    .packing-existing-row.is-pending-delete {
+        border-color: #f5c2c7;
+        background: #fff8f8;
+        opacity: .78;
+    }
+
+    .packing-existing-row.is-pending-delete .pk-row-main,
+    .packing-existing-row.is-pending-delete .pk-row-details {
+        display: none;
+    }
+
+    .pk-delete-pending {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .packing-existing-row.is-pending-delete .pk-delete-pending {
+        display: flex;
+    }
+
+    .pk-existing-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
     .pk-row-main {
         padding: 10px 12px 9px;
     }
@@ -899,7 +929,15 @@
                                             data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
                                             data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                         >
-                                            <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
+                                            {% if can_add_items %}
+                                                <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
+                                                <input type="hidden" class="existing-delete-input" name="existing-{{ packing_item.pk }}-delete" value="0">
+                                            {% endif %}
+
+                                            <div class="pk-delete-pending">
+                                                <span class="text-danger fw-bold" data-key="packing_item_marked_deleted">Item marked for deletion</span>
+                                                <button type="button" class="btn btn-sm btn-light existing-undo-delete" data-key="undo">Undo</button>
+                                            </div>
 
                                             <div class="pk-row-main">
                                                 <div class="pk-row-top">
@@ -910,7 +948,19 @@
                                                             <span>{{ packing_item.part_number|default:"-" }}</span>
                                                         </div>
                                                     </div>
-                                                    <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                    {% if can_add_items %}
+                                                        <div class="pk-existing-actions">
+                                                            <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                            <button
+                                                                type="button"
+                                                                class="pk-remove existing-delete-row"
+                                                                title="Delete row"
+                                                                aria-label="Delete row"
+                                                            >×</button>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                    {% endif %}
                                                 </div>
 
                                                 {% if can_add_items %}
@@ -1070,6 +1120,8 @@
     <span data-key="packing_submit">Save Packing</span>
     <span data-key="packing_resize_columns">Drag to resize columns; double-click to reset.</span>
     <span data-key="packing_open_file">Open</span>
+    <span data-key="packing_item_marked_deleted">Item marked for deletion</span>
+    <span data-key="undo">Undo</span>
     <span data-key="packing_no_file">No file uploaded</span>
     <span data-key="packing_file_1">Invoice</span>
     <span data-key="packing_file_2">Packing List</span>
@@ -1260,12 +1312,12 @@
     }
 
     function selectedOrderIds() {
-        return Array.from(document.querySelectorAll('.packing-existing-row, #formset-container .packing-selected-row'))
+        return Array.from(document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row'))
             .map(el => String(el.dataset.orderId));
     }
 
     function syncEmptyState() {
-        const count = document.querySelectorAll('.packing-existing-row, #formset-container .packing-selected-row').length;
+        const count = document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row').length;
         if (selectedCount) selectedCount.textContent = count;
         if (emptyState) emptyState.classList.toggle('d-none', count > 0);
     }
@@ -1298,6 +1350,8 @@
         let value = 0;
 
         document.querySelectorAll('.packing-existing-row').forEach(row => {
+            if (row.classList.contains('is-pending-delete')) return;
+
             const quantityInput = row.querySelector('.packing-existing-quantity');
             const q = quantityInput ? toNumber(quantityInput.value) : toNumber(row.dataset.quantity);
             const unitWeight = toNumber(row.dataset.unitWeight);
@@ -1519,6 +1573,32 @@
                 if (maxQ > 0 && current > maxQ) this.value = maxQ;
                 if (current < 0) this.value = 0;
                 updateTotals();
+            });
+        });
+
+        document.querySelectorAll('.existing-delete-row').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = this.closest('.packing-existing-row');
+                const deleteInput = row?.querySelector('.existing-delete-input');
+                if (!row || !deleteInput) return;
+
+                deleteInput.value = '1';
+                row.classList.add('is-pending-delete');
+                updateTotals();
+                syncDatatable();
+            });
+        });
+
+        document.querySelectorAll('.existing-undo-delete').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = this.closest('.packing-existing-row');
+                const deleteInput = row?.querySelector('.existing-delete-input');
+                if (!row || !deleteInput) return;
+
+                deleteInput.value = '0';
+                row.classList.remove('is-pending-delete');
+                updateTotals();
+                syncDatatable();
             });
         });
 
