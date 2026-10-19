@@ -3898,6 +3898,88 @@ class QuickPackingView(LoginRequiredMixin, View):
             })
         return rows
 
+    def _parse_existing_rows(self, request):
+        rows = []
+        prefix = 'existing-'
+        item_ids = []
+
+        for key in request.POST.keys():
+            if key.startswith(prefix) and key.endswith('-id'):
+                try:
+                    item_ids.append(int(request.POST.get(key)))
+                except (TypeError, ValueError):
+                    continue
+
+        for item_id in sorted(set(item_ids)):
+            quantity = self._to_float(
+                request.POST.get(f'existing-{item_id}-quantity'),
+                default=None,
+            )
+            if quantity is None:
+                raise ValueError(f'Invalid quantity for PackingItem {item_id}.')
+
+            rows.append({
+                'id': item_id,
+                'quantity': quantity,
+                'carton_number': request.POST.get(f'existing-{item_id}-carton_number'),
+                'gross_weight_kg': self._to_float(
+                    request.POST.get(f'existing-{item_id}-gross_weight_kg'),
+                    0,
+                ),
+                'size': request.POST.get(f'existing-{item_id}-size'),
+                'description': request.POST.get(f'existing-{item_id}-description'),
+            })
+
+        return rows
+
+    def _update_existing_rows(self, request, packing_obj):
+        if packing_obj.workflow_state_index() != 0:
+            return
+
+        rows = self._parse_existing_rows(request)
+        if not rows:
+            return
+
+        for row in rows:
+            packing_item = (
+                PackingItem.objects
+                .select_for_update()
+                .filter(
+                    pk=row['id'],
+                    packing=packing_obj,
+                    is_deleted=False,
+                )
+                .first()
+            )
+            if not packing_item:
+                raise ValueError('Packing item does not belong to this Packing.')
+
+            order = Order.objects.select_for_update().get(pk=packing_item.order_id)
+
+            is_valid, validation_error = order.validate_for_packing(
+                row['quantity'],
+                packing_obj,
+                packing_item_obj=packing_item,
+            )
+            if not is_valid:
+                raise ValueError(validation_error)
+
+            item = order.final_item
+            unit_weight = float(order.final_weight or 0)
+            unit_price = float(order.final_price or 0)
+
+            packing_item.quantity = row['quantity']
+            packing_item.price = unit_price
+            packing_item.net_weight_kg = unit_weight * row['quantity']
+            packing_item.gross_weight_kg = row['gross_weight_kg']
+            packing_item.carton_number = row['carton_number']
+            packing_item.size = row['size']
+            packing_item.brand = str(item.brand) if item and item.brand else None
+            packing_item.description = row['description']
+            packing_item.editor_user = request.user
+            packing_item.extra_data.request = request
+            packing_item.save()
+
     def _save_uploaded_files(self, request, packing_obj):
         if not any(name.startswith('file_') for name in request.FILES):
             return
@@ -3937,6 +4019,7 @@ class QuickPackingView(LoginRequiredMixin, View):
                         packing_obj = form.save()
                         packing_obj.extra_data.request = request
                         packing_obj.save()
+                        self._update_existing_rows(request, packing_obj)
                         self._save_uploaded_files(request, packing_obj)
                         self._submit_workflow_action(packing_obj, workflow_action)
 
@@ -3980,6 +4063,8 @@ class QuickPackingView(LoginRequiredMixin, View):
                 packing_obj = form.save()
                 packing_obj.extra_data.request = request
                 packing_obj.save()
+
+                self._update_existing_rows(request, packing_obj)
 
                 if rows:
                     if packing_obj.workflow_state_index() > 0:
