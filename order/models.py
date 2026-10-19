@@ -522,7 +522,33 @@ class Order(BaseModeWF):
 
         return True, ''
 
-    def validate_for_packing(self, quantity, packing_obj=None):
+    def packing_available_quantity(self, exclude_packing_item=None):
+        """
+        Return the maximum quantity that can currently be assigned to Packing.
+
+        When editing an existing PackingItem, exclude that row from the already
+        packed quantity so its current allocation becomes available to itself.
+        """
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if exclude_packing_item is not None:
+            exclude_pk = getattr(exclude_packing_item, 'pk', exclude_packing_item)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
+
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        final_quantity = float(self.final_quantity or 0)
+        packable_gio = min(final_quantity, float(gio_quantity or 0))
+
+        return max(
+            packable_gio - float(packed_quantity or 0),
+            0,
+        )
+
+    def validate_for_packing(self, quantity, packing_obj=None, packing_item_obj=None):
         """
         Packing can only consume quantities that have already been GIO'd and
         have not been consumed by previous active PackingItems.
@@ -539,15 +565,15 @@ class Order(BaseModeWF):
             is_deleted=False
         ).aggregate(total=Sum('quantity'))['total'] or 0
 
-        packed_quantity = self.packing_item_order.filter(
-            is_deleted=False
-        ).aggregate(total=Sum('quantity'))['total'] or 0
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if packing_item_obj is not None:
+            exclude_pk = getattr(packing_item_obj, 'pk', packing_item_obj)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
 
-        final_quantity = float(self.final_quantity or 0)
-        packable_gio = min(final_quantity, float(gio_quantity or 0))
-        available_for_packing = max(
-            packable_gio - float(packed_quantity or 0),
-            0,
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        available_for_packing = self.packing_available_quantity(
+            exclude_packing_item=packing_item_obj,
         )
 
         if requested_quantity > available_for_packing + 0.000001:
