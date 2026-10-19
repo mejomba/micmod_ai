@@ -603,7 +603,8 @@
                 </a>
             </div>
 
-            <div class="packing-layout">
+            <div class="packing-layout{% if not can_add_items %} packing-layout-form-only{% endif %}">
+                {% if can_add_items %}
                 <section class="pk-card packing-source-panel" id="packing-source-panel">
                     <div class="pk-card-header">
                         <div>
@@ -647,6 +648,29 @@
                         </div>
 
                         <div class="pk-card-body">
+                            {% if packing_object %}
+                                <div class="mb-4 p-3 rounded border bg-light">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                        <div>
+                                            <span class="text-muted" data-key="state">State</span>
+                                            <strong class="ms-2">{{ current_state }}</strong>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            {% if can_back %}
+                                                <button type="button" class="btn btn-sm btn-light-warning packing-workflow-action" data-action="back">
+                                                    <span data-key="back">Back</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if can_next %}
+                                                <button type="button" class="btn btn-sm btn-light-primary packing-workflow-action" data-action="next">
+                                                    <span data-key="next">Next</span>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+
                             <div id="packing-header">
                                 <div class="packing-meta-grid">
                                     {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimated_delivery_date form.description label='on-border' %}
@@ -678,18 +702,64 @@
                                         <strong data-key="packing_selected_items">Selected Items</strong>
                                         <span class="pk-selected-count" id="packing-selected-count">0</span>
                                     </div>
-                                    <small class="text-muted" data-key="packing_remove_hint">Use the remove button on each row to delete it.</small>
+                                    {% if can_add_items %}
+                                        <small class="text-muted" data-key="packing_remove_hint">Use the remove button on each row to delete it.</small>
+                                    {% endif %}
                                 </div>
 
                                 {{ formset.management_form }}
 
-                                <div id="packing-empty-state" class="pk-empty-state">
+                                <div id="packing-empty-state" class="pk-empty-state{% if packings %} d-none{% endif %}">
                                     <div class="empty-icon">＋</div>
                                     <div class="fw-bold text-dark mb-1" data-key="packing_empty_title">No order selected yet</div>
                                     <div data-key="packing_empty_help">Use the add button in the orders table.</div>
                                 </div>
 
-                                <div id="formset-container"></div>
+                                <div id="existing-packing-items">
+                                    {% for packing_item in packings %}
+                                        <div
+                                            class="packing-selected-row packing-existing-row"
+                                            data-order-id="{{ packing_item.order_id }}"
+                                            data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
+                                            data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
+                                            data-total-value="{% widthratio packing_item.quantity|default_if_none:0 1 packing_item.price|default_if_none:0 %}"
+                                        >
+                                            <div class="pk-row-main">
+                                                <div class="pk-row-top">
+                                                    <div class="min-w-0">
+                                                        <div class="pk-row-title">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
+                                                        <div class="pk-row-part">
+                                                            <span class="me-2">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
+                                                            <span>{{ packing_item.part_number|default:"-" }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                </div>
+
+                                                <div class="pk-row-quantity">
+                                                    <div class="pk-stat">
+                                                        <span class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</span>
+                                                        <strong>{{ packing_item.quantity|floatformat:"-4g" }}</strong>
+                                                    </div>
+                                                    <div class="pk-stat">
+                                                        <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
+                                                        <strong>{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+                                                    </div>
+                                                    <div class="pk-stat">
+                                                        <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
+                                                        <strong>{{ packing_item.price|floatformat:"-4g" }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if can_add_items %}
+                                    <div id="formset-container"></div>
+                                {% else %}
+                                    <div id="formset-container" class="d-none"></div>
+                                {% endif %}
                             </div>
 
                             <div class="pk-summary">
@@ -708,9 +778,11 @@
                                     </div>
                                 </div>
 
-                                <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
-                                    <span data-key="packing_submit">Save Packing</span>
-                                </button>
+                                {% if wf_access %}
+                                    <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
+                                        <span data-key="packing_submit">Save Packing</span>
+                                    </button>
+                                {% endif %}
                                 <div id="ajax-response"></div>
                             </div>
                         </div>
@@ -762,7 +834,8 @@
 <script>
 (function () {
     const listUrl = "{% url 'order:quick_packing.datatable' %}";
-    const submitUrl = "{% url 'order:quick_packing' %}";
+    const submitUrl = "{% if packing_object %}{% url 'order:quick_packing' packing_object.pk %}{% else %}{% url 'order:quick_packing' %}{% endif %}";
+    const canAddItems = {{ can_add_items|yesno:"true,false" }};
     const container = document.getElementById('formset-container');
     const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
     const submitButton = document.getElementById('submit-packing');
@@ -933,14 +1006,14 @@
     }
 
     function selectedOrderIds() {
-        return Array.from(container.querySelectorAll('.packing-selected-row'))
+        return Array.from(document.querySelectorAll('.packing-existing-row, #formset-container .packing-selected-row'))
             .map(el => String(el.dataset.orderId));
     }
 
     function syncEmptyState() {
-        const count = container.querySelectorAll('.packing-selected-row').length;
-        selectedCount.textContent = count;
-        emptyState.classList.toggle('d-none', count > 0);
+        const count = document.querySelectorAll('.packing-existing-row, #formset-container .packing-selected-row').length;
+        if (selectedCount) selectedCount.textContent = count;
+        if (emptyState) emptyState.classList.toggle('d-none', count > 0);
     }
 
     function syncDatatable() {
@@ -969,6 +1042,12 @@
         let quantity = 0;
         let weight = 0;
         let value = 0;
+
+        document.querySelectorAll('.packing-existing-row').forEach(row => {
+            quantity += toNumber(row.dataset.quantity);
+            weight += toNumber(row.dataset.totalWeight);
+            value += toNumber(row.dataset.totalValue);
+        });
 
         container.querySelectorAll('.packing-selected-row').forEach(row => {
             const q = toNumber(row.querySelector('input[name$="-quantity"]')?.value);
@@ -1129,6 +1208,7 @@
     $(document).ready(async function () {
         await loadPackingTranslations();
 
+        if (canAddItems && document.getElementById('quick-packing-list')) {
         AjaxDatatableViewUtils.initialize_table(
             $('#quick-packing-list'),
             listUrl,
@@ -1161,13 +1241,47 @@
             applyDynamicTranslations(document.getElementById('quick-packing-list'));
         });
         initResizableLayout();
+        }
         syncEmptyState();
+        updateTotals();
     });
 
-    submitButton.addEventListener('click', function () {
+    document.querySelectorAll('.packing-workflow-action').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const action = button.dataset.action;
+            const formData = new FormData();
+            formData.append('workflow_action', action);
+
+            document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
+                if (input.type === 'file') return;
+                if (input.name) formData.append(input.name, input.value);
+            });
+
+            $.ajax({
+                url: submitUrl,
+                method: 'POST',
+                data: formData,
+                headers: {"X-CSRFToken": getCookie("csrftoken")},
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    window.location.href = response.res.url;
+                },
+                error: function (response) {
+                    const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
+                    $('#ajax-response')
+                        .removeClass('text-success')
+                        .addClass('text-danger')
+                        .text(message);
+                }
+            });
+        });
+    });
+
+    submitButton && submitButton.addEventListener('click', function () {
         const rows = container.querySelectorAll('.packing-selected-row');
 
-        if (!rows.length) {
+        if (!rows.length && !{{ packing_object|yesno:"true,false" }}) {
             $('#ajax-response')
                 .removeClass('text-success')
                 .addClass('text-danger')
