@@ -4333,9 +4333,14 @@ class QuickPackingDataTableListView(AjaxDatatableView):
     ]
 
     def get_initial_queryset(self, request=None):
+        # BaseModel has Meta.ordering = ['-created_date'].
+        # Clear it before GROUP BY, otherwise PostgreSQL/Django can include the
+        # ordering column in the grouped subquery and [:1] would return only one
+        # grouped row instead of the sum of every active item for this Order.
         gio_quantity_subquery = (
             GIOItem.objects
             .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .order_by()
             .values('order_id')
             .annotate(total=Sum('quantity'))
             .values('total')[:1]
@@ -4343,6 +4348,7 @@ class QuickPackingDataTableListView(AjaxDatatableView):
         packing_quantity_subquery = (
             PackingItem.objects
             .filter(order_id=OuterRef('pk'), is_deleted=False)
+            .order_by()
             .values('order_id')
             .annotate(total=Sum('quantity'))
             .values('total')[:1]
