@@ -4059,21 +4059,23 @@ class QuickPackingView(LoginRequiredMixin, View):
                     status=400,
                 )
 
-            form = self._build_form(
-                packing_obj=packing_obj,
-                data=request.POST,
-                files=request.FILES,
-            )
-            if not form.is_valid():
-                return JsonResponse(
-                    {'res': {'ERROR': form.errors.get_json_data()}},
-                    status=400,
-                )
-
             with transaction.atomic():
                 if packing_obj:
+                    # Lock first, then bind/validate the form against the exact
+                    # instance that will be saved. Replacing form.instance after
+                    # is_valid() discards ModelForm's cleaned values.
                     packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
-                    form.instance = packing_obj
+
+                form = self._build_form(
+                    packing_obj=packing_obj,
+                    data=request.POST,
+                    files=request.FILES,
+                )
+                if not form.is_valid():
+                    return JsonResponse(
+                        {'res': {'ERROR': form.errors.get_json_data()}},
+                        status=400,
+                    )
 
                 packing_obj = form.save()
                 packing_obj.extra_data.request = request
