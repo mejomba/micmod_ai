@@ -307,5 +307,16 @@
     "packing_save_error": "Error saving packing.",
     "packing_resize_columns": "Drag to resize columns; double-click to reset.",
     "packing_gio_quantity": "GIO Qty",
-    "packing_order_number": "Order Number"
+    "packing_order_number": "Order Number",
+    "packing_open_file": "Open",
+    "packing_no_file": "No file uploaded",
+    "packing_file_1": "Invoice",
+    "packing_file_2": "Packing List",
+    "packing_file_3": "Inspection Certificate",
+    "packing_file_4": "Certificate of Origin",
+    "packing_file_5": "Packing Details",
+    "packing_file_6": "Customs Packing",
+    "packing_file_7": "Order Registration",
+    "packing_file_8": "Proforma",
+    "packing_file_9": "Insurance Policy"
 }
