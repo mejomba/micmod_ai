@@ -356,6 +356,38 @@ class PackingSafeForm(FormMX, CustomBaseModelForm):
         for name in self.only_show:
             self.fields.pop(name, None)
 
+    def iter_packing_file_groups(self):
+        """
+        Return Packing file slots in their business group order.
+
+        Existing files are returned for both editable and read-only slots so
+        the UI can always render a saved file under the exact upload category
+        it belongs to.
+        """
+        groups = []
+        hidden = set(self.allowed_hidden or [])
+
+        for idx in range(1, self.file_groups_2 + 1):
+            name = f"file_{idx}"
+            if name in hidden:
+                continue
+
+            is_editable = name in self.fields
+            is_read_only = name in self.only_show
+            if not is_editable and not is_read_only:
+                continue
+
+            groups.append({
+                "index": idx,
+                "name": name,
+                "label_key": f"packing_file_{idx}",
+                "field": self[name] if is_editable else None,
+                "files": self._group_files(name),
+                "editable": is_editable,
+            })
+
+        return groups
+
 
 class PackingForm(CustomBaseModelForm):
     file_groups = 9
