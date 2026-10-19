@@ -3716,11 +3716,50 @@ class QuickPackingView(LoginRequiredMixin, View):
         }
 
     def _build_form(self, packing_obj=None, data=None, files=None):
+        constraint = self._workflow_constraint(packing_obj)
+        form_state = constraint.get('form_state') or 0
+        form_constraints = constraint.get('form_constraint') or []
+        state_constraint = (
+            form_constraints[form_state]
+            if form_state < len(form_constraints)
+            else {}
+        ) or {}
+        if isinstance(state_constraint, list):
+            state_constraint = state_constraint[0] if state_constraint else {}
+
+        hidden = set(state_constraint.get('hide') or [])
+        read = set(state_constraint.get('read') or [])
+
+        quick_fields = [
+            'packing_number',
+            'currency',
+            'shipment_type',
+            'bl_number',
+            'estimated_delivery_date',
+            'description',
+        ] + [f'file_{idx}' for idx in range(1, 10)]
+
+        if not constraint.get('wf_access') or '__all__' in read:
+            allowed_fields = []
+            only_show = [name for name in quick_fields if name not in hidden]
+        else:
+            allowed_fields = [
+                name for name in quick_fields
+                if name not in hidden and name not in read
+            ]
+            only_show = [
+                name for name in quick_fields
+                if name in read and name not in hidden
+            ]
+
         return self.form_class(
             data=data,
             files=files,
             instance=packing_obj,
-            initial={'constraint': self._workflow_constraint(packing_obj)},
+            initial={'constraint': constraint},
+            allowed_fields=allowed_fields,
+            allowed_hidden=[],
+            only_show=only_show,
         )
 
     def _create_initial_workflow(self, packing_obj):
