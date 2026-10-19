@@ -297,6 +297,131 @@
         border-radius: 10px;
     }
 
+    .pk-file-groups {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .pk-file-group {
+        min-width: 0;
+        border: 1px solid var(--pk-border);
+        border-radius: 11px;
+        background: #fff;
+        padding: 11px;
+    }
+
+    .pk-file-group-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .pk-file-group-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #3f4254;
+    }
+
+    .pk-file-group-number {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 24px;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--pk-primary-soft);
+        color: #3699ff;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    .pk-file-group .form-control,
+    .pk-file-group input[type="file"] {
+        width: 100%;
+        min-width: 0;
+        font-size: .76rem;
+    }
+
+    .pk-file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 9px;
+    }
+
+    .pk-file-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        border: 1px solid #edf0f5;
+        border-radius: 8px;
+        padding: 7px 8px;
+        background: #f9fafc;
+        text-decoration: none !important;
+        transition: border-color .15s ease, background .15s ease;
+    }
+
+    .pk-file-item:hover {
+        border-color: #b9d9ff;
+        background: #f2f8ff;
+    }
+
+    .pk-file-icon {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        border-radius: 8px;
+        background: #eef2f7;
+        color: #5e6278;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .9rem;
+    }
+
+    .pk-file-item.is-image .pk-file-icon {
+        background: var(--pk-success-soft);
+        color: #0f9d58;
+    }
+
+    .pk-file-name {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #3f4254;
+        font-size: .74rem;
+        direction: ltr;
+        text-align: left;
+    }
+
+    .pk-file-open {
+        flex: 0 0 auto;
+        color: #3699ff;
+        font-size: .7rem;
+        font-weight: 600;
+    }
+
+    .pk-file-empty {
+        margin-top: 8px;
+        padding: 7px 8px;
+        border-radius: 8px;
+        background: #f8f9fb;
+        color: var(--pk-muted);
+        font-size: .72rem;
+        text-align: center;
+    }
+
     .pk-selected-wrap {
         margin-top: 16px;
     }
@@ -571,7 +696,8 @@
         .packing-meta-grid,
         .pk-row-quantity,
         .pk-row-details-body,
-        .pk-summary-grid {
+        .pk-summary-grid,
+        .pk-file-groups {
             grid-template-columns: 1fr;
         }
 
@@ -688,10 +814,55 @@
                                     <span>+</span>
                                 </button>
 
-                                <div class="collapse" id="packing-attachments">
+                                <div class="collapse{% if packing_object and form.iter_packing_file_groups %} show{% endif %}" id="packing-attachments">
                                     <div class="pk-attachments">
-                                        <div class="row row-cols-1">
-                                            {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
+                                        <div class="pk-file-groups">
+                                            {% for file_group in form.iter_packing_file_groups %}
+                                                <div class="pk-file-group">
+                                                    <div class="pk-file-group-head">
+                                                        <div class="pk-file-group-title">
+                                                            <span class="pk-file-group-number">{{ file_group.index }}</span>
+                                                            <span data-key="{{ file_group.label_key }}">{{ file_group.name }}</span>
+                                                        </div>
+                                                        {% if not file_group.editable %}
+                                                            <i class="ti ti-lock text-muted" aria-hidden="true"></i>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    {% if file_group.field %}
+                                                        {{ file_group.field }}
+                                                        {% if file_group.field.errors %}
+                                                            <div class="text-danger mt-1">{{ file_group.field.errors }}</div>
+                                                        {% endif %}
+                                                    {% endif %}
+
+                                                    {% if file_group.files %}
+                                                        <div class="pk-file-list">
+                                                            {% for existing_file in file_group.files %}
+                                                                <a
+                                                                    class="pk-file-item{% if existing_file.is_image %} is-image{% endif %}"
+                                                                    href="/media/{{ existing_file.url }}"
+                                                                    target="_blank"
+                                                                    rel="noopener"
+                                                                    title="{{ existing_file.filename }}"
+                                                                >
+                                                                    <span class="pk-file-icon">
+                                                                        {% if existing_file.is_image %}
+                                                                            <i class="ti ti-photo" aria-hidden="true"></i>
+                                                                        {% else %}
+                                                                            <i class="ti ti-file" aria-hidden="true"></i>
+                                                                        {% endif %}
+                                                                    </span>
+                                                                    <span class="pk-file-name">{{ existing_file.filename }}</span>
+                                                                    <span class="pk-file-open" data-key="packing_open_file">Open</span>
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="pk-file-empty" data-key="packing_no_file">No file uploaded</div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
@@ -828,6 +999,17 @@
     <span data-key="packing_save_error">Error saving packing.</span>
     <span data-key="packing_submit">Save Packing</span>
     <span data-key="packing_resize_columns">Drag to resize columns; double-click to reset.</span>
+    <span data-key="packing_open_file">Open</span>
+    <span data-key="packing_no_file">No file uploaded</span>
+    <span data-key="packing_file_1">Invoice</span>
+    <span data-key="packing_file_2">Packing List</span>
+    <span data-key="packing_file_3">Inspection Certificate</span>
+    <span data-key="packing_file_4">Certificate of Origin</span>
+    <span data-key="packing_file_5">Packing Details</span>
+    <span data-key="packing_file_6">Customs Packing</span>
+    <span data-key="packing_file_7">Order Registration</span>
+    <span data-key="packing_file_8">Proforma</span>
+    <span data-key="packing_file_9">Insurance Policy</span>
     <span data-key="packing_gio_quantity">GIO Qty</span>
     <span data-key="sku">SKU</span>
 </div>
