@@ -722,7 +722,7 @@
                                             data-order-id="{{ packing_item.order_id }}"
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
-                                            data-total-value="{% widthratio packing_item.quantity|default_if_none:0 1 packing_item.price|default_if_none:0 %}"
+                                            data-unit-price="{{ packing_item.price|default_if_none:0 }}"
                                         >
                                             <div class="pk-row-main">
                                                 <div class="pk-row-top">
@@ -1046,7 +1046,7 @@
         document.querySelectorAll('.packing-existing-row').forEach(row => {
             quantity += toNumber(row.dataset.quantity);
             weight += toNumber(row.dataset.totalWeight);
-            value += toNumber(row.dataset.totalValue);
+            value += toNumber(row.dataset.quantity) * toNumber(row.dataset.unitPrice);
         });
 
         container.querySelectorAll('.packing-selected-row').forEach(row => {
