@@ -3899,20 +3899,16 @@ class QuickPackingView(LoginRequiredMixin, View):
         return rows
 
     def _save_uploaded_files(self, request, packing_obj):
-        for name in request.FILES:
-            if not name.startswith('file_'):
-                continue
-            try:
-                group = int(name.split('_', 1)[1])
-            except (IndexError, ValueError):
-                continue
-            packing_obj.save_file(
-                request=request,
-                file_groups=group,
-                file_model=File,
-                obj=packing_obj,
-                input_prefix='file',
-            )
+        if not any(name.startswith('file_') for name in request.FILES):
+            return
+
+        packing_obj.save_file(
+            request=request,
+            file_groups=9,
+            file_model=File,
+            obj=packing_obj,
+            input_prefix='file',
+        )
 
     def post(self, request, pk=None, *args, **kwargs):
         packing_obj = self.get_object(pk) if pk else None
@@ -3926,7 +3922,24 @@ class QuickPackingView(LoginRequiredMixin, View):
                 if workflow_action:
                     with transaction.atomic():
                         packing_obj = Packing.objects.select_for_update().get(pk=packing_obj.pk)
+
+                        form = self._build_form(
+                            packing_obj=packing_obj,
+                            data=request.POST,
+                            files=request.FILES,
+                        )
+                        if not form.is_valid():
+                            return JsonResponse(
+                                {'res': {'ERROR': form.errors.get_json_data()}},
+                                status=400,
+                            )
+
+                        packing_obj = form.save()
+                        packing_obj.extra_data.request = request
+                        packing_obj.save()
+                        self._save_uploaded_files(request, packing_obj)
                         self._submit_workflow_action(packing_obj, workflow_action)
+
                     return JsonResponse(
                         {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
                         status=200,
