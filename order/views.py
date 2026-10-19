@@ -3911,15 +3911,21 @@ class QuickPackingView(LoginRequiredMixin, View):
                     continue
 
         for item_id in sorted(set(item_ids)):
+            delete_requested = (
+                str(request.POST.get(f'existing-{item_id}-delete', '')).lower()
+                in ('1', 'true', 'yes', 'on')
+            )
+
             quantity = self._to_float(
                 request.POST.get(f'existing-{item_id}-quantity'),
                 default=None,
             )
-            if quantity is None:
+            if quantity is None and not delete_requested:
                 raise ValueError(f'Invalid quantity for PackingItem {item_id}.')
 
             rows.append({
                 'id': item_id,
+                'delete': delete_requested,
                 'quantity': quantity,
                 'carton_number': request.POST.get(f'existing-{item_id}-carton_number'),
                 'gross_weight_kg': self._to_float(
@@ -3933,12 +3939,14 @@ class QuickPackingView(LoginRequiredMixin, View):
         return rows
 
     def _update_existing_rows(self, request, packing_obj):
-        if packing_obj.workflow_state_index() != 0:
-            return
-
         rows = self._parse_existing_rows(request)
         if not rows:
             return
+
+        if packing_obj.workflow_state_index() != 0:
+            raise PermissionDenied(
+                'Packing items can only be edited or deleted in the first workflow state.'
+            )
 
         for row in rows:
             packing_item = (
@@ -3953,6 +3961,13 @@ class QuickPackingView(LoginRequiredMixin, View):
             )
             if not packing_item:
                 raise ValueError('Packing item does not belong to this Packing.')
+
+            if row.get('delete'):
+                packing_item.is_deleted = True
+                packing_item.editor_user = request.user
+                packing_item.extra_data.request = request
+                packing_item.save()
+                continue
 
             order = Order.objects.select_for_update().get(pk=packing_item.order_id)
 
