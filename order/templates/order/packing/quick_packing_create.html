@@ -896,7 +896,7 @@
                                             data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
                                             data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
                                             data-unit-price="{{ packing_item.price|default_if_none:0 }}"
-                                            data-unit-weight="{% if packing_item.quantity %}{% widthratio packing_item.net_weight_kg|default_if_none:0 packing_item.quantity 1 %}{% else %}0{% endif %}"
+                                            data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
                                         >
                                             <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
 
@@ -920,11 +920,16 @@
                                                                 type="number"
                                                                 step="any"
                                                                 min="0.000001"
+                                                                max="{{ packing_item.quick_available_quantity|default_if_none:packing_item.quantity }}"
                                                                 class="form-control packing-existing-quantity"
                                                                 name="existing-{{ packing_item.pk }}-quantity"
                                                                 value="{{ packing_item.quantity|default_if_none:0 }}"
                                                                 required
                                                             >
+                                                            <small class="text-muted d-block mt-1">
+                                                                <span data-key="packing_max">Max</span>
+                                                                {{ packing_item.quick_available_quantity|default_if_none:packing_item.quantity|floatformat:"-4g" }}
+                                                            </small>
                                                         </div>
 
                                                         <div class="pk-stat">
@@ -1495,7 +1500,13 @@
         initResizableLayout();
         }
         document.querySelectorAll('.packing-existing-quantity').forEach(function (input) {
-            input.addEventListener('input', updateTotals);
+            input.addEventListener('input', function () {
+                const maxQ = toNumber(this.max);
+                const current = toNumber(this.value);
+                if (maxQ > 0 && current > maxQ) this.value = maxQ;
+                if (current < 0) this.value = 0;
+                updateTotals();
+            });
         });
 
         syncEmptyState();
