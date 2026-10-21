@@ -1,10 +1,11 @@
 import string
+from decimal import Decimal
 
 import django.views.defaults
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.views import View
 from django.views.generic.list import ListView
 from django.urls import reverse_lazy, reverse
@@ -400,23 +401,66 @@ class SuppliersAccountingList(LoginRequiredMixin,View):
         return all((True if x in char_set else False for x in m_str))
 
 
-class SalesHistory(LoginRequiredMixin, View):
-    def get(self, requset):
-        # if not has_groups(request.user,['trade_user','accounting_user']):
-        #     return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
-        context = {}
-        context['customer_code'] = requset.GET.get('customer_code',"")
-        context['item_code'] = requset.GET.get('item_code',"")
-        context['part'] = requset.GET.get('part',"")
-        context['g_p'] = requset.GET.get('g_p',"")
-        context['doc_type'] = requset.GET.get('doc_type',"")
-        context['fisicalyearref'] = requset.GET.get('fisicalyearref')
-        print(context)
-        context['list'] = Dl.get_sales_history_list(self.request.GET)
-        if context['list']:
-            context['total_price'] = sum([(x.Fee*x.Quantity) for x in context['list']]) if len(context['list']) < 3000 else None
-        return render(self.request,'sepidar/sales_history.html',context)
+# class SalesHistory(LoginRequiredMixin, View):
+#     def get(self, requset):
+#         # if not has_groups(request.user,['trade_user','accounting_user']):
+#         #     return django.views.defaults.page_not_found(request,{},template_name="pages/pages-404.html")
+#         context = {}
+#         context['customer_code'] = requset.GET.get('customer_code',"")
+#         context['item_code'] = requset.GET.get('item_code',"")
+#         context['part'] = requset.GET.get('part',"")
+#         context['g_p'] = requset.GET.get('g_p',"")
+#         context['doc_type'] = requset.GET.get('doc_type',"")
+#         context['fisicalyearref'] = requset.GET.get('fisicalyearref')
+#         print(context)
+#         context['list'] = Dl.get_sales_history_list(self.request.GET)
+#         if context['list']:
+#             context['total_price'] = sum([(x.Fee*x.Quantity) for x in context['list']]) if len(context['list']) < 3000 else None
+#             context['total_quantity'] = sum([x.Quantity for x in context['list']]) if len(context['list']) < 3000 else None
+#         return render(self.request,'sepidar/sales_history.html', context)
 
+
+class SalesHistory(LoginRequiredMixin, View):
+    template_name = 'sepidar/sales_history.html'
+
+    def get(self, request):
+        context = {
+            key: request.GET.get(key, '')
+            for key in (
+                'customer_code', 'item_code', 'part', 'g_p',
+                'doc_type', 'fisicalyearref',
+            )
+        }
+
+        try:
+            # New opt-in mode; original callers of Dl.get_sales_history_list()
+            # still get their legacy Sepidar RawQuerySet.
+            result = Dl.get_sales_history_list(
+                request.GET,
+                include_portal=True
+            )
+
+            if result is None:
+                data, truncated = [], False
+            else:
+                data, truncated = result
+        except ValueError as exc:
+            return HttpResponseBadRequest(str(exc))
+
+        context['list'] = data
+        context['truncated'] = truncated
+        context['total_price'] = sum(
+            (
+                Decimal(str(row.get('Fee') or 0))
+                * Decimal(str(row.get('Quantity') or 0))
+            ) for row in data
+        )
+        context['total_quantity'] = sum(
+            Decimal(str(row.get('Quantity') or 0))
+            for row in data
+        )
+
+        return render(request, self.template_name, context)
 
 class BuyHistory(LoginRequiredMixin, View):
     def get(self, requset):
