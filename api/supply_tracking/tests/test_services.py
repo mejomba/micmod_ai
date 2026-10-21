@@ -140,3 +140,30 @@ class FactorFinancialStatusTests(SimpleTestCase):
             self.resolver.factor(factor)["code"],
             "WAITING_FINANCIAL_APPROVAL",
         )
+
+
+class TrackingDirectResolverTests(SimpleTestCase):
+    def setUp(self):
+        from api.supply_tracking.services import TrackingDirectResolver
+        self.resolver_class = TrackingDirectResolver
+
+    def test_parse_accepts_supported_tracking_ids(self):
+        self.assertEqual(
+            self.resolver_class._parse("fi:12345"),
+            ("fi", 12345),
+        )
+        self.assertEqual(
+            self.resolver_class._parse("qi:42"),
+            ("qi", 42),
+        )
+        self.assertEqual(
+            self.resolver_class._parse("order:7"),
+            ("order", 7),
+        )
+
+    def test_parse_rejects_invalid_tracking_ids(self):
+        for value in ("", "fi", "xx:1", "fi:not-a-number", "fi:0", "fi:-1"):
+            self.assertEqual(
+                self.resolver_class._parse(value),
+                (None, None),
+            )
