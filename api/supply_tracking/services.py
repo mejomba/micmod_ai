@@ -245,12 +245,144 @@ class TrackingDiscoveryService:
         return sorted(out, key=lambda x: iso(x.created_at) or "", reverse=True)
 
 
+class TrackingDirectResolver:
+    """
+    Resolve an explicit tracking_id independently from root discovery.
+
+    Discovery intentionally suppresses rows that already have a parent so the
+    list endpoint returns one canonical tree root. Direct detail lookup has a
+    different contract: if the caller explicitly asks for qi:/fi:/order:, that
+    exact node must be resolvable as long as it belongs to the customer's
+    authorized scope.
+    """
+
+    VALID_TYPES = {"cri", "qi", "fi", "order"}
+
+    def __init__(self, customer_ids):
+        self.customer_ids = list(customer_ids or [])
+
+    @staticmethod
+    def _parse(tracking_id):
+        if not tracking_id or ":" not in tracking_id:
+            return None, None
+
+        source_type, raw_id = tracking_id.split(":", 1)
+        source_type = source_type.strip().lower()
+        if source_type not in TrackingDirectResolver.VALID_TYPES:
+            return None, None
+
+        try:
+            source_id = int(raw_id)
+        except (TypeError, ValueError):
+            return None, None
+
+        if source_id <= 0:
+            return None, None
+        return source_type, source_id
+
+    def resolve(self, tracking_id):
+        if not self.customer_ids:
+            return None
+
+        source_type, source_id = self._parse(tracking_id)
+        if not source_type:
+            return None
+
+        if source_type == "cri":
+            obj = (
+                CustomerRequestItem.objects
+                .filter(
+                    pk=source_id,
+                    cr__customer__pk__in=self.customer_ids,
+                )
+                .only("pk", "created_date")
+                .first()
+            )
+
+        elif source_type == "qi":
+            obj = (
+                QuotationItem.objects
+                .filter(pk=source_id)
+                .filter(
+                    Q(quotation__customer_party_id__pk__in=self.customer_ids)
+                    | Q(customer_request_item__cr__customer__pk__in=self.customer_ids)
+                )
+                .only("pk", "created_date")
+                .distinct()
+                .first()
+            )
+
+        elif source_type == "fi":
+            obj = (
+                FactorItem.objects
+                .filter(pk=source_id)
+                .filter(
+                    Q(factor__customer_party_id__pk__in=self.customer_ids)
+                    | Q(factor__q__customer_party_id__pk__in=self.customer_ids)
+                    | Q(qi__quotation__customer_party_id__pk__in=self.customer_ids)
+                    | Q(customer_request_item__cr__customer__pk__in=self.customer_ids)
+                )
+                .only("pk", "created_date")
+                .distinct()
+                .first()
+            )
+
+        else:
+            # An Order can be linked directly to request/quotation, through the
+            # safe FactorItemSupplyLocation model, through legacy
+            # FactorItem.supply_locations, or through OrderOrder.order_rel.
+            # All paths are accepted for authorization; none of them determine
+            # whether the Order is a discovery root.
+            customer_scope = (
+                Q(customer_party_id__pk__in=self.customer_ids)
+                | Q(qi__quotation__customer_party_id__pk__in=self.customer_ids)
+                | Q(customer_request_item__cr__customer__pk__in=self.customer_ids)
+
+                # New/safe allocation.
+                | Q(order_fis__fi__factor__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_fis__fi__factor__q__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_fis__fi__qi__quotation__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_fis__fi__customer_request_item__cr__customer__pk__in=self.customer_ids)
+
+                # Legacy FactorItem.supply_locations.
+                | Q(factor_items__factor__customer_party_id__pk__in=self.customer_ids)
+                | Q(factor_items__factor__q__customer_party_id__pk__in=self.customer_ids)
+                | Q(factor_items__qi__quotation__customer_party_id__pk__in=self.customer_ids)
+                | Q(factor_items__customer_request_item__cr__customer__pk__in=self.customer_ids)
+
+                # Legacy OrderOrder where the real supply Order is order_rel.
+                | Q(order_rel_items__fi__factor__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_rel_items__fi__factor__q__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_rel_items__order_base__factor_items__factor__customer_party_id__pk__in=self.customer_ids)
+                | Q(order_rel_items__order_base__factor_items__factor__q__customer_party_id__pk__in=self.customer_ids)
+            )
+            obj = (
+                Order.objects
+                .filter(pk=source_id)
+                .filter(customer_scope)
+                .only("pk", "created_date")
+                .distinct()
+                .first()
+            )
+
+        if not obj:
+            return None
+
+        return TrackingCandidate(
+            tracking_id=f"{source_type}:{obj.pk}",
+            source_type=source_type,
+            source_id=obj.pk,
+            created_at=obj.created_date,
+        )
+
+
 class SupplyTrackingService:
     def __init__(self, mobile: str):
         self.mobile = normalize_phone(mobile)
         self.customers = ShopCustomerScopeResolver.resolve(self.mobile)
         self.customer_ids = [c.pk for c in self.customers]
         self.discovery = TrackingDiscoveryService(self.customers)
+        self.direct = TrackingDirectResolver(self.customer_ids)
         self.status = TrackingStatusResolver()
         self.delivery = DeliveryEstimator()
 
@@ -277,7 +409,7 @@ class SupplyTrackingService:
         }
 
     def get_detail(self, tracking_id: str):
-        candidate = next((x for x in self.discovery.candidates() if x.tracking_id == tracking_id), None)
+        candidate = self.direct.resolve(tracking_id)
         if not candidate:
             return None
         tree = self._build_candidate(candidate, include_events=True)
