@@ -927,5 +927,9 @@
     "packing_workflow_current_state": "مرحله جاری",
     "packing_workflow_completed": "تکمیل شده",
     "packing_workflow_current": "مرحله جاری",
-    "packing_workflow_upcoming": "مرحله بعدی"
+    "packing_workflow_upcoming": "مرحله بعدی",
+    "packing_workflow_assigned_user": "کاربر مسئول",
+    "packing_change_user": "تغییر کاربر",
+    "packing_apply_change_user": "اعمال",
+    "packing_change_user_required": "یک کاربر انتخاب کنید."
 }
