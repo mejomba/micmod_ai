@@ -3770,12 +3770,20 @@ class QuickPackingView(LoginRequiredMixin, View):
         if isinstance(first_deadline, list):
             first_deadline = first_deadline[0] if first_deadline else 0
 
+        assignee = (
+            self.request.user
+            if self.request.user.groups.filter(name=group).exists()
+            else packing_obj.workflow_assigned_user(group, fallback_first=True)
+        )
+        if not assignee:
+            raise ValueError(f'No user is available in workflow group {group}.')
+
         wf = WorkFlow.objects.create(
             wf_status=5,
             action=self.flow_config.get('flow_action') or 'create',
             flow_name=self.flow_config.get('flow_name') or 'create packing',
             from_user=self.request.user,
-            to_user=self.request.user,
+            to_user=assignee,
             state=state,
             deadline=timezone.now() + timedelta(days=first_deadline),
             belong_to_group=group,
@@ -3791,23 +3799,73 @@ class QuickPackingView(LoginRequiredMixin, View):
         return wf
 
     def _pick_flow_user(self, packing_obj, group):
-        if not group:
-            return self.request.user
+        user = packing_obj.workflow_assigned_user(
+            group,
+            fallback_first=True,
+        )
+        if not user:
+            raise ValueError(f'No user is available in workflow group {group}.')
+        return user
 
-        users = get_user_model().objects.filter(
-            groups__name=group,
-        ).distinct().order_by('id')
+    def _can_change_user(self, packing_obj):
+        if not packing_obj:
+            return False
+        current_group = self._flow_group(packing_obj.workflow_state_index())
+        return bool(
+            self.request.user.is_superuser
+            or FlowAdminGroup.is_admin_of_group(
+                self.request.user,
+                current_group,
+                model=Packing,
+            )
+        )
 
-        last_flow = packing_obj.workflows.filter(
-            belong_to_group=group,
-        ).order_by('id').last()
+    def _change_workflow_user(self, packing_obj, user_id):
+        if not self._can_change_user(packing_obj):
+            raise PermissionDenied('Only workflow admins can change the assigned user.')
 
-        if last_flow:
-            for user_id in (last_flow.to_user_id, last_flow.from_user_id):
-                if user_id and users.filter(pk=user_id).exists():
-                    return users.get(pk=user_id)
+        state_index = packing_obj.workflow_state_index()
+        states = self.flow_config.get('flow_state_list') or []
+        current_state = states[state_index]
+        current_group = self._flow_group(state_index)
 
-        return users.first() or self.request.user
+        new_user = (
+            get_user_model().objects
+            .filter(
+                pk=user_id,
+                groups__name=current_group,
+                is_active=True,
+            )
+            .distinct()
+            .first()
+        )
+        if not new_user:
+            raise ValueError('Selected user is not a valid member of the current workflow group.')
+
+        deadline_days = self.flow_config.get('flow_deadline', [0])[state_index] or 0
+        if isinstance(deadline_days, list):
+            deadline_days = deadline_days[0] if deadline_days else 0
+
+        wf = WorkFlow.objects.create(
+            wf_status=4,
+            action='change_user',
+            flow_name=self.flow_config.get('flow_name') or 'create packing',
+            from_user=self.request.user,
+            to_user=new_user,
+            state=current_state,
+            deadline=timezone.now() + timedelta(days=deadline_days),
+            belong_to_group=current_group,
+            content_type=ContentType.objects.get_for_model(Packing),
+            object_id=packing_obj.pk,
+            current_state_name=current_state,
+            wf_description=self.request.POST.get('wf_description'),
+            creator_user=self.request.user,
+            editor_user=self.request.user,
+        )
+        packing_obj.last_work_flow = wf
+        packing_obj.extra_data.request = self.request
+        packing_obj.save()
+        return wf
 
     def _submit_workflow_action(self, packing_obj, action):
         if not packing_obj.user_has_workflow_access(self.request.user):
@@ -4036,7 +4094,14 @@ class QuickPackingView(LoginRequiredMixin, View):
                         packing_obj.save()
                         self._update_existing_rows(request, packing_obj)
                         self._save_uploaded_files(request, packing_obj)
-                        self._submit_workflow_action(packing_obj, workflow_action)
+
+                        if workflow_action == 'change_user':
+                            self._change_workflow_user(
+                                packing_obj,
+                                request.POST.get('workflow_user_id'),
+                            )
+                        else:
+                            self._submit_workflow_action(packing_obj, workflow_action)
 
                     return JsonResponse(
                         {'res': {'url': reverse_lazy('order:quick_packing', kwargs={'pk': packing_obj.pk})}},
@@ -4200,6 +4265,21 @@ class QuickPackingView(LoginRequiredMixin, View):
             'can_add_items': can_add_items,
             'can_next': bool(wf_access and packing_obj and state_index < len(states) - 1),
             'can_back': bool(wf_access and packing_obj and state_index > 0),
+            'can_change_user': bool(packing_obj and self._can_change_user(packing_obj)),
+            'workflow_current_user': (
+                packing_obj.workflow_assigned_user(
+                    self._flow_group(state_index),
+                    fallback_first=False,
+                )
+                if packing_obj else None
+            ),
+            'workflow_group_users': (
+                get_user_model().objects.filter(
+                    groups__name=self._flow_group(state_index),
+                    is_active=True,
+                ).distinct().order_by('id')
+                if packing_obj else get_user_model().objects.none()
+            ),
             'flow': (
                 packing_obj.workflows.order_by('-id')
                 if packing_obj else []
