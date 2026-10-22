@@ -1087,6 +1087,45 @@
                                         </div>
                                     </div>
 
+                                    <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+                                        <div>
+                                            <span class="pk-mini-label" data-key="packing_workflow_assigned_user">Assigned user</span>
+                                            <strong>
+                                                {% if workflow_current_user %}
+                                                    {{ workflow_current_user }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+
+                                        {% if can_change_user %}
+                                            <div class="d-flex flex-wrap align-items-end gap-2 ms-auto">
+                                                <div style="min-width:220px">
+                                                    <label class="pk-mini-label" for="packing-workflow-user" data-key="packing_change_user">Change user</label>
+                                                    <select id="packing-workflow-user" class="form-select form-select-sm">
+                                                        {% for workflow_user in workflow_group_users %}
+                                                            <option
+                                                                value="{{ workflow_user.pk }}"
+                                                                {% if workflow_current_user and workflow_user.pk == workflow_current_user.pk %}selected{% endif %}
+                                                            >
+                                                                {{ workflow_user }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-light-info packing-workflow-action"
+                                                    data-action="change_user"
+                                                >
+                                                    <i class="ti ti-user-edit me-1" aria-hidden="true"></i>
+                                                    <span data-key="packing_apply_change_user">Apply</span>
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
                                     <div class="pk-workflow-scroll">
                                         <div class="pk-workflow-steps" aria-label="Packing workflow">
                                             {% for workflow_state in flow_state_list %}
@@ -1462,6 +1501,10 @@
     <span data-key="packing_file_8">Proforma</span>
     <span data-key="packing_file_9">Insurance Policy</span>
     <span data-key="packing_workflow_current_state">Current stage</span>
+    <span data-key="packing_workflow_assigned_user">Assigned user</span>
+    <span data-key="packing_change_user">Change user</span>
+    <span data-key="packing_apply_change_user">Apply</span>
+    <span data-key="packing_change_user_required">Select a user.</span>
     <span data-key="packing_workflow_completed">Completed</span>
     <span data-key="packing_workflow_current">Current</span>
     <span data-key="packing_workflow_upcoming">Upcoming</span>
@@ -1944,6 +1987,18 @@
             const action = button.dataset.action;
             const formData = new FormData();
             formData.append('workflow_action', action);
+
+            if (action === 'change_user') {
+                const userSelect = document.getElementById('packing-workflow-user');
+                if (!userSelect || !userSelect.value) {
+                    $('#ajax-response')
+                        .removeClass('text-success')
+                        .addClass('text-danger')
+                        .text(tr('packing_change_user_required', 'Select a user.'));
+                    return;
+                }
+                formData.append('workflow_user_id', userSelect.value);
+            }
 
             document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
                 if (input.type === 'file') return;
