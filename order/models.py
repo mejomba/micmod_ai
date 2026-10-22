@@ -1073,6 +1073,75 @@ class Packing(BaseModeWF):
         return base_index
 
     @classmethod
+    def workflow_group_for_state(cls, state_name):
+        if not state_name:
+            return None
+
+        flow_config = cls.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        states = list(flow_config.get('flow_state_list') or [])
+        groups = list(flow_config.get('flow_users_groups') or [])
+
+        try:
+            index = states.index(state_name)
+        except ValueError:
+            return None
+
+        if index >= len(groups):
+            return None
+
+        group = groups[index]
+        if isinstance(group, list):
+            group = group[0] if group else None
+        return group
+
+    def workflow_assigned_user(self, group_name, fallback_first=True):
+        """
+        Return the latest assignee remembered for a workflow group.
+
+        Assignment memory is derived from the effective state because
+        belong_to_group describes the source step on next/back records while
+        to_user is the assignee of the destination step.
+
+        A wf_status=4 change-user record becomes the newest assignment for that
+        group and is automatically reused by later next/back transitions.
+        """
+        if not group_name:
+            return None
+
+        users = (
+            get_user_model().objects
+            .filter(groups__name=group_name)
+            .distinct()
+            .order_by('id')
+        )
+        valid_user_ids = set(users.values_list('id', flat=True))
+
+        flows = (
+            WorkFlow.objects
+            .filter(
+                object_id=self.pk,
+                content_type=ContentType.objects.get_for_model(self.__class__),
+            )
+            .select_related('to_user')
+            .order_by('-id')
+        )
+
+        for flow in flows:
+            effective_state = flow.current_state_name or flow.state
+            effective_group = self.workflow_group_for_state(effective_state)
+            if (
+                effective_group == group_name
+                and flow.to_user_id
+                and flow.to_user_id in valid_user_ids
+            ):
+                return flow.to_user
+
+        return users.first() if fallback_first else None
+
+    @classmethod
     def user_can_create_workflow(cls, user):
         if not user or not getattr(user, 'is_authenticated', False):
             return False
