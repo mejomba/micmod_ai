@@ -324,5 +324,9 @@
     "packing_workflow_current_state": "Current stage",
     "packing_workflow_completed": "Completed",
     "packing_workflow_current": "Current",
-    "packing_workflow_upcoming": "Upcoming"
+    "packing_workflow_upcoming": "Upcoming",
+    "packing_workflow_assigned_user": "Assigned user",
+    "packing_change_user": "Change user",
+    "packing_apply_change_user": "Apply",
+    "packing_change_user_required": "Select a user."
 }
