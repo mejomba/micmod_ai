@@ -522,11 +522,68 @@ class Order(BaseModeWF):
 
         return True, ''
 
-    def validate_for_packing(self, quantity, packing_obj):
-        if self.packing_item_order.filter(packing=packing_obj, is_deleted=False).exists():
-            return False, f'duplicate order {self.order_number} in packing {packing_obj.pk}'
+    def packing_available_quantity(self, exclude_packing_item=None):
+        """
+        Return the maximum quantity that can currently be assigned to Packing.
 
-        total_arrived_wh_in_percent, total_arrived_wh, final_quantity = self.packing_info
+        When editing an existing PackingItem, exclude that row from the already
+        packed quantity so its current allocation becomes available to itself.
+        """
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if exclude_packing_item is not None:
+            exclude_pk = getattr(exclude_packing_item, 'pk', exclude_packing_item)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
+
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        final_quantity = float(self.final_quantity or 0)
+        packable_gio = min(final_quantity, float(gio_quantity or 0))
+
+        return max(
+            packable_gio - float(packed_quantity or 0),
+            0,
+        )
+
+    def validate_for_packing(self, quantity, packing_obj=None, packing_item_obj=None):
+        """
+        Packing can only consume quantities that have already been GIO'd and
+        have not been consumed by previous active PackingItems.
+        """
+        try:
+            requested_quantity = float(quantity or 0)
+        except (TypeError, ValueError):
+            return False, 'تعداد وارد شده برای پکینگ معتبر نیست.'
+
+        if requested_quantity <= 0:
+            return False, 'تعداد پکینگ باید بیشتر از صفر باشد.'
+
+        gio_quantity = self.gio_items.filter(
+            is_deleted=False
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        packed_qs = self.packing_item_order.filter(is_deleted=False)
+        if packing_item_obj is not None:
+            exclude_pk = getattr(packing_item_obj, 'pk', packing_item_obj)
+            if exclude_pk:
+                packed_qs = packed_qs.exclude(pk=exclude_pk)
+
+        packed_quantity = packed_qs.aggregate(total=Sum('quantity'))['total'] or 0
+        available_for_packing = self.packing_available_quantity(
+            exclude_packing_item=packing_item_obj,
+        )
+
+        if requested_quantity > available_for_packing + 0.000001:
+            return False, (
+                f'حداکثر تعداد قابل استفاده از سفارش {self.order_number or self.pk} '
+                f'در پکینگ {available_for_packing:0.20g} است. '
+                f'(GIO: {float(gio_quantity or 0):0.20g} / '
+                f'Packing قبلی: {float(packed_quantity or 0):0.20g})'
+            )
+
         return True, ''
 
 
@@ -978,6 +1035,108 @@ class Packing(BaseModeWF):
     sales_10_darsad = models.TextField('sales_10_darsad', null=True, blank=True, help_text='شماره کارتن هایی که به عنوان 10 درصد هستند. با علامت / جدا کنید')
     currency = models.ForeignKey(Currency, on_delete=models.DO_NOTHING, null=True, blank=True,
                                  related_name='packings')
+
+    def workflow_state_index(self):
+        """Return the effective workflow state index using the same status rules as FlowBaseView."""
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        states = list(flow_config.get('flow_state_list') or [])
+        if not states:
+            return 0
+
+        from workflow.models import WorkFlow
+        from django.contrib.contenttypes.models import ContentType
+
+        flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if not flow:
+            return 0
+
+        try:
+            base_index = states.index(flow.state)
+        except (ValueError, TypeError):
+            return 0
+
+        if flow.wf_status == 2:
+            return max(base_index - 1, 0)
+        if flow.wf_status == 3:
+            return min(base_index + 1, len(states) - 1)
+        if flow.wf_status == 4:
+            return base_index
+        if flow.wf_status == 5:
+            return 0
+        return base_index
+
+    @classmethod
+    def user_can_create_workflow(cls, user):
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+
+        from workflow.models import FlowAdminGroup
+
+        flow_config = cls.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        first_group = groups[0]
+        if isinstance(first_group, list):
+            first_group = first_group[0] if first_group else None
+        if not first_group:
+            return False
+
+        return (
+            user.groups.filter(name=first_group).exists()
+            or FlowAdminGroup.is_admin_of_group(user, first_group, model=cls)
+        )
+
+    def user_has_workflow_access(self, user):
+        """Server-side edit access for Packing and all Packing child actions."""
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if user.is_superuser:
+            return True
+
+        from workflow.models import WorkFlow, FlowAdminGroup
+        from django.contrib.contenttypes.models import ContentType
+
+        flow_config = self.get_flow_config(
+            settings.BASE_DIR / '_keenthemes/view_config.json',
+            'PackingView',
+        )
+        groups = list(flow_config.get('flow_users_groups') or [])
+        if not groups:
+            return False
+
+        state_index = self.workflow_state_index()
+        current_group = groups[min(state_index, len(groups) - 1)]
+        if isinstance(current_group, list):
+            current_group = current_group[0] if current_group else None
+        if not current_group:
+            return False
+
+        if FlowAdminGroup.is_admin_of_group(user, current_group, model=self.__class__):
+            return True
+
+        last_flow = WorkFlow.objects.filter(
+            object_id=self.pk,
+            content_type=ContentType.objects.get_for_model(self.__class__),
+        ).order_by('id').last()
+
+        if last_flow:
+            return last_flow.to_user_id == user.id
+
+        return state_index == 0 and user.groups.filter(name=current_group).exists()
 
     def __str__(self):
         return f'{self.bl_number} -- {self.created_date}'

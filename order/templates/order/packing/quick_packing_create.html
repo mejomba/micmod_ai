@@ -6,684 +6,2066 @@
 {% load order_tags %}
 {% load jalali_tags %}
 
-{% block title %}GIO create{% endblock title %}
-{% block extra_css %} 
-<!-- Responsive Table css -->
-<link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css" />
-    <!-- DataTables -->
-    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
-    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+{% block title %}Packing{% endblock title %}
 
-    <!-- Responsive datatable examples -->
-    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
-    <link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
-    <link href="{% static 'css/local/buttons.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
+{% block extra_css %}
+<link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'css/local/jquery.dataTables.min.css' %}" rel="stylesheet" type="text/css" />
 
-    <style>
-    .select2-container{
-        min-width: 15em !important;
+<style>
+    :root {
+        --pk-border: #e7eaf0;
+        --pk-muted: #7e8299;
+        --pk-bg: #f6f8fb;
+        --pk-soft: #f9fafc;
+        --pk-primary-soft: #eef6ff;
+        --pk-success-soft: #eefaf3;
+        --pk-warning-soft: #fff8e7;
+        --pk-danger-soft: #fff2f2;
     }
-    </style>
+
+    .packing-page {
+        background: var(--pk-bg);
+        min-height: calc(100vh - 80px);
+        padding: 22px 0 40px;
+    }
+
+    .packing-shell {
+        max-width: 1900px;
+        margin: 0 auto;
+        padding: 0 18px;
+    }
+
+    .packing-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .packing-page-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: #181c32;
+    }
+
+    .packing-page-subtitle {
+        margin-top: 6px;
+        color: var(--pk-muted);
+        font-size: .92rem;
+        max-width: 780px;
+    }
+
+    .packing-layout {
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        width: 100%;
+    }
+
+    .packing-source-panel {
+        flex: 0 0 62%;
+        min-width: 420px;
+    }
+
+    .packing-side {
+        flex: 1 1 auto;
+        min-width: 360px;
+    }
+
+    .pk-resizer {
+        flex: 0 0 18px;
+        align-self: stretch;
+        cursor: col-resize;
+        position: relative;
+        min-height: 520px;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .pk-resizer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 8px;
+        width: 2px;
+        border-radius: 2px;
+        background: #dfe4ec;
+        transition: width .15s ease, left .15s ease, background .15s ease;
+    }
+
+    .pk-resizer::after {
+        content: '⋮';
+        position: sticky;
+        top: 45vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 46px;
+        margin-top: 180px;
+        border: 1px solid #dde3ec;
+        border-radius: 9px;
+        background: #fff;
+        color: #9aa3b2;
+        font-size: 20px;
+        line-height: 1;
+        box-shadow: 0 3px 10px rgba(24, 28, 50, .06);
+    }
+
+    .pk-resizer:hover::before,
+    .pk-resizer.is-dragging::before {
+        left: 7px;
+        width: 4px;
+        background: #3699ff;
+    }
+
+    .pk-resizer:hover::after,
+    .pk-resizer.is-dragging::after {
+        color: #3699ff;
+        border-color: #b9d9ff;
+    }
+
+    body.pk-resizing {
+        cursor: col-resize !important;
+        user-select: none !important;
+    }
+
+    .pk-card {
+        border: 1px solid var(--pk-border);
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(31, 38, 135, .04);
+        overflow: hidden;
+    }
+
+    .pk-card-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--pk-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fff;
+    }
+
+    .pk-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #181c32;
+        margin: 0;
+    }
+
+    .pk-card-title-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: var(--pk-primary-soft);
+        color: #3699ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+    }
+
+    .pk-card-help {
+        color: var(--pk-muted);
+        font-size: .82rem;
+    }
+
+    .pk-card-body {
+        padding: 16px 18px;
+    }
+
+    .pk-source-table .dataTables_wrapper {
+        width: 100%;
+    }
+
+    .pk-source-table .dataTables_filter {
+        float: none !important;
+        text-align: right !important;
+        margin-bottom: 12px;
+    }
+
+    .pk-source-table .dataTables_filter input {
+        border: 1px solid var(--pk-border) !important;
+        border-radius: 9px !important;
+        min-width: 240px;
+        padding: 7px 10px !important;
+        background: var(--pk-soft);
+    }
+
+    .pk-source-table .dataTables_length {
+        margin-bottom: 12px;
+    }
+
+    #quick-packing-list {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        width: 100% !important;
+    }
+
+    #quick-packing-list thead th {
+        background: #f7f9fc;
+        color: #5e6278;
+        font-size: .78rem;
+        font-weight: 700;
+        border-top: 1px solid var(--pk-border) !important;
+        border-bottom: 1px solid var(--pk-border) !important;
+        white-space: nowrap;
+        padding: 11px 9px !important;
+    }
+
+    #quick-packing-list tbody td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f1f5 !important;
+        color: #3f4254;
+        font-size: .84rem;
+        padding: 11px 9px !important;
+    }
+
+    #quick-packing-list tbody tr:hover {
+        background: #f8fbff !important;
+    }
+
+    #quick-packing-list .available-for-packing {
+        color: #0f9d58;
+        font-weight: 700;
+    }
+
+    #quick-packing-list .quantity-in-gio {
+        color: #3699ff;
+        font-weight: 600;
+    }
+
+    #quick-packing-list .remaining-quantity-in-order {
+        color: #b26a00;
+        font-weight: 600;
+    }
+
+    #quick-packing-list .action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .packing-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+    }
+
+    .packing-meta-grid > div {
+        min-width: 0;
+    }
+
+    .packing-meta-grid .form-control,
+    .packing-meta-grid .form-select,
+    .packing-meta-grid select {
+        border-radius: 9px;
+        border-color: var(--pk-border);
+    }
+
+    .pk-attachments-toggle {
+        width: 100%;
+        border: 1px dashed #cfd6e4;
+        background: #fbfcfe;
+        border-radius: 10px;
+        color: #5e6278;
+        padding: 9px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .pk-attachments {
+        margin-top: 10px;
+        padding: 12px;
+        background: #fafbfc;
+        border: 1px solid var(--pk-border);
+        border-radius: 10px;
+    }
+
+    .pk-file-groups {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .pk-file-group {
+        min-width: 0;
+        border: 1px solid var(--pk-border);
+        border-radius: 11px;
+        background: #fff;
+        padding: 11px;
+    }
+
+    .pk-file-group-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .pk-file-group-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #3f4254;
+    }
+
+    .pk-file-group-number {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 24px;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--pk-primary-soft);
+        color: #3699ff;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    .pk-file-group .form-control,
+    .pk-file-group input[type="file"] {
+        width: 100%;
+        min-width: 0;
+        font-size: .76rem;
+    }
+
+    .pk-file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 9px;
+    }
+
+    .pk-file-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        border: 1px solid #edf0f5;
+        border-radius: 8px;
+        padding: 7px 8px;
+        background: #f9fafc;
+        text-decoration: none !important;
+        transition: border-color .15s ease, background .15s ease;
+    }
+
+    .pk-file-item:hover {
+        border-color: #b9d9ff;
+        background: #f2f8ff;
+    }
+
+    .pk-file-icon {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        border-radius: 8px;
+        background: #eef2f7;
+        color: #5e6278;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .9rem;
+    }
+
+    .pk-file-item.is-image .pk-file-icon {
+        background: var(--pk-success-soft);
+        color: #0f9d58;
+    }
+
+    .pk-file-name {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #3f4254;
+        font-size: .74rem;
+        direction: ltr;
+        text-align: left;
+    }
+
+    .pk-file-open {
+        flex: 0 0 auto;
+        color: #3699ff;
+        font-size: .7rem;
+        font-weight: 600;
+    }
+
+    .pk-file-empty {
+        margin-top: 8px;
+        padding: 7px 8px;
+        border-radius: 8px;
+        background: #f8f9fb;
+        color: var(--pk-muted);
+        font-size: .72rem;
+        text-align: center;
+    }
+
+    .pk-selected-wrap {
+        margin-top: 16px;
+    }
+
+    .pk-selected-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .pk-selected-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 26px;
+        padding: 0 8px;
+        border-radius: 20px;
+        background: #eef2f7;
+        color: #5e6278;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    #formset-container {
+        min-height: 100px;
+        overflow: visible;
+        padding-right: 0;
+    }
+
+    .pk-empty-state {
+        border: 1px dashed #d9dee8;
+        background: #fafbfc;
+        border-radius: 12px;
+        padding: 26px 18px;
+        text-align: center;
+        color: var(--pk-muted);
+    }
+
+    .pk-empty-state .empty-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        margin: 0 auto 10px;
+        background: #f0f3f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .packing-selected-row {
+        border: 1px solid var(--pk-border);
+        border-radius: 12px;
+        background: #fff;
+        margin-bottom: 10px;
+        overflow: hidden;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .packing-selected-row:hover {
+        border-color: #c8d7ef;
+        box-shadow: 0 4px 12px rgba(24, 28, 50, .05);
+    }
+
+    .packing-existing-row.is-pending-delete {
+        border-color: #f5c2c7;
+        background: #fff8f8;
+        opacity: .78;
+    }
+
+    .packing-existing-row.is-pending-delete .pk-row-main,
+    .packing-existing-row.is-pending-delete .pk-row-details {
+        display: none;
+    }
+
+    .pk-delete-pending {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .packing-existing-row.is-pending-delete .pk-delete-pending {
+        display: flex;
+    }
+
+    .pk-existing-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
+    .pk-row-main {
+        padding: 10px 12px 9px;
+    }
+
+    .pk-row-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .pk-row-title {
+        font-weight: 700;
+        color: #181c32;
+        font-size: .95rem;
+    }
+
+    .pk-row-part {
+        margin-top: 3px;
+        color: #5e6278;
+        font-size: .8rem;
+        word-break: break-word;
+    }
+
+    .pk-row-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .pk-tag {
+        border-radius: 20px;
+        padding: 4px 8px;
+        font-size: .72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .pk-tag-gio { background: var(--pk-primary-soft); color: #3699ff; }
+    .pk-tag-available { background: var(--pk-success-soft); color: #0f9d58; }
+    .pk-tag-remaining { background: var(--pk-warning-soft); color: #a86600; }
+
+    .pk-remove {
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 8px;
+        color: #f1416c;
+        background: var(--pk-danger-soft);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+    }
+
+    .pk-row-quantity {
+        display: grid;
+        grid-template-columns: minmax(135px, .8fr) 1fr 1fr;
+        gap: 10px;
+        align-items: end;
+        margin-top: 9px;
+    }
+
+    .pk-quantity-box label,
+    .pk-mini-label {
+        color: var(--pk-muted);
+        font-size: .72rem;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .pk-quantity-box input {
+        border-radius: 9px;
+        border: 1px solid #cfd6e4;
+        font-weight: 700;
+        color: #181c32;
+    }
+
+    .pk-stat {
+        border-radius: 9px;
+        background: var(--pk-soft);
+        border: 1px solid #eef0f4;
+        padding: 6px 9px;
+        min-height: 50px;
+    }
+
+    .pk-stat strong {
+        font-size: .87rem;
+        color: #181c32;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pk-row-details {
+        border-top: 1px solid #f0f1f5;
+        background: #fbfcfe;
+    }
+
+    .pk-row-details summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 7px 12px;
+        color: #5e6278;
+        font-size: .78rem;
+        user-select: none;
+    }
+
+    .pk-row-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .pk-row-details-body {
+        padding: 0 12px 10px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .pk-row-details-body .form-control {
+        border-radius: 8px;
+        border-color: var(--pk-border);
+        font-size: .82rem;
+    }
+
+    .pk-row-details-body .pk-desc {
+        grid-column: 1 / -1;
+    }
+
+    .pk-summary {
+        border-top: 1px solid var(--pk-border);
+        margin-top: 14px;
+        padding-top: 14px;
+    }
+
+    .pk-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .pk-summary-item {
+        border: 1px solid var(--pk-border);
+        border-radius: 10px;
+        background: var(--pk-soft);
+        padding: 9px 10px;
+    }
+
+    .pk-summary-item span {
+        display: block;
+        color: var(--pk-muted);
+        font-size: .7rem;
+        margin-bottom: 2px;
+    }
+
+    .pk-summary-item strong {
+        font-size: .92rem;
+        color: #181c32;
+    }
+
+    .pk-submit {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    #ajax-response {
+        font-size: .78rem;
+        margin-top: 8px;
+    }
+
+    .pk-workflow-panel {
+        margin-bottom: 16px;
+        border: 1px solid var(--pk-border);
+        border-radius: 12px;
+        background: #fbfcfe;
+        padding: 12px 14px;
+    }
+
+    .pk-workflow-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .pk-workflow-current {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .pk-workflow-current-label {
+        color: var(--pk-muted);
+        font-size: .74rem;
+        white-space: nowrap;
+    }
+
+    .pk-workflow-current-name {
+        color: #181c32;
+        font-weight: 700;
+        font-size: .88rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pk-workflow-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .pk-workflow-scroll {
+        overflow-x: auto;
+        padding: 2px 1px 5px;
+        scrollbar-width: thin;
+    }
+
+    .pk-workflow-steps {
+        display: grid;
+        grid-template-columns: repeat({{ flow_state_list|length|default:1 }}, minmax(120px, 1fr));
+        gap: 0;
+        min-width: max-content;
+    }
+
+    .pk-workflow-step {
+        position: relative;
+        min-width: 120px;
+        padding: 0 7px;
+        text-align: center;
+    }
+
+    .pk-workflow-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        inset-inline-start: calc(50% + 18px);
+        width: calc(100% - 36px);
+        height: 2px;
+        background: #dfe4ec;
+        z-index: 0;
+    }
+
+    .pk-workflow-step.is-completed:not(:last-child)::after {
+        background: #50cd89;
+    }
+
+    .pk-workflow-node {
+        position: relative;
+        z-index: 1;
+        width: 30px;
+        height: 30px;
+        margin: 0 auto 7px;
+        border: 2px solid #dfe4ec;
+        border-radius: 50%;
+        background: #fff;
+        color: #a1a5b7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-node {
+        border-color: #50cd89;
+        background: #e8fff3;
+        color: #0f9d58;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-node {
+        border-color: #3699ff;
+        background: #eaf4ff;
+        color: #1976d2;
+        box-shadow: 0 0 0 4px rgba(54, 153, 255, .10);
+    }
+
+    .pk-workflow-step-name {
+        display: block;
+        color: #a1a5b7;
+        font-size: .7rem;
+        line-height: 1.45;
+        font-weight: 600;
+        white-space: normal;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-step-name {
+        color: #5e6278;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-step-name {
+        color: #181c32;
+        font-weight: 800;
+    }
+
+    .pk-workflow-step-status {
+        display: block;
+        margin-top: 3px;
+        font-size: .62rem;
+        line-height: 1.3;
+        color: #b5b5c3;
+    }
+
+    .pk-workflow-step.is-completed .pk-workflow-step-status {
+        color: #0f9d58;
+    }
+
+    .pk-workflow-step.is-current .pk-workflow-step-status {
+        color: #1976d2;
+        font-weight: 700;
+    }
+
+    /* Full-width workflow stages: use the space that the Order table occupied. */
+    .packing-layout-form-only .packing-side {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .packing-layout-form-only .pk-card-body {
+        padding: 18px 20px;
+    }
+
+    .packing-layout-form-only .packing-meta-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px 14px;
+    }
+
+    .packing-layout-form-only .pk-file-groups {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .packing-layout-form-only #existing-packing-items {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .packing-layout-form-only .packing-selected-row {
+        margin-bottom: 0;
+        height: 100%;
+    }
+
+    .packing-layout-form-only .pk-row-main {
+        padding: 13px 14px;
+    }
+
+    .packing-layout-form-only .pk-row-top {
+        padding-bottom: 9px;
+        border-bottom: 1px solid #f0f1f5;
+    }
+
+    .pk-row-readonly-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .pk-row-readonly-grid .pk-stat {
+        min-height: 58px;
+        padding: 8px 10px;
+    }
+
+    .pk-row-readonly-description {
+        grid-column: 1 / -1;
+        min-height: 58px;
+        border: 1px solid #eef0f4;
+        border-radius: 9px;
+        background: #fbfcfe;
+        padding: 8px 10px;
+    }
+
+    .pk-row-readonly-description .pk-mini-label {
+        margin-bottom: 5px;
+    }
+
+    .pk-row-readonly-description .pk-readonly-text {
+        color: #3f4254;
+        font-size: .8rem;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .packing-layout-form-only .pk-summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @media (max-width: 1500px) {
+        .packing-layout-form-only .packing-meta-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .packing-layout-form-only #existing-packing-items {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 1250px) {
+        .packing-layout {
+            display: block;
+        }
+
+        .packing-source-panel,
+        .packing-side {
+            min-width: 0;
+            width: 100% !important;
+            flex-basis: auto !important;
+        }
+
+        .packing-side {
+            margin-top: 18px;
+        }
+
+        .pk-resizer {
+            display: none;
+        }
+
+        .packing-layout-form-only .packing-meta-grid,
+        .packing-layout-form-only .pk-file-groups {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .pk-row-readonly-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 700px) {
+        .packing-page-header {
+            flex-direction: column;
+        }
+
+        .packing-shell {
+            padding: 0 10px;
+        }
+
+        .packing-meta-grid,
+        .pk-row-quantity,
+        .pk-row-details-body,
+        .pk-summary-grid,
+        .pk-file-groups,
+        .pk-row-readonly-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pk-workflow-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pk-workflow-actions {
+            width: 100%;
+        }
+
+        .pk-workflow-actions .btn {
+            flex: 1 1 auto;
+        }
+
+        .pk-workflow-step {
+            min-width: 105px;
+        }
+
+        .pk-source-table {
+            overflow-x: auto;
+        }
+
+        .pk-card-body {
+            padding: 12px;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
+<div class="main-content" id="main-content">
+    <div class="packing-page">
+        <div class="packing-shell">
 
-        <div class="main-content " id="main-content">
-            <div class="page-content">
-                <div class="container-fluid">
-                        <div class="d-flex">
-                            <div class="" style="width: 55%" id="section-1">
-                            <div style="width: fit-content; position: relative; right: calc(100% - 30px); width: fit-content" class="d-flex">
-                                <div class="p-2 bg-white shadow-sm cursor-pointer" onclick="expandRight()">
-                                    <span class="ki-duotone ki-double-right fs-2">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                    </span>
-                                </div>
-                                <div class="p-2 bg-white shadow-sm cursor-pointer hover-link" onclick="expandLeft()">
-                                    <span class="ki-duotone ki-double-left fs-2">
-                                        <span class="path1"></span>
-                                        <span class="path2"></span>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="table-responsive p-2">
-                                <table id="quick-packing-list" width="100%" class="m-table table-striped table-bordered w-100">
+            <div class="packing-page-header">
+                <div>
+                    <h1 class="packing-page-title" data-key="packing_create_title">Create Packing</h1>
+                    <div class="packing-page-subtitle">
+                        <span data-key="packing_create_subtitle">Select GIO orders. Packing quantity is limited by GIO quantity and previous packings.</span>
+                    </div>
+                </div>
+                <a href="{% url 'order:packing.list' %}" class="btn btn-sm btn-light">
+                    <span data-key="packing_view_list">View Packings</span>
+                </a>
+            </div>
 
-                                </table>
-                            </div>
-                        </div>
-                        <div class="mt-10" style="width: 45%" id="section-2">
-                            <div class="card px-2 py-5" id="gio-form-inputs">
-
-                            {% if not form.instance.pk %}
-                                <fieldset>
-                                    <legend data-key="create_gio">create new packing</legend>
-{#                                    <form action="{% url 'order:gio.view' %}" method="post" id="gio_submit_form">#}
-                                    <div class="row row-cols-2 mt-16" id="packing-header">
-                                        {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimate_delivery_date form.description label='on-border' %}
-                                        {% render_field_by_order form form.file_1 form.file_2 form.file_3 form.file_4 form.file_5 form.file_6 form.file_7 form.file_8 form.file_9 label='on-border' %}
-                                    </div>
-{#                                    </form>#}
-                                </fieldset>
-                            {% endif %}
-
-                                <fieldset id="items-area" class="mt-10">
-                                    <legend>packing Items</legend>
-                                    {{ formset.management_form }}
-                                    <div id="formset-container">
-                                        {% for form_s in formset %}
-                                            <div class="item-form row pt-5 mb-1 ms-0">
-                                                <div class="col-12">
-                                                    <div class="row delete">
-                                                        <div class="col-3">
-                                                            {% render_field_by_order form_s form_s.order form_s.quantity  label='on-border' margin_b=0%}
-                                                        </div>
-                                                        <div class="col-8">
-                                                            {% render_field_by_order form_s form_s.order form_s.description label='on-border' margin_b=0%}
-                                                        </div>
-{#                                                        {% render_field_by_order form_s form_s.order form_s.quantity form_s.description label='on-border' margin_b=0%}#}
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="show_order_str"></div>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-
-                                    <span>&nbsp;</span>
-
-                                    <div class="d-flex justify-content-between align-items-end">
-                                        <div>
-                                            <button type="button" id="submit-gio" class="btn btn-primary mt-5 me-5">ثبت</button>
-                                            <span id="ajax-response"></span>
-                                        </div>
-                                    </div>
-                                </fieldset>
-
-                            <div class="d-flex flex-column mt-8">
-                                    <div>
-                                        <span>total quantity:</span>
-                                        <span id="qio-total-quantity">12345678</span>
-                                    </div>
-                                </div>
-
+            <div class="packing-layout{% if not can_add_items %} packing-layout-form-only{% endif %}">
+                {% if can_add_items %}
+                <section class="pk-card packing-source-panel" id="packing-source-panel">
+                    <div class="pk-card-header">
+                        <div>
+                            <h2 class="pk-card-title">
+                                <span class="pk-card-title-icon">01</span>
+                                <span data-key="packing_available_orders">Orders Available for Packing</span>
+                            </h2>
+                            <div class="pk-card-help mt-1">
+                                <span data-key="packing_available_orders_help">Only orders with usable GIO quantity are shown.</span>
                             </div>
                         </div>
                     </div>
-                </div> <!-- container-fluid -->
+
+                    <div class="pk-card-body pk-source-table">
+                        <div class="table-responsive">
+                            <table id="quick-packing-list" class="table w-100"></table>
+                        </div>
+                    </div>
+                </section>
+
+                <div
+                    class="pk-resizer"
+                    id="packing-layout-resizer"
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Resize packing columns"
+                ></div>
+                {% endif %}
+
+                <aside class="packing-side" id="packing-form-panel">
+                    <div class="pk-card">
+                        <div class="pk-card-header">
+                            <div>
+                                <h2 class="pk-card-title">
+                                    <span class="pk-card-title-icon">02</span>
+                                    <span data-key="packing_info">Packing Information</span>
+                                </h2>
+                                <div class="pk-card-help mt-1">
+                                    <span data-key="packing_info_help">Shipment details and selected items</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pk-card-body">
+                            {% if packing_object %}
+                                <div class="pk-workflow-panel">
+                                    <div class="pk-workflow-head">
+                                        <div class="pk-workflow-current">
+                                            <span class="pk-workflow-current-label" data-key="packing_workflow_current_state">Current stage</span>
+                                            <span class="pk-workflow-current-name">{{ current_state }}</span>
+                                        </div>
+
+                                        <div class="pk-workflow-actions">
+                                            {% if can_back %}
+                                                <button type="button" class="btn btn-sm btn-light-warning packing-workflow-action" data-action="back">
+                                                    <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>
+                                                    <span data-key="back">Back</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if can_next %}
+                                                <button type="button" class="btn btn-sm btn-light-primary packing-workflow-action" data-action="next">
+                                                    <span data-key="next">Next</span>
+                                                    <i class="ti ti-arrow-forward-up ms-1" aria-hidden="true"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="pk-workflow-scroll">
+                                        <div class="pk-workflow-steps" aria-label="Packing workflow">
+                                            {% for workflow_state in flow_state_list %}
+                                                <div class="pk-workflow-step{% if forloop.counter0 < flow_state_index %} is-completed{% elif forloop.counter0 == flow_state_index %} is-current{% endif %}">
+                                                    <div class="pk-workflow-node">
+                                                        {% if forloop.counter0 < flow_state_index %}
+                                                            <i class="ti ti-check" aria-hidden="true"></i>
+                                                        {% else %}
+                                                            {{ forloop.counter }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="pk-workflow-step-name">{{ workflow_state }}</span>
+                                                    <span class="pk-workflow-step-status">
+                                                        {% if forloop.counter0 < flow_state_index %}
+                                                            <span data-key="packing_workflow_completed">Completed</span>
+                                                        {% elif forloop.counter0 == flow_state_index %}
+                                                            <span data-key="packing_workflow_current">Current</span>
+                                                        {% else %}
+                                                            <span data-key="packing_workflow_upcoming">Upcoming</span>
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div id="packing-header">
+                                <div class="packing-meta-grid">
+                                    {% render_field_by_order form form.packing_number form.currency form.shipment_type form.bl_number form.estimated_delivery_date form.description label='on-border' %}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="pk-attachments-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#packing-attachments"
+                                    aria-expanded="false"
+                                >
+                                    <span data-key="packing_attachments">Packing Documents</span>
+                                    <span>+</span>
+                                </button>
+
+                                <div class="collapse" id="packing-attachments">
+                                    <div class="pk-attachments">
+                                        <div class="pk-file-groups">
+                                            {% for file_group in form.iter_packing_file_groups %}
+                                                <div class="pk-file-group">
+                                                    <div class="pk-file-group-head">
+                                                        <div class="pk-file-group-title">
+                                                            <span class="pk-file-group-number">{{ file_group.index }}</span>
+                                                            <span data-key="{{ file_group.label_key }}">{{ file_group.name }}</span>
+                                                        </div>
+                                                        {% if not file_group.editable %}
+                                                            <i class="ti ti-lock text-muted" aria-hidden="true"></i>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    {% if file_group.field %}
+                                                        {{ file_group.field }}
+                                                        {% if file_group.field.errors %}
+                                                            <div class="text-danger mt-1">{{ file_group.field.errors }}</div>
+                                                        {% endif %}
+                                                    {% endif %}
+
+                                                    {% if file_group.files %}
+                                                        <div class="pk-file-list">
+                                                            {% for existing_file in file_group.files %}
+                                                                <a
+                                                                    class="pk-file-item{% if existing_file.is_image %} is-image{% endif %}"
+                                                                    href="/media/{{ existing_file.url }}"
+                                                                    target="_blank"
+                                                                    rel="noopener"
+                                                                    title="{{ existing_file.filename }}"
+                                                                >
+                                                                    <span class="pk-file-icon">
+                                                                        {% if existing_file.is_image %}
+                                                                            <i class="ti ti-photo" aria-hidden="true"></i>
+                                                                        {% else %}
+                                                                            <i class="ti ti-file" aria-hidden="true"></i>
+                                                                        {% endif %}
+                                                                    </span>
+                                                                    <span class="pk-file-name">{{ existing_file.filename }}</span>
+                                                                    <span class="pk-file-open" data-key="packing_open_file">Open</span>
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="pk-file-empty" data-key="packing_no_file">No file uploaded</div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pk-selected-wrap">
+                                <div class="pk-selected-header">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <strong data-key="packing_selected_items">Selected Items</strong>
+                                        <span class="pk-selected-count" id="packing-selected-count">0</span>
+                                    </div>
+                                    {% if can_add_items %}
+                                        <small class="text-muted" data-key="packing_remove_hint">Use the remove button on each row to delete it.</small>
+                                    {% endif %}
+                                </div>
+
+                                {{ formset.management_form }}
+
+                                <div id="packing-empty-state" class="pk-empty-state{% if packings %} d-none{% endif %}">
+                                    <div class="empty-icon">＋</div>
+                                    <div class="fw-bold text-dark mb-1" data-key="packing_empty_title">No order selected yet</div>
+                                    <div data-key="packing_empty_help">Use the add button in the orders table.</div>
+                                </div>
+
+                                <div id="existing-packing-items">
+                                    {% for packing_item in packings %}
+                                        <div
+                                            class="packing-selected-row packing-existing-row"
+                                            data-order-id="{{ packing_item.order_id }}"
+                                            data-item-id="{{ packing_item.pk }}"
+                                            data-quantity="{{ packing_item.quantity|default_if_none:0 }}"
+                                            data-total-weight="{{ packing_item.net_weight_kg|default_if_none:0 }}"
+                                            data-unit-price="{{ packing_item.price|default_if_none:0 }}"
+                                            data-currency="{{ packing_item.order.currency.title_en|default_if_none:'' }}"
+                                            data-unit-weight="{{ packing_item.order.final_weight|default_if_none:0 }}"
+                                        >
+                                            {% if can_add_items %}
+                                                <input type="hidden" name="existing-{{ packing_item.pk }}-id" value="{{ packing_item.pk }}">
+                                                <input type="hidden" class="existing-delete-input" name="existing-{{ packing_item.pk }}-delete" value="0">
+                                            {% endif %}
+
+                                            <div class="pk-delete-pending">
+                                                <span class="text-danger fw-bold" data-key="packing_item_marked_deleted">Item marked for deletion</span>
+                                                <button type="button" class="btn btn-sm btn-light existing-undo-delete" data-key="undo">Undo</button>
+                                            </div>
+
+                                            <div class="pk-row-main">
+                                                <div class="pk-row-top">
+                                                    <div class="min-w-0">
+                                                        <div class="pk-row-title">{{ packing_item.order.order_number|default:packing_item.order_id }}</div>
+                                                        <div class="pk-row-part">
+                                                            <span class="me-2">SKU: <b>{{ packing_item.order.final_item.sku|default:"-" }}</b></span>
+                                                            <span>{{ packing_item.part_number|default:"-" }}</span>
+                                                        </div>
+                                                    </div>
+                                                    {% if can_add_items %}
+                                                        <div class="pk-existing-actions">
+                                                            <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                            <button
+                                                                type="button"
+                                                                class="pk-remove existing-delete-row"
+                                                                title="Delete row"
+                                                                aria-label="Delete row"
+                                                            >×</button>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="badge badge-light-secondary" data-key="packing_existing_item">Existing Item</span>
+                                                    {% endif %}
+                                                </div>
+
+                                                {% if can_add_items %}
+                                                    <div class="pk-row-quantity">
+                                                        <div class="pk-quantity-box">
+                                                            <label data-key="packing_quantity_this">Packing Quantity</label>
+                                                            <input
+                                                                type="number"
+                                                                step="any"
+                                                                min="0.000001"
+                                                                max="{{ packing_item.quick_available_quantity|default_if_none:packing_item.quantity }}"
+                                                                class="form-control packing-existing-quantity"
+                                                                name="existing-{{ packing_item.pk }}-quantity"
+                                                                value="{{ packing_item.quantity|default_if_none:0 }}"
+                                                                required
+                                                            >
+                                                            <small class="text-muted d-block mt-1">
+                                                                <span data-key="packing_max">Max</span>
+                                                                {{ packing_item.quick_available_quantity|default_if_none:packing_item.quantity|floatformat:"-4g" }}
+                                                            </small>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
+                                                            <strong class="existing-row-total-weight">{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
+                                                            <strong>
+                                                                <span class="existing-row-total-value">0</span>
+                                                                <span class="text-muted ms-1">{{ packing_item.order.currency.title_en|default_if_none:'' }}</span>
+                                                            </strong>
+                                                            <small class="text-muted">
+                                                                <span data-key="packing_unit_price">Unit Price</span>:
+                                                                {{ packing_item.price|floatformat:"-4g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+
+                                                    <details class="pk-row-details">
+                                                        <summary data-key="packing_row_more_info">Additional Row Information</summary>
+                                                        <div class="pk-row-details-body">
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_carton_number">Carton Number</label>
+                                                                <input class="form-control" name="existing-{{ packing_item.pk }}-carton_number" value="{{ packing_item.carton_number|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</label>
+                                                                <input type="number" step="any" class="form-control" name="existing-{{ packing_item.pk }}-gross_weight_kg" value="{{ packing_item.gross_weight_kg|default_if_none:'' }}">
+                                                            </div>
+                                                            <div>
+                                                                <label class="pk-mini-label" data-key="packing_size">Size</label>
+                                                                <input class="form-control" name="existing-{{ packing_item.pk }}-size" value="{{ packing_item.size|default_if_none:'' }}">
+                                                            </div>
+                                                            <div class="pk-desc">
+                                                                <label class="pk-mini-label" data-key="packing_description">Description</label>
+                                                                <textarea class="form-control" rows="2" name="existing-{{ packing_item.pk }}-description">{{ packing_item.description|default_if_none:'' }}</textarea>
+                                                            </div>
+                                                        </div>
+                                                    </details>
+                                                {% else %}
+                                                    <div class="pk-row-readonly-grid">
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_quantity_this">Packing Quantity</span>
+                                                            <strong>{{ packing_item.quantity|floatformat:"-4g" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_weight">Row Total Weight</span>
+                                                            <strong>{{ packing_item.net_weight_kg|floatformat:"-4g" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_gross_weight">Gross Weight</span>
+                                                            <strong>{{ packing_item.gross_weight_kg|default_if_none:"-"|floatformat:"-4g" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_unit_price">Unit Price</span>
+                                                            <strong>
+                                                                {{ packing_item.price|floatformat:"-4g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
+                                                            </strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_row_total_value">Row Total Value</span>
+                                                            <strong>
+                                                                {{ packing_item.computed_amount|floatformat:"-2g" }}
+                                                                {{ packing_item.order.currency.title_en|default_if_none:'' }}
+                                                            </strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_carton_number">Carton Number</span>
+                                                            <strong>{{ packing_item.carton_number|default:"-" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_size">Size</span>
+                                                            <strong>{{ packing_item.size|default:"-" }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="packing_description">Description</span>
+                                                            <strong>{{ packing_item.description|default:"-"|truncatechars:48 }}</strong>
+                                                        </div>
+
+                                                        <div class="pk-stat">
+                                                            <span class="pk-mini-label" data-key="sku">SKU</span>
+                                                            <strong>{{ packing_item.order.final_item.sku|default:"-" }}</strong>
+                                                        </div>
+
+                                                        {% if packing_item.description %}
+                                                            <div class="pk-row-readonly-description">
+                                                                <span class="pk-mini-label" data-key="packing_description">Description</span>
+                                                                <div class="pk-readonly-text">{{ packing_item.description }}</div>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if can_add_items %}
+                                    <div id="formset-container"></div>
+                                {% else %}
+                                    <div id="formset-container" class="d-none"></div>
+                                {% endif %}
+                            </div>
+
+                            <div class="pk-summary">
+                                <div class="pk-summary-grid">
+                                    <div class="pk-summary-item">
+                                        <span data-key="packing_total_quantity">Total Quantity</span>
+                                        <strong id="packing-total-quantity">0</strong>
+                                    </div>
+                                    <div class="pk-summary-item">
+                                        <span data-key="packing_total_weight">Total Weight</span>
+                                        <strong id="packing-total-weight">0</strong>
+                                    </div>
+                                    <div class="pk-summary-item">
+                                        <span data-key="packing_total_value">Total Value</span>
+                                        <strong id="packing-total-value">0</strong>
+                                    </div>
+                                </div>
+
+                                {% if wf_access %}
+                                    <button type="button" id="submit-packing" class="btn btn-primary pk-submit">
+                                        <span data-key="packing_submit">Save Packing</span>
+                                    </button>
+                                {% endif %}
+                                <div id="ajax-response"></div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
             </div>
-            <!-- End Page-content -->
-        {% include 'core/partial/empty_modal_lg.html' %}
         </div>
-        <!-- end main content-->
+    </div>
+</div>
 {% endblock content %}
 
 {% block extra_js %}
+<script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
 
-<script language="javascript">
-    $(document).ready(function() {
-        const url = new URL(window.location);
-        const q = url.searchParams.get("q")
+<div id="packing-i18n-bank" class="d-none" aria-hidden="true">
+    <span data-key="packing_available">Available for Packing</span>
+    <span data-key="packing_order_remaining">Remaining in Order</span>
+    <span data-key="packing_remove_row">Remove row</span>
+    <span data-key="packing_quantity_this">Packing Quantity</span>
+    <span data-key="packing_max">Max</span>
+    <span data-key="packing_row_total_weight">Row Total Weight</span>
+    <span data-key="packing_unit_weight">Unit Weight</span>
+    <span data-key="packing_row_total_value">Row Total Value</span>
+    <span data-key="packing_unit_price">Unit Price</span>
+    <span data-key="packing_row_more_info">Additional Row Information</span>
+    <span data-key="packing_previous">Previous Packing</span>
+    <span data-key="packing_carton_number">Carton Number</span>
+    <span data-key="packing_gross_weight">Gross Weight</span>
+    <span data-key="packing_size">Size</span>
+    <span data-key="packing_description">Description</span>
+    <span data-key="packing_search_orders">Search orders...</span>
+    <span data-key="packing_length_menu">Show _MENU_ rows</span>
+    <span data-key="packing_info_records">Showing _START_ to _END_ of _TOTAL_ orders</span>
+    <span data-key="packing_info_empty">No orders are available for packing</span>
+    <span data-key="packing_zero_records">No packable order found</span>
+    <span data-key="packing_previous_page">Previous</span>
+    <span data-key="packing_next_page">Next</span>
+    <span data-key="packing_select_one_error">Select at least one order for packing.</span>
+    <span data-key="packing_quantity_invalid_error">One row quantity is outside the available packing capacity.</span>
+    <span data-key="packing_submitting">Saving...</span>
+    <span data-key="packing_success">Packing saved successfully.</span>
+    <span data-key="packing_save_error">Error saving packing.</span>
+    <span data-key="packing_submit">Save Packing</span>
+    <span data-key="packing_resize_columns">Drag to resize columns; double-click to reset.</span>
+    <span data-key="packing_open_file">Open</span>
+    <span data-key="packing_item_marked_deleted">Item marked for deletion</span>
+    <span data-key="undo">Undo</span>
+    <span data-key="packing_no_file">No file uploaded</span>
+    <span data-key="packing_file_1">Invoice</span>
+    <span data-key="packing_file_2">Packing List</span>
+    <span data-key="packing_file_3">Inspection Certificate</span>
+    <span data-key="packing_file_4">Certificate of Origin</span>
+    <span data-key="packing_file_5">Packing Details</span>
+    <span data-key="packing_file_6">Customs Packing</span>
+    <span data-key="packing_file_7">Order Registration</span>
+    <span data-key="packing_file_8">Proforma</span>
+    <span data-key="packing_file_9">Insurance Policy</span>
+    <span data-key="packing_workflow_current_state">Current stage</span>
+    <span data-key="packing_workflow_completed">Completed</span>
+    <span data-key="packing_workflow_current">Current</span>
+    <span data-key="packing_workflow_upcoming">Upcoming</span>
+    <span data-key="packing_gio_quantity">GIO Qty</span>
+    <span data-key="sku">SKU</span>
+</div>
+
+<script>
+(function () {
+    const listUrl = "{% url 'order:quick_packing.datatable' %}";
+    const submitUrl = "{% if packing_object %}{% url 'order:quick_packing' packing_object.pk %}{% else %}{% url 'order:quick_packing' %}{% endif %}";
+    const canAddItems = {{ can_add_items|yesno:"true,false" }};
+    const container = document.getElementById('formset-container');
+    const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+    const submitButton = document.getElementById('submit-packing');
+    const emptyState = document.getElementById('packing-empty-state');
+    const selectedCount = document.getElementById('packing-selected-count');
+    const packingLayout = document.querySelector('.packing-layout');
+    const sourcePanel = document.getElementById('packing-source-panel');
+    const formPanel = document.getElementById('packing-form-panel');
+    const layoutResizer = document.getElementById('packing-layout-resizer');
+    const splitStorageKey = 'quickPackingSplitPercent';
+    const defaultSplitPercent = 62;
+    let packingTranslations = {};
+
+    function currentLanguage() {
+        return localStorage.getItem('Dason-language') || 'en';
+    }
+
+    function tr(key, fallback = '') {
+        return packingTranslations[key] || fallback || key;
+    }
+
+    function applyDynamicTranslations(root = document) {
+        root.querySelectorAll('[data-key]').forEach(function (element) {
+            const key = element.dataset.key;
+            if (packingTranslations[key] !== undefined) {
+                element.textContent = packingTranslations[key];
+            }
+        });
+
+        if (layoutResizer) {
+            layoutResizer.setAttribute(
+                'aria-label',
+                tr('packing_resize_columns', 'Drag to resize columns; double-click to reset.')
+            );
+            layoutResizer.setAttribute(
+                'title',
+                tr('packing_resize_columns', 'Drag to resize columns; double-click to reset.')
+            );
+        }
+    }
+
+    async function loadPackingTranslations() {
+        try {
+            const response = await fetch('/static/lang/' + currentLanguage() + '.json', {
+                cache: 'force-cache'
+            });
+            if (response.ok) {
+                packingTranslations = await response.json();
+            }
+        } catch (error) {
+            packingTranslations = {};
+        }
+        applyDynamicTranslations(document);
+    }
+
+    function clampSplitPercent(value) {
+        return Math.min(76, Math.max(38, value));
+    }
+
+    function applySplitPercent(percent, persist = false) {
+        if (window.innerWidth <= 1250) return;
+
+        const safePercent = clampSplitPercent(percent);
+        sourcePanel.style.flexBasis = safePercent + '%';
+        formPanel.style.flexBasis = '0';
+        formPanel.style.flexGrow = '1';
+
+        if (persist) {
+            localStorage.setItem(splitStorageKey, String(safePercent));
+        }
+    }
+
+    function initResizableLayout() {
+        if (!layoutResizer || !packingLayout) return;
+
+        const saved = parseFloat(localStorage.getItem(splitStorageKey));
+        applySplitPercent(Number.isFinite(saved) ? saved : defaultSplitPercent);
+
+        let dragging = false;
+
+        const resizeFromPointer = (clientX) => {
+            const rect = packingLayout.getBoundingClientRect();
+            const isRtl = getComputedStyle(packingLayout).direction === 'rtl';
+
+            const distanceFromSourceEdge = isRtl
+                ? rect.right - clientX
+                : clientX - rect.left;
+
+            const percent = (distanceFromSourceEdge / rect.width) * 100;
+            applySplitPercent(percent);
+        };
+
+        layoutResizer.addEventListener('pointerdown', function (event) {
+            if (window.innerWidth <= 1250) return;
+            dragging = true;
+            document.body.classList.add('pk-resizing');
+            layoutResizer.classList.add('is-dragging');
+            layoutResizer.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+        });
+
+        layoutResizer.addEventListener('pointermove', function (event) {
+            if (!dragging) return;
+            resizeFromPointer(event.clientX);
+        });
+
+        const stopDragging = function () {
+            if (!dragging) return;
+            dragging = false;
+            document.body.classList.remove('pk-resizing');
+            layoutResizer.classList.remove('is-dragging');
+
+            const layoutRect = packingLayout.getBoundingClientRect();
+            const sourceRect = sourcePanel.getBoundingClientRect();
+            const percent = (sourceRect.width / layoutRect.width) * 100;
+            applySplitPercent(percent, true);
+
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#quick-packing-list')) {
+                $('#quick-packing-list').DataTable().columns.adjust();
+            }
+        };
+
+        layoutResizer.addEventListener('pointerup', stopDragging);
+        layoutResizer.addEventListener('pointercancel', stopDragging);
+
+        layoutResizer.addEventListener('dblclick', function () {
+            localStorage.removeItem(splitStorageKey);
+            applySplitPercent(defaultSplitPercent, true);
+
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#quick-packing-list')) {
+                $('#quick-packing-list').DataTable().columns.adjust();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 1250) {
+                const stored = parseFloat(localStorage.getItem(splitStorageKey));
+                applySplitPercent(Number.isFinite(stored) ? stored : defaultSplitPercent);
+            }
+        });
+    }
+
+    function toNumber(value) {
+        const number = parseFloat(String(value ?? '').replace(/,/g, ''));
+        return Number.isFinite(number) ? number : 0;
+    }
+
+    function fmt(value) {
+        return toNumber(value).toLocaleString('en-US', {maximumFractionDigits: 4});
+    }
+
+    function fmtMoney(value) {
+        return toNumber(value).toLocaleString('en-US', {maximumFractionDigits: 2});
+    }
+
+    function rowDataFromTr(tr) {
+        return {
+            orderId: toNumber(tr.querySelector('.order')?.textContent),
+            orderNumber: tr.querySelector('.order-number')?.textContent?.trim() || '',
+            sku: tr.querySelector('.sku')?.textContent?.trim() || '',
+            partNumber: tr.querySelector('.partnumber')?.textContent?.trim() || '',
+            quantityInGio: toNumber(tr.querySelector('.quantity-in-gio')?.textContent),
+            available: toNumber(tr.querySelector('.available-for-packing')?.textContent),
+            remainingInOrder: toNumber(tr.querySelector('.remaining-quantity-in-order')?.textContent),
+            unitWeight: toNumber(tr.querySelector('.unit-weight')?.textContent),
+            finalPrice: toNumber(tr.querySelector('.final-price')?.textContent),
+            currency: tr.querySelector('.currency-title')?.textContent?.trim() || '',
+        };
+    }
+
+    function selectedOrderIds() {
+        return Array.from(document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row'))
+            .map(el => String(el.dataset.orderId));
+    }
+
+    function syncEmptyState() {
+        const count = document.querySelectorAll('.packing-existing-row:not(.is-pending-delete), #formset-container .packing-selected-row').length;
+        if (selectedCount) selectedCount.textContent = count;
+        if (emptyState) emptyState.classList.toggle('d-none', count > 0);
+    }
+
+    function syncDatatable() {
+        const selected = selectedOrderIds();
+
+        document.querySelectorAll('#quick-packing-list tbody tr').forEach(tr => {
+            const orderId = String(toNumber(tr.querySelector('.order')?.textContent));
+            const btn = tr.querySelector('.action');
+            if (!btn) return;
+
+            if (selected.includes(orderId)) {
+                btn.innerHTML = '✓';
+                btn.dataset.isSelected = 'yes';
+                btn.classList.remove('btn-light-primary');
+                btn.classList.add('btn-light-success', 'text-success');
+            } else {
+                btn.innerHTML = '＋';
+                btn.dataset.isSelected = 'no';
+                btn.classList.remove('btn-light-success', 'text-success');
+                btn.classList.add('btn-light-primary');
+            }
+        });
+    }
+
+    function updateTotals() {
+        let quantity = 0;
+        let weight = 0;
+        let value = 0;
+
+        document.querySelectorAll('.packing-existing-row').forEach(row => {
+            if (row.classList.contains('is-pending-delete')) return;
+
+            const quantityInput = row.querySelector('.packing-existing-quantity');
+            const q = quantityInput ? toNumber(quantityInput.value) : toNumber(row.dataset.quantity);
+            const unitWeight = toNumber(row.dataset.unitWeight);
+            const unitPrice = toNumber(row.dataset.unitPrice);
+            const totalWeight = q * unitWeight;
+            const totalValue = q * unitPrice;
+
+            quantity += q;
+            weight += totalWeight;
+            value += totalValue;
+
+            const weightTarget = row.querySelector('.existing-row-total-weight');
+            const valueTarget = row.querySelector('.existing-row-total-value');
+            if (weightTarget) weightTarget.textContent = fmt(totalWeight);
+            if (valueTarget) valueTarget.textContent = fmtMoney(totalValue);
+        });
+
+        container.querySelectorAll('.packing-selected-row').forEach(row => {
+            const q = toNumber(row.querySelector('input[name$="-quantity"]')?.value);
+            const unitWeight = toNumber(row.dataset.unitWeight);
+            const finalPrice = toNumber(row.dataset.finalPrice);
+
+            const totalWeight = q * unitWeight;
+            const totalValue = q * finalPrice;
+
+            quantity += q;
+            weight += totalWeight;
+            value += totalValue;
+
+            row.querySelector('.row-total-weight').textContent = fmt(totalWeight);
+            row.querySelector('.row-total-value').textContent = fmtMoney(totalValue);
+        });
+
+        document.getElementById('packing-total-quantity').textContent = fmt(quantity);
+        document.getElementById('packing-total-weight').textContent = fmt(weight);
+        document.getElementById('packing-total-value').textContent = fmtMoney(value);
+
+        syncEmptyState();
+    }
+
+    function reindexRows() {
+        const rows = Array.from(container.querySelectorAll('.packing-selected-row'));
+
+        rows.forEach((row, index) => {
+            row.querySelectorAll('[name]').forEach(input => {
+                input.name = input.name.replace(/form-\d+-/, `form-${index + 1}-`);
+            });
+        });
+
+        totalFormsInput.value = rows.length + 1;
+    }
+
+    window.order_to_packing_item = function (event) {
+        const tableRow = event.currentTarget.closest('tr');
+        const data = rowDataFromTr(tableRow);
+
+        if (!data.orderId || data.available <= 0) return;
+        if (selectedOrderIds().includes(String(data.orderId))) return;
+
+        const index = container.querySelectorAll('.packing-selected-row').length + 1;
+        const packedBefore = Math.max(data.quantityInGio - data.available, 0);
+
+        const row = document.createElement('div');
+        row.className = 'packing-selected-row';
+        row.dataset.orderId = data.orderId;
+        row.dataset.unitWeight = data.unitWeight;
+        row.dataset.finalPrice = data.finalPrice;
+        row.dataset.currency = data.currency;
+
+        row.innerHTML = `
+            <input type="hidden" name="form-${index}-order" value="${data.orderId}">
+
+            <div class="pk-row-main">
+                <div class="pk-row-top">
+                    <div class="min-w-0">
+                        <div class="pk-row-title">${data.orderNumber || ('Order #' + data.orderId)}</div>
+                        <div class="pk-row-part">
+                            <span class="me-2">SKU: <b>${data.sku || '-'}</b></span>
+                            <span>${data.partNumber || '-'}</span>
+                        </div>
+
+                        <div class="pk-row-tags">
+                            <span class="pk-tag pk-tag-gio">${tr('packing_gio_quantity', 'GIO Qty')}: ${fmt(data.quantityInGio)}</span>
+                            <span class="pk-tag pk-tag-available">${tr('packing_available', 'Available for Packing')}: ${fmt(data.available)}</span>
+                            <span class="pk-tag pk-tag-remaining">${tr('packing_order_remaining', 'Remaining in Order')}: ${fmt(data.remainingInOrder)}</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="pk-remove remove-packing-row" title="${tr('packing_remove_row', 'Remove row')}">×</button>
+                </div>
+
+                <div class="pk-row-quantity">
+                    <div class="pk-quantity-box">
+                        <label>${tr('packing_quantity_this', 'Packing Quantity')}</label>
+                        <input
+                            type="number"
+                            step="any"
+                            min="0.000001"
+                            max="${data.available}"
+                            class="form-control packing-quantity"
+                            name="form-${index}-quantity"
+                            value="${data.available}"
+                            required
+                        >
+                        <small class="text-muted d-block mt-1">${tr('packing_max', 'Max')} ${fmt(data.available)}</small>
+                    </div>
+
+                    <div class="pk-stat">
+                        <span class="pk-mini-label">${tr('packing_row_total_weight', 'Row Total Weight')}</span>
+                        <strong><span class="row-total-weight">0</span></strong>
+                        <small class="text-muted">${tr('packing_unit_weight', 'Unit Weight')}: ${fmt(data.unitWeight)}</small>
+                    </div>
+
+                    <div class="pk-stat">
+                        <span class="pk-mini-label">${tr('packing_row_total_value', 'Row Total Value')}</span>
+                        <strong>
+                            <span class="row-total-value">0</span>
+                            <span class="text-muted ms-1">${data.currency}</span>
+                        </strong>
+                        <small class="text-muted">${tr('packing_unit_price', 'Unit Price')}: ${fmtMoney(data.finalPrice)} ${data.currency}</small>
+                    </div>
+                </div>
+            </div>
+
+            <details class="pk-row-details">
+                <summary>
+                    ${tr('packing_row_more_info', 'Additional Row Information')}
+                    <span class="text-muted ms-2">${tr('packing_previous', 'Previous Packing')}: ${fmt(packedBefore)}</span>
+                </summary>
+
+                <div class="pk-row-details-body">
+                    <div>
+                        <label class="pk-mini-label">${tr('packing_carton_number', 'Carton Number')}</label>
+                        <input class="form-control" name="form-${index}-carton_number">
+                    </div>
+
+                    <div>
+                        <label class="pk-mini-label">${tr('packing_gross_weight', 'Gross Weight')}</label>
+                        <input type="number" step="any" class="form-control" name="form-${index}-gross_weight_kg">
+                    </div>
+
+                    <div>
+                        <label class="pk-mini-label">${tr('packing_size', 'Size')}</label>
+                        <input class="form-control" name="form-${index}-size">
+                    </div>
+
+                    <div class="pk-desc">
+                        <label class="pk-mini-label">${tr('packing_description', 'Description')}</label>
+                        <textarea class="form-control" rows="2" name="form-${index}-description"></textarea>
+                    </div>
+                </div>
+            </details>
+        `;
+
+        container.appendChild(row);
+
+        row.querySelector('.packing-quantity').addEventListener('input', function () {
+            const current = toNumber(this.value);
+            if (current > data.available) this.value = data.available;
+            if (current < 0) this.value = 0;
+            updateTotals();
+        });
+
+        row.querySelector('.remove-packing-row').addEventListener('click', function () {
+            row.remove();
+            reindexRows();
+            updateTotals();
+            syncDatatable();
+        });
+
+        reindexRows();
+        updateTotals();
+        syncDatatable();
+
+        row.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    };
+
+    $(document).ready(async function () {
+        await loadPackingTranslations();
+
+        if (canAddItems && document.getElementById('quick-packing-list')) {
         AjaxDatatableViewUtils.initialize_table(
             $('#quick-packing-list'),
-            "{% url 'order:quick_packing.datatable' %}",
+            listUrl,
             {
                 processing: true,
                 autoWidth: false,
                 full_row_select: false,
-                scrollX: false,
+                scrollX: true,
                 bFilter: true,
-                dom: 'Blfrtip',
-                buttons: [
-                    'copyHtml5',
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5'
-                ]
-            }, {
-                // extra_data
-                // ...
-                q:q
+                pageLength: 25,
+                dom: 'lfrtip',
+                language: {
+                    search: '',
+                    searchPlaceholder: tr('packing_search_orders', 'Search orders...'),
+                    lengthMenu: tr('packing_length_menu', 'Show _MENU_ rows'),
+                    info: tr('packing_info_records', 'Showing _START_ to _END_ of _TOTAL_ orders'),
+                    infoEmpty: tr('packing_info_empty', 'No orders are available for packing'),
+                    zeroRecords: tr('packing_zero_records', 'No packable order found'),
+                    paginate: {
+                        previous: tr('packing_previous_page', 'Previous'),
+                        next: tr('packing_next_page', 'Next')
+                    }
+                }
             },
+            {}
         );
 
-        $('#quick-packing-list').on('draw.dt', function (){
-            sync_datatable()
-        }) // end on draw.dt
-
-    }); // end ready
-
-    function sync_datatable(){
-        const table_order = document.querySelectorAll('.order')
-        const form_order = document.querySelectorAll('input[name$="-order"]')
-        table_order.forEach(item => {
-            const order = item.textContent.trim()
-            const match = Array.from(form_order).find(i => i.value.trim() === order)
-            const target = item.closest('tr').querySelector('.action')
-
-            if (match && order && target){
-                target.innerHTML = '&#x2713;'
-                target.classList.add('text-success', 'font-size-20')
-                target.dataset.is_selected = 'yes'
-            } else if (target) {
-                target.innerHTML = '➕'
-                target.classList.remove('text-success')
-                target.dataset.is_selected = 'no'
-            }
-        }) // end forEach
-    }
-    function order_to_gio_item(event) {
-        debugger
-        const target = event.currentTarget
-        if (target.dataset.is_selected === 'yes'){
-            alert("order already selected")
-            return
+        $('#quick-packing-list').on('draw.dt', function () {
+            syncDatatable();
+            applyDynamicTranslations(document.getElementById('quick-packing-list'));
+        });
+        initResizableLayout();
         }
-
-        target.dataset.is_selected = 'yes'
-        target.innerHTML = '&#x2713;'
-        target.classList.add('text-success', 'font-size-20')
-        const row = target.closest('tr')
-        const formsetContainer = document.getElementById('formset-container');
-        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
-        const order_id = row.querySelector('.order').innerHTML
-        const quantity = row.querySelector('.quantity').innerHTML
-        const show_order_str = row.querySelector('.show_order_str').innerHTML
-
-        let totalForms = parseInt(totalFormsInput.value);
-        const firstForm = formsetContainer.querySelector('.item-form');
-        const newForm = firstForm.cloneNode(true); // کل فرم را کپی می‌کنیم
-        newForm.classList.remove('d-none')
-        newForm.querySelector('.show_order_str').innerHTML = show_order_str
-
-        // پاک ‌کردن مقدار فیلدها و تغییر نام و id
-        const inputs = newForm.querySelectorAll('input');
-        inputs.forEach(function (input, idx) {
-            let value;
-            if (input.name.endsWith('quantity')) {value = parseFloat(quantity)}
-            {#if (input.name.endsWith('price')) {value = 'قیمت وارد کنید'}#}
-            {#if (input.name.endsWith('itemref')) {value = itemref}#}
-            {#if (input.name.endsWith('item')) {value = item}#}
-            if (input.name.endsWith('order')) {value = order_id}
-
-            const name = input.name.replace(/\d+/, totalForms);
-            const id = 'id_' + name;
-            input.name = name;
-            input.id = id;
-            input.value = value || '';
-
-            // اضافه کردن event listener برای تغییر مقدار
-            {#input.addEventListener('keyup', calculate_price);#}
-        });
-
-        formsetContainer.appendChild(newForm);
-        totalFormsInput.value = totalForms + 1;
-
-        // ساخت دکمه حذف
-        const removeBtn = document.createElement('span');
-        removeBtn.classList.add('remove-row', 'col-1'); // کلاس‌های دلخواه بوت‌استرپ یا سفارشی
-
-        // قرار دادن آیکون داخل دکمه
-        removeBtn.innerHTML = `
-            <i class="ki-duotone ki-trash text-danger fs-2x cursor-pointer">
-                <span class="path1"></span>
-                <span class="path2"></span>
-                <span class="path3"></span>
-                <span class="path4"></span>
-                <span class="path5"></span>
-            </i>
-        `;
-
-        // افزودن event حذف
-        removeBtn.addEventListener('click', function() {
-            newForm.remove(); // حذف ردیف فرم از DOM
-
-            const formset = document.querySelector('#formset-container');
-            const rows = formset.querySelectorAll('.item-form')
-            totalForms = -1
-
-            rows.forEach(function (row, idx) {
-                totalForms += 1
-                {#const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');#}
-                row.querySelectorAll('input').forEach(function (input){
-                    let value;
-                    const name = input.name.replace(/\d+/, totalForms);
-                    const id = 'id_' + name;
-                    input.name = name;
-                    input.id = id;
-                })
+        document.querySelectorAll('.packing-existing-quantity').forEach(function (input) {
+            input.addEventListener('input', function () {
+                const maxQ = toNumber(this.max);
+                const current = toNumber(this.value);
+                if (maxQ > 0 && current > maxQ) this.value = maxQ;
+                if (current < 0) this.value = 0;
+                updateTotals();
             });
-
-            // در صورت نیاز تعداد فرم‌ها را هم کاهش بده:
-            const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
-            totalFormsInput.value = parseInt(totalForms) + 1;
-            sync_datatable()
-            gio_total_quantity_show()
         });
 
-        gio_total_quantity_show()
+        document.querySelectorAll('.existing-delete-row').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = this.closest('.packing-existing-row');
+                const deleteInput = row?.querySelector('.existing-delete-input');
+                if (!row || !deleteInput) return;
 
-        newForm.querySelector('.delete').appendChild(removeBtn);
-    }
+                deleteInput.value = '1';
+                row.classList.add('is-pending-delete');
+                updateTotals();
+                syncDatatable();
+            });
+        });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const formsetContainer = document.getElementById('formset-container');
-        const forms = formsetContainer.querySelectorAll('.item-form');
-        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        document.querySelectorAll('.existing-undo-delete').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const row = this.closest('.packing-existing-row');
+                const deleteInput = row?.querySelector('.existing-delete-input');
+                if (!row || !deleteInput) return;
 
-        // مخفی کردن تمام فرم‌های اولیه
-        forms.forEach(form => form.classList.add('d-none'));
+                deleteInput.value = '0';
+                row.classList.remove('is-pending-delete');
+                updateTotals();
+                syncDatatable();
+            });
+        });
+
+        syncEmptyState();
+        updateTotals();
     });
 
-    const submitGIO = document.querySelector("#submit-gio")
-    submitGIO && submitGIO.addEventListener('click', function (){
-        const container = document.getElementById('gio-form-inputs');
-        const inputs = container.querySelectorAll('input');
-        const gio_date = container.querySelector('#id_gio_date').value
-        const description = document.querySelector('#id_description').value
-        const rows_description = container.querySelectorAll('textarea');
-        const data = {};
-        inputs.forEach(input => {
-            let value = input.value.trim();
-            if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {
-                value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار
-            }
-            data[input.name] = value || '';
-        });
+    document.querySelectorAll('.packing-workflow-action').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const action = button.dataset.action;
+            const formData = new FormData();
+            formData.append('workflow_action', action);
 
-        data['gio_date'] = gio_date
-        data['description'] = description
-        const element = $('#ajax-response')
-        $.ajax({
-            type: 'POST',
-            url: '/order/quick_gio/',
-            dataType: 'json',
-            data: JSON.stringify(data),
-            headers: {
-                "X-CSRFToken": getCookie("csrftoken")
-            },
-            cache: false,
-            processData: false,
-            contentType: false,
-            {#beforeSend: block_main_container,#}
-            success: function (data, xhr) {
-                debugger
-                html = data['res'];
-                try {
-                    element.html(html);
-                } catch (e) {
-                    element.innerHTML = html
-                }
-                setTimeout(function (){
-                    var loc = window.location;
-                    window.location = loc.protocol + '//' + loc.host + data['res']['url']
-                }, 300)
-                {#run_scripts(html);#}
-            },
-            error: function (data) {
-                {#initJsonAccordion(data.responseJSON['res'])#}
-                document.querySelector('#submit-gio').classList.remove('d-none')
-                element.text(JSON.stringify(data.responseJSON['res']))
-                element.addClass('text-danger')
-            },
-            {#complete: release_main_container#}
-        }); // end ajax
-        {#custom_ajax_post_data(JSON.stringify(data), '/order/quick_gio/', $('#ajax-response'))#}
-        submitGIO.classList.add('d-none')
-    })
+            document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
+                if (input.type === 'file') return;
+                if (input.name) formData.append(input.name, input.value);
+            });
 
- {#const submitGIO = document.querySelector("#main-submit-btn")#}
- {#   function submitGIO (){#}
- {#       const container = document.getElementById('buy-form-inputs');#}
- {#       const inputs = container.querySelectorAll('input');#}
- {#       const quantity = container.querySelector('#id_quantity').value#}
- {#       const date = document.querySelector('#id_gio_date').value#}
- {#       const description = document.querySelector('#id_description').value#}
- {#       const itemform = document.querySelector('.item-form')#}
- {#       const data = {};#}
- {#       inputs.forEach(input => {#}
- {#           let value = input.value.trim();#}
- {#           if (input.type === 'number' || input.type === 'range' || input.type === 'hidden') {#}
- {#               value = value ? parseFloat(value) : 0; // اگر خالی بود، صفر بگذار#}
- {#           }#}
- {#           data[input.name] = value;#}
- {#       });#}
- {##}
- {#       $.ajax({#}
- {#               url: '/order/gio/view/',#}
- {#               method: 'POST',#}
- {#               headers: {'X-CSRFToken': csrftoken},#}
- {#               dataType: "json",#}
- {#               type: "POST",#}
- {#               async: false,#}
- {#               data: {pk: pk},#}
- {#               cache: true,#}
- {#               success: function (data) {#}
- {#                   data['quantity'] = quantity#}
- {#                   data['date'] = date#}
- {#                   data['description'] = description#}
- {#                   result = data;#}
- {#                   },#}
- {#               error: function (res){#}
- {#                   alert("خطا")#}
- {#               }#}
- {#               }); // end ajax#}
-        {#custom_ajax_post_data(JSON.stringify(data), '/order/gio/view/', $('#ajax-response'))#}
- {#       submitBuyFactor.classList.add('d-none')#}
- {#   }#}
+            document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
+                if (input.name) formData.append(input.name, input.value);
+            });
 
-    $('#gio_submit_form').on('submit', function (e){
-        e.preventDefault()
-        ajax_submit(this, true, true)
-    })
-
-    {#function calculate_price(){#}
-    {#    debugger#}
-    {#    console.log('calculate price')#}
-    {#    const submitBuyFactor = document.querySelector("#submit-buy-factor")#}
-    {#    const total_calculated_element = document.querySelector('#total-calculated')#}
-    {#    const discount_calculated_element = document.querySelector('#discount-calculated')#}
-    {#    const addition_calculated_element = document.querySelector('#addition-calculated')#}
-    {#    const tax_calculated_element = document.querySelector('#tax-calculated')#}
-    {#    const netprice_calculated_element = document.querySelector('#netprice-calculated')#}
-    {##}
-    {#    const formset_container = document.querySelector('#formset-container')#}
-    {#    const buy_factor_header = document.querySelector('#buy-factor-header')#}
-    {#    let item_form = [];#}
-    {#    if (formset_container){item_form = formset_container.querySelectorAll('.item-form')}#}
-    {#    let all_tax, all_discount = 0#}
-    {#    if (buy_factor_header){#}
-    {#        all_tax = buy_factor_header.querySelector('#id_tax').value#}
-    {#        all_discount = buy_factor_header.querySelector('#id_discount').value#}
-    {#    }#}
-    {#    let total_row_price = 0;#}
-    {#    let total_row_discount = 0;#}
-    {#    let total_row_addition = 0;#}
-    {#    let price_object = {#}
-    {#        "factor_header": {#}
-    {#            "all_tax": all_tax,#}
-    {#            "all_discount": all_discount#}
-    {#        }#}
-    {#    }#}
-    {##}
-    {#    let hasError = false; // برای تشخیص اینکه break اتفاق افتاده یا نه#}
-    {##}
-    {#    for (const row of item_form) {#}
-    {#        const row_quantity = parseFloat(row.querySelector('input[id$="-quantity"]')?.value) || 0;#}
-    {#        const row_unit_price = parseFloat(row.querySelector('input[id$="-price"]')?.value) || 0;#}
-    {#        const row_discount = parseFloat(row.querySelector('input[id$="-discount"]')?.value) || 0;#}
-    {#        const row_addition = parseFloat(row.querySelector('input[id$="-addition"]')?.value) || 0;#}
-    {#        const row_itemref = parseFloat(row.querySelector('input[id$="-itemref"]')?.value) || 0;#}
-    {##}
-    {#        const row_price = (row_quantity * row_unit_price);#}
-    {#        const row_price_after_discount = row_price - row_discount;#}
-    {##}
-    {#        // جمع کردن مقادیر کل فقط تا قبل از خطا#}
-    {#        total_row_price += row_price;#}
-    {#        total_row_discount += row_discount;#}
-    {#        total_row_addition += row_addition;#}
-    {##}
-    {#        if ((!row_quantity || !row_price) && row_itemref) {#}
-    {#            row.style.backgroundColor = '#ffbbbb'; // قرمز ملایم برای هشدار#}
-    {#            submitBuyFactor.classList.add('d-none');#}
-    {#            document.querySelector('#ajax-response').innerHTML = 'ردیف‌های مشخص‌شده را اصلاح کنید.';#}
-    {#            hasError = true;#}
-    {#            break; // خروج از حلقه#}
-    {#        } else {#}
-    {#            row.style.backgroundColor = ''; // اگر کامل بود، رنگ پیش‌فرض برگرده#}
-    {#        }#}
-    {#    }#}
-    {##}
-    {#    // فقط اگر break اتفاق نیفتاد (یعنی خطایی وجود نداشت)#}
-    {#    if (!hasError) {#}
-    {#        submitBuyFactor.classList.remove('d-none');#}
-    {#        document.querySelector('#ajax-response').innerHTML = '';#}
-    {#    }#}
-    {##}
-    {#    const _toNumber = v => parseFloat(v) || 0;#}
-    {##}
-    {#    all_tax = _toNumber(price_object.factor_header.all_tax);#}
-    {#    all_discount = _toNumber(price_object.factor_header.all_discount);#}
-    {#    const net_price = _toNumber(total_row_price) - _toNumber(total_row_discount) - _toNumber(all_discount) + _toNumber(all_tax) + _toNumber(total_row_addition);#}
-    {#    total_calculated_element.innerHTML = formatNumber(total_row_price) || '0'#}
-    {#    discount_calculated_element.innerHTML = formatNumber(total_row_discount + all_discount) || '0'#}
-    {#    addition_calculated_element.innerHTML = formatNumber(total_row_addition) || '0'#}
-    {#    tax_calculated_element.innerHTML = formatNumber(all_tax) || '0'#}
-    {#    netprice_calculated_element.innerHTML = formatNumber(net_price) || '0'#}
-    {##}
-    {#    document.querySelector('input[name="total_price"]').value = total_row_price#}
-    //}
-
-    function formatNumber(num) {
-        return num.toLocaleString('us-EN'); // یا 'fa-IR' برای فارسی
-    }
-</script>
-
-
-    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
-    <script src="{% static 'admin/js/django_jalali.min.js' %}"></script>
-    <script src="{% static 'libs/select2/dist/js/select2.full.min.js' %}"></script>
-
-    <script src="{% static 'js/local/jqury.dataTables.min.js' %}"></script>
-    <script src="{% static 'js/local/dataTables.buttons.2.4.1.min.js' %}"></script>
-    <script src="{% static 'js/local/jszip.min.js' %}"></script>
-    <script src="{% static 'js/local/pdfmake.min.js' %}"></script>
-    <script src="{% static 'js/local/vfs_fonts.js' %}"></script>
-    <script src="{% static 'js/local/buttons.html5.min.js' %}"></script>
-    {{ form.media }}
-
-    <script>
-    function check_gio_item_quantity_less_than_order(event){
-        const target = event.currentTarget
-        const quantity = target.value
-        const max_valid_quantity = document.querySelector('#max-valid-quantity')?.value
-        const quantity_warning = document.querySelector('#quantity-warning')
-        const submit_gio_item = document.querySelector('#submit-gio-item')
-        if (parseFloat(quantity) > parseFloat(max_valid_quantity)){
-            submit_gio_item.classList.add('disabled')
-            quantity_warning.classList.remove('d-none')
-        } else {
-            submit_gio_item.classList.remove('disabled')
-            quantity_warning.classList.add('d-none')
-        }
-
-    }
-
-    function check_gio_item_quantity_eq_to_qio(){
-        console.log('aaa')
-        const gio_quantity_input = document.querySelector('#id_quantity')
-        if (gio_quantity_input){
-            const gio_quantity = gio_quantity_input.value
-            if (gio_quantity) {
-                let total_quantity_in_gio_item = 0
-                document.querySelectorAll('#gio_item_quantity').forEach(function (item){
-                    total_quantity_in_gio_item += parseFloat(item.innerHTML.replace(',', ''))
-                })
-
-                console.log(parseFloat(total_quantity_in_gio_item))
-                const sibling = [...gio_quantity_input.parentNode.children].find(el => el !== gio_quantity_input && el.classList.contains("text-danger"));
-                const main_submit_btn = document.querySelector('#main-submit-btn')
-
-                if (parseFloat(gio_quantity) != parseFloat(total_quantity_in_gio_item)){
-                    let str = 'جمع تعداد ردیف های GIO باید برابر این فیلد باشد.'
-                    str += ` (${total_quantity_in_gio_item} != ${gio_quantity})`
-                    sibling.innerHTML = str
-
-                    main_submit_btn.classList.add('disabled')
-                    main_submit_btn.value = 'خطا های فرم را اصلاح کنید'
-                } else {
-                    sibling.innerHTML = ''
-                    main_submit_btn.classList.remove('disabled')
-                    main_submit_btn.value = 'ثبت'
-                }
-            }
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', check_gio_item_quantity_eq_to_qio)
-
-    const gio_item_container = document.querySelector('#gio_item_container')
-    const gio_item = document.querySelector('#gio_item')
-    gio_item && gio_item.addEventListener('click', function (e){
-        e.preventDefault()
-        const modal_lg_body = $('#id-empty-modal-body-lg')
-        $.ajax({
-            type: 'GET',
-            url: this.dataset.url,
-            dataType: 'json',
-            cache: false,
-            processData: false,
-            contentType: false,
-            beforeSend: block_main_container,
-            success: function (data) {
-                html = data['res'];
-                modal_lg_body.html(html);
-                initializeDatepickers();
-            },
-            error: function () {
-
-            },
-            complete: release_main_container
-        });
-    })
-
-    const EditGioItem = document.querySelectorAll('.edit-gio-item')
-    const DeleteGioItem = document.querySelectorAll('.delete-gio-item')
-    EditGioItem.forEach((element) => {
-        element.addEventListener('click', function (e){
-        e.preventDefault()
-        const modal_lg_body = $('#id-empty-modal-body-lg')
             $.ajax({
-            type: 'GET',
-            url: element.dataset.url,
-            dataType: 'json',
-            cache: false,
-            processData: false,
-            contentType: false,
-            beforeSend: block_main_container,
-            success: function (data) {
-                html = data['res'];
-                modal_lg_body.html(html);
-                initializeDatepickers();
-            },
-            error: function () {
+                url: submitUrl,
+                method: 'POST',
+                data: formData,
+                headers: {"X-CSRFToken": getCookie("csrftoken")},
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    window.location.href = response.res.url;
+                },
+                error: function (response) {
+                    const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
+                    $('#ajax-response')
+                        .removeClass('text-success')
+                        .addClass('text-danger')
+                        .text(message);
+                }
+            });
+        });
+    });
 
-            },
-            complete: release_main_container
-        }); //end ajax
-    })
-    })
-    DeleteGioItem.forEach((element) => {
-        element.addEventListener('click', function (e){
-            e.preventDefault()
-            const modal_sm_body = $('#id-empty-modal-body-sm')
-            custom_ajax_get('', this.dataset.url, modal_sm_body)
-        })
-    })
+    submitButton && submitButton.addEventListener('click', function () {
+        const rows = container.querySelectorAll('.packing-selected-row');
 
-    window.addEventListener('DOMContentLoaded', function (e){
-        const to_sepidar_wrapper = document.querySelector('#to-sepidar-wrapper')
-        const to_sepidar = document.querySelector('#to-sepidar')
-        const to_sepidar_err = document.querySelector('#to-sepidar-err')
-        const invalid_row = document.querySelectorAll('.invalid')
-
-        if (invalid_row.length > 0) {
-            to_sepidar && to_sepidar.classList.add('d-none')
-            to_sepidar_err && to_sepidar_err.classList.remove('d-none')
-        } else {
-            to_sepidar && to_sepidar.classList.remove('d-none')
-            to_sepidar_err && to_sepidar_err.classList.add('d-none')
+        if (!rows.length && !{{ packing_object|yesno:"true,false" }}) {
+            $('#ajax-response')
+                .removeClass('text-success')
+                .addClass('text-danger')
+                .text(tr('packing_select_one_error', 'Select at least one order for packing.'));
+            return;
         }
-    })
 
-    function trade_buy_factor_to_sepidar_preview(event){
-        const preview_element = $('#sepidar-preview')
-        custom_ajax_get(null, event.currentTarget.dataset.url, preview_element)
-    }
+        let valid = true;
 
-    function send_gio_to_sepidar(event){
-        const gio_id = document.querySelector('#gio_id')?.value
-        let gio_data = {
-            gio_id: gio_id
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('input[name$="-quantity"]');
+            const q = toNumber(quantityInput.value);
+            const maxQ = toNumber(quantityInput.max);
+
+            if (q <= 0 || q > maxQ) {
+                valid = false;
+                quantityInput.classList.add('border-danger', 'text-danger');
+            } else {
+                quantityInput.classList.remove('border-danger', 'text-danger');
+            }
+        });
+
+        if (!valid) {
+            $('#ajax-response')
+                .removeClass('text-success')
+                .addClass('text-danger')
+                .text(tr('packing_quantity_invalid_error', 'One row quantity is outside the available packing capacity.'));
+            return;
         }
-        const url = event.currentTarget.dataset.url
+
+        const formData = new FormData();
+
+        document.querySelectorAll('#packing-header input, #packing-header select, #packing-header textarea').forEach(input => {
+            if (input.type === 'file') {
+                Array.from(input.files || []).forEach(file => formData.append(input.name, file));
+            } else {
+                formData.append(input.name, input.value);
+            }
+        });
+
+        document.querySelectorAll('#existing-packing-items input, #existing-packing-items textarea, #existing-packing-items select').forEach(input => {
+            if (input.name) formData.append(input.name, input.value);
+        });
+
+        container.querySelectorAll('input, textarea, select').forEach(input => {
+            formData.append(input.name, input.value);
+        });
+
+        formData.append('form-TOTAL_FORMS', totalFormsInput.value);
+
+        submitButton.disabled = true;
+        submitButton.textContent = tr('packing_submitting', 'Saving...');
+
+        $('#ajax-response')
+            .removeClass('text-danger text-success')
+            .text('');
 
         $.ajax({
-            type: 'POST',
-            url: url,
-            dataType: 'json',
-            data: JSON.stringify(gio_data),
-            headers: {
-                "X-CSRFToken": getCookie("csrftoken")
-            },
-            cache: false,
+            url: submitUrl,
+            method: 'POST',
+            data: formData,
+            headers: {"X-CSRFToken": getCookie("csrftoken")},
             processData: false,
             contentType: false,
-            beforeSend: block_main_container,
-            success: function (data) {
-                const res = data['res'];
-                window.location.reload()
+
+            success: function (response) {
+                $('#ajax-response')
+                    .removeClass('text-danger')
+                    .addClass('text-success')
+                    .text(tr('packing_success', 'Packing saved successfully.'));
+
+                window.location.href = response.res.url;
             },
-            error: function (e) {
-                alert(JSON.stringify(e.responseJSON))
-            },
-            complete: release_main_container
-        }); // end ajax
-    }
 
-    const createSku = document.getElementById('id_create_sku')
-    createSku && createSku.addEventListener('click', function (){
-        debugger
-        const part_number = document.getElementById('id_part_number').value || document.getElementById('id_part_number').textContent
-        const targeturl = `/extra_data/item/create/?part_number=${part_number}`
-        window.open(targeturl, '_blank');
+            error: function (response) {
+                submitButton.disabled = false;
+                submitButton.textContent = tr('packing_submit', 'Save Packing');
 
-    })
+                const message = response.responseJSON?.res?.ERROR || tr('packing_save_error', 'Error saving packing.');
 
-    function expandRight(){
-        const right_section = document.querySelector('#section-1')
-        const left_section = document.querySelector('#section-2')
-        debugger
-        if (right_section && left_section){
-            const current_right_size = parseInt(right_section.style.width)
-            const current_left_size = parseInt(left_section.style.width)
-            if (current_right_size > 15){
-                left_section.style.width = `${current_left_size + 5}%`
-                right_section.style.width = `${current_right_size - 5}%`
+                $('#ajax-response')
+                    .removeClass('text-success')
+                    .addClass('text-danger')
+                    .text(message);
             }
-        }
-    }
-    function expandLeft(){
-        const right_section = document.querySelector('#section-1')
-        const left_section = document.querySelector('#section-2')
-        debugger
-        if (right_section && left_section){
-            const current_right_size = parseInt(right_section.style.width)
-            const current_left_size = parseInt(left_section.style.width)
-            if (current_left_size > 15){
-                left_section.style.width = `${current_left_size - 5}%`
-                right_section.style.width = `${current_right_size + 5}%`
-            }
-        }
-    }
-
-    function gio_total_quantity_show(){
-        let total_quantity = 0
-        const exist_gio_item_quantity = document.querySelectorAll('#gio_item_quantity')
-        const new_gio_item_quantity = document.querySelectorAll('input[name$="quantity"]')
-        const gio_total_quantity_show_element = document.querySelector('#qio-total-quantity')
-        exist_gio_item_quantity.forEach(function (item){
-            total_quantity += parseFloat(item.dataset.quantity)
-        })
-
-        new_gio_item_quantity.forEach(function (item){
-            total_quantity += parseFloat(item.value)
-        })
-        gio_total_quantity_show_element.innerHTML = formatNumber(total_quantity)
-    }
-
-    </script>
-
+        });
+    });
+})();
+</script>
 {% endblock extra_js %}

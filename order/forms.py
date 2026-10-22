@@ -212,6 +212,183 @@ class BazarOrderForm(CustomBaseModelForm):
         self.fields['description'].widget.attrs['rows'] = 1
 
 
+class PackingSafeForm(FormMX, CustomBaseModelForm):
+    """
+    Security-first Packing form.
+
+    Editable fields are whitelisted from the current workflow state instead of
+    merely being disabled in the browser. This follows the same defensive
+    pattern as OrderSafeForm: fields outside the user's current workflow access
+    are removed from the bound form and therefore cannot be changed by a
+    crafted POST.
+    """
+    file_groups = 9
+    file_groups_2 = 9
+    file_labels = {
+        1: "invoice",
+        2: "packing",
+        3: "inspection_certificate",
+        4: "certificate_of_origin",
+        5: "packing_detail",
+        6: "customs_packing",
+        7: "order_registration",
+        8: "proforma",
+        9: "insurance_policy",
+    }
+
+    field_layout = [
+        "packing_number", "currency", "shipment_type", "bl_number",
+        "departure_date", "arrival_date",
+        "sales_manager_needed", "sales_manager_check_date",
+        "delivery_to_salehi_date",
+        "cl_90_date", "cl_10_date", "cl_100_date",
+        "arrive_to_wh_date",
+        "estimated_delivery_date", "estimated_arrive_to_wh_date",
+        "reserve_bar_date",
+        "sum_qty", "sum_arrived_qty",
+        "description", "wh_destination", "sales_10_darsad",
+    ]
+
+    class Meta:
+        model = Packing
+        fields = "__all__"
+
+    def __init__(self, *args, allowed_fields=None, allowed_hidden=None, only_show=None, **kwargs):
+        constraint = {}
+        initial = kwargs.get("initial") or {}
+        if isinstance(initial, dict):
+            constraint = initial.get("constraint") or {}
+
+        # FormMX._add_file_fields() reads these attributes, so initialize them
+        # before adding the dynamic file fields.
+        self.only_show = list(only_show or [])
+        self.allowed_fields = list(allowed_fields or [])
+        self.allowed_hidden = list(allowed_hidden or [])
+
+        super().__init__(*args, **kwargs)
+
+        self._add_file_fields()
+
+        for name in (
+            "departure_date", "arrival_date", "sales_manager_check_date",
+            "delivery_to_salehi_date", "cl_90_date", "cl_10_date", "cl_100_date",
+            "arrive_to_wh_date", "estimated_delivery_date",
+            "estimated_arrive_to_wh_date", "reserve_bar_date",
+        ):
+            if name in self.fields:
+                self.fields[name].widget = forms.DateInput(
+                    attrs={"type": "date", "class": "form-control"}
+                )
+
+        if "description" in self.fields:
+            self.fields["description"].widget.attrs["rows"] = 1
+        if "sales_10_darsad" in self.fields:
+            self.fields["sales_10_darsad"].widget.attrs["rows"] = 2
+
+        if allowed_fields is None and allowed_hidden is None and only_show is None:
+            request = constraint.get("request")
+            form_state = constraint.get("form_state")
+            wf_access = bool(constraint.get("wf_access"))
+
+            if request:
+                if self.instance and self.instance.pk:
+                    form_state = self.instance.workflow_state_index()
+                    wf_access = self.instance.user_has_workflow_access(request.user)
+                else:
+                    wf_access = Packing.user_can_create_workflow(request.user)
+
+            form_constraint = constraint.get("form_constraint") or []
+
+            state_constraint = {}
+            if form_state is not None and form_state < len(form_constraint):
+                state_constraint = form_constraint[form_state] or {}
+                if isinstance(state_constraint, list):
+                    state_constraint = state_constraint[0] if state_constraint else {}
+
+            hidden = list(state_constraint.get("hide") or [])
+            read = list(state_constraint.get("read") or [])
+
+            available_names = [
+                name for name in self.field_layout
+                if name in self.fields
+            ] + [
+                f"file_{idx}" for idx in range(1, self.file_groups_2 + 1)
+                if f"file_{idx}" in self.fields
+            ]
+
+            if not wf_access or "__all__" in read:
+                allowed_fields = []
+                only_show = [
+                    name for name in available_names
+                    if name not in hidden
+                ]
+            else:
+                read_set = set(read)
+                hidden_set = set(hidden)
+                allowed_fields = [
+                    name for name in available_names
+                    if name not in read_set and name not in hidden_set
+                ]
+                only_show = [
+                    name for name in available_names
+                    if name in read_set and name not in hidden_set
+                ]
+
+            allowed_hidden = [
+                name for name in hidden
+                if name in self.fields
+            ]
+
+        self.only_show = list(only_show or [])
+        self.allowed_fields = list(allowed_fields or [])
+        self.allowed_hidden = list(allowed_hidden or [])
+
+        keep = set(self.allowed_fields) | set(self.allowed_hidden)
+        for name in list(self.fields):
+            if name not in keep:
+                self.fields.pop(name)
+
+        for field_name in self.allowed_hidden:
+            if field_name in self.fields:
+                self.fields[field_name].widget = self.fields[field_name].hidden_widget()
+
+        # only_show values are display-only and must never be accepted from POST.
+        for name in self.only_show:
+            self.fields.pop(name, None)
+
+    def iter_packing_file_groups(self):
+        """
+        Return Packing file slots in their business group order.
+
+        Existing files are returned for both editable and read-only slots so
+        the UI can always render a saved file under the exact upload category
+        it belongs to.
+        """
+        groups = []
+        hidden = set(self.allowed_hidden or [])
+
+        for idx in range(1, self.file_groups_2 + 1):
+            name = f"file_{idx}"
+            if name in hidden:
+                continue
+
+            is_editable = name in self.fields
+            is_read_only = name in self.only_show
+            if not is_editable and not is_read_only:
+                continue
+
+            groups.append({
+                "index": idx,
+                "name": name,
+                "label_key": f"packing_file_{idx}",
+                "field": self[name] if is_editable else None,
+                "files": self._group_files(name),
+                "editable": is_editable,
+            })
+
+        return groups
+
+
 class PackingForm(CustomBaseModelForm):
     file_groups = 9
     file_label = {
@@ -297,14 +474,46 @@ class PackingItemForm(CustomBaseModelForm):
         exclude = ['group']
 
     def __init__(self, *args, **kwargs):
-        request = kwargs['initial'].pop('request', None) if kwargs.get('initial') else None
+        initial = kwargs.get('initial') or {}
+        request = initial.pop('request', None)
+        workflow_constraint = initial.pop('workflow_constraint', None) or {}
+
         super(PackingItemForm, self).__init__(*args, **kwargs)
+
         self.make_hidden(['order'])
         self.fields['description'].widget.attrs['rows'] = 1
-        # if self.instance.pk and (packing := self.initial.get('packing')):
+
         packing = self.initial.get('packing')
+        packing_obj = None
         if packing:
-            self.fields['packing'].queryset = self.fields['packing'].queryset.filter(id=getattr(packing, 'pk', packing))
+            packing_obj = packing if isinstance(packing, Packing) else Packing.objects.filter(pk=packing).first()
+            self.fields['packing'].queryset = self.fields['packing'].queryset.filter(
+                id=getattr(packing, 'pk', packing)
+            )
+
+        # Parent workflow is the security boundary for PackingItem edits.
+        if request and packing_obj and not packing_obj.user_has_workflow_access(request.user):
+            self.make_disable(['__all__'])
+            self.enable = False
+
+        state_index = workflow_constraint.get('form_state')
+        formset_constraint = workflow_constraint.get('formset_constraint') or []
+        if state_index is None and packing_obj:
+            state_index = packing_obj.workflow_state_index()
+
+        state_constraint = {}
+        if state_index is not None and state_index < len(formset_constraint):
+            state_constraint = formset_constraint[state_index] or {}
+            if isinstance(state_constraint, list):
+                state_constraint = state_constraint[0] if state_constraint else {}
+
+        workflow_hidden = list(state_constraint.get('hide') or [])
+        workflow_read = list(state_constraint.get('read') or [])
+
+        if workflow_hidden:
+            self.make_hidden(workflow_hidden)
+        if workflow_read:
+            self.make_disable(workflow_read)
 
         if request and request.user.base_group == 'wh':
             # self.make_disable(['order'])
