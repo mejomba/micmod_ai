@@ -1129,12 +1129,12 @@ class Customer(AbsBaseModel):
             sum(rc.[amount]) as sum_check,
             rc.[DlRef] as dl_ref
             from RPA.ReceiptCheque rc 
-            left join RPA.ReceiptHeader as rh on rc.ReceiptHeaderRef=rh.ReceiptHeaderId where rc.State=1 and rc.[description] like '%%ضم%%' and FiscalYearRef={settings.SEPIDAR_CONST_DATA.get("fiscalyearref")} and rc.DlRef={self.sepidar_dl_id}
+            left join RPA.ReceiptHeader as rh on rc.ReceiptHeaderRef=rh.ReceiptHeaderId where rc.State=1 and rc.[description] like N'%%ضم%%' and FiscalYearRef={settings.SEPIDAR_CONST_DATA.get("fiscalyearref")} and rc.DlRef={self.sepidar_dl_id}
             group by rc.DlRef, [ReceiptChequeId]'''
 
         try:
             credit = Customer.objects.raw(qry, using='sepidar')
-            credit = float(credit[0].sum_check)
+            credit = float(sum([item.sum_check for item in credit]))
         except Exception as e:
             credit = 'در دسترس نیست'
 
