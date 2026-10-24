@@ -66,6 +66,18 @@ def _normalize_result(raw, source):
     return row
 
 
+def normalize_persian_sql(column):
+    return f"""
+        REPLACE(
+            REPLACE(
+                CONVERT(NVARCHAR(MAX), {column})
+                    COLLATE Latin1_General_100_BIN2,
+                N'ي', N'ی'
+            ),
+            N'ك', N'ک'
+        )
+    """
+
 def _sepidar_history(filters):
     conditions = []
     params = []
@@ -109,67 +121,126 @@ def _sepidar_history(filters):
     where_sql = '\n'.join(conditions)
     query = f"""
     SELECT TOP ({MAX_ROWS_PER_SOURCE})
-        docs.Date, docs.Number, docs.coef, docs.doc_type,
-        docs.Fee, docs.itemId, docs.NetPrice,
-        docs.NetPriceInBaseCurrency, docs.Price,
-        docs.PriceInBaseCurrency, docs.Quantity, docs.Rate,
+        docs.Date,
+        docs.Number,
+        docs.coef,
+        docs.doc_type,
+        docs.Fee,
+        docs.itemId,
+        docs.NetPrice,
+        docs.NetPriceInBaseCurrency,
+        docs.Price,
+        docs.PriceInBaseCurrency,
+        docs.Quantity,
+        docs.Rate,
+
         st.Number AS sales_type_code,
-        CONVERT(nvarchar(20), st.Title) AS sales_type,
+        {normalize_persian_sql('st.Title')} AS sales_type,
+
         p.CreationDate AS customer_creation_date,
-        dl.Title AS customer_title, dl.Code AS customer_code, dl.DLId,
-        g1.Code AS sales_user_code, g1.Title AS sales_user_group,
-        Item.Code AS item_code, Item.Title AS item_title,
-        g_p.Title AS purchase_group, g_s.Title AS sales_group,
-        fy.Title AS year_title, curr.Title AS currency,
+
+        {normalize_persian_sql('dl.Title')} AS customer_title,
+        {normalize_persian_sql('dl.Code')} AS customer_code,
+
+        dl.DLId,
+
+        {normalize_persian_sql('g1.Code')} AS sales_user_code,
+        {normalize_persian_sql('g1.Title')} AS sales_user_group,
+
+        {normalize_persian_sql('Item.Code')} AS item_code,
+        {normalize_persian_sql('Item.Title')} AS item_title,
+
+        {normalize_persian_sql('g_p.Title')} AS purchase_group,
+        {normalize_persian_sql('g_s.Title')} AS sales_group,
+
+        {normalize_persian_sql('fy.Title')} AS year_title,
+        {normalize_persian_sql('curr.Title')} AS currency,
+
         (docs.Fee * docs.Quantity - docs.Discount)
-           / NULLIF(docs.Quantity, 0) AS fee_after_discount
+            / NULLIF(docs.Quantity, 0) AS fee_after_discount
+
     FROM (
-        SELECT I.Date, I.Number, I.FiscalYearRef,
-               I.CustomerPartyRef, I.SaleTypeRef, I.CurrencyRef, I.Rate,
-               II.Discount, II.ItemRef, II.Quantity, II.Fee,
-               II.NetPrice, II.NetPriceInBaseCurrency,
-               II.Price, II.PriceInBaseCurrency,
-               II.InvoiceItemID AS itemId,
-               1 AS coef, 'invoice' AS doc_type
+        SELECT
+            I.Date, I.Number, I.FiscalYearRef,
+            I.CustomerPartyRef, I.SaleTypeRef,
+            I.CurrencyRef, I.Rate,
+            II.Discount, II.ItemRef,
+            II.Quantity, II.Fee,
+            II.NetPrice, II.NetPriceInBaseCurrency,
+            II.Price, II.PriceInBaseCurrency,
+            II.InvoiceItemID AS itemId,
+            1 AS coef,
+            'invoice' AS doc_type
         FROM [SLS].[Invoice] I
-        JOIN [SLS].[InvoiceItem] II ON II.InvoiceRef = I.InvoiceId
+        JOIN [SLS].[InvoiceItem] II
+            ON II.InvoiceRef = I.InvoiceId
 
         UNION ALL
 
-        SELECT I.Date, I.Number, I.FiscalYearRef,
-               I.CustomerPartyRef, I.SaleTypeRef, I.CurrencyRef, I.Rate,
-               II.Discount, II.ItemRef, II.Quantity, II.Fee,
-               II.NetPrice, II.NetPriceInBaseCurrency,
-               II.Price, II.PriceInBaseCurrency,
-               II.QuotationItemID AS itemId,
-               0 AS coef, 'quotation' AS doc_type
+        SELECT
+            I.Date, I.Number, I.FiscalYearRef,
+            I.CustomerPartyRef, I.SaleTypeRef,
+            I.CurrencyRef, I.Rate,
+            II.Discount, II.ItemRef,
+            II.Quantity, II.Fee,
+            II.NetPrice, II.NetPriceInBaseCurrency,
+            II.Price, II.PriceInBaseCurrency,
+            II.QuotationItemID AS itemId,
+            0 AS coef,
+            'quotation' AS doc_type
         FROM [SLS].[Quotation] I
-        JOIN [SLS].[QuotationItem] II ON II.QuotationRef = I.QuotationId
+        JOIN [SLS].[QuotationItem] II
+            ON II.QuotationRef = I.QuotationId
 
         UNION ALL
 
-        SELECT I.Date, I.Number, I.FiscalYearRef,
-               I.CustomerPartyRef, I.SaleTypeRef, I.CurrencyRef, I.Rate,
-               II.Discount, II.ItemRef, II.Quantity, II.Fee,
-               -II.NetPrice, -II.NetPriceInBaseCurrency,
-               -II.Price, -II.PriceInBaseCurrency,
-               II.ReturnedInvoiceItemID AS itemId,
-               -1 AS coef, 'returned_invoice' AS doc_type
+        SELECT
+            I.Date, I.Number, I.FiscalYearRef,
+            I.CustomerPartyRef, I.SaleTypeRef,
+            I.CurrencyRef, I.Rate,
+            II.Discount, II.ItemRef,
+            II.Quantity, II.Fee,
+            -II.NetPrice, -II.NetPriceInBaseCurrency,
+            -II.Price, -II.PriceInBaseCurrency,
+            II.ReturnedInvoiceItemID AS itemId,
+            -1 AS coef,
+            'returned_invoice' AS doc_type
         FROM [SLS].[ReturnedInvoice] I
         JOIN [SLS].[ReturnedInvoiceItem] II
-             ON II.ReturnedInvoiceRef = I.ReturnedInvoiceId
+            ON II.ReturnedInvoiceRef = I.ReturnedInvoiceId
+
     ) docs
-    JOIN [SLS].[SaleType] st ON st.SaleTypeId = docs.SaleTypeRef
-    JOIN [INV].[Item] Item ON Item.ItemID = docs.ItemRef
-    LEFT JOIN [GNR].[Grouping] g_p ON g_p.GroupingID = Item.PurchaseGroupRef
-    LEFT JOIN [GNR].[Grouping] g_s ON g_s.GroupingID = Item.SaleGroupRef
-    JOIN [GNR].[Party] p ON p.PartyId = docs.CustomerPartyRef
-    JOIN [ACC].[DL] dl ON dl.DLId = p.DLRef
-    LEFT JOIN [GNR].[Grouping] g1 ON g1.GroupingID = p.CustomerGroupingRef
-    JOIN [FMK].[FiscalYear] fy ON fy.FiscalYearId = docs.FiscalYearRef
-    JOIN [GNR].[Currency] curr ON curr.CurrencyID = docs.CurrencyRef
+
+    JOIN [SLS].[SaleType] st
+        ON st.SaleTypeId = docs.SaleTypeRef
+
+    JOIN [INV].[Item] Item
+        ON Item.ItemID = docs.ItemRef
+
+    LEFT JOIN [GNR].[Grouping] g_p
+        ON g_p.GroupingID = Item.PurchaseGroupRef
+
+    LEFT JOIN [GNR].[Grouping] g_s
+        ON g_s.GroupingID = Item.SaleGroupRef
+
+    JOIN [GNR].[Party] p
+        ON p.PartyId = docs.CustomerPartyRef
+
+    JOIN [ACC].[DL] dl
+        ON dl.DLId = p.DLRef
+
+    LEFT JOIN [GNR].[Grouping] g1
+        ON g1.GroupingID = p.CustomerGroupingRef
+
+    JOIN [FMK].[FiscalYear] fy
+        ON fy.FiscalYearId = docs.FiscalYearRef
+
+    JOIN [GNR].[Currency] curr
+        ON curr.CurrencyID = docs.CurrencyRef
+
     WHERE 1 = 1
     {where_sql}
+
     ORDER BY docs.Date DESC, docs.itemId DESC
     """
     return [_normalize_result(rec, 'sepidar') for rec in _rows('sepidar', query, params)]
