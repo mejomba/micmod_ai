@@ -84,16 +84,58 @@
     <div class="mb-2">
         {% include 'workflow/flow.html' with wfform=workflow_form flow=flow %}
     </div>
+    {% if is_copy %}
+        <div class="alert alert-info d-flex align-items-center gap-2 mb-5">
+            <i class="ti ti-copy fs-2"></i>
+
+            <div>
+                سند جدید بر اساس دستور پرداخت
+                <strong>#{{ copy_source.pk }}</strong>
+                ایجاد می‌شود.
+                پس از ذخیره، این سند دارای workflow مستقل خواهد بود.
+            </div>
+        </div>
+    {% endif %}
 <div class="container mt-10 persian-number mb-20 pb-20">
-<div class="d-flex gap-8 w-30">
-    <a href="#" onclick="printDiv('DivToPrint')" class="button print btn btn-primary btn-bordered mb-10">پرینت</a>
-    {% render_field_by_order form form.assigned_accounting_user label='on-border' %}
+<div class="d-flex gap-3 align-items-start mb-10">
+
+    <a
+        href="#"
+        onclick="printDiv('DivToPrint')"
+        class="button print btn btn-primary btn-bordered"
+    >
+        <i class="ti ti-printer me-1"></i>
+        پرینت
+    </a>
+
+    {% if object %}
+        <a
+            href="{% url 'payment:local.payment' %}?copy_from={{ object.pk }}"
+            target="_blank"
+            class="btn btn-light-info"
+        >
+            <i class="ti ti-copy me-1"></i>
+            کپی دستور پرداخت
+        </a>
+    {% endif %}
+
+    <div>
+        {% render_field_by_order form form.assigned_accounting_user label='on-border' %}
+    </div>
+
 </div>
 {% if form.errors %}
   <span class="text-danger">خطا: اطلاعات وارد شده را بررسی کنید</span>
 {% endif %}
 
     <div class="DivToPrint A5" id="DivToPrint">
+    {% if form.pay_to %}
+        <input
+            type="hidden"
+            name="{{ form.pay_to.html_name }}"
+            value="{{ form.pay_to.value|default_if_none:'' }}"
+        >
+    {% endif %}
         <div class="row row-cols-3">
         <div class="col">
             <img src="{% static 'media/svg/brand-logos/mocromodern_dark.svg' %}" alt="" class="text-danger">
