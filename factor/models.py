@@ -47,7 +47,7 @@ class Factor(SLSDoc):
     shop_buy_factor_id = models.IntegerField(null=True, blank=True)
     shop_document_id = models.IntegerField(null=True, blank=True)
     shop_payment_approved = models.BooleanField(default=False, verbose_name=_('shop_payment_approved'))
-    is_reserve = models.BooleanField(default=False, verbose_name=_(''))
+    is_reserve = models.BooleanField(default=False, verbose_name=_('is_reserve'))
     customer_party_id = models.ForeignKey(Customer, verbose_name=_('party_id'), null=True, blank=True,
                                           to_field='sepidar_party_id', on_delete=models.DO_NOTHING,
                                           db_column='customer_party_id')
