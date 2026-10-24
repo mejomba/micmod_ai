@@ -2,217 +2,1253 @@
 {% load static %}
 {% load jalali_tags %}
 {% load humanize %}
+{% load l10n %}
 
-{% block title %}تاریخچه فروش{% endblock title %}
+{% block title %}مرور فروش یکپارچه سیپدار و پرتال{% endblock title %}
+
 {% block extra_css %}
-    <!-- Responsive Table css -->
-    <link href="{% static 'libs/admin-resources/rwd-table/rwd-table.min.css' %}" rel="stylesheet" type="text/css"/>
-    <!-- DataTables -->
-    <link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet"
-          type="text/css"/>
+<link href="{% static 'libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet">
+<style>
+/* همه استایل‌ها فقط داخل گزارش مرور فروش اعمال می‌شوند. */
+.sh-report { --sh-ink:#15243b; --sh-muted:#64748b; --sh-line:#e6ebf2; --sh-blue:#2463eb;
+  --sh-surface:#fff; --sh-soft:#f5f8fc; --sh-green:#087e67; --sh-radius:16px;
+  direction:rtl; color:var(--sh-ink); font-family:inherit; }
+.sh-report * {box-sizing:border-box}
+.sh-report .sh-top {display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:4px 0 22px}
+.sh-report .sh-overline {font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--sh-blue);margin:0 0 7px}
+.sh-report .sh-title {font-size:26px;font-weight:850;line-height:1.5;letter-spacing:-.6px;margin:0}
+.sh-report .sh-subtitle {color:var(--sh-muted);font-size:13px;margin:5px 0 0}
+.sh-report .sh-live-label {display:inline-flex;align-items:center;gap:8px;color:#2463eb;background:#eaf1ff;border:1px solid #dbe7ff;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700}
+.sh-report .sh-live-label::before {content:"";width:8px;height:8px;border-radius:50%;background:#3b82f6;box-shadow:0 0 0 3px #bfdbfe}
+.sh-report .sh-panel {border:1px solid var(--sh-line);background:var(--sh-surface);border-radius:var(--sh-radius);box-shadow:0 10px 32px rgba(31,51,85,.045);margin-bottom:20px;overflow:hidden}
+.sh-report .sh-panel-heading {padding:19px 23px 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.sh-report .sh-panel-heading h2 {margin:0;font-size:15px;font-weight:800}
+.sh-report .sh-panel-heading p {margin:4px 0 0;color:var(--sh-muted);font-size:12px}
+.sh-report .sh-filter-form {display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:15px;padding:20px 23px 22px}
+.sh-report .sh-doc-type {grid-column:span 2}
+.sh-report .sh-field {display:flex;flex-direction:column;gap:7px;min-width:0}
+.sh-report .sh-field label {font-weight:700;font-size:12px;color:#42536d;margin:0}
+.sh-report .sh-input,.sh-report .sh-select {border:1px solid #dbe3ee;border-radius:10px;height:42px;background:#fff;box-shadow:none;color:#1f2c43;padding:0 12px;outline:0;width:100%;font-size:13px}
+.sh-report .sh-input:focus,.sh-report .sh-select:focus {border-color:#5e8cff;box-shadow:0 0 0 3px #e7efff}
+.sh-report .sh-document-select {display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-height:42px}
+.sh-report .sh-radio {position:relative;cursor:pointer;margin:0}
+.sh-report .sh-radio input {position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer}
+.sh-report .sh-radio span {display:inline-flex;align-items:center;justify-content:center;border:1px solid #dbe3ee;border-radius:9px;padding:10px 14px;min-height:41px;font-size:12px;color:#53657e;font-weight:700;background:#fff;transition:.15s}
+.sh-report .sh-radio input:checked+span {background:#ebf2ff;border-color:#8db0ff;color:#1d4ed8}
+.sh-report .sh-radio input:focus-visible+span {outline:3px solid #b3cfff;outline-offset:2px}
+.sh-report .sh-action-cell {display:flex;align-items:end;gap:9px;flex-wrap:wrap}
+.sh-report .sh-button {display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:10px;padding:10px 17px;min-height:42px;border:1px solid #dbe3ee;background:#fff;color:#3b506d;text-decoration:none;font-size:12px;font-weight:750;cursor:pointer;transition:.15s}
+.sh-report .sh-button:hover {background:#eef3fb;color:#1c3e73;text-decoration:none}
+.sh-report .sh-button-primary {background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 5px 12px rgba(37,99,235,.16)}
+.sh-report .sh-button-primary:hover {color:#fff;background:#1d4ed8}
+.sh-report .sh-currency-strip {border:1px solid var(--sh-line);border-radius:13px;background:#f9fbff;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px;margin-bottom:18px}
+.sh-report .sh-currency-title {font-size:12px;font-weight:800;color:#526580;margin-left:5px}
+.sh-report .sh-currency-chip {display:inline-flex;gap:10px;align-items:center;border:1px solid #dce8f6;background:#fff;border-radius:9px;padding:8px 11px;font-size:12px}
+.sh-report .sh-currency-chip strong {direction:ltr;font-size:14px;font-weight:850;color:#193a6e}
+.sh-report .sh-currency-chip span {color:#65748c;font-weight:600}
+.sh-report .sh-help {margin:0 0 17px;color:#7c611a;background:#fffaed;border:1px solid #f8e8bd;padding:11px 15px;border-radius:11px;font-size:12px;line-height:1.8}
+.sh-report .sh-table-panel-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 22px 16px}
+.sh-report .sh-table-panel-heading h2 {font-size:17px;font-weight:850;margin:0}
+.sh-report .sh-table-panel-heading p {margin:5px 0 0;color:var(--sh-muted);font-size:12px}
+.sh-report .sh-table-tools {background:#f8faff;border-top:1px solid #ecf0f6;border-bottom:1px solid #ecf0f6;padding:14px 22px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.sh-report .sh-table-tools .sh-field {max-width:190px}
+.sh-report .sh-table-tools .sh-input {height:38px;min-width:160px}
+.sh-report .sh-table-tools .sh-button {height:38px;min-height:38px;padding:8px 12px}
+.sh-report .sh-date-note {font-size:11px;color:#718198;margin-right:auto;align-self:center}
+.sh-report .sh-date-message {color:#a53e28;font-size:12px;min-height:0;padding:0 22px}
+.sh-report .sh-date-message:not(:empty) {padding:10px 22px;background:#fff5ef}
+.sh-report .sh-dt-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 21px}
+.sh-report .sh-dt-header-left,.sh-report .sh-dt-header-middle,.sh-report .sh-dt-header-right {display:flex;align-items:center;gap:7px;min-width:0}
+.sh-report .dataTables_length label,.sh-report .dataTables_filter label {display:flex;align-items:center;gap:9px;font-size:12px;color:#61748e;margin:0;white-space:nowrap}
+.sh-report .dataTables_length select {border:1px solid #dce3ee;border-radius:8px;padding:5px 12px;min-width:75px;margin:0}
+.sh-report .dataTables_filter input {border:1px solid #dce3ee !important;border-radius:9px;padding:9px 13px;margin:0 !important;min-width:250px;max-width:100%;font-size:13px;outline:0}
+.sh-report .dataTables_filter input:focus {border-color:#5e8cff!important;box-shadow:0 0 0 3px #e7efff!important}
+.sh-report .dt-buttons {display:flex;flex-wrap:wrap;gap:5px}
+.sh-report .dt-buttons .btn {margin:0!important;font-size:12px!important;font-weight:700;border:1px solid #dce3ee!important;background:#fff!important;color:#375276!important;border-radius:8px!important;padding:8px 11px!important;box-shadow:none!important}
+.sh-report .dt-buttons .btn:hover {background:#edf3ff!important;border-color:#bad1ff!important}
+.sh-report .sh-table-scroll {width:100%;overflow-x:auto;overflow-y:visible;border-top:1px solid #e9eef5}
+.sh-report table.sh-table {min-width:2070px;width:100%!important;margin:0!important;border-collapse:separate!important;border-spacing:0;table-layout:auto;font-size:12px}
+.sh-report .sh-table thead tr.sh-label-head th {background:#edf3fa;border-bottom:1px solid #dbe5f1!important;border-top:0!important;border-left:1px solid #e3ebf3;color:#304766;padding:13px 11px!important;font-weight:850;white-space:nowrap;position:relative;text-align:right}
+.sh-report .sh-table thead tr.sh-search-head th {background:#f7faff;border-bottom:2px solid #cedff6!important;border-left:1px solid #e9eff6;padding:8px!important;vertical-align:middle}
+.sh-report .sh-col-search {width:100%;min-width:83px;height:32px;border:1px solid #dce6f2;background:#fff;border-radius:7px;padding:4px 9px;color:#273f5e;font-size:11px;outline:0}
+.sh-report .sh-col-search:focus {border-color:#729dff;box-shadow:0 0 0 2px #e2ebff}
+.sh-report .sh-table tbody td {padding:11px 11px!important;white-space:nowrap;border-bottom:1px solid #eef1f6;border-left:1px solid #f0f3f8;color:#2b3e59;vertical-align:middle;background:#fff}
+.sh-report .sh-table tbody tr:nth-child(even) td {background:#fafcff}
+.sh-report .sh-table tbody tr:hover td {background:#eff5ff!important}
+.sh-report .sh-table .sh-number {direction:ltr;text-align:left;font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+.sh-report .sh-table .sh-amount {font-weight:750;color:#183b6d}
+.sh-report .sh-table .sh-price {color:#06765f;font-weight:850}
+.sh-report .sh-pill {display:inline-block;font-size:11px;font-weight:800;padding:5px 9px;border-radius:7px;white-space:nowrap}
+.sh-report .sh-pill--portal {color:#086a55;background:#dff7ee}
+.sh-report .sh-pill--sepidar {color:#205bbb;background:#e5efff}
+.sh-report .sh-pill--invoice {color:#1b599b;background:#e7f0ff}
+.sh-report .sh-pill--quotation {color:#865c0b;background:#fff2d6}
+.sh-report .sh-pill--return {color:#b14b47;background:#fff0ed}
+.sh-report .sh-dt-footer {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 20px;border-top:1px solid #e9eef6}
+.sh-report .dataTables_info {font-size:12px;color:#66778f!important;padding:0!important}
+.sh-report .pagination {margin:0!important;gap:4px}
+.sh-report .page-link {border:1px solid #dce5f2;border-radius:8px!important;color:#526988;font-size:12px;padding:7px 11px}
+.sh-report .page-item.active .page-link {background:#2563eb;border-color:#2563eb;color:#fff}
+.sh-report .sh-caption {font-size:11px;color:#718198;line-height:1.9;padding:0 22px 18px;margin:0}
+.sh-report .sh-none {color:#a0abc0}
+@media (max-width:1250px) {.sh-report .sh-filter-form {grid-template-columns:repeat(3,minmax(170px,1fr))}}
+@media (max-width:768px) {.sh-report .sh-filter-form {grid-template-columns:repeat(2,minmax(0,1fr));padding:15px}.sh-report .sh-panel-heading {padding:16px 15px 0}.sh-report .sh-title {font-size:22px}.sh-report .sh-dt-header {padding:12px}.sh-report .sh-dt-header-middle {width:100%}.sh-report .dataTables_filter,.sh-report .dataTables_filter label,.sh-report .dataTables_filter input {width:100%;min-width:0}.sh-report .sh-table-tools {padding:12px}.sh-report .sh-table-tools .sh-field {max-width:calc(50% - 8px)}}
+@media (max-width:480px) {.sh-report .sh-filter-form {grid-template-columns:1fr}.sh-report .sh-doc-type {grid-column:auto}.sh-report .sh-radio span {padding:9px 11px}.sh-report .sh-table-tools .sh-field {max-width:100%;width:100%}.sh-report .sh-table-tools .sh-input {width:100%}}
 
-    <!-- Responsive datatable examples -->
-    <link href="{% static 'libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
-          type="text/css"/>
-{% endblock %}
+/* Compact edition: emphasize the table over the toolbar. */
+.sh-report { --sh-radius:12px; }
+.sh-report .sh-top {margin:0 0 8px;align-items:center;gap:8px}
+.sh-report .sh-title {font-size:19px;line-height:1.35;letter-spacing:0}
+.sh-report .sh-top-detail {color:var(--sh-muted);font-size:11px;margin:0}
+.sh-report .sh-panel {margin-bottom:10px;border-radius:11px;box-shadow:0 2px 12px rgba(31,51,85,.035)}
+.sh-report .sh-filters {overflow:visible;position:relative}
+.sh-report .sh-compact-form {display:flex;align-items:end;flex-wrap:wrap;gap:8px;padding:10px 12px}
+.sh-report .sh-mini-field {display:flex;flex-direction:column;gap:3px;min-width:0;margin:0}
+.sh-report .sh-mini-field label,.sh-report .sh-mini-field legend {font-size:11px;font-weight:750;color:#465a75;margin:0;line-height:1.3;padding:0}
+.sh-report .sh-mini-field--customer {flex:1.6 1 165px}
+.sh-report .sh-mini-field--item {flex:.75 1 110px}
+.sh-report .sh-mini-field--type {flex:1.5 1 250px;border:0;padding:0}
+.sh-report .sh-mini-field .sh-input,.sh-report .sh-mini-field .sh-select {height:34px;border-radius:8px;font-size:12px;padding:0 10px}
+.sh-report .sh-document-select {min-height:34px;gap:4px;flex-wrap:nowrap}
+.sh-report .sh-radio span {min-height:34px;padding:6px 10px;font-size:11px;border-radius:8px;white-space:nowrap}
+.sh-report .sh-filter-actions {display:flex;align-items:end;gap:6px;white-space:nowrap}
+.sh-report .sh-filter-actions .sh-button,.sh-report .sh-advanced>summary {min-height:34px;height:34px;padding:7px 10px;border-radius:8px;font-size:11px;white-space:nowrap}
+.sh-report .sh-advanced {position:relative;min-width:max-content;align-self:end}
+.sh-report .sh-advanced>summary {list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid #dbe3ee;background:#fff;color:#375276;font-weight:750}
+.sh-report .sh-advanced>summary::-webkit-details-marker {display:none}
+.sh-report .sh-advanced>summary::after {content:'▾';font-size:11px;margin-right:2px}
+.sh-report .sh-advanced[open]>summary {background:#edf3ff;border-color:#aac7ff}
+.sh-report .sh-advanced[open]>summary::after {content:'▴'}
+.sh-report .sh-active-indicator {border-radius:999px;background:#dbecff;color:#2054a1;font-size:10px;padding:1px 5px}
+.sh-report .sh-advanced-content {position:absolute;top:calc(100% + 6px);left:0;z-index:60;width:min(570px,calc(100vw - 52px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:13px;background:#fff;border:1px solid #d6e2f1;border-radius:11px;box-shadow:0 14px 32px rgba(29,54,86,.16)}
+.sh-report .sh-advanced-content .sh-mini-field {min-width:0}
+.sh-report .sh-mini-metrics {display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:7px 10px;background:#f8faff;border:1px solid #e4ebf5;border-radius:10px;margin:0 0 10px}
+.sh-report .sh-mini-qty {display:flex;align-items:baseline;gap:8px;border-left:1px solid #dce6f2;padding-left:13px;margin-left:2px;white-space:nowrap}
+.sh-report .sh-mini-qty-label {font-size:11px;font-weight:800;color:#526580}
+.sh-report #sh-stat-quantity {font-size:17px;font-weight:850;color:#087e67;direction:ltr;font-variant-numeric:tabular-nums}
+.sh-report .sh-mini-qty-unit {font-size:10px;color:#8491a4}
+.sh-report .sh-currency-strip {border:0;background:none;padding:0;margin:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex:1;min-width:0}
+.sh-report .sh-currency-title {font-size:11px;margin-left:2px;white-space:nowrap}
+.sh-report .sh-currency-chip {display:inline-flex;gap:6px;align-items:baseline;border-color:#e1e9f3;border-radius:7px;padding:5px 9px;font-size:11px;background:#fff}
+.sh-report .sh-currency-chip .sh-currency-name {color:#415a7b;font-weight:850;white-space:nowrap}
+.sh-report .sh-currency-chip .sh-currency-prefix {color:#7b8ba3;font-size:10px}
+.sh-report .sh-currency-chip strong {direction:ltr;unicode-bidi:isolate;color:#163d72;font-size:13px;font-variant-numeric:tabular-nums}
+.sh-report .sh-help {font-size:11px;padding:7px 12px;margin:0 0 10px}
+.sh-report .sh-table-panel-heading {padding:9px 14px;gap:6px}
+.sh-report .sh-table-panel-heading h2 {font-size:14px}
+.sh-report .sh-table-panel-heading p {font-size:11px;margin:1px 0 0}
+.sh-report .sh-table-panel-heading .sh-button {padding:6px 10px;min-height:31px;font-size:11px}
+.sh-report .sh-table-tools {padding:7px 13px;align-items:center;gap:8px}
+.sh-report .sh-table-tools .sh-mini-field {max-width:160px}
+.sh-report .sh-table-tools .sh-input {height:31px;min-width:132px;padding:0 9px;font-size:12px}
+.sh-report .sh-table-tools .sh-button {height:31px;min-height:31px;padding:5px 9px;font-size:11px}
+.sh-report .sh-date-note {font-size:10px}
+.sh-report .sh-dt-header {padding:8px 13px;gap:8px}
+.sh-report .dataTables_filter input {padding:6px 10px;min-width:200px}
+.sh-report .dt-buttons .btn {padding:5px 8px!important;font-size:11px!important}
+.sh-report .sh-table thead tr.sh-label-head th {padding:9px 10px!important}
+.sh-report .sh-table thead tr.sh-search-head th {padding:5px!important}
+.sh-report .sh-col-search {height:28px}
+@media (max-width:900px){
+  .sh-report .sh-mini-field--customer {flex:1 1 190px}
+  .sh-report .sh-mini-field--item {flex:1 1 110px}
+  .sh-report .sh-mini-field--type {flex:1 1 250px}
+  .sh-report .sh-advanced-content {left:0;right:auto}
+}
+@media (max-width:540px){
+  .sh-report .sh-top-detail {display:none}
+  .sh-report .sh-compact-form {gap:6px;padding:8px}
+  .sh-report .sh-mini-field--customer {flex:2 1 160px}
+  .sh-report .sh-mini-field--item {flex:1 1 90px}
+  .sh-report .sh-mini-field--type {flex:1 1 100%}
+  .sh-report .sh-radio span {padding:6px 8px}
+  .sh-report .sh-advanced-content {left:auto;right:0;grid-template-columns:1fr;width:min(300px,calc(100vw - 38px))}
+  .sh-report .sh-mini-metrics {align-items:flex-start}
+  .sh-report .sh-mini-qty {padding-left:8px}
+  .sh-report .sh-currency-strip {flex-basis:100%}
+  .sh-report .sh-date-note {display:none}
+}
+
+/* نسخه اصلاحی: تمام پنج فیلتر اصلی همیشه در دید هستند. */
+.sh-report .sh-compact-form{display:grid;grid-template-columns:minmax(180px,2fr) minmax(95px,.9fr) minmax(160px,1.5fr) minmax(135px,1.2fr) minmax(115px,1fr) auto;align-items:end;gap:8px;padding:10px 12px}
+.sh-report .sh-compact-form>.sh-mini-field{min-width:0;flex:auto}
+.sh-report .sh-mini-field--customer,.sh-report .sh-mini-field--item,.sh-report .sh-mini-field--part,.sh-report .sh-mini-field--group,.sh-report .sh-mini-field--year{grid-row:1}
+.sh-report .sh-mini-field--type{grid-row:2;grid-column:1 / span 4;min-width:0}
+.sh-report .sh-filter-actions{grid-row:2;grid-column:5 / span 2;justify-self:end}
+.sh-report .sh-compact-form .sh-input,.sh-report .sh-compact-form .sh-select{height:33px}
+.sh-report .sh-date-control{display:flex;position:relative;min-width:0;align-items:center}
+.sh-report .sh-date-control .sh-input{padding-left:35px;cursor:text}
+.sh-report .sh-date-trigger{position:absolute;left:3px;top:3px;bottom:3px;width:28px;border:0;background:#eaf1ff;color:#2058a0;border-radius:7px;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sh-report .sh-date-trigger:hover{background:#dce8ff}
+.sh-jalali-popover{position:fixed;z-index:99999;width:292px;max-width:calc(100vw - 20px);direction:rtl;border:1px solid #cbd9ed;border-radius:12px;background:#fff;box-shadow:0 14px 40px rgba(30,52,93,.19);padding:12px;font-family:inherit;color:#263d5b}
+.sh-jalali-popover[hidden]{display:none!important}
+.sh-jalali-popover .sh-cal-header{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:8px}
+.sh-jalali-popover .sh-cal-nav{border:1px solid #d6e1f2;background:#f5f8ff;border-radius:7px;width:34px;height:30px;font-weight:bold;cursor:pointer;color:#305e99}
+.sh-jalali-popover .sh-cal-title{font-weight:850;font-size:13px;white-space:nowrap}
+.sh-jalali-popover .sh-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.sh-jalali-popover .sh-cal-weekday{text-align:center;font-size:11px;color:#72819a;font-weight:700;padding:5px 0}
+.sh-jalali-popover .sh-cal-empty{min-height:34px}
+.sh-jalali-popover .sh-cal-day{height:34px;border:0;border-radius:7px;font-size:12px;background:#fff;color:#2c4564;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sh-jalali-popover .sh-cal-day:hover{background:#e5eeff}
+.sh-jalali-popover .sh-cal-day.is-today{border:1px solid #88b0ee}
+.sh-jalali-popover .sh-cal-day.is-selected{background:#2563eb;color:#fff;font-weight:800}
+.sh-jalali-popover .sh-cal-actions{border-top:1px solid #edf1f7;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;gap:6px}
+.sh-jalali-popover .sh-cal-actions button{border:1px solid #d8e2f0;background:#f7faff;border-radius:7px;font-size:11px;padding:5px 9px;cursor:pointer;color:#47607c}
+/* منوی ستون‌ها عمداً به body افزوده می‌شود تا overflow:hidden پنل جدول آن را نبُرد. */
+.sh-colvis-floating {
+  position:fixed!important; z-index:2147483000!important;
+  width:min(440px,calc(100vw - 16px)); max-height:calc(100vh - 16px);
+  overflow:hidden; display:flex; flex-direction:column; direction:rtl;
+  background:#fff; color:#263d5b; border:1px solid #cad8ea; border-radius:12px;
+  box-shadow:0 18px 50px rgba(25,43,78,.25);font-family:inherit;
+}
+.sh-colvis-floating[hidden] {display:none!important}
+.sh-colvis-floating * {box-sizing:border-box}
+.sh-colvis-floating .sh-cv-head {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;border-bottom:1px solid #e8edf5;background:#f7faff
+}
+.sh-colvis-floating .sh-cv-title {font-weight:800;font-size:13px}
+.sh-colvis-floating .sh-cv-close {border:0;background:transparent;font-size:23px;line-height:1;color:#657b99;cursor:pointer;padding:0 5px}
+.sh-colvis-floating .sh-cv-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 7px;padding:10px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.sh-colvis-floating .sh-cv-option {display:flex;align-items:center;gap:8px;margin:0;min-width:0;border-radius:7px;padding:8px 9px;font-size:12px;font-weight:650;color:#304968;cursor:pointer}
+.sh-colvis-floating .sh-cv-option:hover {background:#edf3ff}
+.sh-colvis-floating .sh-cv-option input {margin:0;flex:0 0 auto;accent-color:#2563eb;width:15px;height:15px}
+.sh-colvis-floating .sh-cv-option span {white-space:normal;overflow-wrap:anywhere}
+.sh-colvis-floating .sh-cv-footer {display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 13px;border-top:1px solid #e8edf5;background:#fbfcff}
+.sh-colvis-floating .sh-cv-reset,.sh-colvis-floating .sh-cv-done {border:1px solid #d9e3ef;background:#fff;border-radius:7px;color:#355478;cursor:pointer;font-size:11px;font-weight:750;padding:7px 11px}
+.sh-colvis-floating .sh-cv-done {background:#2563eb;border-color:#2563eb;color:#fff}
+@media (max-width:500px) { .sh-colvis-floating {width:min(300px,calc(100vw - 16px))} .sh-colvis-floating .sh-cv-options{grid-template-columns:1fr} }
+@media(max-width:1300px){
+.sh-report .sh-compact-form{grid-template-columns:repeat(5,minmax(0,1fr))}
+.sh-report .sh-mini-field--customer,.sh-report .sh-mini-field--item,.sh-report .sh-mini-field--part,.sh-report .sh-mini-field--group,.sh-report .sh-mini-field--year{grid-row:1}
+.sh-report .sh-mini-field--type{grid-row:2;grid-column:1 / span 3}
+.sh-report .sh-filter-actions{grid-row:2;grid-column:4 / span 2}
+}
+@media(max-width:800px){
+.sh-report .sh-compact-form{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.sh-report .sh-mini-field--customer,.sh-report .sh-mini-field--item,.sh-report .sh-mini-field--part{grid-row:1}
+.sh-report .sh-mini-field--group,.sh-report .sh-mini-field--year{grid-row:2}
+.sh-report .sh-mini-field--type{grid-row:3;grid-column:1 / span 3}
+.sh-report .sh-filter-actions{grid-row:4;grid-column:1 / span 3;justify-self:start}
+}
+@media(max-width:540px){
+.sh-report .sh-compact-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sh-report .sh-mini-field--customer{grid-row:1;grid-column:1 / span 2}
+.sh-report .sh-mini-field--item,.sh-report .sh-mini-field--part{grid-row:2}
+.sh-report .sh-mini-field--group,.sh-report .sh-mini-field--year{grid-row:3}
+.sh-report .sh-mini-field--type{grid-row:4;grid-column:1 / span 2}
+.sh-report .sh-filter-actions{grid-row:5;grid-column:1 / span 2}
+}
+
+/* شمارنده‌های کوچک منابع، در همان نوار جمع تعداد و مبالغ */
+.sh-report .sh-source-counts {display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 10px;border-right:1px solid #dce6f2}
+.sh-report .sh-source-count-title {font-size:11px;font-weight:750;color:#526580;white-space:nowrap}
+.sh-report .sh-source-count {display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:8px;border:1px solid #dfe8f4;background:#fff;white-space:nowrap;font-size:11px;font-weight:750}
+.sh-report .sh-source-count--sepidar {color:#205bbb;background:#f1f6ff;border-color:#dbe7fb}
+.sh-report .sh-source-count--portal {color:#08745e;background:#edfbf5;border-color:#d4f1e6}
+.sh-report .sh-source-count strong {font-size:13px;font-weight:850;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+@media (max-width:540px) {.sh-report .sh-source-counts {border-right:0;padding:0}}
+
+/* v6 — compact distinct KPIs, in-column summaries, sticky header + 6 RTL columns */
+.sh-report .sh-currency-average{color:#28618c;font-size:11px;font-weight:800;padding-right:8px;border-right:1px solid #e2e9f4;white-space:nowrap}
+.sh-report .sh-unique-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;border:1px solid #e3eaf5;background:#f8fbff;border-radius:9px;margin:0 0 9px;padding:7px 10px}
+.sh-report .sh-unique-title{font-size:11px;font-weight:850;color:#526681;margin-left:5px}
+.sh-report .sh-unique-chip{display:inline-flex;align-items:baseline;gap:7px;padding:5px 9px;border:1px solid #e0e9f6;border-radius:8px;background:#fff;color:#50647f;font-size:11px;font-weight:750;white-space:nowrap}
+.sh-report .sh-unique-chip strong{color:#194e94;font-size:14px;font-weight:850;font-variant-numeric:tabular-nums}
+.sh-report .sh-unique-hint{color:#8897ad;font-size:10px;margin-right:auto}
+.sh-report .sh-table-scroll{position:relative;overflow:auto!important;max-height:min(68vh,750px);overscroll-behavior:contain;direction:rtl;scrollbar-gutter:stable}
+.sh-report .sh-table{min-width:2020px!important;table-layout:auto}
+.sh-report .sh-table thead tr.sh-label-head th{position:sticky!important;top:0!important;z-index:30;background:#eaf2fc!important;box-shadow:0 1px 0 #d7e2ef}
+.sh-report .sh-table thead tr.sh-search-head th{position:sticky!important;top:var(--sh-head-height,54px)!important;z-index:29;background:#f7faff!important;box-shadow:0 2px 0 #cadcf4}
+.sh-report .sh-table tbody td.sh-pinned{position:sticky!important;right:var(--sh-pin-right,0)!important;z-index:11;background:#fff;box-shadow:-1px 0 0 #e4eaf2}
+.sh-report .sh-table tbody tr:nth-child(even) td.sh-pinned{background:#fafcff}
+.sh-report .sh-table tbody tr:hover td.sh-pinned{background:#eff5ff!important}
+.sh-report .sh-table thead tr.sh-label-head th.sh-pinned{right:var(--sh-pin-right,0)!important;z-index:43!important;background:#dbeaff!important;box-shadow:-1px 0 0 #c5d8ef}
+.sh-report .sh-table thead tr.sh-search-head th.sh-pinned{right:var(--sh-pin-right,0)!important;z-index:42!important;background:#edf5ff!important;box-shadow:-1px 0 0 #d5e3f3}
+.sh-report .sh-table [data-sh-col="0"]{min-width:88px;width:88px;max-width:90px}
+.sh-report .sh-table [data-sh-col="1"]{min-width:115px;width:115px;max-width:126px}
+.sh-report .sh-table [data-sh-col="2"]{min-width:155px;width:155px;max-width:180px}
+.sh-report .sh-table [data-sh-col="3"]{min-width:112px;width:112px;max-width:125px}
+.sh-report .sh-table [data-sh-col="4"]{min-width:112px;width:112px;max-width:125px}
+.sh-report .sh-table [data-sh-col="5"]{min-width:170px;width:170px;max-width:190px}
+.sh-report .sh-table tbody td[data-sh-col="2"],.sh-report .sh-table tbody td[data-sh-col="5"]{overflow:hidden;text-overflow:ellipsis}
+.sh-report .sh-header-total{display:block;font-size:10px;line-height:1.8;color:#2563a0;font-weight:850;min-width:115px;white-space:nowrap;max-width:185px;overflow:hidden;text-overflow:ellipsis;cursor:help}
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14),.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){min-width:175px}
+.sh-report .sh-dt-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sh-report .sh-scroll-status{color:#416087;font-size:11px;font-weight:700;margin-right:auto}
+.sh-report .dataTables_info{float:none!important}
+@media(max-width:950px){.sh-report .sh-unique-hint{display:none}}
+@media(max-width:760px){.sh-report .sh-unique-bar{gap:4px}.sh-report .sh-unique-chip{padding:4px 7px}}
+
+
+/* v8 — larger working surface; full content width beside the existing sidebar. */
+.sh-main-shell .sh-main-page {padding:8px 8px 22px!important}
+.sh-main-shell .sh-report {max-width:none!important;width:100%;padding-inline:8px!important}
+.sh-report .sh-panel {margin-bottom:8px}
+.sh-report .sh-table-scroll {
+  height:min(82vh, 990px)!important;
+  min-height: min(530px, 72vh);
+  max-height:none!important;
+  overflow-x:auto!important;overflow-y:auto!important;
+  scrollbar-gutter:stable;
+}
+.sh-report table.sh-table{min-width:2160px!important;font-size:12.5px}
+.sh-report .sh-table tbody td{padding:12px 13px!important}
+.sh-report .sh-table thead tr.sh-label-head th{padding:12px 13px!important;font-size:12.5px;vertical-align:top}
+.sh-report .sh-table thead tr.sh-search-head th{padding:7px!important}
+.sh-report .sh-col-search{height:32px;font-size:12px}
+/* Compact fixed columns after removing the now-unwanted per-row homta badges. */
+.sh-report .sh-table [data-sh-col="1"]{min-width:142px;width:142px;max-width:160px}
+.sh-report .sh-table [data-sh-col="3"]{min-width:155px;width:155px;max-width:175px}
+.sh-report .sh-table [data-sh-col="4"]{min-width:142px;width:142px;max-width:162px}
+.sh-report .sh-head-diversity{
+  display:flex;align-items:center;justify-content:flex-start;gap:5px;
+  width:max-content;max-width:100%;margin-top:7px;padding:4px 7px;
+  color:#25558e;background:#e0edff;border:1px solid #bfd5f5;border-radius:7px;
+  font-size:10.5px;font-weight:750;line-height:1.4;white-space:nowrap;
+}
+.sh-report .sh-head-diversity strong{
+  color:#103e79;font-size:14px;font-weight:900;
+  font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;
+}
+/* Financial figures remain visible inside the exact column header, for every currency. */
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14),
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){min-width:248px!important}
+.sh-report .sh-header-total{
+  display:flex;flex-direction:column;align-items:stretch;gap:3px;
+  margin-top:6px;padding-top:5px;border-top:1px solid #cbdcf0;
+  min-width:210px;width:max-content;max-width:none;
+  max-height:none;overflow:visible!important;white-space:normal!important;
+  text-overflow:clip!important;font-size:11px;cursor:default;
+}
+.sh-report #sh-header-quantity{min-width:0;width:auto;display:block}
+.sh-report .sh-header-line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;white-space:nowrap}
+.sh-report .sh-header-currency{font-size:10.5px}
+.sh-report .sh-header-number{font-size:13px;font-weight:900}
+@media(max-width:768px){
+  .sh-main-shell .sh-main-page{padding:5px 2px 18px!important}
+  .sh-main-shell .sh-report{padding-inline:3px!important}
+  .sh-report .sh-table-scroll{height:min(75vh,860px)!important;min-height:420px}
+  .sh-report table.sh-table{font-size:12px}
+}
+
+/* Sales History v9: zero top KPI banners, narrow pinned columns, INLINE exact money in headers. */
+.sh-report .sh-mini-metrics,.sh-report .sh-unique-bar{display:none!important}
+.sh-report #sh-clear-date.mt-8{margin-top:2rem!important}
+/* Fixed RTL columns: source, document, customer name, customer code, item code, item name. */
+.sh-report .sh-table [data-sh-col="0"]{width:68px!important;min-width:68px!important;max-width:68px!important}
+.sh-report .sh-table [data-sh-col="1"]{width:106px!important;min-width:106px!important;max-width:106px!important}
+.sh-report .sh-table [data-sh-col="2"]{width:145px!important;min-width:145px!important;max-width:145px!important}
+.sh-report .sh-table [data-sh-col="3"]{width:103px!important;min-width:103px!important;max-width:103px!important}
+.sh-report .sh-table [data-sh-col="4"]{width:103px!important;min-width:103px!important;max-width:103px!important}
+.sh-report .sh-table [data-sh-col="5"]{width:152px!important;min-width:152px!important;max-width:152px!important}
+.sh-report .sh-table th[data-sh-col],.sh-report .sh-table td[data-sh-col]{overflow:hidden;text-overflow:ellipsis}
+.sh-report .sh-table td[data-sh-col="0"],.sh-report .sh-table td[data-sh-col="1"]{padding-inline:5px!important}
+.sh-report .sh-table thead tr.sh-search-head th[data-sh-col] .sh-col-search{
+    min-width:0!important;width:100%!important;padding-inline:4px!important
+}
+.sh-report .sh-head-diversity{
+    margin-top:3px!important;padding:0!important;gap:4px!important;
+    border:none!important;background:none!important;color:#526988!important;
+    font-size:10px!important;line-height:1.3!important
+}
+.sh-report .sh-head-diversity strong{font-size:12px!important}
+/* The three currency totals MUST appear next to the column name, not in another row/strip. */
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14){min-width:475px!important}
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){min-width:570px!important}
+.sh-report #sh-header-fee,.sh-report #sh-header-amount{
+    display:inline-flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+    vertical-align:middle!important;align-items:center!important;gap:5px!important;
+    min-width:0!important;max-width:none!important;width:auto!important;
+    margin:0 8px 0 0!important;padding:0!important;border:0!important;
+    font-size:11px!important;white-space:nowrap!important;overflow:visible!important;
+    text-overflow:clip!important
+}
+.sh-report #sh-header-fee .sh-header-line,.sh-report #sh-header-amount .sh-header-line{
+    display:inline-flex!important;justify-content:flex-start!important;align-items:baseline!important;
+    gap:4px!important;padding:3px 6px!important;
+    background:#e2edff;border:1px solid #bcd2f5;border-radius:6px;
+    direction:rtl;white-space:nowrap!important
+}
+.sh-report #sh-header-fee .sh-header-currency,.sh-report #sh-header-amount .sh-header-currency{font-size:10.5px!important}
+.sh-report #sh-header-fee .sh-header-number,.sh-report #sh-header-amount .sh-header-number{
+    font-size:12px!important;font-weight:900!important;color:#164783
+}
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14),
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){white-space:nowrap!important;overflow:visible!important}
+
+
+/* Sales History v10: financial summary outside headers, draggable sticky-pane seam. */
+.sh-report .sh-mini-metrics,.sh-report .sh-unique-bar{display:none!important}
+.sh-report #sh-clear-date.mt-8{margin-top:2rem!important}
+.sh-report .sh-finance-overview{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+  margin:8px 13px 12px;direction:rtl
+}
+.sh-report .sh-finance-group{min-width:0;display:flex;flex-wrap:wrap;align-items:center;
+  gap:8px 15px;border:1px solid #dfe8f4;background:#f8fbff;border-radius:10px;padding:10px 13px}
+.sh-report .sh-finance-heading{display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:850;color:#294663;white-space:nowrap}
+.sh-report .sh-finance-heading small{font-size:10px;color:#72839d;font-weight:550;margin-right:3px}
+.sh-report .sh-finance-icon{display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:6px;background:#e7f0ff;color:#215ab0;font-size:16px}
+.sh-report .sh-finance-values{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap;
+  font-size:11px;font-weight:700;min-width:0}
+.sh-report .sh-finance-values .sh-header-line{display:inline-flex!important;align-items:baseline!important;
+  justify-content:flex-start!important;gap:6px!important;padding:4px 9px!important;
+  border:1px solid #dce7f5;border-radius:7px;background:white;white-space:nowrap;direction:rtl}
+.sh-report .sh-finance-values .sh-header-currency{font-size:11px!important;color:#657997}
+.sh-report .sh-finance-values .sh-header-number{font-size:13px!important;color:#17467f;font-weight:850}
+/* Release v9's forced oversized money columns; values now belong to the upper strip. */
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14),
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){min-width:132px!important;max-width:none!important}
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(14),
+.sh-report .sh-table thead tr.sh-label-head th:nth-child(16){white-space:nowrap!important}
+/* Width vars apply equally to both header rows and all body rows (including lazy-loaded rows). */
+.sh-report .sh-table [data-sh-col="0"]{width:var(--sh-split-w0,68px)!important;min-width:var(--sh-split-w0,68px)!important;max-width:var(--sh-split-w0,68px)!important}
+.sh-report .sh-table [data-sh-col="1"]{width:var(--sh-split-w1,106px)!important;min-width:var(--sh-split-w1,106px)!important;max-width:var(--sh-split-w1,106px)!important}
+.sh-report .sh-table [data-sh-col="2"]{width:var(--sh-split-w2,145px)!important;min-width:var(--sh-split-w2,145px)!important;max-width:var(--sh-split-w2,145px)!important}
+.sh-report .sh-table [data-sh-col="3"]{width:var(--sh-split-w3,103px)!important;min-width:var(--sh-split-w3,103px)!important;max-width:var(--sh-split-w3,103px)!important}
+.sh-report .sh-table [data-sh-col="4"]{width:var(--sh-split-w4,103px)!important;min-width:var(--sh-split-w4,103px)!important;max-width:var(--sh-split-w4,103px)!important}
+.sh-report .sh-table [data-sh-col="5"]{width:var(--sh-split-w5,152px)!important;min-width:var(--sh-split-w5,152px)!important;max-width:var(--sh-split-w5,152px)!important}
+.sh-report .sh-table td[data-sh-col="0"],.sh-report .sh-table td[data-sh-col="1"],
+.sh-report .sh-table td[data-sh-col="2"],.sh-report .sh-table td[data-sh-col="3"],
+.sh-report .sh-table td[data-sh-col="4"],.sh-report .sh-table td[data-sh-col="5"]{
+  overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+}
+.sh-report .sh-scroll-frame{position:relative;min-width:0}
+.sh-report .sh-pinned-splitter{
+  position:absolute;top:0;bottom:0;width:13px;transform:translateX(50%);
+  border:0;padding:0;margin:0;z-index:70;cursor:col-resize;touch-action:none;
+  background:linear-gradient(to right,transparent 4px,#93b5e9 4px,#93b5e9 7px,transparent 7px);
+  opacity:.85;transition:opacity .15s,background .15s
+}
+.sh-report .sh-pinned-splitter::before{
+  content:'⋮⋮';position:absolute;top:98px;right:50%;transform:translateX(50%);
+  display:flex;align-items:center;justify-content:center;writing-mode:horizontal-tb;
+  width:22px;height:55px;background:#2563eb;color:#fff;border:2px solid #fff;
+  border-radius:9px;box-shadow:0 2px 10px rgba(24,64,115,.22);font-size:18px;letter-spacing:-2px
+}
+.sh-report .sh-pinned-splitter:hover,.sh-report .sh-pinned-splitter:focus-visible,
+.sh-report .sh-pinned-splitter.is-dragging{opacity:1;outline:none;background:linear-gradient(to right,transparent 4px,#2563eb 4px,#2563eb 7px,transparent 7px)}
+.sh-report .sh-pinned-splitter:focus-visible::before{outline:3px solid #93c5fd;outline-offset:2px}
+.sh-report .sh-scroll-frame.is-dragging,.sh-report .sh-scroll-frame.is-dragging *{cursor:col-resize!important}
+@media(max-width:960px){.sh-report .sh-finance-overview{grid-template-columns:1fr}}
+@media(max-width:600px){.sh-report .sh-finance-overview{margin:6px 5px 10px}.sh-report .sh-finance-group{padding:8px}}
+
+</style>
+{% endblock extra_css %}
 
 {% block content %}
-    <!-- ============================================================== -->
-    <!-- Start right Content here -->
-    <!-- ============================================================== -->
-    <div class="main-content">
-        <div class="page-content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="my-2">
-                        <form class="" method="get" action="">
-                            <div class="row row-cols-4">
-                                <div class="col p-0">
-                                    <input class="form-control mx-2" type="text" name="customer_code"
-                                   value="{{ customer_code }}" placeholder="کد مشتری / عنوان مشتری">
-                                </div>
-                                <div class="col p-0">
-                                    <input class="form-control mx-2" type="text" name="item_code" value="{{ item_code }}"
-                                   placeholder="کد کالا">
-                                </div>
-                                <div class="col p-0">
-                                    <input class="form-control mx-2" type="text" name="part" value="{{ part }}"
-                                   placeholder="پارت نامبر">
-                                </div>
-                                <div class="col p-0 pe-3">
-                                    <input class="form-control mx-2" type="text" name="g_p" value="{{ g_p }}"
-                                   placeholder="گروه خرید">
-                                </div>
-                                <div class="col p-0">
-                                    <select class="form-control mx-2" name="fisicalyearref" id="fisicalyearref">
-                                        <option value="">----------</option>
-                                        <option value="48" {% if fisicalyearref == '48' %} selected {% endif %} >سال مالی 1405</option>
-                                        <option value="46" {% if fisicalyearref == '46' %} selected {% endif %} >سال مالی 1404</option>
-                                        <option value="44" {% if fisicalyearref == '44' %} selected {% endif %} >سال مالی 1403</option>
-                                        <option value="42" {% if fisicalyearref == '42' %} selected {% endif %} >سال مالی 1402</option>
-                                        <option value="41" {% if fisicalyearref == '41' %} selected {% endif %} >سال مالی 1401</option>
-                                        <option value="31" {% if fisicalyearref == '31' %} selected {% endif %} >سال مالی 1400</option>
-                                        <option value="25" {% if fisicalyearref == '25' %} selected {% endif %} >سال مالی 1399</option>
-                                        <option value="23" {% if fisicalyearref == '23' %} selected {% endif %} >سال مالی 1398</option>
-                                        <option value="21" {% if fisicalyearref == '21' %} selected {% endif %} >سال مالی 1397</option>
-                                        <option value="14" {% if fisicalyearref == '14' %} selected {% endif %} >سال مالی 1396</option>
-                                        <option value="3" {% if fisicalyearref == '3' %} selected {% endif %} >سال مالی 1395</option>
-                                    </select>
-                                </div>
-                                <div class="col p-0">
-                                    <div class="d-flex align-items-baseline ps-4">
-                                        <div class="">
-                                            <input type="radio" name="doc_type" value="invoice" id='doc_type_invoice'>
-                                            <label for="doc_type_invoice" class="col-form-label text-center mx-2">فقط فاکتور</label>
-                                        </div>
-                                        <div class="">
-                                            <input type="radio" name="doc_type" value="quotation" id='doc_type_quotation'>
-                                            <label for="doc_type_quotation" class="col-form-label text-center mx-2">فقط پیش فاکتور</label>
-                                        </div>
-                                        <div class="">
-                                            <input class="btn btn-sm btn-primary px-5" type="submit" value="Filter">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
+<div class="main-content sh-main-shell">
+  <div class="page-content sh-main-page">
+    <div class="container-fluid sh-report" id="sales-history-report">
+      <header class="sh-top">
+        <h1 class="sh-title">مرور فروش</h1>
+        <p class="sh-top-detail"> جست‌وجو و فیلتر در جدول</p>
+      </header>
 
-                                <h4 class="card-title" data-key="sales_history">مرور فروش</h4>
+      <section class="sh-panel sh-filters" aria-label="فیلترهای اولیه دریافت اطلاعات">
+        <form class="sh-compact-form" method="get" action="">
+          <div class="sh-mini-field sh-mini-field--customer">
+            <label for="sh-customer">مشتری یا کد مشتری</label>
+            <input id="sh-customer" class="sh-input" name="customer_code" value="{{ customer_code|default:'' }}" placeholder="نام یا کد مشتری">
+          </div>
+          <div class="sh-mini-field sh-mini-field--item">
+            <label for="sh-item">کد کالا</label>
+            <input id="sh-item" class="sh-input" name="item_code" value="{{ item_code|default:'' }}" placeholder="مثلاً 899">
+          </div>
+          <div class="sh-mini-field sh-mini-field--part">
+            <label for="sh-part">پارت‌نامبر / عنوان کالا</label>
+            <input id="sh-part" class="sh-input" name="part" value="{{ part|default:'' }}" placeholder="نام یا پارت‌نامبر">
+          </div>
+          <div class="sh-mini-field sh-mini-field--group">
+            <label for="sh-group">گروه خرید</label>
+            <input id="sh-group" class="sh-input" name="g_p" value="{{ g_p|default:'' }}" placeholder="نام گروه خرید">
+          </div>
+          <div class="sh-mini-field sh-mini-field--year">
+            <label for="sh-year">سال مالی</label>
+            <select id="sh-year" class="sh-select" name="fisicalyearref">
+              <option value="">تمام سال‌ها</option>
+              <option value="48" {% if fisicalyearref == '48' %}selected{% endif %}>۱۴۰۵</option>
+              <option value="46" {% if fisicalyearref == '46' %}selected{% endif %}>۱۴۰۴</option>
+              <option value="44" {% if fisicalyearref == '44' %}selected{% endif %}>۱۴۰۳</option>
+              <option value="42" {% if fisicalyearref == '42' %}selected{% endif %}>۱۴۰۲</option>
+              <option value="41" {% if fisicalyearref == '41' %}selected{% endif %}>۱۴۰۱</option>
+              <option value="31" {% if fisicalyearref == '31' %}selected{% endif %}>۱۴۰۰</option>
+              <option value="25" {% if fisicalyearref == '25' %}selected{% endif %}>۱۳۹۹</option>
+              <option value="23" {% if fisicalyearref == '23' %}selected{% endif %}>۱۳۹۸</option>
+              <option value="21" {% if fisicalyearref == '21' %}selected{% endif %}>۱۳۹۷</option>
+              <option value="14" {% if fisicalyearref == '14' %}selected{% endif %}>۱۳۹۶</option>
+              <option value="3" {% if fisicalyearref == '3' %}selected{% endif %}>۱۳۹۵</option>
+            </select>
+          </div>
+          <fieldset class="sh-mini-field sh-mini-field--type">
+            <legend>نوع سند</legend>
+            <div class="sh-document-select" aria-label="نوع سند">
+              <label class="sh-radio"><input type="radio" name="doc_type" value="" {% if not doc_type %}checked{% endif %}><span>همه اسناد</span></label>
+              <label class="sh-radio"><input type="radio" name="doc_type" value="invoice" {% if doc_type == 'invoice' %}checked{% endif %}><span>فقط فاکتور</span></label>
+              <label class="sh-radio"><input type="radio" name="doc_type" value="quotation" {% if doc_type == 'quotation' %}checked{% endif %}><span>فقط پیش‌فاکتور</span></label>
+            </div>
+          </fieldset>
+          <div class="sh-filter-actions">
+            <button class="sh-button sh-button-primary" type="submit">اعمال</button>
+            <a class="sh-button" href="{{ request.path }}">پاک‌کردن</a>
+          </div>
 
-                                <div class="table-rep-plugin">
-                                <div class="d-flex flex-end gap-4">
-                                <span>جمع قیمت (تعداد * فی) تمام ردیف ها: </span>
-                                    {% if total_price %}
-                                        <span class="bold" id="total-price-dt">{{ total_price|floatformat:'-2g'|intcomma }}</span>
-                                    {% else %}
-                                        <span class="badge badge-light-warning">تعداد ردیف ها بیشتر یا کمتر از حد مجاز، فیلتر را تغییر دهید.</span>
-                                    {% endif %}
-                                </div>
-                                    <div>
-                                        <table id="datatable-buttons"
-                                               class="m-table table-striped table-bordered w-100"
-                                                data-order='[[0,"asc"],[ 2, "desc" ]]' data-page-length='25' paging='false' >
-                                            <thead>
-                                            <tr>
-                                                <th data-key="doc_type">نوع سند</th>
-                                                <th data-key="Number">شماره سند</th>
-                                                <th data-key="date">تاریخ</th>
-                                                <th data-key="customer_title">مشتری</th>
-                                                <th data-key="customer_code">کد مشتری</th>
-                                                <th data-key="sales_user_group">کارشناس</th>
-                                                <th data-key="item_code">کد کالا</th>
-                                                <th data-key="item_title">کالا</th>
-                                                <th data-key="purchase_group">گروه خرید</th>
-                                                <th data-key="sales_group">گروه فروش</th>
-                                                <th data-key="sales_type">نوع فروش</th>
-                                                <th data-key="Quantity">تعداد</th>
-                                                <th data-key="Fee">فی</th>
-                                                <th data-key="fee_after_discount">فی بعد تخفیف</th>
-                                                <th data-key="currency">ارز</th>
-                                                <th data-key="Rate">نرخ ارز</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            {% for item in list %}
-                                                <tr>
-                                                    <td>{{ item.doc_type }}</td>
-                                                    <td>{{ item.Number }}</td>
-                                                    <td>{{ item.Date|to_jalali:'%Y/%m/%d' }}</td>
-                                                    <td>{{ item.customer_title }}</td>
-                                                    <td>{{ item.customer_code }}</td>
-                                                    <td>{{ item.sales_user_group }}</td>
-                                                    <td>{{ item.item_code }}</td>
-                                                    <td>{{ item.item_title }}</td>
-                                                    <td>{{ item.purchase_group }}</td>
-                                                    <td>{{ item.sales_group }}</td>
-                                                    {#                                                        <td>{{ item.coef }}</td>#}
-                                                    <td>{{ item.sales_type }}</td>
-                                                    <td>{{ item.Quantity|floatformat:0|intcomma }}</td>
-                                                    <td>{{ item.Fee|floatformat:'-2g'|intcomma }}</td>
-                                                    <td>{{ item.fee_after_discount|floatformat:'-2g'|intcomma }}</td>
-                                                    {#                                                        <td>{{ item.Price|floatformat:2|intcomma }}</td>#}
-                                                    {#                                                        <td>{{ item.PriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
-                                                    {#                                                        <td>{{ item.NetPrice|floatformat:2|intcomma }}</td>#}
-                                                    {#                                                        <td>{{ item.NetPriceInBaseCurrency|floatformat:0|intcomma }}</td>#}
-                                                    <td>{{ item.currency }}</td>
-                                                    <td>{{ item.Rate|floatformat:0|intcomma }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        </form>
+      </section>
 
-            </div> <!-- container-fluid -->
+
+      {% if truncated %}
+        <div class="sh-help">توجه: نتایج به سقف دریافت ۳۰۰۰ ردیف از هر منبع رسیده‌اند. جدول و جمع‌ها فقط داده‌های دریافت‌شده را پوشش می‌دهند؛ فیلتر بازه تاریخ پایین نیز روی همین ردیف‌ها اجرا می‌شود.</div>
+      {% endif %}
+
+      <section class="sh-panel" aria-labelledby="sh-table-heading">
+        <div class="sh-table-panel-heading">
+          <div><h2 id="sh-table-heading">جدول جزئیات فروش</h2><p>۶ ستون ثابت، سربرگ ثابت، جست‌وجوی ستونی و بارگذاری تدریجی</p></div>
+          <button class="sh-button" id="sh-clear-table" type="button">پاک‌کردن فیلترهای جدول</button>
         </div>
-        <!-- End Page-content -->
-
+        <div class="sh-table-tools">
+          <div class="sh-field sh-date-field"><label for="sh-date-from">از تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-from" autocomplete="off" placeholder="۱۴۰۵/۰۱/۰۱" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-from" aria-label="باز کردن تقویم تاریخ شروع" title="انتخاب تاریخ شروع">▦</button></div></div>
+          <div class="sh-field sh-date-field"><label for="sh-date-to">تا تاریخ (شمسی)</label><div class="sh-date-control"><input type="text" dir="ltr" inputmode="numeric" maxlength="10" class="sh-input" id="sh-date-to" autocomplete="off" placeholder="۱۴۰۵/۱۲/۲۹" aria-describedby="sh-date-message" aria-haspopup="dialog"><button class="sh-date-trigger" type="button" data-target="sh-date-to" aria-label="باز کردن تقویم تاریخ پایان" title="انتخاب تاریخ پایان">▦</button></div></div>
+          <button class="sh-button mt-8" id="sh-clear-date" type="button">حذف بازه تاریخ</button>
+          <span class="sh-date-note">بازه تاریخ و جست‌وجو روی همه داده‌های دریافت‌شده اعمال می‌شود، نه فقط ردیف‌های نمایان.</span>
+        </div>
+        <div class="sh-date-message" id="sh-date-message" role="status"></div>
+                <!-- Sales History v10: figures in a compact strip, NOT within table headers. -->
+        <div class="sh-finance-overview" aria-label="خلاصه مالی نتایج فیلترشده">
+          <div class="sh-finance-group">
+            <div class="sh-finance-heading"><span class="sh-finance-icon" aria-hidden="true">∑</span>میانگین موزون فی <small>بر اساس تعداد کالا</small></div>
+            <div class="sh-finance-values" id="sh-top-fee" aria-live="polite">در حال محاسبه…</div>
+          </div>
+          <div class="sh-finance-group">
+            <div class="sh-finance-heading"><span class="sh-finance-icon" aria-hidden="true">◈</span>جمع مبلغ نهایی <small>به تفکیک ارز</small></div>
+            <div class="sh-finance-values" id="sh-top-amount" aria-live="polite">در حال محاسبه…</div>
+          </div>
+        </div>
+        <table id="datatable-buttons" class="sh-table table" aria-describedby="sh-table-caption">
+          <thead>
+            <tr class="sh-label-head">
+              <th data-sh-col="0">منبع</th> <th data-sh-col="1">شماره سند<small class="sh-head-diversity" title="تعداد اسناد متفاوت در تمام ردیف‌های مطابق فیلتر؛ به تفکیک منبع، نوع و سال سند">تنوع: <strong id="sh-distinct-document" aria-live="polite">—</strong></small></th> <th data-sh-col="2">مشتری</th> <th data-sh-col="3">کد مشتری<small class="sh-head-diversity" title="تعداد کد مشتری یکتا در ردیف‌های فیلترشده؛ برای یک کالا نشان می‌دهد به چند مشتری متفاوت فروخته شده است">تنوع: <strong id="sh-distinct-customer" aria-live="polite">—</strong></small></th> <th data-sh-col="4">کد کالا<small class="sh-head-diversity" title="تعداد کد کالای یکتا در ردیف‌های فیلترشده">تنوع: <strong id="sh-distinct-item" aria-live="polite">—</strong></small></th> <th data-sh-col="5">کالا</th> <th>نوع سند</th> <th>تاریخ</th> <th>کارشناس</th> <th>گروه خرید<small class="sh-head-diversity" title="تعداد گروه خرید یکتا در ردیف‌های فیلترشده">تنوع: <strong id="sh-distinct-purchase" aria-live="polite">—</strong></small></th> <th>گروه فروش<small class="sh-head-diversity" title="تعداد گروه فروش یکتا در ردیف‌های فیلترشده">تنوع: <strong id="sh-distinct-sales" aria-live="polite">—</strong></small></th> <th>نوع فروش</th> <th>تعداد<small class="sh-header-total" id="sh-header-quantity" aria-live="polite">—</small></th> <th>فی</th> <th>فی بعد تخفیف</th> <th>مبلغ نهایی</th> <th>ارز</th> <th>نرخ ارز</th>
+            </tr>
+            <tr class="sh-search-head">
+              <th data-sh-col="0"><select class="sh-col-search" data-col="0" aria-label="فیلتر منبع"><option value="">همه</option><option value="portal">پرتال</option><option value="sepidar">سپیدار</option></select></th>
+              <th data-sh-col="1"><input class="sh-col-search" data-col="1" type="search" placeholder="شماره" aria-label="جست‌وجوی شماره سند"></th>
+              <th data-sh-col="2"><input class="sh-col-search" data-col="2" type="search" placeholder="نام مشتری" aria-label="جست‌وجوی مشتری"></th>
+              <th data-sh-col="3"><input class="sh-col-search" data-col="3" type="search" placeholder="کد" aria-label="جست‌وجوی کد مشتری"></th>
+              <th data-sh-col="4"><input class="sh-col-search" data-col="4" type="search" placeholder="کد کالا" aria-label="جست‌وجوی کد کالا"></th>
+              <th data-sh-col="5"><input class="sh-col-search" data-col="5" type="search" placeholder="عنوان کالا" aria-label="جست‌وجوی کالا"></th>
+              <th><select class="sh-col-search" data-col="6" aria-label="فیلتر نوع سند"><option value="">همه</option><option value="invoice">فاکتور</option><option value="quotation">پیش‌فاکتور</option><option value="returned_invoice">برگشت از فروش</option></select></th>
+              <th><input class="sh-col-search" data-col="7" type="search" placeholder="تاریخ" aria-label="جست‌وجوی تاریخ"></th>
+              <th><input class="sh-col-search" data-col="8" type="search" placeholder="کارشناس" aria-label="جست‌وجوی کارشناس"></th>
+              <th><input class="sh-col-search" data-col="9" type="search" placeholder="گروه خرید" aria-label="جست‌وجوی گروه خرید"></th>
+              <th><input class="sh-col-search" data-col="10" type="search" placeholder="گروه فروش" aria-label="جست‌وجوی گروه فروش"></th>
+              <th><input class="sh-col-search" data-col="11" type="search" placeholder="نوع فروش" aria-label="جست‌وجوی نوع فروش"></th>
+              <th><input class="sh-col-search" data-col="12" type="search" inputmode="decimal" placeholder="تعداد" aria-label="جست‌وجوی تعداد"></th>
+              <th><input class="sh-col-search" data-col="13" type="search" inputmode="decimal" placeholder="فی" aria-label="جست‌وجوی فی"></th>
+              <th><input class="sh-col-search" data-col="14" type="search" inputmode="decimal" placeholder="فی خالص" aria-label="جست‌وجوی فی بعد تخفیف"></th>
+              <th><input class="sh-col-search" data-col="15" type="search" inputmode="decimal" placeholder="مبلغ" aria-label="جست‌وجوی مبلغ نهایی"></th>
+              <th><input class="sh-col-search" data-col="16" type="search" placeholder="ارز" aria-label="جست‌وجوی ارز"></th>
+              <th><input class="sh-col-search" data-col="17" type="search" inputmode="decimal" placeholder="نرخ" aria-label="جست‌وجوی نرخ ارز"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for item in list %}
+            <tr data-source="{{ item.source|default:'' }}"
+                data-doc-number="{{ item.Number|default_if_none:'' }}"
+                data-doc-year="{{ item.year_title|default_if_none:'' }}"
+                data-customer-code="{{ item.customer_code|default_if_none:'' }}"
+                data-item-code="{{ item.item_code|default_if_none:'' }}"
+                data-purchase-group="{{ item.purchase_group|default_if_none:'' }}"
+                data-sales-group="{{ item.sales_group|default_if_none:'' }}"
+                data-doc-type="{{ item.doc_type|default_if_none:'' }}"
+                data-row-date="{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% endif %}"
+                data-row-fee="{{ item.Fee|default_if_none:0|unlocalize }}"
+                data-currency="{{ item.currency|default_if_none:'' }}"
+                data-row-price="{{ item.Price|default_if_none:0|unlocalize }}"
+                data-row-qty="{{ item.Quantity|default_if_none:0|unlocalize }}">
+              <td data-search="{{ item.source }}" data-sh-col="0">
+                {% if item.source == 'sepidar' %}<span class="sh-pill sh-pill--sepidar">سپیدار</span>{% else %}<span class="sh-pill sh-pill--portal">پرتال</span>{% endif %}
+              </td>
+              <td class="sh-number" data-sh-col="1" data-search="{{ item.Number|default_if_none:'' }}" data-order="{{ item.Number|default_if_none:'' }}">{{ item.Number|default_if_none:'—' }}</td>
+              <td title="{{ item.customer_title|default_if_none:'' }}" data-sh-col="2">{{ item.customer_title|default_if_none:'—' }}</td>
+              <td class="sh-number" data-sh-col="3" data-search="{{ item.customer_code|default_if_none:'' }}" data-order="{{ item.customer_code|default_if_none:'' }}">{{ item.customer_code|default_if_none:'—' }}</td>
+              <td class="sh-number" data-sh-col="4" data-search="{{ item.item_code|default_if_none:'' }}" data-order="{{ item.item_code|default_if_none:'' }}">{{ item.item_code|default_if_none:'—' }}</td>
+              <td title="{{ item.item_title|default_if_none:'' }}" data-sh-col="5">{{ item.item_title|default_if_none:'—' }}</td>
+              <td data-search="{{ item.doc_type }}">
+                {% if item.doc_type == 'invoice' %}<span class="sh-pill sh-pill--invoice">فاکتور</span>
+                {% elif item.doc_type == 'quotation' %}<span class="sh-pill sh-pill--quotation">پیش‌فاکتور</span>
+                {% elif item.doc_type == 'returned_invoice' %}<span class="sh-pill sh-pill--return">برگشت از فروش</span>
+                {% else %}{{ item.doc_type }}{% endif %}
+              </td>
+              <td class="sh-number" data-order="{{ item.Date|date:'Y-m-d' }}">{% if item.Date %}{{ item.Date|to_jalali:'%Y/%m/%d' }}{% else %}—{% endif %}</td>
+              <td>{{ item.sales_user_group|default_if_none:'—' }}</td>
+              <td data-search="{{ item.purchase_group|default_if_none:'' }}" data-order="{{ item.purchase_group|default_if_none:'' }}">{{ item.purchase_group|default_if_none:'—' }}</td>
+              <td data-search="{{ item.sales_group|default_if_none:'' }}" data-order="{{ item.sales_group|default_if_none:'' }}">{{ item.sales_group|default_if_none:'—' }}</td>
+              <td>{{ item.sales_type|default_if_none:'—' }}</td>
+              <td class="sh-number" data-search="{{ item.Quantity|default_if_none:0|unlocalize }}">{{ item.Quantity|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-amount" data-search="{{ item.Fee|default_if_none:0|unlocalize }}">{{ item.Fee|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-amount" data-search="{{ item.fee_after_discount|default_if_none:0|unlocalize }}">{{ item.fee_after_discount|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td class="sh-number sh-price" data-search="{{ item.Price|default_if_none:0|unlocalize }}">{{ item.Price|default_if_none:0|floatformat:'-6'|intcomma }}</td>
+              <td>{{ item.currency|default_if_none:'—' }}</td>
+              <td class="sh-number" data-search="{{ item.Rate|default_if_none:''|unlocalize }}">{% if item.Rate is not None %}{{ item.Rate|floatformat:'-4'|intcomma }}{% else %}<span class="sh-none">—</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <p class="sh-caption" id="sh-table-caption"></p>
+      </section>
     </div>
-    <!-- end main content-->
+  </div>
+</div>
 {% endblock content %}
 
 {% block extra_js %}
-    <!-- Required datatable js -->
-    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
-    <!-- Buttons examples -->
-    <script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
-    <script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
-    <script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
-    <script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'libs/jszip/dist/jszip.min.js' %}"></script>
+<script src="{% static 'libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- عمداً فایل js/pages/datatables.init.js را در این صفحه لود نکنید. -->
+<script>
+(function ($) {
+  'use strict';
+  $(function () {
+    var tableEl = document.getElementById('datatable-buttons');
+    if (!tableEl || !$.fn.DataTable) return;
 
-    <!-- Responsive examples -->
-    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
-    <script src="{% static 'libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+    var fromInput = document.getElementById('sh-date-from');
+    var toInput = document.getElementById('sh-date-to');
+    var dateMessage = document.getElementById('sh-date-message');
+    var activeFrom = null, activeTo = null, invalidRange = false;
 
-    <!-- Datatable init js -->
-    <script src="{% static 'js/pages/datatables.init.js' %}"></script>
+    function latinDigits(input) {
+      return String(input == null ? '' : input)
+        .replace(/[۰-۹]/g, function (d) { return String(d.charCodeAt(0) - 1776); })
+        .replace(/[٠-٩]/g, function (d) { return String(d.charCodeAt(0) - 1632); });
+    }
+    function jalaliKey(input) {
+      var s = latinDigits(input).trim().replace(/[\-.]/g, '/');
+      if (!s) return null;
+      var parts = /^(\d{4})\s*\/\s*(\d{1,2})\s*\/\s*(\d{1,2})$/.exec(s);
+      if (!parts) return NaN;
+      var year = +parts[1], month = +parts[2], day = +parts[3];
+      if (year < 1300 || year > 1600 || month < 1 || month > 12 || day < 1 || day > 31) return NaN;
+      if (day > daysInJalaliMonth(year, month)) return NaN;
+      return year * 10000 + month * 100 + day;
+    }
+    function updateDateInputs() {
+      var fromKey = jalaliKey(fromInput.value), toKey = jalaliKey(toInput.value);
+      activeFrom = fromKey === null || Number.isNaN(fromKey) ? null : fromKey;
+      activeTo = toKey === null || Number.isNaN(toKey) ? null : toKey;
+      var invalidFrom = Number.isNaN(fromKey), invalidTo = Number.isNaN(toKey);
+      invalidRange = invalidFrom || invalidTo || (activeFrom !== null && activeTo !== null && activeFrom > activeTo);
+      fromInput.setAttribute('aria-invalid', invalidFrom ? 'true' : 'false');
+      toInput.setAttribute('aria-invalid', invalidTo ? 'true' : 'false');
+      dateMessage.textContent = (invalidFrom || invalidTo) ? 'تاریخ شمسی معتبر را با قالب 1405/07/26 وارد کنید.' :
+        (invalidRange ? 'تاریخ شروع نباید بعد از تاریخ پایان باشد.' : '');
+    }
 
-    <script>
-       // $('#datatable-buttons').DataTable({
-       //     paging: false
-        //});
-        //hide the second and third columns
-        {#debugger#}
-        {#dt.orderable = false#}
-        {#dt.columns([1,2]).visible(false);#}
-        setTimeout(function (){
-            $('#datatable-buttons_filter input').on('keyup', function () {
-               debugger
-                let table = $('#datatable-buttons').DataTable();
-                let filteredRows = table.rows({ search: 'applied' }).data();
-                let total = 0;
-                filteredRows.each(function(row){
-                    let price = parseFloat(row[11].replace(/,/g, '')) || 0;   // ستون فی
-                    let qty   = parseFloat(row[12].replace(/,/g, '')) || 0;   // ستون تعداد
+    // افزونه فیلتر به صورت محدودشده به همین جدول ثبت می‌شود.
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      if (settings.nTable !== tableEl) return true;
+      if (invalidRange) return false;
+      if (activeFrom === null && activeTo === null) return true;
+      var internal = settings.aoData[dataIndex];
+      var tr = internal && internal.nTr;
+      var td = tr && {textContent: tr.getAttribute('data-row-date') || ''};
+      var value = td ? jalaliKey(td.textContent) : null;
+      if (value === null || Number.isNaN(value)) return false;
+      return (activeFrom === null || value >= activeFrom) && (activeTo === null || value <= activeTo);
+    });
 
-                    console.log(price, qty, price*qty)
+    // تقویم شمسی بدون نیاز به کتابخانه خارجی؛ تبدیل با Intl Persian و UTC
+    var months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+    var weekNames = ['ش','ی','د','س','چ','پ','ج'];
+    var persianUTC = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+      timeZone:'UTC',year:'numeric',month:'numeric',day:'numeric'
+    });
+    var persianLocal = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+      year:'numeric',month:'numeric',day:'numeric'
+    });
+    function persianParts(date, formatter) {
+      var parts = formatter.formatToParts(date), result = {};
+      parts.forEach(function (p) {if (p.type==='year'||p.type==='month'||p.type==='day') result[p.type] = Number(latinDigits(p.value));});
+      return result;
+    }
+    function jDayNum(y,m,d) {return y*10000 + m*100 + d;}
+    function gregorianUTCForJalali(y,m,d) {
+      var wanted=jDayNum(y,m,d);
+      var low=Math.floor(Date.UTC(y+620,0,1)/86400000);
+      var high=Math.floor(Date.UTC(y+622,11,31)/86400000);
+      while(low<=high){
+        var mid=Math.floor((low+high)/2);
+        var p=persianParts(new Date(mid*86400000+12*3600000), persianUTC);
+        var key=jDayNum(p.year,p.month,p.day);
+        if(key===wanted)return new Date(mid*86400000);
+        if(key<wanted)low=mid+1;else high=mid-1;
+      }
+      return null;
+    }
+    var esfandLengthCache = Object.create(null);
+    function daysInJalaliMonth(y,m) {
+      if(m<1||m>12)return 0;
+      if(m<=6)return 31;
+      if(m<=11)return 30;
+      if(esfandLengthCache[y])return esfandLengthCache[y];
+      var a=gregorianUTCForJalali(y,12,1);
+      var b=gregorianUTCForJalali(y+1,1,1);
+      return (esfandLengthCache[y] = (a&&b ? Math.round((b-a)/86400000) : 29));
+    }
+    function isoJalali(y,m,d) {return String(y)+'/'+String(m).padStart(2,'0')+'/'+String(d).padStart(2,'0');}
+    var cal=document.createElement('div');
+    cal.id='sh-jalali-popover';
+    cal.className='sh-jalali-popover';
+    cal.setAttribute('role','dialog');
+    cal.setAttribute('aria-label','انتخاب تاریخ شمسی');
+    cal.hidden=true;
+    document.body.appendChild(cal);
+    var openInput=null, shownYear=null, shownMonth=null;
+    function repositionCalendar() {
+      if(!openInput||cal.hidden)return;
+      var box=openInput.getBoundingClientRect();
+      var width=Math.min(292,window.innerWidth-20);
+      var left=Math.max(10,Math.min(window.innerWidth-width-10,box.right-width));
+      var bottomSpace=window.innerHeight-box.bottom;
+      var height=cal.getBoundingClientRect().height||320;
+      var top=bottomSpace>=height+8?box.bottom+5:Math.max(10,box.top-height-6);
+      cal.style.left=Math.round(left)+'px';cal.style.top=Math.round(top)+'px';
+    }
+    function renderCalendar() {
+      var first=gregorianUTCForJalali(shownYear,shownMonth,1);
+      if(!first){cal.innerHTML='<p>امکان نمایش تقویم وجود ندارد.</p>';return;}
+      var firstCol=(first.getUTCDay()+1)%7;
+      var selected=jalaliKey(openInput.value);
+      var now=persianParts(new Date(),persianLocal);
+      var today=jDayNum(now.year,now.month,now.day);
+      var html='<div class="sh-cal-header">'+
+        '<button type="button" class="sh-cal-nav" data-nav="-1" aria-label="ماه قبل">›</button>'+
+        '<span class="sh-cal-title">'+months[shownMonth-1]+' '+shownYear+'</span>'+
+        '<button type="button" class="sh-cal-nav" data-nav="1" aria-label="ماه بعد">‹</button></div>'+
+        '<div class="sh-cal-grid">';
+      weekNames.forEach(function(w){html+='<span class="sh-cal-weekday">'+w+'</span>';});
+      for(var i=0;i<firstCol;i++)html+='<span class="sh-cal-empty"></span>';
+      var count=daysInJalaliMonth(shownYear,shownMonth);
+      for(var d=1;d<=count;d++){
+        var date=jDayNum(shownYear,shownMonth,d);
+        html+='<button type="button" class="sh-cal-day'+(date===today?' is-today':'')+(date===selected?' is-selected':'')+'" data-day="'+d+'" aria-label="'+isoJalali(shownYear,shownMonth,d)+'">'+d+'</button>';
+      }
+      html+='</div><div class="sh-cal-actions"><button type="button" data-action="today">امروز</button><button type="button" data-action="clear">پاک کردن</button><button type="button" data-action="close">بستن</button></div>';
+      cal.innerHTML=html;
+      repositionCalendar();
+    }
+    function hideCalendar(){cal.hidden=true;openInput=null;}
+    function showCalendar(input){
+      if(!input)return;
+      if(!cal.hidden&&openInput===input){hideCalendar();return;}
+      openInput=input;
+      var parsed=jalaliKey(input.value);
+      var p=persianParts(new Date(),persianLocal);
+      if(Number.isFinite(parsed)){
+        shownYear=Math.floor(parsed/10000);shownMonth=Math.floor((parsed%10000)/100);
+      }else {shownYear=p.year;shownMonth=p.month;}
+      cal.hidden=false;
+      renderCalendar();
+    }
+    function setCalendarDate(value){
+      if(!openInput)return;
+      openInput.value=value;
+      openInput.dispatchEvent(new Event('change',{bubbles:true}));
+      hideCalendar();
+    }
+    $('#sales-history-report .sh-date-trigger').on('click',function(ev){ev.preventDefault();showCalendar(document.getElementById(this.getAttribute('data-target')));});
+    $(fromInput).add(toInput).on('click',function(){if(cal.hidden||openInput!==this)showCalendar(this);});
+    cal.addEventListener('click',function(ev){
+      var btn=ev.target.closest('button');if(!btn)return;
+      if(btn.hasAttribute('data-nav')){
+        shownMonth+=Number(btn.getAttribute('data-nav'));
+        if(shownMonth<1){shownMonth=12;shownYear--;}else if(shownMonth>12){shownMonth=1;shownYear++;}
+        if(shownYear<1300)shownYear=1300;if(shownYear>1600)shownYear=1600;
+        renderCalendar();
+      }else if(btn.hasAttribute('data-day'))setCalendarDate(isoJalali(shownYear,shownMonth,Number(btn.getAttribute('data-day'))));
+      else if(btn.getAttribute('data-action')==='today'){
+        var p=persianParts(new Date(),persianLocal);setCalendarDate(isoJalali(p.year,p.month,p.day));
+      }else if(btn.getAttribute('data-action')==='clear')setCalendarDate('');
+      else if(btn.getAttribute('data-action')==='close')hideCalendar();
+    });
+    document.addEventListener('mousedown',function(ev){
+      if(!cal.hidden&&!cal.contains(ev.target)&&!ev.target.closest('.sh-date-control'))hideCalendar();
+    });
+    document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!cal.hidden)hideCalendar();});
+    window.addEventListener('scroll',function(){if(!cal.hidden)repositionCalendar();},true);
+    window.addEventListener('resize',function(){if(!cal.hidden)repositionCalendar();});
 
-                    total += price * qty;
-                });
+    function cleanExportHeader(data, index, node) {
+      var clone=node.cloneNode(true);
+      clone.querySelectorAll('.sh-header-total, .sh-head-diversity, .sh-col-search').forEach(function(el){el.remove();});
+      return clone.textContent.trim();
+    }
+    var table = $.fn.dataTable.isDataTable(tableEl) ? $(tableEl).DataTable() : $(tableEl).DataTable({
+      // DataTable فقط یک بار روی این جدول initialize می‌شود.
+      orderCellsTop: true,
+      order: [[7, 'desc']],
+      pageLength: 60,
+      lengthChange: false, // نمایش تدریجی ۶۰ ردیف؛ همه نتایج برای جست‌وجو و خروجی‌گیری حفظ می‌شوند.
+      autoWidth: false,
+      responsive: false,
+      searchDelay: 150,
+      dom: "<'sh-dt-header'<'sh-dt-header-middle'f><'sh-dt-header-right'B>><'sh-table-scroll't><'sh-dt-footer'<'sh-dt-info'i>>",
+      buttons: [
+        {extend:'copyHtml5',text:'کپی',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'excelHtml5',text:'Excel',title:'sales_history',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {extend:'print',text:'چاپ',title:'گزارش مرور فروش',exportOptions:{columns:':visible',modifier:{search:'applied',order:'applied',page:'all'},format:{header:cleanExportHeader}}},
+        {text:'ستون‌ها',className:'buttons-colvis',action:function(e,dt,node){toggleColumnPanel(node)}}
+      ],
+      language: {
+        search:'جست‌وجوی کلی:',
+        searchPlaceholder:'جست‌وجو در کل جدول...',
+        lengthMenu:'نمایش _MENU_ ردیف',
+        info:'نمایش _START_ تا _END_ از _TOTAL_ ردیف',
+        infoFiltered:'(از _MAX_ ردیف دریافت‌شده)',
+        infoEmpty:'هیچ ردیفی برای نمایش وجود ندارد',
+        zeroRecords:'هیچ ردیفی با فیلترهای فعلی مطابقت ندارد',
+        emptyTable:'برای نمایش سوابق، فیلترهای اولیه را در بالا اعمال کنید.',
+        paginate:{first:'اول',last:'آخر',next:'بعدی',previous:'قبلی'},
+        processing:'در حال پردازش...'
+      }
+    });
 
-                console.log('========')
+    // منوی شناور اختصاصی، مستقل از dropdown افزونه ColVis و مستقل از overflow پنل.
+    // تمام ۱۸ ستون از DataTables API کنترل می‌شوند؛ exportOptions:{columns:':visible'} حفظ شده است.
+    var colvisPanel=null, colvisAnchor=null;
+    var columnTitles=Array.prototype.map.call(
+      tableEl.querySelectorAll('thead .sh-label-head th'),
+      function(th){return cleanExportHeader('',0,th);}
+    );
 
-                document.querySelector('#total-price-dt').innerHTML = numberWithCommas(total)
-            });
-        }, 3000)
+    function hideColumnPanel(){
+      if(!colvisPanel)return;
+      colvisPanel.hidden=true;
+      if(colvisAnchor)colvisAnchor.setAttribute('aria-expanded','false');
+    }
+    function makeColumnPanel(){
+      if(colvisPanel)return;
+      colvisPanel=document.createElement('section');
+      colvisPanel.className='sh-colvis-floating';
+      colvisPanel.id='sh-colvis-floating';
+      colvisPanel.hidden=true;
+      colvisPanel.setAttribute('role','dialog');
+      colvisPanel.setAttribute('aria-label','انتخاب ستون‌های جدول');
 
-    </script>
+      var head=document.createElement('div');head.className='sh-cv-head';
+      var heading=document.createElement('strong');heading.className='sh-cv-title';
+      heading.textContent='ستون‌های قابل نمایش';
+      var close=document.createElement('button');close.type='button';
+      close.className='sh-cv-close';close.textContent='×';
+      close.setAttribute('aria-label','بستن پنجره انتخاب ستون‌ها');
+      close.addEventListener('click',hideColumnPanel);
+      head.appendChild(heading);head.appendChild(close);
+      colvisPanel.appendChild(head);
 
+      var options=document.createElement('div');options.className='sh-cv-options';
+      columnTitles.forEach(function(title,i){
+        var label=document.createElement('label');label.className='sh-cv-option';
+        var input=document.createElement('input');input.type='checkbox';
+        input.setAttribute('data-column-index',String(i));
+        input.checked=table.column(i).visible();
+        input.addEventListener('change',function(){
+          // حداقل یک ستون همیشه قابل‌نمایش باقی بماند.
+          if(!this.checked && table.columns(':visible').count()<=1){
+            this.checked=true;return;
+          }
+          table.column(i).visible(this.checked);
+        });
+        var span=document.createElement('span');span.textContent=title;
+        label.appendChild(input);label.appendChild(span);options.appendChild(label);
+      });
+      colvisPanel.appendChild(options);
+
+      var footer=document.createElement('div');footer.className='sh-cv-footer';
+      var reset=document.createElement('button');reset.type='button';
+      reset.className='sh-cv-reset';reset.textContent='نمایش همه ستون‌ها';
+      reset.addEventListener('click',function(){
+        table.columns().visible(true);
+        refreshColumnPanel();
+      });
+      var done=document.createElement('button');done.type='button';
+      done.className='sh-cv-done';done.textContent='تأیید و بستن';
+      done.addEventListener('click',hideColumnPanel);
+      footer.appendChild(reset);footer.appendChild(done);
+      colvisPanel.appendChild(footer);
+
+      // نکته کلیدی: نه داخل sh-panel، نه داخل sh-table-scroll.
+      document.body.appendChild(colvisPanel);
+    }
+    function refreshColumnPanel(){
+      if(!colvisPanel)return;
+      colvisPanel.querySelectorAll('input[data-column-index]').forEach(function(input){
+        input.checked=table.column(Number(input.getAttribute('data-column-index'))).visible();
+      });
+    }
+    function repositionColumnPanel(){
+      if(!colvisPanel||colvisPanel.hidden||!colvisAnchor)return;
+      var rect=colvisAnchor.getBoundingClientRect();
+      var width=colvisPanel.offsetWidth, height=colvisPanel.offsetHeight;
+      var viewportW=window.innerWidth,viewportH=window.innerHeight;
+      // اول سمت راست دکمه، و در صورت کمبود جا سمت چپ آن؛ هیچ‌وقت بیرون از صفحه نه.
+      var left=rect.right+8;
+      if(left+width>viewportW-8)left=rect.left-width-8;
+      left=Math.max(8,Math.min(left,Math.max(8,viewportW-width-8)));
+      var top=Math.max(8,Math.min(rect.top,Math.max(8,viewportH-height-8)));
+      colvisPanel.style.left=Math.round(left)+'px';
+      colvisPanel.style.top=Math.round(top)+'px';
+    }
+    function toggleColumnPanel(node){
+      makeColumnPanel();
+      var anchor=node&&(node.jquery?node[0]:node);
+      colvisAnchor=anchor||tableEl.closest('.sh-report').querySelector('.buttons-colvis');
+      if(!colvisAnchor)return;
+      if(!colvisPanel.hidden){hideColumnPanel();return;}
+      refreshColumnPanel();
+      colvisPanel.hidden=false;
+      colvisAnchor.setAttribute('aria-haspopup','dialog');
+      colvisAnchor.setAttribute('aria-controls','sh-colvis-floating');
+      colvisAnchor.setAttribute('aria-expanded','true');
+      repositionColumnPanel();
+    }
+    document.addEventListener('pointerdown',function(ev){
+      if(colvisPanel&&!colvisPanel.hidden&&!colvisPanel.contains(ev.target)&&
+         (!colvisAnchor||!colvisAnchor.contains(ev.target)))hideColumnPanel();
+    });
+    document.addEventListener('keydown',function(ev){
+      if(ev.key==='Escape'&&colvisPanel&&!colvisPanel.hidden){hideColumnPanel();if(colvisAnchor)colvisAnchor.focus();}
+    });
+    window.addEventListener('resize',repositionColumnPanel);
+    window.addEventListener('scroll',repositionColumnPanel,true);
+
+    // اعداد پولی و تعداد را با BigInt جمع می‌کنیم تا خطای Float جاوااسکریپت وارد جمع نشود.
+    var SCALE_DIGITS = 6;
+    var SCALE = 1000000n;
+    function scaledDecimal(raw) {
+      var s = latinDigits(raw).trim().replace(/,/g,'');
+      if (!s) return 0n;
+      var match = /^([+-]?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(s);
+      if (!match) return 0n;
+      var digits = (match[2] + (match[3] || '')).replace(/^0+/, '') || '0';
+      var exp = Number(match[4] || 0);
+      var places = (match[3] || '').length;
+      var power = SCALE_DIGITS - places + exp;
+      var value = BigInt(digits);
+      if (power >= 0) value *= 10n ** BigInt(power);
+      else {
+        var divisor = 10n ** BigInt(-power);
+        value = (value + divisor / 2n) / divisor;
+      }
+      return match[1] === '-' ? -value : value;
+    }
+    function formatScaled(value) {
+      var negative = value < 0n;
+      var abs = negative ? -value : value;
+      var whole = (abs / SCALE).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      var fraction = (abs % SCALE).toString().padStart(SCALE_DIGITS, '0').replace(/0+$/, '');
+      return (negative ? '-' : '') + whole + (fraction ? '.' + fraction : '');
+    }
+    // فقط نمایش جمع نهایی ریال بدون اعشار؛ جمع دقیق BigInt دست‌نخورده می‌ماند.
+    function formatCurrencyTotal(entry) {
+      if (entry.key !== 'IRR') return formatScaled(entry.value);
+      var negative = entry.value < 0n;
+      var abs = negative ? -entry.value : entry.value;
+      var rounded = (abs + SCALE / 2n) / SCALE;
+      var formatted = rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return (negative && rounded !== 0n ? '-' : '') + formatted;
+    }
+    function write(id, value) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+    // یکسان‌سازی نام یک ارز از دو دیتابیس، بدون حذف هیچ ردیف سند.
+    // نمونه: «ریال»، «ريال»، «Rial»، «IRR» باید فقط یک جمع «ریال (IRR)» تولید کنند.
+    function normalizeCurrency(raw) {
+      var original=String(raw||'').trim();
+      var norm=original.normalize('NFKC').replace(/[يى]/g,'ی').replace(/ك/g,'ک')
+        .replace(/[\u200c\u200d\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,'')
+        .replace(/[ًٌٍَُِّْـ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+      var compact=norm.replace(/[\s()\[\]._\-\/:]/g,'');
+      if(/^(?:ریال|ریالایران|ریالایرانی|ریالirr|ریالrial|rial|rials|irr|irrrial|rialirr|iranianrial|iranrial)$/.test(compact))return {key:'IRR',label:'ریال (IRR)'};
+      if(/^(?:یوان|یوانچین|یوانrmb|یوانcny|rmb|cny|yuan|chineseyuan|renminbi)$/.test(compact))return {key:'CNY',label:'یوان (RMB/CNY)'};
+      if(/^(?:دلار|دلارآمریکا|دلارusd|usd|usdol|usdollar|usddollar|unitedstatesdollar)$/.test(compact))return {key:'USD',label:'دلار (USD)'};
+      if(!compact)return {key:'UNKNOWN',label:'ارز نامشخص'};
+      return {key:norm,label:original.replace(/[يى]/g,'ی').replace(/ك/g,'ک').trim()};
+    }
+    function normalizedUnique(raw) {
+      var v=latinDigits(raw).normalize('NFKC').replace(/[يى]/g,'ی').replace(/ك/g,'ک')
+        .replace(/[\u200c-\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
+      return (!v || v === '—' || v === '-' || v.toLowerCase() === 'none') ? '' : v.toLocaleLowerCase('fa');
+    }
+    function absolute(value) {return value<0n ? -value : value;}
+    // v7: تمام ارزها و اعداد آن‌ها درون سربرگ همان ستون، نه در Tooltip یا نوار بالا.
+    // v9: amounts are rendered INLINE next to the header title for IRR, CNY & USD.
+    // Currency amounts are never added to amounts in another currency.
+    function updateHeaderMoney(id, buckets, property, label) {
+      var el=document.getElementById(id);
+      if(!el)return;
+      var mainCurrencies=[
+        {key:'IRR',short:'ریال'},
+        {key:'CNY',short:'یوان'},
+        {key:'USD',short:'دلار'}
+      ];
+      var list=mainCurrencies.concat(Array.from(buckets.values())
+        .filter(function(b){return !mainCurrencies.some(function(c){return c.key===b.key;});})
+        .map(function(b){return {key:b.key,short:b.label};})
+        .sort(function(a,b){return a.short.localeCompare(b.short,'fa');}));
+      el.replaceChildren();
+      var descriptions=[];
+      list.forEach(function(c){
+        var b=buckets.get(c.key);
+        var amount=property==='avg' ?
+          (b&&b.weight ? b.feeWeighted/b.weight : null) : (b?b.value:0n);
+        var formatted=amount===null?'—':formatCurrencyTotal({key:c.key,value:amount});
+        descriptions.push(c.short+': '+formatted);
+        var chip=document.createElement('span');chip.className='sh-header-line';
+        var currency=document.createElement('span');currency.className='sh-header-currency';
+        currency.textContent=c.short+':';
+        var numeric=document.createElement('b');numeric.className='sh-header-number';
+        numeric.dir='ltr';numeric.textContent=formatted;
+        chip.appendChild(currency);chip.appendChild(numeric);el.appendChild(chip);
+      });
+      el.title=label+': '+descriptions.join(' | ');
+      el.setAttribute('aria-label',el.title);
+    }
+
+    function updateSummary() {
+      var totals=new Map(), totalQty=0n, sepidarCount=0, portalCount=0;
+      var distinct={document:new Set(),customer:new Set(),item:new Set(),purchase:new Set(),sales:new Set()};
+      table.rows({search:'applied',page:'all'}).nodes().each(function (tr) {
+        var source=String(tr.getAttribute('data-source')||'').trim().toLowerCase();
+        if(source==='sepidar')sepidarCount++;
+        else if(source==='portal')portalCount++;
+        var docNumber=normalizedUnique(tr.getAttribute('data-doc-number'));
+        if(docNumber)distinct.document.add([source,normalizedUnique(tr.getAttribute('data-doc-type')),normalizedUnique(tr.getAttribute('data-doc-year')),docNumber].join('|'));
+        ['customer','item','purchase','sales'].forEach(function(name){
+          var attr={'customer':'data-customer-code','item':'data-item-code','purchase':'data-purchase-group','sales':'data-sales-group'}[name];
+          var value=normalizedUnique(tr.getAttribute(attr));
+          if(value)distinct[name].add(value);
+        });
+        var qty=scaledDecimal(tr.getAttribute('data-row-qty'));
+        var price=scaledDecimal(tr.getAttribute('data-row-price'));
+        var fee=scaledDecimal(tr.getAttribute('data-row-fee'));
+        totalQty+=qty;
+        var currency=normalizeCurrency(tr.getAttribute('data-currency'));
+        var bucket=totals.get(currency.key)||{key:currency.key,label:currency.label,value:0n,feeSum:0n,count:0,weight:0n,feeWeighted:0n};
+        bucket.value+=price;
+        bucket.feeSum+=fee;bucket.count++;
+        bucket.weight+=absolute(qty);
+        bucket.feeWeighted+=fee*absolute(qty);
+        totals.set(currency.key,bucket);
+      });
+      write('sh-stat-quantity',formatScaled(totalQty));
+      write('sh-header-quantity','جمع: '+formatScaled(totalQty));
+      write('sh-count-sepidar',sepidarCount.toLocaleString('fa-IR'));
+      write('sh-count-portal',portalCount.toLocaleString('fa-IR'));
+      Object.keys(distinct).forEach(function(key){write('sh-distinct-'+key,distinct[key].size.toLocaleString('fa-IR'));});
+      updateHeaderMoney('sh-top-fee',totals,'avg','میانگین موزون');
+      updateHeaderMoney('sh-top-amount',totals,'total','جمع');
+      // No separate financial summary above the table. All totals are in column headers.
+
+    }
+
+    // جست‌وجو بالای تک‌تک ستون‌ها. ورودی‌ها نباید باعث مرتب‌سازی هدر شوند.
+    $('#sales-history-report thead .sh-col-search').on('mousedown click keydown', function (event) {
+      event.stopPropagation();
+    });
+    var columnTimers = Object.create(null);
+    $('#sales-history-report thead .sh-col-search').on('input change', function () {
+      var control = this, idx = control.getAttribute('data-col');
+      clearTimeout(columnTimers[idx]);
+      columnTimers[idx] = setTimeout(function () {
+        var column = table.column(Number(control.getAttribute('data-col')));
+        if (control.tagName === 'SELECT') {
+          // جست‌وجوی دقیق: invoice نباید returned_invoice را برگرداند.
+          column.search(control.value ? '^' + control.value + '$' : '', true, false).draw();
+        } else {
+          column.search(control.value || '', false, true).draw();
+        }
+      }, 140);
+    });
+
+    var dateTimer = null;
+    $(fromInput).add(toInput).on('input change', function () {
+      clearTimeout(dateTimer);
+      dateTimer = setTimeout(function () { updateDateInputs(); table.draw(); }, 160);
+    });
+    $('#sh-clear-date').on('click', function () {
+      clearTimeout(dateTimer);
+      fromInput.value = ''; toInput.value = '';
+      hideCalendar(); updateDateInputs(); table.draw();
+    });
+    $('#sh-clear-table').on('click', function () {
+      clearTimeout(dateTimer);
+      Object.keys(columnTimers).forEach(function (key) { clearTimeout(columnTimers[key]); });
+      $('#sales-history-report thead .sh-col-search').val('');
+      fromInput.value = ''; toInput.value = ''; hideCalendar();
+      table.columns().search(''); table.search(''); updateDateInputs(); table.draw();
+    });
+
+    // Sticky header and six RTL pinned columns: calculate real rendered widths,
+    // so hiding a column never leaves empty space or an incorrect right offset.
+    function refreshSticky(){
+      var head=tableEl.querySelector('thead tr.sh-label-head');
+      if(!head)return;
+      tableEl.style.setProperty('--sh-head-height',Math.ceil(head.getBoundingClientRect().height)+'px');
+      var right=0, pinMax=Infinity;
+      for(var i=0;i<6;i++){
+        var th=tableEl.querySelector('thead tr.sh-label-head th[data-sh-col="'+i+'"]');
+        var width=th ? th.getBoundingClientRect().width : 0;
+        var visible=th&&th.getClientRects().length&&getComputedStyle(th).display!=='none'&&right+width<=pinMax;
+        tableEl.querySelectorAll('[data-sh-col="'+i+'"]').forEach(function(el){
+          if(visible){
+            el.classList.add('sh-pinned');
+            el.style.setProperty('--sh-pin-right',right+'px');
+          }else{
+            el.classList.remove('sh-pinned');el.style.removeProperty('--sh-pin-right');
+          }
+        });
+        if(visible)right+=width;
+      }
+      if(splitter){
+        splitter.style.right=Math.round(right)+'px';
+        splitter.setAttribute('aria-valuenow',String(Math.round(right)));
+        splitter.setAttribute('aria-valuemin',String(splitterBounds().min));
+        splitter.setAttribute('aria-valuemax',String(splitterBounds().max));
+        splitter.hidden=right===0;
+      }
+    }
+    var scrollArea=document.querySelector('#sales-history-report .sh-table-scroll');
+
+    // Sales History v10: draggable RTL boundary for six sticky columns.
+    // Only changes their widths: existing DataTables columns, search, sorting, exports remain intact.
+    var splitter = null, splitterFrame = null;
+    var pinBase = [68,106,145,103,103,152];
+    var pinBaseTotal = pinBase.reduce(function(a,b){return a+b;},0);
+    var pinnedDesired = pinBaseTotal;
+    function splitterBounds(){
+      var viewport = scrollArea ? scrollArea.clientWidth : 0;
+      var max = Math.max(250,Math.min(1120,Math.floor(viewport*0.78),viewport-220));
+      return {min:Math.min(450,max),max:max};
+    }
+    function clampPinned(n){
+      var bounds=splitterBounds();
+      return Math.max(bounds.min,Math.min(bounds.max,Math.round(n)));
+    }
+    function setPinnedTotal(n){
+      pinnedDesired=clampPinned(n);
+      var assigned=0;
+      pinBase.forEach(function(base,i){
+        var px=i===5 ? pinnedDesired-assigned : Math.round(pinnedDesired*base/pinBaseTotal);
+        assigned+=px;
+        tableEl.style.setProperty('--sh-split-w'+i,px+'px');
+      });
+      refreshSticky();
+    }
+    if(scrollArea){
+      splitterFrame=document.createElement('div');
+      splitterFrame.className='sh-scroll-frame';
+      scrollArea.parentNode.insertBefore(splitterFrame,scrollArea);
+      splitterFrame.appendChild(scrollArea);
+      splitter=document.createElement('div');
+      splitter.className='sh-pinned-splitter';
+      splitter.tabIndex=0;
+      splitter.setAttribute('role','separator');
+      splitter.setAttribute('aria-label','تغییر اندازه بخش ثابت جدول؛ با کشیدن یا کلیدهای جهت');
+      splitter.setAttribute('aria-orientation','vertical');
+      splitter.title='برای تغییر عرض شش ستون ثابت به چپ یا راست بکشید؛ کلیدهای جهت هم کار می‌کنند.';
+      splitterFrame.appendChild(splitter);
+      var dragStartX=0,dragStartWidth=0,dragPointer=null,oldUserSelect='';
+      function endDrag(){
+        if(dragPointer===null)return;
+        dragPointer=null;
+        splitter.classList.remove('is-dragging');
+        splitterFrame.classList.remove('is-dragging');
+        document.body.style.userSelect=oldUserSelect;
+      }
+      splitter.addEventListener('pointerdown',function(event){
+        if(event.pointerType==='mouse' && event.button!==0)return;
+        event.preventDefault();event.stopPropagation();
+        dragPointer=event.pointerId;
+        dragStartX=event.clientX;
+        dragStartWidth=pinnedDesired;
+        oldUserSelect=document.body.style.userSelect;
+        document.body.style.userSelect='none';
+        splitter.classList.add('is-dragging');
+        splitterFrame.classList.add('is-dragging');
+        splitter.setPointerCapture(event.pointerId);
+      });
+      splitter.addEventListener('pointermove',function(event){
+        if(event.pointerId!==dragPointer)return;
+        event.preventDefault();
+        // RTL: move LEFT => wider pinned pane; move RIGHT => narrower pinned pane.
+        setPinnedTotal(dragStartWidth+dragStartX-event.clientX);
+      });
+      splitter.addEventListener('pointerup',endDrag);
+      splitter.addEventListener('pointercancel',endDrag);
+      splitter.addEventListener('lostpointercapture',endDrag);
+      splitter.addEventListener('keydown',function(event){
+        var step=event.shiftKey?64:24;
+        var next;
+        if(event.key==='ArrowLeft')next=pinnedDesired+step;
+        else if(event.key==='ArrowRight')next=pinnedDesired-step;
+        else if(event.key==='Home')next=splitterBounds().min;
+        else if(event.key==='End')next=splitterBounds().max;
+        else return;
+        event.preventDefault();setPinnedTotal(next);
+      });
+      setPinnedTotal(pinnedDesired);
+    }
+    var CHUNK_SIZE=60, pendingScroll=false, scrollStatus=document.createElement('span');
+    scrollStatus.className='sh-scroll-status';scrollStatus.setAttribute('role','status');
+    var footer=document.querySelector('#sales-history-report .sh-dt-footer');
+    if(footer)footer.appendChild(scrollStatus);
+    function updateScrollStatus(){
+      var filtered=table.rows({search:'applied',page:'all'}).count();
+      var displayed=Math.min(table.page.len(),filtered);
+      scrollStatus.textContent=filtered===0 ? 'نتیجه‌ای وجود ندارد' :
+        ('نمایش '+displayed.toLocaleString('fa-IR')+' از '+filtered.toLocaleString('fa-IR')+' ردیف · '+
+          (displayed<filtered?'برای ادامه پایین بروید':'پایان نتایج دریافت‌شده'));
+    }
+    function loadIfNearEnd(){
+      if(!scrollArea||pendingScroll)return;
+      var remaining=scrollArea.scrollHeight-scrollArea.clientHeight-scrollArea.scrollTop;
+      if(remaining>170)return;
+      var filtered=table.rows({search:'applied',page:'all'}).count();
+      var shown=table.page.len();
+      if(shown>=filtered)return;
+      pendingScroll=true;
+      // No network requests. DataTables reveals 60 more of the already-received rows.
+      table.page.len(Math.min(filtered,shown+CHUNK_SIZE)).draw(false);
+      pendingScroll=false;
+    }
+    if(scrollArea){scrollArea.addEventListener('scroll',loadIfNearEnd,{passive:true});}
+    table.on('column-visibility.dt',function(){requestAnimationFrame(refreshSticky);});
+    window.addEventListener('resize',function(){requestAnimationFrame(refreshSticky);});
+    table.on('draw.dt',function(){
+      updateSummary();updateScrollStatus();requestAnimationFrame(refreshSticky);
+    });
+    refreshSticky();updateScrollStatus();
+    // A short result set may not fill the viewport after filtering.
+    // Avoid forced loading while the user has not scrolled: redraw is demand driven.
+
+    updateDateInputs();
+    updateSummary();
+    requestAnimationFrame(refreshSticky); // Header height changes as currency / diversity totals render.
+  });
+})(jQuery);
+</script>
 {% endblock extra_js %}

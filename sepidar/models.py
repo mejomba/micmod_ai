@@ -132,7 +132,14 @@ Where (dl.Code like '%%{text}%%' or dl.Title like '%%{text}%%' ) and IsCustomer=
     """)
 
     @staticmethod
-    def get_sales_history_list(kwargs):
+    def get_sales_history_list(kwargs, include_portal=False):
+        if include_portal:
+            from sepidar.sales_history_service import (
+                get_sales_history_list as get_combined_history
+            )
+
+            return get_combined_history(kwargs)
+
         customer_code = kwargs.get('customer_code')
         item_code = kwargs.get('item_code')
         part = kwargs.get('part')
