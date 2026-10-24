@@ -82,3 +82,4 @@ class TransportationCalender(BaseModel):
     capacity_kg = models.DecimalField(max_digits=12, decimal_places=2)
     shipment_type = models.CharField(choices=TransportationMethod)
     description = models.TextField(null=True, blank=True)
+    transporter_company = models.CharField(max_length=100, null=True, blank=True)
