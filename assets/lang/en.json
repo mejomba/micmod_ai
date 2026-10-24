@@ -261,5 +261,7 @@
     "آیا از حذف این آیتم اطمینان دارید؟": "?you want to delete this item",
     "has_customer_prepaid": "has customer prepaid",
     "qi": "quotation",
-    "qi_": "quotation"
+    "qi_": "quotation",
+    "is_reserve": "reserve",
+    "Request cancel": "درخواست کنسلی"
 }
