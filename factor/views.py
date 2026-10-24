@@ -1251,7 +1251,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
     def save_new_address(self):
         try:
             address = self.request.POST.get('new_address')
-            customer = self.request.POST.get('customer') or self.object.customer_party_id.pk
+            customer = self.request.POST.get('customer') or self.object.customer_party_id.sepidar_party_id
             if address and customer:
                 obj = CustomerAddress.objects.create(address=address, customer_id=customer)
 
@@ -1534,6 +1534,7 @@ class SafeFactorView(LoginRequiredMixin, BaseView):
         else:
             initial = dict()
             if self.object:
+                context['is_all_supplied'] = self.object.is_all_supplied2
                 Notification.notify_customer_for_factor(self.object, self.request)
                 if self.object.last_work_flow and (self.object.last_work_flow.to_user == self.request.user or self.object.last_work_flow.to_user.team == self.request.user):
                     context['allow_cancel'] = self.object.last_work_flow.to_user

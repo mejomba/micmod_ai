@@ -426,9 +426,9 @@ debugger
     net_price_after_tax_discount = net_price
 
     let selfDiscountValue = parseFloat(selfDiscount.value?.replaceAll(',', ''))
-    if (selfDiscountValue != 0){
-        selfDiscountValue = parseFloat(selfDiscount.innerHTML.replaceAll(',', ''))
-    }
+    {#if (selfDiscountValue != 0){#}
+    {#    selfDiscountValue = parseFloat(selfDiscount.innerHTML.replaceAll(',', ''))#}
+    //}
     //row_discount_base_percentage = net_price_after_tax_discount * (selfDiscountValue/100)
     row_discount_base_percentage = net_price * (selfDiscountValue/100)
 

@@ -140,12 +140,12 @@ class FactorModelForm(CustomBaseModelForm):
 
 
 class FactorItemModelForm(CustomBaseModelForm):
-    product_id = forms.CharField(
+    # product_id = forms.CharField(
         # choices=[],
-        label='کالای شاپ',
-        widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
-        required=False,
-    )
+        # label='کالای شاپ',
+        # widget=forms.Select,  # این ویجت پیش‌فرض است، اما برای وضوح ذکر شده
+        # required=False,
+    # )
     class Meta:
         model = FactorItem
         exclude = ['group']
@@ -196,7 +196,6 @@ class FactorItemModelForm(CustomBaseModelForm):
 
         super(FactorItemModelForm, self).__init__(*args, **kwargs)
 
-        self.fields['product_id'].initial = [("x", "y")]
         self.fields['quantity'].widget.attrs['onkeyup'] = 'check_quantity(event)'
         self.fields['price'].widget.attrs['onkeyup'] = 'check_price(event)'
         self.fields['price'].widget.attrs['class'] += ' comma-seperator'
@@ -715,15 +714,15 @@ FACTOR_ITEM_FIELDS_BY_PERMISSION = {
 
     },
     "factor.cp_factor_item_sales_admin": {
-        0: {
-            "edit": [
-                "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
-                'product_id', 'product_name'
-            ],
-            "hidden": [
-                "qi", "factor"
-            ]
-        },
+        # 0: {
+        #     "edit": [
+        #         "goods_code", "part_number_show", "quantity", "price", "final_amount", "discount_per_item",
+        #         'product_id', 'product_name'
+        #     ],
+        #     "hidden": [
+        #         "qi", "factor"
+        #     ]
+        # },
     },
     "factor.cp_factor_item_wh": {
         1: {
